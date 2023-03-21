@@ -16,11 +16,12 @@ class BlockIndexer(private val thorService: ThorService, private val blockRepo: 
             initialise()
             while (true) {
                 logger.info("Indexing block $currentBlockNumber")
-                val block = thorService.getBlock(currentBlockNumber++)
+                val block = thorService.getBlock(currentBlockNumber)
                 blockRepo.save(block)
+                currentBlockNumber++
             }
         } catch (e: Exception) {
-            logger.error("Error while indexing blocks", e)
+            logger.error("Error while indexing block $currentBlockNumber", e)
             logger.info("Restarting block indexer in 10s...")
             Thread.sleep(10000)
             run()

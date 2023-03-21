@@ -17,12 +17,13 @@ class ClauseIndexer(private val thorService: ThorService, private val clauseRepo
             initialise()
             while (true) {
                 logger.info("Indexing clauses in block $currentBlockNumber")
-                val block = thorService.getBlock(currentBlockNumber++)
+                val block = thorService.getBlock(currentBlockNumber)
                 val clauses = block.transactions.flatMap { tx -> tx.clauses.map { WrappedClause(block, tx, it) } }
                 clauseRepo.saveAll(clauses)
+                currentBlockNumber++
             }
         } catch (e: Exception) {
-            logger.error("Error while indexing clauses", e)
+            logger.error("Error while indexing clauses for block $currentBlockNumber", e)
             logger.info("Restarting clause indexer in 10s...")
             Thread.sleep(10000)
             run()

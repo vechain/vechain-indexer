@@ -17,11 +17,12 @@ class TransactionIndexer(private val thorService: ThorService, private val txRep
             initialise()
             while (true) {
                 logger.info("Indexing transactions in block $currentBlockNumber")
-                val block = thorService.getBlock(currentBlockNumber++)
+                val block = thorService.getBlock(currentBlockNumber)
                 txRepo.saveAll(block.transactions.map { WrappedTransaction(block, it) })
+                currentBlockNumber++
             }
         } catch (e: Exception) {
-            logger.error("Error while indexing transactions", e)
+            logger.error("Error while indexing transactions for block $currentBlockNumber", e)
             logger.info("Restarting transaction indexer in 10s...")
             Thread.sleep(10000)
             run()
