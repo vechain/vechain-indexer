@@ -1,0 +1,87 @@
+version: '3.5'
+
+services:
+  mongo-node1:
+    hostname: mongo-node1
+    container_name: mongo-node1
+    image: mongo:6
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    restart: always
+    volumes:
+      - vechain-data-1:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: admin
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
+    networks:
+      - vechain-database
+
+  mongo-node2:
+    hostname: mongo-node2
+    container_name: mongo-node2
+    image: mongo:6
+    expose:
+      - 27018
+    ports:
+      - 27018:27018
+    restart: always
+    volumes:
+      - vechain-data-2:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--port", "27018", "--bind_ip_all", "--replSet", "rs0" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: admin
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
+    networks:
+      - vechain-database
+
+  mongo-node3:
+    hostname: mongo-node3
+    container_name: mongo-node3
+    image: mongo:6
+    expose:
+      - 27019
+    ports:
+      - 27019:27019
+    restart: always
+    volumes:
+      - vechain-data-3:/data/db
+    entrypoint: [ "/usr/bin/mongod", "--port", "27019", "--bind_ip_all", "--replSet", "rs0" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: admin
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 128m
+    networks:
+      - vechain-database
+
+networks:
+  vechain-database:
+    driver: bridge
+    name: vechain-database
+
+volumes:
+  vechain-data-1:
+  vechain-data-2:
+  vechain-data-3:
