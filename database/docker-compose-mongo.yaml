@@ -20,9 +20,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2048m
+          memory: 4096m
         reservations:
-          memory: 512m
+          memory: 1024m
     networks:
       - vechain-database
 
@@ -45,9 +45,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2048m
+          memory: 4096m
         reservations:
-          memory: 512m
+          memory: 1024m
     networks:
       - vechain-database
 
@@ -70,9 +70,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2048m
+          memory: 4096m
         reservations:
-          memory: 512m
+          memory: 1024m
     networks:
       - vechain-database
 
