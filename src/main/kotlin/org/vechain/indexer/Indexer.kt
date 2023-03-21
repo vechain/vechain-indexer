@@ -7,7 +7,7 @@ import org.vechain.indexer.exception.IndexerFullySynchronizedException
 const val APPROX_BLOCK_PERIOD = 9990L
 abstract class Indexer {
     private var backoffDelay = 0L
-    private val SHORT_BACKOFF_PERIOD = generateRandomDelay(1000, 3000)
+    private val shortBackoffPeriod = generateRandomDelay(1000, 3000)
 
     fun run() {
         logger.info("Starting block indexer...")
@@ -19,12 +19,12 @@ abstract class Indexer {
 
             processBlock(blockNumber)
 
-            if (backoffDelay == SHORT_BACKOFF_PERIOD) backoffDelay = APPROX_BLOCK_PERIOD
+            if (backoffDelay == shortBackoffPeriod) backoffDelay = APPROX_BLOCK_PERIOD
             return run(blockNumber + 1)
 
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("Indexer fully synchronized...")
-            backoffDelay = SHORT_BACKOFF_PERIOD
+            backoffDelay = shortBackoffPeriod
             run(blockNumber)
         }
         catch (e: Exception) {
