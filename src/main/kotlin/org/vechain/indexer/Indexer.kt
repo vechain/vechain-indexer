@@ -14,25 +14,27 @@ abstract class Indexer {
         run(getStartingBlock())
     }
     private fun run(blockNumber: Long) {
+        var nextBlock = blockNumber
         try {
             if (backoffDelay > 0) Thread.sleep(backoffDelay)
 
             processBlock(blockNumber)
 
             if (backoffDelay == shortBackoffPeriod) backoffDelay = APPROX_BLOCK_PERIOD
-            return run(blockNumber + 1)
 
+            nextBlock++
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("Indexer fully synchronized...")
             backoffDelay = shortBackoffPeriod
-            run(blockNumber)
         }
         catch (e: Exception) {
             logger.error("Error while processing block $blockNumber", e)
             logger.info("Restarting indexer in 10s...")
             Thread.sleep(10000)
-            run()
+        } finally {
+            run(nextBlock)
         }
+
     }
 
     private fun generateRandomDelay(lower: Long, upper: Long): Long {
