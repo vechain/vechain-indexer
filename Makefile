@@ -11,9 +11,9 @@ down: #@ Stop all the infrastructure and the application.
 
 # Application
 app-up: #@ Start the application.
-	docker-compose up -d --build
+	docker compose up -d --build
 app-down: #@ Stop the application.
-	docker-compose down
+	docker compose down
 
 # Infra
 infra-all: #@ Remove, clean and start all the infrastructure.
