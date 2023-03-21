@@ -3,41 +3,60 @@ package org.vechain.indexer
 import org.apache.logging.log4j.LogManager
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
 
-
+enum class Status {
+    SYNCING, FULLY_SYNCED, THROTTLED
+}
 const val APPROX_BLOCK_PERIOD = 9990L
+const val THROTTLE_PERIOD = 15000L
 abstract class Indexer {
-    private var backoffDelay = 0L
-    private val shortBackoffPeriod = generateRandomDelay(1000, 3000)
+    private var status = Status.SYNCING
+    var currentBlock: Long = 0
 
-    fun run() {
+    fun start() {
         logger.info("Starting block indexer...")
-        run(getStartingBlock())
+        currentBlock = getStartingBlock()
+        run()
     }
-    private tailrec fun run(blockNumber: Long) {
-        var nextBlock = blockNumber
+    private tailrec fun run() {
         try {
-            if (backoffDelay > 0) Thread.sleep(backoffDelay)
+            backoffDelay()
 
-            processBlock(blockNumber)
+            processBlock(currentBlock)
 
-            if (backoffDelay == shortBackoffPeriod) backoffDelay = APPROX_BLOCK_PERIOD
-
-            nextBlock++
+            currentBlock++
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("Indexer fully synchronized...")
-            backoffDelay = shortBackoffPeriod
+            Thread.sleep(generateRandomDelay(1000, 3000))
+            status = Status.FULLY_SYNCED
         }
         catch (e: Exception) {
-            logger.error("Error while processing block $blockNumber", e)
+            logger.error("Error while processing block $currentBlock", e)
             logger.info("Restarting indexer in 10s...")
             Thread.sleep(10000)
         }
-        
-        run(nextBlock)
+
+        run()
+    }
+
+    private fun backoffDelay() {
+        if (status == Status.FULLY_SYNCED) {
+            Thread.sleep(APPROX_BLOCK_PERIOD)
+        } else if (status == Status.THROTTLED) {
+            logger.info("Indexer throttled...")
+            Thread.sleep(THROTTLE_PERIOD)
+        }
     }
 
     private fun generateRandomDelay(lower: Long, upper: Long): Long {
         return (Math.random() * (upper - lower) + lower).toLong()
+    }
+
+    fun throttle() {
+        if (status == Status.SYNCING) status = Status.THROTTLED
+    }
+
+    fun unthrottle() {
+        if (status == Status.THROTTLED) status = Status.SYNCING
     }
 
     abstract fun processBlock(blockNumber: Long)
