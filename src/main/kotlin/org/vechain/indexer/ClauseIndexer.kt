@@ -18,7 +18,7 @@ class ClauseIndexer(private val thorService: ThorService, private val clauseRepo
             while (true) {
                 logger.info("Indexing clauses in block $currentBlockNumber")
                 val block = thorService.getBlock(currentBlockNumber)
-                val clauses = block.transactions.flatMap { tx -> tx.clauses.map { WrappedClause(block, tx, it) } }
+                val clauses = block.transactions.flatMap { tx -> tx.clauses.mapIndexed { idx, cl -> WrappedClause(block, tx, cl, idx) } }
                 clauseRepo.saveAll(clauses)
                 currentBlockNumber++
             }
