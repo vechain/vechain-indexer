@@ -5,33 +5,19 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.repos.BlockRepo
 import org.vechain.indexer.service.ThorService
 
-
 @Component
-class BlockIndexer(private val thorService: ThorService, private val blockRepo: BlockRepo) {
-    private var currentBlockNumber: Long = 0
+class BlockIndexer(private val thorService: ThorService, private val blockRepo: BlockRepo): Indexer() {
 
-    fun run() {
-        try {
-            logger.info("Starting block indexer...")
-            initialise()
-            while (true) {
-                logger.info("Indexing block $currentBlockNumber")
-                val block = thorService.getBlock(currentBlockNumber)
-                blockRepo.save(block)
-                currentBlockNumber++
-            }
-        } catch (e: Exception) {
-            logger.error("Error while indexing block $currentBlockNumber", e)
-            logger.info("Restarting block indexer in 10s...")
-            Thread.sleep(10000)
-            run()
-        }
+    override fun processBlock(blockNumber: Long) {
+        logger.info("Processing block $blockNumber")
+        val block = thorService.getBlock(blockNumber)
+        blockRepo.save(block)
     }
 
-    fun initialise() {
+    override fun getStartingBlock(): Long {
         val maxBlockNumber = blockRepo.getMaxBlockNumber().firstOrNull()?.number ?: 0
-        currentBlockNumber = maxBlockNumber
         logger.info("Starting block indexer from block $maxBlockNumber...")
+        return maxBlockNumber
     }
 
     companion object {

@@ -7,32 +7,19 @@ import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.service.ThorService
 
 @Component
-class TransactionIndexer(private val thorService: ThorService, private val txRepo: TransactionRepo) {
-    private var currentBlockNumber: Long = 0
+class TransactionIndexer(private val thorService: ThorService, private val txRepo: TransactionRepo): Indexer() {
 
-    fun run() {
-
-        try {
-            logger.info("Starting transaction indexer...")
-            initialise()
-            while (true) {
-                logger.info("Indexing transactions in block $currentBlockNumber")
-                val block = thorService.getBlock(currentBlockNumber)
-                txRepo.saveAll(block.transactions.map { WrappedTransaction(block, it) })
-                currentBlockNumber++
-            }
-        } catch (e: Exception) {
-            logger.error("Error while indexing transactions for block $currentBlockNumber", e)
-            logger.info("Restarting transaction indexer in 10s...")
-            Thread.sleep(10000)
-            run()
-        }
+    override fun processBlock(blockNumber: Long) {
+        logger.info("Processing transactions in block $blockNumber")
+        val block = thorService.getBlock(blockNumber)
+        if (block.transactions.isNotEmpty())
+            txRepo.saveAll(block.transactions.map { WrappedTransaction(block, it) })
     }
 
-    private fun initialise() {
+    override fun getStartingBlock(): Long {
         val maxBlockNumber = txRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
-        currentBlockNumber = maxBlockNumber
         logger.info("Starting transaction indexer from block $maxBlockNumber...")
+        return maxBlockNumber
     }
 
     companion object {
