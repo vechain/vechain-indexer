@@ -22,7 +22,7 @@ class AppConfig {
             .build()
         return WebClient.builder()
             .exchangeStrategies(strategies)
-            .baseUrl("https://mainnet.vechain.org")
+            .baseUrl("http://thor-solo:8669")
             .build()
     }
 }

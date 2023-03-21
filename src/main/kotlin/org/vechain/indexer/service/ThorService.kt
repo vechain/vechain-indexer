@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import org.vechain.indexer.exception.IndexerFullySynchronizedException
 import org.vechain.indexer.model.Block
 
 @Service
@@ -15,7 +16,7 @@ class ThorService(val thorRest: WebClient) {
 
         if (response == null) {
             logger.error("Block $number not found")
-            throw RuntimeException("Block $number not found")
+            throw IndexerFullySynchronizedException()
         }
 
         logger.info("Block $number found: ${response.id}")
