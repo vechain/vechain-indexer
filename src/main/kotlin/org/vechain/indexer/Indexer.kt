@@ -7,7 +7,7 @@ enum class Status {
     SYNCING, FULLY_SYNCED, THROTTLED
 }
 const val APPROX_BLOCK_PERIOD = 9990L
-const val THROTTLE_PERIOD = 15000L
+const val THROTTLE_PERIOD = 5000L
 abstract class Indexer {
     private var status = Status.SYNCING
     var currentBlock: Long = 0
