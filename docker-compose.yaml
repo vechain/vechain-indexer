@@ -7,6 +7,12 @@ services:
     container_name: vechain-indexer
     restart: "no"
     env_file: .env
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+        reservations:
+          memory: 512m
     networks:
       - vechain
       - vechain-database
