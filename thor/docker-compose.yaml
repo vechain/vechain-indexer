@@ -14,6 +14,13 @@ services:
       retries: 30
     volumes:
       - thor-volume:/root/.org.vechain.thor
+    networks:
+        - vechain-thor
 
 volumes:
   thor-volume:
+
+networks:
+  vechain-thor:
+    driver: bridge
+    name: vechain-thor

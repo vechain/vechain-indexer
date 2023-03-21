@@ -3,7 +3,9 @@ version: "3.5"
 services:
 
   vechain-indexer:
-    image: vechain-indexer
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: vechain-indexer
     restart: "no"
     env_file: .env
@@ -16,6 +18,7 @@ services:
     networks:
       - vechain
       - vechain-database
+      - vechain-thor
 
 networks:
   vechain:
@@ -24,3 +27,6 @@ networks:
   vechain-database:
     external: true
     name: vechain-database
+  vechain-thor:
+    external: true
+    name: vechain-thor

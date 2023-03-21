@@ -3,9 +3,9 @@ help:
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
-	make infra-up app-up
+	make infra-up infra-setup app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make infra-clean
+	make app-down infra-clean
 down: #@ Stop all the infrastructure and the application.
 	make infra-down app-down
 
@@ -29,7 +29,7 @@ infra-up: #@ Start all the infrastructure.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
-DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml\
+DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 
 db-all: #@ Remove, clean and start all the database.
 	make db-down db-clean db-up db-setup
