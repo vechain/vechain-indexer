@@ -11,7 +11,7 @@ data class WrappedClause (
     val blockId: String,
     val blockNumber: Long,
     val txId: String,
-    override val to: String,
+    override val to: String? = null,
     override val value: String,
     override val data: String
 ): IClause {
