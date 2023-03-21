@@ -13,7 +13,7 @@ abstract class Indexer {
         logger.info("Starting block indexer...")
         run(getStartingBlock())
     }
-    private fun run(blockNumber: Long) {
+    private tailrec fun run(blockNumber: Long) {
         var nextBlock = blockNumber
         try {
             if (backoffDelay > 0) Thread.sleep(backoffDelay)
@@ -31,10 +31,9 @@ abstract class Indexer {
             logger.error("Error while processing block $blockNumber", e)
             logger.info("Restarting indexer in 10s...")
             Thread.sleep(10000)
-        } finally {
-            run(nextBlock)
         }
-
+        
+        run(nextBlock)
     }
 
     private fun generateRandomDelay(lower: Long, upper: Long): Long {
