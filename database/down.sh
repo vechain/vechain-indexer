@@ -2,4 +2,4 @@
 
 echo "Stopping databases"
 
-docker-compose -f docker-compose-mongo.yaml down
+docker compose -f docker-compose-mongo.yaml down

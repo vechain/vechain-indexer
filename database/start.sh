@@ -2,4 +2,4 @@
 
 echo "Starting databases"
 
-docker-compose -f docker-compose-mongo.yaml up -d
+docker compose -f docker-compose-mongo.yaml up -d

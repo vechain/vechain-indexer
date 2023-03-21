@@ -7,7 +7,6 @@ COPY ./gradlew ./
 
 RUN ./gradlew
 
-COPY ./libs ./libs
 COPY ./build.gradle.kts ./
 COPY ./settings.gradle.kts ./
 COPY ./system.properties ./

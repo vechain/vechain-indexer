@@ -2,4 +2,4 @@
 
 echo "Cleaning databases out"
 
-docker-compose -f docker-compose-mongo.yaml down -v --remove-orphans
+docker compose -f docker-compose-mongo.yaml down -v --remove-orphans
