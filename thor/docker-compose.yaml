@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  thor-solo:
+    build:
+      dockerfile: Dockerfile
+    container_name: thor-solo
+    ports:
+      - "8669:8669"
+      - "11235:11235"
+    healthcheck:
+      test: curl --fail 0.0.0.0:8669/blocks/0 || exit 1
+      interval: 2s
+      retries: 30
+    volumes:
+      - thor-volume:/root/.org.vechain.thor
+
+volumes:
+  thor-volume:
