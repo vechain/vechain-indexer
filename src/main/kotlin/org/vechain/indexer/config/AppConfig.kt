@@ -3,7 +3,10 @@ package org.vechain.indexer.config
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.codec.ClientCodecConfigurer
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+
 
 @Configuration
 @EnableCaching
@@ -11,6 +14,15 @@ class AppConfig {
 
     @Bean
     fun thorRest(): WebClient {
-        return WebClient.create("https://mainnet.vechain.org")
+        val size = 16 * 1024 * 1024
+        val strategies = ExchangeStrategies.builder()
+            .codecs { codecs: ClientCodecConfigurer ->
+                codecs.defaultCodecs().maxInMemorySize(size)
+            }
+            .build()
+        return WebClient.builder()
+            .exchangeStrategies(strategies)
+            .baseUrl("https://mainnet.vechain.org")
+            .build()
     }
 }
