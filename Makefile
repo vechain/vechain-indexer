@@ -52,7 +52,7 @@ thor-clean: #@ Clean the VeChainThor data
 thor-down: #@ Stop VeChainThor
 	$(THOR_COMMAND) down
 thor-up: #@ Start VeChainThor
-	$(THOR_COMMAND) up -d --wait
+	$(THOR_COMMAND) up -d --wait --build
 
 # Application Build
 build-gradle: #@ Build the application with Gradle.
