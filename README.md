@@ -12,10 +12,24 @@
 
 ### Option 1: Docker only
 
+- Copy `.env.example` to `.env.local` and fill in the values for your environment. They should work as-is for docker
+
 - Run:
 ```
 make start
 ```
+
+### Option 2: Docker + IntelliJ (Recommended for debugging)
+
+- No need to copy `.env.example` to `.env` if you are using IntelliJ. The default variables should connect to the infrastructure using localhost variables
+- Run: 
+```bash
+make infra-all
+```
+- Go to IndexerApplication.kt inside IntelliJ and run/debug:
+
+
+![img.png](images/intellij-start.png)
 
 ### Restarting
 

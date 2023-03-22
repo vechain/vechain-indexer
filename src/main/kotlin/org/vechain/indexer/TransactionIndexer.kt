@@ -7,8 +7,6 @@ import org.vechain.indexer.service.ThorService
 
 @Component
 class TransactionIndexer(private val thorService: ThorService, private val txRepo: TransactionRepo): Indexer() {
-    override fun name() = "TransactionIndexer"
-
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
         if (block.transactions.isNotEmpty())

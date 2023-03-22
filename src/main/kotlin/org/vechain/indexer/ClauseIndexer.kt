@@ -7,8 +7,6 @@ import org.vechain.indexer.service.ThorService
 
 @Component
 class ClauseIndexer(private val thorService: ThorService, private val clauseRepo: ClauseRepo): Indexer() {
-    override fun name() = "ClauseIndexer"
-
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
         if (block.transactions.isNotEmpty() && block.transactions.any { it.clauses.isNotEmpty() }) {

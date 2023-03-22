@@ -9,6 +9,9 @@ enum class Status {
 const val APPROX_BLOCK_PERIOD = 9990L
 const val THROTTLE_PERIOD = 5000L
 abstract class Indexer {
+
+    private val logger = LogManager.getLogger(this::class.simpleName)
+
     private var status = Status.SYNCING
     var currentBlock: Long = 0
 
@@ -63,9 +66,8 @@ abstract class Indexer {
     abstract fun processBlock(blockNumber: Long)
     abstract fun getStartingBlock(): Long
 
-    abstract fun name(): String
-
-    companion object {
-        private val logger = LogManager.getLogger(Indexer::class.java)
+    private fun name(): String {
+        return this.javaClass.simpleName
     }
+
 }
