@@ -10,7 +10,7 @@ import org.vechain.indexer.model.Block
 @Service
 class ThorService(val thorRest: WebClient) {
 
-    @Cacheable("blocks")
+    @Cacheable(value=["blocks"], key="#number", unless="#result == null")
     fun getBlock(number: Long): Block {
         val response = thorRest.get().uri("/blocks/$number?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 
