@@ -1,0 +1,31 @@
+package org.vechain.indexer
+
+import org.springframework.stereotype.Component
+import org.vechain.indexer.model.Contract
+import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.utils.ContractUtils
+
+@Component
+class ContractIndexer(private val thorService: ThorService, private val contractRepo: ContractRepo,
+    private val contractUtils: ContractUtils): Indexer() {
+    override fun processBlock(blockNumber: Long) {
+        val block = thorService.getBlock(blockNumber)
+        var contracts: List<Contract> = emptyList()
+        block.transactions.forEach { tx ->
+            tx.clauses.forEachIndexed { index, clause ->
+                    val outputs = tx.outputs[index]
+                    if (contractUtils.isContractDeployment(clause, outputs)) {
+                        contracts = contracts.plus(Contract(outputs.contractAddress!!, block.id, block.number, tx.id, index, tx.origin, clause.data))
+                    }
+
+            }
+        }
+        if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
+    }
+
+    override fun getStartingBlock(): Long {
+        return contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
+    }
+
+}
