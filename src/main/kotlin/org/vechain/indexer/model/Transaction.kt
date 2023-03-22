@@ -18,4 +18,23 @@ data class Transaction(
         override val reverted: Boolean,
         override val origin: String,
         override val delegator: String?,
-        override val outputs: List<Any>): ITransaction
+        override val outputs: List<TxOutputs>): ITransaction
+
+
+data class TxOutputs(
+        val contractAddress: String?,
+        val events: List<TxEvent>,
+        val transfers: List<TxTransfer>,
+)
+
+data class TxEvent(
+        val address: String,
+        val topics: List<String>,
+        val data: String
+)
+
+data class TxTransfer(
+        val sender: String,
+        val recipient: String,
+        val amount: String
+)
