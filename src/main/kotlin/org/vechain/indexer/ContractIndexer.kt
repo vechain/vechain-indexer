@@ -13,22 +13,24 @@ class ContractIndexer(private val thorService: ThorService, private val contract
         val block = thorService.getBlock(blockNumber)
         var contracts: List<Contract> = emptyList()
         block.transactions.forEach { tx ->
-            tx.clauses.forEachIndexed { index, clause ->
-                if (tx.outputs.size >= index + 1) {
-                    val outputs = tx.outputs[index]
-                    if (contractUtils.isContractDeployment(clause, outputs)) {
-                        contracts = contracts.plus(
-                            Contract(
-                                outputs.contractAddress!!,
-                                block.id,
-                                block.number,
-                                tx.id,
-                                index,
-                                tx.origin,
-                                clause.data
+            if (!tx.reverted) {
+                tx.clauses.forEachIndexed { index, clause ->
+                    if (tx.outputs.size >= index + 1) {
+                        val outputs = tx.outputs[index]
+                        if (contractUtils.isContractDeployment(clause, outputs)) {
+                            contracts = contracts.plus(
+                                Contract(
+                                    outputs.contractAddress!!,
+                                    block.id,
+                                    block.number,
+                                    tx.id,
+                                    index,
+                                    tx.origin,
+                                    clause.data
+                                )
                             )
-                        )
 
+                        }
                     }
                 }
             }
