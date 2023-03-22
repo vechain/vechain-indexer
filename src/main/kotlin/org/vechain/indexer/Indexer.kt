@@ -13,25 +13,26 @@ abstract class Indexer {
     var currentBlock: Long = 0
 
     fun start() {
-        logger.info("Starting block indexer...")
         currentBlock = getStartingBlock()
+        logger.info("Starting ${name()} from block ${currentBlock}...")
         run()
     }
     private tailrec fun run() {
         try {
             backoffDelay()
 
+            logger.info("${name()} is processing block $currentBlock...")
             processBlock(currentBlock)
 
             currentBlock++
         } catch (e: IndexerFullySynchronizedException) {
-            logger.info("Indexer fully synchronized...")
+            logger.info("${name()} is fully synchronized...")
             Thread.sleep(generateRandomDelay(1000, 3000))
             status = Status.FULLY_SYNCED
         }
         catch (e: Exception) {
-            logger.error("Error while processing block $currentBlock", e)
-            logger.info("Restarting indexer in 10s...")
+            logger.error("${name()}: Error while processing block $currentBlock", e)
+            logger.info("${name()}: Restarting indexer in 10s...")
             Thread.sleep(10000)
         }
 
@@ -42,7 +43,7 @@ abstract class Indexer {
         if (status == Status.FULLY_SYNCED) {
             Thread.sleep(APPROX_BLOCK_PERIOD)
         } else if (status == Status.THROTTLED) {
-            logger.info("Indexer throttled...")
+            logger.info("${name()} is being throttled...")
             Thread.sleep(THROTTLE_PERIOD)
         }
     }
@@ -61,6 +62,8 @@ abstract class Indexer {
 
     abstract fun processBlock(blockNumber: Long)
     abstract fun getStartingBlock(): Long
+
+    abstract fun name(): String
 
     companion object {
         private val logger = LogManager.getLogger(Indexer::class.java)
