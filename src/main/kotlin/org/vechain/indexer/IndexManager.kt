@@ -19,17 +19,4 @@ class IndexManager(val indexers: List<Indexer>) {
         indexers.forEach { indexer -> executor.submit<Any> { indexer.start(); null } }
     }
 
-    @Scheduled(fixedDelay = 5000)
-    fun throttleIndexers() {
-        val minIndexer = indexers.minBy { it.currentBlock }
-
-        indexers.forEach { indexer ->
-            if (indexer.currentBlock - minIndexer!!.currentBlock > ALLOWED_BLOCK_GAP) {
-                indexer.throttle()
-            } else {
-                indexer.unthrottle()
-            }
-        }
-    }
-
 }
