@@ -1,7 +1,6 @@
 package org.vechain.indexer.service
 
 import org.apache.logging.log4j.LogManager
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
@@ -10,7 +9,6 @@ import org.vechain.indexer.model.Block
 @Service
 class ThorService(val thorRest: WebClient) {
 
-    @Cacheable(value=["blocks"], key="#number", unless="#result == null")
     fun getBlock(number: Long): Block {
         val response = thorRest.get().uri("/blocks/$number?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 

@@ -6,11 +6,6 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:mongo-auth-password,prod}
 
-spring.cache:
-    cache-names: blocks
-    caffeine:
-      spec: maximumSize=25000,expireAfterAccess=600s
-
 spring.data:
     mongodb:
       database: ${MONGO_DATABASE:vechain}

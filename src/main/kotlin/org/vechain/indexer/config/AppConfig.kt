@@ -11,8 +11,6 @@ import org.springframework.web.reactive.function.client.WebClient
 
 
 @Configuration
-@EnableCaching
-@EnableScheduling
 class AppConfig (@Value("\${thor.url}") private val thorUrl: String,) {
 
     @Bean
