@@ -18,6 +18,7 @@ plugins {
 	id("maven-publish")
 	id("org.jetbrains.kotlin.jvm") version "1.8.10"
 	kotlin("plugin.spring") version "1.8.10"
+	jacoco
 }
 
 group = "org.vechain"
@@ -47,6 +48,12 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.testcontainers:testcontainers:1.17.6")
+	testImplementation("org.testcontainers:junit-jupiter:1.17.6")
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.4.2")
+	testImplementation("org.testcontainers:mongodb:1.17.6")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+
 }
 
 tasks.withType<KotlinCompile> {
@@ -58,7 +65,10 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	testLogging.showStandardStreams = true
+	finalizedBy(tasks.jacocoTestReport)
 }
+
 
 tasks.getByName<BootJar>("bootJar") {
 	enabled = true

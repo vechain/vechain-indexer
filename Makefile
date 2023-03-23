@@ -1,6 +1,9 @@
 help:
 	@egrep -h '\s#@\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#@ "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
+test: #@ Run all the tests.
+	./gradlew cleanTest test
+
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
 	make infra-up infra-setup app-up
@@ -38,7 +41,7 @@ db-clean: #@ Clean all the database data
 db-down: #@ Stop all the database.
 	$(DB_COMMAND) down
 db-up: #@ Start all the database.
-	$(DB_COMMAND) up -d
+	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up; $(DB_SETUP_COMMAND) rm --force
 
@@ -53,6 +56,8 @@ thor-down: #@ Stop VeChainThor
 	$(THOR_COMMAND) down
 thor-up: #@ Start VeChainThor
 	$(THOR_COMMAND) up -d --wait --build
+thor-test: #@ Test VeChainThor
+	$(THOR_COMMAND) up thor-tx-script
 
 # Application Build
 build-gradle: #@ Build the application with Gradle.
