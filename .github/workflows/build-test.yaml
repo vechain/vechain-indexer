@@ -17,7 +17,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  packages: writ
+  packages: write
 
 jobs:
   build:
