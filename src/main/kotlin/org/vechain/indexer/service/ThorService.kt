@@ -17,7 +17,7 @@ class ThorService(val thorRest: WebClient) {
             throw IndexerFullySynchronizedException()
         }
 
-        logger.info("Block $number found: ${response.id}")
+        if (logger.isDebugEnabled) logger.debug("Block $number found: ${response.id}")
 
         return response
     }
