@@ -15,4 +15,9 @@ class ContractUtils {
     fun findTransferEvents(events: List<TxEvent>): List<TxEvent> {
         return events.filter { it.topics.size == 3 && it.topics[0] == TRANSFER_EVENT_SIGNATURE }
     }
+
+    fun removeTopicPadding(topic: String): String {
+        if (topic.length <= 26) return topic
+        return "0x${topic.substring(26)}"
+    }
 }

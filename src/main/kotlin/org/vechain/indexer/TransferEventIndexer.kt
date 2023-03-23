@@ -7,7 +7,11 @@ import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.ContractUtils
 
 @Component
-class TransferEventIndexer(private val thorService: ThorService, private val transferEventRepo: TransferEventRepo, private val contractUtils: ContractUtils) : Indexer() {
+class TransferEventIndexer(
+    private val thorService: ThorService,
+    private val transferEventRepo: TransferEventRepo,
+    private val contractUtils: ContractUtils
+) : Indexer() {
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
         var events: List<TransferEvent> = emptyList()
@@ -17,19 +21,19 @@ class TransferEventIndexer(private val thorService: ThorService, private val tra
                     val tfEvents = contractUtils.findTransferEvents(txOutputs.events)
                     if (tfEvents.isNotEmpty()) {
                         events = events.plus(
-                                tfEvents.mapIndexed { evtIndex, it ->
-                                    TransferEvent(
-                                            "${tx.id}-${index}-${evtIndex}",
-                                            block.id,
-                                            block.number,
-                                            tx.id,
-                                            index,
-                                            it.topics[1],
-                                            it.topics[2],
-                                            it.data,
-                                            it.address
-                                    )
-                                }
+                            tfEvents.mapIndexed { evtIndex, it ->
+                                TransferEvent(
+                                    "${tx.id}-${index}-${evtIndex}",
+                                    block.id,
+                                    block.number,
+                                    tx.id,
+                                    index,
+                                    contractUtils.removeTopicPadding(it.topics[1]),
+                                    contractUtils.removeTopicPadding(it.topics[2]),
+                                    it.data,
+                                    it.address
+                                )
+                            }
                         )
 
                     }
