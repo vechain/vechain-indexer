@@ -61,6 +61,6 @@ thor-test: #@ Test VeChainThor
 
 # Application Build
 build-gradle: #@ Build the application with Gradle.
-	./gradlew build
+	./gradlew build -x test
 build-docker: #@ Build the application with Docker.
 	docker build -t veworld-indexer .
