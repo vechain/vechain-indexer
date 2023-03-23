@@ -25,7 +25,7 @@ data class WrappedTransaction(
         override val reverted: Boolean,
         override val origin: String,
         override val delegator: String?,
-        override val outputs: List<Any>): ITransaction {
+        override val outputs: List<TxOutputs>): ITransaction {
         constructor(block: Block, tx: ITransaction) : this( block.id, block.number,
                 tx.id, tx.size, tx.chainTag, tx.blockRef, tx.expiration, tx.clauses,
                 tx.gasPriceCoef, tx.gas, tx.dependsOn, tx.nonce, tx.gasUsed, tx.gasPayer,

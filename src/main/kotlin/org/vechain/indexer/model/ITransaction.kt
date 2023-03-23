@@ -18,5 +18,5 @@ interface ITransaction {
     val reverted: Boolean
     val origin: String
     val delegator: String?
-    val outputs: List<Any>
+    val outputs: List<TxOutputs>
 }
