@@ -16,7 +16,7 @@ class ThrottleConfig {
         val minIndexer = indexers.minBy { it.currentBlock }
 
         indexers.forEach { indexer ->
-            if (indexer.currentBlock - minIndexer!!.currentBlock > ALLOWED_BLOCK_GAP) {
+            if (indexer.currentBlock - minIndexer.currentBlock > ALLOWED_BLOCK_GAP) {
                 indexer.throttle()
             } else {
                 indexer.unthrottle()
