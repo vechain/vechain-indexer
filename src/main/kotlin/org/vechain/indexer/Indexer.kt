@@ -17,14 +17,14 @@ abstract class Indexer {
 
     fun start() {
         currentBlock = getStartingBlock()
-        logger.info("Starting ${name()} from block ${currentBlock}...")
+        logger.info("Starting ${name()} from block ${currentBlock}")
         run()
     }
     private tailrec fun run() {
         try {
             backoffDelay()
 
-            logger.info("${name()} is processing block $currentBlock...")
+            logger.info("${name()} is processing block $currentBlock")
             processBlock(currentBlock)
 
             currentBlock++
@@ -46,7 +46,7 @@ abstract class Indexer {
         if (status == Status.FULLY_SYNCED) {
             Thread.sleep(APPROX_BLOCK_PERIOD)
         } else if (status == Status.THROTTLED) {
-            logger.info("${name()} is being throttled...")
+            logger.info("${name()} is being throttled")
             Thread.sleep(THROTTLE_PERIOD)
         }
     }
