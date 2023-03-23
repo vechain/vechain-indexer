@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class Block(
     @Id
     val id: String,
-    @Indexed
+    @Indexed(unique = true)
     val number: Long,
     val size: Long,
     val parentID: String,

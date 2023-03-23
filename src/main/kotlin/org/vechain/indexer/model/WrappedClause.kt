@@ -14,7 +14,7 @@ data class WrappedClause(
     val index: Int,
     @Indexed
     val origin: String,
-    @Indexed
+    @Indexed(sparse = true)
     override val to: String? = null,
     override val value: String,
     override val data: String
