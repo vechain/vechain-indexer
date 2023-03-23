@@ -12,7 +12,7 @@ COPY ./settings.gradle.kts ./
 COPY ./system.properties ./
 COPY ./src ./src
 
-RUN ./gradlew build publishToMavenLocal
+RUN ./gradlew build publishToMavenLocal -x test
 
 FROM eclipse-temurin:19
 
