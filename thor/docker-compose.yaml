@@ -30,7 +30,7 @@ services:
       # The mnemonic to use. Defaults to Thor solo mnemonic
       - MNEMONIC_WORDS=denial kitchen pet squirrel other broom bar gas better priority spoil cross
       # How many times to iterate the mints and transfers. Defaults to 5
-      - ITERATE_TX_AMOUNT=5
+      - ITERATE_TX_AMOUNT=1
     volumes:
       - ./.output/:/app/.output
     networks:

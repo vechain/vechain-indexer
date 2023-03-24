@@ -1,0 +1,94 @@
+[
+  {
+    "_comment": "Contract Deployment",
+    "gasUsed": 159633,
+    "gasPayer": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+    "paid": "0x16274dad624ca000",
+    "reward": "0x6a5641a6a4a3000",
+    "reverted": false,
+    "meta": {
+      "blockID": "0x00e44d0ad73ebbb0ccfdb9e1733f4092ad403f5fe7a2ae444fbfb701aecb72da",
+      "blockNumber": 14961930,
+      "blockTimestamp": 1679650660,
+      "txID": "0x501b589ef991696988d25c15187794de02a8966549363d07e69ff81c056a85e2",
+      "txOrigin": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+    },
+    "outputs": [
+      {
+        "contractAddress": "0x701c32090f1b9bfe4a49786a07f17a63a579ffb8",
+        "events": [
+          {
+            "address": "0x701c32090f1b9bfe4a49786a07f17a63a579ffb8",
+            "topics": [
+              "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
+            ],
+            "data": "0x000000000000000000000000f077b491b355e64048ce21e3a6fc4751eeea77fa"
+          }
+        ],
+        "transfers": []
+      }
+    ]
+  },
+  {
+    "_comment": "Contract Deployment (WITH DELEGATION)",
+    "gasUsed": 159633,
+    "gasPayer": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+    "paid": "0x16274dad624ca000",
+    "reward": "0x6a5641a6a4a3000",
+    "reverted": false,
+    "meta": {
+      "blockID": "0x00e44d21b1e56643972688b846314dbf9b1e1aa5ab07fb7849731414e44e89b3",
+      "blockNumber": 14961953,
+      "blockTimestamp": 1679650890,
+      "txID": "0xc33d5d7734a97e92a6fc68453f7aec0ddad5f4d3ddc4fc645c4509c626076b43",
+      "txOrigin": "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
+    },
+    "outputs": [
+      {
+        "contractAddress": "0xe2b912fbe4f4c05d867d26afc5248c75acd237ee",
+        "events": [
+          {
+            "address": "0xe2b912fbe4f4c05d867d26afc5248c75acd237ee",
+            "topics": [
+              "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
+            ],
+            "data": "0x000000000000000000000000435933c8064b4ae76be665428e0307ef2ccfbd68"
+          }
+        ],
+        "transfers": []
+      }
+    ]
+  },
+  {
+    "_comment": "Multiple clauses",
+    "gasUsed": 85394,
+    "gasPayer": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+    "paid": "0xbd9cde7d77f4000",
+    "reward": "0x38e242bf3d96000",
+    "reverted": false,
+    "meta": {
+      "blockID": "0x00e44d3bb217fa8435e5300ccc40ea4112b50e3ab72227189858f9b2c7d897f1",
+      "blockNumber": 14961979,
+      "blockTimestamp": 1679651150,
+      "txID": "0x90cd5cbae2473f06da84bb7808e3ca778ff5ad74450490cb2aef0d82a260c379",
+      "txOrigin": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+    },
+    "outputs": [
+      {
+        "contractAddress": null,
+        "events": [],
+        "transfers": []
+      },
+      {
+        "contractAddress": null,
+        "events": [],
+        "transfers": []
+      },
+      {
+        "contractAddress": null,
+        "events": [],
+        "transfers": []
+      }
+    ]
+  }
+]

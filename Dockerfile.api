@@ -12,12 +12,12 @@ COPY settings.gradle.kts ./
 COPY system.properties ./
 COPY packages ./packages
 
-RUN ./gradlew packages:indexer:build publishToMavenLocal -x test
+RUN ./gradlew packages:api:build publishToMavenLocal -x test
 
 FROM eclipse-temurin:19
 
 WORKDIR /opt/app
 
-COPY --from=builder /opt/app/packages/indexer/build/libs/*-SNAPSHOT.jar /opt/app/app.jar
+COPY --from=builder /opt/app/packages/api/build/libs/*-SNAPSHOT.jar /opt/app/app.jar
 
 ENTRYPOINT ["java", "-Djdk.tls.client.protocols=TLSv1.2", "-jar", "./app.jar", "-XX:+UseContainerSupport"]

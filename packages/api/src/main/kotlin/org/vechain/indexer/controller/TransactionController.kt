@@ -1,0 +1,76 @@
+package org.vechain.indexer.controller
+
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.service.TransactionService
+import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.validation.Address
+
+@Tag(name = "Transactions", description = "Query on chain transactions")
+@Validated
+@RestController
+@RequestMapping("api/v1/transactions")
+open class TransactionController(private val transactionService: TransactionService) {
+
+    @GetMapping("{address}")
+    @Operation(summary = "Get all transactions by an origin address")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+        ]
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "address",
+        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        description = "Address of the transaction origin",
+        required = true,
+        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "includeDelegated",
+        schema = Schema(type = "boolean"),
+        description = "Whether to include delegated transactions",
+        required = false,
+        example = "false"
+    )
+    fun getTransactionsByOrigin(
+        @Address @PathVariable(required = true) address: String,
+        @RequestParam(required = false) includeDelegated: Boolean?
+    ): List<Transaction> {
+        if (includeDelegated == true)
+            return transactionService.findByOriginOrDelegator(address)
+
+        return transactionService.findByOrigin(address)
+    }
+
+    @GetMapping("{address}/delegated")
+    @Operation(summary = "Get all delegated transactions by a delegator address")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+        ]
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "address",
+        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        description = "Address of the transaction delegator",
+        required = true,
+        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+    )
+    fun getDelegatedTransactions(
+        @Address @PathVariable(required = true) address: String
+    ): List<Transaction> {
+        return transactionService.findByDelegator(address)
+    }
+}
