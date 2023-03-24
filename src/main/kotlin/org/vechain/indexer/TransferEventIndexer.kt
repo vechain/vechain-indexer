@@ -1,11 +1,13 @@
 package org.vechain.indexer
 
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.ContractUtils
 
+@Profile("transfer-event-indexer", "prod")
 @Component
 class TransferEventIndexer(
     private val thorService: ThorService,

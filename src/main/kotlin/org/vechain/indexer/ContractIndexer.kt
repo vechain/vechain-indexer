@@ -1,14 +1,18 @@
 package org.vechain.indexer
 
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.ContractUtils
 
+@Profile("contract-indexer", "prod")
 @Component
-class ContractIndexer(private val thorService: ThorService, private val contractRepo: ContractRepo,
-    private val contractUtils: ContractUtils): Indexer() {
+class ContractIndexer(
+    private val thorService: ThorService, private val contractRepo: ContractRepo,
+    private val contractUtils: ContractUtils
+) : Indexer() {
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
         var contracts: List<Contract> = emptyList()
