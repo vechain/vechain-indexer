@@ -6,8 +6,10 @@ import org.vechain.indexer.exception.IndexerFullySynchronizedException
 enum class Status {
     SYNCING, FULLY_SYNCED, THROTTLED
 }
+
 const val APPROX_BLOCK_PERIOD = 9990L
 const val THROTTLE_PERIOD = 1000L
+
 abstract class Indexer {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
@@ -17,9 +19,10 @@ abstract class Indexer {
 
     fun start() {
         currentBlock = getStartingBlock()
-        logger.info("Starting ${name()} from block ${currentBlock}")
+        logger.info("Starting ${name()} from block $currentBlock")
         run()
     }
+
     private tailrec fun run() {
         try {
             backoffDelay()
@@ -32,8 +35,7 @@ abstract class Indexer {
             logger.info("${name()} is fully synchronized...")
             Thread.sleep(generateRandomDelay(1000, 3000))
             status = Status.FULLY_SYNCED
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             logger.error("${name()}: Error while processing block $currentBlock", e)
             logger.info("${name()}: Restarting indexer in 10s...")
             Thread.sleep(10000)
