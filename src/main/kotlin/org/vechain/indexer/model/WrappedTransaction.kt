@@ -9,6 +9,7 @@ data class WrappedTransaction(
     @Id
     override val id: String,
     val blockId: String,
+    @Indexed
     val blockNumber: Long,
     override val size: Int,
     override val chainTag: Int,

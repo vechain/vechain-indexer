@@ -9,6 +9,7 @@ data class TransferEvent(
     @Id
     val id: String,
     val blockId: String,
+    @Indexed
     val blockNumber: Long,
     val txId: String,
     val clauseIndex: Int,

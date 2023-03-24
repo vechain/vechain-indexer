@@ -9,6 +9,7 @@ data class WrappedClause(
     @Id
     val id: String,
     val blockId: String,
+    @Indexed
     val blockNumber: Long,
     val txId: String,
     val index: Int,

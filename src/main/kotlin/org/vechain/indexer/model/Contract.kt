@@ -9,6 +9,7 @@ data class Contract(
     @Id
     val address: String,
     val blockId: String,
+    @Indexed
     val blockNumber: Long,
     val txId: String,
     val clauseIndex: Int,
