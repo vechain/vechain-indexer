@@ -17,7 +17,7 @@ open class ContractIndexer(
         val block = thorService.getBlock(blockNumber)
         var contracts: List<Contract> = emptyList()
         block.transactions.forEach { tx ->
-            if (!tx.reverted) {
+            if (tx.reverted != false) {
                 tx.clauses.forEachIndexed { index, clause ->
                     if (tx.outputs.size >= index + 1) {
                         val outputs = tx.outputs[index]

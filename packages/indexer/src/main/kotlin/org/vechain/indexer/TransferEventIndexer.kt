@@ -18,22 +18,22 @@ open class TransferEventIndexer(
         val block = thorService.getBlock(blockNumber)
         var events: List<TransferEvent> = emptyList()
         block.transactions.forEach { tx ->
-            if (!tx.reverted) {
+            if (tx.reverted != false) {
                 tx.outputs.forEachIndexed { index, txOutputs ->
                     val tfEvents = contractUtils.findTransferEvents(txOutputs.events)
                     if (tfEvents.isNotEmpty()) {
                         events = events.plus(
                             tfEvents.mapIndexed { evtIndex, it ->
                                 TransferEvent(
-                                    "${tx.id}-${index}-${evtIndex}",
-                                    block.id,
-                                    block.number,
-                                    tx.id,
-                                    index,
-                                    contractUtils.removeTopicPadding(it.topics[1]),
-                                    contractUtils.removeTopicPadding(it.topics[2]),
-                                    it.data,
-                                    it.address
+                                    id = "${tx.id}-${index}-${evtIndex}",
+                                    blockId = block.id,
+                                    blockNumber = block.number,
+                                    txId = tx.id,
+                                    clauseIndex = index,
+                                    from = contractUtils.removeTopicPadding(it.topics[1]),
+                                    to = contractUtils.removeTopicPadding(it.topics[2]),
+                                    value = it.data,
+                                    tokenAddress = it.address
                                 )
                             }
                         )

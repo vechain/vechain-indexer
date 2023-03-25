@@ -33,9 +33,6 @@ jobs:
       - name: Gradle Test
         run: ./gradlew cleanTest test
 
-      - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag vechain-indexer:latest
-
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v3

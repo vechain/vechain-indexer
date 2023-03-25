@@ -39,7 +39,7 @@ open class NFTController {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    fun getOwnedNFTs(
+    open fun getOwnedNFTs(
         @Address @PathVariable(required = true) address: String
     ): Array<NFT> {
         throw InternalServerException("This endpoint is not yet implemented")

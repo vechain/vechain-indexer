@@ -7,13 +7,13 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "contracts")
 data class Contract(
     @Id
-    val address: String,
-    val blockId: String,
+    val address: String? = null,
+    val blockId: String? = null,
     @Indexed
-    val blockNumber: Long,
-    val txId: String,
-    val clauseIndex: Int,
+    val blockNumber: Long? = null,
+    val txId: String? = null,
+    val clauseIndex: Int? = null,
     @Indexed
-    val creator: String,
-    val rawData: String
+    val creator: String? = null,
+    val rawData: String? = null
 )

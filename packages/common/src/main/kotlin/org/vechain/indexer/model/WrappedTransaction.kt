@@ -7,30 +7,30 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "transactions")
 data class WrappedTransaction(
     @Id
-    override val id: String,
-    val blockId: String,
+    override val id: String? = null,
+    val blockId: String? = null,
     @Indexed
-    val blockNumber: Long,
-    override val size: Int,
-    override val chainTag: Int,
-    override val blockRef: String,
-    override val expiration: Long,
-    override val clauses: List<Clause>,
-    override val gasPriceCoef: Int,
-    override val gas: Long,
-    override val dependsOn: String?,
-    override val nonce: String,
-    override val gasUsed: Long,
+    val blockNumber: Long? = null,
+    override val size: Int? = null,
+    override val chainTag: Int? = null,
+    override val blockRef: String? = null,
+    override val expiration: Long? = null,
+    override val clauses: List<Clause> = emptyList(),
+    override val gasPriceCoef: Int? = null,
+    override val gas: Long? = null,
+    override val dependsOn: String? = null,
+    override val nonce: String? = null,
+    override val gasUsed: Long? = null,
     @Indexed
-    override val gasPayer: String,
-    override val paid: String,
-    override val reward: String,
-    override val reverted: Boolean,
+    override val gasPayer: String? = null,
+    override val paid: String? = null,
+    override val reward: String? = null,
+    override val reverted: Boolean? = null,
     @Indexed
-    override val origin: String,
+    override val origin: String? = null,
     @Indexed
-    override val delegator: String?,
-    override val outputs: List<TxOutputs>
+    override val delegator: String? = null,
+    override val outputs: List<TxOutputs> = emptyList()
 ) : ITransaction {
     constructor(block: Block, tx: ITransaction) : this(
         tx.id, block.id, block.number,

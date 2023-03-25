@@ -16,9 +16,9 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.Transaction
-import org.vechain.indexer.repository.ContractRepository
-import org.vechain.indexer.repository.TransactionRepository
+import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.repos.TransactionRepo
 import java.util.*
 
 
@@ -29,7 +29,7 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractIntegrationTest {
 
-    protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
+    protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
 
     protected val objectMapper = ObjectMapper()
@@ -39,15 +39,15 @@ abstract class AbstractIntegrationTest {
     }
 
     @Autowired
-    lateinit var transactionRepository: TransactionRepository
+    lateinit var transactionRepository: TransactionRepo
 
     @Autowired
-    lateinit var contractRepository: ContractRepository
+    lateinit var contractRepository: ContractRepo
 
     @BeforeAll
     fun setup() {
 
-        val transactions: List<Transaction> =
+        val transactions: List<WrappedTransaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<Contract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)

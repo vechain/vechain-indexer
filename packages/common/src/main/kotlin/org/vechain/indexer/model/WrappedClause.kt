@@ -7,19 +7,19 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "clauses")
 data class WrappedClause(
     @Id
-    val id: String,
-    val blockId: String,
+    val id: String? = null,
+    val blockId: String? = null,
     @Indexed
-    val blockNumber: Long,
-    val txId: String,
-    val index: Int,
+    val blockNumber: Long? = null,
+    val txId: String? = null,
+    val index: Int? = null,
     @Indexed
-    val origin: String,
+    val origin: String? = null,
     @Indexed(sparse = true)
     override val to: String? = null,
-    override val value: String,
-    override val data: String,
-    val reverted: Boolean,
+    override val value: String? = null,
+    override val data: String? = null,
+    val reverted: Boolean? = null,
     val output: TxOutputs?,
 ) : IClause {
     constructor(block: Block, tx: ITransaction, clause: Clause, index: Int) : this(

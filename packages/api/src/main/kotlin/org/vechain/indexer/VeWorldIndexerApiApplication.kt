@@ -14,7 +14,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         description = "Blockchain data indexed for fast querying"
     )
 )
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["org.vechain.indexer"])
 @EnableMongoRepositories(basePackages = ["org.vechain.indexer.repos"])
 open class VeWorldIndexerApiApplication
 

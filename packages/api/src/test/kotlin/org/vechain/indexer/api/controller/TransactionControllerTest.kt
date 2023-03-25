@@ -32,7 +32,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 2)
+            assert(transactions.size == 39)
         }
 
         @Test
@@ -43,7 +43,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 3)
+            assert(transactions.size == 40)
         }
 
         @Test
@@ -55,7 +55,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 2)
+            assert(transactions.size == 39)
         }
     }
 

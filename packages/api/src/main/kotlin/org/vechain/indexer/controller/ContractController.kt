@@ -38,7 +38,7 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    fun getContractsByOrigin(
+    open fun getContractsByOrigin(
         @Address @PathVariable(required = true) address: String
     ): List<Contract> {
         return contractService.findByCreator(address)

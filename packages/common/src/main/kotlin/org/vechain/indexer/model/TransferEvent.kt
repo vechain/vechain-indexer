@@ -11,13 +11,13 @@ data class TransferEvent(
     val blockId: String,
     @Indexed
     val blockNumber: Long,
-    val txId: String,
+    val txId: String?,
     val clauseIndex: Int,
     @Indexed
     val from: String,
     @Indexed
     val to: String,
-    val value: String,
+    val value: String?,
     @Indexed
-    val tokenAddress: String
+    val tokenAddress: String?
 )

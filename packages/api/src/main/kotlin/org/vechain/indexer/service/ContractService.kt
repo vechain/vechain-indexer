@@ -6,9 +6,9 @@ import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.utils.HexUtil
 
 @Service
-class ContractService(private val contractRepository: ContractRepo) {
+open class ContractService(private val contractRepository: ContractRepo) {
 
-    fun findByCreator(creator: String): List<Contract> {
+    open fun findByCreator(creator: String): List<Contract> {
         return contractRepository.findAllByCreator(HexUtil.normalise(creator))
     }
 
