@@ -9,6 +9,9 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import org.testcontainers.utility.DockerImageName
+import java.time.Duration
 import java.util.*
 
 
@@ -21,10 +24,30 @@ abstract class AbstractIntegrationTest {
     companion object {
         val mongoContainer = GenericContainer("mongo:6")
             .withExposedPorts(27017)
+            .withReuse(true)
+            .waitingFor(
+                (LogMessageWaitStrategy())
+                    .withRegEx(".*(Waiting for connections).*")
+                    .withTimes(1)
+                    .withStartupTimeout(Duration.ofSeconds(180L))
+            )
 
         val thorContainer = GenericContainer("vechain/thor:v2.0.0")
             .withCommand("solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'")
             .withExposedPorts(8669)
+            .withReuse(true)
+            .waitingFor(
+                (LogMessageWaitStrategy())
+                    .withRegEx(".*(new block packed).*")
+                    .withTimes(1)
+                    .withStartupTimeout(Duration.ofSeconds(180L))
+            )
+
+        val transactionScript = GenericContainer(
+            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:a1b8c4a901c09a776c683e9dc04943f2174e9f5d")
+        )
+            //TODO: Create a wait strategy if we're waiting for transactions to be submitted
+            .withReuse(true)
     }
 
     internal class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -34,6 +57,9 @@ abstract class AbstractIntegrationTest {
 
             val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
             val thorUrl = "http://${thorContainer.host}:${thorContainer.getMappedPort(8669)}"
+
+            transactionScript.withEnv("NODE_URL", thorUrl)
+            transactionScript.start()
 
             TestPropertyValues.of(
                 "spring.data.mongodb.uri=${mongoUri}",

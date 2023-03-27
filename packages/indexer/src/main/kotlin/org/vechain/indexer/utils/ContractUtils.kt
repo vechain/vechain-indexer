@@ -5,6 +5,7 @@ import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
 import org.vechain.indexer.constants.TRANSFER_EVENT_SIGNATURE
 import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.model.TxOutputs
+import org.vechain.indexer.specifications.ContractSpecification
 
 @Component
 class ContractUtils {
@@ -19,5 +20,11 @@ class ContractUtils {
     fun removeTopicPadding(topic: String): String {
         if (topic.length <= 26) return topic
         return "0x${topic.substring(26)}"
+    }
+
+    fun isContractType(specification: ContractSpecification, rawData: String?): Boolean {
+        rawData ?: return false
+        return specification.functions.all { rawData.contains(it) } &&
+                specification.events.all { rawData.contains(it) }
     }
 }
