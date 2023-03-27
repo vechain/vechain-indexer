@@ -51,7 +51,7 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<Contract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)
-
+        
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
 

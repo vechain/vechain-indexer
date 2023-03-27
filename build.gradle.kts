@@ -46,6 +46,45 @@ allprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
         testLogging.showStandardStreams = true
+
+        val failedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
+        val skippedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
+
+        addTestListener(object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+            override fun beforeTest(testDescriptor: TestDescriptor) {}
+            override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+                when (result.resultType) {
+                    TestResult.ResultType.FAILURE -> failedTests.add(Pair(testDescriptor, result.exception))
+                    TestResult.ResultType.SKIPPED -> skippedTests.add(Pair(testDescriptor, result.exception))
+                    else -> {}
+                }
+            }
+
+            override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+                logger.lifecycle("----")
+                logger.lifecycle("Test result: ${result.resultType}")
+                logger.lifecycle(
+                    "Test summary: ${result.testCount} tests, " +
+                            "${result.successfulTestCount} succeeded, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped"
+                )
+                if (failedTests.isNotEmpty()) {
+                    logger.lifecycle("\tFailed Tests:")
+                    failedTests.forEach {
+                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}", it.second)
+                    }
+                }
+
+                if (skippedTests.isNotEmpty()) {
+                    logger.lifecycle("\tSkipped Tests:")
+                    skippedTests.forEach {
+                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
+                    }
+                }
+            }
+        })
     }
 
     dependencies {

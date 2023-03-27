@@ -29,7 +29,7 @@ class ContractControllerTest : AbstractIntegrationTest() {
             .andReturn()
 
         val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
-
+        
         assert(contracts.size == 18)
     }
 

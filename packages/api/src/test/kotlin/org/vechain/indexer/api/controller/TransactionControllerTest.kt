@@ -47,7 +47,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `delegated false`() {
+        fun `include delegated false`() {
             val result =
                 mockMvc.get("${baseEndpoint}/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?includeDelegated=false")
                     .andExpect { status { isOk() } }
@@ -62,8 +62,15 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
     @Nested
     inner class DelegatedTransactions {
+
         @Test
-        fun `get delegated transactions should return OKAY`() {
+        fun `get DELEGATED transactions for bad address should return BAD_REQUEST`() {
+            mockMvc.get("${baseEndpoint}/badAddress/delegated")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get DELEGATED transactions should return OKAY`() {
             val result = mockMvc.get("${baseEndpoint}/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa/delegated")
                 .andExpect { status { isOk() } }
                 .andReturn()
