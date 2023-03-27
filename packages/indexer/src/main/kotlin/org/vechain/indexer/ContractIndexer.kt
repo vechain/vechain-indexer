@@ -23,15 +23,18 @@ class ContractIndexer(
         /**
          * Find all events that are contract deployments, paired with their transaction.
          */
-        val contractEvents = block.transactions.flatMap { tx ->
-            tx.outputs.flatMap { output ->
-                output.events.filter { event ->
-                    contractUtils.isContractDeployment(event)
-                }.map { event ->
-                    Pair(event, tx)
+        val contractEvents = block.transactions
+            .filter { tx -> tx.reverted == false }
+            .flatMap { tx ->
+                tx.outputs.flatMap { output ->
+                    output.events
+                        .filter { event ->
+                            contractUtils.isContractDeployment(event)
+                        }.map { event ->
+                            Pair(event, tx)
+                        }
                 }
             }
-        }
 
         /**
          * For each contract deployment, get the contract code and save it to the database.
