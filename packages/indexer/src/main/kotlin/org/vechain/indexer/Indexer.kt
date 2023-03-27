@@ -38,6 +38,7 @@ abstract class Indexer {
             logger.error("${name()}: Error while processing block $currentBlock", e)
             logger.info("${name()}: Restarting indexer in 10s...")
             Thread.sleep(10000)
+            status = Status.SYNCING
         }
 
         run()
