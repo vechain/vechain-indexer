@@ -7,7 +7,6 @@ import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
-import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.ContractUtils
 
 @Profile("contract-indexer", "prod")
@@ -24,10 +23,10 @@ class ContractIndexer(
         /**
          * Find all events that are contract deployments, paired with their transaction.
          */
-        val allEventsWithTx = block.transactions.flatMap { tx ->
+        val contractEvents = block.transactions.flatMap { tx ->
             tx.outputs.flatMap { output ->
                 output.events.filter { event ->
-                    event.address != null && contractUtils.isContractDeployment(event)
+                    contractUtils.isContractDeployment(event)
                 }.map { event ->
                     Pair(event, tx)
                 }
@@ -37,9 +36,13 @@ class ContractIndexer(
         /**
          * For each contract deployment, get the contract code and save it to the database.
          */
-        allEventsWithTx.forEach { event: Pair<TxEvent, WrappedTransaction> ->
+        contractEvents.forEach { event: Pair<TxEvent, WrappedTransaction> ->
 
-            val rawData = thorService.getAccountCode(event.first.address!!)
+            val rawData = if (event.first.address != null)
+                thorService.getAccountCode(event.first.address!!)
+            else null
+
+            val contractType = contractUtils.getContractType(rawData)
 
             contracts.add(
                 Contract(
@@ -49,7 +52,7 @@ class ContractIndexer(
                     txId = event.second.id,
                     creator = event.second.origin,
                     rawData = rawData,
-                    isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData)
+                    contractType = contractType.value
                 )
             )
         }

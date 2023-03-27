@@ -5,11 +5,12 @@ import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
 import org.vechain.indexer.constants.TRANSFER_EVENT_SIGNATURE
 import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.specifications.ContractSpecification
+import org.vechain.indexer.specifications.ContractType
 
 @Component
 class ContractUtils {
     fun isContractDeployment(event: TxEvent): Boolean {
-        return event.topics.isNotEmpty() && event.topics[0] == MASTER_EVENT_SIGNATURE
+        return event.topics.isNotEmpty() && event.address != null && event.topics[0] == MASTER_EVENT_SIGNATURE
     }
 
     fun findTransferEvents(events: List<TxEvent>): List<TxEvent> {
@@ -25,5 +26,13 @@ class ContractUtils {
         rawData ?: return false
         return specification.functions.all { rawData.contains(it) } &&
                 specification.events.all { rawData.contains(it) }
+    }
+
+    fun getContractType(rawData: String?): ContractType {
+        ContractType.values().forEach {
+            if (isContractType(it.specification, rawData)) return it
+        }
+
+        return ContractType.UNKNOWN
     }
 }

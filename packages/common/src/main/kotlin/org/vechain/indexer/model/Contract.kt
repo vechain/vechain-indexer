@@ -17,5 +17,5 @@ data class Contract(
     @Indexed(sparse = true)
     val factoryContract: String? = null,
     val rawData: String? = null,
-    val isErc20: Boolean? = null,
+    val contractType: String? = null,
 )

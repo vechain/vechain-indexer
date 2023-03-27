@@ -10,6 +10,8 @@ import org.vechain.indexer.model.Block
 @Service
 class ThorService(val thorRest: WebClient) {
 
+    private val logger = LogManager.getLogger(this::class.simpleName)
+
     fun getBlock(number: Long): Block {
         val response =
             thorRest.get().uri("/blocks/$number?expanded=true").retrieve().bodyToMono(Block::class.java).block()
@@ -33,12 +35,8 @@ class ThorService(val thorRest: WebClient) {
             throw IndexerFullySynchronizedException()
         }
 
-        if (logger.isDebugEnabled) logger.debug("Account $address found: ${response}")
+        if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
 
         return response.code
-    }
-
-    companion object {
-        private val logger = LogManager.getLogger(ThorService::class.java)
     }
 }
