@@ -15,6 +15,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [ api, common, indexer ]
     steps:
       - uses: actions/checkout@v3
 
@@ -24,4 +27,4 @@ jobs:
           java-version: '17'
 
       - name: Gradle Test
-        run: ./gradlew cleanTest test
+        run: ./gradlew {{ matrix.package }}:clean {{ matrix.package }}:test
