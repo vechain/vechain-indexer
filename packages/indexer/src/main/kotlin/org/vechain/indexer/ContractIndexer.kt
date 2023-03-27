@@ -9,7 +9,7 @@ import org.vechain.indexer.utils.ContractUtils
 
 @Profile("contract-indexer", "prod")
 @Component
-open class ContractIndexer(
+class ContractIndexer(
     private val thorService: ThorService, private val contractRepo: ContractRepo,
     private val contractUtils: ContractUtils
 ) : Indexer() {
@@ -18,23 +18,25 @@ open class ContractIndexer(
         var contracts: List<Contract> = emptyList()
         block.transactions.forEach { tx ->
             if (tx.reverted != false) {
-                tx.clauses.forEachIndexed { index, clause ->
-                    if (tx.outputs.size >= index + 1) {
-                        val outputs = tx.outputs[index]
-                        if (contractUtils.isContractDeployment(clause, outputs)) {
+                tx.outputs.forEachIndexed { index, outputs ->
+                    if (contractUtils.isContractDeployment(outputs)) {
+                        val clause = tx.clauses.getOrNull(index)
+                        if (clause != null) {
                             contracts = contracts.plus(
                                 Contract(
-                                    outputs.contractAddress!!,
+                                    outputs.events[0].address,
                                     block.id,
                                     block.number,
                                     tx.id,
                                     index,
                                     tx.origin,
-                                    clause.data
+                                    clause.to,
+                                    clause.data,
                                 )
                             )
-
                         }
+
+
                     }
                 }
             }

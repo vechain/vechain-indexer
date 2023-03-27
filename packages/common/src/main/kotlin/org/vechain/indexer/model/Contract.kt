@@ -15,5 +15,7 @@ data class Contract(
     val clauseIndex: Int? = null,
     @Indexed
     val creator: String? = null,
+    @Indexed(sparse = true)
+    val factoryContract: String?,
     val rawData: String? = null
 )
