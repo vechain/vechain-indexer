@@ -12,7 +12,6 @@ data class Contract(
     @Indexed
     val blockNumber: Long? = null,
     val txId: String? = null,
-    val clauseIndex: Int? = null,
     @Indexed
     val creator: String? = null,
     @Indexed(sparse = true)

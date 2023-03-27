@@ -4,13 +4,12 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
 import org.vechain.indexer.constants.TRANSFER_EVENT_SIGNATURE
 import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.model.TxOutputs
 import org.vechain.indexer.specifications.ContractSpecification
 
 @Component
 class ContractUtils {
-    fun isContractDeployment(outputs: TxOutputs): Boolean {
-        return outputs.events.isNotEmpty() && outputs.events[0].topics.isNotEmpty() && outputs.events[0].topics[0] == MASTER_EVENT_SIGNATURE
+    fun isContractDeployment(event: TxEvent): Boolean {
+        return event.topics.isNotEmpty() && event.topics[0] == MASTER_EVENT_SIGNATURE
     }
 
     fun findTransferEvents(events: List<TxEvent>): List<TxEvent> {
