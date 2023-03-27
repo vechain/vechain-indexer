@@ -27,4 +27,4 @@ jobs:
           java-version: '17'
 
       - name: Gradle Test
-        run: ./gradlew :package:{{ matrix.package }}:cleanTest :package:{{ matrix.package }}:test
+        run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
