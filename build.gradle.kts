@@ -1,79 +1,110 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.springframework.boot.gradle.tasks.bundling.BootJar
-
-buildscript {
-	repositories {
-		mavenLocal()
-		mavenCentral()
-	}
-	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:3.0.4")
-		classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.10")
-	}
-}
 
 plugins {
-	id("org.springframework.boot") version "3.0.4"
-	id("io.spring.dependency-management") version "1.1.0"
-	id("maven-publish")
-	id("org.jetbrains.kotlin.jvm") version "1.8.10"
-	kotlin("plugin.spring") version "1.8.10"
-	jacoco
+    id("org.springframework.boot") version "3.0.5"
+    id("io.spring.dependency-management") version "1.1.0"
+    id("maven-publish")
+    kotlin("jvm") version "1.7.22"
+    kotlin("plugin.spring") version "1.7.22"
+    jacoco
 }
 
-group = "org.vechain"
-version = "0.0.1-SNAPSHOT"
+
 java.sourceCompatibility = JavaVersion.VERSION_17
 
-tasks.withType<JavaCompile> {
-	options.encoding = "UTF-8"
-}
+allprojects {
 
-repositories {
-	mavenLocal()
-	mavenCentral()
-	maven { url = uri("https://repo.spring.io/milestone") }
-	maven { url = uri("https://repo.spring.io/snapshot") }
-}
+    apply {
+        plugin("org.jetbrains.kotlin.jvm")
+        plugin("org.springframework.boot")
+        plugin("io.spring.dependency-management")
+        plugin("maven-publish")
+        plugin("jacoco")
+    }
 
-dependencies {
+    group = "org.vechain"
+    version = "0.0.1-SNAPSHOT"
 
-	implementation("org.springframework.boot:spring-boot-starter")
-	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-	implementation("org.springframework.boot:spring-boot-starter-webflux")
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url = uri("https://repo.spring.io/milestone") }
+        maven { url = uri("https://repo.spring.io/snapshot") }
+    }
 
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
 
-	implementation("org.bouncycastle:bcprov-jdk15on:1.70")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            freeCompilerArgs = listOf("-Xjsr305=strict")
+            jvmTarget = "17"
+        }
+    }
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("org.testcontainers:testcontainers:1.17.6")
-	testImplementation("org.testcontainers:junit-jupiter:1.17.6")
-	testImplementation("org.junit.jupiter:junit-jupiter-api:5.4.2")
-	testImplementation("org.testcontainers:mongodb:1.17.6")
-	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+    tasks.withType<Test> {
+        useJUnitPlatform()
+        testLogging.showStandardStreams = true
 
-}
+        val failedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
+        val skippedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
 
-tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		freeCompilerArgs = listOf("-Xjsr305=strict")
-		jvmTarget = "17"
-	}
-}
+        addTestListener(object : TestListener {
+            override fun beforeSuite(suite: TestDescriptor) {}
+            override fun beforeTest(testDescriptor: TestDescriptor) {}
+            override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+                when (result.resultType) {
+                    TestResult.ResultType.FAILURE -> failedTests.add(Pair(testDescriptor, result.exception))
+                    TestResult.ResultType.SKIPPED -> skippedTests.add(Pair(testDescriptor, result.exception))
+                    else -> {}
+                }
+            }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
-	testLogging.showStandardStreams = true
-	finalizedBy(tasks.jacocoTestReport)
-}
+            override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+                logger.lifecycle("----")
+                logger.lifecycle("Test result: ${result.resultType}")
+                logger.lifecycle(
+                    "Test summary: ${result.testCount} tests, " +
+                            "${result.successfulTestCount} succeeded, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped"
+                )
+                if (failedTests.isNotEmpty()) {
+                    logger.lifecycle("\tFailed Tests:")
+                    failedTests.forEach {
+                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}", it.second)
+                    }
+                }
 
+                if (skippedTests.isNotEmpty()) {
+                    logger.lifecycle("\tSkipped Tests:")
+                    skippedTests.forEach {
+                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
+                    }
+                }
+            }
+        })
+    }
 
-tasks.getByName<BootJar>("bootJar") {
-	enabled = true
-}
+    dependencies {
 
-tasks.getByName<Jar>("jar") {
-	enabled = false
+        // Common dependencies
+        implementation("org.springframework.boot:spring-boot-starter")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+        implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+        implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+        implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+
+        // Test dependencies
+        testImplementation("org.springframework.boot:spring-boot-starter-test")
+        testImplementation("org.testcontainers:testcontainers:1.17.6")
+        testImplementation("org.testcontainers:junit-jupiter:1.17.6")
+        testImplementation("org.testcontainers:mongodb:1.17.6")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+    }
 }

@@ -1,0 +1,146 @@
+{
+	"info": {
+		"_postman_id": "3b5ff60d-f8ce-4455-8190-84d7ccb36bca",
+		"name": "VeWorld Indexer API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25874661"
+	},
+	"item": [
+		{
+			"name": "Transactions (Normal)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VEWORLD_API}}/api/v1/transactions/:address",
+					"host": [
+						"{{VEWORLD_API}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"transactions",
+						":address"
+					],
+					"variable": [
+						{
+							"key": "address",
+							"value": "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Transactions (ALL txs)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VEWORLD_API}}/api/v1/transactions/:address?includeDelegated=true",
+					"host": [
+						"{{VEWORLD_API}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"transactions",
+						":address"
+					],
+					"query": [
+						{
+							"key": "includeDelegated",
+							"value": "true"
+						}
+					],
+					"variable": [
+						{
+							"key": "address",
+							"value": "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Transactions (Delegated)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VEWORLD_API}}/api/v1/transactions/:address",
+					"host": [
+						"{{VEWORLD_API}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"transactions",
+						":address"
+					],
+					"variable": [
+						{
+							"key": "address",
+							"value": "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Contracts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VEWORLD_API}}/api/v1/contracts/:address",
+					"host": [
+						"{{VEWORLD_API}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"contracts",
+						":address"
+					],
+					"variable": [
+						{
+							"key": "address",
+							"value": "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Contracts Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{VEWORLD_API}}/api/v1/nfts/:address",
+					"host": [
+						"{{VEWORLD_API}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"nfts",
+						":address"
+					],
+					"variable": [
+						{
+							"key": "address",
+							"value": "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -5,10 +5,26 @@ services:
   vechain-indexer:
     build:
       context: .
-      dockerfile: Dockerfile
+      args:
+        VEWORLD_PACKAGE: indexer
     container_name: vechain-indexer
     restart: "no"
     env_file: .env.local
+    networks:
+      - vechain
+      - vechain-database
+      - vechain-thor
+
+  vechain-indexer-api:
+    build:
+      context: .
+      args:
+        VEWORLD_PACKAGE: api
+    container_name: vechain-indexer-api
+    restart: "no"
+    env_file: .env.local
+    ports:
+      - 8080:8080
     networks:
       - vechain
       - vechain-database
