@@ -7,6 +7,7 @@ import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.ContractUtils
 
 @Profile("contract-indexer", "prod")
@@ -44,9 +45,7 @@ class ContractIndexer(
             val rawData = if (event.first.address != null)
                 thorService.getAccountCode(event.first.address!!)
             else null
-
-            val contractType = contractUtils.getContractType(rawData)
-
+            
             contracts.add(
                 Contract(
                     address = event.first.address,
@@ -55,7 +54,8 @@ class ContractIndexer(
                     txId = event.second.id,
                     creator = event.second.origin,
                     rawData = rawData,
-                    contractType = contractType
+                    isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
+                    isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData)
                 )
             )
         }
