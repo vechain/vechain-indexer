@@ -55,7 +55,7 @@ class ContractIndexer(
                     txId = event.second.id,
                     creator = event.second.origin,
                     rawData = rawData,
-                    contractType = contractType.value
+                    contractType = contractType
                 )
             )
         }
