@@ -33,7 +33,8 @@ class ContractIndexer(
                                     creator = tx.origin,
                                     factoryContract = clause.to,
                                     rawData = clause.data,
-                                    isErc20 = contractUtils.isContractType(Contracts.ERC20, clause.data)
+                                    isErc20 = contractUtils.isContractType(Contracts.ERC20, clause.data),
+                                    isVip180 = contractUtils.isContractType(Contracts.VIP180, clause.data)
                                 )
                             )
                         }

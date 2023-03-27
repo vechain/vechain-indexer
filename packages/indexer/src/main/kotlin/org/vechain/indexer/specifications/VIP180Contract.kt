@@ -1,6 +1,6 @@
 package org.vechain.indexer.specifications
 
-data class ERC20Contract(
+data class VIP180Contract(
 
     override val functions: List<String> = listOf(
         NAME_FUNCTION_SIGNATURE,
