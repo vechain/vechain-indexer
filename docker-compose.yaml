@@ -10,6 +10,12 @@ services:
     container_name: vechain-indexer
     restart: "no"
     env_file: .env.local
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     networks:
       - vechain
       - vechain-database
@@ -23,6 +29,12 @@ services:
     container_name: vechain-indexer-api
     restart: "no"
     env_file: .env.local
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     ports:
       - 8080:8080
     networks:
