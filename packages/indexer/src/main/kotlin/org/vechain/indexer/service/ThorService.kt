@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.exception.NotFoundException
 import org.vechain.indexer.model.AccountCodeResponse
 import org.vechain.indexer.model.Block
 
@@ -32,7 +33,7 @@ class ThorService(val thorRest: WebClient) {
 
         if (response == null) {
             logger.error("Account $address not found")
-            throw IndexerFullySynchronizedException()
+            throw NotFoundException()
         }
 
         if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
