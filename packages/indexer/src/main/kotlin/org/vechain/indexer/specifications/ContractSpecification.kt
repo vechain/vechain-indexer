@@ -12,7 +12,7 @@ interface ContractSpecification {
     val functions: List<String>
 
     /**
-     * * Lists the encoded events specified by the contract.
+     * Lists the encoded events specified by the contract.
      *
      * The encoded events signatures are obtained like this:
      * keccak256(canonicalName).toString('hex')
