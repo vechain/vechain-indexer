@@ -44,7 +44,7 @@ abstract class AbstractIntegrationTest {
             )
 
         val transactionScript = GenericContainer(
-            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:a1b8c4a901c09a776c683e9dc04943f2174e9f5d")
+            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:9d54451c8d90008707a0f72468dae11519446e7f")
         )
             //TODO: Create a wait strategy if we're waiting for transactions to be submitted
             .withReuse(true)

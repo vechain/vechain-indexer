@@ -11,7 +11,7 @@ const val APPROX_BLOCK_PERIOD = 9990L
 
 abstract class Indexer {
 
-    private val logger = LogManager.getLogger(this::class.simpleName)
+    protected val logger = LogManager.getLogger(this::class.simpleName)
 
     private var status = Status.SYNCING
     private var currentBlock: Long = 0
@@ -38,6 +38,7 @@ abstract class Indexer {
             logger.error("${name()}: Error while processing block $currentBlock", e)
             logger.info("${name()}: Restarting indexer in 10s...")
             Thread.sleep(10000)
+            status = Status.SYNCING
         }
 
         run()

@@ -22,7 +22,7 @@ down: #@ Stop all the infrastructure and the application.
 
 # Application
 app-up: #@ Start the application.
-	docker compose up -d --build
+	docker compose up -d --build --wait
 app-down: #@ Stop the application.
 	docker compose down
 app-logs: #@ Attach to the application logs.

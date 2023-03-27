@@ -12,12 +12,11 @@ data class Contract(
     @Indexed
     val blockNumber: Long? = null,
     val txId: String? = null,
-    val clauseIndex: Int? = null,
     @Indexed
     val creator: String? = null,
     @Indexed(sparse = true)
     val factoryContract: String? = null,
     val rawData: String? = null,
-    val isErc20: Boolean? = null,
-    val isVip180: Boolean? = null,
+    val isErc20: Boolean? = false,
+    val isVip180: Boolean? = false,
 )

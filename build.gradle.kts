@@ -93,6 +93,7 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
         implementation("org.springframework.boot:spring-boot-starter-webflux")
+        implementation("org.springframework.boot:spring-boot-starter-actuator")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect")
 
