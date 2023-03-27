@@ -23,7 +23,6 @@ services:
     depends_on:
       thor-solo:
         condition: service_healthy
-    restart: always
     environment:
       # The node to point to, defaults to http://localhost:8669
       - NODE_URL=http://thor-solo:8669
