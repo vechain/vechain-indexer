@@ -28,11 +28,11 @@ class ContractUtils {
                 specification.events.all { rawData.contains(it) }
     }
 
-    fun getContractType(rawData: String?): ContractType {
+    fun getContractType(rawData: String?): String {
         ContractType.values().forEach {
-            if (isContractType(it.specification, rawData)) return it
+            if (isContractType(it.specification, rawData)) return it.value
         }
 
-        return ContractType.UNKNOWN
+        return "UNKNOWN"
     }
 }
