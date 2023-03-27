@@ -2,7 +2,6 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
@@ -17,14 +16,14 @@ class ContractIndexer(
 ) : Indexer() {
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
-        val contracts: MutableList<Contract> = mutableListOf()
+        var contracts: List<Contract> = emptyList()
         block.transactions.forEach { tx ->
             if (tx.reverted == false) {
                 tx.outputs.forEachIndexed { index, outputs ->
-                    outputs.events.forEach { event ->
-                        if (event.topics[0] === MASTER_EVENT_SIGNATURE) {
-                            val clause = tx.clauses.getOrNull(index)
-                            contracts.add(
+                    if (contractUtils.isContractDeployment(outputs)) {
+                        val clause = tx.clauses.getOrNull(index)
+                        if (clause != null) {
+                            contracts = contracts.plus(
                                 Contract(
                                     address = outputs.events[0].address,
                                     blockId = block.id,
@@ -32,9 +31,9 @@ class ContractIndexer(
                                     txId = tx.id,
                                     clauseIndex = index,
                                     creator = tx.origin,
-                                    factoryContract = clause?.to,
-                                    rawData = clause?.data,
-                                    isErc20 = contractUtils.isContractType(Contracts.ERC20, clause?.data)
+                                    factoryContract = clause.to,
+                                    rawData = clause.data,
+                                    isErc20 = contractUtils.isContractType(Contracts.ERC20, clause.data)
                                 )
                             )
                         }
