@@ -1,4 +1,4 @@
-name: Build API Image
+name: Build Docker Image
 
 on:
   push:
@@ -15,8 +15,11 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [ api, indexer ]
     steps:
       - uses: actions/checkout@v3
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag vechain-indexer:latest
+        run: make build-${{ matrix.package }}

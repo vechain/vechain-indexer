@@ -59,7 +59,7 @@ abstract class AbstractIntegrationTest {
 
 
     /**
-     * Load json files from resources and save to database
+     * Load json files from resources
      */
     fun <T> loadDataFromResources(path: String, type: TypeReference<T>): T {
         val file = AbstractIntegrationTest::class.java.getResource(path)

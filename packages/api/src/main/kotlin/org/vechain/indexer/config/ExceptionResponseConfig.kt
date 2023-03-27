@@ -33,14 +33,14 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
         )
 
         this.logger.warn(
-            "HTTP ${ex.status.value()} ${ex.status.reasonPhrase}: ${ex.message} (path: ${req.servletPath})", ex
+            "HTTP ${ex.status.value()} (${req.servletPath}) ${ex.status.reasonPhrase}: (id=${response.id}) - ${ex.message}"
         )
 
         return ResponseEntity(response, ex.status)
     }
 
     /**
-     * Handles constraint violations
+     * Handles constraint violations. Eg Invalid address
      */
     @ExceptionHandler(value = [ConstraintViolationException::class])
     protected fun handleConstrainViolation(
@@ -55,7 +55,29 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
         )
 
         this.logger.warn(
-            "HTTP ${status.value()} ${status.reasonPhrase}: ${message} (path: ${req.servletPath})", ex
+            "HTTP ${status.value()} (${req.servletPath}) ${status.reasonPhrase}: (id=${response.id}) - $message"
+        )
+
+        return ResponseEntity(response, status)
+    }
+
+    /**
+     * Handles all other exceptions.
+     */
+    @ExceptionHandler(value = [Exception::class])
+    protected fun handleException(
+        req: HttpServletRequest, ex: Exception
+    ): ResponseEntity<ExceptionResponse> {
+
+        val status = HttpStatus.INTERNAL_SERVER_ERROR
+
+        val response = ExceptionResponse(
+            path = req.servletPath, status = status.value(), error = status.reasonPhrase, message = null
+        )
+
+        this.logger.warn(
+            "HTTP ${status.value()} (${req.servletPath}) ${status.reasonPhrase}: (id=${response.id}) - ${ex.message}",
+            ex
         )
 
         return ResponseEntity(response, status)

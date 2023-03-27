@@ -4,6 +4,14 @@ help:
 test: #@ Run all the tests.
 	./gradlew cleanTest test
 
+# Application Build
+build-gradle: #@ Build the applications with Gradle.
+	./gradlew packages:api:build packages:indexer:build -x test
+build-indexer: #@ Build the application with Docker.
+	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
+build-api: #@ Build the application with Docker.
+	docker build --build-arg VEWORLD_PACKAGE=api -t veworld-api .
+
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
 	make infra-up infra-setup app-up
@@ -17,6 +25,8 @@ app-up: #@ Start the application.
 	docker compose up -d --build
 app-down: #@ Stop the application.
 	docker compose down
+app-logs: #@ Attach to the application logs.
+	docker compose logs -f
 
 # Infra
 infra-all: #@ Remove, clean and start all the infrastructure.
@@ -58,9 +68,3 @@ thor-up: #@ Start VeChainThor
 	$(THOR_COMMAND) up -d --wait --build
 thor-test: #@ Test VeChainThor
 	$(THOR_COMMAND) up thor-tx-script
-
-# Application Build
-build-gradle: #@ Build the application with Gradle.
-	./gradlew build -x test
-build-docker: #@ Build the application with Docker.
-	docker build -t veworld-indexer .

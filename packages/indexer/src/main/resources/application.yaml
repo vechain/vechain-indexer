@@ -4,7 +4,7 @@ server:
 
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:mongo-auth-password,prod}
+    active: ${SPRING_PROFILES_ACTIVE:prod}
 
 spring.data:
   mongodb:

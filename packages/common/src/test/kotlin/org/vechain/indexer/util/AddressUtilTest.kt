@@ -9,7 +9,7 @@ import org.vechain.indexer.utils.AddressUtil
 class AddressUtilTest {
 
     private val notPrefixed = "8d66DA6448c6144E894B7cD91Fa1Ae65310A4855"
-    private val prefixed = "0x${notPrefixed}"
+    private val prefixed = "0x8d66DA6448c6144E894B7cD91Fa1Ae65310A4855"
 
     @Nested
     inner class IsValid {

@@ -1,5 +1,6 @@
 package org.vechain.indexer.utils
 
+
 object HexUtil {
 
     /**

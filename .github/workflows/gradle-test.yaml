@@ -1,4 +1,4 @@
-name: Build & Test
+name: Gradle Test
 
 on:
   push:
@@ -11,13 +11,6 @@ on:
 concurrency:
   group: ${{ github.head_ref || github.ref_name }}-build-test
   cancel-in-progress: true
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-  packages: write
 
 jobs:
   build:
@@ -32,18 +25,3 @@ jobs:
 
       - name: Gradle Test
         run: ./gradlew cleanTest test
-
-      - name: Setup Pages
-        if: github.ref == 'refs/heads/main'
-        uses: actions/configure-pages@v3
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        if: github.ref == 'refs/heads/main'
-        with:
-          path: build/reports/jacoco/test/html
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        if: github.ref == 'refs/heads/main'
-        uses: actions/deploy-pages@v1
