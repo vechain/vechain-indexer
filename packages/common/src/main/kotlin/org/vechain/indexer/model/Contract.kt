@@ -19,4 +19,5 @@ data class Contract(
     val rawData: String? = null,
     val isErc20: Boolean? = false,
     val isVip180: Boolean? = false,
+    val isVip181: Boolean? = false,
 )
