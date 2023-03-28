@@ -73,6 +73,7 @@ class ContractIndexer(
                         isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
                         isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
                     )
+                )
         }
 
         if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
