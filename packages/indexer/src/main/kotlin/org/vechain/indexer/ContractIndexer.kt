@@ -48,6 +48,7 @@ class ContractIndexer(
                 thorService.getAccountCode(event.first.address!!)
             else null
 
+
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.
             if (rawData == null || rawData == "0x") {
@@ -67,10 +68,11 @@ class ContractIndexer(
                         creator = event.second.origin,
                         master = contractUtils.removeTopicPadding(event.first.data!!),
                         rawData = rawData,
+                        isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
+                        isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
                         isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
-                        isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData)
+                        isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
                     )
-                )
         }
 
         if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
