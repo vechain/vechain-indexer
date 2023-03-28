@@ -51,12 +51,12 @@ data class VIP181Contract(
         const val OWNER_OF_FUNCTION_SIGNATURE = "6352211e"
 
         /**
-         * function transferFrom(address _from, address _to, uint256 _value) public returns (bool success)
+         * function transferFrom(address _from, address _to, uint256 _tokenId) public returns (bool success)
          */
         const val TRANSFER_FROM_FUNCTION_SIGNATURE = "23b872dd"
 
         /**
-         * function approve(address _spender, uint256 _value) public returns (bool success)
+         * function approve(address _spender, uint256 _tokenId) public returns (bool success)
          */
         const val APPROVE_FUNCTION_SIGNATURE = "095ea7b3"
 
@@ -76,12 +76,12 @@ data class VIP181Contract(
         const val IS_APPROVED_FOR_ALL_FUNCTION_SIGNATURE = "e985e9c5"
 
         /**
-         * event Transfer(address indexed _from, address indexed _to, uint256 _value)
+         * event Transfer(address indexed _from, address indexed _to, uint256 _tokenId)
          */
         const val TRANSFER_EVENT_SIGNATURE = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
         /**
-         * event Approval(address indexed _owner, address indexed _spender, uint256 _value)
+         * event Approval(address indexed _owner, address indexed _spender, uint256 _tokenId)
          */
         const val APPROVAL_EVENT_SIGNATURE = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
 

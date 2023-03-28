@@ -54,9 +54,10 @@ class ContractIndexer(
                     txId = event.second.id,
                     creator = event.second.origin,
                     rawData = rawData,
-                    isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
                     isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
                     isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
+                    isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
+                    isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
                 )
             )
         }
