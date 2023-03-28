@@ -45,7 +45,7 @@ class ContractIndexer(
             val rawData = if (event.first.address != null)
                 thorService.getAccountCode(event.first.address!!)
             else null
-            
+
             contracts.add(
                 Contract(
                     address = event.first.address,
@@ -54,8 +54,10 @@ class ContractIndexer(
                     txId = event.second.id,
                     creator = event.second.origin,
                     rawData = rawData,
+                    isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
+                    isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
                     isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
-                    isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData)
+                    isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
                 )
             )
         }
