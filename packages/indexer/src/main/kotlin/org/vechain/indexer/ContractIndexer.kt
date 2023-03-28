@@ -32,7 +32,7 @@ class ContractIndexer(
                 tx.outputs.flatMap { output ->
                     output.events
                         .filter { event ->
-                            contractUtils.isContractDeployment(event)
+                            contractUtils.isMasterEvent(event)
                         }.map { event ->
                             Pair(event, tx)
                         }
@@ -53,7 +53,7 @@ class ContractIndexer(
             if (rawData == null || rawData == "0x") {
                 val contract = contractRepo.findById(event.first.address!!).getOrNull()
                 if (contract != null && event.first.data != null) {
-                    contract.master = event.first.data
+                    contract.master = contractUtils.removeTopicPadding(event.first.data!!)
                     contracts.add(contract)
                 }
 
@@ -65,7 +65,7 @@ class ContractIndexer(
                         blockNumber = block.number,
                         txId = event.second.id,
                         creator = event.second.origin,
-                        master = event.second.origin,
+                        master = contractUtils.removeTopicPadding(event.first.data!!),
                         rawData = rawData,
                         isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
                         isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData)
