@@ -14,6 +14,8 @@ data class Contract(
     val txId: String? = null,
     @Indexed
     val creator: String? = null,
+    @Indexed
+    var master: String? = null,
     @Indexed(sparse = true)
     val factoryContract: String? = null,
     val rawData: String? = null,
