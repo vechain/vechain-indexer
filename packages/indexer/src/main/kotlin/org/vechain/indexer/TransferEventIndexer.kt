@@ -25,7 +25,7 @@ open class TransferEventIndexer(
 
 
         block.transactions.forEach { tx ->
-            if (tx.reverted != false) {
+            if (tx.reverted == false) {
                 tx.outputs.forEachIndexed { index, txOutputs ->
                     val tfEvents = contractUtils.findTransferEvents(txOutputs.events)
                     if (tfEvents.isNotEmpty()) {
@@ -55,9 +55,8 @@ open class TransferEventIndexer(
     private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
         val contractsLastBlock = contractIndexer.currentBlock
         if (eventsBlockNumber >= contractIndexer.currentBlock) {
-            logger.info("${name()} is waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
             throw IndexerSynchronizationException(
-                "Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
+                "${name()} is waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
             )
         }
     }
