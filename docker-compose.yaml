@@ -7,7 +7,6 @@ services:
       context: .
       args:
         VEWORLD_PACKAGE: indexer
-    container_name: vechain-indexer
     restart: "no"
     env_file: .env.local
     healthcheck:
@@ -26,7 +25,6 @@ services:
       context: .
       args:
         VEWORLD_PACKAGE: api
-    container_name: vechain-indexer-api
     restart: "no"
     env_file: .env.local
     healthcheck:

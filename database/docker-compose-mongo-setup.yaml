@@ -2,13 +2,12 @@ version: "3.5"
 
 services:
   mongo-setup:
-    container_name: mongo-setup
     image: mongo:6
     volumes:
       - ./scripts:/scripts
     restart: "no"
     entrypoint:
-      ["bash", "/scripts/setup.sh", "mongo-node1", "mongo-node2", "mongo-node3"]
+      [ "bash", "/scripts/setup.sh", "mongo-node1", "mongo-node2", "mongo-node3" ]
     networks:
       - vechain-database
 
