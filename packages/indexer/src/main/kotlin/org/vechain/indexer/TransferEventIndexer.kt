@@ -16,11 +16,13 @@ open class TransferEventIndexer(
     private val contractUtils: ContractUtils,
     private val contractIndexer: ContractIndexer,
 ) : Indexer() {
+
     override fun processBlock(blockNumber: Long) {
+        ensureInSyncWithContracts(blockNumber)
+
         val block = thorService.getBlock(blockNumber)
         var events: List<TransferEvent> = emptyList()
 
-        ensureInSyncWithContracts(block.number)
 
         block.transactions.forEach { tx ->
             if (tx.reverted != false) {
@@ -53,6 +55,7 @@ open class TransferEventIndexer(
     private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
         val contractsLastBlock = contractIndexer.currentBlock
         if (eventsBlockNumber > contractIndexer.currentBlock) {
+            logger.info("Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
             throw IndexerSynchronizationException(
                 "Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
             )
@@ -62,6 +65,5 @@ open class TransferEventIndexer(
     override fun getStartingBlock(): Long {
         return transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
-
-
+    
 }

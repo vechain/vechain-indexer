@@ -2,7 +2,6 @@ package org.vechain.indexer
 
 import org.apache.logging.log4j.LogManager
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
-import org.vechain.indexer.exception.IndexerSynchronizationException
 
 enum class Status {
     SYNCING, FULLY_SYNCED
@@ -35,7 +34,7 @@ abstract class Indexer {
             logger.info("${name()} is fully synchronized...")
             Thread.sleep(1000)
             status = Status.FULLY_SYNCED
-        } catch (e: IndexerSynchronizationException) {
+        } catch (e: Exception) {
             logger.error("${name()}: Error while processing block $currentBlock", e)
             logger.info("${name()}: Restarting indexer in 10s...")
             Thread.sleep(10000)
