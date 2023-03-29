@@ -9,7 +9,7 @@ import org.vechain.indexer.model.AccountCodeResponse
 import org.vechain.indexer.model.Block
 
 @Service
-class ThorService(val thorRest: WebClient) {
+class ThorService(private val thorRest: WebClient) {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
 
@@ -25,6 +25,20 @@ class ThorService(val thorRest: WebClient) {
         if (logger.isDebugEnabled) logger.debug("Block $number found: ${response.id}")
 
         return response
+    }
+
+    fun getBestBlockNumber(): Long {
+        val response =
+            thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java).block()
+
+        if (response == null) {
+            logger.error("Best block not found")
+            throw NotFoundException()
+        }
+
+        if (logger.isDebugEnabled) logger.debug("Best block# found: ${response.number}")
+
+        return response.number
     }
 
     fun getAccountCode(address: String): String? {

@@ -14,7 +14,7 @@ abstract class Indexer {
     protected val logger = LogManager.getLogger(this::class.simpleName)
 
     private var status = Status.SYNCING
-    private var currentBlock: Long = 0
+    var currentBlock: Long = 0
 
     fun start() {
         currentBlock = getStartingBlock()
@@ -52,6 +52,14 @@ abstract class Indexer {
 
     private fun generateRandomDelay(lower: Long, upper: Long): Long {
         return (Math.random() * (upper - lower) + lower).toLong()
+    }
+
+    fun getStatus(): Status {
+        return status
+    }
+
+    fun updateStatus(status: Status) {
+        this.status = status
     }
 
     abstract fun processBlock(blockNumber: Long)
