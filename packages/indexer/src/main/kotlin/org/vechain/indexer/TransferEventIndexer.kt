@@ -2,8 +2,8 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.exception.IndexerSynchronizationException
 import org.vechain.indexer.model.TransferEvent
-import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.ContractUtils
@@ -14,7 +14,7 @@ open class TransferEventIndexer(
     private val thorService: ThorService,
     private val transferEventRepo: TransferEventRepo,
     private val contractUtils: ContractUtils,
-    private val contractRepo: ContractRepo,
+    private val contractIndexer: ContractIndexer,
 ) : Indexer() {
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
@@ -54,10 +54,10 @@ open class TransferEventIndexer(
         return transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
-    private fun ensureInSyncWithContracts(blockNumber: Long) {
-        val contractsLastBlock = contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
-        if (blockNumber > contractsLastBlock) {
-            throw Exception("Waiting for contracts indexer at block: $contractsLastBlock. Currently at $blockNumber")
+    private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
+        val contractsLastBlock = contractIndexer.getCurrentBlock()
+        if (eventsBlockNumber > contractIndexer.getCurrentBlock()) {
+            throw IndexerSynchronizationException("Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
         }
     }
 
