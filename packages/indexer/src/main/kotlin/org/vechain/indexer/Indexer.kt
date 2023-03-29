@@ -14,8 +14,8 @@ abstract class Indexer {
 
     protected val logger = LogManager.getLogger(this::class.simpleName)
 
-    private var status = Status.SYNCING
-    private var currentBlock: Long = 0
+    var status = Status.SYNCING
+    var currentBlock: Long = 0
 
     fun start() {
         currentBlock = getStartingBlock()
@@ -33,7 +33,7 @@ abstract class Indexer {
             currentBlock++
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("${name()} is fully synchronized...")
-            Thread.sleep(generateRandomDelay(1000, 3000))
+            Thread.sleep(1000)
             status = Status.FULLY_SYNCED
         } catch (e: IndexerSynchronizationException) {
             logger.error("${name()}: Error while processing block $currentBlock", e)
@@ -49,22 +49,6 @@ abstract class Indexer {
         if (status == Status.FULLY_SYNCED) {
             Thread.sleep(APPROX_BLOCK_PERIOD)
         }
-    }
-
-    private fun generateRandomDelay(lower: Long, upper: Long): Long {
-        return (Math.random() * (upper - lower) + lower).toLong()
-    }
-
-    fun getCurrentBlock(): Long {
-        return currentBlock
-    }
-
-    fun getStatus(): Status {
-        return status
-    }
-
-    fun updateStatus(status: Status) {
-        this.status = status
     }
 
     abstract fun processBlock(blockNumber: Long)

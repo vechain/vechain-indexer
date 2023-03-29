@@ -10,6 +10,8 @@ import java.util.concurrent.Executors
 
 import java.util.concurrent.ThreadPoolExecutor
 
+const val BLOCK_TIME = 10000L
+
 @Component
 class IndexManager(private val indexers: List<Indexer>, private val thorService: ThorService) {
 
@@ -24,14 +26,14 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
 
         indexers.forEach { indexer -> executor.submit<Any> { indexer.start(); null } }
     }
-
-    @Scheduled(fixedRate = APPROX_BLOCK_PERIOD * 2)
+    
+    @Scheduled(fixedRate = BLOCK_TIME * 2)
     fun reSyncingIndexers() {
         val latestBlockNumber = thorService.getBestBlockNumber()
 
         indexers.forEach {
-            if (it.getCurrentBlock() < latestBlockNumber && it.getStatus() == Status.FULLY_SYNCED) {
-                it.updateStatus(Status.SYNCING)
+            if (it.currentBlock < latestBlockNumber && it.status == Status.FULLY_SYNCED) {
+                it.status = Status.SYNCING
             }
         }
     }
