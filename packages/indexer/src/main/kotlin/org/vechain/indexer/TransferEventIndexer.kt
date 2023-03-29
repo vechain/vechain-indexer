@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.exception.IndexerSynchronizationException
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
@@ -12,11 +13,17 @@ import org.vechain.indexer.utils.ContractUtils
 open class TransferEventIndexer(
     private val thorService: ThorService,
     private val transferEventRepo: TransferEventRepo,
-    private val contractUtils: ContractUtils
+    private val contractUtils: ContractUtils,
+    private val contractIndexer: ContractIndexer,
 ) : Indexer() {
+
     override fun processBlock(blockNumber: Long) {
+        ensureInSyncWithContracts(blockNumber)
+
         val block = thorService.getBlock(blockNumber)
         var events: List<TransferEvent> = emptyList()
+
+
         block.transactions.forEach { tx ->
             if (tx.reverted != false) {
                 tx.outputs.forEachIndexed { index, txOutputs ->
@@ -37,14 +44,22 @@ open class TransferEventIndexer(
                                 )
                             }
                         )
-
                     }
                 }
             }
         }
 
-
         if (events.isNotEmpty()) transferEventRepo.saveAll(events)
+    }
+
+    private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
+        val contractsLastBlock = contractIndexer.currentBlock
+        if (eventsBlockNumber >= contractIndexer.currentBlock) {
+            logger.info("${name()} is waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
+            throw IndexerSynchronizationException(
+                "Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
+            )
+        }
     }
 
     override fun getStartingBlock(): Long {
