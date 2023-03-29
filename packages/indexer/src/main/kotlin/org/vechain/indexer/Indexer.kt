@@ -57,7 +57,7 @@ abstract class Indexer {
     abstract fun processBlock(blockNumber: Long)
     abstract fun getStartingBlock(): Long
 
-    private fun name(): String {
+    internal fun name(): String {
         return this.javaClass.simpleName
     }
 

@@ -36,7 +36,7 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
 
         indexers.forEach {
             if (it.currentBlock < latestBlockNumber && it.status == Status.FULLY_SYNCED) {
-                logger.info("Fully synced indexer ${it.javaClass.name} with current block ${it.currentBlock} while best block is $latestBlockNumber")
+                logger.info("Fully synced indexer ${it.javaClass.simpleName} with current block ${it.currentBlock} while best block is $latestBlockNumber")
                 it.status = Status.SYNCING
             }
         }

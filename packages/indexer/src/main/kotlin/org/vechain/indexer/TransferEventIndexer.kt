@@ -55,7 +55,7 @@ open class TransferEventIndexer(
     private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
         val contractsLastBlock = contractIndexer.currentBlock
         if (eventsBlockNumber >= contractIndexer.currentBlock) {
-            logger.info("Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
+            logger.info("${name()} is waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
             throw IndexerSynchronizationException(
                 "Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
             )
