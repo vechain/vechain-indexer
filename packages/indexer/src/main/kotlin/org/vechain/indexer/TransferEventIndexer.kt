@@ -50,15 +50,18 @@ open class TransferEventIndexer(
         if (events.isNotEmpty()) transferEventRepo.saveAll(events)
     }
 
+    private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
+        val contractsLastBlock = contractIndexer.getCurrentBlock()
+        if (eventsBlockNumber > contractIndexer.getCurrentBlock()) {
+            throw IndexerSynchronizationException(
+                "Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber"
+            )
+        }
+    }
+    
     override fun getStartingBlock(): Long {
         return transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
-    private fun ensureInSyncWithContracts(eventsBlockNumber: Long) {
-        val contractsLastBlock = contractIndexer.getCurrentBlock()
-        if (eventsBlockNumber > contractIndexer.getCurrentBlock()) {
-            throw IndexerSynchronizationException("Waiting for contracts indexer at block: $contractsLastBlock. Currently at $eventsBlockNumber")
-        }
-    }
 
 }
