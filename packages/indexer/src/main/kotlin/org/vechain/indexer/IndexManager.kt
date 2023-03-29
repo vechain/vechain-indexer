@@ -10,8 +10,6 @@ import java.util.concurrent.Executors
 
 import java.util.concurrent.ThreadPoolExecutor
 
-const val ALLOWED_BLOCK_GAP = 10000
-
 @Component
 class IndexManager(private val indexers: List<Indexer>, private val thorService: ThorService) {
 
@@ -32,7 +30,7 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
         val latestBlockNumber = thorService.getBestBlockNumber()
 
         indexers.forEach {
-            if (it.currentBlock < latestBlockNumber && it.getStatus() == Status.FULLY_SYNCED) {
+            if (it.getCurrentBlock() < latestBlockNumber && it.getStatus() == Status.FULLY_SYNCED) {
                 it.updateStatus(Status.SYNCING)
             }
         }
