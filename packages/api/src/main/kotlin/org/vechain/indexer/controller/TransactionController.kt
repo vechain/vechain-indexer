@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.validation.Address
