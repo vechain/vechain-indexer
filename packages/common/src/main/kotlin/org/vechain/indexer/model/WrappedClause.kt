@@ -16,13 +16,13 @@ data class WrappedClause(
     @Indexed
     val origin: String? = null,
     @Indexed(sparse = true)
-    override val to: String? = null,
-    override val value: String? = null,
-    override val data: String? = null,
+    val to: String? = null,
+    val value: String? = null,
+    val data: String? = null,
     val reverted: Boolean? = null,
     val output: TxOutputs?,
-) : IClause {
-    constructor(block: Block, tx: ITransaction, clause: Clause, index: Int) : this(
+) {
+    constructor(block: Block, tx: WrappedTransaction, clause: Clause, index: Int) : this(
         "${tx.id}-$index", block.id, block.number, tx.id, index, tx.origin,
         clause.to, clause.value, clause.data, tx.reverted, tx.outputs.getOrNull(index)
     )

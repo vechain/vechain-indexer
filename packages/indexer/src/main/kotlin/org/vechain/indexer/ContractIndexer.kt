@@ -4,8 +4,8 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Clause
 import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.ITransaction
 import org.vechain.indexer.model.TxEvent
+import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.specifications.Contracts
@@ -20,7 +20,7 @@ class ContractIndexer(
 ) : Indexer() {
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(blockNumber: Long) {
-        
+
         val block = thorService.getBlock(blockNumber)
         val contracts: MutableList<Contract> = mutableListOf()
 
@@ -43,12 +43,9 @@ class ContractIndexer(
         /**
          * Process each master change event.
          */
-        masterChangeEvents.forEach { event: Triple<TxEvent, ITransaction, Clause> ->
+        masterChangeEvents.forEach { event: Triple<TxEvent, WrappedTransaction, Clause> ->
 
-            val rawData = if (event.first.address != null)
-                thorService.getAccountCode(event.first.address!!)
-            else null
-
+            val rawData = event.first.address.let { thorService.getAccountCode(event.first.address!!) }
 
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.
