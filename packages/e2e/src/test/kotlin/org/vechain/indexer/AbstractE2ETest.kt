@@ -119,7 +119,7 @@ abstract class AbstractE2ETest {
             )
             .withBuild(true)
             .withLocalCompose(true)
-            .withOptions("--compatibility")
+            .withOptions("--compatibility --env-file ${rootPath}/.env.example")
 
         try {
             MONGO_COMPOSE_CONTAINER.start()
