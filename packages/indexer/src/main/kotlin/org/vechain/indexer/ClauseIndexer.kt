@@ -5,25 +5,17 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.repos.ClauseRepo
 import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.utils.BlockUtils
 
 @Profile("clause-indexer", "prod")
 @Component
 open class ClauseIndexer(private val thorService: ThorService, private val clauseRepo: ClauseRepo) : Indexer() {
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
-        if (block.transactions.isNotEmpty() && block.transactions.any { it.clauses.isNotEmpty() }) {
-            val clauses = block.transactions.flatMap { tx ->
-                tx.clauses.mapIndexed { idx, cl ->
-                    WrappedClause(
-                        block,
-                        tx,
-                        cl,
-                        idx
-                    )
-                }
-            }
-            clauseRepo.saveAll(clauses)
-        }
+
+        val clauses: List<WrappedClause> = BlockUtils.getAllClauses(block)
+
+        if (clauses.isNotEmpty()) clauseRepo.saveAll(clauses)
     }
 
     override fun getStartingBlock(): Long {
