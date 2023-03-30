@@ -2,13 +2,15 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.model.Clause
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.ITransaction
 import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.ContractUtils
+import kotlin.jvm.optionals.getOrNull
 
 @Profile("contract-indexer", "prod")
 @Component
@@ -17,6 +19,7 @@ class ContractIndexer(
     private val contractRepo: ContractRepo,
     private val contractUtils: ContractUtils
 ) : Indexer() {
+    @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(blockNumber: Long) {
         val block = thorService.getBlock(blockNumber)
         val contracts: MutableList<Contract> = mutableListOf()
@@ -24,42 +27,54 @@ class ContractIndexer(
         /**
          * Find all events that are contract deployments, paired with their transaction.
          */
-        val contractEvents = block.transactions
+        val masterChangeEvents = block.transactions
             .filter { tx -> tx.reverted == false }
             .flatMap { tx ->
-                tx.outputs.flatMap { output ->
+                tx.outputs.flatMapIndexed { idx, output ->
                     output.events
                         .filter { event ->
-                            contractUtils.isContractDeployment(event)
+                            contractUtils.isMasterEvent(event)
                         }.map { event ->
-                            Pair(event, tx)
+                            Triple(event, tx, tx.clauses[idx])
                         }
                 }
             }
 
         /**
-         * For each contract deployment, get the contract code and save it to the database.
+         * Process each master change event.
          */
-        contractEvents.forEach { event: Pair<TxEvent, WrappedTransaction> ->
+        masterChangeEvents.forEach { event: Triple<TxEvent, ITransaction, Clause> ->
 
             val rawData = if (event.first.address != null)
                 thorService.getAccountCode(event.first.address!!)
             else null
 
-            contracts.add(
-                Contract(
-                    address = event.first.address,
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    txId = event.second.id,
-                    creator = event.second.origin,
-                    rawData = rawData,
-                    isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
-                    isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
-                    isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
-                    isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
+
+            // If there is no contract data then we assume this is a change of master for an existing contract.
+            // Else, this is a new contract deployment.
+            if (rawData == null || rawData == "0x") {
+                val contract = event.third.to?.let { contractRepo.findById(it).getOrNull() }
+                if (contract != null && event.first.data != null) {
+                    contract.master = contractUtils.removeTopicPadding(event.first.data!!)
+                    contracts.add(contract)
+                }
+
+            } else
+                contracts.add(
+                    Contract(
+                        address = event.first.address,
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        txId = event.second.id,
+                        creator = event.second.origin,
+                        master = contractUtils.removeTopicPadding(event.first.data!!),
+                        rawData = rawData,
+                        isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
+                        isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
+                        isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
+                        isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
+                    )
                 )
-            )
         }
 
         if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
