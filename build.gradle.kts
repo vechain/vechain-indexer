@@ -99,6 +99,7 @@ allprojects {
 
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+        implementation("com.google.code.gson:gson:2.10.1")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -106,6 +107,8 @@ allprojects {
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+        testImplementation("io.mockk:mockk:1.13.4")
+        testImplementation("io.strikt:strikt-core:0.34.1")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     }
 }
