@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.TestInstance
 import org.testcontainers.containers.DockerComposeContainer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
@@ -7,7 +8,6 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.File
 import java.time.Duration
-import java.time.ZonedDateTime
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -24,6 +24,14 @@ abstract class AbstractE2ETest {
 
     @Container
     val APPLICATION_COMPOSE_CONTAINER: DockerComposeContainer<*>
+
+    @AfterAll
+    fun afterAll() {
+        APPLICATION_COMPOSE_CONTAINER.stop()
+        MONGO_COMPOSE_CONTAINER.stop()
+        MONGO_SETUP_CONTAINER.stop()
+        THOR_COMPOSE.stop()
+    }
 
     fun getApiURL(): String {
         val apiOptional = APPLICATION_COMPOSE_CONTAINER.getContainerByServiceName("vechain-indexer-api")
@@ -117,13 +125,9 @@ abstract class AbstractE2ETest {
             MONGO_COMPOSE_CONTAINER.start()
             MONGO_SETUP_CONTAINER.start()
             THOR_COMPOSE.start()
-
-            //Print the time now
-            val timeNow = ZonedDateTime.now()
             APPLICATION_COMPOSE_CONTAINER.start()
 
         } catch (e: Exception) {
-            val time2 = ZonedDateTime.now()
             e.printStackTrace()
             throw e
         }
