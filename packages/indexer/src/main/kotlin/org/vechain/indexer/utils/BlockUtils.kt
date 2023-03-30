@@ -5,12 +5,19 @@ import org.vechain.indexer.model.*
 object BlockUtils {
 
     /**
+     * Get all confirmed transactions from a block
+     */
+    fun confirmedTransactions(block: Block): List<WrappedTransaction> {
+        return block.transactions.filter { it.reverted == false }
+    }
+
+    /**
      * Get all clauses from a block, paired with the transaction that created it.
      *
      * DOES NOT include reverted TXs
      */
     fun getAllClauses(block: Block): List<WrappedClause> {
-        return block.transactions.filter { it.reverted == false }.flatMap { tx ->
+        return confirmedTransactions(block).flatMap { tx ->
             tx.clauses.mapIndexed { idx, cl ->
                 WrappedClause(
                     block, tx, cl, idx
@@ -25,7 +32,7 @@ object BlockUtils {
      * DOES NOT include reverted TXs
      */
     fun getEvents(block: Block): List<Pair<TxEvent, WrappedTransaction>> {
-        return block.transactions.filter { it.reverted == false }.flatMapIndexed { i, tx ->
+        return confirmedTransactions(block).flatMapIndexed { i, tx ->
             tx.outputs.flatMap { output ->
                 output.events.map { event ->
                     Pair(event, tx)
@@ -40,7 +47,7 @@ object BlockUtils {
      * DOES NOT include reverted TXs
      */
     fun getOutputs(block: Block): List<Pair<TxOutputs, WrappedTransaction>> {
-        return block.transactions.filter { it.reverted == false }.flatMapIndexed { i, tx ->
+        return confirmedTransactions(block).flatMapIndexed { i, tx ->
             tx.outputs.map { output ->
                 Pair(output, tx)
             }

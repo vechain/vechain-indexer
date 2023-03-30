@@ -1,7 +1,6 @@
 package org.vechain.indexer.service
 
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.utils.HexUtil
 
