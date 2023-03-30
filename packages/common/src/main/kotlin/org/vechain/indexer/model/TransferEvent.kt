@@ -19,5 +19,6 @@ data class TransferEvent(
     val to: String,
     val value: String?,
     @Indexed
-    val tokenAddress: String?
+    val tokenAddress: String?,
+    val topics: List<String> = emptyList(),
 )

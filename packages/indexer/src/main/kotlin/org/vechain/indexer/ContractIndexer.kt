@@ -16,11 +16,11 @@ import kotlin.jvm.optionals.getOrNull
 @Component
 class ContractIndexer(
     private val thorService: ThorService,
-    private val contractRepo: ContractRepo,
-    private val contractUtils: ContractUtils
+    private val contractRepo: ContractRepo
 ) : Indexer() {
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(blockNumber: Long) {
+        
         val block = thorService.getBlock(blockNumber)
         val contracts: MutableList<Contract> = mutableListOf()
 
@@ -33,7 +33,7 @@ class ContractIndexer(
                 tx.outputs.flatMapIndexed { idx, output ->
                     output.events
                         .filter { event ->
-                            contractUtils.isMasterEvent(event)
+                            ContractUtils.isMasterEvent(event)
                         }.map { event ->
                             Triple(event, tx, tx.clauses[idx])
                         }
@@ -55,7 +55,7 @@ class ContractIndexer(
             if (rawData == null || rawData == "0x") {
                 val contract = event.third.to?.let { contractRepo.findById(it).getOrNull() }
                 if (contract != null && event.first.data != null) {
-                    contract.master = contractUtils.removeTopicPadding(event.first.data!!)
+                    contract.master = ContractUtils.removeTopicPadding(event.first.data!!)
                     contracts.add(contract)
                 }
 
@@ -67,12 +67,12 @@ class ContractIndexer(
                         blockNumber = block.number,
                         txId = event.second.id,
                         creator = event.second.origin,
-                        master = contractUtils.removeTopicPadding(event.first.data!!),
+                        master = ContractUtils.removeTopicPadding(event.first.data!!),
                         rawData = rawData,
-                        isVip180 = contractUtils.isContractType(Contracts.VIP180, rawData),
-                        isVip181 = contractUtils.isContractType(Contracts.VIP181, rawData),
-                        isErc20 = contractUtils.isContractType(Contracts.ERC20, rawData),
-                        isErc721 = contractUtils.isContractType(Contracts.ERC721, rawData),
+                        isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData),
+                        isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData),
+                        isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData),
+                        isErc721 = ContractUtils.isContractType(Contracts.ERC721, rawData),
                     )
                 )
         }
