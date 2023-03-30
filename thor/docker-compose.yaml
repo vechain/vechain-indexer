@@ -4,6 +4,7 @@ services:
   thor-solo:
     build:
       dockerfile: Dockerfile
+      context: ./
     ports:
       - "8669:8669"
       - "11235:11235"
