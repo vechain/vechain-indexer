@@ -2,11 +2,10 @@ package org.vechain.indexer
 
 import org.junit.jupiter.api.Test
 
-class DockerTest : ContainerTests() {
+class SampleTest : AbstractE2ETest() {
 
     @Test
-    fun `network should start`() {
-        Thread.sleep(10_000_000)
+    fun `infrastructure and apps should start`() {
         assert(1 == 1)
     }
 

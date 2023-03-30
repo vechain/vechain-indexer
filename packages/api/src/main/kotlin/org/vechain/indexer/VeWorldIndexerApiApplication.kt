@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.info.Info
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories
 
 @OpenAPIDefinition(
     info = Info(
@@ -15,7 +14,6 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
     )
 )
 @SpringBootApplication(scanBasePackages = ["org.vechain.indexer"])
-@EnableMongoRepositories(basePackages = ["org.vechain.indexer.repos"])
 open class VeWorldIndexerApiApplication
 
 fun main(args: Array<String>) {
