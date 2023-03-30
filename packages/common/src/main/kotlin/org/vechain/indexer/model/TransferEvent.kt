@@ -21,4 +21,10 @@ data class TransferEvent(
     @Indexed
     val tokenAddress: String?,
     val topics: List<String> = emptyList(),
-)
+) {
+    val isNFTTransfer: Boolean
+        get() = topics.size == 4
+
+    val isFungibleTransfer: Boolean
+        get() = topics.size == 3
+}

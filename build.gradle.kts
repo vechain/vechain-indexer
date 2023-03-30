@@ -43,6 +43,17 @@ allprojects {
         }
     }
 
+    tasks.clean {
+        doFirst {
+            delete(
+                "build",
+                "packages/api/build",
+                "packages/indexer/build",
+                "packages/common/build"
+            )
+        }
+    }
+
     tasks.withType<Test> {
         useJUnitPlatform()
         testLogging.showStandardStreams = true

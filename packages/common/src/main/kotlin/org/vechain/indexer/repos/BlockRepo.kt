@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Block
 
 @Repository
-interface BlockRepo: CrudRepository<Block, String> {
+interface BlockRepo : CrudRepository<Block, String> {
 
-    @Aggregation(pipeline = ["{ '\$sort': { 'number': -1 } }", "{ '\$limit': 1 }" ])
+    @Aggregation(pipeline = ["{ '\$sort': { 'number': -1 } }", "{ '\$limit': 1 }"])
     fun getMaxBlockNumber(): List<Block>
 }
