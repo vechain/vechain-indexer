@@ -29,10 +29,10 @@ internal class ContractIndexerTest {
     @InjectMockKs
     lateinit var contractIndexer: ContractIndexer
 
-    // Block #5 -> block_erc20_vip180_contracts.json
+    // Block #5 -> block_5_erc20_vip180_contracts.json
     // This block contains 2 ERC20/VIP180 contract deployment transactions
     @Test
-    fun `Process block - extract erc20 vip180 contract types`() {
+    fun `Extract erc20 vip180 contract types`() {
         // Known fixture
         val blockNumber = 5L
         val block5: Block = buildBlockFixture(blockNumber)
@@ -63,10 +63,10 @@ internal class ContractIndexerTest {
         }
     }
 
-    // Block #6 -> block_erc721_vip181_contracts.json
+    // Block #6 -> block_6_erc721_vip181_contracts.json
     // This block contains 1 ERC20/VIP180 contract deployment transaction
     @Test
-    fun `Process block - extract erc721 vip181 contract types`() {
+    fun `Extract erc721 vip181 contract types`() {
         // Known fixture
         val blockNumber = 6L
         val block6: Block = buildBlockFixture(blockNumber)
@@ -101,7 +101,7 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun `Process block - save contract with correct data`() {
+    fun `Save contract document with correct data`() {
         // Known fixture
         val blockNumber = 6L
         val block6: Block = buildBlockFixture(blockNumber)
@@ -138,13 +138,13 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun `Process block - update contract master when no contract data`() {
+    fun `Update contract master when no contract data`() {
         // Known fixture
         val blockNumber = 16L
         val block16: Block = buildBlockFixture(blockNumber)
         val existingContract = buildContract()
 
-        // Mock data returned for block#6: block & account code
+        // Mock data returned for block#16: block, null account code & existing mongo document
         every { thorService.getBlock(blockNumber) } returns block16
         every { thorService.getAccountCode(any()) } returns null
         every { contractRepo.findById(any()) } returns Optional.of(existingContract)
@@ -172,9 +172,9 @@ internal class ContractIndexerTest {
     private fun readBlockFixture(blockNumber: Long): String {
         val jsonFile =
             when (blockNumber) {
-                5L -> "/fixtures/block_erc20_vip180_contracts.json"
-                6L -> "/fixtures/block_erc721_vip181_contracts.json"
-                16L -> "/fixtures/block_master_event_update.json"
+                5L -> "/fixtures/block_5_erc20_vip180_contracts.json"
+                6L -> "/fixtures/block_6_erc721_vip181_contracts.json"
+                16L -> "/fixtures/block_16_master_event_update.json"
                 else -> ""
             }
         return ContractIndexerTest::class.java.getResource(jsonFile)!!.readText()
