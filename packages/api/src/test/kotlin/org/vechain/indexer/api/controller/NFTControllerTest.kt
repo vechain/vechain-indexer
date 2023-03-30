@@ -24,9 +24,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
     @Test
     fun `valid address should return OKAY`() {
-        mockMvc.get("${baseEndpoint}/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
-            .andExpect { status { isInternalServerError() } }
+        val res = mockMvc.get("${baseEndpoint}/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            .andExpect { status { isOk() } }
             .andReturn()
+
+        val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+
+        assert(nfts.size == 2)
     }
 
 }
