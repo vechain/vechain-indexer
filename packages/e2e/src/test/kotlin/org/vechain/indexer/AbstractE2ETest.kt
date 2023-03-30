@@ -104,6 +104,7 @@ abstract class AbstractE2ETest {
          * Application
          */
         APPLICATION_COMPOSE_CONTAINER = DockerComposeContainer(File("${rootPath}/docker-compose.yaml"))
+            .withEnv("ENV_FILE_NAME", ".env.example")
             .withExposedService("vechain-indexer-api", 8080)
             .waitingFor(
                 "vechain-indexer-api", LogMessageWaitStrategy()
