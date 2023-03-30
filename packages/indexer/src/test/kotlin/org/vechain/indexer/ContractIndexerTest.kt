@@ -32,7 +32,7 @@ internal class ContractIndexerTest {
     // Block #5 -> block_erc20_vip180_contracts.json
     // This block contains 2 ERC20/VIP180 contract deployment transactions
     @Test
-    fun processBlock_andExtract_erc20_vip180_contractTypes() {
+    fun `Process block - extract erc20 vip180 contract types`() {
         // Known fixture
         val blockNumber = 5L
         val block5: Block = buildBlockFixture(blockNumber)
@@ -66,7 +66,7 @@ internal class ContractIndexerTest {
     // Block #6 -> block_erc721_vip181_contracts.json
     // This block contains 1 ERC20/VIP180 contract deployment transaction
     @Test
-    fun processBlock_andExtract_erc721_vip181_contractTypes() {
+    fun `Process block - extract erc721 vip181 contract types`() {
         // Known fixture
         val blockNumber = 6L
         val block6: Block = buildBlockFixture(blockNumber)
@@ -101,7 +101,7 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun processBlock_savesContract_withCorrectData() {
+    fun `Process block - save contract with correct data`() {
         // Known fixture
         val blockNumber = 6L
         val block6: Block = buildBlockFixture(blockNumber)
@@ -138,7 +138,7 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun processBlock_updatesContractMaster_whenNoContractData() {
+    fun `Process block - update contract master when no contract data`() {
         // Known fixture
         val blockNumber = 16L
         val block16: Block = buildBlockFixture(blockNumber)
