@@ -1,19 +1,23 @@
 package org.vechain.indexer.utils
 
-import org.springframework.stereotype.Component
 import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
 import org.vechain.indexer.constants.TRANSFER_EVENT_SIGNATURE
 import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.specifications.ContractSpecification
 
-@Component
-class ContractUtils {
+object ContractUtils {
     fun isMasterEvent(event: TxEvent): Boolean {
         return event.topics.isNotEmpty() && event.address != null && event.topics[0] == MASTER_EVENT_SIGNATURE
     }
 
+    /**
+     * NFTs length of topics is 4, FUNGIBLE is 3
+     */
     fun findTransferEvents(events: List<TxEvent>): List<TxEvent> {
-        return events.filter { it.topics.size == 3 && it.topics[0] == TRANSFER_EVENT_SIGNATURE }
+        return events.filter {
+            (it.topics.size == 3 || it.topics.size == 4) &&
+                    it.topics[0] == TRANSFER_EVENT_SIGNATURE
+        }
     }
 
     fun removeTopicPadding(topic: String): String {

@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.vechain.indexer.exception.InternalServerException
 import org.vechain.indexer.model.NFT
+import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.validation.Address
 
@@ -22,7 +22,7 @@ import org.vechain.indexer.validation.Address
 @Validated
 @RestController
 @RequestMapping("api/v1/nfts")
-open class NFTController {
+open class NFTController(private val nftService: NFTService) {
 
     @GetMapping("{address}")
     @Operation(summary = "Get all NFTs owned by an address")
@@ -41,7 +41,7 @@ open class NFTController {
     )
     open fun getOwnedNFTs(
         @Address @PathVariable(required = true) address: String
-    ): Array<NFT> {
-        throw InternalServerException("This endpoint is not yet implemented")
+    ): List<NFT> {
+        return this.nftService.findByOwner(address)
     }
 }

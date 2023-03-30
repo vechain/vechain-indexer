@@ -16,8 +16,10 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.repos.TransactionRepo
 import java.util.*
 
@@ -31,6 +33,7 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
+    protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
 
     protected val objectMapper = ObjectMapper()
 
@@ -44,6 +47,9 @@ abstract class AbstractIntegrationTest {
     @Autowired
     lateinit var contractRepository: ContractRepo
 
+    @Autowired
+    lateinit var nftRepo: NFTRepo
+
     @BeforeAll
     fun setup() {
 
@@ -51,10 +57,12 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<Contract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)
-        
+        val nfts: List<NFT> =
+            loadDataFromResources("/nfts.json", NFT_TYPE)
+
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
-
+        nftRepo.saveAll(nfts)
     }
 
 
