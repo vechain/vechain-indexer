@@ -17,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.repos.TransactionRepo
