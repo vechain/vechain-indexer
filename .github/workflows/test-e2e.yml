@@ -1,12 +1,13 @@
 name: Test E2E
 
+# on push to all branches
 on:
   push:
     branches:
-      - *
+      - '*'
   pull_request:
     branches:
-      - *
+      - '*'
 
 jobs:
   test-e2e:
