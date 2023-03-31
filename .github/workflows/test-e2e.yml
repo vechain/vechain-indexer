@@ -9,9 +9,12 @@ on:
     branches:
       - '*'
 
+env:
+  ENV_FILE_NAME: .env.example
+
 jobs:
   test-e2e:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: ENV_FILE_NAME=.env.example; make start
+      - run: make start
