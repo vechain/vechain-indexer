@@ -34,21 +34,7 @@ abstract class AbstractE2ETest {
     }
 
     fun getApiURL(): String {
-        val apiOptional = APPLICATION_COMPOSE_CONTAINER.getContainerByServiceName("vechain-indexer-api")
-
-        if (!apiOptional.isPresent) {
-            throw RuntimeException("Could not find API container")
-        }
-
-        val apiContainer = apiOptional.get()
-
-        if (!apiContainer.isHealthy || !apiContainer.isRunning) {
-            throw RuntimeException("API container is not healthy")
-        }
-
-        val port = apiContainer.getMappedPort(8080)
-
-        return "http://${apiContainer.host}:${port}"
+        return "http://localhost:8080"
     }
 
     init {
@@ -64,12 +50,11 @@ abstract class AbstractE2ETest {
             .withStartupTimeout(Duration.ofSeconds(180L))
 
         MONGO_COMPOSE_CONTAINER = DockerComposeContainer(File("$rootPath/database/docker-compose-mongo.yaml"))
-            .withExposedService("mongo-node1", 27017)
-            .withExposedService("mongo-node2", 27018)
-            .withExposedService("mongo-node3", 27019)
             .waitingFor("mongo-node1", mongoWaitStrategy)
             .waitingFor("mongo-node2", mongoWaitStrategy)
             .waitingFor("mongo-node3", mongoWaitStrategy)
+            .withLocalCompose(true)
+            .withBuild(true)
 
         MONGO_SETUP_CONTAINER =
             DockerComposeContainer(File("${rootPath}/database/docker-compose-mongo-setup.yaml"))
@@ -80,6 +65,7 @@ abstract class AbstractE2ETest {
                         .withStartupTimeout(Duration.ofSeconds(180L))
                 )
                 .withLocalCompose(true)
+                .withBuild(true)
 
         /**
          * Thor Infra
@@ -105,7 +91,6 @@ abstract class AbstractE2ETest {
          */
         APPLICATION_COMPOSE_CONTAINER = DockerComposeContainer(File("${rootPath}/docker-compose.yaml"))
             .withEnv("ENV_FILE_NAME", ".env.example")
-            .withExposedService("vechain-indexer-api", 8080)
             .waitingFor(
                 "vechain-indexer-api", LogMessageWaitStrategy()
                     .withRegEx(".*(Started VeWorldIndexerApiApplicationKt in).*")
@@ -120,7 +105,7 @@ abstract class AbstractE2ETest {
             )
             .withBuild(true)
             .withLocalCompose(true)
-            .withOptions("--compatibility --env-file ${rootPath}/.env.example")
+            .withOptions("--compatibility")
 
         try {
             MONGO_COMPOSE_CONTAINER.start()
@@ -129,7 +114,11 @@ abstract class AbstractE2ETest {
             APPLICATION_COMPOSE_CONTAINER.start()
 
         } catch (e: Exception) {
-            e.printStackTrace()
+            APPLICATION_COMPOSE_CONTAINER.stop()
+            MONGO_COMPOSE_CONTAINER.stop()
+            MONGO_SETUP_CONTAINER.stop()
+            THOR_COMPOSE.stop()
+            println(e)
             throw e
         }
     }

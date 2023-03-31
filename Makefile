@@ -3,6 +3,14 @@ help:
 
 test: #@ Run all the tests.
 	./gradlew cleanTest test
+test-e2e: #@ Run all the end-to-end tests.
+	./gradlew clean :package:e2e:test
+test-api: #@ Run all the API tests.
+	./gradlew clean :package:api:test
+test-indexer: #@ Run all the indexer tests.
+	./gradlew clean :package:indexer:test
+test-common: #@ Run all the common tests.
+	./gradlew clean :package:common:test
 
 # Application Build
 build-gradle: #@ Build the applications with Gradle.
