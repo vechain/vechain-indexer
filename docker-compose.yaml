@@ -7,9 +7,8 @@ services:
       context: .
       args:
         VEWORLD_PACKAGE: indexer
-    container_name: vechain-indexer
     restart: "no"
-    env_file: .env.local
+    env_file: ${ENV_FILE_NAME:-.env.local}
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s
@@ -26,9 +25,8 @@ services:
       context: .
       args:
         VEWORLD_PACKAGE: api
-    container_name: vechain-indexer-api
     restart: "no"
-    env_file: .env.local
+    env_file: ${ENV_FILE_NAME:-.env.local}
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s

@@ -37,4 +37,6 @@ build.bat
 
 database/
 
+packages/e2e
+
 

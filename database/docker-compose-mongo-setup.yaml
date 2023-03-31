@@ -2,7 +2,6 @@ version: "3.5"
 
 services:
   mongo-setup:
-    container_name: mongo-setup
     image: mongo:6
     volumes:
       - ./scripts:/scripts
@@ -10,7 +9,7 @@ services:
       - GENESIS_BLOCK_ID=0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6
     restart: "no"
     entrypoint:
-      ["bash", "/scripts/setup.sh", "mongo-node1", "mongo-node2", "mongo-node3"]
+      [ "bash", "/scripts/setup.sh", "mongo-node1", "mongo-node2", "mongo-node3" ]
     networks:
       - vechain-database
 

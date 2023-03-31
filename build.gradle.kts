@@ -98,6 +98,13 @@ allprojects {
         })
     }
 
+//    configurations {
+//        all {
+//            exclude("junit", "junit")
+//            exclude("org.junit.vintage", "junit-vintage-engine")
+//        }
+//    }
+
     dependencies {
 
         // Common dependencies
