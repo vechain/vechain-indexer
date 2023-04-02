@@ -49,7 +49,8 @@ allprojects {
                 "build",
                 "packages/api/build",
                 "packages/indexer/build",
-                "packages/common/build"
+                "packages/common/build",
+                "packages/e2e/build",
             )
         }
     }
@@ -97,13 +98,6 @@ allprojects {
             }
         })
     }
-
-//    configurations {
-//        all {
-//            exclude("junit", "junit")
-//            exclude("org.junit.vintage", "junit-vintage-engine")
-//        }
-//    }
 
     dependencies {
 

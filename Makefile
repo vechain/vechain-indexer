@@ -26,7 +26,7 @@ start: #@ Remove, clean and start all the infrastructure and the application.
 clean: #@ Clean all the infrastructure and the application data.
 	make app-down infra-clean
 down: #@ Stop all the infrastructure and the application.
-	make infra-down app-down
+	make  app-down infra-down
 
 # Application
 app-up: #@ Start the application.

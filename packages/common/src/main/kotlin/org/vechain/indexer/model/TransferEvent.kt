@@ -7,19 +7,19 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "transfer_events")
 data class TransferEvent(
     @Id
-    val id: String,
-    val blockId: String,
+    val id: String? = null,
+    val blockId: String? = null,
     @Indexed
-    val blockNumber: Long,
+    val blockNumber: Long? = null,
     val txId: String?,
-    val clauseIndex: Int,
+    val clauseIndex: Int? = null,
     @Indexed
-    val from: String,
+    val from: String? = null,
     @Indexed
-    val to: String,
-    val value: String?,
+    val to: String? = null,
+    val value: String? = null,
     @Indexed
-    val tokenAddress: String?,
+    val tokenAddress: String? = null,
     val topics: List<String> = emptyList(),
 ) {
     val isNFTTransfer: Boolean

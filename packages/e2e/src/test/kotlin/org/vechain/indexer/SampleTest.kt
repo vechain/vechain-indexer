@@ -5,10 +5,10 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 
-class SampleTest : AbstractE2ETest() {
+class SampleTest {
 
     val restTemplate = RestTemplate()
-    val apiUrl = getApiURL()
+    val apiUrl = "http://localhost:8080"
 
     @Test
     fun `infrastructure and apps should start`() {
