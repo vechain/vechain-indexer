@@ -7,24 +7,24 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "blocks")
 data class Block(
     @Id
-    val id: String,
+    val id: String? = null,
     @Indexed(unique = true)
-    val number: Long,
-    val size: Long,
-    val parentID: String,
-    val timestamp: Long,
-    val gasLimit: Long,
-    val beneficiary: String,
-    val gasUsed: Long,
-    val totalScore: Long,
-    val txsRoot: String,
-    val txsFeatures: Int,
-    val stateRoot: String,
-    val receiptsRoot: String,
-    val com: Boolean,
+    val number: Long? = null,
+    val size: Long? = null,
+    val parentID: String? = null,
+    val timestamp: Long? = null,
+    val gasLimit: Long? = null,
+    val beneficiary: String? = null,
+    val gasUsed: Long? = null,
+    val totalScore: Long? = null,
+    val txsRoot: String? = null,
+    val txsFeatures: Int? = null,
+    val stateRoot: String? = null,
+    val receiptsRoot: String? = null,
+    val com: Boolean? = null,
     @Indexed
-    val signer: String,
-    val isTrunk: Boolean,
-    val isFinalized: Boolean,
+    val signer: String? = null,
+    val isTrunk: Boolean? = null,
+    val isFinalized: Boolean? = null,
     val transactions: List<WrappedTransaction> = emptyList()
 )

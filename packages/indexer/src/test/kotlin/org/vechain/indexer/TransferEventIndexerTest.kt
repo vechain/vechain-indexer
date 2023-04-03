@@ -103,7 +103,6 @@ class TransferEventIndexerTest {
             that(transferEvent.blockId).isEqualTo("0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e")
             that(transferEvent.blockNumber).isEqualTo(blockNumber)
             that(transferEvent.txId).isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
-            that(transferEvent.clauseIndex).isEqualTo(0)
             that(transferEvent.from).isEqualTo("0x0000000000000000000000000000000000000000")
             that(transferEvent.to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
             that(transferEvent.value).isEqualTo("0x")
@@ -122,7 +121,6 @@ class TransferEventIndexerTest {
         blockId = "blockId",
         blockNumber = blockNumber,
         txId = "txId",
-        clauseIndex = 1,
         from = "from",
         to = "to",
         value = "value",

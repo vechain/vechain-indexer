@@ -8,10 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
@@ -39,9 +36,21 @@ open class NFTController(private val nftService: NFTService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "contractAddresses",
+        schema = Schema(type = "list of strings"),
+        description = "The contract addresses to include",
+        required = false,
+        example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
+    )
     open fun getOwnedNFTs(
-        @Address @PathVariable(required = true) address: String
+        @Address @PathVariable(required = true) address: String,
+        @RequestParam(required = false) contractAddresses: List<String>?
     ): List<NFT> {
-        return this.nftService.findByOwner(address)
+        if (contractAddresses.isNullOrEmpty())
+            return nftService.findByOwner(address)
+
+        return nftService.findByOwnerAndContractAddresses(address, contractAddresses)
     }
 }

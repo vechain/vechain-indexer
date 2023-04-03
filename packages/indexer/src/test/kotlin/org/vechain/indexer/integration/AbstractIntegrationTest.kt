@@ -1,4 +1,4 @@
-package org.vechain.indexer
+package org.vechain.indexer.integration
 
 import org.junit.runner.RunWith
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -9,6 +9,7 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
 import java.time.Duration
@@ -22,7 +23,10 @@ import java.util.*
 abstract class AbstractIntegrationTest {
 
     companion object {
-        val mongoContainer = GenericContainer("mongo:6")
+
+        val thorNetwork = Network.newNetwork()
+
+        val mongoContainer: GenericContainer<*> = GenericContainer("mongo:6")
             .withExposedPorts(27017)
             .withReuse(true)
             .waitingFor(
@@ -32,10 +36,14 @@ abstract class AbstractIntegrationTest {
                     .withStartupTimeout(Duration.ofSeconds(180L))
             )
 
-        val thorContainer = GenericContainer("vechain/thor:v2.0.0")
+        val thorContainer: GenericContainer<*> = GenericContainer("vechain/thor:v2.0.0")
             .withCommand("solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'")
             .withExposedPorts(8669)
             .withReuse(true)
+            .withNetwork(thorNetwork)
+            .withCreateContainerCmdModifier { cmd ->
+                cmd.withHostName("thor-node")
+            }
             .waitingFor(
                 (LogMessageWaitStrategy())
                     .withRegEx(".*(new block packed).*")
@@ -43,10 +51,17 @@ abstract class AbstractIntegrationTest {
                     .withStartupTimeout(Duration.ofSeconds(180L))
             )
 
-        val transactionScript = GenericContainer(
-            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:b58b67122686a5dbf0baad7c45d3cb848e9361c9")
+        val transactionScript: GenericContainer<*> = GenericContainer(
+            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:6b981c269661c91123c4ad6e5b2c94ad4f976d20")
         )
-            //TODO: Create a wait strategy if we're waiting for transactions to be submitted
+            .withNetwork(thorNetwork)
+            .withEnv("NODE_URL", "http://thor-node:8669")
+            .waitingFor(
+                LogMessageWaitStrategy()
+                    .withRegEx(".*(Thor TX Script successfully executed).*")
+                    .withTimes(1)
+                    .withStartupTimeout(Duration.ofSeconds(180L))
+            )
             .withReuse(true)
     }
 
@@ -54,12 +69,10 @@ abstract class AbstractIntegrationTest {
         override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
             mongoContainer.start()
             thorContainer.start()
+            transactionScript.start()
 
             val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
-            val thorUrl = "http://${thorContainer.host}:${thorContainer.getMappedPort(8669)}"
-
-            transactionScript.withEnv("NODE_URL", thorUrl)
-            transactionScript.start()
+            val thorUrl = "http://localhost:${thorContainer.getMappedPort(8669)}"
 
             TestPropertyValues.of(
                 "spring.data.mongodb.uri=${mongoUri}",

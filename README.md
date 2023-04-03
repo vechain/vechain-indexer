@@ -54,3 +54,29 @@ make db-all
 ```bash
 make thor-all
 ```
+
+## Testing
+
+- Run all the tests:
+
+```bash
+make test
+```
+
+### Package Testing
+
+- There are 4 packages that can be tested (`api`, `common`, `e2e`, `indexer`)
+- This will run all tests in a package (unit, integration and E2E)
+- Run (example for `api`):
+
+```bash
+make test-api
+```
+
+### E2E
+
+- Running E2E tests will spin up all the docker infrastructure before the test and tears it down after completion.
+  This is useful for testing the entire system, but it is slow. If you need to debug these tests, it is recommended to
+  spin up
+  the network manually using `make clean start` and remove the tasks `preE2e` and `postE2e` tasks
+  in `./packages/e2e/build.gradle.kts` ([here](./packages/e2e/build.gradle.kts))
