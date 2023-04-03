@@ -85,4 +85,32 @@ object BlockUtils {
             }
         }
     }
+
+    fun getAllTransactions(block: Block): List<WrappedTransaction> {
+        return block.transactions.map { tx ->
+            WrappedTransaction(
+                id = tx.id,
+                blockId = block.id,
+                blockNumber = block.number,
+                size = tx.size,
+                chainTag = tx.chainTag,
+                blockRef = tx.blockRef,
+                expiration = tx.expiration,
+                clauses = tx.clauses,
+                gasPriceCoef = tx.gasPriceCoef,
+                gas = tx.gas,
+                dependsOn = tx.dependsOn,
+                nonce = tx.nonce,
+                gasUsed = tx.gasUsed,
+                gasPayer = tx.gasPayer,
+                paid = tx.paid,
+                reward = tx.reward,
+                reverted = tx.reverted,
+                origin = tx.origin,
+                delegator = tx.delegator,
+                outputs = tx.outputs
+            )
+        }
+
+    }
 }
