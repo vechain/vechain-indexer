@@ -5,6 +5,8 @@ import org.vechain.indexer.model.Block
 
 object BlockFixtures {
 
+    private val gson = Gson()
+
     val BLOCK_3_NO_CLAUSES = buildBlockFixture(3L)
     val BLOCK_4_SINGLE_CLAUSE = buildBlockFixture(4L)
     val BLOCK_5_VIP180_CONTRACTS = buildBlockFixture(5L)
@@ -13,7 +15,7 @@ object BlockFixtures {
     val BLOCK_16_MASTER_EVENT_UPDATE = buildBlockFixture(16L)
 
     private fun buildBlockFixture(blockNumber: Long): Block {
-        return Gson().fromJson(
+        return gson.fromJson(
             BlockFixtures::class.java.getResource("/block_${blockNumber}.json")!!.readText(),
             Block::class.java
         )

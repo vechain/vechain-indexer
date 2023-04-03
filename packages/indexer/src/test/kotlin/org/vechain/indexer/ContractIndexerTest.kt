@@ -58,10 +58,10 @@ internal class ContractIndexerTest {
         val contracts = contractsSlot.captured
         expect {
             that(contracts).hasSize(2)
-            that(contracts).map(Contract::isErc20).all { isEqualTo(true) }
-            that(contracts).map(Contract::isVip180).all { isEqualTo(true) }
-            that(contracts).map(Contract::isErc721).all { isEqualTo(false) }
-            that(contracts).map(Contract::isVip181).all { isEqualTo(false) }
+            that(contracts).map(Contract::isErc20).all { isTrue() }
+            that(contracts).map(Contract::isVip180).all { isTrue() }
+            that(contracts).map(Contract::isErc721).all { isFalse() }
+            that(contracts).map(Contract::isVip181).all { isFalse() }
         }
     }
 
