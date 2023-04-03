@@ -15,7 +15,7 @@ interface TransactionRepo : CrudRepository<WrappedTransaction, String> {
     fun findAllByOrigin(origin: String): List<WrappedTransaction>
 
 
-    @Query("{gasPayer: ?0, origin: { \$ne: ?0}}")
+    @Query("{\$and: [{origin: {\$ne: ?0}}, {gasPayer: ?0}]}")
     fun findAllDelegated(gasPayer: String): List<WrappedTransaction>
 
     @Query("{\$or: [{origin: ?0}, {gasPayer: ?0}] }")

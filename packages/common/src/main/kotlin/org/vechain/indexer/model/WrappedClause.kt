@@ -20,10 +20,19 @@ data class WrappedClause(
     val value: String? = null,
     val data: String? = null,
     val reverted: Boolean? = null,
-    val output: TxOutputs?,
+    val output: TxOutputs? = null,
 ) {
     constructor(block: Block, tx: WrappedTransaction, clause: Clause, index: Int) : this(
-        "${tx.id}-$index", block.id, block.number, tx.id, index, tx.origin,
-        clause.to, clause.value, clause.data, tx.reverted, tx.outputs.getOrNull(index)
+        id = "${tx.id}-$index",
+        blockId = block.id,
+        blockNumber = block.number,
+        txId = tx.id,
+        index = index,
+        origin = tx.origin,
+        to = clause.to,
+        value = clause.value,
+        data = clause.data,
+        reverted = tx.reverted,
+        output = tx.outputs.getOrNull(index)
     )
 }

@@ -1,5 +1,5 @@
 dependencies {
-
+    implementation(project(":packages:common"))
 }
 
 task<Exec>("preE2e") {
