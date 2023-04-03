@@ -11,16 +11,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
-import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.TransferEvent
-import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
-import strikt.assertions.isLessThan
 
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {
@@ -31,42 +28,18 @@ class TransferEventIndexerTest {
     @MockK
     lateinit var transferEventRepo: TransferEventRepo
 
-    @MockK
-    lateinit var nftRepo: NFTRepo
-
     @InjectMockKs
     lateinit var transferEventIndexer: TransferEventIndexer
 
     @Test
     fun `Starting block is transfer block - when transfer block is lower`() {
         val transferEventsStartingBlock = 9L
-        val nftsStartingBlock = 10L
 
         every { transferEventRepo.getMaxBlockNumber() } returns listOf(buildTransferEvent(transferEventsStartingBlock))
-        every { nftRepo.getMaxBlockNumber() } returns listOf(buildNft(nftsStartingBlock))
-
 
         val indexerStartingBlock = transferEventIndexer.getStartingBlock()
 
-
-        expectThat(transferEventsStartingBlock).isLessThan(nftsStartingBlock)
         expectThat(indexerStartingBlock).isEqualTo(transferEventsStartingBlock)
-    }
-
-    @Test
-    fun `Starting block is nft block - when nft block is lower`() {
-        val transferEventsStartingBlock = 10L
-        val nftsStartingBlock = 9L
-
-        every { transferEventRepo.getMaxBlockNumber() } returns listOf(buildTransferEvent(transferEventsStartingBlock))
-        every { nftRepo.getMaxBlockNumber() } returns listOf(buildNft(nftsStartingBlock))
-
-
-        val indexerStartingBlock = transferEventIndexer.getStartingBlock()
-
-
-        expectThat(nftsStartingBlock).isLessThan(transferEventsStartingBlock)
-        expectThat(indexerStartingBlock).isEqualTo(nftsStartingBlock)
     }
 
     @Test
@@ -74,9 +47,7 @@ class TransferEventIndexerTest {
         val blockNumber = 3L
         every { thorService.getBlock(blockNumber) } returns BLOCK_3_NO_CLAUSES
 
-
         transferEventIndexer.processBlock(blockNumber)
-
 
         verify { transferEventRepo wasNot Called }
     }
@@ -126,14 +97,5 @@ class TransferEventIndexerTest {
         value = "value",
         tokenAddress = "address",
         topics = emptyList(),
-    )
-
-    private fun buildNft(blockNumber: Long) = NFT(
-        id = "id",
-        tokenId = null,
-        contractAddress = "address",
-        owner = "owner",
-        txId = "txId",
-        blockNumber = blockNumber
     )
 }

@@ -2,7 +2,6 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
@@ -11,8 +10,7 @@ import org.vechain.indexer.utils.BlockUtils
 @Component
 open class TransferEventIndexer(
     private val thorService: ThorService,
-    private val transferEventRepo: TransferEventRepo,
-    private val nftRepo: NFTRepo
+    private val transferEventRepo: TransferEventRepo
 ) : Indexer() {
 
     override fun processBlock(blockNumber: Long) {
@@ -24,11 +22,7 @@ open class TransferEventIndexer(
     }
 
     override fun getStartingBlock(): Long {
-
-        val lastTransfersBlock = transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
-        val lastNFTBlock = nftRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
-
-        return minOf(lastTransfersBlock, lastNFTBlock)
+        return transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
 }
