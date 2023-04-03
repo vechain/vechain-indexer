@@ -2,6 +2,9 @@ package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.WrappedTransaction
 
 class SimpleAPICallsTest {
     @Test
@@ -18,12 +21,7 @@ class SimpleAPICallsTest {
         assert(transactions.size == 8)
 
         transactions.forEach { transaction ->
-            assert(transaction.id != null)
-            assert(transaction.origin != null)
-            assert(transaction.nonce != null)
-            assert(transaction.gasUsed != null)
-            assert(transaction.clauses.isNotEmpty())
-            assert(transaction.outputs.isNotEmpty())
+            assertValidTransaction(transaction)
         }
     }
 
@@ -34,12 +32,7 @@ class SimpleAPICallsTest {
         assert(transactions.size == 1)
 
         transactions.forEach { transaction ->
-            assert(transaction.id != null)
-            assert(transaction.origin != null)
-            assert(transaction.nonce != null)
-            assert(transaction.gasUsed != null)
-            assert(transaction.clauses.isNotEmpty())
-            assert(transaction.outputs.isNotEmpty())
+            assertValidTransaction(transaction)
         }
     }
 
@@ -53,12 +46,7 @@ class SimpleAPICallsTest {
         assert(transactions.size == 9)
 
         transactions.forEach { transaction ->
-            assert(transaction.id != null)
-            assert(transaction.origin != null)
-            assert(transaction.nonce != null)
-            assert(transaction.gasUsed != null)
-            assert(transaction.clauses.isNotEmpty())
-            assert(transaction.outputs.isNotEmpty())
+            assertValidTransaction(transaction)
         }
     }
 
@@ -69,11 +57,7 @@ class SimpleAPICallsTest {
         assert(contracts.size == 8)
 
         contracts.forEach { contract ->
-            assert(contract.txId != null)
-            assert(contract.blockId != null)
-            assert(contract.blockNumber != null)
-            assert(contract.creator != null)
-            assert(contract.rawData != null)
+            assertValidContract(contract)
         }
     }
 
@@ -84,12 +68,7 @@ class SimpleAPICallsTest {
         assert(nfts.size == 2)
 
         nfts.forEach { nft ->
-            assert(nft.tokenId != null)
-            assert(nft.contractAddress != null)
-            assert(nft.blockNumber != null)
-            assert(nft.txId != null)
-            assert(nft.owner != null)
-            assert(nft.id != null)
+            assertValidNft(nft)
         }
     }
 
@@ -109,6 +88,32 @@ class SimpleAPICallsTest {
         )
 
         assert(nftsWithQuery.size == 1)
+    }
+
+    fun assertValidContract(contract: Contract) {
+        assert(contract.txId != null)
+        assert(contract.blockId != null)
+        assert(contract.blockNumber != null)
+        assert(contract.creator != null)
+        assert(contract.rawData != null)
+    }
+
+    fun assertValidTransaction(transaction: WrappedTransaction) {
+        assert(transaction.id != null)
+        assert(transaction.origin != null)
+        assert(transaction.nonce != null)
+        assert(transaction.gasUsed != null)
+        assert(transaction.clauses.isNotEmpty())
+        assert(transaction.outputs.isNotEmpty())
+    }
+
+    fun assertValidNft(nft: NFT) {
+        assert(nft.tokenId != null)
+        assert(nft.contractAddress != null)
+        assert(nft.blockNumber != null)
+        assert(nft.txId != null)
+        assert(nft.owner != null)
+        assert(nft.id != null)
     }
 
 }
