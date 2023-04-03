@@ -10,6 +10,7 @@ task<Exec>("preE2e") {
 
 task<Exec>("postE2e") {
     workingDir(rootDir)
+    //Not cleaning data in case we need to spin up the containers again and debug
     commandLine("make", "down")
 }
 
