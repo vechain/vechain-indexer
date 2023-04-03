@@ -9,6 +9,7 @@ task<Exec>("preE2e") {
 }
 
 task<Exec>("postE2e") {
+    environment("ENV_FILE_NAME", ".env.example")
     workingDir(rootDir)
     //Not cleaning data in case we need to spin up the containers again and debug
     commandLine("make", "down")

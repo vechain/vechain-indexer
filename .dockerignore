@@ -39,4 +39,6 @@ database/
 
 packages/e2e
 
+packages/**/src/test/**
+
 
