@@ -13,6 +13,7 @@ import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.OptionalAddresses
 
 
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -46,7 +47,7 @@ open class NFTController(private val nftService: NFTService) {
     )
     open fun getOwnedNFTs(
         @Address @PathVariable(required = true) address: String,
-        @RequestParam(required = false) contractAddresses: List<String>?
+        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?
     ): List<NFT> {
         if (contractAddresses.isNullOrEmpty())
             return nftService.findByOwner(address)
