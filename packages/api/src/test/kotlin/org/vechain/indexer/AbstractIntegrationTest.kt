@@ -25,7 +25,10 @@ import java.util.*
 
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = [VeWorldIndexerApiApplication::class]
+)
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

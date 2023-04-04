@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
-import org.vechain.indexer.validation.Address
 
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
@@ -44,7 +43,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "false"
     )
     open fun getTransactionsByOrigin(
-        @Address @PathVariable(required = true) address: String,
+        @PathVariable(required = true) address: String,
         @RequestParam(required = false) includeDelegated: Boolean?
     ): List<WrappedTransaction> {
         if (includeDelegated == true)
@@ -69,7 +68,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getDelegatedTransactions(
-        @Address @PathVariable(required = true) address: String
+        @PathVariable(required = true) address: String
     ): List<WrappedTransaction> {
         return transactionService.findAllDelegated(address)
     }

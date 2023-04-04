@@ -6,6 +6,7 @@ plugins {
     id("maven-publish")
     kotlin("jvm") version "1.7.22"
     kotlin("plugin.spring") version "1.7.22"
+    id("jacoco-report-aggregation")
     jacoco
 }
 
@@ -20,6 +21,7 @@ allprojects {
         plugin("io.spring.dependency-management")
         plugin("maven-publish")
         plugin("jacoco")
+        plugin("jacoco-report-aggregation")
     }
 
     group = "org.vechain"
@@ -43,6 +45,10 @@ allprojects {
         }
     }
 
+    tasks.jacocoTestReport {
+        dependsOn(tasks.test)
+    }
+
     tasks.clean {
         doFirst {
             delete(
@@ -58,6 +64,7 @@ allprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
         testLogging.showStandardStreams = true
+        finalizedBy(tasks.jacocoTestReport)
 
         val failedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
         val skippedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
@@ -123,4 +130,10 @@ allprojects {
         testImplementation("io.strikt:strikt-core:0.34.1")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     }
+}
+
+dependencies {
+    testImplementation(project(":packages:common"))
+    testImplementation(project(":packages:indexer"))
+    testImplementation(project(":packages:api"))
 }
