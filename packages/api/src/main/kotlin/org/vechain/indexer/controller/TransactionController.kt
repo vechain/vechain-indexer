@@ -9,17 +9,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.service.TransactionService
-import org.vechain.indexer.utils.API_PATH
 import org.vechain.indexer.utils.AddressUtil
-import org.vechain.indexer.utils.TRANSACTIONS_PATH
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController
-@RequestMapping(API_PATH + TRANSACTIONS_PATH)
+@RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
     @GetMapping("{address}")

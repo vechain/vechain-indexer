@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
@@ -20,7 +21,7 @@ import org.vechain.indexer.validation.Address
 @Tag(name = "Contract", description = "Query on chain contracts")
 @Validated
 @RestController
-@RequestMapping(API_PATH + CONTRACTS_PATH)
+@RequestMapping(CONTRACTS_PATH)
 open class ContractController(private val contractService: ContractService) {
 
     @GetMapping("{address}")

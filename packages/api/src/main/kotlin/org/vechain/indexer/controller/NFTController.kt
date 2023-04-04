@@ -9,11 +9,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
-import org.vechain.indexer.utils.API_PATH
 import org.vechain.indexer.utils.AddressUtil
-import org.vechain.indexer.utils.NFTS_PATH
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.OptionalAddresses
 
@@ -21,7 +20,7 @@ import org.vechain.indexer.validation.OptionalAddresses
 @Tag(name = "NFT", description = "Query on chain NFTs")
 @Validated
 @RestController
-@RequestMapping(API_PATH + NFTS_PATH)
+@RequestMapping(NFTS_PATH)
 open class NFTController(private val nftService: NFTService) {
 
     @GetMapping("{address}")
