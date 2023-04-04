@@ -26,6 +26,7 @@ services:
       args:
         VEWORLD_PACKAGE: api
     restart: "no"
+    hostname: vechain-indexer-api
     env_file: ${ENV_FILE_NAME:-.env.local}
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"

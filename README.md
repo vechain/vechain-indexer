@@ -83,13 +83,9 @@ make test-api
 
 ### Load Testing
 
-- Prerequisites:
-    - [node](https://nodejs.org/en)
-    - [k6](https://k6.io/docs/)
-    - [yarn](https://classic.yarnpkg.com/en/docs/getting-started)
-
+- For a successful run, ensure `./docker-compose.yml` is running
 - To run the load tests:
 
 ```bash
-make load-test-nfts
+make load-test
 ```
