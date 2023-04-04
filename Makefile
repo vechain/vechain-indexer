@@ -12,8 +12,10 @@ test-indexer: #@ Run all the indexer tests.
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 
-load-test-nfts: #@ Load test NFTs.
-	(cd load-testing; yarn install; yarn webpack; k6 run dist/nft-200-test.js)
+# Load Testing
+LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
+load-test: #@ Run the load tests.
+	$(LOAD_TEST_COMMAND) up --build
 
 # Application Build
 build-gradle: #@ Build the applications with Gradle.

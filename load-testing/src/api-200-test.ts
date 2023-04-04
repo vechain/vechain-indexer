@@ -1,8 +1,9 @@
 import { check } from "k6";
 import { Options } from "k6/options";
 import http from "k6/http";
-import nftOwners from "./data/nft-owners.json";
+import soloAccounts from "./data/solo-accounts.json";
 import { randomElement } from "./utils/array-utils";
+import env  from "./env";
 
 export let options: Options = {
   stages: [
@@ -15,10 +16,11 @@ export let options: Options = {
   ]
 };
 
-export default () => {
-  const addr = randomElement(nftOwners);
+export default async () => {
+  const addr = randomElement(soloAccounts);
 
-  const res = http.get(`http://localhost:8080/api/v1/nfts/${addr}`);
+  const res = http.get(`${env.BASE_URL}/api/v1/${env.API_RESOURCE}/${addr}`);
+
   check(res, {
     "status is 200": () => res.status === 200,
   });

@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+  k6-app-nfts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: run /app/dist/api-200-test.js
+    environment:
+      - API_URL=http://vechain-indexer-api:8080
+      - API_RESOURCE=nfts
+    networks:
+      - vechain
+
+  k6-app-transactions:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: run /app/dist/api-200-test.js
+    environment:
+      - API_URL=http://vechain-indexer-api:8080
+      - API_RESOURCE=transactions
+    networks:
+      - vechain
+
+networks:
+  vechain:
+    external: true
+    name: vechain
