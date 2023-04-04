@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.validation.Address
 
 @Tag(name = "Contract", description = "Query on chain contracts")
 @Validated
@@ -38,7 +39,7 @@ open class ContractController(private val contractService: ContractService) {
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getContractsByOrigin(
-        @PathVariable(required = true) address: String
+        @Address @PathVariable(required = true) address: String
     ): List<Contract> {
         return contractService.findByCreator(address)
     }

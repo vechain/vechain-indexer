@@ -4,23 +4,15 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.utils.HexUtil
-import org.vechain.indexer.validation.Validation
 
 @Service
 open class NFTService(private val nftRepo: NFTRepo) {
 
     open fun findByOwner(owner: String): List<NFT> {
-
-        Validation.checkAddress(owner)
-
         return nftRepo.findAllByOwner(HexUtil.normalise(owner)).toList()
     }
 
     open fun findByOwnerAndContractAddresses(owner: String, contractAddresses: List<String>): List<NFT> {
-
-        Validation.checkAddress(owner)
-        Validation.checkAddresses(contractAddresses)
-
         return nftRepo.findAllByOwnerAndContractAddressIn(
             HexUtil.normalise(owner),
             contractAddresses.map { HexUtil.normalise(it) }).toList()

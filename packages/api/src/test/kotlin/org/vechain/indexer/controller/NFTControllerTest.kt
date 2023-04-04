@@ -102,4 +102,10 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         assert(nfts.size == 2)
     }
+
+    @Test
+    fun `filtered addresses, which are not addresses`() {
+        mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=address1,address2")
+            .andExpect { status { isBadRequest() } }
+    }
 }

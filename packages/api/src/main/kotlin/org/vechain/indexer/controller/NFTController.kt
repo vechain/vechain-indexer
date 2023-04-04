@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.OptionalAddresses
 
 
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -44,8 +46,8 @@ open class NFTController(private val nftService: NFTService) {
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
     open fun getOwnedNFTs(
-        @PathVariable(required = true) address: String,
-        @RequestParam(required = false) contractAddresses: List<String>?
+        @Address @PathVariable(required = true) address: String,
+        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?
     ): List<NFT> {
         if (contractAddresses.isNullOrEmpty())
             return nftService.findByOwner(address)
