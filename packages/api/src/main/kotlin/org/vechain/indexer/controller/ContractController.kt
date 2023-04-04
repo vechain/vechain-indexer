@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.service.ContractService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.*
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Contract", description = "Query on chain contracts")
 @Validated
 @RestController
-@RequestMapping("api/v1/contracts")
+@RequestMapping(API_PATH + CONTRACTS_PATH)
 open class ContractController(private val contractService: ContractService) {
 
     @GetMapping("{address}")
@@ -39,7 +39,7 @@ open class ContractController(private val contractService: ContractService) {
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getContractsByOrigin(
-        @Address @PathVariable(required = true) address: String
+        @Address @PathVariable address: String
     ): List<Contract> {
         return contractService.findByCreator(address)
     }

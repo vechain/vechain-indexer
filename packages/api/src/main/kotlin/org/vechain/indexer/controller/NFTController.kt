@@ -11,7 +11,9 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.utils.API_PATH
 import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.NFTS_PATH
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.OptionalAddresses
 
@@ -19,7 +21,7 @@ import org.vechain.indexer.validation.OptionalAddresses
 @Tag(name = "NFT", description = "Query on chain NFTs")
 @Validated
 @RestController
-@RequestMapping("api/v1/nfts")
+@RequestMapping(API_PATH + NFTS_PATH)
 open class NFTController(private val nftService: NFTService) {
 
     @GetMapping("{address}")
@@ -46,7 +48,7 @@ open class NFTController(private val nftService: NFTService) {
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
     open fun getOwnedNFTs(
-        @Address @PathVariable(required = true) address: String,
+        @Address @PathVariable address: String,
         @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?
     ): List<NFT> {
         if (contractAddresses.isNullOrEmpty())
