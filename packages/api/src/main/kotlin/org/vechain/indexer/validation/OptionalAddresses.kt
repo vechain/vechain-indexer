@@ -19,10 +19,6 @@ annotation class OptionalAddresses(
 
 class OptionalAddressesValidator : ConstraintValidator<OptionalAddresses, List<String>?> {
     override fun isValid(value: List<String>?, context: ConstraintValidatorContext?): Boolean {
-        if (value == null) return true
-
-        if (value.isEmpty()) return true
-
-        return value.all { AddressUtil.isValid(it) }
+        return value.isNullOrEmpty() || value.all { AddressUtil.isValid(it) }
     }
 }

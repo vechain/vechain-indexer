@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
@@ -17,7 +18,7 @@ import org.vechain.indexer.validation.Address
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController
-@RequestMapping("api/v1/transactions")
+@RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
     @GetMapping("{address}")
@@ -44,7 +45,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "false"
     )
     open fun getTransactionsByOrigin(
-        @Address @PathVariable(required = true) address: String,
+        @Address @PathVariable address: String,
         @RequestParam(required = false) includeDelegated: Boolean?
     ): List<WrappedTransaction> {
         if (includeDelegated == true)
@@ -69,7 +70,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getDelegatedTransactions(
-        @Address @PathVariable(required = true) address: String
+        @Address @PathVariable address: String
     ): List<WrappedTransaction> {
         return transactionService.findAllDelegated(address)
     }
