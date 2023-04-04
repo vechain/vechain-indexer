@@ -83,13 +83,8 @@ make test-api
 
 ### Load Testing
 
-- Prerequisites:
-    - [node](https://nodejs.org/en)
-    - [k6](https://k6.io/docs/)
-    - [yarn](https://classic.yarnpkg.com/en/docs/getting-started)
-
 - To run the load tests:
 
 ```bash
-make load-test-nfts
+make load-test
 ```
