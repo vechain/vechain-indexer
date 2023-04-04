@@ -83,6 +83,7 @@ make test-api
 
 ### Load Testing
 
+- For a successful run, ensure `./docker-compose.yml` is running
 - To run the load tests:
 
 ```bash
