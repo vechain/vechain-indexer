@@ -12,6 +12,9 @@ test-indexer: #@ Run all the indexer tests.
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 
+load-test-nfts: #@ Load test NFTs.
+	(cd load-testing; yarn install; yarn webpack; k6 run dist/nft-200-test.js)
+
 # Application Build
 build-gradle: #@ Build the applications with Gradle.
 	./gradlew packages:api:build packages:indexer:build -x test

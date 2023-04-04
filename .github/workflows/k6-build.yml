@@ -1,0 +1,37 @@
+name: Build K6 scripts
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-k6-build
+  cancel-in-progress: true
+
+jobs:
+  k6-build:
+    name: Transpile & Bundle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node v16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        working-directory: ./load-testing
+        run: |
+          yarn --frozen-lockfile
+
+      - name: Transpile and bundle test script
+        working-directory: ./load-testing
+        run: |
+          yarn webpack

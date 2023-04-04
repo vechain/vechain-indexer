@@ -40,3 +40,7 @@ out/
 .env.local
 thor/.output/
 packages/e2e/src/test/resources/results.json
+
+
+load-testing/node_modules
+load-testing/dist

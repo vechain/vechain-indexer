@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Docker
-- Java  (v17)
+- Java (v17)
 
 ## Getting Started
 
@@ -80,3 +80,16 @@ make test-api
   spin up
   the network manually using `make clean start` and remove the tasks `preE2e` and `postE2e` tasks
   in `./packages/e2e/build.gradle.kts` ([here](./packages/e2e/build.gradle.kts))
+
+### Load Testing
+
+- Prerequisites:
+    - [node](https://nodejs.org/en)
+    - [k6](https://k6.io/docs/)
+    - [yarn](https://classic.yarnpkg.com/en/docs/getting-started)
+
+- To run the load tests:
+
+```bash
+make load-test-nfts
+```
