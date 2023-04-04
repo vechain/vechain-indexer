@@ -9,13 +9,13 @@ import org.vechain.indexer.utils.HexUtil
 open class NFTService(private val nftRepo: NFTRepo) {
 
     open fun findByOwner(owner: String): List<NFT> {
-        return nftRepo.findAllByOwner(HexUtil.normalise(owner)).toList()
+        return nftRepo.findAllByOwner(HexUtil.normalise(owner))
     }
 
     open fun findByOwnerAndContractAddresses(owner: String, contractAddresses: List<String>): List<NFT> {
         return nftRepo.findAllByOwnerAndContractAddressIn(
             HexUtil.normalise(owner),
-            contractAddresses.map { HexUtil.normalise(it) }).toList()
+            contractAddresses.map { HexUtil.normalise(it) })
     }
 
 }
