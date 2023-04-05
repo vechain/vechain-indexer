@@ -1,5 +1,7 @@
+// Create database
 db = db.getSiblingDB("vechain");
 
+// Create collections
 db.createCollection("blocks");
 db.createCollection("transactions");
 db.createCollection("clauses");

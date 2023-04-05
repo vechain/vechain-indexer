@@ -11,60 +11,6 @@ services:
     restart: always
     volumes:
       - vechain-data-1:/data/db
-    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: admin
-    deploy:
-      resources:
-        limits:
-          memory: 4096m
-        reservations:
-          memory: 1024m
-    healthcheck:
-      test: [ "CMD","mongosh", "--eval", "db.adminCommand('ping')", "--port 27017" ]
-      interval: 5s
-      timeout: 5s
-      retries: 25
-    networks:
-      - vechain-database
-
-  mongo-node2:
-    hostname: mongo-node2
-    image: mongo:6
-    expose:
-      - 27018
-    ports:
-      - 27018:27018
-    restart: always
-    volumes:
-      - vechain-data-2:/data/db
-    entrypoint: [ "/usr/bin/mongod", "--port", "27018", "--bind_ip_all", "--replSet", "rs0" ]
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: admin
-    deploy:
-      resources:
-        limits:
-          memory: 4096m
-        reservations:
-          memory: 1024m
-    networks:
-      - vechain-database
-
-  mongo-node3:
-    hostname: mongo-node3
-    image: mongo:6
-    expose:
-      - 27019
-    ports:
-      - 27019:27019
-    restart: always
-    volumes:
-      - vechain-data-3:/data/db
-    entrypoint: [ "/usr/bin/mongod", "--port", "27019", "--bind_ip_all", "--replSet", "rs0" ]
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
@@ -85,5 +31,3 @@ networks:
 
 volumes:
   vechain-data-1:
-  vechain-data-2:
-  vechain-data-3:
