@@ -44,3 +44,4 @@ packages/e2e/src/test/resources/results.json
 
 load-testing/node_modules
 load-testing/dist
+load-testing/.output

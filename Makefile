@@ -15,7 +15,9 @@ test-common: #@ Run all the common tests.
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
 load-test: #@ Run the load tests.
-	$(LOAD_TEST_COMMAND) up --build
+	$(LOAD_TEST_COMMAND) up --build -d --wait; open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-clean: #@ Clean the load tests data.
+	$(LOAD_TEST_COMMAND) down -v --remove-orphans -v
 
 # Application Build
 build-gradle: #@ Build the applications with Gradle.
@@ -24,12 +26,14 @@ build-indexer: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=api -t veworld-api .
+build-k6: #@ Build the K6 docker image.
+	docker build -t veworld-k6 load-testing
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
 	make infra-up infra-setup app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make app-down infra-clean
+	make app-down infra-clean load-test-clean
 down: #@ Stop all the infrastructure and the application.
 	make app-down infra-down
 
