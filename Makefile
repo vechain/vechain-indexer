@@ -15,7 +15,7 @@ test-common: #@ Run all the common tests.
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
 load-test: #@ Run the load tests.
-	$(LOAD_TEST_COMMAND) up --build
+	$(LOAD_TEST_COMMAND) up --build -d --wait; open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results?orgId=1&refresh=5s&from=now-5m&to=now
 
 # Application Build
 build-gradle: #@ Build the applications with Gradle.

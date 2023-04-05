@@ -1,11 +1,11 @@
 import { check } from "k6";
 import { Options } from "k6/options";
 import http from "k6/http";
-import soloAccounts from "./data/solo-accounts.json";
+import accounts from "./data/nft-accounts.json";
 import { randomElement } from "./utils/array-utils";
 import env from "./env";
 
-export let options: Options = {
+export const options: Options = {
   stages: [
     { duration: "20s", target: 60 }, // simulate ramp-up of traffic from 1 to 60 users.
     { duration: "20s", target: 60 }, // stay at 60
@@ -17,12 +17,12 @@ export let options: Options = {
 };
 
 /**
- *  A generic test that will make a GET request to the API, using the `env.API_RESOURCE`
+ *  Make a GET request to the NFT endpoint using a random address
  */
-export default async () => {
-  const addr = randomElement(soloAccounts);
+export default () => {
+  const account = randomElement(accounts);
 
-  const res = http.get(`${env.BASE_URL}/api/v1/${env.API_RESOURCE}/${addr}`);
+  const res = http.get(`${env.BASE_URL}/api/v1/nfts/${account}`);
 
   check(res, {
     "status is 200": () => res.status === 200,

@@ -1,29 +1,68 @@
 version: "3"
 
 services:
+
+  influxdb:
+    image: influxdb:1.8
+    hostname: influxdb
+    networks:
+      - vechain
+    ports:
+      - "8086:8086"
+    environment:
+      - INFLUXDB_DB=k6
+    healthcheck:
+      test: [ "CMD", "curl", "influxdb:8086/api/v2/ping" ]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+
+  grafana:
+    image: grafana/grafana:latest
+    hostname: grafana
+    networks:
+      - vechain
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+    volumes:
+      - ./grafana-config:/var/lib/grafana
+    healthcheck:
+      test: [ "CMD", "grafana-cli", "plugins", "ls" ]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+
   k6-app-nfts:
     build:
       context: .
       dockerfile: Dockerfile
-    command: run /app/dist/api-200-test.js
+    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-test.js
     environment:
       - API_URL=http://vechain-indexer-api:8080
-      - API_RESOURCE=nfts
+    volumes:
+      - ./.output:/app/.output
     networks:
       - vechain
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      grafana:
+        condition: service_healthy
 
   k6-app-transactions:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: run /app/dist/api-200-test.js
-    environment:
-      - API_URL=http://vechain-indexer-api:8080
-      - API_RESOURCE=transactions
-    networks:
-      - vechain
+    extends:
+      service: k6-app-nfts
+    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-test.js
 
 networks:
   vechain:
     external: true
     name: vechain
+
+volumes:
+  grafana:
+  influxdb:
