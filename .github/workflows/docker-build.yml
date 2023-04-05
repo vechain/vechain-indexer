@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [ api, indexer ]
+        package: [ api, indexer, k6 ]
     steps:
       - uses: actions/checkout@v3
 

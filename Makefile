@@ -24,6 +24,8 @@ build-indexer: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=api -t veworld-api .
+build-k6: #@ Build the K6 docker image.
+	docker build -t veworld-k6 load-testing
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
