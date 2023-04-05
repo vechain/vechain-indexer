@@ -71,7 +71,8 @@ abstract class AbstractIntegrationTest {
             thorContainer.start()
             transactionScript.start()
 
-            val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
+            val mongoUri =
+                "mongodb://admin:password@${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain?authMechanism=SCRAM-SHA-1&authSource=admin"
             val thorUrl = "http://localhost:${thorContainer.getMappedPort(8669)}"
 
             TestPropertyValues.of(

@@ -94,7 +94,8 @@ abstract class AbstractIntegrationTest {
 
             mongoContainer.start()
 
-            val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
+            val mongoUri =
+                "mongodb://admin:password@${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain?authMechanism=SCRAM-SHA-1&authSource=admin"
 
             TestPropertyValues.of(
                 "spring.data.mongodb.uri=${mongoUri}",
