@@ -55,4 +55,25 @@ open class NFTController(private val nftService: NFTService) {
 
         return nftService.findByOwnerAndContractAddresses(address, contractAddresses)
     }
+
+    @GetMapping("/contracts")
+    @Operation(summary = "Get all contracts addresses by NFT owner")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+        ]
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "owner",
+        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        description = "The address of the NFTs owner",
+        required = true,
+        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+    )
+    open fun getContractsByNFTOwner(
+        @Address @RequestParam owner: String
+    ): List<String> {
+        return nftService.findContractsByNFTOwner(owner)
+    }
 }

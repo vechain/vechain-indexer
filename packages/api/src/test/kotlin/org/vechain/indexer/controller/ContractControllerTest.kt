@@ -5,11 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
+import org.vechain.indexer.constants.CONTRACTS_PATH
 
 class ContractControllerTest : AbstractIntegrationTest() {
 
     companion object {
-        const val baseEndpoint = "/api/v1/contracts/"
+        const val baseEndpoint = CONTRACTS_PATH
     }
 
     @Autowired
