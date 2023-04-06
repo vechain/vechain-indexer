@@ -18,4 +18,10 @@ open class NFTService(private val nftRepo: NFTRepo) {
             contractAddresses.map { HexUtil.normalise(it) })
     }
 
+    open fun findContractsByNFTOwner(owner: String): List<String> {
+        return nftRepo.findAllByOwner(HexUtil.normalise(owner))
+            .map { it.contractAddress!! }
+            .distinct()
+    }
+
 }
