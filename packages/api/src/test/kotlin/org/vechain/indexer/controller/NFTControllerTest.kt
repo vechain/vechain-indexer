@@ -123,19 +123,19 @@ class NFTControllerTest : AbstractIntegrationTest() {
     inner class GetContractsByNFTOwner {
 
         @Test
-        fun `get contracts by by NFT owner - bad owner address`() {
+        fun `get contracts by NFT owner - bad owner address`() {
             mockMvc.get("$baseEndpoint/contracts?owner=badAddress")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
-        fun `get contracts by by NFT owner - empty owner address`() {
+        fun `get contracts by NFT owner - empty owner address`() {
             mockMvc.get("$baseEndpoint/contracts?owner=")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
-        fun `get contracts by by NFT owner - valid owner address with NFTs owned`() {
+        fun `get contracts by NFT owner - valid owner address with NFTs owned`() {
             val res =
                 mockMvc.get("$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db5")
                     .andExpect { status { isOk() } }
@@ -154,7 +154,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get contracts by by NFT owner - valid owner address with no NFTs owned`() {
+        fun `get contracts by NFT owner - valid owner address with no NFTs owned`() {
             val res =
                 mockMvc.get("$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db4")
                     .andExpect { status { isOk() } }
