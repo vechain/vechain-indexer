@@ -4,6 +4,7 @@ import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
@@ -51,7 +52,9 @@ internal class ClauseIndexerTest {
         val singleClause = clauses.first()
         expect {
             that(singleClause).get(WrappedClause::id)
-                .isEqualTo("0x9e8d79999a360990bc849a49bced505a66958f5707d6e7640398b596136c942d-0")
+                .isEqualTo(
+                    DigestUtils.sha1Hex("0x9e8d79999a360990bc849a49bced505a66958f5707d6e7640398b596136c942d-0")
+                )
             that(singleClause).get(WrappedClause::blockId)
                 .isEqualTo("0x000000040ec070526cdd2405b0c1653e0431c20774263e6681eeb541103d8e95")
             that(singleClause).get(WrappedClause::blockNumber).isEqualTo(blockNumber)
