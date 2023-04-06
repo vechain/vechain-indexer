@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 
 class NFTControllerTest : AbstractIntegrationTest() {
 
@@ -30,7 +32,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
     @Test
@@ -41,7 +43,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
     @Test
@@ -52,7 +54,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
     @Test
@@ -63,7 +65,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
     @Test
@@ -75,7 +77,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 1)
+        expectThat(nfts.size).isEqualTo(1)
     }
 
     @Test
@@ -87,7 +89,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
 
@@ -100,7 +102,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
     }
 
     @Test

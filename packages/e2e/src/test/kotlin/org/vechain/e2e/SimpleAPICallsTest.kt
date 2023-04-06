@@ -5,6 +5,12 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.WrappedTransaction
+import strikt.api.expect
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
+import strikt.assertions.isNotEmpty
+import strikt.assertions.isNotEqualTo
+import strikt.assertions.isNotNull
 
 class SimpleAPICallsTest {
     @Test
@@ -18,7 +24,7 @@ class SimpleAPICallsTest {
     fun `get transactions`() {
         val transactions = VeWorldAPIClient.getTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        assert(transactions.size == 8)
+        expectThat(transactions.size).isEqualTo(8)
 
         transactions.forEach { transaction ->
             assertValidTransaction(transaction)
@@ -29,7 +35,7 @@ class SimpleAPICallsTest {
     fun `get delegated transactions`() {
         val transactions = VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        assert(transactions.size == 1)
+        expectThat(transactions.size).isEqualTo(1)
 
         transactions.forEach { transaction ->
             assertValidTransaction(transaction)
@@ -43,7 +49,7 @@ class SimpleAPICallsTest {
             includeDelegated = true
         )
 
-        assert(transactions.size == 9)
+        expectThat(transactions.size).isEqualTo(9)
 
         transactions.forEach { transaction ->
             assertValidTransaction(transaction)
@@ -54,7 +60,7 @@ class SimpleAPICallsTest {
     fun `get contracts`() {
         val contracts = VeWorldAPIClient.getContracts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
 
-        assert(contracts.size == 8)
+        expectThat(contracts.size).isEqualTo(8)
 
         contracts.forEach { contract ->
             assertValidContract(contract)
@@ -65,7 +71,7 @@ class SimpleAPICallsTest {
     fun `get NFTs`() {
         val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
 
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
 
         nfts.forEach { nft ->
             assertValidNft(nft)
@@ -76,10 +82,11 @@ class SimpleAPICallsTest {
     fun `get filtered NFTS`() {
         //Perform regular call to get contract addresses
         val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
-        assert(nfts.size == 2)
+        expectThat(nfts.size).isEqualTo(2)
+
 
         //Quick sanity check
-        assert(nfts[0].contractAddress != nfts[1].contractAddress)
+        expectThat(nfts[0].contractAddress).isNotEqualTo(nfts[1].contractAddress)
 
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
@@ -87,33 +94,41 @@ class SimpleAPICallsTest {
             listOf(nfts[0].contractAddress!!)
         )
 
-        assert(nftsWithQuery.size == 1)
+        expectThat(nftsWithQuery.size).isEqualTo(1)
     }
 
     fun assertValidContract(contract: Contract) {
-        assert(contract.txId != null)
-        assert(contract.blockId != null)
-        assert(contract.blockNumber != null)
-        assert(contract.creator != null)
-        assert(contract.rawData != null)
+
+        expect {
+            that(contract.txId).isNotNull()
+            that(contract.blockId).isNotNull()
+            that(contract.blockNumber).isNotNull()
+            that(contract.creator).isNotNull()
+            that(contract.rawData).isNotNull()
+        }
     }
 
     fun assertValidTransaction(transaction: WrappedTransaction) {
-        assert(transaction.id != null)
-        assert(transaction.origin != null)
-        assert(transaction.nonce != null)
-        assert(transaction.gasUsed != null)
-        assert(transaction.clauses.isNotEmpty())
-        assert(transaction.outputs.isNotEmpty())
+
+        expect {
+            that(transaction.id).isNotNull()
+            that(transaction.origin).isNotNull()
+            that(transaction.nonce).isNotNull()
+            that(transaction.gasUsed).isNotNull()
+            that(transaction.clauses).isNotEmpty()
+            that(transaction.outputs).isNotEmpty()
+        }
     }
 
     fun assertValidNft(nft: NFT) {
-        assert(nft.tokenId != null)
-        assert(nft.contractAddress != null)
-        assert(nft.blockNumber != null)
-        assert(nft.txId != null)
-        assert(nft.owner != null)
-        assert(nft.id != null)
+        expect {
+            that(nft.tokenId).isNotNull()
+            that(nft.contractAddress).isNotNull()
+            that(nft.blockNumber).isNotNull()
+            that(nft.txId).isNotNull()
+            that(nft.owner).isNotNull()
+            that(nft.id).isNotNull()
+        }
     }
 
 }

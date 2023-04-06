@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 
 class ContractControllerTest : AbstractIntegrationTest() {
 
@@ -30,7 +32,7 @@ class ContractControllerTest : AbstractIntegrationTest() {
 
         val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-        assert(contracts.size == 18)
+        expectThat(contracts.size).isEqualTo(18)
     }
 
     @Test
@@ -41,7 +43,7 @@ class ContractControllerTest : AbstractIntegrationTest() {
 
         val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-        assert(contracts.size == 18)
+        expectThat(contracts.size).isEqualTo(18)
     }
 
     @Test
@@ -52,7 +54,7 @@ class ContractControllerTest : AbstractIntegrationTest() {
 
         val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-        assert(contracts.size == 18)
+        expectThat(contracts.size).isEqualTo(18)
     }
 
     @Test
@@ -63,7 +65,7 @@ class ContractControllerTest : AbstractIntegrationTest() {
 
         val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-        assert(contracts.size == 18)
+        expectThat(contracts.size).isEqualTo(18)
     }
 
 }

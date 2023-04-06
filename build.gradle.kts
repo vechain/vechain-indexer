@@ -10,7 +10,6 @@ plugins {
     jacoco
 }
 
-
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 allprojects {
@@ -53,10 +52,15 @@ allprojects {
         doFirst {
             delete(
                 "build",
+                "bin",
                 "packages/api/build",
+                "packages/api/bin",
                 "packages/indexer/build",
+                "packages/indexer/bin",
                 "packages/common/build",
+                "packages/common/bin",
                 "packages/e2e/build",
+                "packages/e2e/bin",
             )
         }
     }
@@ -94,6 +98,7 @@ allprojects {
                     failedTests.forEach {
                         logger.lifecycle("\t\t${it.first.className} - ${it.first.name}", it.second)
                     }
+                    failedTests.clear()
                 }
 
                 if (skippedTests.isNotEmpty()) {
@@ -101,6 +106,7 @@ allprojects {
                     skippedTests.forEach {
                         logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
                     }
+                    skippedTests.clear()
                 }
             }
         })

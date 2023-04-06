@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
+import strikt.api.expectThat
+import strikt.assertions.isEqualTo
 
 class TransactionControllerTest : AbstractIntegrationTest() {
 
@@ -32,7 +34,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 39)
+            expectThat(transactions.size).isEqualTo(39)
         }
 
         @Test
@@ -43,7 +45,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 39)
+            expectThat(transactions.size).isEqualTo(39)
         }
 
         @Test
@@ -54,7 +56,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 39)
+            expectThat(transactions.size).isEqualTo(39)
         }
 
         @Test
@@ -65,7 +67,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 39)
+            expectThat(transactions.size).isEqualTo(39)
         }
 
         @Test
@@ -76,7 +78,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 40)
+            expectThat(transactions.size).isEqualTo(40)
         }
 
         @Test
@@ -88,7 +90,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 39)
+            expectThat(transactions.size).isEqualTo(39)
         }
     }
 
@@ -110,7 +112,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 1)
+            expectThat(transactions.size).isEqualTo(1)
         }
 
         @Test
@@ -121,7 +123,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 1)
+            expectThat(transactions.size).isEqualTo(1)
         }
 
         @Test
@@ -132,7 +134,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 1)
+            expectThat(transactions.size).isEqualTo(1)
         }
 
         @Test
@@ -143,7 +145,7 @@ class TransactionControllerTest : AbstractIntegrationTest() {
 
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
-            assert(transactions.size == 1)
+            expectThat(transactions.size).isEqualTo(1)
         }
     }
 }
