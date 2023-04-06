@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.NFT
@@ -34,7 +35,7 @@ open class NFTEventIndexer(
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
 
             NFT(
-                id = "${it.tokenAddress}-${tokenId}",
+                id = buildHashedId("${it.tokenAddress}-${tokenId}"),
                 owner = it.to,
                 contractAddress = it.tokenAddress,
                 tokenId = tokenId,
@@ -48,5 +49,7 @@ open class NFTEventIndexer(
     override fun getStartingBlock(): Long {
         return nftRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
+
+    private fun buildHashedId(plainId: String) = DigestUtils.sha1Hex(plainId)
 
 }

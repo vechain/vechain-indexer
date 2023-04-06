@@ -7,6 +7,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import io.mockk.verify
+import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
@@ -49,7 +50,7 @@ internal class NFTEventIndexerTest {
 
         val nftEvent = nftEvents.first()
         expect {
-            that(nftEvent.id).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e-0")
+            that(nftEvent.id).isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-0"))
             that(nftEvent.tokenId).isEqualTo(BigInteger.ZERO)
             that(nftEvent.contractAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
             that(nftEvent.owner).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")

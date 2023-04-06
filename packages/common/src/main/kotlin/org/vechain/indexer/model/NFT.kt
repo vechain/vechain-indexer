@@ -10,7 +10,7 @@ import java.math.BigInteger
 @CompoundIndex(name = "nft_owner_address_idx", def = "{'owner': 1, 'contractAddress': 1}")
 data class NFT(
     /**
-     * ID = `${contractAddress}-${tokenId}`
+     * sha1 hash of `${contractAddress}-${tokenId}`
      */
     @Id
     val id: String? = null,
