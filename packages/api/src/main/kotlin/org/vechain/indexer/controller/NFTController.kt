@@ -13,6 +13,7 @@ import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.ApiUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.OptionalAddresses
 
@@ -46,14 +47,33 @@ open class NFTController(private val nftService: NFTService) {
         required = false,
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "page",
+        schema = Schema(type = "Integer"),
+        description = "The results page number",
+        required = false,
+        example = "1"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "size",
+        schema = Schema(type = "Integer"),
+        description = "The results page size",
+        required = false,
+        example = "20"
+    )
     open fun getOwnedNFTs(
         @Address @PathVariable address: String,
-        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?
+        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
     ): List<NFT> {
-        if (contractAddresses.isNullOrEmpty())
-            return nftService.findByOwner(address)
-
-        return nftService.findByOwnerAndContractAddresses(address, contractAddresses)
+        return if (contractAddresses.isNullOrEmpty()) {
+            nftService.findByOwner(address, toPageable(page, size))
+        } else {
+            nftService.findByOwnerAndContractAddresses(address, contractAddresses, toPageable(page, size))
+        }
     }
 
     @GetMapping("/contracts")
@@ -71,9 +91,27 @@ open class NFTController(private val nftService: NFTService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "page",
+        schema = Schema(type = "Integer"),
+        description = "The results page number",
+        required = false,
+        example = "1"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "size",
+        schema = Schema(type = "Integer"),
+        description = "The results page size",
+        required = false,
+        example = "20"
+    )
     open fun getContractsByNFTOwner(
-        @Address @RequestParam owner: String
+        @Address @RequestParam owner: String,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
     ): List<String> {
-        return nftService.findContractsByNFTOwner(owner)
+        return nftService.findContractsByNFTOwner(owner, toPageable(page, size))
     }
 }

@@ -7,7 +7,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
 
-class ContractControllerTest : AbstractIntegrationTest() {
+internal class ContractControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = CONTRACTS_PATH

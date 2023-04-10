@@ -6,7 +6,7 @@ import org.vechain.indexer.utils.AddressUtil
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-class AddressUtilTest {
+internal class AddressUtilTest {
 
     @ParameterizedTest
     @CsvSource(
