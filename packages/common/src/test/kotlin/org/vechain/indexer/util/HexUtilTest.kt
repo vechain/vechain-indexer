@@ -6,7 +6,7 @@ import org.vechain.indexer.utils.HexUtil
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-class HexUtilTest {
+internal class HexUtilTest {
 
     @ParameterizedTest
     @CsvSource(

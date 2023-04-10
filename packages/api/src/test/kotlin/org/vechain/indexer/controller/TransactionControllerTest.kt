@@ -8,7 +8,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 
-class TransactionControllerTest : AbstractIntegrationTest() {
+internal class TransactionControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = TRANSACTIONS_PATH

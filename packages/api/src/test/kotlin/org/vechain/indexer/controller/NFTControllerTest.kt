@@ -8,11 +8,10 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.utils.HexUtil
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.containsExactlyInAnyOrder
-import strikt.assertions.hasSize
-import strikt.assertions.isEmpty
+import strikt.assertions.*
 
 class NFTControllerTest : AbstractIntegrationTest() {
 
@@ -88,17 +87,72 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get filtered by all contract addresses`() {
+        fun `get filtered by all contract addresses - no pagination search`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
             val res =
-                mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4,0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14")
+                mockMvc.get(
+                    "$baseEndpoint/$owner" +
+                            "?contractAddresses=$contractAddress1,$contractAddress2"
+                )
                     .andExpect { status { isOk() } }
                     .andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts).hasSize(2)
         }
 
+        @Test
+        fun `get filtered by all contract addresses - paginated search by size`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val size = 1
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/$owner" +
+                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+
+            expect {
+                that(nfts).hasSize(size)
+                that(nfts.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+            }
+        }
+
+        @Test
+        fun `get filtered by all contract addresses - paginated search by page & size`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val page = 1
+            val size = 1
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/$owner" +
+                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                            "&page=$page" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+
+            expect {
+                that(nfts).hasSize(size)
+                that(nfts.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+            }
+        }
 
         @Test
         fun `get filtered by empty contract addresses`() {
@@ -149,6 +203,62 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 that(contracts).containsExactlyInAnyOrder(
                     "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
                     "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+                )
+            }
+        }
+
+        @Test
+        fun `get contracts by NFT owner - valid owner address with NFTs owned - paginated search with size`() {
+            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
+            val size = 1
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/contracts" +
+                            "?owner=$owner" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val contracts =
+                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+
+            expect {
+                that(contracts).hasSize(size)
+                that(contracts.first()).isContainedIn(
+                    listOf(
+                        "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
+                        "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+                    )
+                )
+            }
+        }
+
+        @Test
+        fun `get contracts by NFT owner - valid owner address with NFTs owned - paginated search with page & size`() {
+            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
+            val page = 1
+            val size = 1
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/contracts" +
+                            "?owner=$owner" +
+                            "&page=$page" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val contracts =
+                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+
+            expect {
+                that(contracts).hasSize(size)
+                that(contracts.first()).isContainedIn(
+                    listOf(
+                        "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
+                        "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+                    )
                 )
             }
         }

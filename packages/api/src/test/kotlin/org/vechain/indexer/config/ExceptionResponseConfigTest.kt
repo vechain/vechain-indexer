@@ -14,10 +14,10 @@ import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
 import strikt.assertions.isNull
 
-class ExceptionResponseConfigTest : ExceptionResponseConfig() {
+internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
 
-    val requestPath = "/api/v1/resources/"
-    val servlet: HttpServletRequest = mockk()
+    private val requestPath = "/api/v1/resources/"
+    private val servlet: HttpServletRequest = mockk()
 
     init {
         every { servlet.servletPath } returns requestPath
@@ -25,7 +25,7 @@ class ExceptionResponseConfigTest : ExceptionResponseConfig() {
 
     @Test
     fun `random exception should return internal server error`() {
-        val exception = IllegalArgumentException("Some bard argument")
+        val exception = IllegalArgumentException("Some bad argument")
 
         val res = handleException(servlet, exception)
 
@@ -74,7 +74,6 @@ class ExceptionResponseConfigTest : ExceptionResponseConfig() {
             that(res.body?.timestamp).isNotNull()
         }
     }
-
 
     @Test
     fun `handle constraint exception`() {
