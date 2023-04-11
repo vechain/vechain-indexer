@@ -3,6 +3,7 @@ package org.vechain.indexer
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.model.Block
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.repos.NFTRepo
@@ -15,10 +16,9 @@ import org.web3j.utils.Numeric
 open class NFTEventIndexer(
     private val thorService: ThorService,
     private val nftRepo: NFTRepo
-) : Indexer() {
+) : Indexer(thorService) {
 
-    override fun processBlock(blockNumber: Long) {
-        val block = thorService.getBlock(blockNumber)
+    override fun processBlock(block: Block) {
 
         val transferEvents = BlockUtils.getTransferEvents(block)
 

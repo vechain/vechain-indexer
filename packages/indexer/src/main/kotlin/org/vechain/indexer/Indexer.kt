@@ -2,17 +2,21 @@ package org.vechain.indexer
 
 import org.apache.logging.log4j.LogManager
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.model.Block
+import org.vechain.indexer.service.ThorService
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import kotlin.math.max
 
 enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
-const val INITIAL_BACKOFF_PERIOD = 9850L
-const val MAX_BACKOFF_PERIOD = 9975L
+const val INITIAL_BACKOFF_PERIOD = 10000L
 
-abstract class Indexer {
+abstract class Indexer(private val thorService: ThorService) {
 
-    protected val logger = LogManager.getLogger(this::class.simpleName)
+    private val logger = LogManager.getLogger(this::class.simpleName)
 
     var status = Status.SYNCING
     var currentBlock: Long = 0
@@ -29,12 +33,13 @@ abstract class Indexer {
             backoffDelay()
 
             logger.info("${name()} is processing block $currentBlock (Status: $status)")
-            processBlock(currentBlock)
+            val block = thorService.getBlock(currentBlock)
+            processBlock(block)
 
-            postProcessBlock()
+            postProcessBlock(block)
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("${name()} is fully synchronized...")
-            backoffPeriod = 500
+            backoffPeriod = 4000
             status = Status.FULLY_SYNCED
         } catch (e: Exception) {
             logger.error("${name()}: Error while processing block $currentBlock", e)
@@ -46,10 +51,15 @@ abstract class Indexer {
         run()
     }
 
-    private fun postProcessBlock() {
+    private fun postProcessBlock(block: Block) {
         // If we are fully synced, recalculate the backoff period.
-        if (status == Status.FULLY_SYNCED)
-            backoffPeriod = minOf(maxOf(INITIAL_BACKOFF_PERIOD, backoffPeriod + 25), MAX_BACKOFF_PERIOD)
+        if (status == Status.FULLY_SYNCED) {
+            val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC)
+            val timeSinceLastBlock =
+                max(currentEpoch - block.timestamp!!, 0)
+            logger.info("${name()} currentEpoch $currentEpoch blocktimestamp ${block.timestamp} time since last block: $timeSinceLastBlock")
+            backoffPeriod = INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000)
+        }
 
         // Increment the current block.
         currentBlock++
@@ -62,10 +72,10 @@ abstract class Indexer {
         }
     }
 
-    abstract fun processBlock(blockNumber: Long)
+    abstract fun processBlock(block: Block)
     abstract fun getStartingBlock(): Long
 
-    internal fun name(): String {
+    private fun name(): String {
         return this.javaClass.simpleName
     }
 

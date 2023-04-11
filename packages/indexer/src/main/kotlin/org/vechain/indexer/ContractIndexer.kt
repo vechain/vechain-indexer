@@ -2,10 +2,7 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.Clause
-import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.specifications.Contracts
@@ -17,11 +14,10 @@ import kotlin.jvm.optionals.getOrNull
 class ContractIndexer(
     private val thorService: ThorService,
     private val contractRepo: ContractRepo
-) : Indexer() {
+) : Indexer(thorService) {
     @OptIn(ExperimentalStdlibApi::class)
-    override fun processBlock(blockNumber: Long) {
+    override fun processBlock(block: Block) {
 
-        val block = thorService.getBlock(blockNumber)
         val contracts: MutableList<Contract> = mutableListOf()
 
         /**
@@ -80,5 +76,6 @@ class ContractIndexer(
     override fun getStartingBlock(): Long {
         return contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
+
 
 }

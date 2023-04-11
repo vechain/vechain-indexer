@@ -27,7 +27,7 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
         indexers.forEach { indexer -> executor.submit<Any> { indexer.start(); null } }
     }
 
-    @Scheduled(fixedRate = BLOCK_TIME * 2)
+    @Scheduled(fixedRate = BLOCK_TIME * 10)
     fun reSyncingIndexers() {
         val latestBlockNumber = thorService.getBestBlockNumber()
 
