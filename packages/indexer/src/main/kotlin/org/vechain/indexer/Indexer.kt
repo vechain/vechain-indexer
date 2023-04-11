@@ -7,8 +7,8 @@ enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
-const val INITIAL_BACKOFF_PERIOD = 9650L
-const val MAX_BACKOFF_PERIOD = 9950L
+const val INITIAL_BACKOFF_PERIOD = 9850L
+const val MAX_BACKOFF_PERIOD = 9975L
 
 abstract class Indexer {
 
@@ -30,9 +30,8 @@ abstract class Indexer {
 
             logger.info("${name()} is processing block $currentBlock (Status: $status)")
             processBlock(currentBlock)
-            
-            backoffPeriod = minOf(maxOf(INITIAL_BACKOFF_PERIOD, backoffPeriod + 25), MAX_BACKOFF_PERIOD)
-            currentBlock++
+
+            postProcessBlock()
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("${name()} is fully synchronized...")
             backoffPeriod = 500
@@ -47,9 +46,18 @@ abstract class Indexer {
         run()
     }
 
+    private fun postProcessBlock() {
+        // If we are fully synced, recalculate the backoff period.
+        if (status == Status.FULLY_SYNCED)
+            backoffPeriod = minOf(maxOf(INITIAL_BACKOFF_PERIOD, backoffPeriod + 25), MAX_BACKOFF_PERIOD)
+
+        // Increment the current block.
+        currentBlock++
+    }
+
     private fun backoffDelay() {
         if (status == Status.FULLY_SYNCED) {
-            logger.debug("Backing off for $backoffPeriod ms...")
+            logger.info("${name()} is backing off for $backoffPeriod ms...")
             Thread.sleep(backoffPeriod)
         }
     }
