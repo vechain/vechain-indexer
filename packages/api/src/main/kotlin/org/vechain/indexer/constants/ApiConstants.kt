@@ -11,5 +11,5 @@ const val NFTS_PATH = "$API_PATH/nfts"
 const val TRANSACTIONS_PATH = "$API_PATH/transactions"
 
 // PAGINATION DEFAULTS
-const val DEFAULT_PAGE = 0
+const val DEFAULT_PAGE_NUMBER = 0
 const val DEFAULT_PAGE_SIZE = 20
