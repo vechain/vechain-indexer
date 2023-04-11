@@ -58,7 +58,7 @@ abstract class Indexer(private val thorService: ThorService) {
             val timeSinceLastBlock =
                 max(currentEpoch - block.timestamp!!, 0)
             logger.info("${name()} currentEpoch $currentEpoch blocktimestamp ${block.timestamp} time since last block: $timeSinceLastBlock")
-            backoffPeriod = INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000)
+            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000))
         }
 
         // Increment the current block.
