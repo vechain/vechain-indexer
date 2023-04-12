@@ -1,5 +1,7 @@
 package org.vechain.indexer.utils
 
+import java.math.BigInteger
+
 object AddressUtil {
 
     /**
@@ -13,6 +15,11 @@ object AddressUtil {
 
     fun isNotValid(address: String): Boolean {
         return !isValid(address)
+    }
+
+
+    fun toBigInt(address: String): BigInteger {
+        return BigInteger(HexUtil.removePrefix(address), 16)
     }
 
 }

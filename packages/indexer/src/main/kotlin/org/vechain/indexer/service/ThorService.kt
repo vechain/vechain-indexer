@@ -1,12 +1,15 @@
 package org.vechain.indexer.service
 
 import org.apache.logging.log4j.LogManager
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
 import org.vechain.indexer.exception.NotFoundException
-import org.vechain.indexer.model.AccountCodeResponse
-import org.vechain.indexer.model.Block
+import org.vechain.indexer.model.*
 
 @Service
 class ThorService(private val thorRest: WebClient) {
@@ -27,7 +30,7 @@ class ThorService(private val thorRest: WebClient) {
         return response
     }
 
-    fun getBestBlockNumber(): Long {
+    fun getBestBlock(): Block {
         val response =
             thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 
@@ -38,7 +41,7 @@ class ThorService(private val thorRest: WebClient) {
 
         if (logger.isDebugEnabled) logger.debug("Best block# found: ${response.number}")
 
-        return response.number!!
+        return response
     }
 
     fun getAccountCode(address: String): String? {
@@ -53,5 +56,24 @@ class ThorService(private val thorRest: WebClient) {
         if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
 
         return response.code
+    }
+
+    fun executeReadOnlyCode(clauses: List<Clause>): List<ExecuteCodeResponse> {
+
+        val bestBlock = getBestBlock()
+        val blockRef = bestBlock.id?.substring(0, 18)
+            ?: throw Exception("Block ref is null")
+
+        val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
+        
+        val res = thorRest.post().uri("/accounts/*")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .retrieve()
+            .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
+            .block() ?: throw Exception("Empty response from Thor")
+
+        return res.toList()
     }
 }

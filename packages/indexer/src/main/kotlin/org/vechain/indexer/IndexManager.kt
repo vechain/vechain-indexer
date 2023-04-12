@@ -29,14 +29,14 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
 
     @Scheduled(fixedRate = BLOCK_TIME * 2)
     fun reSyncingIndexers() {
-        val latestBlockNumber = thorService.getBestBlockNumber()
+        val latestBlock = thorService.getBestBlock()
 
-        logger.info("Best block is currently at: $latestBlockNumber")
-
-        indexers.forEach {
-            if (it.currentBlock < latestBlockNumber && it.status == Status.FULLY_SYNCED) {
-                logger.info("Fully synced indexer ${it.javaClass.simpleName} with current block ${it.currentBlock} while best block is $latestBlockNumber")
-                it.status = Status.SYNCING
+        latestBlock.number?.let { latestBlockNumber ->
+            indexers.forEach { indexer ->
+                if (indexer.currentBlock < latestBlockNumber && indexer.status == Status.FULLY_SYNCED) {
+                    logger.info("${indexer.name()} - Switching from FULLY_SYNCED to SYNCING (current=${indexer.currentBlock}, latest=${latestBlock.number})")
+                    indexer.status = Status.SYNCING
+                }
             }
         }
     }

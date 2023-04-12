@@ -7,6 +7,7 @@ import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.ContractUtils
@@ -16,7 +17,8 @@ import kotlin.jvm.optionals.getOrNull
 @Component
 class ContractIndexer(
     private val thorService: ThorService,
-    private val contractRepo: ContractRepo
+    private val contractRepo: ContractRepo,
+    private val contractService: ContractService
 ) : Indexer() {
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(blockNumber: Long) {
@@ -45,7 +47,9 @@ class ContractIndexer(
          */
         masterChangeEvents.forEach { event: Triple<TxEvent, WrappedTransaction, Clause> ->
 
-            val rawData = event.first.address?.let { thorService.getAccountCode(it) }
+            val contractAddress = event.first.address ?: return@forEach
+
+            val rawData = thorService.getAccountCode(contractAddress)
 
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.
@@ -56,10 +60,11 @@ class ContractIndexer(
                     contracts.add(contract)
                 }
 
-            } else
+            } else {
+
                 contracts.add(
                     Contract(
-                        address = event.first.address,
+                        address = contractAddress,
                         blockId = block.id,
                         blockNumber = block.number,
                         txId = event.second.id,
@@ -67,11 +72,13 @@ class ContractIndexer(
                         master = ContractUtils.removeTopicPadding(event.first.data!!),
                         rawData = rawData,
                         isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData),
-                        isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData),
+                        isVip181 = contractService.isVip181(contractAddress),
                         isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData),
-                        isErc721 = ContractUtils.isContractType(Contracts.ERC721, rawData),
+                        isErc721 = contractService.isErc721(contractAddress),
                     )
                 )
+            }
+
         }
 
         if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
