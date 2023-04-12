@@ -7,14 +7,14 @@ import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
-internal class ApiUtilsTest {
+internal class PaginationUtilsTest {
 
     @Test
     fun `default page number when page is null`() {
         val page = null
         val size = 50
 
-        val pageable = ApiUtils.toPageable(page, size)
+        val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
             that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE_NUMBER)
@@ -27,7 +27,7 @@ internal class ApiUtilsTest {
         val page = 1
         val size = null
 
-        val pageable = ApiUtils.toPageable(page, size)
+        val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
             that(pageable.pageNumber).isEqualTo(page)
@@ -40,7 +40,7 @@ internal class ApiUtilsTest {
         val page = null
         val size = null
 
-        val pageable = ApiUtils.toPageable(page, size)
+        val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
             that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE_NUMBER)
@@ -53,7 +53,7 @@ internal class ApiUtilsTest {
         val page = 13
         val size = 30
 
-        val pageable = ApiUtils.toPageable(page, size)
+        val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
             that(pageable.pageNumber).isEqualTo(page)
@@ -66,7 +66,7 @@ internal class ApiUtilsTest {
         val page = 13
         val size = 30
 
-        val pageable = ApiUtils.toPageable(page, size)
+        val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
             that(pageable.sort).isEqualTo(Sort.by(Sort.Direction.ASC, "id"))
@@ -79,7 +79,7 @@ internal class ApiUtilsTest {
         val size = 30
         val sort = Sort.by(Sort.Direction.ASC, "number")
 
-        val pageable = ApiUtils.toPageable(page, size, sort)
+        val pageable = PaginationUtils.toPageable(page, size, sort)
 
         expect {
             that(pageable.sort).isEqualTo(sort)

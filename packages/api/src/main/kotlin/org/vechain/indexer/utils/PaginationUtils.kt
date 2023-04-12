@@ -6,7 +6,7 @@ import org.springframework.data.domain.Sort
 import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 
-object ApiUtils {
+object PaginationUtils {
 
     fun toPageable(page: Int?, size: Int?, sort: Sort = byAscendingId()): Pageable {
         return PageRequest.of(

@@ -7,13 +7,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Sort.Direction.ASC
+import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
-import org.vechain.indexer.utils.ApiUtils.toPageable
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Contract", description = "Query on chain contracts")
@@ -43,7 +45,7 @@ open class ContractController(private val contractService: ContractService) {
         schema = Schema(type = "Integer"),
         description = "The results page number",
         required = false,
-        example = "1"
+        example = "0"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -58,7 +60,10 @@ open class ContractController(private val contractService: ContractService) {
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) size: Int?,
     ): List<Contract> {
-        return contractService.findByCreator(address, toPageable(page, size))
+        return contractService.findByCreator(
+            address,
+            toPageable(page, size, by(ASC, "blockNumber", "txId", "address"))
+        )
     }
 
 }

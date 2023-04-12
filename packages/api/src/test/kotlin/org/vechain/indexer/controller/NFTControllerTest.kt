@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.model.NFT
 import org.vechain.indexer.utils.HexUtil
 import strikt.api.expect
 import strikt.api.expectThat
@@ -155,6 +156,35 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get filtered by all contract addresses - sorted by blockNumber & txId & id`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val page = 0
+            val size = Int.MAX_VALUE
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/$owner" +
+                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                            "&page=$page" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+
+            expectThat(nfts)
+                .hasSize(2)
+                .isSorted(
+                    compareBy<NFT> { it.blockNumber }
+                        .then(compareBy<NFT> { it.txId }
+                            .then(compareBy { it.id })
+                        )
+                )
+        }
+
+        @Test
         fun `get filtered by empty contract addresses`() {
             val res =
                 mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=")
@@ -262,6 +292,34 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
             }
         }
+
+        /*@Test
+        fun `get contracts by NFT owner - sorted by blockNumber & txId & id`() {
+            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
+            val page = 1
+            val size = 1
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/contracts" +
+                            "?owner=$owner" +
+                            "&page=$page" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val contracts =
+                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+
+            expectThat(contracts)
+                .hasSize(size)
+                .isSorted(
+                    compareBy<NFT> { it.blockNumber }
+                        .then(compareBy<NFT> { it.txId }
+                            .then(compareBy { it.id })
+                        )
+                )
+        }*/
 
         @Test
         fun `get contracts by NFT owner - valid owner address with no NFTs owned`() {
