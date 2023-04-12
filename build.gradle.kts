@@ -128,6 +128,7 @@ allprojects {
 
         implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+        implementation("org.web3j:abi:4.9.7")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
         implementation("com.google.code.gson:gson:2.10.1")

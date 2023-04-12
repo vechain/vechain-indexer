@@ -13,10 +13,16 @@ import org.vechain.indexer.utils.TransactionUtils
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
+
 @Service
 class ContractService(private val thorService: ThorService) {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
+
+    companion object {
+        val SAMPLE_ADDRESS_1 = AddressUtil.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+        val SAMPLE_ADDRESS_2 = AddressUtil.toBigInt("0x435933c8064b4Ae76bE665428e0307eF2cCFBD68")
+    }
 
     /**
      * Calls to the supportsInterface function of the ERC721 interface.
@@ -42,6 +48,9 @@ class ContractService(private val thorService: ThorService) {
 
     /**
      * Calls to ALL the read only functions of VIP 181
+     * - Can't call `ownerOf` as it will revert if the owner is the zero address
+     *
+     * VIP 181 does not support the supportsInterface function of the ERC165 interface.
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
@@ -53,17 +62,15 @@ class ContractService(private val thorService: ThorService) {
             val balanceOf = ClauseUtils.contractCall(
                 address,
                 VIP181ABI.balanceOf,
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1
             )
 
-            //Differentiator to ERC20
-            val ownerOf = ClauseUtils.contractCall(address, VIP181ABI.ownerOf, BigInteger.ZERO)
             //Differentiator to ERC20
             val isApprovedForAll = ClauseUtils.contractCall(
                 address,
                 VIP181ABI.isApprovedForAll,
-                AddressUtil.toBigInt(address),
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1,
+                SAMPLE_ADDRESS_2
             )
 
             val contractCalls = listOf(
@@ -71,9 +78,9 @@ class ContractService(private val thorService: ThorService) {
                 symbol,
                 totalSupply,
                 balanceOf,
-                ownerOf,
                 isApprovedForAll
             )
+
 
             val response = thorService.executeReadOnlyCode(contractCalls)
 
@@ -86,19 +93,24 @@ class ContractService(private val thorService: ThorService) {
         }
     }
 
+    /**
+     * Calls to ALL the read only functions of ERC 20
+     *
+     * ERC 20 does not support the supportsInterface function of the ERC165 interface.
+     */
     fun isErc20(address: String): Boolean {
         try {
             val totalSupply = ClauseUtils.contractCall(address, ERC20ABI.totalSupply)
             val balanceOf = ClauseUtils.contractCall(
                 address,
                 ERC20ABI.balanceOf,
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1
             )
             val allowance = ClauseUtils.contractCall(
                 address,
                 ERC20ABI.allowance,
-                AddressUtil.toBigInt(address),
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1,
+                SAMPLE_ADDRESS_2
             )
 
             val contractCalls = listOf(
@@ -118,6 +130,11 @@ class ContractService(private val thorService: ThorService) {
         }
     }
 
+    /**
+     * Calls to ALL the read only functions of ERC 20
+     *
+     * ERC 20 does not support the supportsInterface function of the ERC165 interface.
+     */
     fun isVip180(address: String): Boolean {
         try {
             val name = ClauseUtils.contractCall(address, VIP180ABI.name)
@@ -127,13 +144,13 @@ class ContractService(private val thorService: ThorService) {
             val balanceOf = ClauseUtils.contractCall(
                 address,
                 VIP180ABI.balanceOf,
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1
             )
             val allowance = ClauseUtils.contractCall(
                 address,
                 VIP180ABI.allowance,
-                AddressUtil.toBigInt(address),
-                AddressUtil.toBigInt(address)
+                SAMPLE_ADDRESS_1,
+                SAMPLE_ADDRESS_2
             )
 
             val contractCalls = listOf(
