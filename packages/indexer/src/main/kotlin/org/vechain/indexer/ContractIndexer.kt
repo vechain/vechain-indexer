@@ -45,7 +45,13 @@ class ContractIndexer(
          */
         masterChangeEvents.forEach { event: Triple<TxEvent, WrappedTransaction, Clause> ->
 
-            val rawData = event.first.address?.let { thorService.getAccountCode(it) }
+            val rawData = event.first.address?.let {
+                try {
+                    thorService.getAccountCode(it)
+                } catch (e: Exception) {
+                    null
+                }
+            }
 
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.

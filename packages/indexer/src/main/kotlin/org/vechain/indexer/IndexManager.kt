@@ -1,13 +1,12 @@
 package org.vechain.indexer
 
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.service.ThorService
 import java.util.concurrent.Executors
-
 import java.util.concurrent.ThreadPoolExecutor
 
 const val BLOCK_TIME = 10000L
@@ -15,12 +14,12 @@ const val BLOCK_TIME = 10000L
 @Component
 class IndexManager(private val indexers: List<Indexer>, private val thorService: ThorService) {
 
-    private val logger = LogManager.getLogger(this::class.simpleName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
 
-        logger.warn("Starting indexers for ${indexers.size} chains")
+        logger.info("Starting indexers for ${indexers.size} chains")
 
         val executor = Executors.newFixedThreadPool(indexers.size) as ThreadPoolExecutor
 
@@ -29,16 +28,17 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
 
     @Scheduled(fixedRate = BLOCK_TIME * 2)
     fun reSyncingIndexers() {
-        val latestBlockNumber = thorService.getBestBlockNumber()
+        try {
+            val latestBlockNumber = thorService.getBestBlockNumber()
 
-        logger.info("Best block is currently at: $latestBlockNumber")
-
-        indexers.forEach {
-            if (it.currentBlock < latestBlockNumber && it.status == Status.FULLY_SYNCED) {
-                logger.info("Fully synced indexer ${it.javaClass.simpleName} with current block ${it.currentBlock} while best block is $latestBlockNumber")
-                it.status = Status.SYNCING
+            indexers.forEach { indexer ->
+                if (indexer.currentBlock < latestBlockNumber && indexer.status == Status.FULLY_SYNCED) {
+                    logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlock}, bestBlock=${latestBlockNumber})")
+                    indexer.status = Status.SYNCING
+                }
             }
+        } catch (e: Exception) {
+            logger.warn("There was an error while checking sync status of indexers", e)
         }
     }
-
 }

@@ -1,3 +1,3 @@
 package org.vechain.indexer.exception
 
-class NotFoundException : Exception()
+class NotFoundException(message: String?) : Exception(message)
