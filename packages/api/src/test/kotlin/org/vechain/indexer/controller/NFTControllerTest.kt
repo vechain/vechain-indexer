@@ -293,34 +293,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
             }
         }
 
-        /*@Test
-        fun `get contracts by NFT owner - sorted by blockNumber & txId & id`() {
-            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
-            val page = 1
-            val size = 1
-
-            val res =
-                mockMvc.get(
-                    "$baseEndpoint/contracts" +
-                            "?owner=$owner" +
-                            "&page=$page" +
-                            "&size=$size"
-                )
-                    .andExpect { status { isOk() } }
-                    .andReturn()
-            val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
-
-            expectThat(contracts)
-                .hasSize(size)
-                .isSorted(
-                    compareBy<NFT> { it.blockNumber }
-                        .then(compareBy<NFT> { it.txId }
-                            .then(compareBy { it.id })
-                        )
-                )
-        }*/
-
         @Test
         fun `get contracts by NFT owner - valid owner address with no NFTs owned`() {
             val res =
