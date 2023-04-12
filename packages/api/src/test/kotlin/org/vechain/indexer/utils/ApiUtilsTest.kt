@@ -2,7 +2,7 @@ package org.vechain.indexer.utils
 
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Sort
-import org.vechain.indexer.constants.DEFAULT_PAGE
+import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import strikt.api.expect
 import strikt.assertions.isEqualTo
@@ -17,7 +17,7 @@ internal class ApiUtilsTest {
         val pageable = ApiUtils.toPageable(page, size)
 
         expect {
-            that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE)
+            that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE_NUMBER)
             that(pageable.pageSize).isEqualTo(size)
         }
     }
@@ -43,7 +43,7 @@ internal class ApiUtilsTest {
         val pageable = ApiUtils.toPageable(page, size)
 
         expect {
-            that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE)
+            that(pageable.pageNumber).isEqualTo(DEFAULT_PAGE_NUMBER)
             that(pageable.pageSize).isEqualTo(DEFAULT_PAGE_SIZE)
         }
     }
@@ -62,7 +62,7 @@ internal class ApiUtilsTest {
     }
 
     @Test
-    fun `pagination is sorted by ascending id`() {
+    fun `pagination sorting default is by ascending id`() {
         val page = 13
         val size = 30
 
@@ -70,6 +70,19 @@ internal class ApiUtilsTest {
 
         expect {
             that(pageable.sort).isEqualTo(Sort.by(Sort.Direction.ASC, "id"))
+        }
+    }
+
+    @Test
+    fun `pagination custom sorting can be passed as param`() {
+        val page = 13
+        val size = 30
+        val sort = Sort.by(Sort.Direction.ASC, "number")
+
+        val pageable = ApiUtils.toPageable(page, size, sort)
+
+        expect {
+            that(pageable.sort).isEqualTo(sort)
         }
     }
 }

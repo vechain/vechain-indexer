@@ -8,14 +8,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
+import org.vechain.indexer.utils.ApiUtils.toPageable
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Contract", description = "Query on chain contracts")
@@ -39,10 +37,28 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "page",
+        schema = Schema(type = "Integer"),
+        description = "The results page number",
+        required = false,
+        example = "1"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "size",
+        schema = Schema(type = "Integer"),
+        description = "The results page size",
+        required = false,
+        example = "20"
+    )
     open fun getContractsByOrigin(
-        @Address @PathVariable address: String
+        @Address @PathVariable address: String,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
     ): List<Contract> {
-        return contractService.findByCreator(address)
+        return contractService.findByCreator(address, toPageable(page, size))
     }
 
 }

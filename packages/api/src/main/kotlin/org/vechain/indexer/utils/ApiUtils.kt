@@ -3,17 +3,19 @@ package org.vechain.indexer.utils
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import org.vechain.indexer.constants.DEFAULT_PAGE
+import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 
 object ApiUtils {
 
-    fun toPageable(page: Int?, size: Int?): Pageable {
+    fun toPageable(page: Int?, size: Int?, sort: Sort = byAscendingId()): Pageable {
         return PageRequest.of(
-            page ?: DEFAULT_PAGE,
+            page ?: DEFAULT_PAGE_NUMBER,
             size ?: DEFAULT_PAGE_SIZE,
-            Sort.by(Sort.Direction.ASC, "id")
+            sort
         )
     }
+
+    private fun byAscendingId() = Sort.by(Sort.Direction.ASC, "id")
 
 }
