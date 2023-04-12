@@ -81,7 +81,7 @@ abstract class AbstractIntegrationTest {
     /**
      * Load json files from resources
      */
-    fun <T> loadDataFromResources(path: String, type: TypeReference<T>): T {
+    private fun <T> loadDataFromResources(path: String, type: TypeReference<T>): T {
         val file = AbstractIntegrationTest::class.java.getResource(path)
             ?: throw Exception("File not found: $path")
 

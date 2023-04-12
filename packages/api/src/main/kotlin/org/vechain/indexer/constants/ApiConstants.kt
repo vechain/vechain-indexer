@@ -13,5 +13,5 @@ const val BLOCKS_PATH = "$API_PATH/blocks"
 const val TRANSFER_EVENTS_PATH = "$API_PATH/transfers"
 
 // PAGINATION DEFAULTS
-const val DEFAULT_PAGE = 0
+const val DEFAULT_PAGE_NUMBER = 0
 const val DEFAULT_PAGE_SIZE = 20
