@@ -9,6 +9,8 @@ const val API_PATH = "$API_ROOT$API_VERSION"
 const val CONTRACTS_PATH = "$API_PATH/contracts"
 const val NFTS_PATH = "$API_PATH/nfts"
 const val TRANSACTIONS_PATH = "$API_PATH/transactions"
+const val BLOCKS_PATH = "$API_PATH/blocks"
+const val TRANSFER_EVENTS_PATH = "$API_PATH/transfers"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE = 0
