@@ -27,11 +27,15 @@ class ContractService(private val thorService: ThorService) {
     /**
      * Calls to the supportsInterface function of the ERC721 interface.
      */
-    fun isErc721(address: String): Boolean {
+    fun isErc721(contractAddress: String): Boolean {
 
         try {
             val supportsInterface =
-                ClauseUtils.contractCall(address, ERC721ABI.supportsInterface, Utils.hexToBytes(ERC721ABI.interfaceId))
+                ClauseUtils.contractCall(
+                    contractAddress,
+                    ERC721ABI.supportsInterface,
+                    Utils.hexToBytes(ERC721ABI.interfaceId)
+                )
 
             val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
 
@@ -41,7 +45,7 @@ class ContractService(private val thorService: ThorService) {
 
             return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
         } catch (e: Exception) {
-            logger.warn("Error while checking if $address is ERC721", e)
+            logger.warn("Error while checking if $contractAddress is ERC721", e)
             return false
         }
     }
@@ -54,20 +58,20 @@ class ContractService(private val thorService: ThorService) {
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
-    fun isVip181(address: String): Boolean {
+    fun isVip181(contractAddress: String): Boolean {
         try {
-            val name = ClauseUtils.contractCall(address, VIP181ABI.name)
-            val symbol = ClauseUtils.contractCall(address, VIP181ABI.symbol)
-            val totalSupply = ClauseUtils.contractCall(address, VIP181ABI.totalSupply)
+            val name = ClauseUtils.contractCall(contractAddress, VIP181ABI.name)
+            val symbol = ClauseUtils.contractCall(contractAddress, VIP181ABI.symbol)
+            val totalSupply = ClauseUtils.contractCall(contractAddress, VIP181ABI.totalSupply)
             val balanceOf = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 VIP181ABI.balanceOf,
                 SAMPLE_ADDRESS_1
             )
 
             //Differentiator to ERC20
             val isApprovedForAll = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 VIP181ABI.isApprovedForAll,
                 SAMPLE_ADDRESS_1,
                 SAMPLE_ADDRESS_2
@@ -88,7 +92,7 @@ class ContractService(private val thorService: ThorService) {
                 TransactionUtils.isSuccessWithData(it)
             }
         } catch (e: Exception) {
-            logger.warn("Error while checking if $address is VIP181", e)
+            logger.warn("Error while checking if $contractAddress is VIP181", e)
             return false
         }
     }
@@ -98,16 +102,16 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isErc20(address: String): Boolean {
+    fun isErc20(contractAddress: String): Boolean {
         try {
-            val totalSupply = ClauseUtils.contractCall(address, ERC20ABI.totalSupply)
+            val totalSupply = ClauseUtils.contractCall(contractAddress, ERC20ABI.totalSupply)
             val balanceOf = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 ERC20ABI.balanceOf,
                 SAMPLE_ADDRESS_1
             )
             val allowance = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 ERC20ABI.allowance,
                 SAMPLE_ADDRESS_1,
                 SAMPLE_ADDRESS_2
@@ -125,7 +129,7 @@ class ContractService(private val thorService: ThorService) {
                 TransactionUtils.isSuccessWithData(it)
             }
         } catch (e: Exception) {
-            logger.warn("Error while checking if $address is ERC20", e)
+            logger.warn("Error while checking if $contractAddress is ERC20", e)
             return false
         }
     }
@@ -135,19 +139,19 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isVip180(address: String): Boolean {
+    fun isVip180(contractAddress: String): Boolean {
         try {
-            val name = ClauseUtils.contractCall(address, VIP180ABI.name)
-            val decimals = ClauseUtils.contractCall(address, VIP180ABI.decimals)
-            val symbol = ClauseUtils.contractCall(address, VIP180ABI.symbol)
-            val totalSupply = ClauseUtils.contractCall(address, VIP180ABI.totalSupply)
+            val name = ClauseUtils.contractCall(contractAddress, VIP180ABI.name)
+            val decimals = ClauseUtils.contractCall(contractAddress, VIP180ABI.decimals)
+            val symbol = ClauseUtils.contractCall(contractAddress, VIP180ABI.symbol)
+            val totalSupply = ClauseUtils.contractCall(contractAddress, VIP180ABI.totalSupply)
             val balanceOf = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 VIP180ABI.balanceOf,
                 SAMPLE_ADDRESS_1
             )
             val allowance = ClauseUtils.contractCall(
-                address,
+                contractAddress,
                 VIP180ABI.allowance,
                 SAMPLE_ADDRESS_1,
                 SAMPLE_ADDRESS_2
@@ -169,7 +173,7 @@ class ContractService(private val thorService: ThorService) {
             }
 
         } catch (e: Exception) {
-            logger.warn("Error while checking if $address is VIP180", e)
+            logger.warn("Error while checking if $contractAddress is VIP180", e)
             return false
         }
     }
