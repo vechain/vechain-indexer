@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.model.NFT
 import org.vechain.indexer.utils.HexUtil
 import strikt.api.expect
 import strikt.api.expectThat
@@ -152,6 +153,35 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 that(nfts.first().owner).isEqualTo(HexUtil.normalise(owner))
                 that(nfts.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
             }
+        }
+
+        @Test
+        fun `get filtered by all contract addresses - sorted by blockNumber & txId & id`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val page = 0
+            val size = Int.MAX_VALUE
+
+            val res =
+                mockMvc.get(
+                    "$baseEndpoint/$owner" +
+                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                            "&page=$page" +
+                            "&size=$size"
+                )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+
+            expectThat(nfts)
+                .hasSize(2)
+                .isSorted(
+                    compareBy<NFT> { it.blockNumber }
+                        .then(compareBy<NFT> { it.txId }
+                            .then(compareBy { it.id })
+                        )
+                )
         }
 
         @Test

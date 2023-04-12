@@ -7,9 +7,11 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.model.Contract
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
+import strikt.assertions.isSorted
 
 internal class ContractControllerTest : AbstractIntegrationTest() {
 
@@ -164,6 +166,31 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
             expectThat(contracts).hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
+        }
+
+        @Test
+        fun `fetch contracts by origin - paginated search - sorted by blockNumber & txId & address`() {
+            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val page = 1
+            val size = 10
+            val result = mockMvc.get(
+                "$BASE_ENDPOINT/$origin" +
+                        "?page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
+
+            expectThat(contracts)
+                .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
+                .isSorted(
+                    compareBy<Contract> { it.blockNumber }
+                        .then(compareBy<Contract> { it.txId }
+                            .then(compareBy { it.address })
+                        )
+                )
         }
     }
 }

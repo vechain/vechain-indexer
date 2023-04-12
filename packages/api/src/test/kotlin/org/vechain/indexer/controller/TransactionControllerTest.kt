@@ -8,9 +8,11 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.model.WrappedTransaction
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
+import strikt.assertions.isSorted
 
 internal class TransactionControllerTest : AbstractIntegrationTest() {
 
@@ -187,6 +189,29 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
             expectThat(transactions).hasSize(9)
         }
+
+        @Test
+        fun `get txs by origin - sorted by blockNumber & id`() {
+            val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val page = 3
+            val size = 10
+            val result = mockMvc.get(
+                "$baseEndpoint/$origin" +
+                        "?page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+
+            expectThat(transactions)
+                .hasSize(9)
+                .isSorted(
+                    compareBy<WrappedTransaction> { it.blockNumber }
+                        .then(compareBy { it.id })
+                )
+        }
     }
 
 
@@ -309,6 +334,29 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
             expectThat(transactions).hasSize(size)
+        }
+
+        @Test
+        fun `get delegated txs - sorted by blockNumber & id`() {
+            val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val page = 0
+            val size = 1
+            val result = mockMvc.get(
+                "$baseEndpoint/$origin/delegated" +
+                        "?page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+
+            expectThat(transactions)
+                .hasSize(size)
+                .isSorted(
+                    compareBy<WrappedTransaction> { it.blockNumber }
+                        .then(compareBy { it.id })
+                )
         }
     }
 }

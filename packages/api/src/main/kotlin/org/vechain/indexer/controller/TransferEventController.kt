@@ -5,7 +5,8 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort
+import org.springframework.data.domain.Sort.Direction.ASC
+import org.springframework.data.domain.Sort.by
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.service.TransferEventService
-import org.vechain.indexer.utils.ApiUtils.toPageable
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 
 @Tag(name = "TransferEvent", description = "Query blockchain transfer events")
 @RestController
@@ -28,7 +29,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "Integer"),
         description = "The results page number",
         required = false,
-        example = "1"
+        example = "0"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -43,7 +44,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @RequestParam(required = false) size: Int?,
     ): List<TransferEvent> {
         return transferEventService.findAll(
-            toPageable(page, size, Sort.by(Sort.Direction.ASC, "blockNumber", "txId", "id"))
+            toPageable(page, size, by(ASC, "blockNumber", "txId", "id"))
         )
     }
 }
