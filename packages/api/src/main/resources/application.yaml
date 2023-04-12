@@ -23,7 +23,8 @@ management:
 
 spring.data:
   mongodb:
-    database: ${MONGO_DATABASE:vechain}
-    uri: ${MONGO_URI:mongodb://localhost:27017}
-    username: ${MONGO_USER_NAME:admin}
-    password: ${MONGO_PASSWORD:password}
+    uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG

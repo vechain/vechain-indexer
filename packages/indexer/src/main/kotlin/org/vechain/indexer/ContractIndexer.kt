@@ -9,7 +9,6 @@ import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
-import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.ContractUtils
 import kotlin.jvm.optionals.getOrNull
 
@@ -71,9 +70,10 @@ class ContractIndexer(
                         creator = event.second.origin,
                         master = ContractUtils.removeTopicPadding(event.first.data!!),
                         rawData = rawData,
-                        isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData),
+                        //TODO: Add back ContractUtils check before contract service to reduce API calls,
+                        isVip180 = contractService.isVip180(contractAddress),
                         isVip181 = contractService.isVip181(contractAddress),
-                        isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData),
+                        isErc20 = contractService.isErc20(contractAddress),
                         isErc721 = contractService.isErc721(contractAddress),
                     )
                 )

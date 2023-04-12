@@ -16,8 +16,6 @@ services:
       interval: 3s
       timeout: 10s
       retries: 30
-    volumes:
-      - influxdb:/var/lib/influxdb
 
   grafana:
     image: grafana/grafana:latest
@@ -49,7 +47,6 @@ services:
       - ./.output:/app/.output
     networks:
       - vechain
-      - vechain-database
     depends_on:
       influxdb:
         condition: service_healthy
@@ -65,10 +62,7 @@ networks:
   vechain:
     external: true
     name: vechain
-  vechain-database:
-    external: true
-    name: vechain-database
-  
 
 volumes:
+  grafana:
   influxdb:

@@ -6,13 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
+import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-class TransactionControllerTest : AbstractIntegrationTest() {
+internal class TransactionControllerTest : AbstractIntegrationTest() {
 
     companion object {
-        const val baseEndpoint = "/api/v1/transactions/"
+        const val baseEndpoint = TRANSACTIONS_PATH
     }
 
     @Autowired

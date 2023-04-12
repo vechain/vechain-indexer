@@ -3,7 +3,9 @@ package org.vechain.indexer.service
 import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
+import org.vechain.indexer.abi.ERC20ABI
 import org.vechain.indexer.abi.ERC721ABI
+import org.vechain.indexer.abi.VIP180ABI
 import org.vechain.indexer.abi.VIP181ABI
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ClauseUtils
@@ -80,6 +82,77 @@ class ContractService(private val thorService: ThorService) {
             }
         } catch (e: Exception) {
             logger.warn("Error while checking if $address is VIP181", e)
+            return false
+        }
+    }
+
+    fun isErc20(address: String): Boolean {
+        try {
+            val totalSupply = ClauseUtils.contractCall(address, ERC20ABI.totalSupply)
+            val balanceOf = ClauseUtils.contractCall(
+                address,
+                ERC20ABI.balanceOf,
+                AddressUtil.toBigInt(address)
+            )
+            val allowance = ClauseUtils.contractCall(
+                address,
+                ERC20ABI.allowance,
+                AddressUtil.toBigInt(address),
+                AddressUtil.toBigInt(address)
+            )
+
+            val contractCalls = listOf(
+                totalSupply,
+                balanceOf,
+                allowance
+            )
+
+            val response = thorService.executeReadOnlyCode(contractCalls)
+
+            return response.size == contractCalls.size && response.all {
+                TransactionUtils.isSuccessWithData(it)
+            }
+        } catch (e: Exception) {
+            logger.warn("Error while checking if $address is ERC20", e)
+            return false
+        }
+    }
+
+    fun isVip180(address: String): Boolean {
+        try {
+            val name = ClauseUtils.contractCall(address, VIP180ABI.name)
+            val decimals = ClauseUtils.contractCall(address, VIP180ABI.decimals)
+            val symbol = ClauseUtils.contractCall(address, VIP180ABI.symbol)
+            val totalSupply = ClauseUtils.contractCall(address, VIP180ABI.totalSupply)
+            val balanceOf = ClauseUtils.contractCall(
+                address,
+                VIP180ABI.balanceOf,
+                AddressUtil.toBigInt(address)
+            )
+            val allowance = ClauseUtils.contractCall(
+                address,
+                VIP180ABI.allowance,
+                AddressUtil.toBigInt(address),
+                AddressUtil.toBigInt(address)
+            )
+
+            val contractCalls = listOf(
+                name,
+                symbol,
+                decimals,
+                totalSupply,
+                balanceOf,
+                allowance
+            )
+
+            val response = thorService.executeReadOnlyCode(contractCalls)
+
+            return response.size == contractCalls.size && response.all {
+                TransactionUtils.isSuccessWithData(it)
+            }
+
+        } catch (e: Exception) {
+            logger.warn("Error while checking if $address is VIP180", e)
             return false
         }
     }

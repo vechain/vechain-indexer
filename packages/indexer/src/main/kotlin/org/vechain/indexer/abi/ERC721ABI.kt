@@ -24,7 +24,7 @@ object ERC721ABI {
                         internalType = "bool"
                     )
                 ),
-                stateMutability = StateMutability.VIEW.value
+                stateMutability = "view"
             )
         }
 }

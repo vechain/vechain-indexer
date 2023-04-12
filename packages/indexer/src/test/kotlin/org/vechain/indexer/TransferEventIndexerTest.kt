@@ -7,6 +7,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.slot
 import io.mockk.verify
+import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
@@ -69,7 +70,7 @@ class TransferEventIndexerTest {
             that(transfers).hasSize(10)
         }
         val transferEvent =
-            transfers.first { it.id == "0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-0" }
+            transfers.first { it.id == DigestUtils.sha1Hex("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-0") }
         expect {
             that(transferEvent.blockId).isEqualTo("0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e")
             that(transferEvent.blockNumber).isEqualTo(blockNumber)

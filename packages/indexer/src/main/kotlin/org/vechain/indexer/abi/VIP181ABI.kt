@@ -2,82 +2,10 @@ package org.vechain.indexer.abi
 
 object VIP181ABI {
 
-    val name: FunctionDefinition
-        get() {
-            return FunctionDefinition(
-                name = "name",
-                inputs = listOf(),
-                outputs = listOf(
-                    FunctionParameter(
-                        name = "",
-                        type = "string",
-                        components = listOf(),
-                        internalType = "string"
-                    )
-                ),
-                stateMutability = StateMutability.VIEW.value
-            )
-        }
-
-    val symbol: FunctionDefinition
-        get() {
-            return FunctionDefinition(
-                name = "symbol",
-                inputs = listOf(),
-                outputs = listOf(
-                    FunctionParameter(
-                        name = "",
-                        type = "string",
-                        components = listOf(),
-                        internalType = "string"
-                    )
-                ),
-                stateMutability = StateMutability.VIEW.value
-            )
-        }
-
-
-    val totalSupply: FunctionDefinition
-        get() {
-            return FunctionDefinition(
-                name = "totalSupply",
-                inputs = listOf(),
-                outputs = listOf(
-                    FunctionParameter(
-                        name = "",
-                        type = "uint256",
-                        components = listOf(),
-                        internalType = "uint256"
-                    )
-                ),
-                stateMutability = StateMutability.VIEW.value
-            )
-        }
-
-    val balanceOf: FunctionDefinition
-        get() {
-            return FunctionDefinition(
-                name = "balanceOf",
-                inputs = listOf(
-                    FunctionParameter(
-                        name = "owner",
-                        type = "address",
-                        components = listOf(),
-                        internalType = "address"
-                    )
-                ),
-                outputs = listOf(
-                    FunctionParameter(
-                        name = "",
-                        type = "uint256",
-                        components = listOf(),
-                        internalType = "uint256"
-                    )
-                ),
-                stateMutability = StateMutability.VIEW.value
-            )
-        }
-
+    val name: FunctionDefinition = CommonABI.name
+    val symbol: FunctionDefinition = CommonABI.symbol
+    val totalSupply: FunctionDefinition = CommonABI.totalSupply
+    val balanceOf: FunctionDefinition = CommonABI.balanceOf
 
     val ownerOf: FunctionDefinition
         get() {
@@ -99,7 +27,7 @@ object VIP181ABI {
                         internalType = "address"
                     )
                 ),
-                stateMutability = StateMutability.VIEW.value
+                stateMutability = "view"
             )
         }
 
@@ -129,7 +57,7 @@ object VIP181ABI {
                         internalType = "bool"
                     )
                 ),
-                stateMutability = StateMutability.VIEW.value
+                stateMutability = "view"
             )
         }
 }

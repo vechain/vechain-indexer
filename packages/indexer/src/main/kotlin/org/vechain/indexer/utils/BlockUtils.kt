@@ -1,5 +1,6 @@
 package org.vechain.indexer.utils
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.model.*
 
 object BlockUtils {
@@ -72,7 +73,7 @@ object BlockUtils {
         return getOutputs(block).flatMap { (output, tx) ->
             ContractUtils.findTransferEvents(output.events).mapIndexed { i, event ->
                 TransferEvent(
-                    id = "${tx.id}-${i}",
+                    id = DigestUtils.sha1Hex("${tx.id}-${i}"),
                     blockId = block.id,
                     blockNumber = block.number,
                     txId = tx.id,
