@@ -15,12 +15,8 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
-import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.NFT
-import org.vechain.indexer.model.WrappedTransaction
-import org.vechain.indexer.repos.ContractRepo
-import org.vechain.indexer.repos.NFTRepo
-import org.vechain.indexer.repos.TransactionRepo
+import org.vechain.indexer.model.*
+import org.vechain.indexer.repos.*
 import java.util.*
 
 
@@ -37,6 +33,8 @@ abstract class AbstractIntegrationTest {
     protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
+    protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
+    protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
 
     protected val objectMapper = ObjectMapper()
 
@@ -53,6 +51,12 @@ abstract class AbstractIntegrationTest {
     @Autowired
     lateinit var nftRepo: NFTRepo
 
+    @Autowired
+    lateinit var blockRepo: BlockRepo
+
+    @Autowired
+    lateinit var transferEventRepo: TransferEventRepo
+
     @BeforeAll
     fun setup() {
 
@@ -62,12 +66,17 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)
         val nfts: List<NFT> =
             loadDataFromResources("/nfts.json", NFT_TYPE)
+        val blocks: List<Block> =
+            loadDataFromResources("/blocks.json", BLOCKS_TYPE)
+        val transferEvents: List<TransferEvent> =
+            loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
         nftRepo.saveAll(nfts)
+        blockRepo.saveAll(blocks)
+        transferEventRepo.saveAll(transferEvents)
     }
-
 
     /**
      * Load json files from resources

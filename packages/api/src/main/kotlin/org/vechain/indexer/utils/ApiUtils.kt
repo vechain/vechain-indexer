@@ -8,12 +8,14 @@ import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 
 object ApiUtils {
 
-    fun toPageable(page: Int?, size: Int?): Pageable {
+    fun toPageable(page: Int?, size: Int?, sort: Sort = byAscendingId()): Pageable {
         return PageRequest.of(
             page ?: DEFAULT_PAGE,
             size ?: DEFAULT_PAGE_SIZE,
-            Sort.by(Sort.Direction.ASC, "id")
+            sort
         )
     }
+
+    private fun byAscendingId() = Sort.by(Sort.Direction.ASC, "id")
 
 }

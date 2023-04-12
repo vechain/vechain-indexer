@@ -11,7 +11,7 @@ data class TransferEvent(
     val blockId: String? = null,
     @Indexed
     val blockNumber: Long? = null,
-    val txId: String?,
+    val txId: String? = null,
     @Indexed
     val from: String? = null,
     @Indexed

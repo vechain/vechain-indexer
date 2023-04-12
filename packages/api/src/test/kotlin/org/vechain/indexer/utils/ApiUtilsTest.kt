@@ -62,7 +62,7 @@ internal class ApiUtilsTest {
     }
 
     @Test
-    fun `pagination is sorted by ascending id`() {
+    fun `pagination sorting default is by ascending id`() {
         val page = 13
         val size = 30
 
@@ -70,6 +70,19 @@ internal class ApiUtilsTest {
 
         expect {
             that(pageable.sort).isEqualTo(Sort.by(Sort.Direction.ASC, "id"))
+        }
+    }
+
+    @Test
+    fun `pagination custom sorting can be passed as param`() {
+        val page = 13
+        val size = 30
+        val sort = Sort.by(Sort.Direction.ASC, "number")
+
+        val pageable = ApiUtils.toPageable(page, size, sort)
+
+        expect {
+            that(pageable.sort).isEqualTo(sort)
         }
     }
 }
