@@ -10,6 +10,9 @@ springdoc:
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  output:
+    ansi:
+      enabled: always
 
 management:
   endpoints:
@@ -26,5 +29,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
 
 logging:
+  pattern:
+    console: "%date | %highlight(%-5level) | %cyan(%-40.40logger{40}) | %msg %n"
   level:
-    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.vechain: ${APP_LOG_LEVEL:INFO}

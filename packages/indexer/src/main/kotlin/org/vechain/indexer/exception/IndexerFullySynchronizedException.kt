@@ -1,3 +1,3 @@
 package org.vechain.indexer.exception
 
-class IndexerFullySynchronizedException : Exception()
+class IndexerFullySynchronizedException(message: String?) : Exception(message)

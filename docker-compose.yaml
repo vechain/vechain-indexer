@@ -15,6 +15,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+    tty: true
     networks:
       - vechain
       - vechain-database
@@ -36,6 +37,7 @@ services:
       start_period: 40s
     ports:
       - 8080:8080
+    tty: true
     networks:
       - vechain
       - vechain-database
