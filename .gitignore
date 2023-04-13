@@ -46,3 +46,4 @@ load-testing/node_modules
 load-testing/dist
 load-testing/.output
 mongo-data
+app-logs

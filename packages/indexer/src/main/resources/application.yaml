@@ -11,9 +11,8 @@ spring:
       enabled: always
 
 logging:
-  pattern:
-    console: "%date | %highlight(%-5level) | %cyan(%-40.40logger{40}) | %msg %n"
   level:
+    ROOT: INFO
     org.vechain: ${APP_LOG_LEVEL:INFO}
 
 management:
