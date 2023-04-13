@@ -33,24 +33,20 @@ internal class TransactionIndexerTest {
 
     @Test
     fun `Process block - With no transactions`() {
-        val blockNumber = 3L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_3_NO_CLAUSES
 
-        transactionIndexer.processBlock(blockNumber)
+        transactionIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
         verify { transactionRepo wasNot Called }
     }
 
     @Test
     fun `Process block - With transactions`() {
-        val blockNumber = 4L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_4_SINGLE_CLAUSE
 
         val transactionsSlot = slot<List<WrappedTransaction>>()
         every { transactionRepo.saveAll(capture(transactionsSlot)) } returns mutableListOf()
 
 
-        transactionIndexer.processBlock(blockNumber)
+        transactionIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
 
 
         val txs = transactionsSlot.captured
