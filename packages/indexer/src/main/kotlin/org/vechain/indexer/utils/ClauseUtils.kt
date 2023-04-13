@@ -26,7 +26,7 @@ object ClauseUtils {
     }
 
     fun contractCall(address: String, function: FunctionDefinition, vararg args: Any): Clause {
-        val func = objectMapper.convertValue(function, Function::class.java)
+        val func = Function(objectMapper.writeValueAsString(function))
         val encoded = func.encodeToHex(true, *args)
         return Clause(to = address, data = encoded, value = "0x0")
     }
