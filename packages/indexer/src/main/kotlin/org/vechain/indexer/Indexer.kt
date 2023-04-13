@@ -12,6 +12,7 @@ enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
+const val ZERO_ID = "0x000000000"
 const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(private val thorService: ThorService) {
@@ -22,12 +23,13 @@ abstract class Indexer(private val thorService: ThorService) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
-    var currentBlock: Long = 0
+    var currentBlockNumber: Long = 0
+    var previousBlockId: String = ZERO_ID
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
-        currentBlock = getStartingBlock()
-        logger.info("Starting @ Block: $currentBlock")
+        currentBlockNumber = getStartingBlock()
+        logger.info("Starting @ Block: $currentBlockNumber")
         run()
     }
 
@@ -35,17 +37,21 @@ abstract class Indexer(private val thorService: ThorService) {
         try {
             backoffDelay()
 
-            logger.info("Processing @ Block $currentBlock (${status})")
-            val block = thorService.getBlock(currentBlock)
+            logger.info("Processing @ Block $currentBlockNumber (${status})")
+            val block = thorService.getBlock(currentBlockNumber)
+
+            // Check for reorg.
+            
+
             processBlock(block)
 
             postProcessBlock(block)
         } catch (e: IndexerFullySynchronizedException) {
-            logger.info("FULLY_SYNCED @ Block $currentBlock")
+            logger.info("FULLY_SYNCED @ Block $currentBlockNumber")
             backoffPeriod = 4000
             status = Status.FULLY_SYNCED
         } catch (e: Exception) {
-            logger.error("Error while processing block $currentBlock", e)
+            logger.error("Error while processing block $currentBlockNumber", e)
             logger.info("Restarting indexer in 10s...")
             Thread.sleep(10 * 1000)
             status = Status.SYNCING
@@ -64,7 +70,10 @@ abstract class Indexer(private val thorService: ThorService) {
         }
 
         // Increment the current block.
-        currentBlock++
+        currentBlockNumber++
+
+        // Set the previous block id.
+        previousBlockId = block.id!!
     }
 
     private fun backoffDelay() {
