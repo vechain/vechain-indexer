@@ -83,7 +83,7 @@ class ContractIndexer(
     }
 
     override fun getStartingBlock(): Long {
-        return 3924480
+        return contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
 }

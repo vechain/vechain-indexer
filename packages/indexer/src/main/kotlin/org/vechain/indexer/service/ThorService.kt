@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.slf4j.LoggerFactory
 import org.apache.logging.log4j.LogManager
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpHeaders
@@ -14,18 +15,14 @@ import org.vechain.indexer.model.*
 @Service
 class ThorService(private val thorRest: WebClient) {
 
-    private val logger = LogManager.getLogger(this::class.simpleName)
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun getBlock(number: Long): Block {
         val response =
             thorRest.get().uri("/blocks/$number?expanded=true").retrieve().bodyToMono(Block::class.java).block()
+                ?: throw IndexerFullySynchronizedException("Block $number not found")
 
-        if (response == null) {
-            logger.error("Block $number not found")
-            throw IndexerFullySynchronizedException()
-        }
-
-        if (logger.isDebugEnabled) logger.debug("Block $number found: ${response.id}")
+        logger.debug("Block $number found")
 
         return response
     }
@@ -35,11 +32,10 @@ class ThorService(private val thorRest: WebClient) {
             thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 
         if (response?.number == null) {
-            logger.error("Best block not found")
-            throw NotFoundException()
+            throw NotFoundException("Best block not found")
         }
 
-        if (logger.isDebugEnabled) logger.debug("Best block# found: ${response.number}")
+        logger.debug("Best block found: ${response.number}")
 
         return response
     }
@@ -47,13 +43,9 @@ class ThorService(private val thorRest: WebClient) {
     fun getAccountCode(address: String): String? {
         val response =
             thorRest.get().uri("/accounts/$address/code").retrieve().bodyToMono(AccountCodeResponse::class.java).block()
+                ?: throw NotFoundException("Account $address not found")
 
-        if (response == null) {
-            logger.error("Account $address not found")
-            throw NotFoundException()
-        }
-
-        if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
+        logger.debug("Account $address found: $response")
 
         return response.code
     }
@@ -65,7 +57,7 @@ class ThorService(private val thorRest: WebClient) {
             ?: throw Exception("Block ref is null")
 
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
-        
+
         val res = thorRest.post().uri("/accounts/*")
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .accept(MediaType.APPLICATION_JSON)

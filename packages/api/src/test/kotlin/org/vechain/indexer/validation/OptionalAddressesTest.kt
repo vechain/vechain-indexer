@@ -5,8 +5,8 @@ import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
-class OptionalAddressesTest {
-    val validator = OptionalAddressesValidator()
+internal class OptionalAddressesTest {
+    private val validator = OptionalAddressesValidator()
 
     @Test
     fun `empty list should be true`() {

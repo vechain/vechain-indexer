@@ -7,12 +7,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Sort.Direction.ASC
+import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Transactions", description = "Query on chain transactions")
@@ -44,14 +47,33 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "page",
+        schema = Schema(type = "Integer"),
+        description = "The results page number",
+        required = false,
+        example = "0"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "size",
+        schema = Schema(type = "Integer"),
+        description = "The results page size",
+        required = false,
+        example = "20"
+    )
     open fun getTransactionsByOrigin(
         @Address @PathVariable address: String,
-        @RequestParam(required = false) includeDelegated: Boolean?
+        @RequestParam(required = false) includeDelegated: Boolean?,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
     ): List<WrappedTransaction> {
-        if (includeDelegated == true)
-            return transactionService.findByOriginOrGasPayer(address)
-
-        return transactionService.findByOrigin(address)
+        return transactionService.findByOrigin(
+            address,
+            includeDelegated,
+            toPageable(page, size, by(ASC, "blockNumber", "id"))
+        )
     }
 
     @GetMapping("{address}/delegated")
@@ -69,9 +91,30 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "page",
+        schema = Schema(type = "Integer"),
+        description = "The results page number",
+        required = false,
+        example = "0"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "size",
+        schema = Schema(type = "Integer"),
+        description = "The results page size",
+        required = false,
+        example = "20"
+    )
     open fun getDelegatedTransactions(
-        @Address @PathVariable address: String
+        @Address @PathVariable address: String,
+        @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) size: Int?,
     ): List<WrappedTransaction> {
-        return transactionService.findAllDelegated(address)
+        return transactionService.findAllDelegated(
+            address,
+            toPageable(page, size, by(ASC, "blockNumber", "id"))
+        )
     }
 }

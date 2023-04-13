@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
 
 enum class Status {
@@ -11,14 +11,17 @@ const val APPROX_BLOCK_PERIOD = 9990L
 
 abstract class Indexer {
 
-    protected val logger = LogManager.getLogger(this::class.simpleName)
+    val name: String
+        get() = this.javaClass.simpleName
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
     var currentBlock: Long = 0
 
     fun start() {
         currentBlock = getStartingBlock()
-        logger.info("Starting ${name()} from block $currentBlock")
+        logger.info("Starting @ Block: $currentBlock")
         run()
     }
 
@@ -26,18 +29,19 @@ abstract class Indexer {
         try {
             backoffDelay()
 
-            logger.info("${name()} is processing block $currentBlock (Status: $status)")
+            logger.info("Processing @ Block $currentBlock (${status})")
+
             processBlock(currentBlock)
 
             currentBlock++
         } catch (e: IndexerFullySynchronizedException) {
-            logger.info("${name()} is fully synchronized...")
+            logger.info("FULLY_SYNCED @ Block $currentBlock")
             Thread.sleep(1000)
             status = Status.FULLY_SYNCED
         } catch (e: Exception) {
-            logger.error("${name()}: Error while processing block $currentBlock", e)
-            logger.info("${name()}: Restarting indexer in 10s...")
-            Thread.sleep(10000)
+            logger.error("Error while processing block $currentBlock", e)
+            logger.info("Restarting indexer in 10s...")
+            Thread.sleep(10 * 1000)
             status = Status.SYNCING
         }
 
@@ -53,8 +57,5 @@ abstract class Indexer {
     abstract fun processBlock(blockNumber: Long)
     abstract fun getStartingBlock(): Long
 
-    internal fun name(): String {
-        return this.javaClass.simpleName
-    }
 
 }
