@@ -20,6 +20,10 @@ object HexUtil {
         return if (hex.startsWith("0x")) hex else "0x$hex"
     }
 
+    fun removePrefix(hex: String): String {
+        return if (hex.startsWith("0x")) hex.substring(2) else hex
+    }
+
     /**
      * Add prefix and lowercase. Used for queries in the DB
      */

@@ -52,7 +52,7 @@ abstract class AbstractIntegrationTest {
             )
 
         val transactionScript: GenericContainer<*> = GenericContainer(
-            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:6b981c269661c91123c4ad6e5b2c94ad4f976d20")
+            DockerImageName.parse("ghcr.io/vechainfoundation/thor-transactions-script:8ea5c8f17000cf3891629f890a86fc86504b3c8d")
         )
             .withNetwork(thorNetwork)
             .withEnv("NODE_URL", "http://thor-node:8669")

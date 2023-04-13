@@ -22,11 +22,6 @@ object ContractUtils {
         }
     }
 
-    fun removeTopicPadding(topic: String): String {
-        if (topic.length <= 26) return topic
-        return "0x${topic.substring(26)}"
-    }
-
     fun isContractType(specification: ContractSpecification, rawData: String?): Boolean {
         rawData ?: return false
         return specification.functions.all { rawData.contains(it) } &&
