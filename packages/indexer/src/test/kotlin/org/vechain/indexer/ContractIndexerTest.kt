@@ -25,7 +25,7 @@ internal class ContractIndexerTest {
     private val contractService: ContractService = ContractService(thorService)
 
     //Using constructor invocation because MockK has problems with @SpyK + @InjectMocks
-    private val contractIndexer: ContractIndexer = ContractIndexer(thorService, contractRepo, contractService)
+    private val contractIndexer: ContractIndexer = ContractIndexer(thorService, contractService, contractRepo)
 
     init {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
@@ -129,7 +129,7 @@ internal class ContractIndexerTest {
 
     @Test
     fun `Update contract master when no contract data`() {
-        
+
         // Mock data returned for block#16: block, null account code & existing mongo document
         every { thorService.getAccountCode(any()) } returns null
         every { contractRepo.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
