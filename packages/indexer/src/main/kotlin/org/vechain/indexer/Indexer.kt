@@ -33,8 +33,8 @@ abstract class Indexer(private val thorService: ThorService, private val repo: I
     fun start() {
         currentBlockNumber = getStartingBlock()
 
-        // TODO: Check for reorg. on restart.
-
+        // As a precaution assume a reorg happened
+        resolveReorg()
 
         logger.info("Starting @ Block: $currentBlockNumber")
         run()
@@ -95,9 +95,12 @@ abstract class Indexer(private val thorService: ThorService, private val repo: I
 
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
-        repo.deleteAllByBlockNumberBetween(currentBlockNumber - REORG_BLOCK_PURGE - 2, currentBlockNumber)
+        repo.deleteAllByBlockNumberBetween(
+            maxOf(currentBlockNumber - REORG_BLOCK_PURGE - 1, 1),
+            maxOf(currentBlockNumber + 1, 1)
+        )
 
-        currentBlockNumber -= REORG_BLOCK_PURGE
+        currentBlockNumber = maxOf(currentBlockNumber - REORG_BLOCK_PURGE, 0)
         previousBlockId = ZERO_ID
         status = Status.SYNCING
     }
