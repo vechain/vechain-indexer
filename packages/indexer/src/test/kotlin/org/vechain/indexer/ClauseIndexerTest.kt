@@ -90,9 +90,7 @@ internal class ClauseIndexerTest {
         val clausesSlot = slot<List<WrappedClause>>()
         every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
 
-
         clauseIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
-
 
         val clauses = clausesSlot.captured
         expect {

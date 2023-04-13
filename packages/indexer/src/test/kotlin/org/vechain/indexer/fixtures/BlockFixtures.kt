@@ -1,11 +1,16 @@
 package org.vechain.indexer.fixtures
 
-import com.google.gson.Gson
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.vechain.indexer.model.Block
 
 object BlockFixtures {
 
-    private val gson = Gson()
+    private val objectMapper = ObjectMapper()
+
+    init {
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    }
 
     val BLOCK_3_NO_CLAUSES = buildBlockFixture(3L)
     val BLOCK_4_SINGLE_CLAUSE = buildBlockFixture(4L)
@@ -15,7 +20,7 @@ object BlockFixtures {
     val BLOCK_16_MASTER_EVENT_UPDATE = buildBlockFixture(16L)
 
     private fun buildBlockFixture(blockNumber: Long): Block {
-        return gson.fromJson(
+        return objectMapper.readValue(
             BlockFixtures::class.java.getResource("/block_${blockNumber}.json")!!.readText(),
             Block::class.java
         )
