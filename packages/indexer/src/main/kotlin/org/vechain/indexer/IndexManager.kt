@@ -31,7 +31,7 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
         try {
             val latestBlock = thorService.getBestBlock()
 
-            latestBlock.number?.let { latestBlockNumber ->
+            latestBlock.blockNumber?.let { latestBlockNumber ->
                 indexers.forEach { indexer ->
                     if (indexer.currentBlockNumber < latestBlockNumber && indexer.status == Status.FULLY_SYNCED) {
                         logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlockNumber}, bestBlock=${latestBlockNumber})")

@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.model.Block
 
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
