@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.repos.BlockNumber
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
@@ -25,7 +26,7 @@ class TransferEventIndexerTest {
 
     @MockK
     lateinit var thorService: ThorService
-
+    
     @MockK
     lateinit var transferEventRepo: TransferEventRepo
 
@@ -36,7 +37,7 @@ class TransferEventIndexerTest {
     fun `Starting block is transfer block - when transfer block is lower`() {
         val transferEventsStartingBlock = 9L
 
-        every { transferEventRepo.getMaxBlockNumber() } returns listOf(buildTransferEvent(transferEventsStartingBlock))
+        every { transferEventRepo.getMaxBlockNumber() } returns BlockNumber(transferEventsStartingBlock)
 
         val indexerStartingBlock = transferEventIndexer.getStartingBlock()
 
@@ -45,10 +46,8 @@ class TransferEventIndexerTest {
 
     @Test
     fun `Process block - with no transfer events`() {
-        val blockNumber = 3L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_3_NO_CLAUSES
 
-        transferEventIndexer.processBlock(blockNumber)
+        transferEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
         verify { transferEventRepo wasNot Called }
     }
@@ -56,14 +55,11 @@ class TransferEventIndexerTest {
     @Test
     fun `Process block - with transfer events`() {
         val blockNumber = 8L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_8_MULTIPLE_CLAUSES
 
         val transfersSlot = slot<List<TransferEvent>>()
         every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
 
-
-        transferEventIndexer.processBlock(blockNumber)
-
+        transferEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
         val transfers = transfersSlot.captured
         expect {

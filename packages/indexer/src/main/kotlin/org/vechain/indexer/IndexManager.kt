@@ -26,17 +26,18 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
         indexers.forEach { indexer -> executor.submit<Any> { indexer.start(); null } }
     }
 
-    @Scheduled(fixedRate = BLOCK_TIME * 2)
+    @Scheduled(fixedRate = BLOCK_TIME * 10)
     fun reSyncingIndexers() {
         try {
             val latestBlock = thorService.getBestBlock()
 
-            latestBlock.number?.let { latestBlockNumber ->
+            latestBlock.blockNumber?.let { latestBlockNumber ->
                 indexers.forEach { indexer ->
-                    if (indexer.currentBlock < latestBlockNumber && indexer.status == Status.FULLY_SYNCED) {
-                        logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlock}, bestBlock=${latestBlockNumber})")
+                    if (indexer.currentBlockNumber < latestBlockNumber && indexer.status == Status.FULLY_SYNCED) {
+                        logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlockNumber}, bestBlock=${latestBlockNumber})")
                         indexer.status = Status.SYNCING
                     }
+
                 }
             }
 

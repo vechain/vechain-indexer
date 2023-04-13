@@ -26,7 +26,7 @@ internal class NFTEventIndexerTest {
 
     @MockK
     lateinit var thorService: ThorService
-
+    
     @MockK
     lateinit var nftRepo: NFTRepo
 
@@ -36,14 +36,11 @@ internal class NFTEventIndexerTest {
     @Test
     fun `Process block - with NFT transfer events`() {
         val blockNumber = 8L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_8_MULTIPLE_CLAUSES
 
         val nftsSlot = slot<List<NFT>>()
         every { nftRepo.saveAll(capture(nftsSlot)) } returns mutableListOf()
 
-
-        nftEventIndexer.processBlock(blockNumber)
-
+        nftEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
         val nftEvents = nftsSlot.captured
         expectThat(nftEvents).hasSize(10)
@@ -61,12 +58,8 @@ internal class NFTEventIndexerTest {
 
     @Test
     fun `Process block - with no NFT transfer events`() {
-        val blockNumber = 3L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_3_NO_CLAUSES
 
-
-        nftEventIndexer.processBlock(blockNumber)
-
+        nftEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
         verify { nftRepo wasNot Called }
     }

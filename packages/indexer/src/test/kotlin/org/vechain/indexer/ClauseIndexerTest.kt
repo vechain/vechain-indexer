@@ -36,14 +36,11 @@ internal class ClauseIndexerTest {
     @Test
     fun `Extract clauses from block - Single clause`() {
         val blockNumber = 4L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_4_SINGLE_CLAUSE
 
         val clausesSlot = slot<List<WrappedClause>>()
         every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
 
-
-        clauseIndexer.processBlock(blockNumber)
-
+        clauseIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
 
         val clauses = clausesSlot.captured
         expect {
@@ -89,15 +86,11 @@ internal class ClauseIndexerTest {
 
     @Test
     fun `Extract clauses from block - Multiple clauses`() {
-        val blockNumber = 8L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_8_MULTIPLE_CLAUSES
 
         val clausesSlot = slot<List<WrappedClause>>()
         every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
 
-
-        clauseIndexer.processBlock(blockNumber)
-
+        clauseIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
         val clauses = clausesSlot.captured
         expect {
@@ -107,10 +100,8 @@ internal class ClauseIndexerTest {
 
     @Test
     fun `Extract clauses from block - No clause`() {
-        val blockNumber = 3L
-        every { thorService.getBlock(blockNumber) } returns BLOCK_3_NO_CLAUSES
 
-        clauseIndexer.processBlock(blockNumber)
+        clauseIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
         verify { clauseRepo wasNot Called }
     }

@@ -31,11 +31,11 @@ class ThorService(private val thorRest: WebClient) {
         val response =
             thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 
-        if (response?.number == null) {
+        if (response?.blockNumber == null) {
             throw NotFoundException("Best block not found")
         }
 
-        logger.debug("Best block found: ${response.number}")
+        logger.debug("Best block found: ${response.blockNumber}")
 
         return response
     }

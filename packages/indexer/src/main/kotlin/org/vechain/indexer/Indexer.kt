@@ -2,14 +2,23 @@ package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.exception.ReorgException
+import org.vechain.indexer.model.Block
+import org.vechain.indexer.repos.IndexerRepository
+import org.vechain.indexer.service.ThorService
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import kotlin.math.max
 
 enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
-const val APPROX_BLOCK_PERIOD = 9990L
+const val ZERO_ID = "0x000000000"
+const val REORG_BLOCK_PURGE = 36L
+const val INITIAL_BACKOFF_PERIOD = 10000L
 
-abstract class Indexer {
+abstract class Indexer(private val thorService: ThorService, private val repo: IndexerRepository) {
 
     val name: String
         get() = this.javaClass.simpleName
@@ -17,11 +26,17 @@ abstract class Indexer {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
-    var currentBlock: Long = 0
+    var currentBlockNumber: Long = 0
+    var previousBlockId: String = ZERO_ID
+    private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
-        currentBlock = getStartingBlock()
-        logger.info("Starting @ Block: $currentBlock")
+        currentBlockNumber = getStartingBlock()
+
+        // As a precaution assume a reorg happened
+        resolveReorg()
+
+        logger.info("Starting @ Block: $currentBlockNumber")
         run()
     }
 
@@ -29,17 +44,25 @@ abstract class Indexer {
         try {
             backoffDelay()
 
-            logger.info("Processing @ Block $currentBlock (${status})")
+            logger.info("Processing @ Block $currentBlockNumber (${status})")
+            val block = thorService.getBlock(currentBlockNumber)
 
-            processBlock(currentBlock)
+            // Check for reorg.
+            if (previousBlockId != ZERO_ID && previousBlockId != block.parentID) throw ReorgException("Reorg detected.")
 
-            currentBlock++
+            processBlock(block)
+
+            postProcessBlock(block)
         } catch (e: IndexerFullySynchronizedException) {
-            logger.info("FULLY_SYNCED @ Block $currentBlock")
-            Thread.sleep(1000)
+            logger.info("FULLY_SYNCED @ Block $currentBlockNumber")
+            backoffPeriod = 4000
             status = Status.FULLY_SYNCED
+        } catch (e: ReorgException) {
+            logger.error("REORG @ Block $currentBlockNumber")
+            resolveReorg()
+            logger.info("Restarting indexer @ Block $currentBlockNumber after resolving reorg...")
         } catch (e: Exception) {
-            logger.error("Error while processing block $currentBlock", e)
+            logger.error("Error while processing block $currentBlockNumber", e)
             logger.info("Restarting indexer in 10s...")
             Thread.sleep(10 * 1000)
             status = Status.SYNCING
@@ -48,14 +71,44 @@ abstract class Indexer {
         run()
     }
 
+    private fun postProcessBlock(block: Block) {
+        // If we are fully synced, recalculate the backoff period.
+        if (status == Status.FULLY_SYNCED) {
+            val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC)
+            val timeSinceLastBlock =
+                max(currentEpoch - block.timestamp!!, 0)
+            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000))
+        }
+
+        // Increment the current block.
+        currentBlockNumber++
+
+        // Set the previous block id.
+        previousBlockId = block.id!!
+    }
+
     private fun backoffDelay() {
         if (status == Status.FULLY_SYNCED) {
-            Thread.sleep(APPROX_BLOCK_PERIOD)
+            Thread.sleep(backoffPeriod)
         }
     }
 
-    abstract fun processBlock(blockNumber: Long)
-    abstract fun getStartingBlock(): Long
+    private fun resolveReorg() {
+        // Delete all records from the previous n blocks
+        repo.deleteAllByBlockNumberBetween(
+            maxOf(currentBlockNumber - REORG_BLOCK_PURGE - 1, 1),
+            maxOf(currentBlockNumber + 1, 1)
+        )
 
+        currentBlockNumber = maxOf(currentBlockNumber - REORG_BLOCK_PURGE, 0)
+        previousBlockId = ZERO_ID
+        status = Status.SYNCING
+    }
+
+    fun getStartingBlock(): Long {
+        return repo.getMaxBlockNumber()?.blockNumber ?: 0
+    }
+
+    abstract fun processBlock(block: Block)
 
 }
