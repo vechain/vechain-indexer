@@ -1,6 +1,6 @@
 [
   {
-    "number": 3,
+    "blockNumber": 3,
     "id": "0x00000003dc993afc0aa8f0f11abc00a0a5d0986f891448dc00c480bf0c610cad",
     "size": 355,
     "parentID": "0x00000002f6621ed527205da02beaec09a6fb16d822f9bf53ac5fca11a79f8478",
@@ -20,7 +20,7 @@
     "transactions": []
   },
   {
-    "number": 4,
+    "blockNumber": 4,
     "id": "0x000000040ec070526cdd2405b0c1653e0431c20774263e6681eeb541103d8e95",
     "size": 8911,
     "parentID": "0x00000003dc993afc0aa8f0f11abc00a0a5d0986f891448dc00c480bf0c610cad",
@@ -81,7 +81,7 @@
     ]
   },
   {
-    "number": 5,
+    "blockNumber": 5,
     "id": "0x00000005e1a971fddd7d04e5a0f22de2a2d7cba851af09e108467b394333fdfd",
     "size": 20927,
     "parentID": "0x000000040ec070526cdd2405b0c1653e0431c20774263e6681eeb541103d8e95",
@@ -212,7 +212,7 @@
     ]
   },
   {
-    "number": 6,
+    "blockNumber": 6,
     "id": "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
     "size": 20364,
     "parentID": "0x00000005e1a971fddd7d04e5a0f22de2a2d7cba851af09e108467b394333fdfd",
@@ -303,7 +303,7 @@
     ]
   },
   {
-    "number": 8,
+    "blockNumber": 8,
     "id": "0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e",
     "size": 1930,
     "parentID": "0x00000007356657f673a3e02c66e98647a0bef53e889e6a70f9acc47c8cffa8ac",
@@ -754,7 +754,7 @@
     ]
   },
   {
-    "number": 16,
+    "blockNumber": 16,
     "id": "0x000000104d2ac4a9075c98f082edaa307aa089af124d9591c083878e5a060e46",
     "size": 581,
     "parentID": "0x0000000f9b7df5d48ccdf9292cbd2fa8dd7489379c03e52fdf9b6c5cf11269de",
