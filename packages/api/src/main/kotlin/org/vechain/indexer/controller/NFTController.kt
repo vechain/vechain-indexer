@@ -7,13 +7,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Sort.Direction.ASC
+import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
-import org.vechain.indexer.utils.ApiUtils.toPageable
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.OptionalAddresses
 
@@ -53,7 +55,7 @@ open class NFTController(private val nftService: NFTService) {
         schema = Schema(type = "Integer"),
         description = "The results page number",
         required = false,
-        example = "1"
+        example = "0"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -70,9 +72,9 @@ open class NFTController(private val nftService: NFTService) {
         @RequestParam(required = false) size: Int?,
     ): List<NFT> {
         return if (contractAddresses.isNullOrEmpty()) {
-            nftService.findByOwner(address, toPageable(page, size))
+            nftService.findByOwner(address, toPageable(page, size, sorted()))
         } else {
-            nftService.findByOwnerAndContractAddresses(address, contractAddresses, toPageable(page, size))
+            nftService.findByOwnerAndContractAddresses(address, contractAddresses, toPageable(page, size, sorted()))
         }
     }
 
@@ -97,7 +99,7 @@ open class NFTController(private val nftService: NFTService) {
         schema = Schema(type = "Integer"),
         description = "The results page number",
         required = false,
-        example = "1"
+        example = "0"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -112,6 +114,8 @@ open class NFTController(private val nftService: NFTService) {
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) size: Int?,
     ): List<String> {
-        return nftService.findContractsByNFTOwner(owner, toPageable(page, size))
+        return nftService.findContractsByNFTOwner(owner, toPageable(page, size, sorted()))
     }
+
+    private fun sorted() = by(ASC, "blockNumber", "txId", "id")
 }

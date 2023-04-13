@@ -15,6 +15,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+    tty: true
+    volumes:
+      - ./app-logs:/opt/app/app-logs
     networks:
       - vechain
       - vechain-database
@@ -36,6 +39,9 @@ services:
       start_period: 40s
     ports:
       - 8080:8080
+    tty: true
+    volumes:
+      - ./app-logs:/opt/app/app-logs
     networks:
       - vechain
       - vechain-database

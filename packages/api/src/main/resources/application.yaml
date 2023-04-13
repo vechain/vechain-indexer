@@ -7,9 +7,17 @@ springdoc:
   swagger-ui:
     path: /
 
+logging:
+  level:
+    ROOT: INFO
+    org.vechain: ${APP_LOG_LEVEL:INFO}
+
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  output:
+    ansi:
+      enabled: always
 
 management:
   endpoints:
@@ -24,7 +32,3 @@ management:
 spring.data:
   mongodb:
     uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
-
-logging:
-  level:
-    org.springframework.data.mongodb.core.MongoTemplate: DEBUG

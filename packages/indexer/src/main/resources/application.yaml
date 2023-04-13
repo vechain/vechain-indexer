@@ -6,6 +6,14 @@ server:
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:prod}
+  output:
+    ansi:
+      enabled: always
+
+logging:
+  level:
+    ROOT: INFO
+    org.vechain: ${APP_LOG_LEVEL:INFO}
 
 management:
   endpoints:

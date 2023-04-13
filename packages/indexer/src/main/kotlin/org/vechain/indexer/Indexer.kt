@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-import org.apache.logging.log4j.LogManager
+import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.service.ThorService
@@ -16,7 +16,10 @@ const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(private val thorService: ThorService) {
 
-    private val logger = LogManager.getLogger(this::class.simpleName)
+    val name: String
+        get() = this.javaClass.simpleName
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
     var currentBlock: Long = 0
@@ -24,7 +27,7 @@ abstract class Indexer(private val thorService: ThorService) {
 
     fun start() {
         currentBlock = getStartingBlock()
-        logger.info("Starting ${name()} from block $currentBlock")
+        logger.info("Starting @ Block: $currentBlock")
         run()
     }
 
@@ -32,19 +35,19 @@ abstract class Indexer(private val thorService: ThorService) {
         try {
             backoffDelay()
 
-            logger.info("${name()} is processing block $currentBlock (Status: $status)")
+            logger.info("Processing @ Block $currentBlock (${status})")
             val block = thorService.getBlock(currentBlock)
             processBlock(block)
-
+            
             postProcessBlock(block)
         } catch (e: IndexerFullySynchronizedException) {
-            logger.info("${name()} is fully synchronized...")
+            logger.info("FULLY_SYNCED @ Block $currentBlock")
             backoffPeriod = 4000
             status = Status.FULLY_SYNCED
         } catch (e: Exception) {
-            logger.error("${name()}: Error while processing block $currentBlock", e)
-            logger.info("${name()}: Restarting indexer in 10s...")
-            Thread.sleep(10000)
+            logger.error("Error while processing block $currentBlock", e)
+            logger.info("Restarting indexer in 10s...")
+            Thread.sleep(10 * 1000)
             status = Status.SYNCING
         }
 
@@ -74,9 +77,5 @@ abstract class Indexer(private val thorService: ThorService) {
 
     abstract fun processBlock(block: Block)
     abstract fun getStartingBlock(): Long
-
-    private fun name(): String {
-        return this.javaClass.simpleName
-    }
 
 }
