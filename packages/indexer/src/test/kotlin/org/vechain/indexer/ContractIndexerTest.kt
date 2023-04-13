@@ -1,12 +1,9 @@
 package org.vechain.indexer
 
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import io.mockk.slot
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
@@ -14,23 +11,25 @@ import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
 import java.util.*
 
-@ExtendWith(MockKExtension::class)
 internal class ContractIndexerTest {
 
-    @MockK
-    lateinit var thorService: ThorService
+    private val thorService: ThorService = mockk()
+    private var contractRepo: ContractRepo = mockk()
+    private val contractService: ContractService = ContractService(thorService)
 
-    @MockK
-    lateinit var contractRepo: ContractRepo
+    //Using constructor invocation because MockK has problems with @SpyK + @InjectMocks
+    private val contractIndexer: ContractIndexer = ContractIndexer(thorService, contractRepo, contractService)
 
-    @InjectMockKs
-    lateinit var contractIndexer: ContractIndexer
+    init {
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+    }
 
     // Block #5 -> block_5.json
     // This block contains 2 ERC20/VIP180 contract deployment transactions

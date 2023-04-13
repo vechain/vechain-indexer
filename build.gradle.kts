@@ -10,7 +10,6 @@ plugins {
     jacoco
 }
 
-
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 allprojects {
@@ -32,6 +31,12 @@ allprojects {
         mavenCentral()
         maven { url = uri("https://repo.spring.io/milestone") }
         maven { url = uri("https://repo.spring.io/snapshot") }
+        maven {
+            url = uri("https://jitpack.io")
+            content {
+                includeGroup("com.github.vechain")
+            }
+        }
     }
 
     tasks.withType<JavaCompile> {
@@ -53,10 +58,15 @@ allprojects {
         doFirst {
             delete(
                 "build",
+                "bin",
                 "packages/api/build",
+                "packages/api/bin",
                 "packages/indexer/build",
+                "packages/indexer/bin",
                 "packages/common/build",
+                "packages/common/bin",
                 "packages/e2e/build",
+                "packages/e2e/bin",
             )
         }
     }
@@ -94,6 +104,7 @@ allprojects {
                     failedTests.forEach {
                         logger.lifecycle("\t\t${it.first.className} - ${it.first.name}", it.second)
                     }
+                    failedTests.clear()
                 }
 
                 if (skippedTests.isNotEmpty()) {
@@ -101,6 +112,7 @@ allprojects {
                     skippedTests.forEach {
                         logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
                     }
+                    skippedTests.clear()
                 }
             }
         })
@@ -116,6 +128,7 @@ allprojects {
 
         implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+        implementation("org.web3j:abi:4.9.7")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
         implementation("com.google.code.gson:gson:2.10.1")

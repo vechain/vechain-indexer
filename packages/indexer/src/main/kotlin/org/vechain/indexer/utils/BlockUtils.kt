@@ -77,8 +77,8 @@ object BlockUtils {
                     blockId = block.id,
                     blockNumber = block.blockNumber,
                     txId = tx.id,
-                    from = ContractUtils.removeTopicPadding(event.topics[1]),
-                    to = ContractUtils.removeTopicPadding(event.topics[2]),
+                    from = AddressUtil.decode(event.topics[1]),
+                    to = AddressUtil.decode(event.topics[2]),
                     value = event.data,
                     tokenAddress = event.address,
                     topics = event.topics

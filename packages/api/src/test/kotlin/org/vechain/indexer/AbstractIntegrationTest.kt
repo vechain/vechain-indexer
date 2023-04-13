@@ -35,6 +35,8 @@ abstract class AbstractIntegrationTest {
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
+    protected val CLAUSES_TYPE = object : TypeReference<List<WrappedClause>>() {}
+    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = ObjectMapper()
 
@@ -57,6 +59,9 @@ abstract class AbstractIntegrationTest {
     @Autowired
     lateinit var transferEventRepo: TransferEventRepo
 
+    @Autowired
+    lateinit var clauseRepo: ClauseRepo
+
     @BeforeAll
     fun setup() {
 
@@ -70,12 +75,15 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<TransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
+        val clauses: List<WrappedClause> =
+            loadDataFromResources("/clauses.json", CLAUSES_TYPE)
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
         nftRepo.saveAll(nfts)
         blockRepo.saveAll(blocks)
         transferEventRepo.saveAll(transferEvents)
+        clauseRepo.saveAll(clauses)
     }
 
     /**

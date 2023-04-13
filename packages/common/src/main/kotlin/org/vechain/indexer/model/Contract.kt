@@ -24,4 +24,5 @@ data class Contract(
     val isVip181: Boolean? = false,
     val isErc20: Boolean? = false,
     val isErc721: Boolean? = false,
+    val previousMasters: MutableSet<String> = mutableSetOf()
 )

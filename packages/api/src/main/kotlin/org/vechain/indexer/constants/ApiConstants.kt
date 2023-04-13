@@ -11,6 +11,7 @@ const val NFTS_PATH = "$API_PATH/nfts"
 const val TRANSACTIONS_PATH = "$API_PATH/transactions"
 const val BLOCKS_PATH = "$API_PATH/blocks"
 const val TRANSFER_EVENTS_PATH = "$API_PATH/transfers"
+const val CLAUSES_PATH = "$API_PATH/clauses"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0
