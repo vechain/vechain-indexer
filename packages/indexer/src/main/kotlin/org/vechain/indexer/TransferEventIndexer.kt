@@ -12,17 +12,13 @@ import org.vechain.indexer.utils.BlockUtils
 open class TransferEventIndexer(
     private val thorService: ThorService,
     private val transferEventRepo: TransferEventRepo
-) : Indexer(thorService) {
+) : Indexer(thorService, transferEventRepo) {
 
     override fun processBlock(block: Block) {
 
         val transferEvents = BlockUtils.getTransferEvents(block)
 
         if (transferEvents.isNotEmpty()) transferEventRepo.saveAll(transferEvents)
-    }
-
-    override fun getStartingBlock(): Long {
-        return transferEventRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
 }

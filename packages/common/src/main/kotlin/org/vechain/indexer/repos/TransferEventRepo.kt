@@ -1,14 +1,10 @@
 package org.vechain.indexer.repos
 
-import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.TransferEvent
 
 @Repository
-interface TransferEventRepo : PagingAndSortingRepository<TransferEvent, String>, CrudRepository<TransferEvent, String> {
-
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
-    fun getMaxBlockNumber(): List<TransferEvent>
-}
+interface TransferEventRepo : IndexerRepository, PagingAndSortingRepository<TransferEvent, String>,
+    CrudRepository<TransferEvent, String>

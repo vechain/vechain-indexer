@@ -14,7 +14,7 @@ import kotlin.jvm.optionals.getOrNull
 class ContractIndexer(
     private val thorService: ThorService,
     private val contractRepo: ContractRepo
-) : Indexer(thorService) {
+) : Indexer(thorService, contractRepo) {
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
 
@@ -63,7 +63,7 @@ class ContractIndexer(
                     Contract(
                         address = event.first.address,
                         blockId = block.id,
-                        blockNumber = block.number,
+                        blockNumber = block.blockNumber,
                         txId = event.second.id,
                         creator = event.second.origin,
                         master = ContractUtils.removeTopicPadding(event.first.data!!),
@@ -78,10 +78,5 @@ class ContractIndexer(
 
         if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
     }
-
-    override fun getStartingBlock(): Long {
-        return contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
-    }
-
 
 }

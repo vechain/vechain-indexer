@@ -14,6 +14,7 @@ import org.vechain.indexer.model.TxEvent
 import org.vechain.indexer.model.TxOutputs
 import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.repos.ClauseRepo
+import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -22,6 +23,9 @@ import strikt.assertions.isNotNull
 
 @ExtendWith(MockKExtension::class)
 internal class ClauseIndexerTest {
+
+    @MockK
+    lateinit var thorService: ThorService
 
     @MockK
     lateinit var clauseRepo: ClauseRepo
@@ -36,9 +40,7 @@ internal class ClauseIndexerTest {
         val clausesSlot = slot<List<WrappedClause>>()
         every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
 
-
         clauseIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
-
 
         val clauses = clausesSlot.captured
         expect {

@@ -18,5 +18,6 @@ data class NFT(
     val contractAddress: String? = null,
     val owner: String? = null,
     val txId: String? = null,
+//    @Indexed(direction = IndexDirection.DESCENDING)
     val blockNumber: Long? = null,
 )

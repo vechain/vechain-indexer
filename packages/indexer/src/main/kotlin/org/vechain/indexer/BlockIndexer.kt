@@ -8,13 +8,11 @@ import org.vechain.indexer.service.ThorService
 
 @Profile("block-indexer", "prod")
 @Component
-open class BlockIndexer(private val thorService: ThorService, private val blockRepo: BlockRepo) : Indexer(thorService) {
+open class BlockIndexer(private val thorService: ThorService, private val blockRepo: BlockRepo) :
+    Indexer(thorService, blockRepo) {
+
     override fun processBlock(block: Block) {
         blockRepo.save(block)
     }
-
-    override fun getStartingBlock(): Long {
-        return blockRepo.getMaxBlockNumber().firstOrNull()?.number ?: 0
-    }
-
+    
 }

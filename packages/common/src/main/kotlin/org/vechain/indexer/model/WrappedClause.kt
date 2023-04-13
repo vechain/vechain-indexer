@@ -2,6 +2,7 @@ package org.vechain.indexer.model
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
@@ -10,7 +11,7 @@ data class WrappedClause(
     @Id
     val id: String? = null,
     val blockId: String? = null,
-    @Indexed
+    @Indexed(direction = IndexDirection.DESCENDING)
     val blockNumber: Long? = null,
     val txId: String? = null,
     val index: Int? = null,
@@ -26,7 +27,7 @@ data class WrappedClause(
     constructor(block: Block, tx: WrappedTransaction, clause: Clause, index: Int) : this(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),
         blockId = block.id,
-        blockNumber = block.number,
+        blockNumber = block.blockNumber,
         txId = tx.id,
         index = index,
         origin = tx.origin,

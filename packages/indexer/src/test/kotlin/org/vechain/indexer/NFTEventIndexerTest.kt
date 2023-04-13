@@ -14,6 +14,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.repos.NFTRepo
+import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -23,6 +24,9 @@ import java.math.BigInteger
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
 
+    @MockK
+    lateinit var thorService: ThorService
+    
     @MockK
     lateinit var nftRepo: NFTRepo
 

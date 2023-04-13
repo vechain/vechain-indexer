@@ -11,16 +11,12 @@ import org.vechain.indexer.utils.BlockUtils
 @Profile("transaction-indexer", "prod")
 @Component
 open class TransactionIndexer(private val thorService: ThorService, private val txRepo: TransactionRepo) :
-    Indexer(thorService) {
+    Indexer(thorService, txRepo) {
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {
             val txs: List<WrappedTransaction> = BlockUtils.getAllTransactions(block)
             txRepo.saveAll(txs)
         }
-    }
-
-    override fun getStartingBlock(): Long {
-        return txRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
 }

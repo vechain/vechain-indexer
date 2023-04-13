@@ -27,12 +27,12 @@ class ThorService(private val thorRest: WebClient) {
         val response =
             thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java).block()
 
-        if (response?.number == null)
+        if (response?.blockNumber == null)
             throw NotFoundException("Best block number not found")
-        
-        logger.debug("Best block found: ${response.number}")
 
-        return response.number!!
+        logger.debug("Best block found: ${response.blockNumber}")
+
+        return response.blockNumber!!
     }
 
     fun getAccountCode(address: String): String? {

@@ -13,7 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.repos.BlockNumber
 import org.vechain.indexer.repos.TransferEventRepo
+import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -22,6 +24,9 @@ import strikt.assertions.isEqualTo
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {
 
+    @MockK
+    lateinit var thorService: ThorService
+    
     @MockK
     lateinit var transferEventRepo: TransferEventRepo
 
@@ -32,7 +37,7 @@ class TransferEventIndexerTest {
     fun `Starting block is transfer block - when transfer block is lower`() {
         val transferEventsStartingBlock = 9L
 
-        every { transferEventRepo.getMaxBlockNumber() } returns listOf(buildTransferEvent(transferEventsStartingBlock))
+        every { transferEventRepo.getMaxBlockNumber() } returns BlockNumber(transferEventsStartingBlock)
 
         val indexerStartingBlock = transferEventIndexer.getStartingBlock()
 

@@ -2,7 +2,9 @@ package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
+import org.vechain.indexer.repos.IndexerRepository
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -13,9 +15,10 @@ enum class Status {
 }
 
 const val ZERO_ID = "0x000000000"
+const val REORG_BLOCK_PURGE = 36L
 const val INITIAL_BACKOFF_PERIOD = 10000L
 
-abstract class Indexer(private val thorService: ThorService) {
+abstract class Indexer(private val thorService: ThorService, private val repo: IndexerRepository) {
 
     val name: String
         get() = this.javaClass.simpleName
@@ -29,6 +32,10 @@ abstract class Indexer(private val thorService: ThorService) {
 
     fun start() {
         currentBlockNumber = getStartingBlock()
+
+        // TODO: Check for reorg. on restart.
+
+
         logger.info("Starting @ Block: $currentBlockNumber")
         run()
     }
@@ -41,7 +48,7 @@ abstract class Indexer(private val thorService: ThorService) {
             val block = thorService.getBlock(currentBlockNumber)
 
             // Check for reorg.
-            
+            if (previousBlockId != ZERO_ID && previousBlockId != block.parentID) throw ReorgException("Reorg detected.")
 
             processBlock(block)
 
@@ -50,6 +57,10 @@ abstract class Indexer(private val thorService: ThorService) {
             logger.info("FULLY_SYNCED @ Block $currentBlockNumber")
             backoffPeriod = 4000
             status = Status.FULLY_SYNCED
+        } catch (e: ReorgException) {
+            logger.error("REORG @ Block $currentBlockNumber")
+            resolveReorg()
+            logger.info("Restarting indexer @ Block $currentBlockNumber after resolving reorg...")
         } catch (e: Exception) {
             logger.error("Error while processing block $currentBlockNumber", e)
             logger.info("Restarting indexer in 10s...")
@@ -82,7 +93,19 @@ abstract class Indexer(private val thorService: ThorService) {
         }
     }
 
+    private fun resolveReorg() {
+        // Delete all records from the previous n blocks
+        repo.deleteAllByBlockNumberBetween(currentBlockNumber - REORG_BLOCK_PURGE - 2, currentBlockNumber)
+
+        currentBlockNumber -= REORG_BLOCK_PURGE
+        previousBlockId = ZERO_ID
+        status = Status.SYNCING
+    }
+
+    fun getStartingBlock(): Long {
+        return repo.getMaxBlockNumber()?.blockNumber ?: 0
+    }
+
     abstract fun processBlock(block: Block)
-    abstract fun getStartingBlock(): Long
 
 }

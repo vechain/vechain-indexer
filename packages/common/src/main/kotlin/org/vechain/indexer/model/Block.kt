@@ -1,6 +1,8 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
@@ -8,8 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class Block(
     @Id
     val id: String? = null,
-    @Indexed(unique = true)
-    val number: Long? = null,
+    @Indexed(unique = true, direction = IndexDirection.DESCENDING)
+    @JsonProperty("number")
+    val blockNumber: Long? = null,
     val size: Long? = null,
     val parentID: String? = null,
     val timestamp: Long? = null,

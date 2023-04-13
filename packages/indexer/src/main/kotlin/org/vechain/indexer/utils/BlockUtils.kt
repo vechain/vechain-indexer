@@ -75,7 +75,7 @@ object BlockUtils {
                 TransferEvent(
                     id = DigestUtils.sha1Hex("${tx.id}-${i}"),
                     blockId = block.id,
-                    blockNumber = block.number,
+                    blockNumber = block.blockNumber,
                     txId = tx.id,
                     from = ContractUtils.removeTopicPadding(event.topics[1]),
                     to = ContractUtils.removeTopicPadding(event.topics[2]),
@@ -92,7 +92,7 @@ object BlockUtils {
             WrappedTransaction(
                 id = tx.id,
                 blockId = block.id,
-                blockNumber = block.number,
+                blockNumber = block.blockNumber,
                 size = tx.size,
                 chainTag = tx.chainTag,
                 blockRef = tx.blockRef,

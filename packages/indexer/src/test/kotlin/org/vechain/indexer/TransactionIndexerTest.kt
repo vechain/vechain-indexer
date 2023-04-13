@@ -13,6 +13,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.TransactionRepo
+import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -20,7 +21,9 @@ import strikt.assertions.isNull
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionIndexerTest {
-
+    @MockK
+    lateinit var thorService: ThorService
+    
     @MockK
     lateinit var transactionRepo: TransactionRepo
 

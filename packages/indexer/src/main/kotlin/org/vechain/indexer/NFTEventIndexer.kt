@@ -16,7 +16,7 @@ import org.web3j.utils.Numeric
 open class NFTEventIndexer(
     private val thorService: ThorService,
     private val nftRepo: NFTRepo
-) : Indexer(thorService) {
+) : Indexer(thorService, nftRepo) {
 
     override fun processBlock(block: Block) {
 
@@ -43,11 +43,6 @@ open class NFTEventIndexer(
                 blockNumber = it.blockNumber
             )
         }
-    }
-
-
-    override fun getStartingBlock(): Long {
-        return nftRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
     }
 
     private fun buildHashedId(plainId: String) = DigestUtils.sha1Hex(plainId)
