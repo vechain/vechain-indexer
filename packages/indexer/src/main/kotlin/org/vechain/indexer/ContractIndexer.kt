@@ -2,13 +2,11 @@ package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.Clause
 import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.model.WrappedTransaction
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ContractUtils
 import kotlin.jvm.optionals.getOrNull
 
@@ -44,18 +42,19 @@ class ContractIndexer(
         /**
          * Process each master change event.
          */
-        masterChangeEvents.forEach { event: Triple<TxEvent, WrappedTransaction, Clause> ->
+        masterChangeEvents.forEach { (event, tx, clause) ->
 
-            val contractAddress = event.first.address ?: return@forEach
-
+            val contractAddress = event.address ?: return@forEach
+            val master = event.data?.let { AddressUtil.decode(it) }
             val rawData = thorService.getAccountCode(contractAddress)
 
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.
             if (rawData == null || rawData == "0x") {
-                val contract = event.third.to?.let { contractRepo.findById(it).getOrNull() }
-                if (contract != null && event.first.data != null) {
-                    contract.master = ContractUtils.removeTopicPadding(event.first.data!!)
+                val contract = clause.to?.let { contractRepo.findById(it).getOrNull() }
+                if (contract != null) {
+                    contract.master?.let { contract.previousMasters.add(it) }
+                    contract.master = master
                     contracts.add(contract)
                 }
 
@@ -66,15 +65,14 @@ class ContractIndexer(
                         address = contractAddress,
                         blockId = block.id,
                         blockNumber = block.number,
-                        txId = event.second.id,
-                        creator = event.second.origin,
-                        master = ContractUtils.removeTopicPadding(event.first.data!!),
+                        txId = tx.id,
+                        creator = tx.origin,
+                        master = master,
                         rawData = rawData,
-                        //TODO: Add back ContractUtils check before contract service to reduce API calls,
-                        isVip180 = contractService.isVip180(contractAddress),
-                        isVip181 = contractService.isVip181(contractAddress),
-                        isErc20 = contractService.isErc20(contractAddress),
-                        isErc721 = contractService.isErc721(contractAddress),
+                        isVip180 = contractService.isVip180(contractAddress, rawData, clause),
+                        isVip181 = contractService.isVip181(contractAddress, rawData, clause),
+                        isErc20 = contractService.isErc20(contractAddress, rawData, clause),
+                        isErc721 = contractService.isErc721(contractAddress, rawData, clause),
                     )
                 )
             }
@@ -85,7 +83,7 @@ class ContractIndexer(
     }
 
     override fun getStartingBlock(): Long {
-        return contractRepo.getMaxBlockNumber().firstOrNull()?.blockNumber ?: 0
+        return 3924480
     }
 
 }

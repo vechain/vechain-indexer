@@ -7,8 +7,11 @@ import org.vechain.indexer.abi.ERC20ABI
 import org.vechain.indexer.abi.ERC721ABI
 import org.vechain.indexer.abi.VIP180ABI
 import org.vechain.indexer.abi.VIP181ABI
+import org.vechain.indexer.model.Clause
+import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ClauseUtils
+import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.TransactionUtils
 import org.web3j.utils.Numeric
 import java.math.BigInteger
@@ -27,9 +30,13 @@ class ContractService(private val thorService: ThorService) {
     /**
      * Calls to the supportsInterface function of the ERC721 interface.
      */
-    fun isErc721(contractAddress: String): Boolean {
+    fun isErc721(contractAddress: String, rawData: String?, clause: Clause): Boolean {
 
         try {
+            val isErc721 = ContractUtils.isContractType(Contracts.ERC721, rawData) ||
+                    ContractUtils.isContractType(Contracts.ERC721, clause.data)
+            if (isErc721) return true
+
             val supportsInterface =
                 ClauseUtils.contractCall(
                     contractAddress,
@@ -58,8 +65,13 @@ class ContractService(private val thorService: ThorService) {
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
-    fun isVip181(contractAddress: String): Boolean {
+    fun isVip181(contractAddress: String, rawData: String?, clause: Clause): Boolean {
         try {
+
+            val isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData) ||
+                    ContractUtils.isContractType(Contracts.VIP181, clause.data)
+            if (isVip181) return true
+
             val name = ClauseUtils.contractCall(contractAddress, VIP181ABI.name)
             val symbol = ClauseUtils.contractCall(contractAddress, VIP181ABI.symbol)
             val totalSupply = ClauseUtils.contractCall(contractAddress, VIP181ABI.totalSupply)
@@ -102,8 +114,13 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isErc20(contractAddress: String): Boolean {
+    fun isErc20(contractAddress: String, rawData: String?, clause: Clause): Boolean {
         try {
+
+            val isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData) ||
+                    ContractUtils.isContractType(Contracts.ERC20, clause.data)
+            if (isErc20) return true
+
             val totalSupply = ClauseUtils.contractCall(contractAddress, ERC20ABI.totalSupply)
             val balanceOf = ClauseUtils.contractCall(
                 contractAddress,
@@ -139,8 +156,14 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isVip180(contractAddress: String): Boolean {
+    fun isVip180(contractAddress: String, rawData: String?, clause: Clause): Boolean {
+
         try {
+
+            val isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData) ||
+                    ContractUtils.isContractType(Contracts.VIP180, clause.data)
+            if (isVip180) return true
+
             val name = ClauseUtils.contractCall(contractAddress, VIP180ABI.name)
             val decimals = ClauseUtils.contractCall(contractAddress, VIP180ABI.decimals)
             val symbol = ClauseUtils.contractCall(contractAddress, VIP180ABI.symbol)
