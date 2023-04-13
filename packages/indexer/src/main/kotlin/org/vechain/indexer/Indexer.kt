@@ -38,7 +38,7 @@ abstract class Indexer(private val thorService: ThorService) {
             logger.info("Processing @ Block $currentBlock (${status})")
             val block = thorService.getBlock(currentBlock)
             processBlock(block)
-            
+
             postProcessBlock(block)
         } catch (e: IndexerFullySynchronizedException) {
             logger.info("FULLY_SYNCED @ Block $currentBlock")
@@ -60,7 +60,6 @@ abstract class Indexer(private val thorService: ThorService) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC)
             val timeSinceLastBlock =
                 max(currentEpoch - block.timestamp!!, 0)
-            logger.info("${name()} currentEpoch $currentEpoch blocktimestamp ${block.timestamp} time since last block: $timeSinceLastBlock")
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000))
         }
 
@@ -70,7 +69,6 @@ abstract class Indexer(private val thorService: ThorService) {
 
     private fun backoffDelay() {
         if (status == Status.FULLY_SYNCED) {
-            logger.info("${name()} is backing off for $backoffPeriod ms...")
             Thread.sleep(backoffPeriod)
         }
     }
