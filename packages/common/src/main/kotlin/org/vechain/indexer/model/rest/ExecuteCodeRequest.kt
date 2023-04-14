@@ -1,6 +1,9 @@
-package org.vechain.indexer.model
+package org.vechain.indexer.model.rest
 
-data class ExecuteCodeRequest(
+import org.springframework.boot.context.properties.bind.ConstructorBinding
+import org.vechain.indexer.model.Clause
+
+data class ExecuteCodeRequest @ConstructorBinding constructor(
     val clauses: List<Clause>,
     val gas: Long = 10000000,
     val gasPrice: String = "1000000000000000",

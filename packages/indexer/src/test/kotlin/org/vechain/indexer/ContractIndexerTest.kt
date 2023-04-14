@@ -131,7 +131,7 @@ internal class ContractIndexerTest {
     fun `Update contract master when no contract data`() {
 
         // Mock data returned for block#16: block, null account code & existing mongo document
-        every { thorService.getAccountCode(any()) } returns null
+        every { thorService.getAccountCode(any()) } returns "0x"
         every { contractRepo.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
@@ -151,7 +151,7 @@ internal class ContractIndexerTest {
     }
 
     private fun getContractData(block: Block, txId: String): String {
-        return block.transactions.first { it.id == txId }.clauses.first().data!!
+        return block.transactions.first { it.id == txId }.clauses.first().data
     }
 
 }

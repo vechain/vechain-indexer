@@ -78,7 +78,7 @@ abstract class Indexer(
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock =
-                maxOf(currentEpoch - (block.timestamp?.times(1000) ?: 0), 0)
+                maxOf(currentEpoch - block.timestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock))
         }
 
@@ -86,7 +86,7 @@ abstract class Indexer(
         currentBlockNumber++
 
         // Set the previous block id.
-        previousBlockId = block.id!!
+        previousBlockId = block.id
     }
 
     private fun backoffDelay() {

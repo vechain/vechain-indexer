@@ -8,9 +8,10 @@ import org.vechain.indexer.model.WrappedTransaction
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
 import strikt.assertions.isNotEqualTo
-import strikt.assertions.isNotNull
+import java.math.BigInteger
 
 class SimpleAPICallsTest {
     @Test
@@ -91,7 +92,7 @@ class SimpleAPICallsTest {
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
             "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            listOf(nfts[0].contractAddress!!)
+            listOf(nfts[0].contractAddress)
         )
 
         expectThat(nftsWithQuery.size).isEqualTo(1)
@@ -100,21 +101,21 @@ class SimpleAPICallsTest {
     fun assertValidContract(contract: Contract) {
 
         expect {
-            that(contract.txId).isNotNull()
-            that(contract.blockId).isNotNull()
-            that(contract.blockNumber).isNotNull()
-            that(contract.creator).isNotNull()
-            that(contract.rawData).isNotNull()
+            that(contract.txId).isNotEmpty()
+            that(contract.blockId).isNotEmpty()
+            that(contract.blockNumber).isGreaterThan(0)
+            that(contract.creator).isNotEmpty()
+            that(contract.rawData).isNotEmpty()
         }
     }
 
     fun assertValidTransaction(transaction: WrappedTransaction) {
 
         expect {
-            that(transaction.id).isNotNull()
-            that(transaction.origin).isNotNull()
-            that(transaction.nonce).isNotNull()
-            that(transaction.gasUsed).isNotNull()
+            that(transaction.id).isNotEmpty()
+            that(transaction.origin).isNotEmpty()
+            that(transaction.nonce).isNotEmpty()
+            that(transaction.gasUsed).isGreaterThan(0)
             that(transaction.clauses).isNotEmpty()
             that(transaction.outputs).isNotEmpty()
         }
@@ -122,12 +123,12 @@ class SimpleAPICallsTest {
 
     fun assertValidNft(nft: NFT) {
         expect {
-            that(nft.tokenId).isNotNull()
-            that(nft.contractAddress).isNotNull()
-            that(nft.blockNumber).isNotNull()
-            that(nft.txId).isNotNull()
-            that(nft.owner).isNotNull()
-            that(nft.id).isNotNull()
+            that(nft.tokenId).isGreaterThan(BigInteger.valueOf(-1))
+            that(nft.contractAddress).isNotEmpty()
+            that(nft.blockNumber).isGreaterThan(0)
+            that(nft.txId).isNotEmpty()
+            that(nft.owner).isNotEmpty()
+            that(nft.id).isNotEmpty()
         }
     }
 

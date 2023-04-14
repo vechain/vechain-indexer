@@ -1,7 +1,9 @@
 package org.vechain.indexer.model
 
-data class Clause(
-    val to: String? = null,
-    val value: String? = null,
-    val data: String? = null
+import org.springframework.boot.context.properties.bind.ConstructorBinding
+
+data class Clause @ConstructorBinding constructor(
+    val to: String?,
+    val value: String,
+    val data: String
 )

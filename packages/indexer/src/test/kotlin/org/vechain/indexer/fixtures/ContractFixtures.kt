@@ -19,6 +19,7 @@ object ContractFixtures {
         isVip181 = true,
         isErc20 = false,
         isErc721 = true,
+        previousMasters = mutableSetOf()
     )
 
 }

@@ -1,28 +1,29 @@
 package org.vechain.indexer.model
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "clauses")
-data class WrappedClause(
+data class WrappedClause @ConstructorBinding constructor(
     @Id
-    val id: String? = null,
-    val blockId: String? = null,
+    val id: String,
+    val blockId: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long? = null,
-    val txId: String? = null,
-    val index: Int? = null,
+    val blockNumber: Long,
+    val txId: String,
+    val index: Int,
     @Indexed
-    val origin: String? = null,
+    val origin: String,
     @Indexed(sparse = true)
-    val to: String? = null,
-    val value: String? = null,
-    val data: String? = null,
-    val reverted: Boolean? = null,
-    val output: TxOutputs? = null,
+    val to: String?,
+    val value: String,
+    val data: String,
+    val reverted: Boolean,
+    val output: TxOutputs?,
 ) {
     constructor(block: Block, tx: WrappedTransaction, clause: Clause, index: Int) : this(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),

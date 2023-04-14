@@ -30,7 +30,7 @@ class ContractService(private val thorService: ThorService) {
     /**
      * Calls to the supportsInterface function of the ERC721 interface.
      */
-    fun isErc721(contractAddress: String, rawData: String?, clause: Clause): Boolean {
+    fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         try {
             val isErc721 = ContractUtils.isContractType(Contracts.ERC721, rawData) ||
@@ -65,7 +65,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
-    fun isVip181(contractAddress: String, rawData: String?, clause: Clause): Boolean {
+    fun isVip181(contractAddress: String, rawData: String, clause: Clause): Boolean {
         try {
 
             val isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData) ||
@@ -114,7 +114,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isErc20(contractAddress: String, rawData: String?, clause: Clause): Boolean {
+    fun isErc20(contractAddress: String, rawData: String, clause: Clause): Boolean {
         try {
 
             val isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData) ||
@@ -156,7 +156,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isVip180(contractAddress: String, rawData: String?, clause: Clause): Boolean {
+    fun isVip180(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         try {
 

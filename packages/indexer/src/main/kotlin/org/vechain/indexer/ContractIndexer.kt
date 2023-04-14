@@ -46,16 +46,16 @@ class ContractIndexer(
          */
         masterChangeEvents.forEach { (event, tx, clause) ->
 
-            val contractAddress = event.address ?: return@forEach
-            val master = event.data?.let { AddressUtil.decode(it) }
+            val contractAddress = event.address
+            val master = AddressUtil.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
             // If there is no contract data then we assume this is a change of master for an existing contract.
             // Else, this is a new contract deployment.
-            if (rawData == null || rawData == "0x") {
+            if (rawData == "0x") {
                 val contract = clause.to?.let { contractRepo.findById(it).getOrNull() }
                 if (contract != null) {
-                    contract.master?.let { contract.previousMasters.add(it) }
+                    contract.previousMasters.add(contract.master)
                     contract.master = master
                     contracts.add(contract)
                 }
@@ -75,6 +75,7 @@ class ContractIndexer(
                         isVip181 = contractService.isVip181(contractAddress, rawData, clause),
                         isErc20 = contractService.isErc20(contractAddress, rawData, clause),
                         isErc721 = contractService.isErc721(contractAddress, rawData, clause),
+                        previousMasters = mutableSetOf()
                     )
                 )
             }
