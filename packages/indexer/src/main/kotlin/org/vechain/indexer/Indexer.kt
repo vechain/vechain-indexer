@@ -14,10 +14,13 @@ enum class Status {
 }
 
 const val ZERO_ID = "0x000000000"
-const val REORG_BLOCK_PURGE = 12L
 const val INITIAL_BACKOFF_PERIOD = 10000L
 
-abstract class Indexer(private val thorService: ThorService, private val repo: IndexerRepository) {
+abstract class Indexer(
+    private val thorService: ThorService,
+    private val repo: IndexerRepository,
+    private val numBlocksToPurge: Long = 12L
+) {
 
     val name: String
         get() = this.javaClass.simpleName
@@ -95,11 +98,11 @@ abstract class Indexer(private val thorService: ThorService, private val repo: I
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
         repo.deleteAllByBlockNumberBetween(
-            maxOf(currentBlockNumber - REORG_BLOCK_PURGE - 1, 1),
+            maxOf(currentBlockNumber - numBlocksToPurge - 1, 1),
             maxOf(currentBlockNumber + 1, 1)
         )
 
-        currentBlockNumber = maxOf(currentBlockNumber - REORG_BLOCK_PURGE, 0)
+        currentBlockNumber = maxOf(currentBlockNumber - numBlocksToPurge, 0)
         previousBlockId = ZERO_ID
         status = Status.SYNCING
     }
