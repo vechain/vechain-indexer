@@ -20,8 +20,7 @@ object ContractUtils {
         }
     }
 
-    fun isContractType(specification: ContractSpecification, rawData: String?): Boolean {
-        rawData ?: return false
+    fun isContractType(specification: ContractSpecification, rawData: String): Boolean {
         return specification.functions.all { rawData.contains(it) } &&
                 specification.events.all { rawData.contains(it) }
     }
