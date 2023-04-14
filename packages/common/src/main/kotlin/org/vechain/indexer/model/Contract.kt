@@ -1,28 +1,27 @@
 package org.vechain.indexer.model
 
+import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "contracts")
-data class Contract(
+data class Contract @ConstructorBinding constructor(
     @Id
-    val address: String? = null,
-    val blockId: String? = null,
+    val address: String,
+    val blockId: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long? = null,
-    val txId: String? = null,
+    val blockNumber: Long,
+    val txId: String,
     @Indexed
-    val creator: String? = null,
+    val creator: String,
     @Indexed
-    var master: String? = null,
-    @Indexed(sparse = true)
-    val factoryContract: String? = null,
-    val rawData: String? = null,
-    val isVip180: Boolean? = false,
-    val isVip181: Boolean? = false,
-    val isErc20: Boolean? = false,
-    val isErc721: Boolean? = false,
-    val previousMasters: MutableSet<String> = mutableSetOf()
+    var master: String,
+    val rawData: String,
+    val isVip180: Boolean,
+    val isVip181: Boolean,
+    val isErc20: Boolean,
+    val isErc721: Boolean,
+    val previousMasters: MutableSet<String>
 )

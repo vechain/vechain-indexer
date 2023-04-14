@@ -1,6 +1,6 @@
 package org.vechain.indexer.utils
 
-import org.vechain.indexer.model.ExecuteCodeResponse
+import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.web3j.abi.FunctionReturnDecoder
 import org.web3j.abi.TypeReference
 import org.web3j.abi.datatypes.AbiTypes
@@ -9,12 +9,9 @@ import org.web3j.abi.datatypes.Utf8String
 
 object TransactionUtils {
     fun isSuccessWithData(res: ExecuteCodeResponse): Boolean {
-        return res.reverted == false &&
-                res.vmError.isNullOrEmpty() &&
-                res.data != null &&
-                res.data != "0x"
+        return !res.reverted && res.vmError.isNullOrEmpty() && res.data != "0x"
     }
-    
+
 
     /**
      * Extracts the revert reason from the `data` of a transaction response.

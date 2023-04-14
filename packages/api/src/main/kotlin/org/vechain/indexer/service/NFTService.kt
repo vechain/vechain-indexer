@@ -28,7 +28,7 @@ open class NFTService(private val nftRepo: NFTRepo) {
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): List<String> {
         return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
-            .map { it.contractAddress!! }
+            .map { it.contractAddress }
             .distinct()
     }
 

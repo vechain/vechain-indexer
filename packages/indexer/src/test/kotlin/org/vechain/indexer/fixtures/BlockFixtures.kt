@@ -1,14 +1,13 @@
 package org.vechain.indexer.fixtures
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.vechain.indexer.model.Block
 
 object BlockFixtures {
 
-    private val objectMapper = ObjectMapper()
+    private val objectMapper = JsonUt
 
     init {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)

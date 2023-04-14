@@ -7,18 +7,11 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.util.TestPropertyValues
-import org.springframework.context.ApplicationContextInitializer
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
-import java.util.*
-
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -28,8 +21,7 @@ import java.util.*
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class AbstractIntegrationTest {
-
+abstract class FastAbstractIntegrationTest {
     protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
@@ -39,10 +31,6 @@ abstract class AbstractIntegrationTest {
     protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
-
-    init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
-    }
 
     @Autowired
     lateinit var transactionRepository: TransactionRepo
@@ -98,22 +86,5 @@ abstract class AbstractIntegrationTest {
         if (rawJson.isEmpty()) throw Exception("Empty json file: $path")
 
         return objectMapper.readValue(rawJson, type)
-    }
-
-    internal class Initializer :
-        ApplicationContextInitializer<ConfigurableApplicationContext> {
-        override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
-            val mongoContainer: GenericContainer<*> = GenericContainer("mongo:6")
-                .withExposedPorts(27017)
-                .withReuse(true)
-
-            mongoContainer.start()
-
-            val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
-
-            TestPropertyValues.of(
-                "spring.data.mongodb.uri=${mongoUri}/vechain",
-            ).applyTo(configurableApplicationContext.environment)
-        }
     }
 }

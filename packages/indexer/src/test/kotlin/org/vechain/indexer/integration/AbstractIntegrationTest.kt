@@ -12,6 +12,7 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
+import org.testcontainers.utility.TestcontainersConfiguration
 import java.time.Duration
 import java.util.*
 
@@ -21,6 +22,10 @@ import java.util.*
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {
+
+    init {
+        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
+    }
 
     companion object {
 
