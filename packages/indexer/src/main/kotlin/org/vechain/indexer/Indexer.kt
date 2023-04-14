@@ -8,7 +8,6 @@ import org.vechain.indexer.repos.IndexerRepository
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import kotlin.math.max
 
 enum class Status {
     SYNCING, FULLY_SYNCED
@@ -16,7 +15,7 @@ enum class Status {
 
 const val ZERO_ID = "0x000000000"
 const val REORG_BLOCK_PURGE = 36L
-const val INITIAL_BACKOFF_PERIOD = 10000L
+const val INITIAL_BACKOFF_PERIOD = 12000L
 
 abstract class Indexer(private val thorService: ThorService, private val repo: IndexerRepository) {
 
@@ -27,7 +26,7 @@ abstract class Indexer(private val thorService: ThorService, private val repo: I
 
     var status = Status.SYNCING
     var currentBlockNumber: Long = 0
-    var previousBlockId: String = ZERO_ID
+    private var previousBlockId: String = ZERO_ID
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
@@ -74,10 +73,10 @@ abstract class Indexer(private val thorService: ThorService, private val repo: I
     private fun postProcessBlock(block: Block) {
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
-            val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toEpochSecond(ZoneOffset.UTC)
+            val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock =
-                max(currentEpoch - block.timestamp!!, 0)
-            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock * 1000))
+                maxOf(currentEpoch - (block.timestamp?.times(1000) ?: 0), 0)
+            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock))
         }
 
         // Increment the current block.
