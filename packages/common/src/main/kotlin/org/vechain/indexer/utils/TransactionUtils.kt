@@ -9,7 +9,10 @@ import org.web3j.abi.datatypes.Utf8String
 
 object TransactionUtils {
     fun isSuccessWithData(res: ExecuteCodeResponse): Boolean {
-        return !res.reverted && res.vmError.isNullOrEmpty() && res.data != "0x"
+        return !res.reverted &&
+                res.vmError.isNullOrEmpty() &&
+                res.data.startsWith("0x") &&
+                res.data.length > 2
     }
 
 

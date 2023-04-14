@@ -7,9 +7,7 @@ import org.vechain.indexer.specifications.ContractSpecification
 
 object ContractUtils {
     fun isMasterEvent(event: TxEvent): Boolean {
-        return event.topics.isNotEmpty() &&
-                event.address != null &&
-                event.topics[0] == MASTER_EVENT_SIGNATURE
+        return event.topics.isNotEmpty() && event.topics[0] == MASTER_EVENT_SIGNATURE
     }
 
     /**

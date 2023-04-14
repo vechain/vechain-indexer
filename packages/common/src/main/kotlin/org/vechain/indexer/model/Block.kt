@@ -25,7 +25,7 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     val gasUsed: Long,
     val totalScore: Long,
     val txsRoot: String,
-    val txsFeatures: Long,
+    val txsFeatures: Int,
     val stateRoot: String,
     val receiptsRoot: String,
     val com: Boolean,

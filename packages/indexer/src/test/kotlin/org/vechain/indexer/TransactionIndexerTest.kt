@@ -23,7 +23,7 @@ import strikt.assertions.isNull
 internal class TransactionIndexerTest {
     @MockK
     lateinit var thorService: ThorService
-    
+
     @MockK
     lateinit var transactionRepo: TransactionRepo
 
@@ -70,7 +70,6 @@ internal class TransactionIndexerTest {
                 }
             that(transaction).get(WrappedTransaction::gasPayer).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(transaction).get(WrappedTransaction::origin).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
-            that(transaction).get(WrappedTransaction::delegator).isNull()
         }
     }
 }

@@ -3,25 +3,14 @@ package org.vechain.indexer.fixtures
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import net.minidev.json.JSONUtil
 import org.vechain.indexer.model.Block
+import org.vechain.indexer.utils.JsonUtils
 
 object BlockFixtures {
 
-    private val objectMapper = JsonUt
-
-    init {
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        objectMapper.registerModule(
-            KotlinModule.Builder()
-                .withReflectionCacheSize(512)
-                .configure(KotlinFeature.NullToEmptyCollection, false)
-                .configure(KotlinFeature.NullToEmptyMap, false)
-                .configure(KotlinFeature.NullIsSameAsDefault, false)
-                .configure(KotlinFeature.StrictNullChecks, false)
-                .build()
-        )
-    }
-
+    private val objectMapper = JsonUtils.mapper
+    
     val BLOCK_3_NO_CLAUSES = buildBlockFixture(3L)
     val BLOCK_4_SINGLE_CLAUSE = buildBlockFixture(4L)
     val BLOCK_5_VIP180_CONTRACTS = buildBlockFixture(5L)

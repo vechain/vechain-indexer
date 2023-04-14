@@ -14,7 +14,7 @@ data class ExpandedBlockResponse @ConstructorBinding constructor(
     var gasUsed: Long,
     var totalScore: Long,
     var txsRoot: String,
-    var txsFeatures: Long,
+    var txsFeatures: Int,
     var stateRoot: String,
     var receiptsRoot: String,
     var com: Boolean,
