@@ -14,8 +14,8 @@ enum class Status {
 }
 
 const val ZERO_ID = "0x000000000"
-const val REORG_BLOCK_PURGE = 36L
-const val INITIAL_BACKOFF_PERIOD = 12000L
+const val REORG_BLOCK_PURGE = 12L
+const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(private val thorService: ThorService, private val repo: IndexerRepository) {
 
