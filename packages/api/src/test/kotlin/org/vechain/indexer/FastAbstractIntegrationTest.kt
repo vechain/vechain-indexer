@@ -13,6 +13,9 @@ import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
 
+/**
+ * To be used for local testing only. Does not spin up mongo container, you can do this manually to speed up tests.
+ */
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,

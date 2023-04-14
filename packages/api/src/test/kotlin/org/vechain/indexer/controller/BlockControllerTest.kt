@@ -4,13 +4,13 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
-import org.vechain.indexer.FastAbstractIntegrationTest
+import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.BLOCKS_PATH
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
 
-internal class BlockControllerTest : FastAbstractIntegrationTest() {
+internal class BlockControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = BLOCKS_PATH
