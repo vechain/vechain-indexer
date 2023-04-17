@@ -63,7 +63,7 @@ object BlockUtils {
      */
     fun getTransferEventsFromTopics(block: Block): List<TransferEvent> {
         return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
-            extractTransferEvents(output.events, tx, block, outputIndex)
+            extractTopicTransfers(output.events, tx, block, outputIndex)
         }
     }
 
@@ -75,13 +75,13 @@ object BlockUtils {
 
             val vetTransfers = extractVetTransfers(output.transfers, tx, block, outputIndex)
 
-            val topicTransfers = extractTransferEvents(output.events, tx, block, outputIndex)
+            val topicTransfers = extractTopicTransfers(output.events, tx, block, outputIndex)
 
             vetTransfers + topicTransfers
         }
     }
 
-    private fun extractTransferEvents(
+    private fun extractTopicTransfers(
         events: List<TxEvent>,
         tx: WrappedTransaction,
         block: Block,
