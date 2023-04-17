@@ -9,7 +9,7 @@ object BlockUtils {
      * Get all confirmed transactions from a block
      */
     fun confirmedTransactions(block: Block): List<WrappedTransaction> {
-        return block.transactions.filter { it.reverted == false }
+        return block.transactions.filter { !it.reverted }
     }
 
     /**
@@ -28,21 +28,6 @@ object BlockUtils {
     }
 
     /**
-     * Get all events from a block, paired with the transaction that created it.
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getEvents(block: Block): List<Pair<TxEvent, WrappedTransaction>> {
-        return confirmedTransactions(block).flatMap { tx ->
-            tx.outputs.flatMap { output ->
-                output.events.map { event ->
-                    Pair(event, tx)
-                }
-            }
-        }
-    }
-
-    /**
      * Get all outputs from a block, paired with the transaction that created it.
      *
      * DOES NOT include reverted TXs
@@ -53,11 +38,13 @@ object BlockUtils {
                 tx.outputs.map { output ->
                     Pair(output, tx)
                 }
-
-            }.sortedBy {
-                //Sort by ID so that outputs are consistent (we use indexes in some object IDs)
-                it.second.id
-            }
+            }.sortedWith(
+                //Sort by txId, then output index. We use indexes to create MongoDB IDs, so this is important.
+                compareBy(
+                    { it.second.id },
+                    { it.second.outputs.indexOf(it.first) }
+                )
+            )
     }
 
     /**
