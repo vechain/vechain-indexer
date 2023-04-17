@@ -48,11 +48,16 @@ object BlockUtils {
      * DOES NOT include reverted TXs
      */
     fun getOutputs(block: Block): List<Pair<TxOutputs, WrappedTransaction>> {
-        return confirmedTransactions(block).flatMap { tx ->
-            tx.outputs.map { output ->
-                Pair(output, tx)
+        return confirmedTransactions(block)
+            .flatMap { tx ->
+                tx.outputs.map { output ->
+                    Pair(output, tx)
+                }
+
+            }.sortedBy {
+                //Sort by ID so that outputs are consistent (we use indexes in some object IDs)
+                it.second.id
             }
-        }
     }
 
     /**
