@@ -26,7 +26,7 @@ class TransferEventIndexerTest {
 
     @MockK
     lateinit var thorService: ThorService
-    
+
     @MockK
     lateinit var transferEventRepo: TransferEventRepo
 
@@ -66,7 +66,7 @@ class TransferEventIndexerTest {
             that(transfers).hasSize(10)
         }
         val transferEvent =
-            transfers.first { it.id == DigestUtils.sha1Hex("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-0") }
+            transfers.first { it.id == DigestUtils.sha1Hex("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-TOPIC-9-0") }
         expect {
             that(transferEvent.blockId).isEqualTo("0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e")
             that(transferEvent.blockNumber).isEqualTo(blockNumber)
@@ -94,5 +94,6 @@ class TransferEventIndexerTest {
         value = "value",
         tokenAddress = "address",
         topics = emptyList(),
+        isVetTransfer = false
     )
 }
