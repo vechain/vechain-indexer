@@ -24,11 +24,9 @@ open class ClauseController(private val clauseService: ClauseService) {
 
     @GetMapping
     @Operation(summary = "Get all on chain tx clauses")
-    @PageablePage
-    @PageableSize
     open fun getAllClauses(
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): PaginatedResponse<List<WrappedClause>> {
         val resultsPage = clauseService.findAll(toPageable(page, size, by(ASC, "blockNumber", "txId", "id")))
 

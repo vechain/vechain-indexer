@@ -22,11 +22,9 @@ open class BlockController(private val blockService: BlockService) {
 
     @GetMapping
     @Operation(summary = "Get all blockchain blocks")
-    @PageablePage
-    @PageableSize
     open fun getAllBlocks(
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageablePage @RequestParam(required = false) page: Int?,
+        @PageableSize @RequestParam(required = false) size: Int?,
     ): List<Block> {
         return blockService.findAll(toPageable(page, size, by(ASC, "number")))
     }

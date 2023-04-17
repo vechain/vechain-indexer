@@ -7,6 +7,6 @@ package org.vechain.indexer.pageable
 @PageableSize
 @PageableSort
 @PageableDirection
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PageableAll

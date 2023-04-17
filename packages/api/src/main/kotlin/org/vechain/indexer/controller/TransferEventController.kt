@@ -22,11 +22,9 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping
     @Operation(summary = "Get all blockchain transfer events")
-    @PageablePage
-    @PageableSize
     open fun getAllTransferEvents(
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): List<TransferEvent> {
         return transferEventService.findAll(
             toPageable(page, size, by(ASC, "blockNumber", "txId", "id"))

@@ -49,13 +49,11 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
-    @PageablePage
-    @PageableSize
     open fun getTransactionsByOrigin(
         @Address @PathVariable address: String,
         @RequestParam(required = false) includeDelegated: Boolean?,
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): List<WrappedTransaction> {
         return transactionService.findByOrigin(
             address,
@@ -79,12 +77,10 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    @PageablePage
-    @PageableSize
     open fun getDelegatedTransactions(
         @Address @PathVariable address: String,
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): List<WrappedTransaction> {
         return transactionService.findAllDelegated(
             address,

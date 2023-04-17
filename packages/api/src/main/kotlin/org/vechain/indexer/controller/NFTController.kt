@@ -51,13 +51,11 @@ open class NFTController(private val nftService: NFTService) {
         required = false,
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
-    @PageablePage
-    @PageableSize
     open fun getOwnedNFTs(
         @Address @PathVariable address: String,
         @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): List<NFT> {
         return if (contractAddresses.isNullOrEmpty()) {
             nftService.findByOwner(address, toPageable(page, size, sorted()))
@@ -81,26 +79,10 @@ open class NFTController(private val nftService: NFTService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
     open fun getContractsByNFTOwner(
         @Address @RequestParam owner: String,
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PageableSize @RequestParam(required = false) page: Int?,
+        @PageablePage @RequestParam(required = false) size: Int?,
     ): List<String> {
         return nftService.findContractsByNFTOwner(owner, toPageable(page, size, sorted()))
     }

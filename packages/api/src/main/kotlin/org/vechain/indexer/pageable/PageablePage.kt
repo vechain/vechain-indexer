@@ -12,6 +12,6 @@ import io.swagger.v3.oas.annotations.media.Schema
     required = false,
     example = "0"
 )
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PageablePage

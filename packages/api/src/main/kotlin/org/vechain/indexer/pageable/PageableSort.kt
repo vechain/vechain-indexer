@@ -13,6 +13,6 @@ import io.swagger.v3.oas.annotations.media.Schema
     example = "blockNumber",
     array = ArraySchema(schema = Schema(type = "String"))
 )
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PageableSort
