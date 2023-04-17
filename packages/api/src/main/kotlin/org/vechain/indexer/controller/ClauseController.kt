@@ -1,9 +1,6 @@
 package org.vechain.indexer.controller
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.domain.Sort.by
@@ -15,6 +12,8 @@ import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.PaginatedResponse
 import org.vechain.indexer.model.PaginationDetail
 import org.vechain.indexer.model.WrappedClause
+import org.vechain.indexer.pageable.PageablePage
+import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 
@@ -25,22 +24,8 @@ open class ClauseController(private val clauseService: ClauseService) {
 
     @GetMapping
     @Operation(summary = "Get all on chain tx clauses")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getAllClauses(
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) size: Int?,

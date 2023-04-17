@@ -20,7 +20,8 @@ data class TransferEvent @ConstructorBinding constructor(
     val to: String,
     val value: String,
     @Indexed
-    val tokenAddress: String,
+    val tokenAddress: String?,
+    val isVetTransfer: Boolean,
     val topics: List<String>,
 ) {
     val isNFTTransfer: Boolean

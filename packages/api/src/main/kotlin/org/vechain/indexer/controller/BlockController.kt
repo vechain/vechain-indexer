@@ -1,9 +1,6 @@
 package org.vechain.indexer.controller
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Sort.Direction.ASC
 import org.springframework.data.domain.Sort.by
@@ -13,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.model.Block
+import org.vechain.indexer.pageable.PageablePage
+import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.BlockService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 
@@ -23,22 +22,8 @@ open class BlockController(private val blockService: BlockService) {
 
     @GetMapping
     @Operation(summary = "Get all blockchain blocks")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getAllBlocks(
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) size: Int?,

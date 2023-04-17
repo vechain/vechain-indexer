@@ -13,6 +13,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.pageable.PageablePage
+import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -39,22 +41,8 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getContractsByOrigin(
         @Address @PathVariable address: String,
         @RequestParam(required = false) page: Int?,

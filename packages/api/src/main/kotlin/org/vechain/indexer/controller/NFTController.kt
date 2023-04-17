@@ -13,6 +13,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
+import org.vechain.indexer.pageable.PageablePage
+import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -49,22 +51,8 @@ open class NFTController(private val nftService: NFTService) {
         required = false,
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getOwnedNFTs(
         @Address @PathVariable address: String,
         @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,

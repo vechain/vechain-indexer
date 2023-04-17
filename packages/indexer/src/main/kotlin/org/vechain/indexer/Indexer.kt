@@ -1,7 +1,7 @@
 package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
-import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.IndexerRepository
@@ -46,19 +46,23 @@ abstract class Indexer(
         try {
             backoffDelay()
 
-            logger.info("Processing @ Block $currentBlockNumber (${status})")
             val block = thorService.getBlock(currentBlockNumber)
 
             // Check for reorg.
-            if (previousBlockId != ZERO_ID && previousBlockId != block.parentID) throw ReorgException("Reorg detected.")
+            if (previousBlockId != ZERO_ID && previousBlockId != block.parentID)
+                throw ReorgException("Reorg detected")
 
+            logger.info("Processing @ Block $currentBlockNumber (${status})")
             processBlock(block)
 
             postProcessBlock(block)
-        } catch (e: IndexerFullySynchronizedException) {
-            logger.info("FULLY_SYNCED @ Block $currentBlockNumber")
+        } catch (ex: BlockNotFoundException) {
+            logger.info("Not Found @ Block $currentBlockNumber")
             backoffPeriod = 4000
-            status = Status.FULLY_SYNCED
+
+            if (ex.blockNumber == currentBlockNumber)
+                status = Status.FULLY_SYNCED
+
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
             resolveReorg()
@@ -66,7 +70,7 @@ abstract class Indexer(
         } catch (e: Exception) {
             logger.error("Error while processing block $currentBlockNumber", e)
             logger.info("Restarting indexer in 10s...")
-            Thread.sleep(10 * 1000)
+            Thread.sleep(INITIAL_BACKOFF_PERIOD)
             status = Status.SYNCING
         }
 
@@ -77,8 +81,7 @@ abstract class Indexer(
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
-            val timeSinceLastBlock =
-                maxOf(currentEpoch - block.timestamp.times(1000), 0)
+            val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock))
         }
 

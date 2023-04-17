@@ -13,6 +13,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.pageable.PageablePage
+import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -47,22 +49,8 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getTransactionsByOrigin(
         @Address @PathVariable address: String,
         @RequestParam(required = false) includeDelegated: Boolean?,
@@ -91,22 +79,8 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "page",
-        schema = Schema(type = "Integer"),
-        description = "The results page number",
-        required = false,
-        example = "0"
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "size",
-        schema = Schema(type = "Integer"),
-        description = "The results page size",
-        required = false,
-        example = "20"
-    )
+    @PageablePage
+    @PageableSize
     open fun getDelegatedTransactions(
         @Address @PathVariable address: String,
         @RequestParam(required = false) page: Int?,

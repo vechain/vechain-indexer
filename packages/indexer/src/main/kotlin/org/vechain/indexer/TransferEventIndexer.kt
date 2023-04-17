@@ -16,7 +16,7 @@ open class TransferEventIndexer(
 
     override fun processBlock(block: Block) {
 
-        val transferEvents = BlockUtils.getTransferEvents(block)
+        val transferEvents = BlockUtils.getAllTransferEvents(block)
 
         if (transferEvents.isNotEmpty()) transferEventRepo.saveAll(transferEvents)
     }

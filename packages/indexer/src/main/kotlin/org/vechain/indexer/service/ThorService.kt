@@ -7,7 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
-import org.vechain.indexer.exception.IndexerFullySynchronizedException
+import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.NotFoundException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.model.Clause
@@ -28,7 +28,7 @@ class ThorService(private val thorRest: WebClient) {
             .retrieve()
             .bodyToMono(ExpandedBlockResponse::class.java)
             .block()
-            ?: throw IndexerFullySynchronizedException("Block $number not found")
+            ?: throw BlockNotFoundException(blockNumber = number)
 
         logger.debug("Block $number found")
 
@@ -39,7 +39,7 @@ class ThorService(private val thorRest: WebClient) {
         val response =
             thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(ExpandedBlockResponse::class.java)
                 .block()
-                ?: throw NotFoundException("Best block not found")
+                ?: throw BlockNotFoundException("Best block not found", -1)
 
         logger.debug("Best block found: ${response.number}")
 
@@ -63,14 +63,12 @@ class ThorService(private val thorRest: WebClient) {
 
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
 
-        val res = thorRest.post().uri("/accounts/*")
+        return thorRest.post().uri("/accounts/*")
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .accept(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
             .retrieve()
             .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
             .block() ?: throw Exception("Empty response from Thor")
-
-        return res.toList()
     }
 }
