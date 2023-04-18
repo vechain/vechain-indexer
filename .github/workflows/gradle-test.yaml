@@ -20,7 +20,7 @@ permissions:
   packages: write
 
 jobs:
-  test:
+  gradle-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -50,14 +50,14 @@ jobs:
           retention-days: 1
           path: static/${{ matrix.package }}
 
-  publish-cucumber-html:
+  publish-test-html:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    name: Publish Cucumber HTML
+    name: Publish HTML
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: run-cucumber-tests
+    needs: gradle-test
     strategy:
       fail-fast: false
     steps:
