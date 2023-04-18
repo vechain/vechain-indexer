@@ -14,7 +14,7 @@ import kotlin.jvm.optionals.getOrNull
 
 @Profile("contract-indexer", "prod")
 @Component
-class ContractIndexer(
+open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepo: ContractRepo

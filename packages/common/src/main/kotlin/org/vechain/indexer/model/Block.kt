@@ -33,7 +33,7 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     val signer: String,
     val isTrunk: Boolean,
     val isFinalized: Boolean,
-    val transactions: List<WrappedTransaction>
+    val transactions: List<TransactionData>
 ) {
     constructor(blockResponse: ExpandedBlockResponse) : this(
         id = blockResponse.id,
@@ -53,6 +53,6 @@ data class Block @ConstructorBinding @JsonCreator constructor(
         signer = blockResponse.signer,
         isTrunk = blockResponse.isTrunk,
         isFinalized = blockResponse.isFinalized,
-        transactions = blockResponse.transactions.map { WrappedTransaction(blockResponse, it) }
+        transactions = blockResponse.transactions.map { TransactionData(blockResponse.number, it) }
     )
 }

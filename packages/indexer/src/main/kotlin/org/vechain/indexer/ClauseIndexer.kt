@@ -10,12 +10,12 @@ import org.vechain.indexer.utils.BlockUtils
 
 @Profile("clause-indexer", "prod")
 @Component
-open class ClauseIndexer(private val thorService: ThorService, private val clauseRepo: ClauseRepo) :
+open class ClauseIndexer(thorService: ThorService, private val clauseRepo: ClauseRepo) :
     Indexer(thorService, clauseRepo) {
     override fun processBlock(block: Block) {
         val clauses: List<WrappedClause> = BlockUtils.getAllClauses(block)
 
         if (clauses.isNotEmpty()) clauseRepo.saveAll(clauses)
     }
-    
+
 }

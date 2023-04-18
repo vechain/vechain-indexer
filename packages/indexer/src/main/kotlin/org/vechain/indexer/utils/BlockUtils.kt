@@ -8,8 +8,10 @@ object BlockUtils {
     /**
      * Get all confirmed transactions from a block
      */
-    fun confirmedTransactions(block: Block): List<WrappedTransaction> {
-        return block.transactions.filter { !it.reverted }
+    fun confirmedTransactions(block: Block): List<Transaction> {
+        return block.transactions
+            .map { Transaction(block.blockNumber, it) }
+            .filter { !it.reverted }
     }
 
     /**
@@ -32,7 +34,7 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    fun getOutputs(block: Block): List<Pair<TxOutputs, WrappedTransaction>> {
+    fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
         return confirmedTransactions(block)
             .flatMap { tx ->
                 tx.outputs.map { output ->
@@ -83,7 +85,7 @@ object BlockUtils {
 
     private fun extractTopicTransfers(
         events: List<TxEvent>,
-        tx: WrappedTransaction,
+        tx: Transaction,
         block: Block,
         outputIndex: Int
     ): List<TransferEvent> {
@@ -105,7 +107,7 @@ object BlockUtils {
 
     private fun extractVetTransfers(
         transfers: List<TxTransfer>,
-        tx: WrappedTransaction,
+        tx: Transaction,
         block: Block,
         outputIndex: Int
     ): List<TransferEvent> {

@@ -12,7 +12,7 @@ import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
-import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.service.TransactionService
@@ -54,7 +54,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) includeDelegated: Boolean?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
-    ): List<WrappedTransaction> {
+    ): List<Transaction> {
         return transactionService.findByOrigin(
             address,
             includeDelegated,
@@ -81,7 +81,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @Address @PathVariable address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
-    ): List<WrappedTransaction> {
+    ): List<Transaction> {
         return transactionService.findAllDelegated(
             address,
             toPageable(page, size, by(ASC, "blockNumber", "id"))

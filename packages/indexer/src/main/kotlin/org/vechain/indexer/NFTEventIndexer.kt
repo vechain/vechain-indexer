@@ -14,7 +14,7 @@ import org.web3j.utils.Numeric
 @Profile("nft-event-indexer", "prod")
 @Component
 open class NFTEventIndexer(
-    private val thorService: ThorService,
+    thorService: ThorService,
     private val nftRepo: NFTRepo
 ) : Indexer(thorService, nftRepo) {
 

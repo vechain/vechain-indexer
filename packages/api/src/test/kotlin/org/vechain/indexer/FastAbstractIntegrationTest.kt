@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
+import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
@@ -25,7 +26,7 @@ import org.vechain.indexer.utils.JsonUtils
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class FastAbstractIntegrationTest {
-    protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
+    protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
@@ -34,6 +35,10 @@ abstract class FastAbstractIntegrationTest {
     protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
+
+    init {
+        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
+    }
 
     @Autowired
     lateinit var transactionRepository: TransactionRepo
@@ -56,7 +61,7 @@ abstract class FastAbstractIntegrationTest {
     @BeforeAll
     fun setup() {
 
-        val transactions: List<WrappedTransaction> =
+        val transactions: List<Transaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<Contract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)
