@@ -1,5 +1,31 @@
 # VeWorld Indexer
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechainfoundation_veworld-indexer&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+
+![Gradle Tests](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/gradle-test.yaml/badge.svg?branch=main)
+![Docker Build](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/docker-build.yml/badge.svg?branch=main)
+
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=bugs&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=vulnerabilities&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=duplicated_lines_density&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=reliability_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=sqale_index&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=ncloc&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=code_smells&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=sqale_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=security_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+
+- Coverage Reports:
+    - [API](https://ideal-fortnight-7vp33mg.pages.github.io/api/coverage/)
+    - [Common](https://ideal-fortnight-7vp33mg.pages.github.io/common/coverage/)
+    - [Indexer](https://ideal-fortnight-7vp33mg.pages.github.io/indexer/coverage/)
+
+- Tests Results:
+    - [API](https://ideal-fortnight-7vp33mg.pages.github.io/api/tests/)
+    - [Common](https://ideal-fortnight-7vp33mg.pages.github.io/common/tests/)
+    - [Indexer](https://ideal-fortnight-7vp33mg.pages.github.io/indexer/tests/)
+    - [E2E](https://ideal-fortnight-7vp33mg.pages.github.io/e2e/tests/)
+
 ## Prerequisites
 
 - Docker

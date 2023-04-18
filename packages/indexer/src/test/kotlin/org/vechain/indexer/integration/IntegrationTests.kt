@@ -17,7 +17,7 @@ class IntegrationTests : AbstractIntegrationTest() {
     fun `repos are indexing`() {
 
         //Sleep while indexer catches chain
-        Thread.sleep(10_000)
+        waitForFullySynced()
 
         allRepos.forEach { repo ->
 
@@ -36,7 +36,7 @@ class IntegrationTests : AbstractIntegrationTest() {
     fun `can read from repos`() {
 
         //Sleep while indexer catches chain
-        Thread.sleep(10_000)
+        waitForFullySynced()
 
         allRepos.forEach { repo ->
             assertDoesNotThrow("should be able to read from the DB") {

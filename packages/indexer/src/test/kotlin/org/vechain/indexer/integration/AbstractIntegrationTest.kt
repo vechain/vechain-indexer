@@ -1,6 +1,7 @@
 package org.vechain.indexer.integration
 
 import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.util.TestPropertyValues
@@ -13,6 +14,8 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
 import org.testcontainers.utility.TestcontainersConfiguration
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.Status
 import java.time.Duration
 import java.util.*
 
@@ -23,8 +26,22 @@ import java.util.*
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {
 
+    @Autowired
+    lateinit var allIndexers: List<Indexer>
+
     init {
         TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
+    }
+
+    fun waitForFullySynced() {
+        for (i in 0..120) {
+            if (allIndexers.all { it.status == Status.FULLY_SYNCED }) {
+                return
+            }
+            Thread.sleep(500)
+        }
+
+        throw Exception("Indexers not fully synced after 60 seconds")
     }
 
     companion object {
