@@ -38,6 +38,7 @@ jobs:
 
       - name: Copy HTML Test Report
         run: |
+          mkdir -p static/${{ matrix.package }}
           cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
           cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
 
