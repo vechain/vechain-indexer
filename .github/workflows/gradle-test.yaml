@@ -3,7 +3,7 @@ name: Gradle Test
 on:
   push:
     branches:
-      - main
+      - '*'
   pull_request:
     branches:
       - main
@@ -11,6 +11,13 @@ on:
 concurrency:
   group: ${{ github.head_ref || github.ref_name }}-build-test
   cancel-in-progress: true
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  packages: write
 
 jobs:
   test:
@@ -28,3 +35,48 @@ jobs:
 
       - name: Gradle Test
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
+
+      - name: Copy HTML Test Report
+        run: |
+          cp -r package/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
+          cp -r package/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v2
+        # on main branch
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: test-results-${{ github.head_ref || github.ref_name }}
+          retention-days: 1
+          path: static/${{ matrix.package }}
+
+  publish-cucumber-html:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    name: Publish Cucumber HTML
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: run-cucumber-tests
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download Static HTML
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ github.head_ref || github.ref_name }}-${{ github.sha }}-serenity-report
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: static
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

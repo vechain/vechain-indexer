@@ -55,19 +55,38 @@ allprojects {
     }
 
     tasks.clean {
-        doFirst {
-            delete(
-                "build",
-                "bin",
-                "packages/api/build",
-                "packages/api/bin",
-                "packages/indexer/build",
-                "packages/indexer/bin",
-                "packages/common/build",
-                "packages/common/bin",
-                "packages/e2e/build",
-                "packages/e2e/bin",
+
+        val dirs = mutableListOf(buildDir.path, "${rootDir.path}/bin")
+        dirs.addAll(subprojects.flatMap {
+            listOf(
+                it.buildDir.path,
+                "${it.projectDir.path}/bin"
             )
+        })
+
+        doFirst { delete(dirs) }
+    }
+
+    /**
+     * This does NOT run the tests prior to generating the report. It only uses the existing test results.
+     */
+    tasks.register<JacocoReport>("codeCoverageReport") {
+        // If a subproject applies the 'jacoco' plugin, add the result it to the report
+        subprojects {
+            val subproject = this
+            subproject.plugins.withType<JacocoPlugin>().configureEach {
+                subproject.tasks.matching { it.extensions.findByType<JacocoTaskExtension>() != null }.configureEach {
+                    val testTask = this
+                    sourceSets(subproject.sourceSets.main.get())
+                    executionData(testTask)
+                }
+            }
+        }
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
         }
     }
 
