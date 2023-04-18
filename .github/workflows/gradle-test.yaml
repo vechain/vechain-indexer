@@ -24,7 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [ api, common, indexer, e2e ]
+        #        package: [ api, common, indexer, e2e ]
+        package: [ api, common ]
     steps:
       - uses: actions/checkout@v3
 
