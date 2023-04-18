@@ -24,8 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        #        package: [ api, common, indexer, e2e ]
-        package: [ api, common ]
+        package: [ api, common, indexer, e2e ]
     steps:
       - uses: actions/checkout@v3
 
@@ -71,19 +70,14 @@ jobs:
           name: test-results-${{ github.head_ref || github.ref_name }}
           path: static
 
-      - name: Echo Downloaded Dir and Files
-        run: |
-          ls -la
-          ls -la static
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
 
-#      - name: Setup Pages
-#        uses: actions/configure-pages@v3
-#
-#      - name: Upload artifact
-#        uses: actions/upload-pages-artifact@v1
-#        with:
-#          path: ./static
-#
-#      - name: Deploy to GitHub Pages
-#        id: deployment
-#        uses: actions/deploy-pages@v1
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./static
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
