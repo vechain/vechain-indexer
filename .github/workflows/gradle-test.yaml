@@ -67,7 +67,7 @@ jobs:
       - name: Download Static HTML
         uses: actions/download-artifact@v3
         with:
-          name: ${{ github.head_ref || github.ref_name }}-${{ github.sha }}-serenity-report
+          name: test-results-${{ github.head_ref || github.ref_name }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
