@@ -26,7 +26,7 @@ internal class NFTEventIndexerTest {
 
     @MockK
     lateinit var thorService: ThorService
-    
+
     @MockK
     lateinit var nftRepo: NFTRepo
 
@@ -47,11 +47,11 @@ internal class NFTEventIndexerTest {
 
         val nftEvent = nftEvents.first()
         expect {
-            that(nftEvent.id).isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-0"))
-            that(nftEvent.tokenId).isEqualTo(BigInteger.ZERO)
+            that(nftEvent.id).isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-1"))
+            that(nftEvent.tokenId).isEqualTo(BigInteger.ONE)
             that(nftEvent.contractAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
-            that(nftEvent.owner).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
-            that(nftEvent.txId).isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
+            that(nftEvent.owner).isEqualTo("0x361277d1b27504f36a3b33d3a52d1f8270331b8c")
+            that(nftEvent.txId).isEqualTo("0x039d5f9bd7ffadd11a4f5888e88f459b7ff349c8c06e820f3102fa0779867ac6")
             that(nftEvent.blockNumber).isEqualTo(blockNumber)
         }
     }

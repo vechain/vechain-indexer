@@ -9,7 +9,7 @@ object BlockUtils {
      * Get all confirmed transactions from a block
      */
     fun confirmedTransactions(block: Block): List<WrappedTransaction> {
-        return block.transactions.filter { it.reverted == false }
+        return block.transactions.filter { !it.reverted }
     }
 
     /**
@@ -28,31 +28,23 @@ object BlockUtils {
     }
 
     /**
-     * Get all events from a block, paired with the transaction that created it.
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getEvents(block: Block): List<Pair<TxEvent, WrappedTransaction>> {
-        return confirmedTransactions(block).flatMap { tx ->
-            tx.outputs.flatMap { output ->
-                output.events.map { event ->
-                    Pair(event, tx)
-                }
-            }
-        }
-    }
-
-    /**
      * Get all outputs from a block, paired with the transaction that created it.
      *
      * DOES NOT include reverted TXs
      */
     fun getOutputs(block: Block): List<Pair<TxOutputs, WrappedTransaction>> {
-        return confirmedTransactions(block).flatMap { tx ->
-            tx.outputs.map { output ->
-                Pair(output, tx)
-            }
-        }
+        return confirmedTransactions(block)
+            .flatMap { tx ->
+                tx.outputs.map { output ->
+                    Pair(output, tx)
+                }
+            }.sortedWith(
+                //Sort by txId, then output index. We use indexes to create MongoDB IDs, so this is important.
+                compareBy(
+                    { it.second.id },
+                    { it.second.outputs.indexOf(it.first) }
+                )
+            )
     }
 
     /**
@@ -69,21 +61,67 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    fun getTransferEvents(block: Block): List<TransferEvent> {
-        return getOutputs(block).flatMap { (output, tx) ->
-            ContractUtils.findTransferEvents(output.events).mapIndexed { i, event ->
-                TransferEvent(
-                    id = DigestUtils.sha1Hex("${tx.id}-${i}"),
-                    blockId = block.id,
-                    blockNumber = block.blockNumber,
-                    txId = tx.id,
-                    from = AddressUtil.decode(event.topics[1]),
-                    to = AddressUtil.decode(event.topics[2]),
-                    value = event.data,
-                    tokenAddress = event.address,
-                    topics = event.topics
-                )
-            }
+    fun getTransferEventsFromTopics(block: Block): List<TransferEvent> {
+        return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
+            extractTopicTransfers(output.events, tx, block, outputIndex)
+        }
+    }
+
+    /**
+     * Gets all VET transfers AND transfers from topics
+     */
+    fun getAllTransferEvents(block: Block): List<TransferEvent> {
+        return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
+
+            val vetTransfers = extractVetTransfers(output.transfers, tx, block, outputIndex)
+
+            val topicTransfers = extractTopicTransfers(output.events, tx, block, outputIndex)
+
+            vetTransfers + topicTransfers
+        }
+    }
+
+    private fun extractTopicTransfers(
+        events: List<TxEvent>,
+        tx: WrappedTransaction,
+        block: Block,
+        outputIndex: Int
+    ): List<TransferEvent> {
+        return ContractUtils.findTransferEvents(events).mapIndexed { eventIndex, event ->
+            TransferEvent(
+                id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}"),
+                blockId = block.id,
+                blockNumber = block.blockNumber,
+                txId = tx.id,
+                from = AddressUtil.decode(event.topics[1]),
+                to = AddressUtil.decode(event.topics[2]),
+                value = event.data,
+                tokenAddress = event.address,
+                topics = event.topics,
+                isVetTransfer = false
+            )
+        }
+    }
+
+    private fun extractVetTransfers(
+        transfers: List<TxTransfer>,
+        tx: WrappedTransaction,
+        block: Block,
+        outputIndex: Int
+    ): List<TransferEvent> {
+        return transfers.mapIndexed { transferIndex, transfer ->
+            TransferEvent(
+                id = DigestUtils.sha1Hex("${tx.id}-VET-${outputIndex}-${transferIndex}"),
+                blockId = block.id,
+                blockNumber = block.blockNumber,
+                txId = tx.id,
+                from = transfer.sender,
+                to = transfer.recipient,
+                value = transfer.amount,
+                topics = listOf(),
+                isVetTransfer = true,
+                tokenAddress = null,
+            )
         }
     }
 }

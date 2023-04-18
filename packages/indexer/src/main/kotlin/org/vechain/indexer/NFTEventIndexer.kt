@@ -20,7 +20,7 @@ open class NFTEventIndexer(
 
     override fun processBlock(block: Block) {
 
-        val transferEvents = BlockUtils.getTransferEvents(block)
+        val transferEvents = BlockUtils.getTransferEventsFromTopics(block)
 
         val nfts = getNfts(transferEvents)
 
@@ -28,21 +28,20 @@ open class NFTEventIndexer(
     }
 
     private fun getNfts(transfers: List<TransferEvent>): List<NFT> {
-        val nftTransfers = transfers.filter { it.isNFTTransfer }
+        return transfers.filter { it.isNFTTransfer && it.tokenAddress != null }
+            .map {
 
-        return nftTransfers.map {
+                val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
 
-            val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
-
-            NFT(
-                id = buildHashedId("${it.tokenAddress}-${tokenId}"),
-                owner = it.to,
-                contractAddress = it.tokenAddress,
-                tokenId = tokenId,
-                txId = it.txId,
-                blockNumber = it.blockNumber
-            )
-        }
+                NFT(
+                    id = buildHashedId("${it.tokenAddress}-${tokenId}"),
+                    owner = it.to,
+                    contractAddress = it.tokenAddress!!,
+                    tokenId = tokenId,
+                    txId = it.txId,
+                    blockNumber = it.blockNumber
+                )
+            }
     }
 
     private fun buildHashedId(plainId: String) = DigestUtils.sha1Hex(plainId)
