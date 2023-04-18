@@ -38,13 +38,12 @@ jobs:
 
       - name: Copy HTML Test Report
         run: |
-          cp -r package/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
-          cp -r package/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
+          cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
+          cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
-        # on main branch
-        if: github.ref == 'refs/heads/main'
+        #        if: github.ref == 'refs/heads/main'
         with:
           name: test-results-${{ github.head_ref || github.ref_name }}
           retention-days: 1
@@ -55,7 +54,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     name: Publish HTML
-    if: github.ref == 'refs/heads/main'
+    #    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: gradle-test
     strategy:
