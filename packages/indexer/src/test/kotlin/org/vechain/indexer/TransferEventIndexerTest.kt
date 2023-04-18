@@ -10,6 +10,7 @@ import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.TransferEvent
@@ -20,6 +21,7 @@ import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {
@@ -81,6 +83,33 @@ class TransferEventIndexerTest {
                 that(transferEvent.topics[2]).isEqualTo("0x000000000000000000000000d7f75a0a1287ab2916848909c8531a0ea9412800")
                 that(transferEvent.topics[3]).isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000")
             }
+        }
+    }
+
+    @Test
+    fun `can pick up VET transfer`() {
+        val blockNumber = 14L
+
+        val transfersSlot = slot<List<TransferEvent>>()
+        every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
+
+        transferEventIndexer.processBlock(BLOCK_14_VET_TRANSFER)
+
+        val transfers = transfersSlot.captured
+
+        expectThat(transfers).hasSize(1)
+
+        val vetTransfer = transfers.first { it.isVetTransfer }
+
+        expect {
+            that(vetTransfer.blockId).isEqualTo("0x0000000e554ca3da5e4c5d0294bdea429297f805c1ffc76453cf7d051655bcfb")
+            that(vetTransfer.blockNumber).isEqualTo(blockNumber)
+            that(vetTransfer.txId).isEqualTo("0x80f3aadef1e87d54e7e608c64b87df9ab69d631b063cfd60869e7a4574ae2d93")
+            that(vetTransfer.from).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(vetTransfer.to).isEqualTo("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+            that(vetTransfer.value).isEqualTo("0x989680")
+            that(vetTransfer.tokenAddress).isNull()
+            that(vetTransfer.topics).hasSize(0)
         }
     }
 
