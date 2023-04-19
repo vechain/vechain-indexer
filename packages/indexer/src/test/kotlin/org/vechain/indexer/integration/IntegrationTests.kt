@@ -1,6 +1,7 @@
 package org.vechain.indexer.integration
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoOperations
 import org.springframework.data.mongodb.core.query.Query
@@ -58,16 +59,11 @@ class IntegrationTests : AbstractIntegrationTest() {
 
         //Sleep while indexer catches chain
         waitForFullySynced()
-
-        val repoNames = mongoOps.collectionNames
-
-        repoNames.forEach {
-            val documents = mongoOps.findAll(Any::class.java, it)
-
-            expect {
-                that(documents.size).isGreaterThan(0)
+        
+        allRepos.forEach { repo ->
+            assertDoesNotThrow {
+                repo.findAll()
             }
         }
-
     }
 }

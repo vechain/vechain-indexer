@@ -40,7 +40,7 @@ class TransferEventIndexerTest {
 
         every { transferEventRepo.getMaxBlockNumber() } returns transferEventsStartingBlock
 
-        val indexerStartingBlock = transferEventIndexer.getMaxBlockNumber()
+        val indexerStartingBlock = transferEventIndexer.getPreviousBlockNumber()
 
         expectThat(indexerStartingBlock).isEqualTo(transferEventsStartingBlock)
     }
