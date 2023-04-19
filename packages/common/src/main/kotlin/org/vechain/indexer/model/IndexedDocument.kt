@@ -3,7 +3,7 @@ package org.vechain.indexer.model
 /**
  * Common interface to all mongo documents.
  */
-interface IndexerDocument {
+interface IndexedDocument {
     //To determine if a re-org has happened
     val blockId: String
 

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoOperations
 import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.repos.IndexerRepo
+import org.vechain.indexer.repos.BaseIndexedRepo
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 import strikt.assertions.isGreaterThan
@@ -16,7 +16,7 @@ class IntegrationTests : AbstractIntegrationTest() {
     lateinit var mongoOps: MongoOperations
 
     @Autowired
-    lateinit var allRepos: List<IndexerRepo<*>>
+    lateinit var allRepos: List<BaseIndexedRepo<*>>
 
     @Test
     fun `repos should be created`() {
@@ -59,7 +59,7 @@ class IntegrationTests : AbstractIntegrationTest() {
 
         //Sleep while indexer catches chain
         waitForFullySynced()
-        
+
         allRepos.forEach { repo ->
             assertDoesNotThrow {
                 repo.findAll()

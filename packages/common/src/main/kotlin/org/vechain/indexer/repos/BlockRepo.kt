@@ -4,4 +4,4 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Block
 
 @Repository
-interface BlockRepo : IndexerRepo<Block>
+interface BlockRepo : BaseIndexedRepo<Block>

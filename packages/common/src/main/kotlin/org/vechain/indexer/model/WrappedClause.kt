@@ -24,7 +24,7 @@ data class WrappedClause @ConstructorBinding constructor(
     val data: String,
     val reverted: Boolean,
     val output: TxOutputs?,
-) : IndexerDocument {
+) : IndexedDocument {
     constructor(block: Block, tx: Transaction, clause: Clause, index: Int) : this(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),
         blockId = block.blockId,

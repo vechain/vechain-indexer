@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.NFT
 
 @Repository
-interface NFTRepo : IndexerRepo<NFT> {
+interface NFTRepo : BaseIndexedRepo<NFT> {
 
     fun findAllByOwner(owner: String, pageable: Pageable): Page<NFT>
 

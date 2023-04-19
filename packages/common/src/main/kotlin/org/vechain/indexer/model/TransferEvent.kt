@@ -23,7 +23,7 @@ data class TransferEvent @ConstructorBinding constructor(
     val tokenAddress: String?,
     val isVetTransfer: Boolean,
     val topics: List<String>,
-) : IndexerDocument {
+) : IndexedDocument {
     val isNFTTransfer: Boolean
         get() = topics.size == 4
 

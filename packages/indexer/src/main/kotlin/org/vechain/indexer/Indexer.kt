@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
-import org.vechain.indexer.repos.IndexerRepo
+import org.vechain.indexer.repos.BaseIndexedRepo
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -18,7 +18,7 @@ const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(
     private val thorService: ThorService,
-    private val repo: IndexerRepo<*>,
+    private val repo: BaseIndexedRepo<*>,
     private val numBlocksToPurge: Long = 12L
 ) {
 

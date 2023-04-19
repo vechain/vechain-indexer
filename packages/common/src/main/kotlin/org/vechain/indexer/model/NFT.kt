@@ -22,4 +22,4 @@ data class NFT @ConstructorBinding constructor(
 //    @Indexed(direction = IndexDirection.DESCENDING)
     override val blockNumber: Long,
     override val blockId: String,
-) : IndexerDocument
+) : IndexedDocument

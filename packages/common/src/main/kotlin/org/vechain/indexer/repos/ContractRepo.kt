@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Contract
 
 @Repository
-interface ContractRepo : IndexerRepo<Contract> {
+interface ContractRepo : BaseIndexedRepo<Contract> {
     fun findAllByCreator(creator: String, pageable: Pageable): Page<Contract>
 }

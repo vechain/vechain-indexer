@@ -31,7 +31,7 @@ data class Transaction @ConstructorBinding constructor(
     @Indexed
     val origin: String,
     val outputs: List<TxOutputs>
-) : IndexerDocument {
+) : IndexedDocument {
 
     constructor(tx: TransactionData) : this(
         id = tx.id,

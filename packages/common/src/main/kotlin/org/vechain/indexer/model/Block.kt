@@ -33,7 +33,7 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     val isTrunk: Boolean,
     val isFinalized: Boolean,
     val transactions: List<TransactionData>
-) : IndexerDocument {
+) : IndexedDocument {
     constructor(blockResponse: ExpandedBlockResponse) : this(
         blockId = blockResponse.id,
         blockNumber = blockResponse.number,

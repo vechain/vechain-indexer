@@ -24,4 +24,4 @@ data class Contract @ConstructorBinding constructor(
     val isErc20: Boolean,
     val isErc721: Boolean,
     val previousMasters: MutableSet<String>
-) : IndexerDocument
+) : IndexedDocument

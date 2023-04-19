@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Transaction
 
 @Repository
-interface TransactionRepo : IndexerRepo<Transaction> {
+interface TransactionRepo : BaseIndexedRepo<Transaction> {
 
     fun findAllByOrigin(origin: String, pageable: Pageable): Page<Transaction>
 
