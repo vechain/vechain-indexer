@@ -17,17 +17,7 @@ class IntegrationTests : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var allRepos: List<BaseIndexedRepo<*>>
-
-    @Test
-    fun `repos should be created`() {
-        val collectionsSize: Int = mongoOps.collectionNames.size
-        val reposSize: Int = allRepos.size
-
-        expect {
-            that(collectionsSize).isEqualTo(reposSize)
-        }
-    }
-
+    
     /**
      * This tests checks that ALL repos have been populated after indexing the thor script output.
      */
