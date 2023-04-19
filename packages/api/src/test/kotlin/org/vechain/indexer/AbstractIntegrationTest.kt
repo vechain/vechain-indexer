@@ -30,7 +30,7 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractIntegrationTest {
 
-    protected val TX_TYPE = object : TypeReference<List<WrappedTransaction>>() {}
+    protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
@@ -41,7 +41,7 @@ abstract class AbstractIntegrationTest {
     protected val objectMapper = JsonUtils.mapper
 
     init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
+        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "false")
     }
 
     @Autowired
@@ -65,7 +65,7 @@ abstract class AbstractIntegrationTest {
     @BeforeAll
     fun setup() {
 
-        val transactions: List<WrappedTransaction> =
+        val transactions: List<Transaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<Contract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)

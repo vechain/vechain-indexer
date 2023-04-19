@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.NFT
-import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.model.Transaction
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -109,7 +109,7 @@ class SimpleAPICallsTest {
         }
     }
 
-    fun assertValidTransaction(transaction: WrappedTransaction) {
+    fun assertValidTransaction(transaction: Transaction) {
 
         expect {
             that(transaction.id).isNotEmpty()

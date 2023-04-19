@@ -10,7 +10,7 @@ import org.vechain.indexer.utils.BlockUtils
 @Profile("transfer-event-indexer", "prod")
 @Component
 open class TransferEventIndexer(
-    private val thorService: ThorService,
+    thorService: ThorService,
     private val transferEventRepo: TransferEventRepo
 ) : Indexer(thorService, transferEventRepo) {
 

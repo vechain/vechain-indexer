@@ -5,11 +5,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.model.rest.BlockTransaction
-import org.vechain.indexer.model.rest.ExpandedBlockResponse
 
 @Document(collection = "transactions")
-data class WrappedTransaction @ConstructorBinding constructor(
+data class Transaction @ConstructorBinding constructor(
     @Id
     val id: String,
     @Indexed(direction = IndexDirection.DESCENDING)
@@ -33,9 +31,10 @@ data class WrappedTransaction @ConstructorBinding constructor(
     val origin: String,
     val outputs: List<TxOutputs>
 ) {
-    constructor(expandedBlockResponse: ExpandedBlockResponse, tx: BlockTransaction) : this(
+
+    constructor(blockNumber: Long, tx: TransactionData) : this(
         id = tx.id,
-        blockNumber = expandedBlockResponse.number,
+        blockNumber = blockNumber,
         size = tx.size,
         chainTag = tx.chainTag,
         blockRef = tx.blockRef,

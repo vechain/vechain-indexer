@@ -6,7 +6,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.NFT
-import org.vechain.indexer.model.WrappedTransaction
+import org.vechain.indexer.model.Transaction
 
 object VeWorldAPIClient {
 
@@ -20,7 +20,7 @@ object VeWorldAPIClient {
     /**
      * Response Types
      */
-    private val TX_RESPONSE_TYPE = object : ParameterizedTypeReference<List<WrappedTransaction>>() {}
+    private val TX_RESPONSE_TYPE = object : ParameterizedTypeReference<List<Transaction>>() {}
     private val CONTRACT_RESPONSE_TYPE = object : ParameterizedTypeReference<List<Contract>>() {}
     private val NFT_RESPONSE_TYPE = object : ParameterizedTypeReference<List<NFT>>() {}
 
@@ -51,15 +51,15 @@ object VeWorldAPIClient {
             throw Exception("Health failed with status $mongoStatus")
     }
 
-    fun getTransactions(address: String): List<WrappedTransaction> {
+    fun getTransactions(address: String): List<Transaction> {
         return getRequest("$API_URL/transactions/${address}", TX_RESPONSE_TYPE)
     }
 
-    fun getTransactions(address: String, includeDelegated: Boolean): List<WrappedTransaction> {
+    fun getTransactions(address: String, includeDelegated: Boolean): List<Transaction> {
         return getRequest("$API_URL/transactions/${address}?includeDelegated=${includeDelegated}", TX_RESPONSE_TYPE)
     }
 
-    fun getDelegatedTransactions(address: String): List<WrappedTransaction> {
+    fun getDelegatedTransactions(address: String): List<Transaction> {
         return getRequest("$API_URL/transactions/${address}/delegated", TX_RESPONSE_TYPE)
     }
 
