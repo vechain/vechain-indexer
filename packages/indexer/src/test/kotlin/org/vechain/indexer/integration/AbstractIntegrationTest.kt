@@ -13,7 +13,6 @@ import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
-import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 import java.time.Duration
@@ -28,10 +27,6 @@ abstract class AbstractIntegrationTest {
 
     @Autowired
     lateinit var allIndexers: List<Indexer>
-
-    init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
-    }
 
     fun waitForFullySynced() {
         for (i in 0..120) {

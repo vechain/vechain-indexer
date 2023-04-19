@@ -1,14 +1,31 @@
 package org.vechain.indexer.integration
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.mongodb.core.MongoOperations
+import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.repos.IndexerRepo
+import strikt.api.expect
+import strikt.assertions.isEqualTo
+import strikt.assertions.isGreaterThan
 
 class IntegrationTests : AbstractIntegrationTest() {
 
     @Autowired
-    lateinit var allRepos: List<CrudRepository<*, String>>
+    lateinit var mongoOps: MongoOperations
+
+    @Autowired
+    lateinit var allRepos: List<IndexerRepo<*>>
+
+    @Test
+    fun `repos should be created`() {
+        val collectionsSize: Int = mongoOps.collectionNames.size
+        val reposSize: Int = allRepos.size
+
+        expect {
+            that(collectionsSize).isEqualTo(reposSize)
+        }
+    }
 
     /**
      * This tests checks that ALL repos have been populated after indexing the thor script output.
@@ -19,12 +36,16 @@ class IntegrationTests : AbstractIntegrationTest() {
         //Sleep while indexer catches chain
         waitForFullySynced()
 
-        allRepos.forEach { repo ->
+        val repoNames = mongoOps.collectionNames
 
-            val repoCount = repo.count()
+        repoNames.forEach { name ->
+            mongoOps.count(Query(), name).let { count ->
 
-            if (repoCount <= 0) {
-                throw Exception("Repo not updating")
+                expect {
+                    that(count)
+                        .describedAs("Repo ($name) should have 1 or more documents")
+                        .isGreaterThan(0)
+                }
             }
         }
     }
@@ -38,10 +59,15 @@ class IntegrationTests : AbstractIntegrationTest() {
         //Sleep while indexer catches chain
         waitForFullySynced()
 
-        allRepos.forEach { repo ->
-            assertDoesNotThrow("should be able to read from the DB") {
-                repo.findAll()
+        val repoNames = mongoOps.collectionNames
+
+        repoNames.forEach {
+            val documents = mongoOps.findAll(Any::class.java, it)
+
+            expect {
+                that(documents.size).isGreaterThan(0)
             }
         }
+
     }
 }

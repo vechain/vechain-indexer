@@ -3,7 +3,6 @@ package org.vechain.indexer.model
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.IndexDirection
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
@@ -12,11 +11,11 @@ import org.vechain.indexer.model.rest.ExpandedBlockResponse
 
 @Document(collection = "blocks")
 data class Block @ConstructorBinding @JsonCreator constructor(
-    @Id
-    val id: String,
+    @Indexed(unique = true)
+    override val blockId: String,
     @Indexed(unique = true, direction = IndexDirection.DESCENDING)
     @JsonProperty("number")
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val size: Long,
     val parentID: String,
     val timestamp: Long,
@@ -34,9 +33,9 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     val isTrunk: Boolean,
     val isFinalized: Boolean,
     val transactions: List<TransactionData>
-) {
+) : IndexerDocument {
     constructor(blockResponse: ExpandedBlockResponse) : this(
-        id = blockResponse.id,
+        blockId = blockResponse.id,
         blockNumber = blockResponse.number,
         size = blockResponse.size,
         parentID = blockResponse.parentID,
@@ -53,6 +52,12 @@ data class Block @ConstructorBinding @JsonCreator constructor(
         signer = blockResponse.signer,
         isTrunk = blockResponse.isTrunk,
         isFinalized = blockResponse.isFinalized,
-        transactions = blockResponse.transactions.map { TransactionData(blockResponse.number, it) }
+        transactions = blockResponse.transactions.map {
+            TransactionData(
+                blockNumber = blockResponse.number,
+                blockId = blockResponse.id,
+                tx = it
+            )
+        }
     )
 }

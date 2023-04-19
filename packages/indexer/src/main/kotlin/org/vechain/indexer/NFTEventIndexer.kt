@@ -39,7 +39,8 @@ open class NFTEventIndexer(
                     contractAddress = it.tokenAddress!!,
                     tokenId = tokenId,
                     txId = it.txId,
-                    blockNumber = it.blockNumber
+                    blockNumber = it.blockNumber,
+                    blockId = it.blockId
                 )
             }
     }

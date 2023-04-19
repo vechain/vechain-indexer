@@ -9,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
-import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
@@ -35,10 +34,6 @@ abstract class FastAbstractIntegrationTest {
     protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
-
-    init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "true")
-    }
 
     @Autowired
     lateinit var transactionRepository: TransactionRepo

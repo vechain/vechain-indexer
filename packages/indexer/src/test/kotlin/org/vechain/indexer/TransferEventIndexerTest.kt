@@ -14,7 +14,6 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.TransferEvent
-import org.vechain.indexer.repos.BlockNumber
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
@@ -39,9 +38,9 @@ class TransferEventIndexerTest {
     fun `Starting block is transfer block - when transfer block is lower`() {
         val transferEventsStartingBlock = 9L
 
-        every { transferEventRepo.getMaxBlockNumber() } returns BlockNumber(transferEventsStartingBlock)
+        every { transferEventRepo.getMaxBlockNumber() } returns transferEventsStartingBlock
 
-        val indexerStartingBlock = transferEventIndexer.getStartingBlock()
+        val indexerStartingBlock = transferEventIndexer.getMaxBlockNumber()
 
         expectThat(indexerStartingBlock).isEqualTo(transferEventsStartingBlock)
     }

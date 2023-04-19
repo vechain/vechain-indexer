@@ -3,15 +3,11 @@ package org.vechain.indexer.repos
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.Query
-import org.springframework.data.repository.CrudRepository
-import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Transaction
 
 @Repository
-interface TransactionRepo : IndexerRepository,
-    PagingAndSortingRepository<Transaction, String>,
-    CrudRepository<Transaction, String> {
+interface TransactionRepo : IndexerRepo<Transaction> {
 
     fun findAllByOrigin(origin: String, pageable: Pageable): Page<Transaction>
 

@@ -10,9 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class TransferEvent @ConstructorBinding constructor(
     @Id
     val id: String,
-    val blockId: String,
+    override val blockId: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val txId: String,
     @Indexed
     val from: String,
@@ -23,7 +23,7 @@ data class TransferEvent @ConstructorBinding constructor(
     val tokenAddress: String?,
     val isVetTransfer: Boolean,
     val topics: List<String>,
-) {
+) : IndexerDocument {
     val isNFTTransfer: Boolean
         get() = topics.size == 4
 
