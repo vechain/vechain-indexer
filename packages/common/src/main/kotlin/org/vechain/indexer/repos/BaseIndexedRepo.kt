@@ -2,10 +2,9 @@ package org.vechain.indexer.repos
 
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.repository.CrudRepository
-import org.springframework.data.repository.PagingAndSortingRepository
 import org.vechain.indexer.model.IndexedDocument
 
-interface BaseIndexedRepo<T : IndexedDocument> : PagingAndSortingRepository<T, String>, CrudRepository<T, String> {
+interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String> {
 
     @Aggregation(
         pipeline = [
