@@ -7,14 +7,13 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -54,11 +53,12 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) includeDelegated: Boolean?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<Transaction> {
         return transactionService.findByOrigin(
             address,
             includeDelegated,
-            toPageable(page, size, by(ASC, "blockNumber", "id"))
+            toPageable(page, size, direction, "blockNumber", "id")
         )
     }
 
@@ -81,10 +81,11 @@ open class TransactionController(private val transactionService: TransactionServ
         @Address @PathVariable address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<Transaction> {
         return transactionService.findAllDelegated(
             address,
-            toPageable(page, size, by(ASC, "blockNumber", "id"))
+            toPageable(page, size, direction, "blockNumber", "id")
         )
     }
 }

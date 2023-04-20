@@ -75,7 +75,7 @@ internal class BlockControllerTest : AbstractIntegrationTest() {
 
         val blocks = objectMapper.readValue(result.response.contentAsString, BLOCKS_TYPE)
 
-        expectThat(blocks).isSorted(compareBy { it.blockNumber })
+        expectThat(blocks).isSorted(compareByDescending { it.blockNumber })
     }
 
 }

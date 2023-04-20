@@ -7,14 +7,13 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -56,11 +55,16 @@ open class NFTController(private val nftService: NFTService) {
         @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<NFT> {
         return if (contractAddresses.isNullOrEmpty()) {
-            nftService.findByOwner(address, toPageable(page, size, sorted()))
+            nftService.findByOwner(address, toPageable(page, size, direction, "blockNumber", "txId", "id"))
         } else {
-            nftService.findByOwnerAndContractAddresses(address, contractAddresses, toPageable(page, size, sorted()))
+            nftService.findByOwnerAndContractAddresses(
+                address,
+                contractAddresses,
+                toPageable(page, size, direction, "blockNumber", "txId", "id")
+            )
         }
     }
 
@@ -83,9 +87,9 @@ open class NFTController(private val nftService: NFTService) {
         @Address @RequestParam owner: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<String> {
-        return nftService.findContractsByNFTOwner(owner, toPageable(page, size, sorted()))
+        return nftService.findContractsByNFTOwner(owner, toPageable(page, size, direction, "blockNumber", "txId", "id"))
     }
 
-    private fun sorted() = by(ASC, "blockNumber", "txId", "id")
 }
