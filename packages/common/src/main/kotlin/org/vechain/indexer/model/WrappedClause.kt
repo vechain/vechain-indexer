@@ -11,9 +11,9 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class WrappedClause @ConstructorBinding constructor(
     @Id
     val id: String,
-    val blockId: String,
+    override val blockId: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val txId: String,
     val index: Int,
     @Indexed
@@ -24,10 +24,10 @@ data class WrappedClause @ConstructorBinding constructor(
     val data: String,
     val reverted: Boolean,
     val output: TxOutputs?,
-) {
+) : IndexedDocument {
     constructor(block: Block, tx: Transaction, clause: Clause, index: Int) : this(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),
-        blockId = block.id,
+        blockId = block.blockId,
         blockNumber = block.blockNumber,
         txId = tx.id,
         index = index,

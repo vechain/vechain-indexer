@@ -11,7 +11,8 @@ data class Transaction @ConstructorBinding constructor(
     @Id
     val id: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long,
+    override val blockNumber: Long,
+    override val blockId: String,
     val size: Long,
     val chainTag: Long,
     val blockRef: String,
@@ -30,11 +31,12 @@ data class Transaction @ConstructorBinding constructor(
     @Indexed
     val origin: String,
     val outputs: List<TxOutputs>
-) {
+) : IndexedDocument {
 
-    constructor(blockNumber: Long, tx: TransactionData) : this(
+    constructor(tx: TransactionData) : this(
         id = tx.id,
-        blockNumber = blockNumber,
+        blockNumber = tx.blockNumber,
+        blockId = tx.blockId,
         size = tx.size,
         chainTag = tx.chainTag,
         blockRef = tx.blockRef,

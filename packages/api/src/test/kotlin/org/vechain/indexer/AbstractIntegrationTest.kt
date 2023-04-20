@@ -13,7 +13,6 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.model.*
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
@@ -39,10 +38,6 @@ abstract class AbstractIntegrationTest {
     protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
-
-    init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "false")
-    }
 
     @Autowired
     lateinit var transactionRepository: TransactionRepo
@@ -77,6 +72,9 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
         val clauses: List<WrappedClause> =
             loadDataFromResources("/clauses.json", CLAUSES_TYPE)
+
+        val repos = listOf(transactionRepository, contractRepository, nftRepo, blockRepo, transferEventRepo, clauseRepo)
+        repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
