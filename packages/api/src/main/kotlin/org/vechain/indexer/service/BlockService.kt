@@ -9,7 +9,7 @@ import org.vechain.indexer.repos.BlockRepo
 open class BlockService(private val blockRepo: BlockRepo) {
 
     open fun findAll(pageable: Pageable): List<Block> {
-        return blockRepo.findAll(pageable).toList()
+        return blockRepo.findAllBy(pageable)
     }
 
 }

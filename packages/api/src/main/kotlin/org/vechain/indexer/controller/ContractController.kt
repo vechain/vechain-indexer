@@ -11,6 +11,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.PaginatedResponse
+import org.vechain.indexer.model.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -45,10 +47,18 @@ open class ContractController(private val contractService: ContractService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Contract> {
-        return contractService.findByCreator(
+    ): PaginatedResponse<List<Contract>> {
+        val resultsPage = contractService.findByCreator(
             address,
             toPageable(page, size, direction, "blockNumber", "txId", "address")
+        )
+
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
         )
     }
 

@@ -31,11 +31,12 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
+    protected val CONTRACT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
+    protected val NFT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<NFT>>>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
     protected val CLAUSES_TYPE = object : TypeReference<List<WrappedClause>>() {}
-    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 

@@ -11,6 +11,12 @@ logging:
   level:
     ROOT: INFO
     org.vechain: ${APP_LOG_LEVEL:INFO}
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
 
 spring:
   profiles:
