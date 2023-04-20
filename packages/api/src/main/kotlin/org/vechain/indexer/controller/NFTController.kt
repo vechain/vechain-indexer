@@ -11,6 +11,8 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -56,8 +58,8 @@ open class NFTController(private val nftService: NFTService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<NFT> {
-        return if (contractAddresses.isNullOrEmpty()) {
+    ): PaginatedResponse<List<NFT>> {
+        val resultsPage = if (contractAddresses.isNullOrEmpty()) {
             nftService.findByOwner(address, toPageable(page, size, direction, "blockNumber", "txId", "id"))
         } else {
             nftService.findByOwnerAndContractAddresses(
@@ -66,6 +68,14 @@ open class NFTController(private val nftService: NFTService) {
                 toPageable(page, size, direction, "blockNumber", "txId", "id")
             )
         }
+
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
+        )
     }
 
     @GetMapping("/contracts")
@@ -88,8 +98,17 @@ open class NFTController(private val nftService: NFTService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<String> {
-        return nftService.findContractsByNFTOwner(owner, toPageable(page, size, direction, "blockNumber", "txId", "id"))
+    ): PaginatedResponse<List<String>> {
+        val resultsPage =
+            nftService.findContractsByNFTOwner(owner, toPageable(page, size, direction, "blockNumber", "txId", "id"))
+
+        return PaginatedResponse(
+            data = resultsPage.content.map { it.contractAddress },
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
+        )
     }
 
 }

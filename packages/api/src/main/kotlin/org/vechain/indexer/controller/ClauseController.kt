@@ -7,8 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.CLAUSES_PATH
-import org.vechain.indexer.model.PaginatedResponse
-import org.vechain.indexer.model.PaginationDetail
 import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
@@ -27,17 +25,8 @@ open class ClauseController(private val clauseService: ClauseService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<List<WrappedClause>> {
-        val resultsPage = clauseService.findAll(toPageable(page, size, direction, "blockNumber", "txId", "id"))
-
-        return PaginatedResponse(
-            data = resultsPage.content,
-            pagination = PaginationDetail(
-                totalPages = resultsPage.totalPages,
-                totalElements = resultsPage.totalElements
-            )
-        )
-
+    ): List<WrappedClause> {
+        return clauseService.findAll(toPageable(page, size, direction, "blockNumber", "txId", "id"))
     }
 
 }

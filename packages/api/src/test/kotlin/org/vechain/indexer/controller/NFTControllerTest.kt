@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.utils.HexUtil
 import strikt.api.expect
 import strikt.api.expectThat
@@ -37,9 +38,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -48,9 +49,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -59,9 +60,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -70,9 +71,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -82,9 +83,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 1)
+            expectThat(nfts.data!!).hasSize(1)
         }
 
         @Test
@@ -100,9 +101,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            expectThat(nfts).hasSize(2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -120,12 +121,12 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
             expect {
-                that(nfts).hasSize(size)
-                that(nfts.first().owner).isEqualTo(HexUtil.normalise(owner))
-                that(nfts.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+                that(nfts.data!!).hasSize(size)
+                that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.data!!.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
             }
         }
 
@@ -146,12 +147,12 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
             expect {
-                that(nfts).hasSize(size)
-                that(nfts.first().owner).isEqualTo(HexUtil.normalise(owner))
-                that(nfts.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+                that(nfts.data!!).hasSize(size)
+                that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.data!!.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
             }
         }
 
@@ -172,9 +173,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            expectThat(nfts)
+            expectThat(nfts.data!!)
                 .hasSize(2)
                 .isSorted(
                     compareByDescending<NFT> { it.blockNumber }
@@ -191,9 +192,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
 
-            assert(nfts.size == 2)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
@@ -226,11 +227,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andReturn()
 
             val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
 
             expect {
-                that(contracts).hasSize(2)
-                that(contracts).containsExactlyInAnyOrder(
+                that(contracts.data!!).hasSize(2)
+                that(contracts.data!!).containsExactlyInAnyOrder(
                     "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
                     "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
                 )
@@ -251,11 +254,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
             val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
 
             expect {
-                that(contracts).hasSize(size)
-                that(contracts.first()).isContainedIn(
+                that(contracts.data!!).hasSize(size)
+                that(contracts.data!!.first()).isContainedIn(
                     listOf(
                         "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
                         "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
@@ -280,11 +285,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
             val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
 
             expect {
-                that(contracts).hasSize(size)
-                that(contracts.first()).isContainedIn(
+                that(contracts.data!!).hasSize(size)
+                that(contracts.data!!.first()).isContainedIn(
                     listOf(
                         "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14",
                         "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
@@ -301,9 +308,11 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andReturn()
 
             val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
 
-            expectThat(contracts).isEmpty()
+            expectThat(contracts.data).isNotNull().and { isEmpty() }
         }
     }
 

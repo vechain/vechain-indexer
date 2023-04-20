@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Contract
@@ -9,8 +10,8 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class ContractService(private val contractRepository: ContractRepo) {
 
-    open fun findByCreator(creator: String, pageable: Pageable): List<Contract> {
-        return contractRepository.findAllByCreator(HexUtil.normalise(creator), pageable).toList()
+    open fun findByCreator(creator: String, pageable: Pageable): Page<Contract> {
+        return contractRepository.findAllByCreator(HexUtil.normalise(creator), pageable)
     }
 
 }

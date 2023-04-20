@@ -7,6 +7,7 @@ import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
 
@@ -21,8 +22,8 @@ object VeWorldAPIClient {
      * Response Types
      */
     private val TX_RESPONSE_TYPE = object : ParameterizedTypeReference<List<Transaction>>() {}
-    private val CONTRACT_RESPONSE_TYPE = object : ParameterizedTypeReference<List<Contract>>() {}
-    private val NFT_RESPONSE_TYPE = object : ParameterizedTypeReference<List<NFT>>() {}
+    private val CONTRACT_RESPONSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Contract>>>() {}
+    private val NFT_RESPONSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
 
 
     fun performHealthCheck() {
@@ -63,11 +64,11 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/transactions/${address}/delegated", TX_RESPONSE_TYPE)
     }
 
-    fun getNfts(address: String): List<NFT> {
+    fun getNfts(address: String): PaginatedResponse<List<NFT>> {
         return getRequest("$API_URL/nfts/${address}", NFT_RESPONSE_TYPE)
     }
 
-    fun getNfts(address: String, contractAddresses: List<String>): List<NFT> {
+    fun getNfts(address: String, contractAddresses: List<String>): PaginatedResponse<List<NFT>> {
         val url = URIBuilder("$API_URL/nfts/${address}")
             .addParameter("contractAddresses", contractAddresses.joinToString(","))
             .toString()
@@ -75,7 +76,7 @@ object VeWorldAPIClient {
         return getRequest(url, NFT_RESPONSE_TYPE)
     }
 
-    fun getContracts(address: String): List<Contract> {
+    fun getContracts(address: String): PaginatedResponse<List<Contract>> {
         return getRequest("$API_URL/contracts/${address}", CONTRACT_RESPONSE_TYPE)
     }
 
