@@ -101,6 +101,11 @@ abstract class Indexer(
         }
     }
 
+    /**
+     * resolveReorg will delete all the records in a given DB, between the current block and `numBlocksToPurge`
+     *
+     * It will set the previousBlockId to the most recent record in the DB. This allows us to call this function recursively until the reorg is resolved.
+     */
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
         repo.deleteAllByBlockNumberBetween(
@@ -108,8 +113,7 @@ abstract class Indexer(
             maxOf(currentBlockNumber + 1, 1)
         )
 
-        currentBlockNumber = maxOf(currentBlockNumber - numBlocksToPurge, 0)
-
+        currentBlockNumber = getPreviousBlockNumber() + 1
         previousBlockId = getPreviousBlockId()
 
         status = Status.SYNCING
