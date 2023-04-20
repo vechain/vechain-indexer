@@ -193,7 +193,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get all clauses should return pagination detail`() {
+        fun `get all contracts should return pagination detail`() {
             val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 0
             val size = 10
