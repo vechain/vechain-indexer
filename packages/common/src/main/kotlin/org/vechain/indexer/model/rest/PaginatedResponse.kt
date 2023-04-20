@@ -1,4 +1,4 @@
-package org.vechain.indexer.model
+package org.vechain.indexer.model.rest
 
 data class PaginatedResponse<T>(
     val data: T? = null,

@@ -7,10 +7,7 @@ import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.Transaction
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.isEqualTo
-import strikt.assertions.isGreaterThan
-import strikt.assertions.isNotEmpty
-import strikt.assertions.isNotEqualTo
+import strikt.assertions.*
 import java.math.BigInteger
 
 class SimpleAPICallsTest {
@@ -59,9 +56,10 @@ class SimpleAPICallsTest {
 
     @Test
     fun `get contracts`() {
-        val contracts = VeWorldAPIClient.getContracts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+        val contracts = VeWorldAPIClient.getContracts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa").data
 
-        expectThat(contracts.size).isEqualTo(8)
+        expectThat(contracts).isNotNull()
+        expectThat(contracts!!.size).isEqualTo(8)
 
         contracts.forEach { contract ->
             assertValidContract(contract)
@@ -70,9 +68,10 @@ class SimpleAPICallsTest {
 
     @Test
     fun `get NFTs`() {
-        val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+        val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa").data
 
-        expectThat(nfts.size).isEqualTo(2)
+        expectThat(nfts).isNotNull()
+        expectThat(nfts!!.size).isEqualTo(2)
 
         nfts.forEach { nft ->
             assertValidNft(nft)
@@ -82,8 +81,8 @@ class SimpleAPICallsTest {
     @Test
     fun `get filtered NFTS`() {
         //Perform regular call to get contract addresses
-        val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
-        expectThat(nfts.size).isEqualTo(2)
+        val nfts = VeWorldAPIClient.getNfts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa").data
+        expectThat(nfts!!.size).isEqualTo(2)
 
 
         //Quick sanity check
@@ -93,9 +92,9 @@ class SimpleAPICallsTest {
         val nftsWithQuery = VeWorldAPIClient.getNfts(
             "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             listOf(nfts[0].contractAddress)
-        )
+        ).data
 
-        expectThat(nftsWithQuery.size).isEqualTo(1)
+        expectThat(nftsWithQuery!!.size).isEqualTo(1)
     }
 
     fun assertValidContract(contract: Contract) {
