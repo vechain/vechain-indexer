@@ -4,9 +4,10 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.utils.TransactionUtils
 import strikt.api.expectThat
-import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
+import strikt.assertions.isTrue
 
-class TransactionUtilsTest {
+internal class TransactionUtilsTest {
 
     @Test
     fun `response has vm error`() {
@@ -21,7 +22,7 @@ class TransactionUtilsTest {
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
 
-        expectThat(isSuccess).isEqualTo(false)
+        expectThat(isSuccess).isFalse()
     }
 
     @Test
@@ -37,7 +38,7 @@ class TransactionUtilsTest {
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
 
-        expectThat(isSuccess).isEqualTo(false)
+        expectThat(isSuccess).isFalse()
     }
 
     @Test
@@ -53,7 +54,7 @@ class TransactionUtilsTest {
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
 
-        expectThat(isSuccess).isEqualTo(false)
+        expectThat(isSuccess).isFalse()
     }
 
     @Test
@@ -69,7 +70,7 @@ class TransactionUtilsTest {
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
 
-        expectThat(isSuccess).isEqualTo(true)
+        expectThat(isSuccess).isTrue()
     }
 
 

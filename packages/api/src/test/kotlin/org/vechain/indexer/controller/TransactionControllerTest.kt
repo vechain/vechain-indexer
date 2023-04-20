@@ -208,8 +208,8 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             expectThat(transactions)
                 .hasSize(9)
                 .isSorted(
-                    compareBy<Transaction> { it.blockNumber }
-                        .then(compareBy { it.id })
+                    compareByDescending<Transaction> { it.blockNumber }
+                        .then(compareByDescending { it.id })
                 )
         }
     }
@@ -354,8 +354,8 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             expectThat(transactions)
                 .hasSize(size)
                 .isSorted(
-                    compareBy<Transaction> { it.blockNumber }
-                        .then(compareBy { it.id })
+                    compareByDescending<Transaction> { it.blockNumber }
+                        .then(compareByDescending { it.id })
                 )
         }
     }

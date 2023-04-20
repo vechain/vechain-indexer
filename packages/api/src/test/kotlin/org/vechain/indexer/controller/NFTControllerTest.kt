@@ -177,9 +177,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
             expectThat(nfts)
                 .hasSize(2)
                 .isSorted(
-                    compareBy<NFT> { it.blockNumber }
-                        .then(compareBy<NFT> { it.txId }
-                            .then(compareBy { it.id })
+                    compareByDescending<NFT> { it.blockNumber }
+                        .then(compareByDescending<NFT> { it.txId }
+                            .then(compareByDescending { it.id })
                         )
                 )
         }

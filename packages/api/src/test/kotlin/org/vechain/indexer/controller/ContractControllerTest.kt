@@ -186,9 +186,9 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             expectThat(contracts)
                 .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
                 .isSorted(
-                    compareBy<Contract> { it.blockNumber }
-                        .then(compareBy<Contract> { it.txId }
-                            .then(compareBy { it.address })
+                    compareByDescending<Contract> { it.blockNumber }
+                        .then(compareByDescending<Contract> { it.txId }
+                            .then(compareByDescending { it.address })
                         )
                 )
         }

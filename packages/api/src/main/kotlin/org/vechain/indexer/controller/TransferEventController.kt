@@ -2,8 +2,6 @@ package org.vechain.indexer.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -12,6 +10,7 @@ import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 
@@ -25,9 +24,10 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getAllTransferEvents(
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<TransferEvent> {
         return transferEventService.findAll(
-            toPageable(page, size, by(ASC, "blockNumber", "txId", "id"))
+            toPageable(page, size, direction, "blockNumber", "txId", "id")
         )
     }
 }

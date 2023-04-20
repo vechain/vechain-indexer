@@ -77,9 +77,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
 
         expectThat(clauses.data!!).isSorted(
-            compareBy<WrappedClause> { it.blockNumber }
-                .then(compareBy<WrappedClause> { it.txId }
-                    .then(compareBy { it.id })
+            compareByDescending<WrappedClause> { it.blockNumber }
+                .then(compareByDescending<WrappedClause> { it.txId }
+                    .then(compareByDescending { it.id })
                 )
         )
     }
