@@ -26,7 +26,7 @@ import org.vechain.indexer.validation.Address
 @RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
-    @GetMapping("{address}")
+    @GetMapping
     @Operation(summary = "Get all transactions by an origin address")
     @ApiResponses(
         value = [
@@ -34,7 +34,7 @@ open class TransactionController(private val transactionService: TransactionServ
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the transaction origin",
@@ -50,7 +50,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "false"
     )
     open fun getTransactionsByOrigin(
-        @Address @PathVariable address: String,
+        @Address @RequestParam(required = true) address: String,
         @RequestParam(required = false) includeDelegated: Boolean?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
@@ -62,7 +62,7 @@ open class TransactionController(private val transactionService: TransactionServ
         )
     }
 
-    @GetMapping("{address}/delegated")
+    @GetMapping("/delegated")
     @Operation(summary = "Get all delegated transactions by a delegator address")
     @ApiResponses(
         value = [
@@ -70,7 +70,7 @@ open class TransactionController(private val transactionService: TransactionServ
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "The address of the delegator",
@@ -78,7 +78,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getDelegatedTransactions(
-        @Address @PathVariable address: String,
+        @Address @RequestParam(required = true) address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
     ): List<Transaction> {

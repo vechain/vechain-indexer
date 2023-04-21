@@ -19,7 +19,6 @@ import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
-import org.vechain.indexer.validation.OptionalAddresses
 
 
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -28,7 +27,7 @@ import org.vechain.indexer.validation.OptionalAddresses
 @RequestMapping(NFTS_PATH)
 open class NFTController(private val nftService: NFTService) {
 
-    @GetMapping("{address}")
+    @GetMapping
     @Operation(summary = "Get all NFTs owned by an address")
     @ApiResponses(
         value = [
@@ -36,7 +35,7 @@ open class NFTController(private val nftService: NFTService) {
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the NFT owner",
@@ -52,15 +51,15 @@ open class NFTController(private val nftService: NFTService) {
         example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
     )
     open fun getOwnedNFTs(
-        @Address @PathVariable address: String,
-        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,
+        @Address @RequestParam(required = true) address: String,
+        @Address @RequestParam(required = false) contractAddress: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
     ): List<NFT> {
-        return if (contractAddresses.isNullOrEmpty()) {
+        return if (contractAddress.isNullOrEmpty()) {
             nftService.findByOwner(address, toPageable(page, size, sorted()))
         } else {
-            nftService.findByOwnerAndContractAddresses(address, contractAddresses, toPageable(page, size, sorted()))
+            nftService.findByOwnerAndContractAddress(address, contractAddress, toPageable(page, size, sorted()))
         }
     }
 

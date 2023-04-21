@@ -14,14 +14,14 @@ open class NFTService(private val nftRepo: NFTRepo) {
             .toList()
     }
 
-    open fun findByOwnerAndContractAddresses(
+    open fun findByOwnerAndContractAddress(
         owner: String,
-        contractAddresses: List<String>,
+        contractAddress: String,
         pageable: Pageable
     ): List<NFT> {
-        return nftRepo.findAllByOwnerAndContractAddressIn(
+        return nftRepo.findAllByOwnerAndContractAddress(
             HexUtil.normalise(owner),
-            contractAddresses.map { HexUtil.normalise(it) },
+            contractAddress,
             pageable
         ).toList()
     }

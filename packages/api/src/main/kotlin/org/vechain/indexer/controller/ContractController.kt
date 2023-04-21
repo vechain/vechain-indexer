@@ -26,7 +26,7 @@ import org.vechain.indexer.validation.Address
 @RequestMapping(CONTRACTS_PATH)
 open class ContractController(private val contractService: ContractService) {
 
-    @GetMapping("{address}")
+    @GetMapping
     @Operation(summary = "Get all deployed contracts by an origin address")
     @ApiResponses(
         value = [
@@ -34,7 +34,7 @@ open class ContractController(private val contractService: ContractService) {
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the origin",
@@ -42,7 +42,7 @@ open class ContractController(private val contractService: ContractService) {
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getContractsByOrigin(
-        @Address @PathVariable address: String,
+        @Address @RequestParam(required = true) address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
     ): List<Contract> {

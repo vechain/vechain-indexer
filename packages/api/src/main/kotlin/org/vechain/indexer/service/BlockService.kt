@@ -1,6 +1,5 @@
 package org.vechain.indexer.service
 
-import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.BlockRepo
@@ -8,8 +7,14 @@ import org.vechain.indexer.repos.BlockRepo
 @Service
 open class BlockService(private val blockRepo: BlockRepo) {
 
-    open fun findAll(pageable: Pageable): List<Block> {
-        return blockRepo.findAll(pageable).toList()
+    fun findBlock(revision: String): Block? {
+        return if (revision == "best") {
+            blockRepo.findTopByOrderByBlockNumberDesc()
+        } else if (revision.startsWith("0x")) {
+            blockRepo.findById(revision).get()
+        } else {
+            blockRepo.findByBlockNumber(revision.toLong())
+        }
     }
 
 }

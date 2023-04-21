@@ -12,4 +12,16 @@ open class TransferEventService(private val transferEventRepo: TransferEventRepo
         return transferEventRepo.findAll(pageable).toList()
     }
 
+    fun find(address: String?, contractAddress: String?, toPageable: Pageable): List<TransferEvent> {
+        return if (address != null && contractAddress != null) {
+            transferEventRepo.findByToOrFromAndTokenAddress(address, address, contractAddress, toPageable).toList()
+        } else if (address != null) {
+            transferEventRepo.findByToOrFrom(address, address, toPageable).toList()
+        } else if (contractAddress != null) {
+            transferEventRepo.findByTokenAddress(contractAddress, toPageable).toList()
+        } else {
+            transferEventRepo.findAll(toPageable).toList()
+        }
+    }
+
 }

@@ -9,8 +9,8 @@ import org.vechain.indexer.repos.ClauseRepo
 @Service
 open class ClauseService(private val clauseRepo: ClauseRepo) {
 
-    open fun findAll(pageable: Pageable): Page<WrappedClause> {
-        return clauseRepo.findAll(pageable)
+    open fun findByAddress(address: String, pageable: Pageable): Page<WrappedClause> {
+        return clauseRepo.findByOriginOrTo(address, address, pageable)
     }
 
 }
