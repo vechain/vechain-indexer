@@ -11,15 +11,6 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.model.Block
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
-import org.vechain.indexer.constants.BLOCKS_PATH
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.pageable.PageablePage
-import org.vechain.indexer.pageable.PageableSize
-import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.BlockService
 
 @Tag(name = "Block", description = "Query blockchain blocks")

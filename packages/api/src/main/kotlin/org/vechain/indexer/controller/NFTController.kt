@@ -58,12 +58,12 @@ open class NFTController(private val nftService: NFTService) {
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<List<NFT>> {
-        val resultsPage = if (contractAddresses.isNullOrEmpty()) {
+        val resultsPage = if (contractAddress.isNullOrEmpty()) {
             nftService.findByOwner(address, toPageable(page, size, direction, "blockNumber", "txId", "id"))
         } else {
-            nftService.findByOwnerAndContractAddresses(
+            nftService.findByOwnerAndContractAddress(
                 address,
-                contractAddresses,
+                contractAddress,
                 toPageable(page, size, direction, "blockNumber", "txId", "id")
             )
         }

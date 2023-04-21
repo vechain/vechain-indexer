@@ -7,16 +7,21 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
+import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
 
 @Tag(name = "Transactions", description = "Query on chain transactions")
@@ -26,6 +31,28 @@ import org.vechain.indexer.validation.Address
 open class TransactionController(private val transactionService: TransactionService) {
 
     @GetMapping
+    @Operation(summary = "Get transaction by ID")
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "400", description = "Invalid id"),
+        ]
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "id",
+        schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
+        description = "A valid transaction ID",
+        required = true,
+        example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
+    )
+    open fun getTransactionById(@RequestParam(required = true) id: String): Transaction {
+        return transactionService.findById(id) ?: throw ResponseStatusException(
+            HttpStatus.NOT_FOUND, "Transaction not found"
+        )
+    }
+
+
+    @GetMapping("/origin")
     @Operation(summary = "Get all transactions by an origin address")
     @ApiResponses(
         value = [
@@ -54,11 +81,19 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Transaction> {
-        return transactionService.findByOrigin(
+    ): PaginatedResponse<List<Transaction>> {
+        val resultsPage = transactionService.findByOrigin(
             address,
             includeDelegated,
             toPageable(page, size, direction, "blockNumber", "id")
+        )
+
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
         )
     }
 
@@ -82,10 +117,18 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Transaction> {
-        return transactionService.findAllDelegated(
+    ): PaginatedResponse<List<Transaction>> {
+        val resultsPage = transactionService.findAllDelegated(
             address,
             toPageable(page, size, direction, "blockNumber", "id")
+        )
+
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
         )
     }
 }

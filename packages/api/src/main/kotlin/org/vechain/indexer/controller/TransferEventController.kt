@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -51,9 +53,9 @@ open class TransferEventController(private val transferEventService: TransferEve
     ): PaginatedResponse<List<TransferEvent>> {
         val resultsPage = transferEventService.find(
             address, contractAddress,
-            toPageable(page, size, by(ASC, "blockNumber", "txId", "id"))
+            toPageable(page, size, "asc", "blockNumber", "txId", "id")
         )
-        
+
         return PaginatedResponse(
             data = resultsPage.content,
             pagination = PaginationDetail(
