@@ -9,7 +9,7 @@ import org.vechain.indexer.repos.TransferEventRepo
 open class TransferEventService(private val transferEventRepo: TransferEventRepo) {
 
     open fun findAll(pageable: Pageable): List<TransferEvent> {
-        return transferEventRepo.findAll(pageable).toList()
+        return transferEventRepo.findAllBy(pageable)
     }
 
     fun find(address: String?, contractAddress: String?, toPageable: Pageable): List<TransferEvent> {

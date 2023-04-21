@@ -6,6 +6,7 @@ import org.vechain.indexer.model.rest.BlockTransaction
 data class TransactionData @ConstructorBinding constructor(
     val id: String,
     val blockNumber: Long,
+    val blockId: String,
     val size: Long,
     val chainTag: Long,
     val blockRef: String,
@@ -23,9 +24,10 @@ data class TransactionData @ConstructorBinding constructor(
     val origin: String,
     val outputs: List<TxOutputs>
 ) {
-    constructor(blockNumber: Long, tx: BlockTransaction) : this(
+    constructor(blockNumber: Long, blockId: String, tx: BlockTransaction) : this(
         id = tx.id,
         blockNumber = blockNumber,
+        blockId = blockId,
         size = tx.size,
         chainTag = tx.chainTag,
         blockRef = tx.blockRef,

@@ -7,14 +7,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -45,10 +46,19 @@ open class ContractController(private val contractService: ContractService) {
         @Address @RequestParam(required = true) address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
-    ): List<Contract> {
-        return contractService.findByCreator(
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<List<Contract>> {
+        val resultsPage = contractService.findByCreator(
             address,
-            toPageable(page, size, by(ASC, "blockNumber", "txId", "address"))
+            toPageable(page, size, direction, "blockNumber", "txId", "address")
+        )
+
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
         )
     }
 

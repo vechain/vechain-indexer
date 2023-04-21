@@ -15,7 +15,7 @@ open class TransactionIndexer(thorService: ThorService, private val txRepo: Tran
         if (block.transactions.isNotEmpty())
             txRepo.saveAll(
                 block.transactions.map {
-                    Transaction(block.blockNumber, it)
+                    Transaction(it)
                 })
     }
 

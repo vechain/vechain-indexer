@@ -13,8 +13,8 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
-import org.testcontainers.utility.TestcontainersConfiguration
 import org.vechain.indexer.model.*
+import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
 import java.util.*
@@ -32,17 +32,14 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
+    protected val CONTRACT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}
     protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
+    protected val NFT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<NFT>>>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
     protected val CLAUSES_TYPE = object : TypeReference<List<WrappedClause>>() {}
-    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
-
-    init {
-        TestcontainersConfiguration.getInstance().updateUserConfig("testcontainers.reuse.enable", "false")
-    }
 
     @Autowired
     lateinit var transactionRepository: TransactionRepo
@@ -77,6 +74,9 @@ abstract class AbstractIntegrationTest {
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
         val clauses: List<WrappedClause> =
             loadDataFromResources("/clauses.json", CLAUSES_TYPE)
+
+        val repos = listOf(transactionRepository, contractRepository, nftRepo, blockRepo, transferEventRepo, clauseRepo)
+        repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)

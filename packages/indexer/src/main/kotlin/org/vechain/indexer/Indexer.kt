@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
-import org.vechain.indexer.repos.IndexerRepository
+import org.vechain.indexer.repos.BaseIndexedRepo
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -18,7 +18,7 @@ const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(
     private val thorService: ThorService,
-    private val repo: IndexerRepository,
+    private val repo: BaseIndexedRepo<*>,
     private val numBlocksToPurge: Long = 12L
 ) {
 
@@ -33,7 +33,7 @@ abstract class Indexer(
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
-        currentBlockNumber = getStartingBlock()
+        currentBlockNumber = getPreviousBlockNumber() + 1
 
         // As a precaution assume a reorg happened
         resolveReorg()
@@ -57,12 +57,11 @@ abstract class Indexer(
 
             postProcessBlock(block)
         } catch (ex: BlockNotFoundException) {
-            logger.info("Not Found @ Block $currentBlockNumber")
+            logger.info("Block Not Found @ $currentBlockNumber")
             backoffPeriod = 4000
 
             if (ex.blockNumber == currentBlockNumber)
                 status = Status.FULLY_SYNCED
-
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
             resolveReorg()
@@ -82,14 +81,18 @@ abstract class Indexer(
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
-            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock))
+            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 1000
+
+            logger.info(
+                "Success @ Block $currentBlockNumber (${timeSinceLastBlock}ms since mine)"
+            )
         }
 
         // Increment the current block.
         currentBlockNumber++
 
         // Set the previous block id.
-        previousBlockId = block.id
+        previousBlockId = block.blockId
     }
 
     private fun backoffDelay() {
@@ -98,20 +101,30 @@ abstract class Indexer(
         }
     }
 
+    /**
+     * resolveReorg will delete all the records in a given DB, between the current block and `numBlocksToPurge`
+     *
+     * It will set the previousBlockId to the most recent record in the DB. This allows us to call this function recursively until the reorg is resolved.
+     */
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
         repo.deleteAllByBlockNumberBetween(
-            maxOf(currentBlockNumber - numBlocksToPurge - 1, 1),
+            maxOf(currentBlockNumber - numBlocksToPurge - 1, -1),
             maxOf(currentBlockNumber + 1, 1)
         )
 
-        currentBlockNumber = maxOf(currentBlockNumber - numBlocksToPurge, 0)
-        previousBlockId = ZERO_ID
+        currentBlockNumber = getPreviousBlockNumber() + 1
+        previousBlockId = getPreviousBlockId()
+
         status = Status.SYNCING
     }
 
-    fun getStartingBlock(): Long {
-        return repo.getMaxBlockNumber()?.blockNumber ?: 0
+    fun getPreviousBlockNumber(): Long {
+        return repo.getMaxBlockNumber() ?: -1
+    }
+
+    fun getPreviousBlockId(): String {
+        return repo.getMaxBlockId() ?: ZERO_ID
     }
 
     abstract fun processBlock(block: Block)

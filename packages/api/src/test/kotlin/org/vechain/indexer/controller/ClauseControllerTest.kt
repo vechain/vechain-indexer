@@ -7,9 +7,9 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.WrappedClause
-import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.*
+import strikt.assertions.hasSize
+import strikt.assertions.isSorted
 
 internal class ClauseControllerTest : AbstractIntegrationTest() {
 
@@ -40,9 +40,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
 
-        expectThat(clauses.data!!).hasSize(CLAUSES_TOTAL_NUMBER)
+        expectThat(clauses).hasSize(CLAUSES_TOTAL_NUMBER)
     }
 
     @Test
@@ -57,9 +57,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
 
-        expectThat(clauses.data!!).hasSize(CLAUSES_TOTAL_NUMBER - (page * size))
+        expectThat(clauses).hasSize(CLAUSES_TOTAL_NUMBER - (page * size))
     }
 
     @Test
@@ -74,40 +74,14 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
 
-        expectThat(clauses.data!!).isSorted(
-            compareBy<WrappedClause> { it.blockNumber }
-                .then(compareBy<WrappedClause> { it.txId }
-                    .then(compareBy { it.id })
+        expectThat(clauses).isSorted(
+            compareByDescending<WrappedClause> { it.blockNumber }
+                .then(compareByDescending<WrappedClause> { it.txId }
+                    .then(compareByDescending { it.id })
                 )
         )
     }
-
-    @Test
-    fun `get all clauses should return pagination detail`() {
-        val page = 1
-        val size = 20
-        val result = mockMvc.get(
-            baseEndpoint +
-                    "?page=$page" +
-                    "&size=$size"
-        )
-            .andExpect { status { isOk() } }
-            .andReturn()
-
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
-
-        expect {
-            that(clauses.data).isNotNull().isA<List<WrappedClause>>().hasSize(size)
-
-            that(clauses.pagination).isNotNull()
-            that(clauses.pagination!!.totalElements).isEqualTo(CLAUSES_TOTAL_NUMBER.toLong())
-            that(clauses.pagination!!.totalPages).isEqualTo(numberOfPages(page, size))
-        }
-    }
-
-    private fun numberOfPages(page: Int, size: Int) =
-        (CLAUSES_TOTAL_NUMBER / size) + (if (CLAUSES_TOTAL_NUMBER % size > 0) 1 else 0)
 
 }

@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -15,6 +13,7 @@ import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -48,10 +47,19 @@ open class TransferEventController(private val transferEventService: TransferEve
         @Address @RequestParam(required = false) contractAddress: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
-    ): List<TransferEvent> {
-        return transferEventService.find(
+        @PageableSortDirection @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<List<TransferEvent>> {
+        val resultsPage = transferEventService.find(
             address, contractAddress,
             toPageable(page, size, by(ASC, "blockNumber", "txId", "id"))
+        )
+        
+        return PaginatedResponse(
+            data = resultsPage.content,
+            pagination = PaginationDetail(
+                totalPages = resultsPage.totalPages,
+                totalElements = resultsPage.totalElements
+            )
         )
     }
 }

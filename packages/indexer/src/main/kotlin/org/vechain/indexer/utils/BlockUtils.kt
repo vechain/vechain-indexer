@@ -10,7 +10,7 @@ object BlockUtils {
      */
     fun confirmedTransactions(block: Block): List<Transaction> {
         return block.transactions
-            .map { Transaction(block.blockNumber, it) }
+            .map { Transaction(it) }
             .filter { !it.reverted }
     }
 
@@ -92,7 +92,7 @@ object BlockUtils {
         return ContractUtils.findTransferEvents(events).mapIndexed { eventIndex, event ->
             TransferEvent(
                 id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}"),
-                blockId = block.id,
+                blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 txId = tx.id,
                 from = AddressUtil.decode(event.topics[1]),
@@ -114,7 +114,7 @@ object BlockUtils {
         return transfers.mapIndexed { transferIndex, transfer ->
             TransferEvent(
                 id = DigestUtils.sha1Hex("${tx.id}-VET-${outputIndex}-${transferIndex}"),
-                blockId = block.id,
+                blockId = block.blockId,
                 blockNumber = block.blockNumber,
                 txId = tx.id,
                 from = transfer.sender,

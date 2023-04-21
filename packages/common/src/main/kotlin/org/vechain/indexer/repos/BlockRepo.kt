@@ -1,6 +1,5 @@
 package org.vechain.indexer.repos
 
-import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Block
 

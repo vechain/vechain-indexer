@@ -20,7 +20,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var mockMvc: MockMvc
-    
+
     @Test
     fun `get transfer events with path param should return NOT_FOUND`() {
         mockMvc.get("$baseEndpoint/pathParam")
@@ -78,9 +78,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         expectThat(transferEvents)
             .hasSize(size)
             .isSorted(
-                compareBy<TransferEvent> { it.blockNumber }
-                    .then(compareBy<TransferEvent> { it.txId }
-                        .then(compareBy { it.id })
+                compareByDescending<TransferEvent> { it.blockNumber }
+                    .then(compareByDescending<TransferEvent> { it.txId }
+                        .then(compareByDescending { it.id })
                     )
             )
     }

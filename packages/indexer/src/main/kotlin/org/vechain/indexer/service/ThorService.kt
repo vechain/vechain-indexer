@@ -59,7 +59,7 @@ class ThorService(private val thorRest: WebClient) {
     fun executeReadOnlyCode(clauses: List<Clause>): List<ExecuteCodeResponse> {
 
         val bestBlock = getBestBlock()
-        val blockRef = bestBlock.id.substring(0, 18)
+        val blockRef = bestBlock.blockId.substring(0, 18)
 
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
 

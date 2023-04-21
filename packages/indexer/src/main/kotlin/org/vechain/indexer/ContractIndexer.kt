@@ -29,7 +29,7 @@ open class ContractIndexer(
          * Find all events that are contract deployments, paired with their transaction.
          */
         val masterChangeEvents = block.transactions
-            .filter { tx -> tx.reverted == false }
+            .filter { tx -> !tx.reverted }
             .flatMap { tx ->
                 tx.outputs.flatMapIndexed { idx, output ->
                     output.events
@@ -65,7 +65,7 @@ open class ContractIndexer(
                 contracts.add(
                     Contract(
                         address = contractAddress,
-                        blockId = block.id,
+                        blockId = block.blockId,
                         blockNumber = block.blockNumber,
                         txId = tx.id,
                         creator = tx.origin,

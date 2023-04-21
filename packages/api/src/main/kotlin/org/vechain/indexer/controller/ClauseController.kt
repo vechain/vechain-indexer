@@ -5,18 +5,15 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Sort.Direction.ASC
-import org.springframework.data.domain.Sort.by
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.CLAUSES_PATH
-import org.vechain.indexer.model.PaginatedResponse
-import org.vechain.indexer.model.PaginationDetail
 import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
+import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -41,6 +38,7 @@ open class ClauseController(private val clauseService: ClauseService) {
         @Address @RequestParam(required = true) address: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
+        @PageableSortDirection @RequestParam(required = false) direction: String?
     ): PaginatedResponse<List<WrappedClause>> {
         val resultsPage =
             clauseService.findByAddress(address, toPageable(page, size, by(ASC, "blockNumber", "txId", "id")))
@@ -52,7 +50,6 @@ open class ClauseController(private val clauseService: ClauseService) {
                 totalElements = resultsPage.totalElements
             )
         )
-
     }
 
 }

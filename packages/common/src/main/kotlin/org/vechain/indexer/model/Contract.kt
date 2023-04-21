@@ -10,9 +10,9 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class Contract @ConstructorBinding constructor(
     @Id
     val address: String,
-    val blockId: String,
+    override val blockId: String,
     @Indexed(direction = IndexDirection.DESCENDING)
-    val blockNumber: Long,
+    override val blockNumber: Long,
     val txId: String,
     @Indexed
     val creator: String,
@@ -24,4 +24,4 @@ data class Contract @ConstructorBinding constructor(
     val isErc20: Boolean,
     val isErc721: Boolean,
     val previousMasters: MutableSet<String>
-)
+) : IndexedDocument

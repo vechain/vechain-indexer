@@ -1,6 +1,6 @@
 {
   "number": 6,
-  "id": "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
+  "blockId": "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
   "size": 20364,
   "parentID": "0x00000005e1a971fddd7d04e5a0f22de2a2d7cba851af09e108467b394333fdfd",
   "timestamp": 1680177334,
@@ -19,6 +19,7 @@
   "transactions": [
     {
       "id": "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+      "blockId": "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
       "chainTag": 246,
       "blockRef": "0x00000003dc993afc",
       "expiration": 18,
