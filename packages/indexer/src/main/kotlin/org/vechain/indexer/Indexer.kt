@@ -109,7 +109,7 @@ abstract class Indexer(
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
         repo.deleteAllByBlockNumberBetween(
-            maxOf(currentBlockNumber - numBlocksToPurge - 1, -1),
+            maxOf(currentBlockNumber - numBlocksToPurge - 1, 0),
             maxOf(currentBlockNumber + 1, 1)
         )
 
