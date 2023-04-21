@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.BlockRepo
@@ -11,7 +12,7 @@ open class BlockService(private val blockRepo: BlockRepo) {
         return if (revision == "best") {
             blockRepo.findTopByOrderByBlockNumberDesc()
         } else if (revision.startsWith("0x")) {
-            blockRepo.findById(revision).get()
+            blockRepo.findByIdOrNull(revision)
         } else {
             blockRepo.findByBlockNumber(revision.toLong())
         }
