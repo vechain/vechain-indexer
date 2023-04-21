@@ -15,6 +15,7 @@ const AUTHORITY_SOL = {
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
@@ -31,6 +32,7 @@ const ENERGY_SOL = {
     "isErc721": false,
     "isVip180": true,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
@@ -47,6 +49,7 @@ const EXECUTOR_SOL = {
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
@@ -63,6 +66,7 @@ const EXTENSION_V2_SOL = {
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
@@ -79,6 +83,7 @@ const PARAMS_SOL = {
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
@@ -95,6 +100,7 @@ const PROTOTYPE_SOL = {
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
 };
 
