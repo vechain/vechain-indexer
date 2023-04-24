@@ -1,6 +1,5 @@
 package org.vechain.e2e
 
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.net.URIBuilder
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
@@ -21,9 +20,10 @@ object VeWorldAPIClient {
     /**
      * Response Types
      */
-    private val TX_RESPONSE_TYPE = object : ParameterizedTypeReference<List<Transaction>>() {}
-    private val CONTRACT_RESPONSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Contract>>>() {}
-    private val NFT_RESPONSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
+    private val TX_TYPE = object : ParameterizedTypeReference<Transaction>() {}
+    private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Transaction>>>() {}
+    private val CONTRACT_TYPE = object : ParameterizedTypeReference<Contract>() {}
+    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
 
 
     fun performHealthCheck() {
@@ -52,32 +52,34 @@ object VeWorldAPIClient {
             throw Exception("Health failed with status $mongoStatus")
     }
 
-    fun getTransactions(address: String): List<Transaction> {
-        return getRequest("$API_URL/transactions/${address}", TX_RESPONSE_TYPE)
+    fun getTransactionById(id: String): Transaction {
+        return getRequest("$API_URL/transactions?id=$id", TX_TYPE)
     }
 
-    fun getTransactions(address: String, includeDelegated: Boolean): List<Transaction> {
-        return getRequest("$API_URL/transactions/${address}?includeDelegated=${includeDelegated}", TX_RESPONSE_TYPE)
+    fun getTransactionsByOrigin(
+        address: String,
+        includeDelegated: Boolean = false
+    ): PaginatedResponse<List<Transaction>> {
+        return getRequest(
+            "$API_URL/transactions/origin?address=$address&includeDelegated=$includeDelegated",
+            PAGINATED_TX_TYPE
+        )
     }
 
-    fun getDelegatedTransactions(address: String): List<Transaction> {
-        return getRequest("$API_URL/transactions/${address}/delegated", TX_RESPONSE_TYPE)
+    fun getDelegatedTransactions(address: String): PaginatedResponse<List<Transaction>> {
+        return getRequest("$API_URL/transactions/delegated?address=$address", PAGINATED_TX_TYPE)
     }
 
     fun getNfts(address: String): PaginatedResponse<List<NFT>> {
-        return getRequest("$API_URL/nfts/${address}", NFT_RESPONSE_TYPE)
+        return getRequest("$API_URL/nfts?address$address", PAGINATED_NFT_TYPE)
     }
 
-    fun getNfts(address: String, contractAddresses: List<String>): PaginatedResponse<List<NFT>> {
-        val url = URIBuilder("$API_URL/nfts/${address}")
-            .addParameter("contractAddresses", contractAddresses.joinToString(","))
-            .toString()
-
-        return getRequest(url, NFT_RESPONSE_TYPE)
+    fun getNfts(address: String, contractAddress: String): PaginatedResponse<List<NFT>> {
+        return getRequest("$API_URL/nfts?address=$address&contractAddresses=$contractAddress", PAGINATED_NFT_TYPE)
     }
 
-    fun getContracts(address: String): PaginatedResponse<List<Contract>> {
-        return getRequest("$API_URL/contracts/${address}", CONTRACT_RESPONSE_TYPE)
+    fun getContract(address: String): Contract {
+        return getRequest("$API_URL/contracts?address=$address", CONTRACT_TYPE)
     }
 
     private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
