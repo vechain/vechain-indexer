@@ -20,6 +20,7 @@ import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.AddressNullable
 
 
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -45,15 +46,15 @@ open class NFTController(private val nftService: NFTService) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "contractAddresses",
-        schema = Schema(type = "list of strings"),
-        description = "The contract addresses to include",
+        name = "contractAddress",
+        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        description = "The contract address",
         required = false,
-        example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
+        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getOwnedNFTs(
         @Address @RequestParam(required = true) address: String,
-        @Address @RequestParam(required = false) contractAddress: String?,
+        @AddressNullable @RequestParam(required = false) contractAddress: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,

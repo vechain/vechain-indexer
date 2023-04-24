@@ -28,13 +28,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
     inner class GetOwnedNFTs {
         @Test
         fun `get transactions for bad address should return BAD_REQUEST`() {
-            mockMvc.get("$baseEndpoint/badAddress")
+            mockMvc.get("$baseEndpoint?address=badAddress")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `valid address should return OKAY`() {
-            val res = mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val res = mockMvc.get("$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -45,7 +45,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `uppercase address should be valid`() {
-            val res = mockMvc.get("$baseEndpoint/0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa")
+            val res = mockMvc.get("$baseEndpoint?address=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -56,7 +56,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `mixed case should be valid`() {
-            val res = mockMvc.get("$baseEndpoint/0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
+            val res = mockMvc.get("$baseEndpoint?address=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -67,7 +67,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `no prefix should be valid`() {
-            val res = mockMvc.get("$baseEndpoint/f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val res = mockMvc.get("$baseEndpoint?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -79,24 +79,23 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get filtered NFTs should return 1 less`() {
             val res =
-                mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4")
+                mockMvc.get("$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&contractAddress=0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data!!).hasSize(1)
+            expectThat(nfts.data!!).hasSize(2)
         }
 
         @Test
-        fun `get filtered by all contract addresses - no pagination search`() {
+        fun `get filtered by contract address - no pagination search`() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
-            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
-            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val contractAddress = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
             val res =
                 mockMvc.get(
-                    "$baseEndpoint/$owner" +
-                            "?contractAddresses=$contractAddress1,$contractAddress2"
+                    "$baseEndpoint?address=$owner" +
+                            "&contractAddress=$contractAddress"
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
@@ -107,16 +106,15 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get filtered by all contract addresses - paginated search by size`() {
+        fun `get filtered by contract address - paginated search by size`() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
-            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
-            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val contractAddress = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
             val size = 1
 
             val res =
                 mockMvc.get(
-                    "$baseEndpoint/$owner" +
-                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                    "$baseEndpoint?address=$owner" +
+                            "&contractAddress=$contractAddress" +
                             "&size=$size"
                 )
                     .andExpect { status { isOk() } }
@@ -126,22 +124,21 @@ class NFTControllerTest : AbstractIntegrationTest() {
             expect {
                 that(nfts.data!!).hasSize(size)
                 that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
-                that(nfts.data!!.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+                that(nfts.data!!.first().contractAddress).isEqualTo(contractAddress)
             }
         }
 
         @Test
-        fun `get filtered by all contract addresses - paginated search by page & size`() {
+        fun `get filtered by contract address - paginated search by page & size`() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
-            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
-            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
-            val page = 1
+            val contractAddress = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
+            val page = 0
             val size = 1
 
             val res =
                 mockMvc.get(
-                    "$baseEndpoint/$owner" +
-                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                    "$baseEndpoint?address=$owner" +
+                            "&contractAddress=$contractAddress" +
                             "&page=$page" +
                             "&size=$size"
                 )
@@ -150,24 +147,23 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expect {
-                that(nfts.data!!).hasSize(size)
-                that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
-                that(nfts.data!!.first().contractAddress).isContainedIn(listOf(contractAddress1, contractAddress2))
+                that(nfts.data?.size).isEqualTo(size)
+                that(nfts.data?.first()?.owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.data?.first()?.contractAddress).isEqualTo(contractAddress)
             }
         }
 
         @Test
         fun `get filtered by all contract addresses - sorted by blockNumber & txId & id`() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
-            val contractAddress1 = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
-            val contractAddress2 = "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14"
+            val contractAddress = "0xc2a77d2ad3cdbc62f9af2462ab8fa8534f5997b4"
             val page = 0
             val size = Int.MAX_VALUE
 
             val res =
                 mockMvc.get(
-                    "$baseEndpoint/$owner" +
-                            "?contractAddresses=$contractAddress1,$contractAddress2" +
+                    "$baseEndpoint?address=$owner" +
+                            "&contractAddress=$contractAddress" +
                             "&page=$page" +
                             "&size=$size"
                 )
@@ -186,9 +182,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get filtered by empty contract addresses`() {
+        fun `get filtered by empty contract address`() {
             val res =
-                mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=")
+                mockMvc.get("$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&contractAddress=")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -198,8 +194,8 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `filtered addresses, which are not addresses`() {
-            mockMvc.get("$baseEndpoint/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa?contractAddresses=address1,address2")
+        fun `Invalid contract address`() {
+            mockMvc.get("$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&contractAddress=address1")
                 .andExpect { status { isBadRequest() } }
         }
     }
