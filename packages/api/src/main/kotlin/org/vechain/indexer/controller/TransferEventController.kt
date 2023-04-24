@@ -19,7 +19,7 @@ import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
-import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.AddressNullable
 
 @Tag(name = "TransferEvent", description = "Query blockchain transfer events")
 @RestController
@@ -38,22 +38,23 @@ open class TransferEventController(private val transferEventService: TransferEve
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "contractAddress",
+        name = "tokenAddress",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
-        description = "The contract address",
+        description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
-    open fun getAllTransferEvents(
-        @Address @RequestParam(required = false) address: String?,
-        @Address @RequestParam(required = false) contractAddress: String?,
+    open fun getTransferEvents(
+        @AddressNullable @RequestParam(required = false) address: String?,
+        @AddressNullable @RequestParam(required = false) tokenAddress: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<List<TransferEvent>> {
+
         val resultsPage = transferEventService.find(
-            address, contractAddress,
-            toPageable(page, size, "asc", "blockNumber", "txId", "id")
+            address, tokenAddress,
+            toPageable(page, size, "desc", "blockNumber", "txId", "id")
         )
 
         return PaginatedResponse(

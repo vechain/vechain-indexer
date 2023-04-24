@@ -9,6 +9,7 @@ import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.TransferEvent
 import strikt.api.expectThat
 import strikt.assertions.hasSize
+import strikt.assertions.isEqualTo
 import strikt.assertions.isSorted
 
 internal class TransferEventsControllerTest : AbstractIntegrationTest() {
@@ -28,54 +29,55 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `get all transfer events with valid endpoint should return OK`() {
+    fun `get transfer events with valid endpoint should return OK`() {
         val page = 0
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
-            baseEndpoint +
-                    "?page=$page" +
+            "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
 
-        expectThat(transferEvents).hasSize(TRANSFERS_TOTAL_NUMBER)
+        expectThat(transferEvents.data!!).hasSize(12)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(12)
     }
 
     @Test
-    fun `get all transfer events with paginated result`() {
-        val page = 3
-        val size = 25
+    fun `get transfer events with paginated result`() {
+        val page = 1
+        val size = 5
         val result = mockMvc.get(
-            baseEndpoint +
-                    "?page=$page" +
+            "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
 
-        expectThat(transferEvents).hasSize(TRANSFERS_TOTAL_NUMBER - (page * size))
+        expectThat(transferEvents.data!!).hasSize(size)
     }
 
     @Test
-    fun `get all transfer events is sorted by block number & txId & id`() {
-        val page = 2
-        val size = 20
+    fun `check transfer events is sorted by block number & txId & id`() {
+        val page = 1
+        val size = 3
         val result = mockMvc.get(
-            baseEndpoint +
-                    "?page=$page" +
+            "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
 
-        expectThat(transferEvents)
+        expectThat(transferEvents.data!!)
             .hasSize(size)
             .isSorted(
                 compareByDescending<TransferEvent> { it.blockNumber }
@@ -83,6 +85,24 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                         .then(compareByDescending { it.id })
                     )
             )
+    }
+
+    @Test
+    fun `get transfer events for contract`() {
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            "$baseEndpoint?tokenAddress=0x0bc68fed18624cfad94699bdf0c4f8379b0696ca" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
+
+        expectThat(transferEvents.data!!).hasSize(20)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(20)
     }
 
 }

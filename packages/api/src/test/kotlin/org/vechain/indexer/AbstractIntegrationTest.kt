@@ -41,6 +41,7 @@ abstract class AbstractIntegrationTest {
     protected val BLOCK_TYPE = object : TypeReference<Block>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
+    protected val PAGINATED_TRANSFER_EVENT_TYPE = object : TypeReference<PaginatedResponse<List<TransferEvent>>>() {}
     protected val LIST_CLAUSE_TYPE = object : TypeReference<List<WrappedClause>>() {}
     protected val PAGINATED_CLAUSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 

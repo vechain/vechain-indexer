@@ -9,15 +9,15 @@ import org.vechain.indexer.repos.TransferEventRepo
 @Service
 open class TransferEventService(private val transferEventRepo: TransferEventRepo) {
 
-    fun find(address: String?, contractAddress: String?, toPageable: Pageable): Page<TransferEvent> {
-        return if (address != null && contractAddress != null) {
-            transferEventRepo.findByToOrFromAndTokenAddress(address, address, contractAddress, toPageable)
+    fun find(address: String?, tokenAddress: String?, toPageable: Pageable): Page<TransferEvent> {
+        return if (address != null && tokenAddress != null) {
+            transferEventRepo.findByToOrFromAndTokenAddress(address, address, tokenAddress, toPageable)
         } else if (address != null) {
             transferEventRepo.findByToOrFrom(address, address, toPageable)
-        } else if (contractAddress != null) {
-            transferEventRepo.findByTokenAddress(contractAddress, toPageable)
+        } else if (tokenAddress != null) {
+            transferEventRepo.findByTokenAddress(tokenAddress, toPageable)
         } else {
-            transferEventRepo.findAll(toPageable)
+            throw IllegalArgumentException("Either address or tokenAddress must be provided")
         }
     }
 
