@@ -68,9 +68,16 @@ class SimpleAPICallsTest {
 
     @Test
     fun `get contracts`() {
-        val contract = VeWorldAPIClient.getContract("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+        val contract = VeWorldAPIClient.getContract("0x1a772e9592f04250860e1416d33b5b8513f7384f")
 
-        expectThat(contract.address).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+        expectThat(contract.address).isEqualTo("0x1a772e9592f04250860e1416d33b5b8513f7384f")
+    }
+
+    @Test
+    fun `get contracts for creator`() {
+        val contract = VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+
+        expectThat(contract.data?.size).isEqualTo(8)
     }
 
     @Test

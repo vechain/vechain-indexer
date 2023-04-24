@@ -23,6 +23,7 @@ object VeWorldAPIClient {
     private val TX_TYPE = object : ParameterizedTypeReference<Transaction>() {}
     private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Transaction>>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<Contract>() {}
+    private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Contract>>>() {}
     private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
 
 
@@ -53,7 +54,7 @@ object VeWorldAPIClient {
     }
 
     fun getTransactionById(id: String): Transaction {
-        return getRequest("$API_URL/transactions?id=$id", TX_TYPE)
+        return getRequest("$API_URL/transactions?id=${id}", TX_TYPE)
     }
 
     fun getTransactionsByOrigin(
@@ -61,7 +62,7 @@ object VeWorldAPIClient {
         includeDelegated: Boolean = false
     ): PaginatedResponse<List<Transaction>> {
         return getRequest(
-            "$API_URL/transactions/origin?address=$address&includeDelegated=$includeDelegated",
+            "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated",
             PAGINATED_TX_TYPE
         )
     }
@@ -80,6 +81,10 @@ object VeWorldAPIClient {
 
     fun getContract(address: String): Contract {
         return getRequest("$API_URL/contracts?address=$address", CONTRACT_TYPE)
+    }
+
+    fun getContractForCreator(address: String): PaginatedResponse<List<Contract>> {
+        return getRequest("$API_URL/contracts/creator?address=$address", PAGINATED_CONTRACT_TYPE)
     }
 
     private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
