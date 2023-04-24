@@ -44,7 +44,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(39)
         }
@@ -58,7 +58,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(39)
         }
@@ -72,7 +72,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(39)
         }
@@ -86,7 +86,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(39)
         }
@@ -101,7 +101,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(40)
         }
@@ -117,7 +117,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(39)
         }
@@ -135,7 +135,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(DEFAULT_PAGE_SIZE)
         }
@@ -151,7 +151,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(19)
         }
@@ -167,7 +167,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(size)
         }
@@ -185,7 +185,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(9)
         }
@@ -203,7 +203,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions)
                 .hasSize(9)
@@ -230,7 +230,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(1)
         }
@@ -241,7 +241,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(1)
         }
@@ -252,7 +252,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(1)
         }
@@ -263,7 +263,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(1)
         }
@@ -281,7 +281,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(1)
         }
@@ -297,7 +297,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).isEmpty()
         }
@@ -313,7 +313,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(size)
         }
@@ -331,7 +331,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions).hasSize(size)
         }
@@ -349,7 +349,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
 
             expectThat(transactions)
                 .hasSize(size)

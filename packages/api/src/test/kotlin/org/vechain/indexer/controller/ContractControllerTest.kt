@@ -11,6 +11,7 @@ import org.vechain.indexer.model.Contract
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
+import java.util.*
 
 internal class ContractControllerTest : AbstractIntegrationTest() {
 
@@ -23,164 +24,166 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
     lateinit var mockMvc: MockMvc
 
     @Nested
-    inner class ValidateContractsQueries {
+    inner class ContractIdQueries {
         @Test
         fun `get transactions for bad address should return BAD_REQUEST`() {
-            mockMvc.get("$BASE_ENDPOINT/badAddress")
+            mockMvc.get("$BASE_ENDPOINT?address=badAddress")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `valid address should return OKAY`() {
-            val result = mockMvc.get("$BASE_ENDPOINT/0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val contractAddress = "0x7bfe63ac68e3c6fed9d1006953ee140f29e084c1"
+            val result = mockMvc.get("$BASE_ENDPOINT?address=$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contract = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contract.address).isEqualTo(contractAddress.lowercase(Locale.getDefault()))
         }
 
         @Test
         fun `valid address UPPERCASE`() {
-            val result = mockMvc.get("$BASE_ENDPOINT/0xF077B491B355E64048CE21E3A6FC4751EEEa77FA")
+
+            val contractAddress = "0x7BFE63AC68E3C6FED9D1006953EE140F29E084C1"
+            val result = mockMvc.get("$BASE_ENDPOINT?address=$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contract = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contract.address).isEqualTo(contractAddress.lowercase(Locale.getDefault()))
         }
 
         @Test
         fun `mixed case`() {
-            val result = mockMvc.get("$BASE_ENDPOINT/0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
+            val contractAddress = "0x7bFe63ac68e3c6Fed9d1006953Ee140f29e084c1"
+            val result = mockMvc.get("$BASE_ENDPOINT?address=$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contract = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contract.address).isEqualTo(contractAddress.lowercase(Locale.getDefault()))
         }
 
         @Test
         fun `no prefix hex`() {
-            val result = mockMvc.get("$BASE_ENDPOINT/f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val contractAddress = "7bfe63ac68e3c6fed9d1006953ee140f29e084c1"
+            val result = mockMvc.get("$BASE_ENDPOINT?address=$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contract = objectMapper.readValue(result.response.contentAsString, CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contract.address).isEqualTo("0x" + contractAddress.lowercase(Locale.getDefault()))
         }
     }
 
     @Nested
-    inner class PaginateContractsQueries {
+    inner class CreatorContractQueries {
         @Test
         fun `fetch contracts by origin - no pagination`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
-            val page = ""
-            val size = ""
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
-                        "&size=$size"
+                "$BASE_ENDPOINT/creator?address=$creatorAddress"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contracts.pagination?.totalElements).isEqualTo(TOTAL_CONTRACTS_NUMBER.toLong())
+            expectThat(contracts.data?.size).isEqualTo(TOTAL_CONTRACTS_NUMBER)
         }
 
         @Test
         fun `fetch contracts by origin - paginated search - page only with results`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 0
-            val size = ""
+            val size = 10
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
-            expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contracts.pagination?.totalElements).isEqualTo(TOTAL_CONTRACTS_NUMBER.toLong())
+            expectThat(contracts.data!!).hasSize(size)
         }
 
         @Test
         fun `fetch contracts by origin - paginated search - page only without results`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
-            val size = ""
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
-                        "&size=$size"
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
             expectThat(contracts.data!!).isEmpty()
         }
 
         @Test
         fun `fetch contracts by origin - paginated search - size only`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = ""
             val size = 10
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
             expectThat(contracts.data!!).hasSize(size)
         }
 
         @Test
         fun `fetch contracts by origin - paginated search - page & size`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val size = 10
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
             expectThat(contracts.data!!).hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
         }
 
         @Test
         fun `fetch contracts by origin - paginated search - sorted by blockNumber & txId & address`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val size = 10
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
             expectThat(contracts.data!!)
                 .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
@@ -194,18 +197,18 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `get all contracts should return pagination detail`() {
-            val origin = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 0
             val size = 10
             val result = mockMvc.get(
-                "$BASE_ENDPOINT/$origin" +
-                        "?page=$page" +
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&page=$page" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_RESPONSE_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACT_TYPE)
 
             expect {
                 that(contracts.data).isNotNull().isA<List<Contract>>().hasSize(size)

@@ -38,7 +38,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
@@ -49,7 +49,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
@@ -60,7 +60,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
@@ -71,7 +71,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
@@ -83,7 +83,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(1)
         }
@@ -101,7 +101,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
@@ -121,7 +121,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expect {
                 that(nfts.data!!).hasSize(size)
@@ -147,7 +147,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expect {
                 that(nfts.data!!).hasSize(size)
@@ -173,7 +173,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                     .andExpect { status { isOk() } }
                     .andReturn()
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!)
                 .hasSize(2)
@@ -192,7 +192,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val nfts = objectMapper.readValue(res.response.contentAsString, NFT_RESPONSE_TYPE)
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFT_TYPE)
 
             expectThat(nfts.data!!).hasSize(2)
         }
