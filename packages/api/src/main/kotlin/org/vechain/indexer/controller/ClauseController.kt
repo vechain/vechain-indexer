@@ -43,7 +43,7 @@ open class ClauseController(private val clauseService: ClauseService) {
         @PageableSortDirection @RequestParam(required = false) direction: String?
     ): PaginatedResponse<List<WrappedClause>> {
         val resultsPage =
-            clauseService.findByAddress(address, toPageable(page, size, "asc", "blockNumber", "txId", "id"))
+            clauseService.findByAddress(address, toPageable(page, size, "desc", "blockNumber", "txId", "id"))
 
         return PaginatedResponse(
             data = resultsPage.content,

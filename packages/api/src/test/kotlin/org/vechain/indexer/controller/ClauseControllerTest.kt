@@ -8,14 +8,13 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.WrappedClause
 import strikt.api.expectThat
-import strikt.assertions.hasSize
+import strikt.assertions.isEqualTo
 import strikt.assertions.isSorted
 
 internal class ClauseControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = CLAUSES_PATH
-        const val CLAUSES_TOTAL_NUMBER = 88
     }
 
     @Autowired
@@ -29,54 +28,62 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `get all clauses with valid endpoint should return OK`() {
+    fun `get all clauses for contract address OK`() {
+        val contractAddress = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
         val page = 0
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
             baseEndpoint +
-                    "?page=$page" +
+                    "?address=$contractAddress" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
 
-        expectThat(clauses).hasSize(CLAUSES_TOTAL_NUMBER)
+        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
+        expectThat(clauses.data?.size).isEqualTo(20)
     }
 
     @Test
-    fun `get all clauses with paginated result`() {
-        val page = 4
-        val size = 20
+    fun `get all clauses for contract address with paginated result`() {
+        val contractAddress = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
+        val page = 0
+        val size = 4
         val result = mockMvc.get(
             baseEndpoint +
-                    "?page=$page" +
+                    "?address=$contractAddress" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
 
-        expectThat(clauses).hasSize(CLAUSES_TOTAL_NUMBER - (page * size))
+        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
+        expectThat(clauses.data?.size).isEqualTo(size)
     }
 
     @Test
-    fun `get all clauses is sorted by blockNumber & txId & id`() {
+    fun `get all clauses for origin`() {
+        val origin = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
         val page = 1
-        val size = 20
+        val size = 10
         val result = mockMvc.get(
             baseEndpoint +
-                    "?page=$page" +
+                    "?address=$origin" +
+                    "&page=$page" +
                     "&size=$size"
         )
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, CLAUSES_RESPONSE_TYPE)
 
-        expectThat(clauses).isSorted(
+        expectThat(clauses.data as List<WrappedClause>).isSorted(
             compareByDescending<WrappedClause> { it.blockNumber }
                 .then(compareByDescending<WrappedClause> { it.txId }
                     .then(compareByDescending { it.id })
