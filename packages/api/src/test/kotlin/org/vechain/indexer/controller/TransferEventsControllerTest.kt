@@ -29,11 +29,47 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `get transfer events with valid endpoint should return OK`() {
+    fun `get transfer events with valid address should return OK`() {
         val page = 0
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
             "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
+
+        expectThat(transferEvents.data!!).hasSize(12)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(12)
+    }
+
+    @Test
+    fun `get transfer events address with no hex prefix should return OK`() {
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
+
+        expectThat(transferEvents.data!!).hasSize(12)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(12)
+    }
+
+    @Test
+    fun `get transfer events address uppercase should return OK`() {
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
                     "&page=$page" +
                     "&size=$size"
         )
@@ -93,6 +129,42 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
             "$baseEndpoint?tokenAddress=0x0bc68fed18624cfad94699bdf0c4f8379b0696ca" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
+
+        expectThat(transferEvents.data!!).hasSize(20)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(20)
+    }
+
+    @Test
+    fun `get transfer events for contract no hex prefix`() {
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            "$baseEndpoint?tokenAddress=0bc68fed18624cfad94699bdf0c4f8379b0696ca" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENT_TYPE)
+
+        expectThat(transferEvents.data!!).hasSize(20)
+        expectThat(transferEvents.pagination?.totalElements).isEqualTo(20)
+    }
+
+    @Test
+    fun `get transfer events for contract upper case`() {
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            "$baseEndpoint?tokenAddress=0x0bc68FED18624cfad94699bdf0c4f8379b0696ca" +
                     "&page=$page" +
                     "&size=$size"
         )
