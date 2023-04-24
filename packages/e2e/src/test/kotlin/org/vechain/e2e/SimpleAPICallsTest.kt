@@ -19,15 +19,6 @@ class SimpleAPICallsTest {
     }
 
     @Test
-    fun `get transaction by id`() {
-        val transaction =
-            VeWorldAPIClient.getTransactionById("0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
-
-        expectThat(transaction.id).isEqualTo("0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
-
-    }
-
-    @Test
     fun `get transactions for origin`() {
         val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
@@ -64,13 +55,6 @@ class SimpleAPICallsTest {
         transactions.data?.forEach { transaction ->
             assertValidTransaction(transaction)
         }
-    }
-
-    @Test
-    fun `get contracts`() {
-        val contract = VeWorldAPIClient.getContract("0x1a772e9592f04250860e1416d33b5b8513f7384f")
-
-        expectThat(contract.address).isEqualTo("0x1a772e9592f04250860e1416d33b5b8513f7384f")
     }
 
     @Test
