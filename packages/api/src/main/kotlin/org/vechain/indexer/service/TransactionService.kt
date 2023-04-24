@@ -16,17 +16,22 @@ open class TransactionService(private val transactionRepository: TransactionRepo
     }
 
     open fun findByOrigin(
-        origin: String,
-        includeDelegated: Boolean?,
+        address: String,
+        includeDelegated: Boolean,
         pageable: Pageable
     ): Page<Transaction> {
-        val normalisedOrigin = HexUtil.normalise(origin)
-        return if (includeDelegated == true) transactionRepository.findAllByOriginOrGasPayer(normalisedOrigin, pageable)
-        else transactionRepository.findAllByOrigin(normalisedOrigin, pageable)
+        val normalisedAddress = HexUtil.normalise(address)
+        return if (includeDelegated) transactionRepository.findByOriginOrGasPayer(
+            normalisedAddress,
+            normalisedAddress,
+            pageable
+        )
+        else transactionRepository.findByOrigin(normalisedAddress, pageable)
     }
 
     open fun findAllDelegated(delegator: String, pageable: Pageable): Page<Transaction> {
-        return transactionRepository.findAllDelegated(HexUtil.normalise(delegator), pageable)
+        val normalisedAddress = HexUtil.normalise(delegator)
+        return transactionRepository.findByOriginNotAndGasPayer(normalisedAddress, normalisedAddress, pageable)
     }
 
 }

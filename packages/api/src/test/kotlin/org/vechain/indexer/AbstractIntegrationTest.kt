@@ -30,7 +30,9 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractIntegrationTest {
 
+    protected val TX_TYPE = object : TypeReference<Transaction>() {}
     protected val LIST_TX_TYPE = object : TypeReference<List<Transaction>>() {}
+    protected val PAGINATED_TX_TYPE = object : TypeReference<PaginatedResponse<List<Transaction>>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<Contract>() {}
     protected val LIST_CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
     protected val PAGINATED_CONTRACT_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}

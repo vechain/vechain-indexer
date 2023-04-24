@@ -77,7 +77,7 @@ open class TransactionController(private val transactionService: TransactionServ
     )
     open fun getTransactionsByOrigin(
         @Address @RequestParam(required = true) address: String,
-        @RequestParam(required = false) includeDelegated: Boolean?,
+        @RequestParam(required = false) includeDelegated: Boolean = false,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
