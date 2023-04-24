@@ -65,7 +65,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     @Test
     fun `check transfer events is sorted by block number & txId & id`() {
-        val page = 1
+        val page = 0
         val size = 3
         val result = mockMvc.get(
             "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +

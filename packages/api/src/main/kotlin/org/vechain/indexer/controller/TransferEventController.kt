@@ -52,10 +52,18 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<List<TransferEvent>> {
 
-        val resultsPage = transferEventService.find(
-            address, tokenAddress,
-            toPageable(page, size, "desc", "blockNumber", "txId", "id")
-        )
+        if (address == null && tokenAddress == null) {
+            throw IllegalArgumentException("Either address or tokenAddress must be provided")
+        }
+
+        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
+        val resultsPage = if (address != null && tokenAddress != null) {
+            transferEventService.find(address, tokenAddress, pageable)
+        } else if (address != null) {
+            transferEventService.findByAddress(address, pageable)
+        } else {
+            transferEventService.findByTokenAddress(tokenAddress!!, pageable)
+        }
 
         return PaginatedResponse(
             data = resultsPage.content,
