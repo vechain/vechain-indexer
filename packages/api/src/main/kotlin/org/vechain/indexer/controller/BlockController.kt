@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.service.BlockService
+import org.vechain.indexer.utils.HexUtil
 
 @Tag(name = "Block", description = "Query blockchain blocks")
 @RestController
@@ -35,8 +36,27 @@ open class BlockController(private val blockService: BlockService) {
     open fun getBlock(
         @RequestParam revision: String,
     ): Block {
-        return blockService.findBlock(revision) ?: throw ResponseStatusException(
+
+        val block = if (revision == "best") {
+            blockService.findBestBlock()
+        } else if (HexUtil.isValidBlockID(revision)) {
+            blockService.findById(revision)
+        } else {
+            // Try to parse to long
+            try {
+                val blockNumber = revision.toLong()
+                blockService.findByBlockNumber(blockNumber)
+            } catch (e: NumberFormatException) {
+                throw ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Invalid revision"
+                )
+            }
+        }
+
+        block ?: throw ResponseStatusException(
             HttpStatus.NOT_FOUND, "Block not found"
         )
+
+        return block
     }
 }

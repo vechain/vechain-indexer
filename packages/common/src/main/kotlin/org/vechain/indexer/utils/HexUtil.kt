@@ -8,8 +8,14 @@ object HexUtil {
      */
     const val REGEX = "^(0x)?[0-9a-fA-F]+$"
 
+    const val BLOCK_ID_REGEX = "^(0x)?[0-9a-fA-F]{64}\$"
+
     fun isValid(hex: String): Boolean {
         return hex.matches(Regex(REGEX))
+    }
+
+    fun isValidBlockID(hex: String): Boolean {
+        return hex.matches(Regex(BLOCK_ID_REGEX))
     }
 
     fun isNotValid(hex: String): Boolean {
