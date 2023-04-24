@@ -23,6 +23,7 @@ import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.TransactionId
 
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
@@ -45,7 +46,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
-    open fun getTransactionById(@RequestParam(required = true) id: String): Transaction {
+    open fun getTransactionById(@TransactionId @RequestParam(required = true) id: String): Transaction {
         return transactionService.findById(id) ?: throw ResponseStatusException(
             HttpStatus.NOT_FOUND, "Transaction not found"
         )

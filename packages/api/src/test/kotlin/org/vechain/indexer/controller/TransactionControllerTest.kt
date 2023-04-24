@@ -25,6 +25,34 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
     lateinit var mockMvc: MockMvc
 
     @Nested
+    inner class TransactionsById {
+
+        @Test
+        fun `get transaction by id with invalid id should return INVALID_REQUEST`() {
+            mockMvc.get("$baseEndpoint?id=invalid_id")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get transaction by id with valid endpoint should return OK`() {
+            val result =
+                mockMvc.get("$baseEndpoint?id=0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transaction = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
+
+            expectThat(transaction.id).isEqualTo("0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
+        }
+
+        @Test
+        fun `get transaction by id with transaction that doesn't exist should return NOT_FOUND`() {
+            mockMvc.get("$baseEndpoint?id=0x00000005aff6e073af33415f5ca4e848742cb483533015486dd9000000000000")
+                .andExpect { status { isNotFound() } }
+        }
+    }
+
+    @Nested
     inner class OriginTransactions {
 
         // larger pagination size to get all results (page is a zero based index)
