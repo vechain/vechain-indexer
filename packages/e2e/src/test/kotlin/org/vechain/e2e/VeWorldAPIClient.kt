@@ -71,11 +71,11 @@ object VeWorldAPIClient {
     }
 
     fun getNfts(address: String): PaginatedResponse<List<NFT>> {
-        return getRequest("$API_URL/nfts?address$address", PAGINATED_NFT_TYPE)
+        return getRequest("$API_URL/nfts?address=$address", PAGINATED_NFT_TYPE)
     }
 
     fun getNfts(address: String, contractAddress: String): PaginatedResponse<List<NFT>> {
-        return getRequest("$API_URL/nfts?address=$address&contractAddresses=$contractAddress", PAGINATED_NFT_TYPE)
+        return getRequest("$API_URL/nfts?address=$address&contractAddress=$contractAddress", PAGINATED_NFT_TYPE)
     }
 
     fun getContract(address: String): Contract {
