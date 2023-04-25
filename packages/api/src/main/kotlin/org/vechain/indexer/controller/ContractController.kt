@@ -7,11 +7,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.PaginationDetail
@@ -45,9 +44,7 @@ open class ContractController(private val contractService: ContractService) {
         example = "0x0000000000000000000000417574686f72697479"
     )
     open fun getContractByAddress(@Address @RequestParam(required = true) address: String): Contract {
-        return contractService.findByAddress(address) ?: throw ResponseStatusException(
-            HttpStatus.NOT_FOUND, "Contract not found"
-        )
+        return contractService.findByAddress(address) ?: throw ResourceNotFoundException("Contract not found")
     }
 
     @GetMapping("/creator")

@@ -6,10 +6,10 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.BLOCKS_PATH
+import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.service.BlockService
 import org.vechain.indexer.utils.HexUtil
@@ -47,15 +47,11 @@ open class BlockController(private val blockService: BlockService) {
                 val blockNumber = revision.toLong()
                 blockService.findByBlockNumber(blockNumber)
             } catch (e: NumberFormatException) {
-                throw ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Invalid revision"
-                )
+                throw BadRequestException("Invalid revision")
             }
         }
 
-        block ?: throw ResponseStatusException(
-            HttpStatus.NOT_FOUND, "Block not found"
-        )
+        block ?: throw ResourceNotFoundException("Block not found")
 
         return block
     }
