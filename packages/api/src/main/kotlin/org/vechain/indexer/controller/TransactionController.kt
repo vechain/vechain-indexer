@@ -7,11 +7,10 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.PaginationDetail
@@ -47,9 +46,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
     open fun getTransactionById(@TransactionId @RequestParam(required = true) id: String): Transaction {
-        return transactionService.findById(id) ?: throw ResponseStatusException(
-            HttpStatus.NOT_FOUND, "Transaction not found"
-        )
+        return transactionService.findById(id) ?: throw ResourceNotFoundException("Transaction not found")
     }
 
 
