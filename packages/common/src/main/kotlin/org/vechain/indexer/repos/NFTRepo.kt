@@ -12,10 +12,9 @@ interface NFTRepo : BaseIndexedRepo<NFT>, PagingAndSortingRepository<NFT, String
 
     fun findAllByOwner(owner: String, pageable: Pageable): Page<NFT>
 
-    @Query("{\$and: [{owner: ?0}, {contractAddress: {\$in: ?1}}] }")
-    fun findAllByOwnerAndContractAddressIn(
+    fun findAllByOwnerAndContractAddress(
         owner: String,
-        contractAddresses: List<String>,
+        contractAddress: String,
         pageable: Pageable
     ): Page<NFT>
 

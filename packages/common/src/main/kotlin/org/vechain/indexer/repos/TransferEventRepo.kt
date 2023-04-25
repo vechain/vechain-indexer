@@ -1,16 +1,22 @@
 package org.vechain.indexer.repos
 
+import org.springframework.data.domain.Page
+import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.TransferEvent
 
 @Repository
-interface TransferEventRepo : BaseIndexedRepo<TransferEvent> {
+interface TransferEventRepo : BaseIndexedRepo<TransferEvent>, PagingAndSortingRepository<TransferEvent, String> {
+    fun findByToOrFromAndTokenAddress(
+        to: String,
+        from: String,
+        contractAddress: String,
+        pageable: Pageable
+    ): Page<TransferEvent>
 
-    /**
-     * findAll() triggers collection count even without returning a page object.
-     * findAllBy() is used to paginate results without counting all elements
-     */
-    fun findAllBy(pageable: Pageable): List<TransferEvent>
+    fun findByToOrFrom(to: String, from: String, pageable: Pageable): Page<TransferEvent>
+
+    fun findByTokenAddress(contractAddress: String, pageable: Pageable): Page<TransferEvent>
 
 }

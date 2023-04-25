@@ -30,14 +30,20 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class AbstractIntegrationTest {
 
-    protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
-    protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
-    protected val CONTRACT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}
-    protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
-    protected val NFT_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<NFT>>>() {}
+    protected val TX_TYPE = object : TypeReference<Transaction>() {}
+    protected val LIST_TX_TYPE = object : TypeReference<List<Transaction>>() {}
+    protected val PAGINATED_TX_TYPE = object : TypeReference<PaginatedResponse<List<Transaction>>>() {}
+    protected val CONTRACT_TYPE = object : TypeReference<Contract>() {}
+    protected val LIST_CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
+    protected val PAGINATED_CONTRACT_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}
+    protected val LIST_NFT_TYPE = object : TypeReference<List<NFT>>() {}
+    protected val PAGINATED_NFT_TYPE = object : TypeReference<PaginatedResponse<List<NFT>>>() {}
+    protected val BLOCK_TYPE = object : TypeReference<Block>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
-    protected val CLAUSES_TYPE = object : TypeReference<List<WrappedClause>>() {}
+    protected val PAGINATED_TRANSFER_EVENT_TYPE = object : TypeReference<PaginatedResponse<List<TransferEvent>>>() {}
+    protected val LIST_CLAUSE_TYPE = object : TypeReference<List<WrappedClause>>() {}
+    protected val PAGINATED_CLAUSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
@@ -63,17 +69,17 @@ abstract class AbstractIntegrationTest {
     fun setup() {
 
         val transactions: List<Transaction> =
-            loadDataFromResources("/transactions.json", TX_TYPE)
+            loadDataFromResources("/transactions.json", LIST_TX_TYPE)
         val contracts: List<Contract> =
-            loadDataFromResources("/contracts.json", CONTRACT_TYPE)
+            loadDataFromResources("/contracts.json", LIST_CONTRACT_TYPE)
         val nfts: List<NFT> =
-            loadDataFromResources("/nfts.json", NFT_TYPE)
+            loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
         val blocks: List<Block> =
             loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<TransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
         val clauses: List<WrappedClause> =
-            loadDataFromResources("/clauses.json", CLAUSES_TYPE)
+            loadDataFromResources("/clauses.json", LIST_CLAUSE_TYPE)
 
         val repos = listOf(transactionRepository, contractRepository, nftRepo, blockRepo, transferEventRepo, clauseRepo)
         repos.forEach { it.deleteAll() }

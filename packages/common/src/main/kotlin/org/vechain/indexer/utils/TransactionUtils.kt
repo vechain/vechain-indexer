@@ -8,6 +8,13 @@ import org.web3j.abi.datatypes.Type
 import org.web3j.abi.datatypes.Utf8String
 
 object TransactionUtils {
+
+    const val REGEX = "^(0x)?[0-9a-fA-F]{64}\$"
+
+    fun isIdValid(id: String?): Boolean {
+        return id?.matches(Regex(REGEX)) ?: false
+    }
+
     fun isSuccessWithData(res: ExecuteCodeResponse): Boolean {
         return !res.reverted &&
                 res.vmError.isNullOrEmpty() &&

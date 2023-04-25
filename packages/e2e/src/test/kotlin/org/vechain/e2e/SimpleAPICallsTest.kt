@@ -19,12 +19,13 @@ class SimpleAPICallsTest {
     }
 
     @Test
-    fun `get transactions`() {
-        val transactions = VeWorldAPIClient.getTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+    fun `get transactions for origin`() {
+        val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transactions.size).isEqualTo(8)
+        expectThat(transactions.data?.size).isEqualTo(8)
+        expectThat(transactions.pagination?.totalElements).isEqualTo(8)
 
-        transactions.forEach { transaction ->
+        transactions.data?.forEach { transaction ->
             assertValidTransaction(transaction)
         }
     }
@@ -33,37 +34,34 @@ class SimpleAPICallsTest {
     fun `get delegated transactions`() {
         val transactions = VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transactions.size).isEqualTo(1)
+        expectThat(transactions.data?.size).isEqualTo(1)
+        expectThat(transactions.pagination?.totalElements).isEqualTo(1)
 
-        transactions.forEach { transaction ->
+        transactions.data?.forEach { transaction ->
             assertValidTransaction(transaction)
         }
     }
 
     @Test
     fun `get sent and delegated transactions`() {
-        val transactions = VeWorldAPIClient.getTransactions(
+        val transactions = VeWorldAPIClient.getTransactionsByOrigin(
             address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
             includeDelegated = true
         )
 
-        expectThat(transactions.size).isEqualTo(9)
+        expectThat(transactions.data?.size).isEqualTo(9)
+        expectThat(transactions.pagination?.totalElements).isEqualTo(9)
 
-        transactions.forEach { transaction ->
+        transactions.data?.forEach { transaction ->
             assertValidTransaction(transaction)
         }
     }
 
     @Test
-    fun `get contracts`() {
-        val contracts = VeWorldAPIClient.getContracts("0xf077b491b355e64048ce21e3a6fc4751eeea77fa").data
+    fun `get contracts for creator`() {
+        val contract = VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
 
-        expectThat(contracts).isNotNull()
-        expectThat(contracts!!.size).isEqualTo(8)
-
-        contracts.forEach { contract ->
-            assertValidContract(contract)
-        }
+        expectThat(contract.data?.size).isEqualTo(8)
     }
 
     @Test
@@ -91,7 +89,7 @@ class SimpleAPICallsTest {
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
             "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-            listOf(nfts[0].contractAddress)
+            nfts[0].contractAddress
         ).data
 
         expectThat(nftsWithQuery!!.size).isEqualTo(1)

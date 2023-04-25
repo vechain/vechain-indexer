@@ -20,7 +20,7 @@ import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
-import org.vechain.indexer.validation.OptionalAddresses
+import org.vechain.indexer.validation.AddressNullable
 
 
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -29,7 +29,7 @@ import org.vechain.indexer.validation.OptionalAddresses
 @RequestMapping(NFTS_PATH)
 open class NFTController(private val nftService: NFTService) {
 
-    @GetMapping("{address}")
+    @GetMapping
     @Operation(summary = "Get all NFTs owned by an address")
     @ApiResponses(
         value = [
@@ -37,7 +37,7 @@ open class NFTController(private val nftService: NFTService) {
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the NFT owner",
@@ -46,25 +46,25 @@ open class NFTController(private val nftService: NFTService) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "contractAddresses",
-        schema = Schema(type = "list of strings"),
-        description = "The contract addresses to include",
+        name = "contractAddress",
+        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        description = "The contract address",
         required = false,
-        example = "['0x435933c8064b4Ae76bE665428e0307eF2cCFBD68']"
+        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getOwnedNFTs(
-        @Address @PathVariable address: String,
-        @OptionalAddresses @RequestParam(required = false) contractAddresses: List<String>?,
+        @Address @RequestParam(required = true) address: String,
+        @AddressNullable @RequestParam(required = false) contractAddress: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<List<NFT>> {
-        val resultsPage = if (contractAddresses.isNullOrEmpty()) {
+        val resultsPage = if (contractAddress.isNullOrEmpty()) {
             nftService.findByOwner(address, toPageable(page, size, direction, "blockNumber", "txId", "id"))
         } else {
-            nftService.findByOwnerAndContractAddresses(
+            nftService.findByOwnerAndContractAddress(
                 address,
-                contractAddresses,
+                contractAddress,
                 toPageable(page, size, direction, "blockNumber", "txId", "id")
             )
         }

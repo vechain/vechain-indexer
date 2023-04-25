@@ -1,6 +1,7 @@
 package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
@@ -13,7 +14,6 @@ enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
-const val ZERO_ID = "0x000000000"
 const val INITIAL_BACKOFF_PERIOD = 10000L
 
 abstract class Indexer(
@@ -22,6 +22,9 @@ abstract class Indexer(
     private val numBlocksToPurge: Long = 12L
 ) {
 
+    @Value("\${genesis.block.id:0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6}")
+    protected open val genesisBlockId: String = "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6"
+
     val name: String
         get() = this.javaClass.simpleName
 
@@ -29,7 +32,7 @@ abstract class Indexer(
 
     var status = Status.SYNCING
     var currentBlockNumber: Long = 0
-    private var previousBlockId: String = ZERO_ID
+    private var previousBlockId: String = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
@@ -49,7 +52,7 @@ abstract class Indexer(
             val block = thorService.getBlock(currentBlockNumber)
 
             // Check for reorg.
-            if (previousBlockId != ZERO_ID && previousBlockId != block.parentID)
+            if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber (${status})")
@@ -109,7 +112,7 @@ abstract class Indexer(
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
         repo.deleteAllByBlockNumberBetween(
-            maxOf(currentBlockNumber - numBlocksToPurge - 1, -1),
+            maxOf(currentBlockNumber - numBlocksToPurge - 1, 0),
             maxOf(currentBlockNumber + 1, 1)
         )
 
@@ -123,8 +126,8 @@ abstract class Indexer(
         return repo.getMaxBlockNumber() ?: -1
     }
 
-    fun getPreviousBlockId(): String {
-        return repo.getMaxBlockId() ?: ZERO_ID
+    private fun getPreviousBlockId(): String {
+        return repo.getMaxBlockId() ?: genesisBlockId
     }
 
     abstract fun processBlock(block: Block)
