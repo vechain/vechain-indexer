@@ -28,13 +28,53 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
-    fun `get all clauses for contract address OK`() {
-        val contractAddress = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
+    fun `get clauses for address`() {
+        val address = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
         val page = 0
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
             baseEndpoint +
-                    "?address=$contractAddress" +
+                    "?address=$address" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+
+        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
+        expectThat(clauses.data?.size).isEqualTo(20)
+    }
+
+    @Test
+    fun `get clauses for address no hex prefix`() {
+        val address = "438d785fffd68dfed059c6380d9b0d07441e263b"
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            baseEndpoint +
+                    "?address=$address" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+
+        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
+        expectThat(clauses.data?.size).isEqualTo(20)
+    }
+
+    @Test
+    fun `get clauses for address upper case`() {
+        val address = "0x438D785FFFD68dfed059c6380d9b0d07441E263B"
+        val page = 0
+        val size = Int.MAX_VALUE
+        val result = mockMvc.get(
+            baseEndpoint +
+                    "?address=$address" +
                     "&page=$page" +
                     "&size=$size"
         )
