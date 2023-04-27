@@ -23,7 +23,7 @@ abstract class Indexer(
 ) {
 
     @Value("\${genesis.block.id:0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6}")
-    protected open val genesisBlockId: String = "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6"
+    protected val genesisBlockId: String = "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6"
 
     val name: String
         get() = this.javaClass.simpleName
@@ -32,6 +32,7 @@ abstract class Indexer(
 
     var status = Status.SYNCING
     var currentBlockNumber: Long = 0
+    var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
     private var previousBlockId: String = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
@@ -96,6 +97,8 @@ abstract class Indexer(
 
         // Set the previous block id.
         previousBlockId = block.blockId
+
+        timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
     }
 
     private fun backoffDelay() {
