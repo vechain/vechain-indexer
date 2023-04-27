@@ -3,6 +3,8 @@ package org.vechain.indexer.model
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
+import org.springframework.data.mongodb.core.index.IndexDirection
+import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.math.BigInteger
 
@@ -19,7 +21,7 @@ data class NFT @ConstructorBinding constructor(
     val contractAddress: String,
     val owner: String,
     val txId: String,
-//    @Indexed(direction = IndexDirection.DESCENDING)
+    @Indexed(direction = IndexDirection.DESCENDING)
     override val blockNumber: Long,
     override val blockId: String,
 ) : IndexedDocument
