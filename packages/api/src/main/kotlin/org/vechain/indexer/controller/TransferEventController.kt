@@ -28,7 +28,7 @@ import org.vechain.indexer.validation.AddressNullable
 open class TransferEventController(private val transferEventService: TransferEventService) {
 
     @GetMapping
-    @Operation(summary = "Get all blockchain transfer events")
+    @Operation(summary = "Get transfer events by address or token address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",

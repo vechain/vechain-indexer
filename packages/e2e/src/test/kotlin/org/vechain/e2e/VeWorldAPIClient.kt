@@ -3,9 +3,7 @@ package org.vechain.e2e
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
-import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.NFT
-import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.*
 import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
@@ -20,11 +18,15 @@ object VeWorldAPIClient {
     /**
      * Response Types
      */
+    private val BLOCK_TYPE = object : ParameterizedTypeReference<Block>() {}
+    private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<WrappedClause>>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<Transaction>() {}
     private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Transaction>>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<Contract>() {}
     private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Contract>>>() {}
     private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
+    private val PAGINATED_TRANSFER_EVENT_TYPE =
+        object : ParameterizedTypeReference<PaginatedResponse<List<TransferEvent>>>() {}
 
 
     fun performHealthCheck() {
@@ -53,38 +55,90 @@ object VeWorldAPIClient {
             throw Exception("Health failed with status $mongoStatus")
     }
 
-    fun getTransactionById(id: String): Transaction {
-        return getRequest("$API_URL/transactions?id=${id}", TX_TYPE)
+    fun getBlock(revision: String): Block {
+        return getRequest("$API_URL/blocks?revision=$revision", BLOCK_TYPE)
     }
 
-    fun getTransactionsByOrigin(
-        address: String,
-        includeDelegated: Boolean = false
-    ): PaginatedResponse<List<Transaction>> {
+    fun getClauses(
+        address: String, page: Int = 0, size: Int = 10
+    ): PaginatedResponse<List<WrappedClause>> {
         return getRequest(
-            "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated",
-            PAGINATED_TX_TYPE
+            "$API_URL/clauses?address=${address}&page=$page&size=$size",
+            PAGINATED_CLAUSE_TYPE
         )
-    }
-
-    fun getDelegatedTransactions(address: String): PaginatedResponse<List<Transaction>> {
-        return getRequest("$API_URL/transactions/delegated?address=$address", PAGINATED_TX_TYPE)
-    }
-
-    fun getNfts(address: String): PaginatedResponse<List<NFT>> {
-        return getRequest("$API_URL/nfts?address=$address", PAGINATED_NFT_TYPE)
-    }
-
-    fun getNfts(address: String, contractAddress: String): PaginatedResponse<List<NFT>> {
-        return getRequest("$API_URL/nfts?address=$address&contractAddress=$contractAddress", PAGINATED_NFT_TYPE)
     }
 
     fun getContract(address: String): Contract {
         return getRequest("$API_URL/contracts?address=$address", CONTRACT_TYPE)
     }
 
-    fun getContractForCreator(address: String): PaginatedResponse<List<Contract>> {
-        return getRequest("$API_URL/contracts/creator?address=$address", PAGINATED_CONTRACT_TYPE)
+    fun getContractForCreator(address: String, page: Int = 0, size: Int = 10): PaginatedResponse<List<Contract>> {
+        return getRequest("$API_URL/contracts/creator?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
+    }
+
+    fun getNfts(
+        address: String? = null,
+        contractAddress: String? = null,
+        page: Int = 0,
+        size: Int = 10
+    ): PaginatedResponse<List<NFT>> {
+        return if (address != null && contractAddress != null)
+            getRequest(
+                "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
+                PAGINATED_NFT_TYPE
+            )
+        else if (address != null)
+            getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFT_TYPE)
+        else if (contractAddress != null)
+            getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFT_TYPE)
+        else
+            throw Exception("No address or contractAddress provided")
+    }
+
+    fun getTransactionById(id: String): Transaction {
+        return getRequest("$API_URL/transactions?id=${id}", TX_TYPE)
+    }
+
+    fun getTransactionsByOrigin(
+        address: String,
+        includeDelegated: Boolean = false,
+        page: Int = 0,
+        size: Int = 10
+    ): PaginatedResponse<List<Transaction>> {
+        return getRequest(
+            "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
+            PAGINATED_TX_TYPE
+        )
+    }
+
+    fun getDelegatedTransactions(
+        address: String,
+        page: Int = 0,
+        size: Int = 10
+    ): PaginatedResponse<List<Transaction>> {
+        return getRequest("$API_URL/transactions/delegated?address=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
+    }
+
+    fun getTransferEvents(
+        address: String? = null,
+        tokenAddress: String? = null,
+        page: Int = 0,
+        size: Int = 10
+    ): PaginatedResponse<List<TransferEvent>> {
+        return if (address != null && tokenAddress != null)
+            getRequest(
+                "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress&page=$page&size=$size",
+                PAGINATED_TRANSFER_EVENT_TYPE
+            )
+        else if (address != null)
+            getRequest("$API_URL/transfers?address=$address&page=$page&size=$size", PAGINATED_TRANSFER_EVENT_TYPE)
+        else if (tokenAddress != null)
+            getRequest(
+                "$API_URL/transfers?tokenAddress=$tokenAddress&page=$page&size=$size",
+                PAGINATED_TRANSFER_EVENT_TYPE
+            )
+        else
+            throw Exception("No address or tokenAddress provided")
     }
 
     private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
