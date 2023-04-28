@@ -9,7 +9,7 @@ services:
       - GENESIS_BLOCK_ID=0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6
     restart: "no"
     entrypoint:
-      [ "bash", "/scripts/setup.sh", "mongo-node1", "admin", "password" ]
+      [ "bash", "/scripts/setup.sh", "mongo-node1" ]
     networks:
       - vechain-database
 
