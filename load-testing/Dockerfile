@@ -12,6 +12,6 @@ COPY src ./src
 RUN yarn webpack
 
 # Lightweight k6 image
-FROM grafana/k6
+FROM 24hoursmedia/k6-xarch
 
 COPY --from=builder /app /app
