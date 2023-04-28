@@ -4,6 +4,7 @@ services:
   mongo-node1:
     hostname: mongo-node1
     image: mongo:6
+    command: mongod --replSet rs0
     expose:
       - 27017
     ports:
@@ -11,10 +12,6 @@ services:
     restart: always
     volumes:
       - vechain-data-1:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-      MONGO_INITDB_DATABASE: admin
     deploy:
       resources:
         limits:
