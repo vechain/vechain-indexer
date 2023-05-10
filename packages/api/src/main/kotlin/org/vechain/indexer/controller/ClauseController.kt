@@ -18,7 +18,6 @@ import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
-import kotlin.system.measureTimeMillis
 
 @Tag(name = "Clause", description = "Query on chain tx clauses")
 @RestController
@@ -41,16 +40,10 @@ open class ClauseController(private val clauseService: ClauseService) {
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?
     ): List<WrappedClause> {
-        var clauses: List<WrappedClause>
-        val elapsed = measureTimeMillis {
-            clauses = clauseService.findByAddress(
-                address,
-                //toPageable(page, size, direction, "blockNumber", "txId", "id")
-                toPageable(page, size, direction, "_id")
-            )
-        }
-        println("Fetch clauses execution time: $elapsed ms")
-        return clauses
+        return clauseService.findByAddress(
+            address,
+            toPageable(page, size, direction, "_id")
+        )
     }
 
 }
