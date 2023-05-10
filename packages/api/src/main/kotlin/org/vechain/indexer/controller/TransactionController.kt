@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Transaction
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -79,19 +77,11 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<List<Transaction>> {
-        val resultsPage = transactionService.findByOrigin(
+    ): List<Transaction> {
+        return transactionService.findByOrigin(
             address,
             includeDelegated,
             toPageable(page, size, direction, "blockNumber", "id")
-        )
-
-        return PaginatedResponse(
-            data = resultsPage.content,
-            pagination = PaginationDetail(
-                totalPages = resultsPage.totalPages,
-                totalElements = resultsPage.totalElements
-            )
         )
     }
 
@@ -115,18 +105,10 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<List<Transaction>> {
-        val resultsPage = transactionService.findAllDelegated(
+    ): List<Transaction> {
+        return transactionService.findAllDelegated(
             address,
             toPageable(page, size, direction, "blockNumber", "id")
-        )
-
-        return PaginatedResponse(
-            data = resultsPage.content,
-            pagination = PaginationDetail(
-                totalPages = resultsPage.totalPages,
-                totalElements = resultsPage.totalElements
-            )
         )
     }
 }

@@ -14,7 +14,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
 import java.util.*
@@ -32,18 +31,13 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<Transaction>() {}
     protected val LIST_TX_TYPE = object : TypeReference<List<Transaction>>() {}
-    protected val PAGINATED_TX_TYPE = object : TypeReference<PaginatedResponse<List<Transaction>>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<Contract>() {}
     protected val LIST_CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
-    protected val PAGINATED_CONTRACT_TYPE = object : TypeReference<PaginatedResponse<List<Contract>>>() {}
     protected val LIST_NFT_TYPE = object : TypeReference<List<NFT>>() {}
-    protected val PAGINATED_NFT_TYPE = object : TypeReference<PaginatedResponse<List<NFT>>>() {}
     protected val BLOCK_TYPE = object : TypeReference<Block>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
-    protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
-    protected val PAGINATED_TRANSFER_EVENT_TYPE = object : TypeReference<PaginatedResponse<List<TransferEvent>>>() {}
+    protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
     protected val LIST_CLAUSE_TYPE = object : TypeReference<List<WrappedClause>>() {}
-    protected val PAGINATED_CLAUSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
@@ -77,7 +71,7 @@ abstract class AbstractIntegrationTest {
         val blocks: List<Block> =
             loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<TransferEvent> =
-            loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
+            loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
         val clauses: List<WrappedClause> =
             loadDataFromResources("/clauses.json", LIST_CLAUSE_TYPE)
 

@@ -1,6 +1,5 @@
 package org.vechain.indexer.service
 
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.NFT
@@ -10,7 +9,7 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class NFTService(private val nftRepo: NFTRepo) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): Page<NFT> {
+    open fun findByOwner(owner: String, pageable: Pageable): List<NFT> {
         return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
     }
 
@@ -18,7 +17,7 @@ open class NFTService(private val nftRepo: NFTRepo) {
         owner: String,
         contractAddress: String,
         pageable: Pageable
-    ): Page<NFT> {
+    ): List<NFT> {
         return nftRepo.findAllByOwnerAndContractAddress(
             HexUtil.normalise(owner),
             contractAddress,
@@ -26,7 +25,7 @@ open class NFTService(private val nftRepo: NFTRepo) {
         )
     }
 
-    open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<NFT> {
+    open fun findContractsByNFTOwner(owner: String, pageable: Pageable): List<NFT> {
         return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
     }
 

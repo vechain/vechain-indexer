@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Contract
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -43,7 +41,7 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x0000000000000000000000417574686f72697479"
     )
-    open fun getContractByAddress(@Address @RequestParam(required = true) address: String): Contract {
+    open fun getContractByAddress(@Address @RequestParam address: String): Contract {
         return contractService.findByAddress(address) ?: throw ResourceNotFoundException("Contract not found")
     }
 
@@ -67,18 +65,10 @@ open class ContractController(private val contractService: ContractService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<List<Contract>> {
-        val resultsPage = contractService.findByCreator(
+    ): List<Contract> {
+        return contractService.findByCreator(
             address,
             toPageable(page, size, direction, "blockNumber", "txId", "address")
-        )
-
-        return PaginatedResponse(
-            data = resultsPage.content,
-            pagination = PaginationDetail(
-                totalPages = resultsPage.totalPages,
-                totalElements = resultsPage.totalElements
-            )
         )
     }
 

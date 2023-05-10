@@ -1,8 +1,7 @@
 package org.vechain.indexer.repos
 
-import org.springframework.data.domain.Page
-import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.data.domain.Pageable
+import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.TransferEvent
 
@@ -13,10 +12,10 @@ interface TransferEventRepo : BaseIndexedRepo<TransferEvent>, PagingAndSortingRe
         from: String,
         contractAddress: String,
         pageable: Pageable
-    ): Page<TransferEvent>
+    ): List<TransferEvent>
 
-    fun findByToOrFrom(to: String, from: String, pageable: Pageable): Page<TransferEvent>
+    fun findByToOrFrom(to: String, from: String, pageable: Pageable): List<TransferEvent>
 
-    fun findByTokenAddress(contractAddress: String, pageable: Pageable): Page<TransferEvent>
+    fun findByTokenAddress(contractAddress: String, pageable: Pageable): List<TransferEvent>
 
 }

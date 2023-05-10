@@ -2,16 +2,16 @@ package org.vechain.indexer.model
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.IndexDirection
+import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "transfer_events")
+@CompoundIndex(name = "transfer_block_number_idx", def = "{'blockNumber': -1}")
 data class TransferEvent @ConstructorBinding constructor(
     @Id
     val id: String,
     override val blockId: String,
-    @Indexed(direction = IndexDirection.DESCENDING)
     override val blockNumber: Long,
     val txId: String,
     @Indexed
