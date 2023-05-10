@@ -4,7 +4,6 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
 
@@ -19,14 +18,14 @@ object VeWorldAPIClient {
      * Response Types
      */
     private val BLOCK_TYPE = object : ParameterizedTypeReference<Block>() {}
-    private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<WrappedClause>>>() {}
+    private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<List<WrappedClause>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<Transaction>() {}
-    private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Transaction>>>() {}
+    private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<List<Transaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<Contract>() {}
-    private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<Contract>>>() {}
-    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<NFT>>>() {}
+    private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<List<Contract>>() {}
+    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<List<NFT>>() {}
     private val PAGINATED_TRANSFER_EVENT_TYPE =
-        object : ParameterizedTypeReference<PaginatedResponse<List<TransferEvent>>>() {}
+        object : ParameterizedTypeReference<List<TransferEvent>>() {}
 
 
     fun performHealthCheck() {
@@ -61,7 +60,7 @@ object VeWorldAPIClient {
 
     fun getClauses(
         address: String, page: Int = 0, size: Int = 10
-    ): PaginatedResponse<List<WrappedClause>> {
+    ): List<WrappedClause> {
         return getRequest(
             "$API_URL/clauses?address=${address}&page=$page&size=$size",
             PAGINATED_CLAUSE_TYPE
@@ -72,7 +71,7 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/contracts?address=$address", CONTRACT_TYPE)
     }
 
-    fun getContractForCreator(address: String, page: Int = 0, size: Int = 10): PaginatedResponse<List<Contract>> {
+    fun getContractForCreator(address: String, page: Int = 0, size: Int = 10): List<Contract> {
         return getRequest("$API_URL/contracts/creator?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
     }
 
@@ -81,7 +80,7 @@ object VeWorldAPIClient {
         contractAddress: String? = null,
         page: Int = 0,
         size: Int = 10
-    ): PaginatedResponse<List<NFT>> {
+    ): List<NFT> {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
@@ -104,7 +103,7 @@ object VeWorldAPIClient {
         includeDelegated: Boolean = false,
         page: Int = 0,
         size: Int = 10
-    ): PaginatedResponse<List<Transaction>> {
+    ): List<Transaction> {
         return getRequest(
             "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
             PAGINATED_TX_TYPE
@@ -115,7 +114,7 @@ object VeWorldAPIClient {
         address: String,
         page: Int = 0,
         size: Int = 10
-    ): PaginatedResponse<List<Transaction>> {
+    ): List<Transaction> {
         return getRequest("$API_URL/transactions/delegated?address=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
     }
 
@@ -124,7 +123,7 @@ object VeWorldAPIClient {
         tokenAddress: String? = null,
         page: Int = 0,
         size: Int = 10
-    ): PaginatedResponse<List<TransferEvent>> {
+    ): List<TransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(
                 "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress&page=$page&size=$size",
