@@ -1,8 +1,6 @@
 package org.vechain.indexer.model
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
@@ -10,8 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Document
 @Document(collection = "clauses")
 @CompoundIndex(name = "clause_block_number_idx", def = "{'blockNumber': -1}")
 data class WrappedClause @ConstructorBinding constructor(
-    @Id
-    val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     @Indexed
@@ -27,7 +23,6 @@ data class WrappedClause @ConstructorBinding constructor(
     val output: TxOutputs?,
 ) : IndexedDocument {
     constructor(block: Block, tx: Transaction, clause: Clause, index: Int) : this(
-        id = DigestUtils.sha1Hex("${tx.id}-$index"),
         blockId = block.blockId,
         blockNumber = block.blockNumber,
         txId = tx.id,

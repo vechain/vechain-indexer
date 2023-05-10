@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     schema = Schema(type = "String"),
     description = "The sort direction (DESC or ASC)",
     required = false,
-    example = "ASC"
+    example = "DESC"
 )
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)

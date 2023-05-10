@@ -6,7 +6,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
-import org.vechain.indexer.model.WrappedClause
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
@@ -119,12 +118,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
 
         val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses).isSorted(
-            compareByDescending<WrappedClause> { it.blockNumber }
-                .then(compareByDescending<WrappedClause> { it.txId }
-                    .then(compareByDescending { it.id })
-                )
-        )
+        expectThat(clauses).isSorted(compareByDescending { it.blockNumber })
     }
 
 }
