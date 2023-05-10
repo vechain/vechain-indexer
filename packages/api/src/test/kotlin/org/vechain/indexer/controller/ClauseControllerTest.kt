@@ -8,7 +8,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.WrappedClause
 import strikt.api.expectThat
-import strikt.assertions.isEqualTo
+import strikt.assertions.hasSize
 import strikt.assertions.isSorted
 
 internal class ClauseControllerTest : AbstractIntegrationTest() {
@@ -41,10 +41,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
-        expectThat(clauses.data?.size).isEqualTo(20)
+        expectThat(clauses).hasSize(20)
     }
 
     @Test
@@ -61,10 +60,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
-        expectThat(clauses.data?.size).isEqualTo(20)
+        expectThat(clauses).hasSize(20)
     }
 
     @Test
@@ -81,10 +79,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
-        expectThat(clauses.data?.size).isEqualTo(20)
+        expectThat(clauses).hasSize(20)
     }
 
     @Test
@@ -101,10 +98,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses.pagination?.totalElements).isEqualTo(20)
-        expectThat(clauses.data?.size).isEqualTo(size)
+        expectThat(clauses).hasSize(size)
     }
 
     @Test
@@ -121,9 +117,9 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
-        expectThat(clauses.data as List<WrappedClause>).isSorted(
+        expectThat(clauses).isSorted(
             compareByDescending<WrappedClause> { it.blockNumber }
                 .then(compareByDescending<WrappedClause> { it.txId }
                     .then(compareByDescending { it.id })

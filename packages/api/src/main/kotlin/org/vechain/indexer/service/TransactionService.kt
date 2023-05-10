@@ -1,6 +1,5 @@
 package org.vechain.indexer.service
 
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -19,7 +18,7 @@ open class TransactionService(private val transactionRepository: TransactionRepo
         address: String,
         includeDelegated: Boolean,
         pageable: Pageable
-    ): Page<Transaction> {
+    ): List<Transaction> {
         val normalisedAddress = HexUtil.normalise(address)
         return if (includeDelegated) transactionRepository.findByOriginOrGasPayer(
             normalisedAddress,
@@ -29,7 +28,7 @@ open class TransactionService(private val transactionRepository: TransactionRepo
         else transactionRepository.findByOrigin(normalisedAddress, pageable)
     }
 
-    open fun findAllDelegated(delegator: String, pageable: Pageable): Page<Transaction> {
+    open fun findAllDelegated(delegator: String, pageable: Pageable): List<Transaction> {
         val normalisedAddress = HexUtil.normalise(delegator)
         return transactionRepository.findByOriginNotAndGasPayer(normalisedAddress, normalisedAddress, pageable)
     }

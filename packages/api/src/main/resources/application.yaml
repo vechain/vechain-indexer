@@ -10,7 +10,13 @@ springdoc:
 logging:
   level:
     ROOT: INFO
-    org.vechain: ${APP_LOG_LEVEL:INFO}
+    org:
+      vechain: ${APP_LOG_LEVEL:INFO}
+        #springframework:
+        #data:
+        #mongodb:
+      #core:
+      #MongoTemplate: DEBUG
 
 spring:
   profiles:
@@ -32,3 +38,4 @@ management:
 spring.data:
   mongodb:
     uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
+    #uri: mongodb://localhost:27017/vechain?directConnection=true

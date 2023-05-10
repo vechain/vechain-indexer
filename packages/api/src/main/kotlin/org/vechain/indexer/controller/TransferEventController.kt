@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.TransferEvent
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -51,27 +49,19 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<List<TransferEvent>> {
+    ): List<TransferEvent> {
 
         if (address == null && tokenAddress == null) {
             throw BadRequestException("Either address or tokenAddress must be provided")
         }
 
         val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
-        val resultsPage = if (address != null && tokenAddress != null) {
+        return if (address != null && tokenAddress != null) {
             transferEventService.find(address, tokenAddress, pageable)
         } else if (address != null) {
             transferEventService.findByAddress(address, pageable)
         } else {
             transferEventService.findByTokenAddress(tokenAddress!!, pageable)
         }
-
-        return PaginatedResponse(
-            data = resultsPage.content,
-            pagination = PaginationDetail(
-                totalPages = resultsPage.totalPages,
-                totalElements = resultsPage.totalElements
-            )
-        )
     }
 }

@@ -3,16 +3,16 @@ package org.vechain.indexer.model
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.IndexDirection
+import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "clauses")
+@CompoundIndex(name = "clause_block_number_idx", def = "{'blockNumber': -1}")
 data class WrappedClause @ConstructorBinding constructor(
     @Id
     val id: String,
     override val blockId: String,
-    @Indexed(direction = IndexDirection.DESCENDING)
     override val blockNumber: Long,
     val txId: String,
     val index: Int,
