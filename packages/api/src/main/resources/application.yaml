@@ -3,7 +3,7 @@ server:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /
   swagger-ui:
     path: /
 
@@ -12,11 +12,8 @@ logging:
     ROOT: INFO
     org:
       vechain: ${APP_LOG_LEVEL:INFO}
-        #springframework:
-        #data:
-        #mongodb:
-      #core:
-      #MongoTemplate: DEBUG
+      springframework:
+        data: DEBUG
 
 spring:
   profiles:
@@ -38,4 +35,3 @@ management:
 spring.data:
   mongodb:
     uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
-    #uri: mongodb://localhost:27017/vechain?directConnection=true

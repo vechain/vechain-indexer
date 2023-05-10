@@ -14,6 +14,7 @@ data class WrappedClause @ConstructorBinding constructor(
     val id: String,
     override val blockId: String,
     override val blockNumber: Long,
+    @Indexed
     val txId: String,
     val index: Int,
     @Indexed
