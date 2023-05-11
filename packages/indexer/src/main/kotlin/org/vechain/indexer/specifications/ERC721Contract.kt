@@ -72,7 +72,7 @@ data class ERC721Contract(
 
         /**
          * This function is defined by the ERC165 interface
-         * Every ERC-721 compliant contract must implement the ERC721 and ERC165 interfaces
+         * Every ERC-721 compliant contract must implement the NFT and ERC165 interfaces
          *
          * function supportsInterface(bytes4 interfaceID) external view returns (bool);
          */

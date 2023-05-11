@@ -2,6 +2,8 @@ package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.model.*
+import org.web3j.utils.Numeric
+import java.math.BigInteger
 
 object BlockUtils {
 
@@ -90,6 +92,18 @@ object BlockUtils {
         outputIndex: Int
     ): List<TransferEvent> {
         return ContractUtils.findTransferEvents(events).mapIndexed { eventIndex, event ->
+
+            val value: BigInteger
+            val type: TransferEventType
+
+            if (event.topics.size == 4) {
+                value = Numeric.decodeQuantity(event.topics[3])
+                type = TransferEventType.NFT
+            } else {
+                value = Numeric.decodeQuantity(event.data)
+                type = TransferEventType.FUNGIBLE_TOKEN
+            }
+
             TransferEvent(
                 id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}"),
                 blockId = block.blockId,
@@ -97,10 +111,10 @@ object BlockUtils {
                 txId = tx.id,
                 from = AddressUtil.decode(event.topics[1]),
                 to = AddressUtil.decode(event.topics[2]),
-                value = event.data,
+                value = value,
                 tokenAddress = event.address,
                 topics = event.topics,
-                isVetTransfer = false
+                eventType = type
             )
         }
     }
@@ -119,10 +133,10 @@ object BlockUtils {
                 txId = tx.id,
                 from = transfer.sender,
                 to = transfer.recipient,
-                value = transfer.amount,
+                value = Numeric.decodeQuantity(transfer.amount),
                 topics = listOf(),
-                isVetTransfer = true,
                 tokenAddress = null,
+                eventType = TransferEventType.VET
             )
         }
     }

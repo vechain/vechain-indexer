@@ -146,7 +146,7 @@ class ContractService(private val thorService: ThorService) {
                 TransactionUtils.isSuccessWithData(it)
             }
         } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is ERC20", e)
+            logger.warn("Error while checking if $contractAddress is FUNGIBLE_TOKEN", e)
             return false
         }
     }

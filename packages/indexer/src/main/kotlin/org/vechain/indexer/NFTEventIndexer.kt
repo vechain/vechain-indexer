@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.model.NFT
 import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
@@ -28,7 +29,7 @@ open class NFTEventIndexer(
     }
 
     private fun getNfts(transfers: List<TransferEvent>): List<NFT> {
-        return transfers.filter { it.isNFTTransfer && it.tokenAddress != null }
+        return transfers.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
             .map {
 
                 val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])

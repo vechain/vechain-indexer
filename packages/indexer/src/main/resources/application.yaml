@@ -27,7 +27,7 @@ management:
 
 spring.data:
   mongodb:
-    uri: ${MONGO_URI:mongodb://admin:password@localhost:27017/vechain?directConnection=true&authMechanism=SCRAM-SHA-1&authSource=admin}
+    uri: ${MONGO_URI:mongodb://localhost:27017/vechain?directConnection=true}
     #uri: mongodb://localhost:27017/vechain?directConnection=true
     auto-index-creation: true
 
