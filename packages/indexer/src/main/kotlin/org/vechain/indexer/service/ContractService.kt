@@ -29,28 +29,13 @@ class ContractService(private val thorService: ThorService) {
      */
     fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
-        try {
-            val isErc721 = ContractUtils.isContractType(Contracts.ERC721, rawData) ||
-                    ContractUtils.isContractType(Contracts.ERC721, clause.data)
-            if (isErc721) return true
-
-            val supportsInterface =
-                ClauseUtils.contractCall(
-                    contractAddress,
-                    ERC721ABI.supportsInterface,
-                    Utils.hexToBytes(ERC721ABI.interfaceId)
-                )
-
-            val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
-
-            val result = response.firstOrNull() ?: return false
-
-            if (!TransactionUtils.isSuccessWithData(result)) return false
-
-            return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
+        return try {
+            ContractUtils.isContractType(Contracts.ERC721, rawData) ||
+                    ContractUtils.isContractType(Contracts.ERC721, clause.data) ||
+                    supportsInterface(ERC721ABI.interfaceId, contractAddress)
         } catch (e: Exception) {
             logger.warn("Error while checking if $contractAddress is ERC721", e)
-            return false
+            false
         }
     }
 
@@ -199,29 +184,13 @@ class ContractService(private val thorService: ThorService) {
     }
 
     fun isErc1155(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        try {
-            val isErc1155 = ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
-                    ContractUtils.isContractType(Contracts.ERC1155, clause.data)
-
-            if (isErc1155) return true
-
-            val supportsInterface =
-                ClauseUtils.contractCall(
-                    contractAddress,
-                    ERC1155ABI.supportsInterface,
-                    Utils.hexToBytes(ERC1155ABI.interfaceId)
-                )
-
-            val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
-
-            val result = response.firstOrNull() ?: return false
-
-            if (!TransactionUtils.isSuccessWithData(result)) return false
-
-            return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
+        return try {
+            ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
+                    ContractUtils.isContractType(Contracts.ERC1155, clause.data) ||
+                    supportsInterface(ERC1155ABI.interfaceId, contractAddress)
         } catch (e: Exception) {
             logger.warn("Error while checking if $contractAddress is ERC1155", e)
-            return false
+            false
         }
     }
 
@@ -263,6 +232,29 @@ class ContractService(private val thorService: ThorService) {
             }
         } catch (e: Exception) {
             logger.warn("Error while checking if $contractAddress is VIP210", e)
+            return false
+        }
+    }
+
+    fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
+        try {
+
+            val supportsInterface =
+                ClauseUtils.contractCall(
+                    contractAddress,
+                    ERC165.supportsInterface,
+                    Utils.hexToBytes(interfaceId)
+                )
+
+            val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
+
+            val result = response.firstOrNull() ?: return false
+
+            if (!TransactionUtils.isSuccessWithData(result)) return false
+
+            return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
+        } catch (ex: Exception) {
+            logger.warn("Error while checking if $contractAddress supportsInterface: $interfaceId", ex)
             return false
         }
     }
