@@ -34,4 +34,4 @@ management:
 
 spring.data:
   mongodb:
-    uri: ${MONGO_URI:mongodb://localhost:27017/vechain?directConnection=true}
+    uri: ${MONGO_URI:mongodb://localhost:27017/vechain}

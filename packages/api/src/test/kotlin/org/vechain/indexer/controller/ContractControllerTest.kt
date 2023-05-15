@@ -9,10 +9,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Contract
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
-import strikt.assertions.isSorted
+import strikt.assertions.*
 import java.util.*
 
 internal class ContractControllerTest : AbstractIntegrationTest() {
@@ -193,6 +190,66 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.address })
                         )
                 )
+        }
+
+        @Test
+        fun `fetch contracts by origin and contract type - invalid type returns BAD REQUEST`() {
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val invalidType = "vip199"
+
+            mockMvc.get(
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&type=$invalidType"
+            )
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `fetch contracts by origin and contract type - without pagination`() {
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val type = "vip180"
+
+            val result = mockMvc.get(
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&type=$type"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+
+            expectThat(contracts)
+                .hasSize(2)
+                .map(Contract::isVip180).all { isTrue() }
+        }
+
+        @Test
+        fun `fetch contracts by origin and contract type - with pagination`() {
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val type = "vip180"
+            val page = 0
+            val size = 10
+
+            val result = mockMvc.get(
+                "$BASE_ENDPOINT/creator?address=$creatorAddress" +
+                        "&type=$type" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+
+            expectThat(contracts)
+                .hasSize(2)
+                .isSorted(
+                    compareByDescending<Contract> { it.blockNumber }
+                        .then(compareByDescending<Contract> { it.txId }
+                            .then(compareByDescending { it.address })
+                        )
+                )
+                .map(Contract::isVip180).all { isTrue() }
         }
     }
 }

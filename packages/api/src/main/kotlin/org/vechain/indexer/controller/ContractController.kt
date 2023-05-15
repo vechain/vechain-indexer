@@ -10,8 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -60,16 +62,34 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "type",
+        schema = Schema(type = "string", allowableValues = ["ERC20", "ERC721", "VIP180", "VIP181"]),
+        description = "The contract type",
+        required = false,
+        example = "VIP180"
+    )
     open fun getContractsByCreator(
-        @Address @RequestParam(required = true) address: String,
+        @Address @RequestParam address: String,
+        @RequestParam(required = false) type: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<Contract> {
+        validateContractType(type)
+
         return contractService.findByCreator(
             address,
+            ContractType.byNameIgnoreCaseOrNull(type),
             toPageable(page, size, direction, "blockNumber", "txId", "address")
         )
+    }
+
+    private fun validateContractType(type: String?) {
+        if (type != null && ContractType.byNameIgnoreCaseOrNull(type) == null) {
+            throw BadRequestException("Invalid contract type parameter: $type")
+        }
     }
 
 }
