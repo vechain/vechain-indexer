@@ -14,8 +14,7 @@ import org.springframework.boot.runApplication
         description = "Blockchain data indexed for fast querying"
     ),
     servers = [
-        Server(url = "https://", description = "HTTPS server"),
-        Server(url = "http://", description = "HTTP server")
+        Server(url = "/", description = "VeWorld Indexer"),
     ]
 )
 @SpringBootApplication(scanBasePackages = ["org.vechain.indexer"])
