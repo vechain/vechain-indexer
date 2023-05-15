@@ -13,7 +13,7 @@ class TransactionTest {
     fun `get transactions for origin`() {
         val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transactions).hasSize(8)
+        expectThat(transactions).hasSize(12)
 
         transactions.forEach { transaction ->
             assertValidTransaction(transaction)
@@ -57,7 +57,7 @@ class TransactionTest {
             includeDelegated = true
         )
 
-        expectThat(transactions).hasSize(9)
+        expectThat(transactions).hasSize(13)
 
         transactions.forEach { transaction ->
             assertValidTransaction(transaction)

@@ -14,7 +14,7 @@ class TransferEventTest {
         val transferEvents =
             VeWorldAPIClient.getTransferEvents(address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transferEvents).hasSize(10)
+        expectThat(transferEvents).hasSize(13)
 
         transferEvents.forEach { transferEvent ->
             assertValidTransferEvent(transferEvent)

@@ -12,9 +12,13 @@ class ContractTest {
 
     @Test
     fun `get contracts for creator`() {
-        val contracts = VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+        val contracts = VeWorldAPIClient.getContractForCreator(
+            address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            page = 0,
+            size = Int.MAX_VALUE,
+        )
 
-        expectThat(contracts).hasSize(8)
+        expectThat(contracts).hasSize(10)
 
         contracts.forEach { contract ->
             assertValidContract(contract)

@@ -10,7 +10,7 @@ class ClauseTest {
         val clauses = VeWorldAPIClient.getClauses(
             "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
         )
-        expectThat(clauses).hasSize(9)
+        expectThat(clauses).hasSize(13)
     }
 
     @Test
