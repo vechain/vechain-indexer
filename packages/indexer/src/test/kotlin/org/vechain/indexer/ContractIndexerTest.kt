@@ -5,6 +5,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
@@ -58,6 +59,41 @@ internal class ContractIndexerTest {
             that(contracts).map(Contract::isVip180).all { isTrue() }
             that(contracts).map(Contract::isErc721).all { isFalse() }
             that(contracts).map(Contract::isVip181).all { isFalse() }
+        }
+    }
+
+
+    // Block #42 -> block_42.json
+    // This block contains 1 ERC1155 and 1 VIP210 contract deployment transaction
+    // The contracts do not implement each other's interfaces
+    @Test
+    fun `should capture erc1155 and vip210 contract deployments`() {
+
+        //Mock contract responses
+        every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns getContractData(
+            BLOCK_42_ERC1155_VIP210_CONTRACTS,
+            "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
+        )
+        every { thorService.getAccountCode("0x5024d193c8ec0ee084995de603365c3560d7ba6e") } returns getContractData(
+            BLOCK_42_ERC1155_VIP210_CONTRACTS,
+            "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
+        )
+
+        // Capture entities saved upon the block processing
+        val contractsSlot = slot<List<Contract>>()
+        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+
+        // Process block for contract indexing
+        contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
+
+        val contracts = contractsSlot.captured
+
+        val vip210: Contract? = contracts.find { it.isVip210 && !it.isErc1155 }
+        val erc1155: Contract? = contracts.find { it.isErc1155 && !it.isVip210 }
+
+        expect {
+            that(vip210).isNotEqualTo(null)
+            that(erc1155).isNotEqualTo(null)
         }
     }
 
