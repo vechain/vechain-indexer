@@ -59,7 +59,7 @@ object VeWorldAPIClient {
     }
 
     fun getClauses(
-        address: String, page: Int = 0, size: Int = Int.MAX_VALUE
+        address: String, page: Int = 0, size: Int = 10
     ): List<WrappedClause> {
         return getRequest(
             "$API_URL/clauses?address=${address}&page=$page&size=$size",
@@ -68,18 +68,18 @@ object VeWorldAPIClient {
     }
 
     fun getContract(address: String): Contract {
-        return getRequest("$API_URL/contracts?address=$address", CONTRACT_TYPE)
+        return getRequest("$API_URL/contracts/address/$address", CONTRACT_TYPE)
     }
 
     fun getContractForCreator(address: String, page: Int = 0, size: Int = Int.MAX_VALUE): List<Contract> {
-        return getRequest("$API_URL/contracts/creator?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
+        return getRequest("$API_URL/contracts?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
     }
 
     fun getNfts(
         address: String? = null,
         contractAddress: String? = null,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = 10
     ): List<NFT> {
         return if (address != null && contractAddress != null)
             getRequest(
@@ -102,7 +102,7 @@ object VeWorldAPIClient {
         address: String,
         includeDelegated: Boolean = false,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = 10
     ): List<Transaction> {
         return getRequest(
             "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
@@ -113,7 +113,7 @@ object VeWorldAPIClient {
     fun getDelegatedTransactions(
         address: String,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = 10
     ): List<Transaction> {
         return getRequest("$API_URL/transactions/delegated?address=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
     }
@@ -122,7 +122,7 @@ object VeWorldAPIClient {
         address: String? = null,
         tokenAddress: String? = null,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = 10
     ): List<TransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(
