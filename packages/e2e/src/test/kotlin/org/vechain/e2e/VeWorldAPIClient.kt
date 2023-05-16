@@ -59,7 +59,7 @@ object VeWorldAPIClient {
     }
 
     fun getClauses(
-        address: String, page: Int = 0, size: Int = 10
+        address: String, page: Int = 0, size: Int = Int.MAX_VALUE
     ): List<WrappedClause> {
         return getRequest(
             "$API_URL/clauses?address=${address}&page=$page&size=$size",
