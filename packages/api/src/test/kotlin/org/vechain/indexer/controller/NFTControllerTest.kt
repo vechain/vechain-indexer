@@ -74,7 +74,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get filtered NFTs should return 1 less`() {
+        fun `get filtered NFTs should return less NFTs`() {
             val res = mockMvc.get(
                 "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" + "&contractAddress=0xb44111d908ad0af0949a20a130429f92a4cc0dbf&size=${Int.MAX_VALUE}"
             ).andExpect { status { isOk() } }.andReturn()
