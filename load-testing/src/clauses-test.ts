@@ -20,7 +20,7 @@ export default () => {
     "has results": () => {
       if (typeof res.body === "string") {
         const body = JSON.parse(res.body);
-        return body.pagination.totalElements > 0;
+        return body.length > 0;
       } else {
         return false;
       }

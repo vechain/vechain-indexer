@@ -3,7 +3,7 @@ server:
 
 springdoc:
   api-docs:
-    path: /
+    path: /api-docs
   swagger-ui:
     path: /
 

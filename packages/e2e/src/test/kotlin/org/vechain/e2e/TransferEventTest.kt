@@ -1,0 +1,58 @@
+package org.vechain.e2e
+
+import org.junit.jupiter.api.Test
+import org.vechain.indexer.model.TransferEvent
+import strikt.api.expect
+import strikt.api.expectThat
+import strikt.assertions.hasSize
+import strikt.assertions.isGreaterThan
+import strikt.assertions.isNotEmpty
+
+class TransferEventTest {
+    @Test
+    fun `get transfer events for address`() {
+        val transferEvents =
+            VeWorldAPIClient.getTransferEvents(address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+
+        expectThat(transferEvents).hasSize(13)
+
+        transferEvents.forEach { transferEvent ->
+            assertValidTransferEvent(transferEvent)
+        }
+
+        val tokenAddress = transferEvents.find { it.tokenAddress != null }!!.tokenAddress
+
+        // Get transfer event by token address
+        val transferEventsForToken = VeWorldAPIClient.getTransferEvents(
+            tokenAddress = tokenAddress,
+        )
+
+        expectThat(transferEventsForToken.size).isGreaterThan(0)
+
+        transferEventsForToken.forEach { transferEvent ->
+            assertValidTransferEvent(transferEvent)
+        }
+    }
+
+    @Test
+    fun `get transfer events for address with pagination`() {
+        val transferEvents =
+            VeWorldAPIClient.getTransferEvents("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
+
+        expectThat(transferEvents).hasSize(1)
+
+        transferEvents.forEach { transferEvent ->
+            assertValidTransferEvent(transferEvent)
+        }
+    }
+
+    fun assertValidTransferEvent(transferEvent: TransferEvent) {
+        expect {
+            that(transferEvent.id).isNotEmpty()
+            that(transferEvent.from).isNotEmpty()
+            that(transferEvent.to).isNotEmpty()
+            that(transferEvent.blockNumber).isGreaterThan(0)
+            that(transferEvent.txId).isNotEmpty()
+        }
+    }
+}

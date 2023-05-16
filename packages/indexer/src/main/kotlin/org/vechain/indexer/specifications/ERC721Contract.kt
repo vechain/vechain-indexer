@@ -1,5 +1,7 @@
 package org.vechain.indexer.specifications
 
+import org.vechain.indexer.utils.ContractUtils
+
 data class ERC721Contract(
 
     override val functions: List<String> = listOf(
@@ -28,47 +30,52 @@ data class ERC721Contract(
         /**
          * function balanceOf(address _owner) external view returns (uint256);
          */
-        const val BALANCE_OF_FUNCTION_SIGNATURE = "70a08231"
+        val BALANCE_OF_FUNCTION_SIGNATURE = ContractUtils.getFunctionSignature("balanceOf(address)")
 
         /**
          * function ownerOf(uint256 _tokenId) external view returns (address);
          */
-        const val OWNER_OF_FUNCTION_SIGNATURE = "6352211e"
+        val OWNER_OF_FUNCTION_SIGNATURE = ContractUtils.getFunctionSignature("ownerOf(uint256)")
 
         /**
          * function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes data) external payable;
          */
-        const val SAFE_TRANSFER_FROM_1_FUNCTION_SIGNATURE = "b88d4fde"
+        val SAFE_TRANSFER_FROM_1_FUNCTION_SIGNATURE =
+            ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256,bytes)")
 
         /**
          * function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable;
          */
-        const val SAFE_TRANSFER_FROM_2_FUNCTION_SIGNATURE = "42842e0e"
+        val SAFE_TRANSFER_FROM_2_FUNCTION_SIGNATURE =
+            ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256)")
 
         /**
          * function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
          */
-        const val TRANSFER_FROM_FUNCTION_SIGNATURE = "23b872dd"
+        val TRANSFER_FROM_FUNCTION_SIGNATURE =
+            ContractUtils.getFunctionSignature("transferFrom(address,address,uint256)")
 
         /**
          * function approve(address _approved, uint256 _tokenId) external payable;
          */
-        const val APPROVE_FUNCTION_SIGNATURE = "095ea7b3"
+        val APPROVE_FUNCTION_SIGNATURE = ContractUtils.getFunctionSignature("approve(address,uint256)")
 
         /**
          * function setApprovalForAll(address _operator, bool _approved) external;
          */
-        const val SET_APPROVAL_FOR_ALL_FUNCTION_SIGNATURE = "a22cb465"
+        val SET_APPROVAL_FOR_ALL_FUNCTION_SIGNATURE =
+            ContractUtils.getFunctionSignature("setApprovalForAll(address,bool)")
 
         /**
          * function getApproved(uint256 _tokenId) external view returns (address);
          */
-        const val GET_APPROVED_FUNCTION_SIGNATURE = "081812fc"
+        val GET_APPROVED_FUNCTION_SIGNATURE = ContractUtils.getFunctionSignature("getApproved(uint256)")
 
         /**
          * function isApprovedForAll(address _owner, address _operator) external view returns (bool);
          */
-        const val IS_APPROVED_FOR_ALL_FUNCTION_SIGNATURE = "e985e9c5"
+        val IS_APPROVED_FOR_ALL_FUNCTION_SIGNATURE =
+            ContractUtils.getFunctionSignature("isApprovedForAll(address,address)")
 
         /**
          * This function is defined by the ERC165 interface
@@ -76,23 +83,22 @@ data class ERC721Contract(
          *
          * function supportsInterface(bytes4 interfaceID) external view returns (bool);
          */
-        const val SUPPORTS_INTERFACE_FUNCTION_SIGNATURE = "01ffc9a7"
-
+        val SUPPORTS_INTERFACE_FUNCTION_SIGNATURE = ContractUtils.getFunctionSignature("supportsInterface(bytes4)")
 
         /**
          * event Transfer(address indexed _from, address indexed _to, uint256 _tokenId)
          */
-        const val TRANSFER_EVENT_SIGNATURE = "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+        val TRANSFER_EVENT_SIGNATURE = ContractUtils.getEventSignature("Transfer(address,address,uint256)")
 
         /**
          * event Approval(address indexed _owner, address indexed _spender, uint256 _tokenId)
          */
-        const val APPROVAL_EVENT_SIGNATURE = "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+        val APPROVAL_EVENT_SIGNATURE = ContractUtils.getEventSignature("Approval(address,address,uint256)")
 
         /**
          * event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved)
          */
-        const val APPROVAL_FOR_ALL_EVENT_SIGNATURE = "17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31"
+        val APPROVAL_FOR_ALL_EVENT_SIGNATURE = ContractUtils.getEventSignature("ApprovalForAll(address,address,bool)")
     }
 
 }
