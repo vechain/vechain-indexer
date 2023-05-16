@@ -21,7 +21,9 @@ data class Contract @ConstructorBinding constructor(
     val rawData: String,
     val isVip180: Boolean,
     val isVip181: Boolean,
+    val isVip210: Boolean,
     val isErc20: Boolean,
     val isErc721: Boolean,
+    val isErc1155: Boolean,
     val previousMasters: MutableSet<String>
 ) : IndexedDocument

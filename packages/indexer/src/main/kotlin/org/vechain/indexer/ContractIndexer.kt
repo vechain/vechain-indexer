@@ -73,9 +73,11 @@ open class ContractIndexer(
                         rawData = rawData,
                         isVip180 = contractService.isVip180(contractAddress, rawData, clause),
                         isVip181 = contractService.isVip181(contractAddress, rawData, clause),
+                        isVip210 = contractService.isVip210(contractAddress, rawData, clause),
                         isErc20 = contractService.isErc20(contractAddress, rawData, clause),
                         isErc721 = contractService.isErc721(contractAddress, rawData, clause),
-                        previousMasters = mutableSetOf()
+                        isErc1155 = contractService.isErc1155(contractAddress, rawData, clause),
+                        previousMasters = mutableSetOf(),
                     )
                 )
             }

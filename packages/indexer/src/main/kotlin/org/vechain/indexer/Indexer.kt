@@ -32,7 +32,9 @@ abstract class Indexer(
 
     var status = Status.SYNCING
     var currentBlockNumber: Long = 0
+        private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
+        private set
     private var previousBlockId: String = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
