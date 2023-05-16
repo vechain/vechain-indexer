@@ -32,8 +32,10 @@ open class ContractRepoImpl(private val mongoTemplate: MongoTemplate) {
         val criteriaKey = when (contractType) {
             ContractType.VIP180 -> "isVip180"
             ContractType.VIP181 -> "isVip181"
+            ContractType.VIP210 -> "isVip210"
             ContractType.ERC20 -> "isErc20"
             ContractType.ERC721 -> "isErc721"
+            ContractType.ERC1155 -> "isErc1155"
         }
         query.addCriteria(Criteria.where(criteriaKey).`is`(true))
     }

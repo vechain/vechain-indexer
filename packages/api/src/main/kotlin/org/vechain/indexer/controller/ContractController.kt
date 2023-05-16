@@ -67,7 +67,10 @@ open class ContractController(private val contractService: ContractService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "type",
-        schema = Schema(type = "string", allowableValues = ["ERC20", "ERC721", "VIP180", "VIP181"]),
+        schema = Schema(
+            type = "string",
+            allowableValues = ["VIP180", "VIP181", "VIP210", "ERC20", "ERC721", "ERC1155"]
+        ),
         description = "The contract type",
         required = false,
         example = "VIP180"
