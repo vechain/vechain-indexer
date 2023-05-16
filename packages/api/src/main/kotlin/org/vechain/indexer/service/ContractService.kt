@@ -16,13 +16,13 @@ open class ContractService(
         return contractRepoImpl.findById(HexUtil.normalise(address))
     }
 
-    open fun findByCreator(
-        creator: String,
+    open fun find(
+        creator: String?,
         contractType: ContractType?,
         pageable: Pageable
     ): List<Contract> {
         return contractRepoImpl.findByCreatorAndType(
-            HexUtil.normalise(creator),
+            if (creator != null) HexUtil.normalise(creator) else null,
             contractType,
             pageable
         )

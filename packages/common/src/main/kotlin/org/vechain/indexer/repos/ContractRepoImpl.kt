@@ -16,17 +16,14 @@ open class ContractRepoImpl(private val mongoTemplate: MongoTemplate) {
     }
 
     open fun findByCreatorAndType(
-        creator: String,
+        creator: String?,
         contractType: ContractType?,
         pageable: Pageable
     ): List<Contract> {
         val query = Query().with(pageable)
 
-        query.addCriteria(Criteria.where("creator").`is`(creator))
-
-        if (contractType != null) {
-            addTypeCriteria(contractType, query)
-        }
+        if (creator != null) query.addCriteria(Criteria.where("creator").`is`(creator))
+        if (contractType != null) addTypeCriteria(contractType, query)
 
         return mongoTemplate.find(query, Contract::class.java)
     }

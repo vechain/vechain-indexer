@@ -21,6 +21,7 @@ import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.AddressNullable
 
 @Tag(name = "Contract", description = "Query on chain contracts")
 @Validated
@@ -28,7 +29,7 @@ import org.vechain.indexer.validation.Address
 @RequestMapping(CONTRACTS_PATH)
 open class ContractController(private val contractService: ContractService) {
 
-    @GetMapping
+    @GetMapping("/address/{address}")
     @Operation(summary = "Get contract by address")
     @ApiResponses(
         value = [
@@ -43,12 +44,13 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x0000000000000000000000417574686f72697479"
     )
-    open fun getContractByAddress(@Address @RequestParam address: String): Contract {
-        return contractService.findByAddress(address) ?: throw ResourceNotFoundException("Contract not found")
+    open fun getContractByAddress(@Address @PathVariable address: String): Contract {
+        return contractService.findByAddress(address)
+            ?: throw ResourceNotFoundException("Contract with address $address was not found")
     }
 
-    @GetMapping("/creator")
-    @Operation(summary = "Get all deployed contracts by an origin address")
+    @GetMapping
+    @Operation(summary = "Get all deployed contracts (by optional creator or type)")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "400", description = "Invalid address supplied"),
@@ -71,7 +73,7 @@ open class ContractController(private val contractService: ContractService) {
         example = "VIP180"
     )
     open fun getContractsByCreator(
-        @Address @RequestParam address: String,
+        @AddressNullable @RequestParam(required = false) address: String?,
         @RequestParam(required = false) type: String?,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
@@ -79,7 +81,7 @@ open class ContractController(private val contractService: ContractService) {
     ): List<Contract> {
         validateContractType(type)
 
-        return contractService.findByCreator(
+        return contractService.find(
             address,
             ContractType.byNameIgnoreCaseOrNull(type),
             toPageable(page, size, direction, "blockNumber", "txId", "address")
