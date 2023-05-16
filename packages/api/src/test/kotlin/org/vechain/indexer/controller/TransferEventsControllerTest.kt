@@ -157,7 +157,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = Int.MAX_VALUE
         val result = mockMvc.get(
-            "$baseEndpoint?tokenAddress=0x0bc68FED18624cfad94699bdf0c4f8379b0696ca" +
+            "$baseEndpoint?tokenAddress=${"0x08f30373569af024d15eb47fd477a35db929eaac".uppercase()}" +
                     "&page=$page" +
                     "&size=$size"
         )
