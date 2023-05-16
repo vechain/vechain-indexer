@@ -14,6 +14,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
@@ -21,6 +22,7 @@ import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
+import java.math.BigInteger
 
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {
@@ -74,7 +76,7 @@ class TransferEventIndexerTest {
             that(transferEvent.txId).isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
             that(transferEvent.from).isEqualTo("0x0000000000000000000000000000000000000000")
             that(transferEvent.to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
-            that(transferEvent.value).isEqualTo("0x")
+            that(transferEvent.value).isEqualTo(BigInteger.ZERO)
             that(transferEvent.tokenAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
             that(transferEvent.topics).hasSize(4).and {
                 that(transferEvent.topics[0]).isEqualTo("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
@@ -98,7 +100,7 @@ class TransferEventIndexerTest {
 
         expectThat(transfers).hasSize(1)
 
-        val vetTransfer = transfers.first { it.isVetTransfer }
+        val vetTransfer = transfers.first { it.eventType == TransferEventType.VET }
 
         expect {
             that(vetTransfer.blockId).isEqualTo("0x0000000e554ca3da5e4c5d0294bdea429297f805c1ffc76453cf7d051655bcfb")
@@ -106,7 +108,7 @@ class TransferEventIndexerTest {
             that(vetTransfer.txId).isEqualTo("0x80f3aadef1e87d54e7e608c64b87df9ab69d631b063cfd60869e7a4574ae2d93")
             that(vetTransfer.from).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(vetTransfer.to).isEqualTo("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
-            that(vetTransfer.value).isEqualTo("0x989680")
+            that(vetTransfer.value).isEqualTo(BigInteger.valueOf(10000000))
             that(vetTransfer.tokenAddress).isNull()
             that(vetTransfer.topics).hasSize(0)
         }
@@ -119,9 +121,9 @@ class TransferEventIndexerTest {
         txId = "txId",
         from = "from",
         to = "to",
-        value = "value",
+        value = BigInteger.ONE,
         tokenAddress = "address",
         topics = emptyList(),
-        isVetTransfer = false
+        eventType = TransferEventType.VET
     )
 }
