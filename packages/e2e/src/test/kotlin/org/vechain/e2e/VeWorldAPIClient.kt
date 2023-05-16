@@ -79,7 +79,7 @@ object VeWorldAPIClient {
         address: String? = null,
         contractAddress: String? = null,
         page: Int = 0,
-        size: Int = 10
+        size: Int = Int.MAX_VALUE
     ): List<NFT> {
         return if (address != null && contractAddress != null)
             getRequest(
@@ -102,7 +102,7 @@ object VeWorldAPIClient {
         address: String,
         includeDelegated: Boolean = false,
         page: Int = 0,
-        size: Int = 10
+        size: Int = Int.MAX_VALUE
     ): List<Transaction> {
         return getRequest(
             "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
@@ -113,7 +113,7 @@ object VeWorldAPIClient {
     fun getDelegatedTransactions(
         address: String,
         page: Int = 0,
-        size: Int = 10
+        size: Int = Int.MAX_VALUE
     ): List<Transaction> {
         return getRequest("$API_URL/transactions/delegated?address=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
     }
@@ -122,7 +122,7 @@ object VeWorldAPIClient {
         address: String? = null,
         tokenAddress: String? = null,
         page: Int = 0,
-        size: Int = 10
+        size: Int = Int.MAX_VALUE
     ): List<TransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(
