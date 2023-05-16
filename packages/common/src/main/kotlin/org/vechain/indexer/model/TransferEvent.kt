@@ -5,6 +5,11 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
+import java.math.BigInteger
+
+enum class TransferEventType {
+    VET, FUNGIBLE_TOKEN, NFT
+}
 
 @Document(collection = "transfer_events")
 @CompoundIndex(name = "transfer_block_number_idx", def = "{'blockNumber': -1}")
@@ -18,15 +23,9 @@ data class TransferEvent @ConstructorBinding constructor(
     val from: String,
     @Indexed
     val to: String,
-    val value: String,
+    val value: BigInteger,
     @Indexed
     val tokenAddress: String?,
-    val isVetTransfer: Boolean,
     val topics: List<String>,
-) : IndexedDocument {
-    val isNFTTransfer: Boolean
-        get() = topics.size == 4
-
-    val isFungibleTransfer: Boolean
-        get() = topics.size == 3
-}
+    val eventType: TransferEventType
+) : IndexedDocument
