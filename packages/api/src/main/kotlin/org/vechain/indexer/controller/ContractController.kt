@@ -29,7 +29,7 @@ import org.vechain.indexer.validation.AddressNullable
 @RequestMapping(CONTRACTS_PATH)
 open class ContractController(private val contractService: ContractService) {
 
-    @GetMapping("/address/{address}")
+    @GetMapping("{address}")
     @Operation(summary = "Get contract by address")
     @ApiResponses(
         value = [

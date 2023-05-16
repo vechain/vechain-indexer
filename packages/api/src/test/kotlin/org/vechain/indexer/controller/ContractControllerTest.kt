@@ -26,14 +26,14 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
     inner class ContractIdQueries {
         @Test
         fun `get transactions for bad address should return BAD_REQUEST`() {
-            mockMvc.get("$BASE_ENDPOINT/address/badAddress")
+            mockMvc.get("$BASE_ENDPOINT/badAddress")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `valid address should return OKAY`() {
             val contractAddress = "0x7bfe63ac68e3c6fed9d1006953ee140f29e084c1"
-            val result = mockMvc.get("$BASE_ENDPOINT/address/$contractAddress")
+            val result = mockMvc.get("$BASE_ENDPOINT/$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -44,9 +44,8 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `valid address UPPERCASE`() {
-
             val contractAddress = "0x7BFE63AC68E3C6FED9D1006953EE140F29E084C1"
-            val result = mockMvc.get("$BASE_ENDPOINT/address/$contractAddress")
+            val result = mockMvc.get("$BASE_ENDPOINT/$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -58,7 +57,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         @Test
         fun `mixed case`() {
             val contractAddress = "0x7bFe63ac68e3c6Fed9d1006953Ee140f29e084c1"
-            val result = mockMvc.get("$BASE_ENDPOINT/address/$contractAddress")
+            val result = mockMvc.get("$BASE_ENDPOINT/$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -70,7 +69,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         @Test
         fun `no prefix hex`() {
             val contractAddress = "7bfe63ac68e3c6fed9d1006953ee140f29e084c1"
-            val result = mockMvc.get("$BASE_ENDPOINT/address/$contractAddress")
+            val result = mockMvc.get("$BASE_ENDPOINT/$contractAddress")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
