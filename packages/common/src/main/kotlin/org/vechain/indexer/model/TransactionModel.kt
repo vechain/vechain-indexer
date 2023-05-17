@@ -12,8 +12,9 @@ import org.web3j.protocol.core.methods.response.Log
 data class Transaction @ConstructorBinding constructor(
     @Id
     val id: String,
-    override val blockNumber: Long,
     override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val size: Long,
     val chainTag: Long,
     val blockRef: String,
@@ -36,8 +37,9 @@ data class Transaction @ConstructorBinding constructor(
 
     constructor(tx: TransactionData) : this(
         id = tx.id,
-        blockNumber = tx.blockNumber,
         blockId = tx.blockId,
+        blockNumber = tx.blockNumber,
+        blockTimestamp = tx.blockTimestamp,
         size = tx.size,
         chainTag = tx.chainTag,
         blockRef = tx.blockRef,

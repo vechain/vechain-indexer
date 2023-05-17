@@ -9,4 +9,7 @@ interface IndexedDocument {
 
     //To find the starting point on restarts
     val blockNumber: Long
+
+    //To access timestamp of operations contained in block
+    val blockTimestamp: Long
 }

@@ -1,21 +1,31 @@
 package org.vechain.indexer.service
 
 import org.springframework.data.domain.Pageable
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Contract
-import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.model.rest.ContractType
+import org.vechain.indexer.repos.ContractRepoImpl
 import org.vechain.indexer.utils.HexUtil
 
 @Service
-open class ContractService(private val contractRepository: ContractRepo) {
+open class ContractService(
+    private val contractRepoImpl: ContractRepoImpl
+) {
 
     open fun findByAddress(address: String): Contract? {
-        return contractRepository.findByIdOrNull(HexUtil.normalise(address))
+        return contractRepoImpl.findById(HexUtil.normalise(address))
     }
 
-    open fun findByCreator(creator: String, pageable: Pageable): List<Contract> {
-        return contractRepository.findAllByCreator(HexUtil.normalise(creator), pageable)
+    open fun find(
+        creator: String?,
+        contractType: ContractType?,
+        pageable: Pageable
+    ): List<Contract> {
+        return contractRepoImpl.findByCreatorAndType(
+            if (creator != null) HexUtil.normalise(creator) else null,
+            contractType,
+            pageable
+        )
     }
 
 }

@@ -86,7 +86,7 @@ abstract class Indexer(
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
-            val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
+            val timeSinceLastBlock = maxOf(currentEpoch - block.blockTimestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 1000
 
             logger.info(

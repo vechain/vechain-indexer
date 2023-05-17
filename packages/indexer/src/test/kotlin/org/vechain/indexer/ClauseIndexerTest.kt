@@ -55,6 +55,7 @@ internal class ClauseIndexerTest {
             that(singleClause).get(WrappedClause::blockId)
                 .isEqualTo("0x000000040ec070526cdd2405b0c1653e0431c20774263e6681eeb541103d8e95")
             that(singleClause).get(WrappedClause::blockNumber).isEqualTo(blockNumber)
+            that(singleClause).get(WrappedClause::blockTimestamp).isEqualTo(1680177332)
             that(singleClause).get(WrappedClause::txId)
                 .isEqualTo("0x9e8d79999a360990bc849a49bced505a66958f5707d6e7640398b596136c942d")
             that(singleClause).get(WrappedClause::index).isEqualTo(0)

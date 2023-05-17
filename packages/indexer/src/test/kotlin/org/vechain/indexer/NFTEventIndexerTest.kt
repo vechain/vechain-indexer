@@ -53,6 +53,7 @@ internal class NFTEventIndexerTest {
             that(nftEvent.owner).isEqualTo("0x361277d1b27504f36a3b33d3a52d1f8270331b8c")
             that(nftEvent.txId).isEqualTo("0x039d5f9bd7ffadd11a4f5888e88f459b7ff349c8c06e820f3102fa0779867ac6")
             that(nftEvent.blockNumber).isEqualTo(blockNumber)
+            that(nftEvent.blockTimestamp).isEqualTo(1680177343)
         }
     }
 

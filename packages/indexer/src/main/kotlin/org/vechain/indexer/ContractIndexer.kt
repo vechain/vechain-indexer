@@ -67,6 +67,7 @@ open class ContractIndexer(
                         address = contractAddress,
                         blockId = block.blockId,
                         blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
                         txId = tx.id,
                         creator = tx.origin,
                         master = master,
