@@ -10,6 +10,7 @@ import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
@@ -45,6 +46,22 @@ class TransferEventIndexerTest {
         val indexerStartingBlock = transferEventIndexer.getPreviousBlockNumber()
 
         expectThat(indexerStartingBlock).isEqualTo(transferEventsStartingBlock)
+    }
+
+    @Test
+    fun `can process semi-fungible transfer events`() {
+
+        val transfersSlot = slot<List<TransferEvent>>()
+        every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
+
+        transferEventIndexer.processBlock(BLOCK_10_SEMI_FUNGIBLE_TOKENS)
+
+        val transfers = transfersSlot.captured
+
+        expect {
+            that(transfers).hasSize(1)
+            that(transfers[0].eventType).isEqualTo(TransferEventType.SEMI_FUNGIBLE_TOKEN)
+        }
     }
 
     @Test

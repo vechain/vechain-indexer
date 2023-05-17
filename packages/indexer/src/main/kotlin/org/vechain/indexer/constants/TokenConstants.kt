@@ -1,6 +1,0 @@
-package org.vechain.indexer.constants
-
-
-const val MASTER_EVENT_SIGNATURE = "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
-
-const val TRANSFER_EVENT_SIGNATURE = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"

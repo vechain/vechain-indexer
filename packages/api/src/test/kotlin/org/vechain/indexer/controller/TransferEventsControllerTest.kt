@@ -1,5 +1,6 @@
 package org.vechain.indexer.controller
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.servlet.MockMvc
@@ -167,6 +168,82 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
 
         expectThat(transferEvents).hasSize(70)
+    }
+
+
+    @Nested
+    inner class FromTransferEvents {
+        @Test
+        fun `get transfer events for from address`() {
+            val page = 0
+            val size = Int.MAX_VALUE
+            val result = mockMvc.get(
+                "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+
+            expectThat(transferEvents).hasSize(4)
+        }
+
+        @Test
+        fun `get transfer events with contract address`() {
+            val page = 0
+            val size = Int.MAX_VALUE
+            val result = mockMvc.get(
+                "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" + "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+
+            expectThat(transferEvents).hasSize(1)
+        }
+    }
+
+    @Nested
+    inner class ToTransferEvents {
+        @Test
+        fun `get transfer events for to address`() {
+            val page = 0
+            val size = Int.MAX_VALUE
+            val result = mockMvc.get(
+                "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+
+            expectThat(transferEvents).hasSize(8)
+        }
+
+        @Test
+        fun `get transfer events with to and contract address`() {
+            val page = 0
+            val size = Int.MAX_VALUE
+            val result = mockMvc.get(
+                "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+
+            expectThat(transferEvents).hasSize(2)
+        }
     }
 
 }

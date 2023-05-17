@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
+import org.web3j.protocol.core.methods.response.Log
 
 @Document(collection = "transactions")
 @CompoundIndex(name = "tx_block_number_idx", def = "{'blockNumber': -1}")
@@ -66,7 +67,19 @@ data class TxEvent(
     val address: String,
     val topics: List<String>,
     val data: String
-)
+) {
+
+    /**
+     * This can be used for decoding events with Web3J
+     */
+    fun toLog(): Log {
+        val log = Log()
+        log.address = address
+        log.topics = topics
+        log.data = data
+        return log
+    }
+}
 
 data class TxTransfer(
     val sender: String,
