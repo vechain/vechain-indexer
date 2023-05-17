@@ -18,6 +18,7 @@ data class TransferEvent @ConstructorBinding constructor(
     val id: String,
     override val blockId: String,
     override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val txId: String,
     @Indexed
     val from: String,

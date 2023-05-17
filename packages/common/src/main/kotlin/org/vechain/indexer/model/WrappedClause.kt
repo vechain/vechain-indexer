@@ -14,6 +14,7 @@ data class WrappedClause @ConstructorBinding constructor(
     val id: String,
     override val blockId: String,
     override val blockNumber: Long,
+    override val blockTimestamp: Long,
     @Indexed
     val txId: String,
     val index: Int,
@@ -30,6 +31,7 @@ data class WrappedClause @ConstructorBinding constructor(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),
         blockId = block.blockId,
         blockNumber = block.blockNumber,
+        blockTimestamp = block.blockTimestamp,
         txId = tx.id,
         index = index,
         origin = tx.origin,

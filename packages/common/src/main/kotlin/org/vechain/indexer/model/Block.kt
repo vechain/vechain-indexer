@@ -17,9 +17,10 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     @Indexed(unique = true, direction = IndexDirection.DESCENDING)
     @JsonProperty("number")
     override val blockNumber: Long,
+    @JsonProperty("timestamp")
+    override val blockTimestamp: Long,
     val size: Long,
     val parentID: String,
-    val timestamp: Long,
     val gasLimit: Long,
     val beneficiary: String,
     val gasUsed: Long,
@@ -40,7 +41,7 @@ data class Block @ConstructorBinding @JsonCreator constructor(
         blockNumber = blockResponse.number,
         size = blockResponse.size,
         parentID = blockResponse.parentID,
-        timestamp = blockResponse.timestamp,
+        blockTimestamp = blockResponse.timestamp,
         gasLimit = blockResponse.gasLimit,
         beneficiary = blockResponse.beneficiary,
         gasUsed = blockResponse.gasUsed,
@@ -55,8 +56,9 @@ data class Block @ConstructorBinding @JsonCreator constructor(
         isFinalized = blockResponse.isFinalized,
         transactions = blockResponse.transactions.map {
             TransactionData(
-                blockNumber = blockResponse.number,
                 blockId = blockResponse.id,
+                blockNumber = blockResponse.number,
+                blockTimestamp = blockResponse.timestamp,
                 tx = it
             )
         }
