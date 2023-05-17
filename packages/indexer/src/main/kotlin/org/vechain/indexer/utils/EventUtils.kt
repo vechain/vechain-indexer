@@ -1,5 +1,6 @@
 package org.vechain.indexer.utils
 
+import org.slf4j.LoggerFactory
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.TxEvent
 import org.web3j.abi.TypeReference
@@ -12,6 +13,8 @@ import org.web3j.utils.Numeric
 import java.math.BigInteger
 
 object EventUtils {
+
+    private val logger = LoggerFactory.getLogger(EventUtils::class.java)
 
     data class TransferParameters(
         val from: String,
@@ -142,6 +145,7 @@ object EventUtils {
                 )
             )
         } catch (e: Exception) {
+            logger.warn("Error parsing single transfer event", e)
             return emptyList()
         }
     }
@@ -168,6 +172,7 @@ object EventUtils {
                 )
             }
         } catch (e: Exception) {
+            logger.warn("Error parsing batch transfer event", e)
             return emptyList()
         }
     }
