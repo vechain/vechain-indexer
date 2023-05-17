@@ -68,7 +68,7 @@ object VeWorldAPIClient {
     }
 
     fun getContract(address: String): Contract {
-        return getRequest("$API_URL/contracts/address/$address", CONTRACT_TYPE)
+        return getRequest("$API_URL/contracts/$address", CONTRACT_TYPE)
     }
 
     fun getContractForCreator(address: String, page: Int = 0, size: Int = Int.MAX_VALUE): List<Contract> {
