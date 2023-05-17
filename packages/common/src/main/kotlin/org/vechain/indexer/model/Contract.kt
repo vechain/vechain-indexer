@@ -13,6 +13,7 @@ data class Contract @ConstructorBinding constructor(
     val address: String,
     override val blockId: String,
     override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val txId: String,
     @Indexed
     val creator: String,

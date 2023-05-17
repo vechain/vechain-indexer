@@ -73,6 +73,7 @@ class TransferEventIndexerTest {
         expect {
             that(transferEvent.blockId).isEqualTo("0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e")
             that(transferEvent.blockNumber).isEqualTo(blockNumber)
+            that(transferEvent.blockTimestamp).isEqualTo(1680177343)
             that(transferEvent.txId).isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
             that(transferEvent.from).isEqualTo("0x0000000000000000000000000000000000000000")
             that(transferEvent.to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
@@ -105,6 +106,7 @@ class TransferEventIndexerTest {
         expect {
             that(vetTransfer.blockId).isEqualTo("0x0000000e554ca3da5e4c5d0294bdea429297f805c1ffc76453cf7d051655bcfb")
             that(vetTransfer.blockNumber).isEqualTo(blockNumber)
+            that(vetTransfer.blockTimestamp).isEqualTo(1681734922)
             that(vetTransfer.txId).isEqualTo("0x80f3aadef1e87d54e7e608c64b87df9ab69d631b063cfd60869e7a4574ae2d93")
             that(vetTransfer.from).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(vetTransfer.to).isEqualTo("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
@@ -113,17 +115,4 @@ class TransferEventIndexerTest {
             that(vetTransfer.topics).hasSize(0)
         }
     }
-
-    private fun buildTransferEvent(blockNumber: Long) = TransferEvent(
-        id = "id",
-        blockId = "blockId",
-        blockNumber = blockNumber,
-        txId = "txId",
-        from = "from",
-        to = "to",
-        value = BigInteger.ONE,
-        tokenAddress = "address",
-        topics = emptyList(),
-        eventType = TransferEventType.VET
-    )
 }

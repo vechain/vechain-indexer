@@ -92,8 +92,8 @@ internal class ContractIndexerTest {
         val erc1155: Contract? = contracts.find { it.isErc1155 && !it.isVip210 }
 
         expect {
-            that(vip210).isNotEqualTo(null)
-            that(erc1155).isNotEqualTo(null)
+            that(vip210).isNotNull()
+            that(erc1155).isNotNull()
         }
     }
 
@@ -156,6 +156,7 @@ internal class ContractIndexerTest {
             that(contract).get(Contract::blockId)
                 .isEqualTo("0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e")
             that(contract).get(Contract::blockNumber).isEqualTo(blockNumber)
+            that(contract).get(Contract::blockTimestamp).isEqualTo(1680177334)
             that(contract).get(Contract::txId).isEqualTo(txId)
             that(contract).get(Contract::creator).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(contract).get(Contract::master).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
