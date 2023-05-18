@@ -24,8 +24,7 @@ object EventUtils {
         val eventType: TransferEventType
     )
 
-
-    private val TRANSFERBATCH_EVENT = Event(
+    private val TRANSFER_BATCH_EVENT = Event(
         "TransferBatch",
         listOf(
             object : TypeReference<Address>(true) {},
@@ -35,7 +34,7 @@ object EventUtils {
             object : TypeReference<DynamicArray<Uint256>>() {})
     )
 
-    private val TRANSFERSINGLE_EVENT = Event(
+    private val TRANSFER_SINGLE_EVENT = Event(
         "TransferSingle",
         listOf<TypeReference<*>>(
             object : TypeReference<Address>(true) {},
@@ -128,7 +127,7 @@ object EventUtils {
 
     fun getSingleTransferParameters(event: TxEvent): List<TransferParameters> {
         try {
-            val eventParameters = Contract.staticExtractEventParameters(TRANSFERSINGLE_EVENT, event.toLog())
+            val eventParameters = Contract.staticExtractEventParameters(TRANSFER_SINGLE_EVENT, event.toLog())
 
             val tokenId = eventParameters.nonIndexedValues[0] as Uint256
             val amount = eventParameters.nonIndexedValues[1] as Uint256
@@ -154,7 +153,7 @@ object EventUtils {
     fun getBatchTransferParameters(event: TxEvent): List<TransferParameters> {
 
         try {
-            val eventParameters = Contract.staticExtractEventParameters(TRANSFERBATCH_EVENT, event.toLog())
+            val eventParameters = Contract.staticExtractEventParameters(TRANSFER_BATCH_EVENT, event.toLog())
 
             val tokenIds = eventParameters.nonIndexedValues[0] as DynamicArray<*>
             val amounts = eventParameters.nonIndexedValues[1] as DynamicArray<*>
