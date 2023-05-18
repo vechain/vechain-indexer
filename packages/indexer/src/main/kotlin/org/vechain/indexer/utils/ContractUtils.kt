@@ -1,7 +1,7 @@
 package org.vechain.indexer.utils
 
+import org.vechain.indexer.contracts.specifications.ContractSpecification
 import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.specifications.ContractSpecification
 import org.web3j.abi.EventEncoder
 import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric

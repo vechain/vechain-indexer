@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.vechain.indexer.specifications.ContractSpecification
-import org.vechain.indexer.specifications.Contracts
+import org.vechain.indexer.contracts.specifications.ContractSpecification
+import org.vechain.indexer.contracts.specifications.Contracts
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isTrue

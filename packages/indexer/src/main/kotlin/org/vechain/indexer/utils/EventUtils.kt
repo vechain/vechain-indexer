@@ -1,6 +1,9 @@
 package org.vechain.indexer.utils
 
 import org.slf4j.LoggerFactory
+import org.vechain.indexer.contracts.specifications.ERC1155Contract
+import org.vechain.indexer.contracts.specifications.Signatures
+import org.vechain.indexer.contracts.specifications.VIP210Contract
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.TxEvent
 import org.web3j.abi.TypeReference
@@ -12,76 +15,42 @@ import org.web3j.tx.Contract
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
+
+data class TransferParameters(
+    val from: String, val to: String, val tokenId: BigInteger?, val amount: BigInteger, val eventType: TransferEventType
+)
+
+
 object EventUtils {
 
     private val logger = LoggerFactory.getLogger(EventUtils::class.java)
 
-    data class TransferParameters(
-        val from: String,
-        val to: String,
-        val tokenId: BigInteger?,
-        val amount: BigInteger,
-        val eventType: TransferEventType
-    )
-
-    private val TRANSFER_BATCH_EVENT = Event(
-        "TransferBatch",
-        listOf(
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<DynamicArray<Uint256>>() {},
-            object : TypeReference<DynamicArray<Uint256>>() {})
-    )
-
-    private val TRANSFER_SINGLE_EVENT = Event(
-        "TransferSingle",
-        listOf<TypeReference<*>>(
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<Address>(true) {},
-            object : TypeReference<Uint256>() {},
-            object : TypeReference<Uint256>() {})
-    )
-
-    /**
-     * Transfer Event for both NFT and Fungible
-     */
-    private val TRANSFER_EVENT_SIGNATURE = ContractUtils.getEventSignature("Transfer(address,address,uint256)")
-
-    /**
-     * Transfer Event for semi-fungible
-     */
-    private val TRANSFER_SINGLE_EVENT_SIGNATURE =
-        ContractUtils.getEventSignature("TransferSingle(address,address,address,uint256,uint256)")
-
-    /**
-     * Transfer Event for semi-fungible
-     */
-    private val TRANSFER_BATCH_EVENT_SIGNATURE =
-        ContractUtils.getEventSignature("TransferBatch(address,address,address,uint256[],uint256[])")
-
     fun isNftTransferEvent(event: TxEvent): Boolean {
-        return event.topics.size == 4 && HexUtil.removePrefix(event.topics[0]) == TRANSFER_EVENT_SIGNATURE
+        return event.topics.size == 4 && HexUtil.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
     }
 
     fun isFungibleTransferEvent(event: TxEvent): Boolean {
-        return event.topics.size == 3 && HexUtil.removePrefix(event.topics[0]) == TRANSFER_EVENT_SIGNATURE
+        return event.topics.size == 3 && HexUtil.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
     }
 
     fun isTransferSingleEvent(event: TxEvent): Boolean {
-        return event.topics.isNotEmpty() && HexUtil.removePrefix(event.topics[0]) == TRANSFER_SINGLE_EVENT_SIGNATURE
+        if (event.topics.isEmpty()) return false
+
+        val topicSignature = HexUtil.removePrefix(event.topics[0])
+
+        return topicSignature == VIP210Contract.TRANSFER_SINGLE_EVENT || topicSignature == ERC1155Contract.TRANSFER_SINGLE_EVENT
     }
 
     fun isTransferBatchEvent(event: TxEvent): Boolean {
-        return event.topics.isNotEmpty() && HexUtil.removePrefix(event.topics[0]) == TRANSFER_BATCH_EVENT_SIGNATURE
+        if (event.topics.isEmpty()) return false
+
+        val topicSignature = HexUtil.removePrefix(event.topics[0])
+
+        return topicSignature == VIP210Contract.TRANSFER_BATCH_EVENT || topicSignature == ERC1155Contract.TRANSFER_BATCH_EVENT
     }
 
     fun isTransferEvent(event: TxEvent): Boolean {
-        return isNftTransferEvent(event)
-                || isFungibleTransferEvent(event)
-                || isTransferSingleEvent(event)
-                || isTransferBatchEvent(event)
+        return event.topics.isNotEmpty() && TRANSFER_SIGNATURES.contains(HexUtil.removePrefix(event.topics[0]))
     }
 
     fun getEventParams(event: TxEvent): List<TransferParameters> {
@@ -124,7 +93,6 @@ object EventUtils {
         )
     }
 
-
     fun getSingleTransferParameters(event: TxEvent): List<TransferParameters> {
         try {
             val eventParameters = Contract.staticExtractEventParameters(TRANSFER_SINGLE_EVENT, event.toLog())
@@ -148,7 +116,6 @@ object EventUtils {
             return emptyList()
         }
     }
-
 
     fun getBatchTransferParameters(event: TxEvent): List<TransferParameters> {
 
@@ -175,5 +142,28 @@ object EventUtils {
             return emptyList()
         }
     }
-
 }
+
+private val TRANSFER_BATCH_EVENT = Event(
+    "TransferBatch", listOf(object : TypeReference<Address>(true) {},
+        object : TypeReference<Address>(true) {},
+        object : TypeReference<Address>(true) {},
+        object : TypeReference<DynamicArray<Uint256>>() {},
+        object : TypeReference<DynamicArray<Uint256>>() {})
+)
+
+private val TRANSFER_SINGLE_EVENT = Event(
+    "TransferSingle", listOf<TypeReference<*>>(object : TypeReference<Address>(true) {},
+        object : TypeReference<Address>(true) {},
+        object : TypeReference<Address>(true) {},
+        object : TypeReference<Uint256>() {},
+        object : TypeReference<Uint256>() {})
+)
+
+private val TRANSFER_SIGNATURES = listOf(
+    Signatures.Common.TRANSFER_EVENT,
+    VIP210Contract.TRANSFER_BATCH_EVENT,
+    VIP210Contract.TRANSFER_SINGLE_EVENT,
+    ERC1155Contract.TRANSFER_BATCH_EVENT,
+    ERC1155Contract.TRANSFER_SINGLE_EVENT
+)

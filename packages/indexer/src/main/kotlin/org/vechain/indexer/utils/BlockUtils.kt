@@ -99,7 +99,7 @@ object BlockUtils {
                         id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"),
                         blockId = block.blockId,
                         blockNumber = block.blockNumber,
-                        blockTimestamp = block.blockTimestamp,txId = tx.id,
+                        blockTimestamp = block.blockTimestamp, txId = tx.id,
                         from = transfer.from,
                         to = transfer.to,
                         value = transfer.amount,

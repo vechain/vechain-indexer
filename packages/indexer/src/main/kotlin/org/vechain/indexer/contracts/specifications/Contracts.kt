@@ -1,4 +1,4 @@
-package org.vechain.indexer.specifications
+package org.vechain.indexer.contracts.specifications
 
 object Contracts {
     val VIP180 = VIP180Contract()

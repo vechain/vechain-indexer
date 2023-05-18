@@ -1,4 +1,4 @@
-package org.vechain.indexer.abi
+package org.vechain.indexer.contracts.abi
 
 data class FunctionParameter(
     val name: String,
