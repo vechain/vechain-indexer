@@ -1,0 +1,65 @@
+{
+  "number": 10,
+  "blockId": "0x0000000a6180cc6bd7c67d7d1baa467f4f16019b674e9ade3a97d67c80c9fcf7",
+  "size": 5137,
+  "parentID": "0x00000009db737bb5803e5cbe609c4e36915a82382273e0e9d8343b632937a4a1",
+  "timestamp": 1684330839,
+  "gasLimit": 10000000,
+  "beneficiary": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+  "gasUsed": 1780026,
+  "totalScore": 10,
+  "txsRoot": "0xafe4842b430c563c10128398860cb67fae2f2bcfaa4921731ebde05df237fe1f",
+  "txsFeatures": 1,
+  "stateRoot": "0x453dc8550b6b01fee1b30ab302a1abc9cba85e3d84a82a9317800f1d70cb3e23",
+  "receiptsRoot": "0x402685ffb93161c8fbad45e753cd48477c141045f30f29e82fe3ecb07820733b",
+  "com": false,
+  "signer": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+  "isTrunk": true,
+  "isFinalized": false,
+  "transactions": [
+    {
+      "id": "0x0508eb862e4c2f1b68253703282768c52abcca3ea80dc660a4e0422cb670a90f",
+      "blockId": "0x0000000a6180cc6bd7c67d7d1baa467f4f16019b674e9ade3a97d67c80c9fcf7",
+      "chainTag": 246,
+      "blockRef": "0x00000007b28b9525",
+      "expiration": 18,
+      "clauses": [
+        {
+          "to": "0xf5cfa7d8f766c904ef2b7abd229d6eea22fca665",
+          "value": "0x0",
+          "data": "0x731133e9000000000000000000000000361277d1b27504f36a3b33d3a52d1f8270331b8c000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000003c300000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "gasPriceCoef": 0,
+      "gas": 65304,
+      "origin": "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
+      "delegator": null,
+      "nonce": "0x290534d01f93d6be",
+      "dependsOn": null,
+      "size": 286,
+      "gasUsed": 50304,
+      "gasPayer": "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
+      "paid": "0x2ba1bb57a5d400000",
+      "reward": "0xd16eb67182600000",
+      "reverted": false,
+      "outputs": [
+        {
+          "contractAddress": null,
+          "events": [
+            {
+              "address": "0xf5cfa7d8f766c904ef2b7abd229d6eea22fca665",
+              "topics": [
+                "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
+                "0x000000000000000000000000361277d1b27504f36a3b33d3a52d1f8270331b8c",
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "0x000000000000000000000000361277d1b27504f36a3b33d3a52d1f8270331b8c"
+              ],
+              "data": "0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000003c3"
+            }
+          ],
+          "transfers": []
+        }
+      ]
+    }
+  ]
+}
