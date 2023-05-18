@@ -62,35 +62,7 @@ object VIP210ABI {
             )
         }
 
-    val isApprovedForAll: FunctionDefinition
-        get() {
-            return FunctionDefinition(
-                name = "isApprovedForAll",
-                inputs = listOf(
-                    FunctionParameter(
-                        name = "_owner",
-                        type = "address",
-                        components = listOf(),
-                        internalType = "address"
-                    ),
-                    FunctionParameter(
-                        name = "_operator",
-                        type = "address",
-                        components = listOf(),
-                        internalType = "address"
-                    )
-                ),
-                outputs = listOf(
-                    FunctionParameter(
-                        name = "",
-                        type = "bool",
-                        components = listOf(),
-                        internalType = "bool"
-                    )
-                ),
-                stateMutability = "view"
-            )
-        }
+    val isApprovedForAll: FunctionDefinition = CommonABI.isApprovedForAll
 
     val uri: FunctionDefinition
         get() {
