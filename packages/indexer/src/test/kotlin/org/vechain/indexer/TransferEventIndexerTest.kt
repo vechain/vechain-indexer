@@ -56,7 +56,7 @@ class TransferEventIndexerTest {
     fun `can process semi-fungible transfer events`() {
 
         val transfersSlot = slot<List<TransferEvent>>()
-        every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_10_SEMI_FUNGIBLE_TOKENS)
 
