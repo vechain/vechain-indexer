@@ -1,4 +1,4 @@
-package org.vechain.indexer.abi
+package org.vechain.indexer.contracts.abi
 
 object ERC20ABI {
     val totalSupply: FunctionDefinition = CommonABI.totalSupply

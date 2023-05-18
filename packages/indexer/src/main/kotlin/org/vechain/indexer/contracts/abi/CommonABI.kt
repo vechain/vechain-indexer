@@ -1,4 +1,4 @@
-package org.vechain.indexer.abi
+package org.vechain.indexer.contracts.abi
 
 object CommonABI {
     val name: FunctionDefinition
@@ -117,6 +117,37 @@ object CommonABI {
                         type = "uint256",
                         components = listOf(),
                         internalType = "uint256"
+                    )
+                ),
+                stateMutability = "view"
+            )
+        }
+
+
+    val isApprovedForAll: FunctionDefinition
+        get() {
+            return FunctionDefinition(
+                name = "isApprovedForAll",
+                inputs = listOf(
+                    FunctionParameter(
+                        name = "owner",
+                        type = "address",
+                        components = listOf(),
+                        internalType = "address"
+                    ),
+                    FunctionParameter(
+                        name = "operator",
+                        type = "address",
+                        components = listOf(),
+                        internalType = "address"
+                    )
+                ),
+                outputs = listOf(
+                    FunctionParameter(
+                        name = "",
+                        type = "bool",
+                        components = listOf(),
+                        internalType = "bool"
                     )
                 ),
                 stateMutability = "view"

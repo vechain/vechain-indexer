@@ -1,4 +1,4 @@
-package org.vechain.indexer.specifications
+package org.vechain.indexer.contracts.specifications
 
 interface ContractSpecification {
 

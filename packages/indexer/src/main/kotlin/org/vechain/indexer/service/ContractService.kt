@@ -3,9 +3,9 @@ package org.vechain.indexer.service
 import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
-import org.vechain.indexer.abi.*
+import org.vechain.indexer.contracts.abi.*
+import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.model.Clause
-import org.vechain.indexer.specifications.Contracts
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ClauseUtils
 import org.vechain.indexer.utils.ContractUtils
