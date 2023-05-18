@@ -1,9 +1,9 @@
 package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Block
-
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
@@ -17,8 +17,9 @@ import kotlin.jvm.optionals.getOrNull
 open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
-    private val contractRepo: ContractRepo
-) : Indexer(thorService, contractRepo) {
+    private val contractRepo: ContractRepo,
+    mongoTemplate: MongoTemplate,
+) : Indexer(thorService, contractRepo, mongoTemplate) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
@@ -57,7 +58,7 @@ open class ContractIndexer(
                 if (contract != null) {
                     contract.previousMasters.add(contract.master)
                     contract.master = master
-                    contracts.add(contract)
+                    contractRepo.save(contract)
                 }
 
             } else {
@@ -85,7 +86,7 @@ open class ContractIndexer(
 
         }
 
-        if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
+        if (contracts.isNotEmpty()) insertAll(contracts, Contract::class.java)
     }
 
 }

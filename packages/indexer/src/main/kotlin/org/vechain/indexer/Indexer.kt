@@ -2,9 +2,11 @@ package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
+import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.repos.BaseIndexedRepo
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
@@ -19,6 +21,7 @@ const val INITIAL_BACKOFF_PERIOD = 10000L
 abstract class Indexer(
     private val thorService: ThorService,
     private val repo: BaseIndexedRepo<*>,
+    private val mongoTemplate: MongoTemplate,
     private val numBlocksToPurge: Long = 12L
 ) {
 
@@ -129,6 +132,13 @@ abstract class Indexer(
 
     fun getPreviousBlockNumber(): Long {
         return repo.getMaxBlockNumber() ?: -1
+    }
+
+    /**
+     * Insert a list of indexed documents into a collection in a single batch write
+     */
+    fun insertAll(documents: List<IndexedDocument>, documentType: Class<*>) {
+        mongoTemplate.insert(documents, documentType)
     }
 
     private fun getPreviousBlockId(): String {
