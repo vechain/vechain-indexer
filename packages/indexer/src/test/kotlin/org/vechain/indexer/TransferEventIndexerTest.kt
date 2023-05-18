@@ -10,6 +10,7 @@ import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
@@ -33,6 +34,9 @@ class TransferEventIndexerTest {
 
     @MockK
     lateinit var transferEventRepo: TransferEventRepo
+
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
 
     @InjectMockKs
     lateinit var transferEventIndexer: TransferEventIndexer
@@ -69,7 +73,7 @@ class TransferEventIndexerTest {
 
         transferEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
-        verify { transferEventRepo wasNot Called }
+        verify { mongoTemplate wasNot Called }
     }
 
     @Test
@@ -77,7 +81,7 @@ class TransferEventIndexerTest {
         val blockNumber = 8L
 
         val transfersSlot = slot<List<TransferEvent>>()
-        every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
@@ -110,7 +114,7 @@ class TransferEventIndexerTest {
         val blockNumber = 14L
 
         val transfersSlot = slot<List<TransferEvent>>()
-        every { transferEventRepo.saveAll(capture(transfersSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_14_VET_TRANSFER)
 
