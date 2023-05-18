@@ -50,6 +50,16 @@
     "_class": "org.vechain.indexer.model.NFT"
   },
   {
+    "id": "1ce3bd66109d27e0e32549b5cbb31fae51de76ae",
+    "tokenId": "2",
+    "contractAddress": "0xb44111d908ad0af0949a20a130429f92a4cc0dbf",
+    "owner": "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0",
+    "txId": "0x9e327578d3bf77fb0ab77fd439b6b40cfce7c8f7fb4d731fc07ea17c90e1925d",
+    "blockNumber": 17,
+    "blockId": "0x00000011b347fd82354d66867d0e9a9a207eb2fbac21cbe85388878193935984",
+    "_class": "org.vechain.indexer.model.NFT"
+  },
+  {
     "id": "481053a4bbe486576c58ba180a3bbb71a575ec68",
     "tokenId": "4",
     "contractAddress": "0x08f30373569af024d15eb47fd477a35db929eaac",

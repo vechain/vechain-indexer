@@ -88,15 +88,10 @@ open class NFTController(private val nftService: NFTService) {
     )
     open fun getContractsByNFTOwner(
         @Address @RequestParam owner: String,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<String> {
         return nftService.findContractsByNFTOwner(
-            owner,
-            toPageable(page, size, direction, "blockNumber", "txId", "id")
+            owner
         )
-            .map { it.contractAddress }
     }
 
 }

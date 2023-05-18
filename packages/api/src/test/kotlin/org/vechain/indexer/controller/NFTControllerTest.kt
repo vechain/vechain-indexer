@@ -189,7 +189,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get contracts by NFT owner - valid owner address with NFTs owned`() {
             val res = mockMvc.get(
-                "$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db5" + "&size=${Int.MAX_VALUE}"
+                "$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db5"
             ).andExpect { status { isOk() } }.andReturn()
 
             val contracts =
@@ -204,44 +204,19 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get contracts by NFT owner - valid owner address with NFTs owned - paginated search with size`() {
-            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
-            val size = 1
+        fun `get contracts for NFT owner - valid owner address with multiple NFTS - ensure no duplicate contract addresses`() {
 
             val res = mockMvc.get(
-                "$baseEndpoint/contracts" + "?owner=$owner" + "&size=$size"
+                "$baseEndpoint/contracts?owner=0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
             ).andExpect { status { isOk() } }.andReturn()
+
             val contracts =
                 objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
 
             expect {
-                that(contracts).hasSize(size)
-                that(contracts.first()).isContainedIn(
-                    listOf(
-                        "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
-                    )
-                )
-            }
-        }
-
-        @Test
-        fun `get contracts by NFT owner - valid owner address with NFTs owned - paginated search with page & size`() {
-            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
-            val page = 1
-            val size = 1
-
-            val res = mockMvc.get(
-                "$baseEndpoint/contracts" + "?owner=$owner" + "&page=$page" + "&size=$size"
-            ).andExpect { status { isOk() } }.andReturn()
-            val contracts =
-                objectMapper.readValue(res.response.contentAsString, object : TypeReference<List<String>>() {})
-
-            expect {
-                that(contracts).hasSize(size)
-                that(contracts.first()).isContainedIn(
-                    listOf(
-                        "0x91f4afa1cd72ee671ad2bf87ea0c69e464726b14", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
-                    )
+                that(contracts).hasSize(2)
+                that(contracts).containsExactlyInAnyOrder(
+                    "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
                 )
             }
         }
