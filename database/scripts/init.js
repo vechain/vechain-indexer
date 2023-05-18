@@ -1,5 +1,5 @@
 // Initialise Replica Set
-rs.initiate()
+//rs.initiate()
 
 // Create database
 db = db.getSiblingDB("vechain");
