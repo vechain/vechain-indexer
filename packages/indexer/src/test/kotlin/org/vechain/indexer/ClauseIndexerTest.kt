@@ -7,6 +7,7 @@ import io.mockk.junit5.MockKExtension
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
@@ -30,6 +31,9 @@ internal class ClauseIndexerTest {
     @MockK
     lateinit var clauseRepo: ClauseRepo
 
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
+
     @InjectMockKs
     lateinit var clauseIndexer: ClauseIndexer
 
@@ -38,7 +42,7 @@ internal class ClauseIndexerTest {
         val blockNumber = 4L
 
         val clausesSlot = slot<List<WrappedClause>>()
-        every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(clausesSlot), WrappedClause::class.java) } returns mutableListOf()
 
         clauseIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
 
@@ -89,7 +93,7 @@ internal class ClauseIndexerTest {
     fun `Extract clauses from block - Multiple clauses`() {
 
         val clausesSlot = slot<List<WrappedClause>>()
-        every { clauseRepo.saveAll(capture(clausesSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(clausesSlot), WrappedClause::class.java) } returns mutableListOf()
 
         clauseIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
@@ -104,7 +108,7 @@ internal class ClauseIndexerTest {
 
         clauseIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
-        verify { clauseRepo wasNot Called }
+        verify { mongoTemplate wasNot Called }
     }
 
 }

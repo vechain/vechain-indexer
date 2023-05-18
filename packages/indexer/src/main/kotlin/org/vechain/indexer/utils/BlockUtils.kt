@@ -3,7 +3,6 @@ package org.vechain.indexer.utils
 import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.model.*
 import org.web3j.utils.Numeric
-import java.math.BigInteger
 
 object BlockUtils {
 
@@ -91,33 +90,25 @@ object BlockUtils {
         block: Block,
         outputIndex: Int
     ): List<TransferEvent> {
-        return ContractUtils.findTransferEvents(events).mapIndexed { eventIndex, event ->
+        return events
+            .filter { EventUtils.isTransferEvent(it) }.flatMapIndexed { eventIndex, event ->
+                val transfers = EventUtils.getEventParams(event)
 
-            val value: BigInteger
-            val type: TransferEventType
-
-            if (event.topics.size == 4) {
-                value = Numeric.decodeQuantity(event.topics[3])
-                type = TransferEventType.NFT
-            } else {
-                value = Numeric.decodeQuantity(event.data)
-                type = TransferEventType.FUNGIBLE_TOKEN
+                transfers.mapIndexed { transferIndex, transfer ->
+                    TransferEvent(
+                        id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"),
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,txId = tx.id,
+                        from = transfer.from,
+                        to = transfer.to,
+                        value = transfer.amount,
+                        topics = event.topics,
+                        tokenAddress = event.address,
+                        eventType = transfer.eventType
+                    )
+                }
             }
-
-            TransferEvent(
-                id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}"),
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
-                txId = tx.id,
-                from = AddressUtil.decode(event.topics[1]),
-                to = AddressUtil.decode(event.topics[2]),
-                value = value,
-                tokenAddress = event.address,
-                topics = event.topics,
-                eventType = type
-            )
-        }
     }
 
     private fun extractVetTransfers(

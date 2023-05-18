@@ -13,7 +13,10 @@ spring:
 logging:
   level:
     ROOT: INFO
-    org.vechain: ${APP_LOG_LEVEL:INFO}
+    org:
+      vechain: ${APP_LOG_LEVEL:INFO}
+      springframework:
+        data: DEBUG
 
 management:
   endpoints:

@@ -9,6 +9,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.model.Transaction
@@ -27,6 +28,9 @@ internal class TransactionIndexerTest {
     @MockK
     lateinit var transactionRepo: TransactionRepo
 
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
+
     @InjectMockKs
     lateinit var transactionIndexer: TransactionIndexer
 
@@ -35,14 +39,14 @@ internal class TransactionIndexerTest {
 
         transactionIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
-        verify { transactionRepo wasNot Called }
+        verify { mongoTemplate wasNot Called }
     }
 
     @Test
     fun `Process block - With transactions`() {
 
         val transactionsSlot = slot<List<Transaction>>()
-        every { transactionRepo.saveAll(capture(transactionsSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(transactionsSlot), Transaction::class.java) } returns mutableListOf()
 
 
         transactionIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)

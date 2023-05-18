@@ -18,4 +18,12 @@ interface TransferEventRepo : BaseIndexedRepo<TransferEvent>, PagingAndSortingRe
 
     fun findByTokenAddress(contractAddress: String, pageable: Pageable): List<TransferEvent>
 
+    fun findByToAndTokenAddress(to: String, contractAddress: String, pageable: Pageable): List<TransferEvent>
+
+    fun findByTo(to: String, pageable: Pageable): List<TransferEvent>
+
+    fun findByFrom(from: String, pageable: Pageable): List<TransferEvent>
+
+    fun findByFromAndTokenAddress(from: String, contractAddress: String, pageable: Pageable): List<TransferEvent>
+
 }

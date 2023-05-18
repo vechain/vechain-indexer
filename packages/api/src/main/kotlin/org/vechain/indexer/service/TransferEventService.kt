@@ -25,4 +25,24 @@ open class TransferEventService(private val transferEventRepo: TransferEventRepo
         val tokenAddressNorm = HexUtil.normalise(tokenAddress)
         return transferEventRepo.findByTokenAddress(tokenAddressNorm, toPageable)
     }
+
+    fun findByTo(to: String, tokenAddress: String?, pageable: Pageable): List<TransferEvent> {
+        val toNorm = HexUtil.normalise(to)
+        return if (tokenAddress != null) {
+            val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+            transferEventRepo.findByToAndTokenAddress(toNorm, tokenAddressNorm, pageable)
+        } else {
+            transferEventRepo.findByTo(toNorm, pageable)
+        }
+    }
+
+    fun findByFrom(from: String, tokenAddress: String?, pageable: Pageable): List<TransferEvent> {
+        val fromNorm = HexUtil.normalise(from)
+        return if (tokenAddress != null) {
+            val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+            transferEventRepo.findByFromAndTokenAddress(fromNorm, tokenAddressNorm, pageable)
+        } else {
+            transferEventRepo.findByFrom(fromNorm, pageable)
+        }
+    }
 }

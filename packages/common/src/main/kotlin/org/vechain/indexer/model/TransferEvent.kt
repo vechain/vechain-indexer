@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 import java.math.BigInteger
 
 enum class TransferEventType {
-    VET, FUNGIBLE_TOKEN, NFT
+    VET, FUNGIBLE_TOKEN, NFT, SEMI_FUNGIBLE_TOKEN
 }
 
 @Document(collection = "transfer_events")
