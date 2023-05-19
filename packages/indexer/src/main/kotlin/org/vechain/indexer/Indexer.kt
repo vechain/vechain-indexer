@@ -25,8 +25,8 @@ abstract class Indexer(
     private val numBlocksToPurge: Long = 12L
 ) {
 
-    @Value("\${genesis.block.id:0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6}")
-    protected val genesisBlockId: String = "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6"
+    @Value("\${thor.genesis.block.id}")
+    protected var genesisBlockId: String? = null
 
     val name: String
         get() = this.javaClass.simpleName
@@ -38,11 +38,12 @@ abstract class Indexer(
         private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
-    private var previousBlockId: String = genesisBlockId
+    private var previousBlockId = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
         currentBlockNumber = getPreviousBlockNumber() + 1
+        previousBlockId = getPreviousBlockId()
 
         // As a precaution assume a reorg happened
         resolveReorg()
@@ -134,6 +135,10 @@ abstract class Indexer(
         return repo.getMaxBlockNumber() ?: -1
     }
 
+    private fun getPreviousBlockId(): String? {
+        return repo.getMaxBlockId() ?: genesisBlockId
+    }
+
     /**
      * Insert a list of indexed documents into a collection in a single batch write
      */
@@ -141,9 +146,6 @@ abstract class Indexer(
         mongoTemplate.insert(documents, documentType)
     }
 
-    private fun getPreviousBlockId(): String {
-        return repo.getMaxBlockId() ?: genesisBlockId
-    }
 
     abstract fun processBlock(block: Block)
 
