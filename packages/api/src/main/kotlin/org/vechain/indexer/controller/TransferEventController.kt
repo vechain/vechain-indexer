@@ -52,14 +52,13 @@ open class TransferEventController(private val transferEventService: TransferEve
     ): List<TransferEvent> {
 
         val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
-        return if (address != null && tokenAddress != null) {
-            transferEventService.find(address, tokenAddress, pageable)
-        } else if (address != null) {
-            transferEventService.findByAddress(address, pageable)
-        } else if (tokenAddress != null) {
-            transferEventService.findByTokenAddress(tokenAddress, pageable)
-        } else
-            throw BadRequestException("Either address or tokenAddress must be provided")
+
+        return when {
+            address != null && tokenAddress != null -> transferEventService.find(address, tokenAddress, pageable)
+            address != null -> transferEventService.findByAddress(address, pageable)
+            tokenAddress != null -> transferEventService.findByTokenAddress(tokenAddress, pageable)
+            else -> throw BadRequestException("Either address or tokenAddress must be provided")
+        }
     }
 
 

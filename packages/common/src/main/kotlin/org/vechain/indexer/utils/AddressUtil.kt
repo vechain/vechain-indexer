@@ -30,9 +30,8 @@ object AddressUtil {
 
         val address = FunctionReturnDecoder.decodeAddress(data)
 
-        if (isNotValid(address))
-            throw IllegalArgumentException("Failed to decode address for data: $data")
-
+        require(isValid(address)) { "Failed to decode address for data: $data" }
+        
         return address
     }
 
