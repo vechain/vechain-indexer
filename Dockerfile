@@ -1,8 +1,8 @@
-FROM gradle:7.6.1-jdk17 AS builder
+FROM eclipse-temurin:17 AS builder
 
 ARG VEWORLD_PACKAGE
 
-WORKDIR /opt/app
+WORKDIR /usr/app
 
 COPY gradle ./gradle
 COPY gradlew ./
@@ -27,8 +27,8 @@ FROM gcr.io/distroless/java17@sha256:78d2c280d0914978844d2a2dd2b5315acd437e33c69
 ARG VEWORLD_PACKAGE
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
-WORKDIR /opt/app
+WORKDIR /usr/app
 
-COPY --from=builder /opt/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*-SNAPSHOT.jar /opt/app/app.jar
+COPY --from=builder /usr/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*-SNAPSHOT.jar /usr/app/app.jar
 
-ENTRYPOINT ["java", "-Djdk.tls.client.protocols=TLSv1.2", "-jar", "./app.jar", "-XX:+UseContainerSupport"]
+CMD ["/usr/app/app.jar"]
