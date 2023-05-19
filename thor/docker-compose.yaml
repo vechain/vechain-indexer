@@ -13,7 +13,7 @@ services:
       interval: 2s
       retries: 30
     volumes:
-      - thor-volume:/root/.org.vechain.thor
+      - thor-volume:/data/thor
     networks:
       - vechain-thor
 
