@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17 AS builder
+FROM gradle:7.6.1-jdk17 AS builder
 
 ARG VEWORLD_PACKAGE
 
