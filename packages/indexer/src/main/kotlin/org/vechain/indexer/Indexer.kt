@@ -38,11 +38,12 @@ abstract class Indexer(
         private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
-    private var previousBlockId = getPreviousBlockId()
+    private var previousBlockId = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
         currentBlockNumber = getPreviousBlockNumber() + 1
+        previousBlockId = getPreviousBlockId()
 
         // As a precaution assume a reorg happened
         resolveReorg()
