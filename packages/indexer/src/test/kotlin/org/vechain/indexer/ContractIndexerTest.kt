@@ -43,6 +43,7 @@ internal class ContractIndexerTest {
             BLOCK_5_VIP180_CONTRACTS,
             "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
@@ -79,6 +80,7 @@ internal class ContractIndexerTest {
             BLOCK_42_ERC1155_VIP210_CONTRACTS,
             "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
@@ -108,6 +110,7 @@ internal class ContractIndexerTest {
             BLOCK_6_VIP181_CONTRACTS,
             "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
@@ -140,6 +143,7 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
@@ -166,10 +170,10 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun `Update contract master when no contract data`() {
+    fun `Update contract master when contract already indexed`() {
 
-        // Mock data returned for block#16: block, null account code & existing mongo document
-        every { thorService.getAccountCode(any()) } returns "0x"
+        // Mock data returned for block#16: block, any account code & existing mongo document
+        every { thorService.getAccountCode(any()) } returns "any account code"
         every { contractRepo.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
