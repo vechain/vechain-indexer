@@ -5,6 +5,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.BlockRepo
@@ -16,6 +17,7 @@ internal class ReOrgIndexerTest {
 
     private val thorService: ThorService = mockk()
     private val repo: BlockRepo = mockk()
+    private val mongoTemplate: MongoTemplate = mockk()
 
     fun mockBlock(num: Long, parentId: String): Block {
         return Block(
@@ -55,6 +57,10 @@ internal class ReOrgIndexerTest {
                 repo.getMaxBlockNumber()
             } returns null andThen 37
 
+            every {
+                mongoTemplate.insertAll(any<List<Block>>())
+            } returns emptyList<Block>()
+
             //Set up capture slots
             val startBlock = slot<Long>()
             val endBlock = slot<Long>()
@@ -65,7 +71,7 @@ internal class ReOrgIndexerTest {
                 println("Deleting blocks")
             }
 
-            val indexer = BlockIndexer(thorService, repo)
+            val indexer = BlockIndexer(thorService, repo, mongoTemplate)
 
             //Mock 50 blocks to process
             for (i in 0..51) {
@@ -85,7 +91,7 @@ internal class ReOrgIndexerTest {
                     mockBlock(51, "0x50")
 
             every { thorService.getBlock(52) } throws BlockNotFoundException("Block not found", 52)
-
+            
             // Start the indexer
             Thread {
                 indexer.start()
