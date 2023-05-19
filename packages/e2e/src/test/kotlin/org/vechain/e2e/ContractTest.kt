@@ -18,7 +18,8 @@ class ContractTest {
             size = Int.MAX_VALUE,
         )
 
-        expectThat(contracts).hasSize(8)
+        // 8 regular contract deployments + 2 deployments from a factory contract
+        expectThat(contracts).hasSize(10)
 
         contracts.forEach { contract ->
             assertValidContract(contract)

@@ -51,7 +51,7 @@ open class ContractIndexer(
             val master = AddressUtil.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
-            val contract = clause.to?.let { contractRepo.findById(it).getOrNull() }
+            val contract = contractRepo.findById(contractAddress).getOrNull()
 
             // If the contract is already indexed, update the master
             if (contract != null) {
