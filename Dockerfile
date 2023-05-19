@@ -1,4 +1,4 @@
-FROM eclipse-temurin:19 AS builder
+FROM eclipse-temurin:17 AS builder
 
 ARG VEWORLD_PACKAGE
 
