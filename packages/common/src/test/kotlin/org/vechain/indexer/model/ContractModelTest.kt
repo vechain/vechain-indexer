@@ -14,9 +14,7 @@ class ContractModelTest {
         val projectDir = System.getProperty("user.dir")
         val rootDir = projectDir.replace("packages/common", "")
         val contractsPath = "${rootDir}database/scripts/built-in-contracts.json"
-
-        object : TypeReference<List<Contract>>() {}
-
+        
         val defaultContractsFile = File(contractsPath)
         val contractsJson = defaultContractsFile.readText(Charsets.UTF_8)
 
