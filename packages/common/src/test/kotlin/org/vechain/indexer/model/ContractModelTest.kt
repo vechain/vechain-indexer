@@ -10,7 +10,7 @@ import java.io.File
 class ContractModelTest {
 
     @Test
-    fun `contract models should be up to date`() {
+    fun `default contracts should be up to date`() {
         val projectDir = System.getProperty("user.dir")
         val rootDir = projectDir.replace("packages/common", "")
         val contractsPath = "${rootDir}database/scripts/built-in-contracts.json"
