@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
@@ -22,6 +23,7 @@ import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.TransactionId
 
+@Profile("transaction-indexer")
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController

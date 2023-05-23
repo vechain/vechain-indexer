@@ -9,7 +9,7 @@ import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 
-@Profile("transfer-event-indexer", "prod")
+@Profile("transfer-event-indexer")
 @Component
 open class TransferEventIndexer(
     thorService: ThorService,

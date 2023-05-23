@@ -1,11 +1,13 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.repos.ClauseRepo
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("clause-indexer")
 @Service
 open class ClauseService(private val clauseRepo: ClauseRepo) {
 

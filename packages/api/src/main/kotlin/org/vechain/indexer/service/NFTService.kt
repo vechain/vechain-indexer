@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -9,6 +10,7 @@ import org.vechain.indexer.model.NFT
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("nft-event-indexer")
 @Service
 open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: MongoTemplate) {
 

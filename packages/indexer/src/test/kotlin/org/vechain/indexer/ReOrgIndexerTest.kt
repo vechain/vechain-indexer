@@ -91,7 +91,7 @@ internal class ReOrgIndexerTest {
                     mockBlock(51, "0x50")
 
             every { thorService.getBlock(52) } throws BlockNotFoundException("Block not found", 52)
-            
+
             // Start the indexer
             Thread {
                 indexer.start()

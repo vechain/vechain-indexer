@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -16,6 +17,7 @@ import org.vechain.indexer.model.rest.ExecuteCodeRequest
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.model.rest.ExpandedBlockResponse
 
+@Profile("block-indexer", "block-proxy")
 @Service
 class ThorService(private val thorRest: WebClient) {
 
@@ -31,6 +33,20 @@ class ThorService(private val thorRest: WebClient) {
             ?: throw BlockNotFoundException(blockNumber = number)
 
         logger.debug("Block $number found")
+
+        return Block(response)
+    }
+
+    fun getBlock(blockId: String): Block {
+        val response = thorRest
+            .get()
+            .uri("/blocks/$blockId?expanded=true")
+            .retrieve()
+            .bodyToMono(ExpandedBlockResponse::class.java)
+            .block()
+            ?: throw BlockNotFoundException(blockId = blockId)
+
+        logger.debug("Block $blockId found")
 
         return Block(response)
     }

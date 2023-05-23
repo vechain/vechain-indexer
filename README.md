@@ -81,6 +81,22 @@ make db-all
 make thor-all
 ```
 
+## Features
+
+There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolation or all together. There is no
+dependency between indexers for this reason. Each indexer and API pair can be enabled using the corresponding spring
+profile.
+
+- `blocks` - enabled with `block-indexer` profile or `block-proxy` to proxy to the Thor node
+- `transactions` - enabled with `transaction-indexer`
+- `clauses` - enabled with `clause-indexer`
+- `contracts` - enabled with `contract-indexer`
+- `nft-events` - enabled with `nft-event-indexer`
+- `transfer-events` - enabled with `transfer-event-indexer`
+
+As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
+want the convenience of the Block endpoints without the overhead of indexing the data.
+
 ## Testing
 
 - Run all the tests:
