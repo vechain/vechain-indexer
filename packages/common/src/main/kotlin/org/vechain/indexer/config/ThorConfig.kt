@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Profile("blocks", "blocks-proxy")
 @Configuration
-open class ThorConfig(@Value("\${thor.url}") private val thorUrl: String) {
+open class ThorConfig(@Value("\${thor.url:http://localhost:8669}") private val thorUrl: String) {
 
     @Bean
     open fun thorRest(): WebClient {
