@@ -39,7 +39,7 @@
 
 ### Option 1: Docker only
 
-- Copy `.env.example` to `.env` and fill in the values for your environment. They should work as-is for docker
+- Copy env files for the two packages `./package/<package>/.env.example` to `./package/<package>/.env` and fill in the values for your environment. They should work as-is for docker
 
 - Run:
 
@@ -49,7 +49,7 @@ make start
 
 ### Option 2: Docker + IntelliJ (Recommended for debugging)
 
-- No need to copy `.env.example` to `.env` if you are using IntelliJ. The default variables should connect to the
+- No need to copy the environment files if you are using IntelliJ. The default variables should connect to the
   infrastructure using localhost variables
 - Run:
 
