@@ -28,6 +28,7 @@ nbdist/
 
 mvnw
 mvnw.cmd
+.env
 .DS_Store
 
 ### Build stuff

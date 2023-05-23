@@ -1,11 +1,13 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("transfer-events")
 @Service
 open class TransferEventService(private val transferEventRepo: TransferEventRepo) {
 

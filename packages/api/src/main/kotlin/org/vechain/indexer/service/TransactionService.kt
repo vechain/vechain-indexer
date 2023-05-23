@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -7,6 +8,7 @@ import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("transactions")
 @Service
 open class TransactionService(private val transactionRepository: TransactionRepo) {
 

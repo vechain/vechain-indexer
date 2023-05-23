@@ -9,7 +9,7 @@ import org.vechain.indexer.repos.ClauseRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 
-@Profile("clause-indexer", "prod")
+@Profile("clauses")
 @Component
 open class ClauseIndexer(
     thorService: ThorService,

@@ -39,7 +39,7 @@
 
 ### Option 1: Docker only
 
-- Copy `.env.example` to `.env.local` and fill in the values for your environment. They should work as-is for docker
+- Copy env files for the two packages `./package/<package>/.env.example` to `./package/<package>/.env` and fill in the values for your environment. They should work as-is for docker
 
 - Run:
 
@@ -49,7 +49,7 @@ make start
 
 ### Option 2: Docker + IntelliJ (Recommended for debugging)
 
-- No need to copy `.env.example` to `.env` if you are using IntelliJ. The default variables should connect to the
+- No need to copy the environment files if you are using IntelliJ. The default variables should connect to the
   infrastructure using localhost variables
 - Run:
 
@@ -80,6 +80,22 @@ make db-all
 ```bash
 make thor-all
 ```
+
+## Features
+
+There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolation or all together. There is no
+dependency between indexers for this reason. Each indexer and API pair can be enabled using the corresponding spring
+profile.
+
+- `blocks` - enabled with `blocks` profile or `blocks-proxy` to proxy to the Thor node
+- `transactions` - enabled with `transactions` profile
+- `clauses` - enabled with `clauses` profile
+- `contracts` - enabled with `contracts` profile
+- `nft-events` - enabled with `nft-events` profile
+- `transfer-events` - enabled with `transfer-events` profile
+
+As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
+want the convenience of the Block endpoints without the overhead of indexing the data.
 
 ## Testing
 

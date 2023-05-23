@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.exception.BadRequestException
@@ -14,6 +15,7 @@ import org.vechain.indexer.model.Block
 import org.vechain.indexer.service.BlockService
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("blocks", "blocks-proxy")
 @Tag(name = "Block", description = "Query blockchain blocks")
 @RestController
 @RequestMapping(BLOCKS_PATH)

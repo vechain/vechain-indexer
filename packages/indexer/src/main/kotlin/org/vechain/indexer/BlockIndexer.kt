@@ -7,7 +7,7 @@ import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.BlockRepo
 import org.vechain.indexer.service.ThorService
 
-@Profile("block-indexer", "prod")
+@Profile("blocks")
 @Component
 open class BlockIndexer(thorService: ThorService, private val blockRepo: BlockRepo, mongoTemplate: MongoTemplate) :
     Indexer(thorService, blockRepo, mongoTemplate) {
