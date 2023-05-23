@@ -6,7 +6,7 @@ import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Transaction
 
-@Profile("transaction-indexer")
+@Profile("transactions")
 @Repository
 interface TransactionRepo : BaseIndexedRepo<Transaction>, PagingAndSortingRepository<Transaction, String> {
 

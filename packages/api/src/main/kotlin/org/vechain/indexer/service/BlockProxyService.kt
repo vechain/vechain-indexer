@@ -6,7 +6,7 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("block-proxy")
+@Profile("blocks-proxy")
 @Service
 open class BlockProxyService(private val thorService: ThorService) : BlockService {
 

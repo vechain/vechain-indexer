@@ -17,7 +17,7 @@ import org.vechain.indexer.model.rest.ExecuteCodeRequest
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.model.rest.ExpandedBlockResponse
 
-@Profile("block-indexer", "block-proxy")
+@Profile("indexer", "blocks-proxy")
 @Service
 class ThorService(private val thorRest: WebClient) {
 

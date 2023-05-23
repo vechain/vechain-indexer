@@ -21,7 +21,7 @@ import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.AddressNullable
 
-@Profile("transfer-event-indexer")
+@Profile("transfer-events")
 @Tag(name = "TransferEvent", description = "Query blockchain transfer events")
 @RestController
 @RequestMapping(TRANSFER_EVENTS_PATH)

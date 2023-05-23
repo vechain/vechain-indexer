@@ -12,7 +12,7 @@ import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ContractUtils
 import kotlin.jvm.optionals.getOrNull
 
-@Profile("contract-indexer")
+@Profile("contracts")
 @Component
 open class ContractIndexer(
     private val thorService: ThorService,

@@ -13,7 +13,7 @@ import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 import org.web3j.utils.Numeric
 
-@Profile("nft-event-indexer")
+@Profile("nft-events")
 @Component
 open class NFTEventIndexer(
     thorService: ThorService,

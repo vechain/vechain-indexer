@@ -15,7 +15,7 @@ import org.vechain.indexer.model.Block
 import org.vechain.indexer.service.BlockService
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("block-indexer", "block-proxy")
+@Profile("blocks", "blocks-proxy")
 @Tag(name = "Block", description = "Query blockchain blocks")
 @RestController
 @RequestMapping(BLOCKS_PATH)

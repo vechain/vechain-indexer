@@ -6,7 +6,7 @@ import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.NFT
 
-@Profile("nft-event-indexer")
+@Profile("nft-events")
 @Repository
 interface NFTRepo : BaseIndexedRepo<NFT>, PagingAndSortingRepository<NFT, String> {
 

@@ -7,7 +7,7 @@ import org.vechain.indexer.model.Block
 import org.vechain.indexer.repos.BlockRepo
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("block-indexer")
+@Profile("blocks")
 @Service
 open class BlockRepoService(private val blockRepo: BlockRepo) : BlockService {
 

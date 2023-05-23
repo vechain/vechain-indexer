@@ -7,7 +7,7 @@ import org.vechain.indexer.model.WrappedClause
 import org.vechain.indexer.repos.ClauseRepo
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("clause-indexer")
+@Profile("clauses")
 @Service
 open class ClauseService(private val clauseRepo: ClauseRepo) {
 

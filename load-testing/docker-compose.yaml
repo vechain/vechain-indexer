@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-test.js
     environment:
-      - API_URL=http://<target-indexer>:8080
+      - API_URL=http://192.168.1.106:8080
     volumes:
       - ./.output:/app/.output
     networks:
@@ -53,25 +53,25 @@ services:
       grafana:
         condition: service_healthy
 
-  k6-app-blocks:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/blocks-test.js
-
-  k6-app-clauses:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/clauses-test.js
-
-  k6-app-transactions:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-test.js
-
-  k6-app-transfer-events:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-test.js
+#  k6-app-blocks:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/blocks-test.js
+#
+#  k6-app-clauses:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/clauses-test.js
+#
+#  k6-app-transactions:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-test.js
+#
+#  k6-app-transfer-events:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-test.js
 
 networks:
   vechain:

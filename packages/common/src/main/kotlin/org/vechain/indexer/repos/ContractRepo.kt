@@ -5,6 +5,6 @@ import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.Contract
 
-@Profile("contract-indexer")
+@Profile("contracts")
 @Repository
 interface ContractRepo : BaseIndexedRepo<Contract>, PagingAndSortingRepository<Contract, String>

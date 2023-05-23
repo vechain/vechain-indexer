@@ -20,7 +20,7 @@ import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 
-@Profile("clause-indexer")
+@Profile("clauses")
 @Tag(name = "Clause", description = "Query on chain tx clauses")
 @RestController
 @RequestMapping(CLAUSES_PATH)

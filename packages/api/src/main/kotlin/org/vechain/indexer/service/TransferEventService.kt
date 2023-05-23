@@ -7,7 +7,7 @@ import org.vechain.indexer.model.TransferEvent
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("transfer-event-indexer")
+@Profile("transfer-events")
 @Service
 open class TransferEventService(private val transferEventRepo: TransferEventRepo) {
 

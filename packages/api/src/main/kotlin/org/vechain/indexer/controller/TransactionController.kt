@@ -23,7 +23,7 @@ import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.TransactionId
 
-@Profile("transaction-indexer")
+@Profile("transactions")
 @Tag(name = "Transactions", description = "Query on chain transactions")
 @Validated
 @RestController

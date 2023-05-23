@@ -39,7 +39,7 @@
 
 ### Option 1: Docker only
 
-- Copy `.env.example` to `.env.local` and fill in the values for your environment. They should work as-is for docker
+- Copy `.env.example` to `.env` and fill in the values for your environment. They should work as-is for docker
 
 - Run:
 
@@ -87,12 +87,12 @@ There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolat
 dependency between indexers for this reason. Each indexer and API pair can be enabled using the corresponding spring
 profile.
 
-- `blocks` - enabled with `block-indexer` profile or `block-proxy` to proxy to the Thor node
-- `transactions` - enabled with `transaction-indexer`
-- `clauses` - enabled with `clause-indexer`
-- `contracts` - enabled with `contract-indexer`
-- `nft-events` - enabled with `nft-event-indexer`
-- `transfer-events` - enabled with `transfer-event-indexer`
+- `blocks` - enabled with `blocks` profile or `blocks-proxy` to proxy to the Thor node
+- `transactions` - enabled with `transactions` profile
+- `clauses` - enabled with `clauses` profile
+- `contracts` - enabled with `contracts` profile
+- `nft-events` - enabled with `nft-events` profile
+- `transfer-events` - enabled with `transfer-events` profile
 
 As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
 want the convenience of the Block endpoints without the overhead of indexing the data.

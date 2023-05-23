@@ -21,7 +21,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.AddressNullable
 
-@Profile("nft-event-indexer")
+@Profile("nft-events")
 @Tag(name = "NFT", description = "Query on chain NFTs")
 @Validated
 @RestController

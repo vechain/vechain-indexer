@@ -24,7 +24,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.AddressNullable
 
-@Profile("contract-indexer")
+@Profile("contracts")
 @Tag(name = "Contract", description = "Query on chain contracts")
 @Validated
 @RestController

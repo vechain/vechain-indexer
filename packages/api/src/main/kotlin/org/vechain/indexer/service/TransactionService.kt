@@ -8,7 +8,7 @@ import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("transaction-indexer")
+@Profile("transactions")
 @Service
 open class TransactionService(private val transactionRepository: TransactionRepo) {
 

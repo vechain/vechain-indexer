@@ -8,7 +8,7 @@ import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.repos.ContractRepoImpl
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("contract-indexer")
+@Profile("contracts")
 @Service
 open class ContractService(
     private val contractRepoImpl: ContractRepoImpl

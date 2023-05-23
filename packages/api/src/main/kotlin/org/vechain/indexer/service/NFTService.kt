@@ -10,7 +10,7 @@ import org.vechain.indexer.model.NFT
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.utils.HexUtil
 
-@Profile("nft-event-indexer")
+@Profile("nft-events")
 @Service
 open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: MongoTemplate) {
 

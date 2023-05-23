@@ -8,7 +8,7 @@ import org.vechain.indexer.model.Transaction
 import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.service.ThorService
 
-@Profile("transaction-indexer")
+@Profile("transactions")
 @Component
 open class TransactionIndexer(
     thorService: ThorService,
