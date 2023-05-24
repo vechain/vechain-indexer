@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Contract
@@ -7,6 +8,7 @@ import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.repos.ContractRepoImpl
 import org.vechain.indexer.utils.HexUtil
 
+@Profile("contracts")
 @Service
 open class ContractService(
     private val contractRepoImpl: ContractRepoImpl

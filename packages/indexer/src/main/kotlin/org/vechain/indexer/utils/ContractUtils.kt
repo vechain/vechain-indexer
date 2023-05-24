@@ -1,27 +1,19 @@
 package org.vechain.indexer.utils
 
-import org.vechain.indexer.constants.MASTER_EVENT_SIGNATURE
-import org.vechain.indexer.constants.TRANSFER_EVENT_SIGNATURE
+import org.vechain.indexer.contracts.specifications.ContractSpecification
 import org.vechain.indexer.model.TxEvent
-import org.vechain.indexer.specifications.ContractSpecification
 import org.web3j.abi.EventEncoder
 import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
 
 object ContractUtils {
+
+    private const val MASTER_EVENT_SIGNATURE = "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
+
     fun isMasterEvent(event: TxEvent): Boolean {
         return event.topics.isNotEmpty() && event.topics[0] == MASTER_EVENT_SIGNATURE
     }
 
-    /**
-     * NFTs length of topics is 4, FUNGIBLE is 3
-     */
-    fun findTransferEvents(events: List<TxEvent>): List<TxEvent> {
-        return events.filter {
-            (it.topics.size == 3 || it.topics.size == 4) &&
-                    it.topics[0] == TRANSFER_EVENT_SIGNATURE
-        }
-    }
 
     private fun rawDataContains(value: String, rawData: String): Boolean {
         val cleansedValue = if (value.startsWith("00")) {

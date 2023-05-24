@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.MongoOperations
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.repos.BaseIndexedRepo
 import strikt.api.expect
-import strikt.assertions.isEqualTo
 import strikt.assertions.isGreaterThan
 
 class IntegrationTests : AbstractIntegrationTest() {
@@ -17,7 +16,7 @@ class IntegrationTests : AbstractIntegrationTest() {
 
     @Autowired
     lateinit var allRepos: List<BaseIndexedRepo<*>>
-    
+
     /**
      * This tests checks that ALL repos have been populated after indexing the thor script output.
      */

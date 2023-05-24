@@ -1,9 +1,8 @@
 package org.vechain.indexer
 
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.*
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
@@ -23,10 +22,12 @@ internal class ContractIndexerTest {
 
     private val thorService: ThorService = mockk()
     private var contractRepo: ContractRepo = mockk()
+    private var mongoTemplate: MongoTemplate = mockk()
     private val contractService: ContractService = ContractService(thorService)
 
     //Using constructor invocation because MockK has problems with @SpyK + @InjectMocks
-    private val contractIndexer: ContractIndexer = ContractIndexer(thorService, contractService, contractRepo)
+    private val contractIndexer: ContractIndexer =
+        ContractIndexer(thorService, contractService, contractRepo, mongoTemplate)
 
     init {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
@@ -42,10 +43,11 @@ internal class ContractIndexerTest {
             BLOCK_5_VIP180_CONTRACTS,
             "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
 
 
         // Process block for contract indexing
@@ -78,10 +80,11 @@ internal class ContractIndexerTest {
             BLOCK_42_ERC1155_VIP210_CONTRACTS,
             "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
@@ -107,10 +110,11 @@ internal class ContractIndexerTest {
             BLOCK_6_VIP181_CONTRACTS,
             "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         )
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
 
 
         // Process block for contract indexing
@@ -139,10 +143,11 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
+        every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<Contract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
 
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
 
@@ -165,26 +170,27 @@ internal class ContractIndexerTest {
     }
 
     @Test
-    fun `Update contract master when no contract data`() {
+    fun `Update contract master when contract already indexed`() {
 
-        // Mock data returned for block#16: block, null account code & existing mongo document
-        every { thorService.getAccountCode(any()) } returns "0x"
+        // Mock data returned for block#16: block, any account code & existing mongo document
+        every { thorService.getAccountCode(any()) } returns "any account code"
         every { contractRepo.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
-        val contractsSlot = slot<List<Contract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        val updatedContractSlot = slot<Contract>()
+        every { contractRepo.save(capture(updatedContractSlot)) } returnsArgument 0
 
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
         expectThat(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.master).isEqualTo(oldMaster)
         contractIndexer.processBlock(BLOCK_16_MASTER_EVENT_UPDATE)
 
-        val contracts = contractsSlot.captured
+        val updatedContract = updatedContractSlot.captured
         val newMaster = "0xa077d962dfa446661d63c97f68d9628f908a5f43"
-        expect {
-            that(contracts).hasSize(2)
-            that(contracts).map(Contract::master).all { isEqualTo(newMaster) }
-        }
+
+        expectThat(updatedContract.master).isEqualTo(newMaster)
+
+        // No inserts should be called here, as this block contains contract master updates only
+        verify { mongoTemplate wasNot Called }
     }
 
     private fun getContractData(block: Block, txId: String): String {

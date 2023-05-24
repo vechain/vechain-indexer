@@ -8,7 +8,7 @@ services:
       args:
         VEWORLD_PACKAGE: indexer
     restart: "no"
-    env_file: ${ENV_FILE_NAME:-.env.local}
+    env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s
@@ -32,7 +32,7 @@ services:
         VEWORLD_PACKAGE: api
     restart: "no"
     hostname: vechain-indexer-api
-    env_file: ${ENV_FILE_NAME:-.env.local}
+    env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
       interval: 20s

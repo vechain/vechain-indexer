@@ -1,9 +1,9 @@
 package org.vechain.indexer
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Block
-
 import org.vechain.indexer.model.Contract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
@@ -12,13 +12,14 @@ import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ContractUtils
 import kotlin.jvm.optionals.getOrNull
 
-@Profile("contract-indexer", "prod")
+@Profile("contracts")
 @Component
 open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
-    private val contractRepo: ContractRepo
-) : Indexer(thorService, contractRepo) {
+    private val contractRepo: ContractRepo,
+    mongoTemplate: MongoTemplate,
+) : Indexer(thorService, contractRepo, mongoTemplate) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
@@ -50,18 +51,14 @@ open class ContractIndexer(
             val master = AddressUtil.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
-            // If there is no contract data then we assume this is a change of master for an existing contract.
-            // Else, this is a new contract deployment.
-            if (rawData == "0x") {
-                val contract = clause.to?.let { contractRepo.findById(it).getOrNull() }
-                if (contract != null) {
-                    contract.previousMasters.add(contract.master)
-                    contract.master = master
-                    contracts.add(contract)
-                }
+            val contract = contractRepo.findById(contractAddress).getOrNull()
 
+            // If the contract is already indexed, update the master
+            if (contract != null) {
+                contract.previousMasters.add(contract.master)
+                contract.master = master
+                contractRepo.save(contract)
             } else {
-
                 contracts.add(
                     Contract(
                         address = contractAddress,
@@ -82,10 +79,9 @@ open class ContractIndexer(
                     )
                 )
             }
-
         }
 
-        if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
+        if (contracts.isNotEmpty()) insertAll(contracts, Contract::class.java)
     }
 
 }

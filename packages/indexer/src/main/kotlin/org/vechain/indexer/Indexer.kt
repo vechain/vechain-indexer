@@ -2,9 +2,11 @@ package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.model.Block
+import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.repos.BaseIndexedRepo
 import org.vechain.indexer.service.ThorService
 import java.time.LocalDateTime
@@ -19,11 +21,12 @@ const val INITIAL_BACKOFF_PERIOD = 10000L
 abstract class Indexer(
     private val thorService: ThorService,
     private val repo: BaseIndexedRepo<*>,
+    private val mongoTemplate: MongoTemplate,
     private val numBlocksToPurge: Long = 12L
 ) {
 
-    @Value("\${genesis.block.id:0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6}")
-    protected val genesisBlockId: String = "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6"
+    @Value("\${thor.genesis.block.id}")
+    protected var genesisBlockId: String? = null
 
     val name: String
         get() = this.javaClass.simpleName
@@ -35,11 +38,12 @@ abstract class Indexer(
         private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
-    private var previousBlockId: String = genesisBlockId
+    private var previousBlockId = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
         currentBlockNumber = getPreviousBlockNumber() + 1
+        previousBlockId = getPreviousBlockId()
 
         // As a precaution assume a reorg happened
         resolveReorg()
@@ -131,9 +135,17 @@ abstract class Indexer(
         return repo.getMaxBlockNumber() ?: -1
     }
 
-    private fun getPreviousBlockId(): String {
+    private fun getPreviousBlockId(): String? {
         return repo.getMaxBlockId() ?: genesisBlockId
     }
+
+    /**
+     * Insert a list of indexed documents into a collection in a single batch write
+     */
+    fun insertAll(documents: List<IndexedDocument>, documentType: Class<*>) {
+        mongoTemplate.insert(documents, documentType)
+    }
+
 
     abstract fun processBlock(block: Block)
 

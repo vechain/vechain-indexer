@@ -10,6 +10,7 @@ import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.NFT
@@ -29,6 +30,9 @@ internal class NFTEventIndexerTest {
 
     @MockK
     lateinit var nftRepo: NFTRepo
+
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
 
     @InjectMockKs
     lateinit var nftEventIndexer: NFTEventIndexer

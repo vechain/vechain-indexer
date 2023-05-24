@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
@@ -20,7 +21,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.AddressNullable
 
-
+@Profile("nft-events")
 @Tag(name = "NFT", description = "Query on chain NFTs")
 @Validated
 @RestController
@@ -88,15 +89,10 @@ open class NFTController(private val nftService: NFTService) {
     )
     open fun getContractsByNFTOwner(
         @Address @RequestParam owner: String,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<String> {
         return nftService.findContractsByNFTOwner(
-            owner,
-            toPageable(page, size, direction, "blockNumber", "txId", "id")
+            owner
         )
-            .map { it.contractAddress }
     }
 
 }

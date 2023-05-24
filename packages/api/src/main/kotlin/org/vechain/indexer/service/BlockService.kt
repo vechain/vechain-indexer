@@ -1,24 +1,13 @@
 package org.vechain.indexer.service
 
-import org.springframework.data.repository.findByIdOrNull
-import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Block
-import org.vechain.indexer.repos.BlockRepo
-import org.vechain.indexer.utils.HexUtil
 
-@Service
-open class BlockService(private val blockRepo: BlockRepo) {
+interface BlockService {
 
-    fun findBestBlock(): Block? {
-        return blockRepo.findTopByOrderByBlockNumberDesc()
-    }
+    fun findBestBlock(): Block?
 
-    fun findById(blockId: String): Block? {
-        return blockRepo.findByIdOrNull(HexUtil.normalise(blockId))
-    }
+    fun findById(blockId: String): Block?
 
-    fun findByBlockNumber(blockNumber: Long): Block? {
-        return blockRepo.findByBlockNumber(blockNumber)
-    }
+    fun findByBlockNumber(blockNumber: Long): Block?
 
 }

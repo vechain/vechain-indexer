@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Block
 import org.vechain.indexer.model.NFT
@@ -12,12 +13,13 @@ import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 import org.web3j.utils.Numeric
 
-@Profile("nft-event-indexer", "prod")
+@Profile("nft-events")
 @Component
 open class NFTEventIndexer(
     thorService: ThorService,
-    private val nftRepo: NFTRepo
-) : Indexer(thorService, nftRepo) {
+    private val nftRepo: NFTRepo,
+    mongoTemplate: MongoTemplate,
+) : Indexer(thorService, nftRepo, mongoTemplate) {
 
     override fun processBlock(block: Block) {
 
