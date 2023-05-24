@@ -1,8 +1,8 @@
-FROM eclipse-temurin:19 AS builder
+FROM eclipse-temurin:17-jdk-jammy  AS builder
 
 ARG VEWORLD_PACKAGE
 
-WORKDIR /opt/app
+WORKDIR /usr/app
 
 COPY gradle ./gradle
 COPY gradlew ./
@@ -20,13 +20,13 @@ ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
 RUN ./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test
 
-FROM eclipse-temurin:19
+FROM eclipse-temurin:17-jre-jammy AS prod
 
 ARG VEWORLD_PACKAGE
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
-WORKDIR /opt/app
+WORKDIR /usr/app
 
-COPY --from=builder /opt/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*-SNAPSHOT.jar /opt/app/app.jar
+COPY --from=builder /usr/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*-SNAPSHOT.jar /usr/app/app.jar
 
-ENTRYPOINT ["java", "-Djdk.tls.client.protocols=TLSv1.2", "-jar", "./app.jar", "-XX:+UseContainerSupport"]
+CMD ["java", "-jar", "/usr/app/app.jar"]
