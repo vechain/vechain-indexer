@@ -140,12 +140,12 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
-        implementation("org.springframework.boot:spring-boot-starter-webflux")
-        implementation("org.springframework.boot:spring-boot-starter-actuator")
+        implementation("org.springframework.boot:spring-boot-starter:3.1.0")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.1.0")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.1.0")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.1.0")
 
-        implementation("org.jetbrains.kotlin:kotlin-reflect")
+        implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
         implementation("org.web3j:abi:4.9.7")
         implementation("org.web3j:contracts:4.9.7")
@@ -154,14 +154,14 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
-        testImplementation("io.mockk:mockk:1.13.4")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
+        testImplementation("io.mockk:mockk:1.13.5")
         testImplementation("io.strikt:strikt-core:0.34.1")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.3")
     }
 }
 
