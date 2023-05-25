@@ -13,6 +13,7 @@ enum class TransferEventType {
 
 @Document(collection = "transfer_events")
 @CompoundIndex(name = "transfer_block_number_idx", def = "{'blockNumber': -1}")
+@CompoundIndex(name = "transfers_blockNumber_txId_id_-1_idx", def = "{'blockNumber': -1, 'txId': -1, '_id': -1}")
 data class TransferEvent @ConstructorBinding constructor(
     @Id
     val id: String,
