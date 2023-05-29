@@ -83,7 +83,7 @@ open class TransactionController(private val transactionService: TransactionServ
         return transactionService.findByOrigin(
             address,
             includeDelegated,
-            toPageable(page, size, direction, "blockNumber", "id")
+            toPageable(page, size, direction, "blockNumber", "_id")
         )
     }
 
@@ -110,7 +110,7 @@ open class TransactionController(private val transactionService: TransactionServ
     ): List<Transaction> {
         return transactionService.findAllDelegated(
             address,
-            toPageable(page, size, direction, "blockNumber", "id")
+            toPageable(page, size, direction, "blockNumber", "_id")
         )
     }
 }

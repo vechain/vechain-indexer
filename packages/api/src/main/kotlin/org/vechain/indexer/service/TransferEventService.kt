@@ -15,7 +15,6 @@ open class TransferEventService(private val transferEventRepo: TransferEventRepo
         val addressNorm = HexUtil.normalise(address)
         val tokenAddressNorm = HexUtil.normalise(tokenAddress)
         return transferEventRepo.findByToOrFromAndTokenAddress(addressNorm, addressNorm, tokenAddressNorm, toPageable)
-
     }
 
     fun findByAddress(address: String, toPageable: Pageable): List<TransferEvent> {

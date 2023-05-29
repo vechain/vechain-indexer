@@ -53,7 +53,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<TransferEvent> {
 
-        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
+        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "_id")
 
         return when {
             address != null && tokenAddress != null -> transferEventService.find(address, tokenAddress, pageable)
@@ -89,7 +89,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<TransferEvent> {
-        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
+        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "_id")
         return transferEventService.findByFrom(address, tokenAddress, pageable)
     }
 
@@ -118,7 +118,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<TransferEvent> {
-        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "id")
+        val pageable = toPageable(page, size, direction, "blockNumber", "txId", "_id")
         return transferEventService.findByTo(address, tokenAddress, pageable)
     }
 }

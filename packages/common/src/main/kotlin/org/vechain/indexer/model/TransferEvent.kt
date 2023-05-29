@@ -3,7 +3,6 @@ package org.vechain.indexer.model
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
-import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.math.BigInteger
 
@@ -14,12 +13,16 @@ enum class TransferEventType {
 @Document(collection = "transfer_events")
 @CompoundIndex(name = "transfer_block_number_idx", def = "{'blockNumber': -1}")
 @CompoundIndex(
-    name = "transfers_to_1_blockNumber_txId_id_-1_idx",
+    name = "transfers_to_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'to': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 @CompoundIndex(
-    name = "transfers_from_1_blockNumber_txId_id_-1_idx",
+    name = "transfers_from_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'from': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
+)
+@CompoundIndex(
+    name = "transfers_tokenAddress_1_blockNumber_-1_txId_-1__id_-1",
+    def = "{'tokenAddress': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 data class TransferEvent @ConstructorBinding constructor(
     @Id
@@ -28,12 +31,9 @@ data class TransferEvent @ConstructorBinding constructor(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val txId: String,
-    @Indexed
     val from: String,
-    @Indexed
     val to: String,
     val value: BigInteger,
-    @Indexed
     val tokenAddress: String?,
     val topics: List<String>,
     val eventType: TransferEventType
