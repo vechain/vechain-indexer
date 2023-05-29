@@ -4,23 +4,27 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
-import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "clauses")
 @CompoundIndex(name = "clause_block_number_idx", def = "{'blockNumber': -1}")
+@CompoundIndex(
+    name = "clause_origin_1_blockNumber_-1_txId_-1__id_-1",
+    def = "{'origin': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
+)
+@CompoundIndex(
+    name = "clause_to_1_blockNumber_-1_txId_-1__id_-1",
+    def = "{'to': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
+)
 data class WrappedClause @ConstructorBinding constructor(
     @Id
     val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
-    @Indexed
     val txId: String,
     val index: Int,
-    @Indexed
     val origin: String,
-    @Indexed(sparse = true)
     val to: String?,
     val value: String,
     val data: String,

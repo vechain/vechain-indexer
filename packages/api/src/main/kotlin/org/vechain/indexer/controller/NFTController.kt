@@ -61,13 +61,13 @@ open class NFTController(private val nftService: NFTService) {
         return if (contractAddress.isNullOrEmpty()) {
             nftService.findByOwner(
                 address,
-                toPageable(page, size, direction, "blockNumber", "txId", "id")
+                toPageable(page, size, direction, "blockNumber", "txId", "_id")
             )
         } else {
             nftService.findByOwnerAndContractAddress(
                 address,
                 contractAddress,
-                toPageable(page, size, direction, "blockNumber", "txId", "id")
+                toPageable(page, size, direction, "blockNumber", "txId", "_id")
             )
         }
     }
