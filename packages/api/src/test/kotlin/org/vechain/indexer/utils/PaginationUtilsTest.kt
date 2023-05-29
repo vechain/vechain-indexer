@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.constants.DEFAULT_SORT_DIRECTION
+import org.vechain.indexer.constants.DEFAULT_SORT_FIELDS
 import org.vechain.indexer.exception.BadRequestException
 import strikt.api.expect
 import strikt.assertions.isA
@@ -65,14 +67,19 @@ internal class PaginationUtilsTest {
     }
 
     @Test
-    fun `pagination sorting default is by descending id`() {
+    fun `pagination sorting default is by descending blockNumber-txId-id`() {
         val page = 13
         val size = 30
 
         val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
-            that(pageable.sort).isEqualTo(Sort.by(Sort.Direction.DESC, "id"))
+            that(pageable.sort).isEqualTo(
+                Sort.by(
+                    Sort.Direction.fromString(DEFAULT_SORT_DIRECTION),
+                    *DEFAULT_SORT_FIELDS
+                )
+            )
         }
     }
 
@@ -80,8 +87,8 @@ internal class PaginationUtilsTest {
     fun `pagination custom sorting can be passed as param`() {
         val page = 13
         val size = 30
-        val direction = "desc"
-        val fields = arrayOf("number")
+        val direction = "asc"
+        val fields = arrayOf("field1")
 
         val pageable = PaginationUtils.toPageable(page, size, direction, *fields)
 

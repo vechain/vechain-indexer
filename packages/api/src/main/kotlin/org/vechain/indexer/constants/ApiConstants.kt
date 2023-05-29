@@ -16,3 +16,5 @@ const val CLAUSES_PATH = "$API_PATH/clauses"
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0
 const val DEFAULT_PAGE_SIZE = 20
+const val DEFAULT_SORT_DIRECTION = "DESC"
+val DEFAULT_SORT_FIELDS = arrayOf("blockNumber", "txId", "_id")

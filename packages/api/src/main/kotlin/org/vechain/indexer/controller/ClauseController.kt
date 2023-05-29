@@ -42,10 +42,7 @@ open class ClauseController(private val clauseService: ClauseService) {
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?
     ): List<WrappedClause> {
-        return clauseService.findByAddress(
-            address,
-            toPageable(page, size, direction, "blockNumber", "txId", "_id")
-        )
+        return clauseService.findByAddress(address, toPageable(page, size, direction))
     }
 
 }

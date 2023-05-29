@@ -89,7 +89,7 @@ open class ContractController(private val contractService: ContractService) {
         return contractService.find(
             address,
             ContractType.byNameIgnoreCaseOrNull(type),
-            toPageable(page, size, direction, "blockNumber", "txId", "_id")
+            toPageable(page, size, direction)
         )
     }
 

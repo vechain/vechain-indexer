@@ -6,6 +6,8 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import org.vechain.indexer.constants.DEFAULT_PAGE_NUMBER
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.constants.DEFAULT_SORT_DIRECTION
+import org.vechain.indexer.constants.DEFAULT_SORT_FIELDS
 import org.vechain.indexer.exception.BadRequestException
 
 object PaginationUtils {
@@ -13,8 +15,8 @@ object PaginationUtils {
     fun toPageable(
         page: Int?,
         size: Int?,
-        direction: String? = "desc",
-        vararg fields: String = arrayOf("id")
+        direction: String? = DEFAULT_SORT_DIRECTION,
+        vararg fields: String = DEFAULT_SORT_FIELDS
     ): Pageable {
         return PageRequest.of(
             page ?: DEFAULT_PAGE_NUMBER,
@@ -26,7 +28,7 @@ object PaginationUtils {
     private fun toSortDirection(direction: String?): Direction {
         val sortDirection: Direction
         try {
-            sortDirection = Direction.fromString(direction ?: "desc")
+            sortDirection = Direction.fromString(direction ?: DEFAULT_SORT_DIRECTION)
         } catch (e: IllegalArgumentException) {
             throw BadRequestException("Invalid sort direction param: $direction")
         }
