@@ -6,6 +6,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
+import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.model.WrappedClause
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -119,6 +120,28 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
 
         val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
+        expectThat(clauses).isSorted(
+            compareByDescending<WrappedClause> { it.blockNumber }
+                .then(compareByDescending<WrappedClause> { it.txId }
+                    .then(compareByDescending { it.id })
+                )
+        )
+    }
+
+    @Test
+    fun `get all clauses for origin is paginated & sorted by default`() {
+        val origin = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
+
+        val result = mockMvc.get(
+            baseEndpoint +
+                    "?address=$origin"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+
+        expectThat(clauses).hasSize(DEFAULT_PAGE_SIZE)
         expectThat(clauses).isSorted(
             compareByDescending<WrappedClause> { it.blockNumber }
                 .then(compareByDescending<WrappedClause> { it.txId }

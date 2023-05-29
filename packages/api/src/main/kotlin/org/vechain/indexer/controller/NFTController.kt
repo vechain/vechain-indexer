@@ -58,18 +58,10 @@ open class NFTController(private val nftService: NFTService) {
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<NFT> {
-        return if (contractAddress.isNullOrEmpty()) {
-            nftService.findByOwner(
-                address,
-                toPageable(page, size, direction, "blockNumber", "txId", "_id")
-            )
-        } else {
-            nftService.findByOwnerAndContractAddress(
-                address,
-                contractAddress,
-                toPageable(page, size, direction, "blockNumber", "txId", "_id")
-            )
-        }
+        val pageable = toPageable(page, size, direction)
+
+        return if (contractAddress.isNullOrEmpty()) nftService.findByOwner(address, pageable)
+        else nftService.findByOwnerAndContractAddress(address, contractAddress, pageable)
     }
 
     @GetMapping("/contracts")
@@ -90,9 +82,7 @@ open class NFTController(private val nftService: NFTService) {
     open fun getContractsByNFTOwner(
         @Address @RequestParam owner: String,
     ): List<String> {
-        return nftService.findContractsByNFTOwner(
-            owner
-        )
+        return nftService.findContractsByNFTOwner(owner)
     }
 
 }
