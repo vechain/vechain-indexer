@@ -13,15 +13,15 @@ enum class TransferEventType {
 @Document(collection = "transfer_events")
 @CompoundIndex(name = "transfer_block_number_idx", def = "{'blockNumber': -1}")
 @CompoundIndex(
-    name = "transfers_to_1_blockNumber_txId_id_-1_idx",
+    name = "transfers_to_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'to': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 @CompoundIndex(
-    name = "transfers_from_1_blockNumber_txId_id_-1_idx",
+    name = "transfers_from_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'from': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 @CompoundIndex(
-    name = "transfers_tokenAddress_1_blockNumber_txId_id_-1_idx",
+    name = "transfers_tokenAddress_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'tokenAddress': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 data class TransferEvent @ConstructorBinding constructor(

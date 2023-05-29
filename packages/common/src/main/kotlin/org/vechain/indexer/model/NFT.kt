@@ -9,7 +9,7 @@ import java.math.BigInteger
 @Document("nfts")
 @CompoundIndex(name = "nft_token_address_idx", def = "{'contractAddress': 1, 'tokenId': 1}", unique = true)
 @CompoundIndex(
-    name = "nft_owner_address_idx",
+    name = "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1",
     def = "{'owner': 1, 'contractAddress': 1, 'blockNumber': -1, 'txId': -1, '_id': -1}"
 )
 @CompoundIndex(name = "nft_block_number_idx", def = "{'blockNumber': -1}")
