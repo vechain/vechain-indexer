@@ -8,7 +8,6 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
-import java.math.BigInteger
 
 class NFTTest {
     @Test
@@ -68,7 +67,7 @@ class NFTTest {
 
     fun assertValidNft(nft: NFT) {
         expect {
-            that(nft.tokenId).isGreaterThan(BigInteger.valueOf(-1))
+            that(nft.tokenId).isNotEmpty()
             that(nft.contractAddress).isNotEmpty()
             that(nft.blockNumber).isGreaterThan(0)
             that(nft.txId).isNotEmpty()
