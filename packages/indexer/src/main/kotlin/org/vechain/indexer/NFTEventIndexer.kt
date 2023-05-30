@@ -40,7 +40,7 @@ open class NFTEventIndexer(
                     id = buildHashedId("${it.tokenAddress}-${tokenId}"),
                     owner = it.to,
                     contractAddress = it.tokenAddress!!,
-                    tokenId = tokenId,
+                    tokenId = tokenId.toString(10),
                     txId = it.txId,
                     blockId = it.blockId,
                     blockNumber = it.blockNumber,

@@ -4,7 +4,6 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.mapping.Document
-import java.math.BigInteger
 
 @Document("nfts")
 @CompoundIndex(name = "nft_token_address_idx", def = "{'contractAddress': 1, 'tokenId': 1}", unique = true)
@@ -19,7 +18,7 @@ data class NFT @ConstructorBinding constructor(
      */
     @Id
     val id: String,
-    val tokenId: BigInteger,
+    val tokenId: String,
     val contractAddress: String,
     val owner: String,
     val txId: String,
