@@ -95,7 +95,7 @@ object VeWorldAPIClient {
     }
 
     fun getTransactionById(id: String): Transaction {
-        return getRequest("$API_URL/transactions?id=${id}", TX_TYPE)
+        return getRequest("$API_URL/${id}", TX_TYPE)
     }
 
     fun getTransactionsByOrigin(
@@ -105,7 +105,7 @@ object VeWorldAPIClient {
         size: Int = Int.MAX_VALUE
     ): List<Transaction> {
         return getRequest(
-            "$API_URL/transactions/origin?address=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
+            "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
             PAGINATED_TX_TYPE
         )
     }
@@ -115,7 +115,7 @@ object VeWorldAPIClient {
         page: Int = 0,
         size: Int = Int.MAX_VALUE
     ): List<Transaction> {
-        return getRequest("$API_URL/transactions/delegated?address=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
+        return getRequest("$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
     }
 
     fun getTransferEvents(

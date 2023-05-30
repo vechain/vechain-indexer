@@ -29,14 +29,14 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `get transaction by id with invalid id should return INVALID_REQUEST`() {
-            mockMvc.get("$baseEndpoint?id=invalid_id")
+            mockMvc.get("$baseEndpoint/invalid_id")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `get transaction by id with valid endpoint should return OK`() {
             val result =
-                mockMvc.get("$baseEndpoint?id=0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
+                mockMvc.get("$baseEndpoint/0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -47,7 +47,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `get transaction by id with transaction that doesn't exist should return NOT_FOUND`() {
-            mockMvc.get("$baseEndpoint?id=0x00000005aff6e073af33415f5ca4e848742cb483533015486dd9000000000000")
+            mockMvc.get("$baseEndpoint/0x00000005aff6e073af33415f5ca4e848742cb483533015486dd9000000000000")
                 .andExpect { status { isNotFound() } }
         }
     }
@@ -60,14 +60,14 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `get transactions for bad address should return BAD_REQUEST`() {
-            mockMvc.get("$baseEndpoint/origin?address=badAddress&size=$resultsPageSize")
+            mockMvc.get("$baseEndpoint?origin=badAddress&size=$resultsPageSize")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `valid address should return OKAY`() {
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
                         "&size=$resultsPageSize"
             )
                 .andExpect { status { isOk() } }
@@ -81,7 +81,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `uppercase should be valid`() {
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa" +
+                "$baseEndpoint?origin=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa" +
                         "&size=$resultsPageSize"
             )
                 .andExpect { status { isOk() } }
@@ -95,7 +95,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `mixed case should be valid`() {
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa" +
+                "$baseEndpoint?origin=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa" +
                         "&size=$resultsPageSize"
             )
                 .andExpect { status { isOk() } }
@@ -109,7 +109,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `no prefix should be valid`() {
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                "$baseEndpoint?origin=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
                         "&size=$resultsPageSize"
             )
                 .andExpect { status { isOk() } }
@@ -123,7 +123,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `include delegated should return 1 more`() {
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
                         "&includeDelegated=true" +
                         "&size=$resultsPageSize"
             )
@@ -139,7 +139,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         fun `include delegated false - same as regular call`() {
             val result =
                 mockMvc.get(
-                    "$baseEndpoint/origin?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                    "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
                             "&includeDelegated=false" +
                             "&size=$resultsPageSize"
                 )
@@ -159,7 +159,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         fun `get txs by origin - pagination defaults`() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=$origin"
+                "$baseEndpoint?origin=$origin"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
@@ -174,7 +174,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=$origin" +
+                "$baseEndpoint?origin=$origin" +
                         "&page=$page"
             )
                 .andExpect { status { isOk() } }
@@ -190,7 +190,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val size = 25
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=$origin" +
+                "$baseEndpoint?origin=$origin" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
@@ -207,7 +207,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 3
             val size = 10
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=$origin" +
+                "$baseEndpoint?origin=$origin" +
                         "&page=$page" +
                         "&size=$size"
             )
@@ -225,7 +225,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 3
             val size = 10
             val result = mockMvc.get(
-                "$baseEndpoint/origin?address=$origin" +
+                "$baseEndpoint?origin=$origin" +
                         "&page=$page" +
                         "&size=$size"
             )
@@ -249,13 +249,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `get DELEGATED transactions for bad address should return BAD_REQUEST`() {
-            mockMvc.get("$baseEndpoint/delegated?address=badAddress")
+            mockMvc.get("$baseEndpoint/delegated?delegator=badAddress")
                 .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `get DELEGATED transactions should return OKAY`() {
-            val result = mockMvc.get("$baseEndpoint/delegated?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val result = mockMvc.get("$baseEndpoint/delegated?delegator=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -266,7 +266,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `uppercase address should be valid`() {
-            val result = mockMvc.get("$baseEndpoint/delegated?address=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa")
+            val result = mockMvc.get("$baseEndpoint/delegated?delegator=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -277,7 +277,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `mixed case address should be valid`() {
-            val result = mockMvc.get("$baseEndpoint/delegated?address=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
+            val result = mockMvc.get("$baseEndpoint/delegated?delegator=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -288,7 +288,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
 
         @Test
         fun `no hex prefix should be valid`() {
-            val result = mockMvc.get("$baseEndpoint/delegated?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+            val result = mockMvc.get("$baseEndpoint/delegated?delegator=f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -305,7 +305,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         fun `get delegated txs - pagination defaults`() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val result = mockMvc.get(
-                "$baseEndpoint/delegated?address=$origin"
+                "$baseEndpoint/delegated?delegator=$origin"
             )
                 .andExpect { status { isOk() } }
                 .andReturn()
@@ -320,7 +320,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val result = mockMvc.get(
-                "$baseEndpoint/delegated?address=$origin" +
+                "$baseEndpoint/delegated?delegator=$origin" +
                         "&page=$page"
             )
                 .andExpect { status { isOk() } }
@@ -336,7 +336,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val size = 1
             val result = mockMvc.get(
-                "$baseEndpoint/delegated?address=$origin" +
+                "$baseEndpoint/delegated?delegator=$origin" +
                         "&size=$size"
             )
                 .andExpect { status { isOk() } }
@@ -353,7 +353,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = 1
             val result = mockMvc.get(
-                "$baseEndpoint/delegated?address=$origin" +
+                "$baseEndpoint/delegated?delegator=$origin" +
                         "&page=$page" +
                         "&size=$size"
             )
@@ -371,7 +371,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = 1
             val result = mockMvc.get(
-                "$baseEndpoint/delegated?address=$origin" +
+                "$baseEndpoint/delegated?delegator=$origin" +
                         "&page=$page" +
                         "&size=$size"
             )
