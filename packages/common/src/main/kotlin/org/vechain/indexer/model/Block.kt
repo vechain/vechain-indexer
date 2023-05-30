@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.IndexDirection
-import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.model.rest.ExpandedBlockResponse
 
@@ -14,7 +12,6 @@ import org.vechain.indexer.model.rest.ExpandedBlockResponse
 data class Block @ConstructorBinding @JsonCreator constructor(
     @Id
     override val blockId: String,
-    @Indexed(unique = true, direction = IndexDirection.DESCENDING)
     @JsonProperty("number")
     override val blockNumber: Long,
     @JsonProperty("timestamp")
@@ -30,7 +27,6 @@ data class Block @ConstructorBinding @JsonCreator constructor(
     val stateRoot: String,
     val receiptsRoot: String,
     val com: Boolean,
-    @Indexed
     val signer: String,
     val isTrunk: Boolean,
     val isFinalized: Boolean,
