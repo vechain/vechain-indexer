@@ -55,7 +55,7 @@ object VeWorldAPIClient {
     }
 
     fun getBlock(revision: String): Block {
-        return getRequest("$API_URL/blocks?revision=$revision", BLOCK_TYPE)
+        return getRequest("$API_URL/blocks/$revision", BLOCK_TYPE)
     }
 
     fun getClauses(

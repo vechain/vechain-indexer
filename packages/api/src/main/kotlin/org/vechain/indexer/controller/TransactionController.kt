@@ -30,7 +30,7 @@ import org.vechain.indexer.validation.TransactionId
 @RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
-    @GetMapping(("{txId}"))
+    @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
     @ApiResponses(
         value = [
