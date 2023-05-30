@@ -31,8 +31,7 @@ management:
 spring.data:
   mongodb:
     uri: ${MONGO_URI:mongodb://localhost:27017/vechain?directConnection=true}
-    #uri: mongodb://localhost:27017/vechain?directConnection=true
-    auto-index-creation: true
+    auto-index-creation: false
 
 thor:
   url: ${THOR_URL:http://localhost:8669}

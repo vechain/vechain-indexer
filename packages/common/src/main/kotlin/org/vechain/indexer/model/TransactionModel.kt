@@ -2,20 +2,10 @@ package org.vechain.indexer.model
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.index.CompoundIndex
 import org.springframework.data.mongodb.core.mapping.Document
 import org.web3j.protocol.core.methods.response.Log
 
 @Document(collection = "transactions")
-@CompoundIndex(name = "tx_block_number_idx", def = "{'blockNumber': -1}")
-@CompoundIndex(
-    name = "tx_origin_1_blockNumber_-1__id_-1",
-    def = "{'origin': 1, 'blockNumber': -1, '_id': -1}"
-)
-@CompoundIndex(
-    name = "tx_gasPayer_1_blockNumber_-1__id_-1",
-    def = "{'gasPayer': 1, 'blockNumber': -1, '_id': -1}"
-)
 data class Transaction @ConstructorBinding constructor(
     @Id
     val id: String,
