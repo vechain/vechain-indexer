@@ -95,7 +95,7 @@ object VeWorldAPIClient {
     }
 
     fun getTransactionById(id: String): Transaction {
-        return getRequest("$API_URL/${id}", TX_TYPE)
+        return getRequest("$API_URL/transactions/${id}", TX_TYPE)
     }
 
     fun getTransactionsByOrigin(
