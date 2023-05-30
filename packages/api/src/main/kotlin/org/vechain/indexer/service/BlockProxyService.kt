@@ -11,26 +11,26 @@ import org.vechain.indexer.utils.HexUtil
 open class BlockProxyService(private val thorService: ThorService) : BlockService {
 
     override fun findBestBlock(): Block? {
-        try {
-            return thorService.getBestBlock()
+        return try {
+            thorService.getBestBlock()
         } catch (e: BlockNotFoundException) {
-            return null
+            null
         }
     }
 
     override fun findById(blockId: String): Block? {
-        try {
-            return thorService.getBlock(HexUtil.normalise(blockId))
+        return try {
+            thorService.getBlock(HexUtil.normalise(blockId))
         } catch (e: BlockNotFoundException) {
-            return null
+            null
         }
     }
 
     override fun findByBlockNumber(blockNumber: Long): Block? {
-        try {
-            return thorService.getBlock(blockNumber)
+        return try {
+            thorService.getBlock(blockNumber)
         } catch (e: BlockNotFoundException) {
-            return null
+            null
         }
     }
 
