@@ -21,7 +21,7 @@ import org.vechain.indexer.utils.HexUtil
 @RequestMapping(BLOCKS_PATH)
 open class BlockController(private val blockService: BlockService) {
 
-    @GetMapping
+    @GetMapping("{revision}")
     @Operation(summary = "Get a block by block number or block id or best block")
     @ApiResponses(
         value = [
@@ -35,9 +35,7 @@ open class BlockController(private val blockService: BlockService) {
         required = true,
         example = "best"
     )
-    open fun getBlock(
-        @RequestParam revision: String,
-    ): Block {
+    open fun getBlock(@PathVariable revision: String): Block {
 
         val block = if (revision == "best") {
             blockService.findBestBlock()
@@ -49,12 +47,10 @@ open class BlockController(private val blockService: BlockService) {
                 val blockNumber = revision.toLong()
                 blockService.findByBlockNumber(blockNumber)
             } catch (e: NumberFormatException) {
-                throw BadRequestException("Invalid revision")
+                throw BadRequestException("Invalid revision $revision")
             }
         }
 
-        block ?: throw ResourceNotFoundException("Block not found")
-
-        return block
+        return block ?: throw ResourceNotFoundException("Block $revision not found")
     }
 }

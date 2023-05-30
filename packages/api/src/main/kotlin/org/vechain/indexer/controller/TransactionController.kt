@@ -30,27 +30,28 @@ import org.vechain.indexer.validation.TransactionId
 @RequestMapping(TRANSACTIONS_PATH)
 open class TransactionController(private val transactionService: TransactionService) {
 
-    @GetMapping
+    @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "400", description = "Invalid id"),
+            ApiResponse(responseCode = "400", description = "Invalid txId"),
         ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "id",
+        name = "txId",
         schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
         description = "A valid transaction ID",
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
-    open fun getTransactionById(@TransactionId @RequestParam(required = true) id: String): Transaction {
-        return transactionService.findById(id) ?: throw ResourceNotFoundException("Transaction not found")
+    open fun getTransactionById(@TransactionId @PathVariable txId: String): Transaction {
+        return transactionService.findById(txId)
+            ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
     }
 
 
-    @GetMapping("/origin")
+    @GetMapping
     @Operation(summary = "Get all transactions by an origin address")
     @ApiResponses(
         value = [
@@ -59,7 +60,7 @@ open class TransactionController(private val transactionService: TransactionServ
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "address",
+        name = "origin",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the transaction origin",
         required = true,
@@ -74,14 +75,14 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "false"
     )
     open fun getTransactionsByOrigin(
-        @Address @RequestParam(required = true) address: String,
+        @Address @RequestParam origin: String,
         @RequestParam(required = false) includeDelegated: Boolean = false,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<Transaction> {
         return transactionService.findByOrigin(
-            address,
+            origin,
             includeDelegated,
             toPageable(page, size, direction, "blockNumber", "_id")
         )
@@ -91,25 +92,25 @@ open class TransactionController(private val transactionService: TransactionServ
     @Operation(summary = "Get all delegated transactions by a delegator address")
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+            ApiResponse(responseCode = "400", description = "Invalid delegator address"),
         ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "address",
+        name = "delegator",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "The address of the delegator",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getDelegatedTransactions(
-        @Address @RequestParam(required = true) address: String,
+        @Address @RequestParam delegator: String,
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
     ): List<Transaction> {
         return transactionService.findAllDelegated(
-            address,
+            delegator,
             toPageable(page, size, direction, "blockNumber", "_id")
         )
     }
