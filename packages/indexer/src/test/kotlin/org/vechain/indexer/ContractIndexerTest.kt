@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import io.mockk.*
 import org.junit.jupiter.api.Test
+import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
@@ -23,11 +24,13 @@ internal class ContractIndexerTest {
     private val thorService: ThorService = mockk()
     private var contractRepo: ContractRepo = mockk()
     private var mongoTemplate: MongoTemplate = mockk()
+    private var genesisId = "0x1234"
+    private var contractsResource: Resource = mockk()
     private val contractService: ContractService = ContractService(thorService)
 
     //Using constructor invocation because MockK has problems with @SpyK + @InjectMocks
     private val contractIndexer: ContractIndexer =
-        ContractIndexer(thorService, contractService, contractRepo, mongoTemplate)
+        ContractIndexer(thorService, contractService, contractRepo, genesisId, contractsResource, mongoTemplate)
 
     init {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()

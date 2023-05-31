@@ -31,7 +31,7 @@ abstract class Indexer(
     val name: String
         get() = this.javaClass.simpleName
 
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    protected val logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
     var currentBlockNumber: Long = 0
