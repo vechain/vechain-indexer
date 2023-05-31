@@ -72,6 +72,6 @@ jobs:
         with:
           repository: veworld/${{ matrix.package }}
           tag: ${{ github.sha }}
-          fail_treshold: high
+          fail_threshold: high
       - run: echo "${{ steps.docker-scan.outputs.total }} total vulnerabilities"
 
