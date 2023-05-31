@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy  AS builder
+FROM --platform=linux/arm64 eclipse-temurin:17-jdk-jammy AS builder
 
 ARG VEWORLD_PACKAGE
 
@@ -20,7 +20,7 @@ ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
 RUN ["/bin/bash", "-c", "./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test"]
 
-FROM eclipse-temurin:17-jre-jammy AS prod
+FROM --platform=linux/arm64 eclipse-temurin:17-jre-jammy AS prod
 
 ARG VEWORLD_PACKAGE
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
