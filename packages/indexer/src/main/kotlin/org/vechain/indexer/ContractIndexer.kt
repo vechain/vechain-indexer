@@ -1,6 +1,10 @@
 package org.vechain.indexer
 
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.event.ApplicationStartedEvent
 import org.springframework.context.annotation.Profile
+import org.springframework.context.event.EventListener
+import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.Block
@@ -10,6 +14,7 @@ import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.JsonUtils
 import kotlin.jvm.optionals.getOrNull
 
 @Profile("contracts")
@@ -18,7 +23,9 @@ open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepo: ContractRepo,
-    mongoTemplate: MongoTemplate,
+    @Value("\${thor.genesis.block.id}") private val genesisId: String,
+    @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
+    mongoTemplate: MongoTemplate
 ) : Indexer(thorService, contractRepo, mongoTemplate) {
 
     @OptIn(ExperimentalStdlibApi::class)
@@ -84,4 +91,17 @@ open class ContractIndexer(
         if (contracts.isNotEmpty()) insertAll(contracts, Contract::class.java)
     }
 
+    @EventListener(ApplicationStartedEvent::class)
+    fun insertBuiltInContracts() {
+
+        logger.info("Saving built-in contracts")
+
+        val contracts = JsonUtils.mapper.readValue(contractsJson.inputStream, Array<Contract>::class.java)
+
+        contracts.forEach { contract ->
+            contract.blockId = genesisId
+        }
+
+        contractRepo.saveAll(contracts.toList())
+    }
 }

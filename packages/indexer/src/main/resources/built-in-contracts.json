@@ -1,6 +1,6 @@
 [
   {
-    "_id": "0x0000000000000000000000417574686f72697479",
+    "address": "0x0000000000000000000000417574686f72697479",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -18,7 +18,7 @@
     "_class": "org.vechain.indexer.model.Contract"
   },
   {
-    "_id": "0x0000000000000000000000000000456e65726779",
+    "address": "0x0000000000000000000000000000456e65726779",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -36,7 +36,7 @@
     "_class": "org.vechain.indexer.model.Contract"
   },
   {
-    "_id": "0x0000000000000000000000004578656375746f72",
+    "address": "0x0000000000000000000000004578656375746f72",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -54,7 +54,7 @@
     "_class": "org.vechain.indexer.model.Contract"
   },
   {
-    "_id": "0x0000000000000000000000457874656e73696f6e",
+    "address": "0x0000000000000000000000457874656e73696f6e",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -72,7 +72,7 @@
     "_class": "org.vechain.indexer.model.Contract"
   },
   {
-    "_id": "0x0000000000000000000000000000506172616d73",
+    "address": "0x0000000000000000000000000000506172616d73",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -90,7 +90,7 @@
     "_class": "org.vechain.indexer.model.Contract"
   },
   {
-    "_id": "0x000000000000000000000050726f746f74797065",
+    "address": "0x000000000000000000000050726f746f74797065",
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
