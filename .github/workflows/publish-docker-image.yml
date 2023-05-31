@@ -1,9 +1,9 @@
-name: Upload Images
+name: Publish Docker Image
 
 on:
   push:
     branches:
-      - '*'
+      - 'main'
 
 concurrency:
   group: ${{ github.head_ref || github.ref_name }}-docker-api
