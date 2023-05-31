@@ -10,3 +10,4 @@ jobs:
     with:
       imageTag: ${{ github.ref_name }}
       latestTag: latest
+    secrets: inherit
