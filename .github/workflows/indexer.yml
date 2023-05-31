@@ -11,6 +11,9 @@ concurrency:
 
 jobs:
   build-push-scan:
+
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
         package: [ api, indexer ]
