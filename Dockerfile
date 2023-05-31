@@ -7,7 +7,7 @@ WORKDIR /usr/app
 COPY gradle ./gradle
 COPY gradlew ./
 
-RUN /bin/bash ./gradlew
+RUN ["/bin/bash", "-c", "./gradlew"]
 
 COPY build.gradle.kts ./
 COPY settings.gradle.kts ./
@@ -18,7 +18,7 @@ COPY packages ./packages
 RUN test -n "VEWORLD_PACKAGE"
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
-RUN /bin/bash ./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test
+RUN ["/bin/bash", "-c", "./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test"]
 
 FROM eclipse-temurin:17-jre-jammy AS prod
 
