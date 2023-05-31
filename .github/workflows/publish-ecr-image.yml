@@ -6,9 +6,6 @@ on:
       imageTag:
         required: true
         type: string
-      latestTag:
-        required: true
-        type: string
 
 jobs:
   build-and-publish:
@@ -61,13 +58,10 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: veworld/${{ matrix.package }}
           IMAGE_TAG: ${{ inputs.imageTag }}
-          LATEST_TAG: ${{ inputs.latestTag }}
         run: |
           ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-          ECR_IMAGE_LATEST=$ECR_REGISTRY/$REPOSITORY:$LATEST_TAG
-          docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }} -t $ECR_IMAGE -t $ECR_IMAGE_LATEST .
+          docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }} -t $ECR_IMAGE .
           docker push $ECR_IMAGE
-          docker push $ECR_IMAGE_LATEST
 
       - name: Scan Docker Image
         id: docker-scan
