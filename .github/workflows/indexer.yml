@@ -69,8 +69,8 @@ jobs:
         id: docker-scan
         uses: alexjurkiewicz/ecr-scan-image@v2.0.0
         with:
-          repository: ${{ inputs.repository }}
-          tag: ${{ inputs.imageTag }}
+          repository: veworld/${{ matrix.package }}
+          tag: ${{ github.sha }}
           fail_treshold: high
       - run: echo "${{ steps.docker-scan.outputs.total }} total vulnerabilities"
 
