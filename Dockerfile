@@ -27,6 +27,6 @@ ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
 WORKDIR /usr/app
 
-COPY --from=builder /usr/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*-SNAPSHOT.jar /usr/app/app.jar
+COPY --from=builder /usr/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*.jar /usr/app/app.jar
 
 CMD ["java", "-jar", "/usr/app/app.jar"]
