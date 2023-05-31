@@ -64,7 +64,8 @@ jobs:
           ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
           ECR_IMAGE_LATEST=$ECR_REGISTRY/$REPOSITORY:dev-latest
           docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }} -t $ECR_IMAGE -t $ECR_IMAGE_LATEST .
-          docker push $ECR_IMAGE $ECR_IMAGE_LATEST
+          docker push $ECR_IMAGE
+          docker push $ECR_IMAGE_LATEST
 
       - name: Scan Docker Image
         id: docker-scan
