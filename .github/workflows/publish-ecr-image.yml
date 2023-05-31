@@ -1,16 +1,17 @@
-name: Publish Docker Image
+name: Push Images to ECR and Scan
 
 on:
-  push:
-    branches:
-      - 'main'
-
-concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-docker-api
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      imageTag:
+        required: true
+        type: string
+      latestTag:
+        required: true
+        type: string
 
 jobs:
-  build-push-scan:
+  build-and-publish:
 
     runs-on: ubuntu-latest
 
@@ -59,10 +60,11 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: veworld/${{ matrix.package }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ inputs.imageTag }}
+          LATEST_TAG: ${{ inputs.latestTag }}
         run: |
           ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-          ECR_IMAGE_LATEST=$ECR_REGISTRY/$REPOSITORY:dev-latest
+          ECR_IMAGE_LATEST=$ECR_REGISTRY/$REPOSITORY:$LATEST_TAG
           docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }} -t $ECR_IMAGE -t $ECR_IMAGE_LATEST .
           docker push $ECR_IMAGE
           docker push $ECR_IMAGE_LATEST
@@ -72,7 +74,7 @@ jobs:
         uses: alexjurkiewicz/ecr-scan-image@v2.0.0
         with:
           repository: veworld/${{ matrix.package }}
-          tag: ${{ github.sha }}
+          tag: ${{ inputs.imageTag }}
           fail_threshold: high
       - run: echo "${{ steps.docker-scan.outputs.total }} total vulnerabilities"
 

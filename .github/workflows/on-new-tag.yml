@@ -1,0 +1,12 @@
+name: On Release
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  publish-to-ecr:
+    uses: ./.github/workflows/publish-ecr-image.yml
+    with:
+      imageTag: ${{ github.ref_name }}
+      latestTag: latest

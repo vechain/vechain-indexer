@@ -1,0 +1,17 @@
+name: Publish Docker Image
+
+on:
+  push:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-docker-api
+  cancel-in-progress: true
+
+jobs:
+  publish-to-ecr:
+    uses: ./.github/workflows/publish-ecr-image.yml
+    with:
+      imageTag: ${{ github.sha }}
+      latestTag: dev-latest
