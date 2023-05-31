@@ -3,10 +3,10 @@ name: Publish Docker Image
 on:
   push:
     branches:
-      - '*'
+      - 'main'
 
 concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-docker-api
+  group: ${{ github.head_ref || github.ref_name }}-main-image-publish
   cancel-in-progress: true
 
 jobs:
