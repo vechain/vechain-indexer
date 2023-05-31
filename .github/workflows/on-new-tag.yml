@@ -9,5 +9,4 @@ jobs:
     uses: ./.github/workflows/publish-ecr-image.yml
     with:
       imageTag: ${{ github.ref_name }}
-      latestTag: latest
     secrets: inherit
