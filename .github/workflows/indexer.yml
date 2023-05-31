@@ -10,13 +10,64 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  upload-image-to-ecr:
-    uses: vechainfoundation/devops/Actions/aws/push-to-ecr.yml@2c80387e0b8d6ebb16ff48ab8bfda3b432404be6
+  build-push-scan:
     strategy:
       matrix:
         package: [ api, indexer ]
-    with:
-      repository: veworld/${{ matrix.package }}
-      imageTag: ${{ github.sha }}
-      buildCommand: docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
+          aws-region: eu-west-1
+
+      - name: Login To Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Check ECR Repository
+        id: check-ecr-repo
+        env:
+          REPOSITORY: veworld/${{ matrix.package }}
+        run: |
+          if 
+            aws ecr describe-repositories --repository-names $REPOSITORY 
+          then
+            echo "::set-output name=exists::true"
+          else
+            echo "::set-output name=exists::false"
+          fi
+
+      - name: Create ECR Repository
+        env:
+          REPOSITORY: veworld/${{ matrix.package }}
+        if: steps.check-ecr-repo.outputs.exists == 'false'
+        run: |
+          aws ecr create-repository --repository-name $REPOSITORY
+
+      - name: Build & Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: veworld/${{ matrix.package }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker build --build-arg VEWORLD_PACKAGE=${{ matrix.package }} -t $ECR_IMAGE .
+          docker push $ECR_IMAGE
+
+      - name: Scan Docker Image
+        id: docker-scan
+        uses: alexjurkiewicz/ecr-scan-image@v2.0.0
+        with:
+          repository: ${{ inputs.repository }}
+          tag: ${{ inputs.imageTag }}
+          fail_treshold: high
+      - run: echo "${{ steps.docker-scan.outputs.total }} total vulnerabilities"
 
