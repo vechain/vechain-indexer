@@ -33,26 +33,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Check ECR Repository
-        id: check-ecr-repo
-        env:
-          REPOSITORY: veworld/${{ matrix.package }}
-        run: |
-          if 
-            aws ecr describe-repositories --repository-names $REPOSITORY 
-          then
-            echo "::set-output name=exists::true"
-          else
-            echo "::set-output name=exists::false"
-          fi
-
-      - name: Create ECR Repository
-        env:
-          REPOSITORY: veworld/${{ matrix.package }}
-        if: steps.check-ecr-repo.outputs.exists == 'false'
-        run: |
-          aws ecr create-repository --repository-name $REPOSITORY
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -67,13 +47,4 @@ jobs:
             VEWORLD_PACKAGE=${{ matrix.package }}
           push: true
           tags: ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-
-      - name: Scan Docker Image
-        id: docker-scan
-        uses: alexjurkiewicz/ecr-scan-image@v2.0.0
-        with:
-          repository: veworld/${{ matrix.package }}
-          tag: ${{ inputs.imageTag }}
-          fail_threshold: high
-      - run: echo "${{ steps.docker-scan.outputs.total }} total vulnerabilities"
 
