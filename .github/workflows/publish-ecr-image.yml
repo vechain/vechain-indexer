@@ -43,8 +43,8 @@ jobs:
         #        uses: docker/build-push-action@v4
         run: |
           ECS_TAG=${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-          docker buildx build -t $ECS_TAG --platform linux/arm64 --build-arg VEWORLD_PACKAGE=${{ matrix.package }} .
-          docker push $ECS_TAG
+          docker buildx build -t $ECS_TAG --platform linux/arm64 --build-arg VEWORLD_PACKAGE=${{ matrix.package }} --push .
+#          docker push $ECS_TAG
 #        with:
 #          platforms: linux/arm64
 #          build-args: |
