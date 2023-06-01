@@ -66,7 +66,7 @@ jobs:
           IMAGE_TAG: ${{ inputs.imageTag }}
         run: |
           ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker buildx build --platform linux/amd64,linux/arm64/v8 --build-arg VEWORLD_PACKAGE=${{ matrix.package }} --push -t $ECR_IMAGE .
+          docker buildx build --platform linux/amd64,linux/arm64 --build-arg VEWORLD_PACKAGE=${{ matrix.package }} --push -t $ECR_IMAGE .
 
       - name: Scan Docker Image
         id: docker-scan
