@@ -1,4 +1,4 @@
-FROM --platform=linux/arm64 eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 ARG VEWORLD_PACKAGE
 
@@ -7,7 +7,7 @@ WORKDIR /usr/app
 COPY gradle ./gradle
 COPY gradlew ./
 
-RUN ["/bin/bash", "-c", "./gradlew"]
+RUN ./gradlew
 
 COPY build.gradle.kts ./
 COPY settings.gradle.kts ./
@@ -18,9 +18,9 @@ COPY packages ./packages
 RUN test -n "VEWORLD_PACKAGE"
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
-RUN ["/bin/bash", "-c", "./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test"]
+RUN ./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test
 
-FROM --platform=linux/arm64 eclipse-temurin:17-jre-jammy AS prod
+FROM eclipse-temurin:17-jre-jammy AS prod
 
 ARG VEWORLD_PACKAGE
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
