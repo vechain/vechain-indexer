@@ -1,0 +1,18 @@
+name: Publish & Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-main-image-publish
+  cancel-in-progress: true
+
+jobs:
+  publish-to-ecr:
+    uses: ./.github/workflows/publish-ecr-image.yml
+    with:
+      imageTag: ${{ github.sha }}
+    secrets: inherit
