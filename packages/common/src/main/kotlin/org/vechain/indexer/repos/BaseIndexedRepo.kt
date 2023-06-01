@@ -15,14 +15,5 @@ interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String> {
     )
     fun getMaxBlockNumber(): Long?
 
-    @Aggregation(
-        pipeline = [
-            "{ '\$sort': { 'blockNumber': -1 } }",
-            "{ '\$limit': 1 }",
-            "{ '\$project': { blockId: 1 } }"
-        ]
-    )
-    fun getMaxBlockId(): String?
-
     fun deleteAllByBlockNumberBetween(start: Long, end: Long)
 }

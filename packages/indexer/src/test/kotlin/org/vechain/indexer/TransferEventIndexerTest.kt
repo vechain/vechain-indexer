@@ -1,21 +1,19 @@
 package org.vechain.indexer
 
-import io.mockk.Called
-import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
-import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
-import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repos.TransferEventRepo
 import org.vechain.indexer.service.ThorService
@@ -38,25 +36,32 @@ class TransferEventIndexerTest {
     @MockK
     lateinit var mongoTemplate: MongoTemplate
 
-    @InjectMockKs
     lateinit var transferEventIndexer: TransferEventIndexer
+
+    @BeforeEach
+    fun setUp() {
+        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
+        MockKAnnotations.init(this)
+        transferEventIndexer = TransferEventIndexer(thorService, transferEventRepo, mongoTemplate)
+    }
 
     @Test
     fun `Starting block is transfer block - when transfer block is lower`() {
         val transferEventsStartingBlock = 9L
 
         every { transferEventRepo.getMaxBlockNumber() } returns transferEventsStartingBlock
+        every { thorService.getBlock(transferEventsStartingBlock) } returns BlockFixtures.BLOCK_9
 
-        val indexerStartingBlock = transferEventIndexer.getPreviousBlockNumber()
+        val indexerStartingBlock = transferEventIndexer.getLastSyncedBlock()
 
-        expectThat(indexerStartingBlock).isEqualTo(transferEventsStartingBlock)
+        expectThat(indexerStartingBlock.number).isEqualTo(transferEventsStartingBlock)
     }
 
     @Test
     fun `can process semi-fungible transfer events`() {
 
-        val transfersSlot = slot<List<TransferEvent>>()
-        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
+        val transfersSlot = slot<List<IndexedTransferEvent>>()
+        every { mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_10_SEMI_FUNGIBLE_TOKENS)
 
@@ -80,8 +85,8 @@ class TransferEventIndexerTest {
     fun `Process block - with transfer events`() {
         val blockNumber = 8L
 
-        val transfersSlot = slot<List<TransferEvent>>()
-        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
+        val transfersSlot = slot<List<IndexedTransferEvent>>()
+        every { mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
@@ -113,8 +118,8 @@ class TransferEventIndexerTest {
     fun `can pick up VET transfer`() {
         val blockNumber = 14L
 
-        val transfersSlot = slot<List<TransferEvent>>()
-        every { mongoTemplate.insert(capture(transfersSlot), TransferEvent::class.java) } returns mutableListOf()
+        val transfersSlot = slot<List<IndexedTransferEvent>>()
+        every { mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java) } returns mutableListOf()
 
         transferEventIndexer.processBlock(BLOCK_14_VET_TRANSFER)
 

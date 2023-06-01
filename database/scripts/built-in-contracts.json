@@ -12,6 +12,8 @@
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   },
@@ -28,6 +30,8 @@
     "isErc721": false,
     "isVip180": true,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   },
@@ -44,6 +48,8 @@
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   },
@@ -60,6 +66,8 @@
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   },
@@ -76,6 +84,8 @@
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   },
@@ -92,6 +102,8 @@
     "isErc721": false,
     "isVip180": false,
     "isVip181": false,
+    "isVip210": false,
+    "isErc1155": false,
     "previousMasters": [],
     "_class": "org.vechain.indexer.model.Contract"
   }

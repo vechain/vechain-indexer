@@ -1,7 +1,7 @@
 package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -42,7 +42,7 @@ class ContractTest {
         }
     }
 
-    fun assertValidContract(contract: Contract) {
+    fun assertValidContract(contract: IndexedContract) {
 
         expect {
             that(contract.txId).isNotEmpty()

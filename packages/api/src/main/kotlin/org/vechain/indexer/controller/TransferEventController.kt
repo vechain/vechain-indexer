@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.exception.BadRequestException
-import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -51,7 +51,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<TransferEvent> {
+    ): List<IndexedTransferEvent> {
 
         val pageable = toPageable(page, size, direction)
 
@@ -88,7 +88,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<TransferEvent> {
+    ): List<IndexedTransferEvent> {
         return transferEventService.findByFrom(address, tokenAddress, toPageable(page, size, direction))
     }
 
@@ -116,7 +116,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<TransferEvent> {
+    ): List<IndexedTransferEvent> {
         return transferEventService.findByTo(address, tokenAddress, toPageable(page, size, direction))
     }
 }

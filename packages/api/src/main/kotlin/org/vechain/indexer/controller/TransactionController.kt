@@ -12,7 +12,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
-import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -45,7 +45,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
-    open fun getTransactionById(@TransactionId @PathVariable txId: String): Transaction {
+    open fun getTransactionById(@TransactionId @PathVariable txId: String): IndexedTransaction {
         return transactionService.findById(txId)
             ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
     }
@@ -80,7 +80,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Transaction> {
+    ): List<IndexedTransaction> {
         return transactionService.findByOrigin(
             origin,
             includeDelegated,
@@ -108,7 +108,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Transaction> {
+    ): List<IndexedTransaction> {
         return transactionService.findAllDelegated(
             delegator,
             toPageable(page, size, direction, "blockNumber", "_id")

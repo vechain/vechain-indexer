@@ -5,11 +5,11 @@ import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
-import org.vechain.indexer.model.Clause
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ClauseUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.TransactionUtils
+import org.vechain.thor.model.Clause
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 

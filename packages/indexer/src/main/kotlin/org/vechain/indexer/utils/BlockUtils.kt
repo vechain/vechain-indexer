@@ -1,7 +1,10 @@
 package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
-import org.vechain.indexer.model.*
+import org.vechain.indexer.model.IndexedClause
+import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.TransferEventType
+import org.vechain.thor.model.*
 import org.web3j.utils.Numeric
 
 object BlockUtils {
@@ -9,9 +12,8 @@ object BlockUtils {
     /**
      * Get all confirmed transactions from a block
      */
-    fun confirmedTransactions(block: Block): List<Transaction> {
+    private fun confirmedTransactions(block: Block): List<Transaction> {
         return block.transactions
-            .map { Transaction(it) }
             .filter { !it.reverted }
     }
 
@@ -20,10 +22,10 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    fun getAllClauses(block: Block): List<WrappedClause> {
+    fun getAllClauses(block: Block): List<IndexedClause> {
         return confirmedTransactions(block).flatMap { tx ->
             tx.clauses.mapIndexed { idx, cl ->
-                WrappedClause(
+                IndexedClause(
                     block, tx, cl, idx
                 )
             }
@@ -35,7 +37,7 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
+    private fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
         return confirmedTransactions(block)
             .flatMap { tx ->
                 tx.outputs.map { output ->
@@ -64,7 +66,7 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    fun getTransferEventsFromTopics(block: Block): List<TransferEvent> {
+    fun getTransferEventsFromTopics(block: Block): List<IndexedTransferEvent> {
         return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
             extractTopicTransfers(output.events, tx, block, outputIndex)
         }
@@ -73,7 +75,7 @@ object BlockUtils {
     /**
      * Gets all VET transfers AND transfers from topics
      */
-    fun getAllTransferEvents(block: Block): List<TransferEvent> {
+    fun getAllTransferEvents(block: Block): List<IndexedTransferEvent> {
         return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
 
             val vetTransfers = extractVetTransfers(output.transfers, tx, block, outputIndex)
@@ -89,17 +91,18 @@ object BlockUtils {
         tx: Transaction,
         block: Block,
         outputIndex: Int
-    ): List<TransferEvent> {
+    ): List<IndexedTransferEvent> {
         return events
             .filter { EventUtils.isTransferEvent(it) }.flatMapIndexed { eventIndex, event ->
                 val transfers = EventUtils.getEventParams(event)
 
                 transfers.mapIndexed { transferIndex, transfer ->
-                    TransferEvent(
+                    IndexedTransferEvent(
                         id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"),
-                        blockId = block.blockId,
-                        blockNumber = block.blockNumber,
-                        blockTimestamp = block.blockTimestamp, txId = tx.id,
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
+                        txId = tx.id,
                         from = transfer.from,
                         to = transfer.to,
                         value = transfer.amount,
@@ -116,13 +119,13 @@ object BlockUtils {
         tx: Transaction,
         block: Block,
         outputIndex: Int
-    ): List<TransferEvent> {
+    ): List<IndexedTransferEvent> {
         return transfers.mapIndexed { transferIndex, transfer ->
-            TransferEvent(
+            IndexedTransferEvent(
                 id = DigestUtils.sha1Hex("${tx.id}-VET-${outputIndex}-${transferIndex}"),
-                blockId = block.blockId,
-                blockNumber = block.blockNumber,
-                blockTimestamp = block.blockTimestamp,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
                 txId = tx.id,
                 from = transfer.sender,
                 to = transfer.recipient,

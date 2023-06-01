@@ -10,7 +10,7 @@ enum class TransferEventType {
 }
 
 @Document(collection = "transfer_events")
-data class TransferEvent @ConstructorBinding constructor(
+data class IndexedTransferEvent @ConstructorBinding constructor(
     @Id
     val id: String,
     override val blockId: String,

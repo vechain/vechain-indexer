@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "contracts")
-data class Contract @ConstructorBinding constructor(
+data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
     override val blockId: String,

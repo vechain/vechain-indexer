@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
@@ -46,7 +46,7 @@ open class ContractController(private val contractService: ContractService) {
         required = true,
         example = "0x0000000000000000000000417574686f72697479"
     )
-    open fun getContractByAddress(@Address @PathVariable address: String): Contract {
+    open fun getContractByAddress(@Address @PathVariable address: String): IndexedContract {
         return contractService.findByAddress(address)
             ?: throw ResourceNotFoundException("Contract with address $address was not found")
     }
@@ -83,7 +83,7 @@ open class ContractController(private val contractService: ContractService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<Contract> {
+    ): List<IndexedContract> {
         validateContractType(type)
 
         return contractService.find(

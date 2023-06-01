@@ -1,7 +1,7 @@
 package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.IndexedNFT
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -65,7 +65,7 @@ class NFTTest {
         expectThat(nftsWithQuery).hasSize(nftAmountForFirstContract)
     }
 
-    fun assertValidNft(nft: NFT) {
+    fun assertValidNft(nft: IndexedNFT) {
         expect {
             that(nft.tokenId).isNotEmpty()
             that(nft.contractAddress).isNotEmpty()

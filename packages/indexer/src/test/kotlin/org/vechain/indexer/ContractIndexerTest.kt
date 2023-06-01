@@ -1,36 +1,52 @@
 package org.vechain.indexer
 
 import io.mockk.*
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
+import org.vechain.thor.model.Block
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
 import java.util.*
 
+@ExtendWith(MockKExtension::class)
 internal class ContractIndexerTest {
 
-    private val thorService: ThorService = mockk()
-    private var contractRepo: ContractRepo = mockk()
-    private var mongoTemplate: MongoTemplate = mockk()
-    private val contractService: ContractService = ContractService(thorService)
+    @MockK
+    lateinit var thorService: ThorService
 
-    //Using constructor invocation because MockK has problems with @SpyK + @InjectMocks
-    private val contractIndexer: ContractIndexer =
-        ContractIndexer(thorService, contractService, contractRepo, mongoTemplate)
+    @MockK
+    lateinit var contractRepo: ContractRepo
 
-    init {
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
+
+    lateinit var contractService: ContractService
+
+    private lateinit var contractIndexer: ContractIndexer
+
+
+    @BeforeEach
+    fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
+        contractService = ContractService(thorService)
+        MockKAnnotations.init(this)
+        contractIndexer = ContractIndexer(thorService, contractService, contractRepo, mongoTemplate)
     }
 
     // Block #5 -> block_5.json
@@ -46,8 +62,8 @@ internal class ContractIndexerTest {
         every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
-        val contractsSlot = slot<List<Contract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
+        val contractsSlot = slot<List<IndexedContract>>()
+        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
 
 
         // Process block for contract indexing
@@ -57,10 +73,10 @@ internal class ContractIndexerTest {
         val contracts = contractsSlot.captured
         expect {
             that(contracts).hasSize(2)
-            that(contracts).map(Contract::isErc20).all { isTrue() }
-            that(contracts).map(Contract::isVip180).all { isTrue() }
-            that(contracts).map(Contract::isErc721).all { isFalse() }
-            that(contracts).map(Contract::isVip181).all { isFalse() }
+            that(contracts).map(IndexedContract::isErc20).all { isTrue() }
+            that(contracts).map(IndexedContract::isVip180).all { isTrue() }
+            that(contracts).map(IndexedContract::isErc721).all { isFalse() }
+            that(contracts).map(IndexedContract::isVip181).all { isFalse() }
         }
     }
 
@@ -83,16 +99,16 @@ internal class ContractIndexerTest {
         every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
-        val contractsSlot = slot<List<Contract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
+        val contractsSlot = slot<List<IndexedContract>>()
+        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
 
         val contracts = contractsSlot.captured
 
-        val vip210: Contract? = contracts.find { it.isVip210 && !it.isErc1155 }
-        val erc1155: Contract? = contracts.find { it.isErc1155 && !it.isVip210 }
+        val vip210: IndexedContract? = contracts.find { it.isVip210 && !it.isErc1155 }
+        val erc1155: IndexedContract? = contracts.find { it.isErc1155 && !it.isVip210 }
 
         expect {
             that(vip210).isNotNull()
@@ -113,13 +129,11 @@ internal class ContractIndexerTest {
         every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
-        val contractsSlot = slot<List<Contract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
-
+        val contractsSlot = slot<List<IndexedContract>>()
+        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
-
 
         val contracts = contractsSlot.captured
         expect {
@@ -127,10 +141,10 @@ internal class ContractIndexerTest {
         }
         val contract = contracts.first()
         expect {
-            that(contract).get(Contract::isErc721).isTrue()
-            that(contract).get(Contract::isVip181).isTrue()
-            that(contract).get(Contract::isErc20).isFalse()
-            that(contract).get(Contract::isVip180).isFalse()
+            that(contract).get(IndexedContract::isErc721).isTrue()
+            that(contract).get(IndexedContract::isVip181).isTrue()
+            that(contract).get(IndexedContract::isErc20).isFalse()
+            that(contract).get(IndexedContract::isVip180).isFalse()
         }
     }
 
@@ -146,26 +160,26 @@ internal class ContractIndexerTest {
         every { contractRepo.findById(any()) } returns Optional.empty()
 
         // Capture entities saved upon the block processing
-        val contractsSlot = slot<List<Contract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), Contract::class.java) } returns mutableListOf()
+        val contractsSlot = slot<List<IndexedContract>>()
+        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
 
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
 
         val contracts = contractsSlot.captured
         expect {
-            that(contracts).all { isA<Contract>() }.hasSize(1)
+            that(contracts).all { isA<IndexedContract>() }.hasSize(1)
         }
         val contract = contracts.first()
         expect {
-            that(contract).get(Contract::address).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
-            that(contract).get(Contract::blockId)
+            that(contract).get(IndexedContract::address).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
+            that(contract).get(IndexedContract::blockId)
                 .isEqualTo("0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e")
-            that(contract).get(Contract::blockNumber).isEqualTo(blockNumber)
-            that(contract).get(Contract::blockTimestamp).isEqualTo(1680177334)
-            that(contract).get(Contract::txId).isEqualTo(txId)
-            that(contract).get(Contract::creator).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
-            that(contract).get(Contract::master).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
-            that(contract).get(Contract::rawData).isEqualTo(contractData)
+            that(contract).get(IndexedContract::blockNumber).isEqualTo(blockNumber)
+            that(contract).get(IndexedContract::blockTimestamp).isEqualTo(1680177334)
+            that(contract).get(IndexedContract::txId).isEqualTo(txId)
+            that(contract).get(IndexedContract::creator).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(contract).get(IndexedContract::master).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(contract).get(IndexedContract::rawData).isEqualTo(contractData)
         }
     }
 
@@ -177,7 +191,7 @@ internal class ContractIndexerTest {
         every { contractRepo.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
-        val updatedContractSlot = slot<Contract>()
+        val updatedContractSlot = slot<IndexedContract>()
         every { contractRepo.save(capture(updatedContractSlot)) } returnsArgument 0
 
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"

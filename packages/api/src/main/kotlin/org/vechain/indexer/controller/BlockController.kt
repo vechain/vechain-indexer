@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
-import org.vechain.indexer.model.Block
+import org.vechain.indexer.model.IndexedBlock
 import org.vechain.indexer.service.BlockService
 import org.vechain.indexer.utils.HexUtil
 
@@ -35,7 +35,7 @@ open class BlockController(private val blockService: BlockService) {
         required = true,
         example = "best"
     )
-    open fun getBlock(@PathVariable revision: String): Block {
+    open fun getBlock(@PathVariable revision: String): IndexedBlock {
 
         val block = if (revision == "best") {
             blockService.findBestBlock()

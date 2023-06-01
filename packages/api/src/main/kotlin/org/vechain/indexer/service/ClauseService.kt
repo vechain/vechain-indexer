@@ -3,7 +3,7 @@ package org.vechain.indexer.service
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.WrappedClause
+import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repos.ClauseRepo
 import org.vechain.indexer.utils.HexUtil
 
@@ -11,7 +11,7 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class ClauseService(private val clauseRepo: ClauseRepo) {
 
-    open fun findByAddress(address: String, pageable: Pageable): List<WrappedClause> {
+    open fun findByAddress(address: String, pageable: Pageable): List<IndexedClause> {
         val addressNorm = HexUtil.normalise(address)
         return clauseRepo.findByOriginOrTo(addressNorm, addressNorm, pageable)
     }

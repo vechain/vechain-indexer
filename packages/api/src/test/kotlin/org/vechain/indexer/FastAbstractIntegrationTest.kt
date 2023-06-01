@@ -26,13 +26,13 @@ import org.vechain.indexer.utils.JsonUtils
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class FastAbstractIntegrationTest {
-    protected val TX_TYPE = object : TypeReference<List<Transaction>>() {}
-    protected val CONTRACT_TYPE = object : TypeReference<List<Contract>>() {}
-    protected val NFT_TYPE = object : TypeReference<List<NFT>>() {}
-    protected val BLOCKS_TYPE = object : TypeReference<List<Block>>() {}
-    protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<TransferEvent>>() {}
-    protected val CLAUSES_TYPE = object : TypeReference<List<WrappedClause>>() {}
-    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<WrappedClause>>>() {}
+    protected val TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
+    protected val CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
+    protected val NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
+    protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
+    protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
+    protected val CLAUSES_TYPE = object : TypeReference<List<IndexedClause>>() {}
+    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<IndexedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
@@ -57,17 +57,17 @@ abstract class FastAbstractIntegrationTest {
     @BeforeAll
     fun setup() {
 
-        val transactions: List<Transaction> =
+        val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
-        val contracts: List<Contract> =
+        val contracts: List<IndexedContract> =
             loadDataFromResources("/contracts.json", CONTRACT_TYPE)
-        val nfts: List<NFT> =
+        val nfts: List<IndexedNFT> =
             loadDataFromResources("/nfts.json", NFT_TYPE)
-        val blocks: List<Block> =
+        val blocks: List<IndexedBlock> =
             loadDataFromResources("/blocks.json", BLOCKS_TYPE)
-        val transferEvents: List<TransferEvent> =
+        val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
-        val clauses: List<WrappedClause> =
+        val clauses: List<IndexedClause> =
             loadDataFromResources("/clauses.json", CLAUSES_TYPE)
 
         transactionRepository.saveAll(transactions)

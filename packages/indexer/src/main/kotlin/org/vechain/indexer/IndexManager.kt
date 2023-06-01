@@ -9,7 +9,7 @@ import org.vechain.indexer.service.ThorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 
-const val BLOCK_TIME = 10000L
+const val BLOCK_TIME = 10_000L
 
 @Component
 class IndexManager(private val indexers: List<Indexer>, private val thorService: ThorService) {
@@ -32,8 +32,8 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
             val latestBlock = thorService.getBestBlock()
 
             indexers.forEach { indexer ->
-                if (indexer.currentBlockNumber < latestBlock.blockNumber && indexer.status == Status.FULLY_SYNCED) {
-                    logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlockNumber}, bestBlock=${latestBlock.blockNumber})")
+                if (indexer.currentBlockNumber < latestBlock.number && indexer.status == Status.FULLY_SYNCED) {
+                    logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlockNumber}, bestBlock=${latestBlock.number})")
                     indexer.status = Status.SYNCING
                 }
 

@@ -1,13 +1,20 @@
 package org.vechain.indexer.model
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.vechain.indexer.model.rest.BlockTransaction
+import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.thor.model.Block
+import org.vechain.thor.model.Clause
+import org.vechain.thor.model.Transaction
+import org.vechain.thor.model.TxOutputs
 
-data class TransactionData @ConstructorBinding constructor(
+@Document(collection = "transactions")
+data class IndexedTransaction @ConstructorBinding constructor(
+    @Id
     val id: String,
-    val blockId: String,
-    val blockNumber: Long,
-    val blockTimestamp: Long,
+    override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val size: Long,
     val chainTag: Long,
     val blockRef: String,
@@ -24,12 +31,13 @@ data class TransactionData @ConstructorBinding constructor(
     val reverted: Boolean,
     val origin: String,
     val outputs: List<TxOutputs>
-) {
-    constructor(blockId: String, blockNumber: Long, blockTimestamp: Long, tx: BlockTransaction) : this(
+) : IndexedDocument {
+
+    constructor(block: Block, tx: Transaction) : this(
         id = tx.id,
-        blockId = blockId,
-        blockNumber = blockNumber,
-        blockTimestamp = blockTimestamp,
+        blockId = block.id,
+        blockNumber = block.number,
+        blockTimestamp = block.timestamp,
         size = tx.size,
         chainTag = tx.chainTag,
         blockRef = tx.blockRef,

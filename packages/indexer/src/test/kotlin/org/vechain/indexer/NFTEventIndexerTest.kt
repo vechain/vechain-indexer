@@ -1,19 +1,16 @@
 package org.vechain.indexer
 
-import io.mockk.Called
-import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
-import io.mockk.verify
 import org.apache.commons.codec.digest.DigestUtils
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
-import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
@@ -30,17 +27,20 @@ internal class NFTEventIndexerTest {
     @MockK
     lateinit var nftRepo: NFTRepo
 
-    @MockK
-    lateinit var mongoTemplate: MongoTemplate
-
-    @InjectMockKs
     lateinit var nftEventIndexer: NFTEventIndexer
+
+    @BeforeEach
+    fun setUp() {
+        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
+        MockKAnnotations.init(this)
+        nftEventIndexer = NFTEventIndexer(thorService, nftRepo)
+    }
 
     @Test
     fun `Process block - with NFT transfer events`() {
         val blockNumber = 8L
 
-        val nftsSlot = slot<List<NFT>>()
+        val nftsSlot = slot<List<IndexedNFT>>()
         every { nftRepo.saveAll(capture(nftsSlot)) } returns mutableListOf()
 
         nftEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
