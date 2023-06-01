@@ -59,14 +59,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build & Push Docker Image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: veworld/${{ matrix.package }}
-          IMAGE_TAG: ${{ inputs.imageTag }}
-        run: |
-          ECR_IMAGE=$ECR_REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker buildx build --platform linux/arm64 --build-arg VEWORLD_PACKAGE=${{ matrix.package }} --push -t $ECR_IMAGE .
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
 
       - name: Scan Docker Image
         id: docker-scan
