@@ -35,11 +35,11 @@
 
 - To see a list of all available commands, run `make help`
 - After starting the application, the swagger will be made available at `http://localhost:8080`
-- There is a postman collection in the directory `./postman`
 
 ### Option 1: Docker only
 
-- Copy env files for the two packages `./package/<package>/.env.example` to `./package/<package>/.env` and fill in the values for your environment. They should work as-is for docker
+- Copy env files for the two packages `./package/<package>/.env.example` to `./package/<package>/.env` and fill in the
+  values for your environment. They should work as-is for docker
 
 - Run:
 

@@ -38,7 +38,7 @@ open class TransactionController(private val transactionService: TransactionServ
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
+        `in` = ParameterIn.PATH,
         name = "txId",
         schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
         description = "A valid transaction ID",

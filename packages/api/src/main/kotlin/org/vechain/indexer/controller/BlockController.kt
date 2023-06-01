@@ -29,7 +29,7 @@ open class BlockController(private val blockService: BlockService) {
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
+        `in` = ParameterIn.PATH,
         name = "revision",
         description = "block ID or number, or 'best' stands for latest block",
         required = true,

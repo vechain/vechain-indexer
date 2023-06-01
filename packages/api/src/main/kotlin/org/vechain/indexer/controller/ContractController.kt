@@ -39,7 +39,7 @@ open class ContractController(private val contractService: ContractService) {
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
+        `in` = ParameterIn.PATH,
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtil.REGEX),
         description = "Address of the contract",

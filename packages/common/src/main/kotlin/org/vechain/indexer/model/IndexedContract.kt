@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
-    override val blockId: String,
+    override var blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val txId: String,

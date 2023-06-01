@@ -6,6 +6,7 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
@@ -35,6 +36,9 @@ internal class ContractIndexerTest {
     @MockK
     lateinit var mongoTemplate: MongoTemplate
 
+    @MockK
+    lateinit var contractsResource: Resource
+
     lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
@@ -46,7 +50,7 @@ internal class ContractIndexerTest {
         every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         contractService = ContractService(thorService)
         MockKAnnotations.init(this)
-        contractIndexer = ContractIndexer(thorService, contractService, contractRepo, mongoTemplate)
+        contractIndexer = ContractIndexer(thorService, contractService, contractRepo, mongoTemplate, contractsResource)
     }
 
     // Block #5 -> block_5.json
