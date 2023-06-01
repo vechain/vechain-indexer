@@ -8,7 +8,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
-import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.IndexedTransaction
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
@@ -237,7 +237,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             expectThat(transactions)
                 .hasSize(9)
                 .isSorted(
-                    compareByDescending<Transaction> { it.blockNumber }
+                    compareByDescending<IndexedTransaction> { it.blockNumber }
                         .then(compareByDescending { it.id })
                 )
         }
@@ -383,7 +383,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             expectThat(transactions)
                 .hasSize(size)
                 .isSorted(
-                    compareByDescending<Transaction> { it.blockNumber }
+                    compareByDescending<IndexedTransaction> { it.blockNumber }
                         .then(compareByDescending { it.id })
                 )
         }

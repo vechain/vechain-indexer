@@ -2,15 +2,14 @@ package org.vechain.indexer
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.model.NFT
-import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repos.NFTRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
+import org.vechain.thor.model.Block
 import org.web3j.utils.Numeric
 
 @Profile("nft-events")
@@ -18,8 +17,8 @@ import org.web3j.utils.Numeric
 open class NFTEventIndexer(
     thorService: ThorService,
     private val nftRepo: NFTRepo,
-    mongoTemplate: MongoTemplate,
-) : Indexer(thorService, nftRepo, mongoTemplate) {
+
+    ) : VeWorldIndexer(thorService, nftRepo) {
 
     override fun processBlock(block: Block) {
 
@@ -30,13 +29,13 @@ open class NFTEventIndexer(
         if (nfts.isNotEmpty()) nftRepo.saveAll(nfts)
     }
 
-    private fun getNfts(transfers: List<TransferEvent>): List<NFT> {
+    private fun getNfts(transfers: List<IndexedTransferEvent>): List<IndexedNFT> {
         return transfers.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
             .map {
 
                 val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
 
-                NFT(
+                IndexedNFT(
                     id = buildHashedId("${it.tokenAddress}-${tokenId}"),
                     owner = it.to,
                     contractAddress = it.tokenAddress!!,

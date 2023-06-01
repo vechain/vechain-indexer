@@ -36,7 +36,7 @@ internal class BlockControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get block by invalid number should return 404`() {
         val blockNumber = "23456789345"
-        val result = mockMvc.get(
+        mockMvc.get(
             "$baseEndpoint/$blockNumber"
         )
             .andExpect { status { isNotFound() } }
@@ -87,7 +87,7 @@ internal class BlockControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get block by ID that doesn't exists should return 404`() {
         val blockId = "0x00000008de120e47e15edb8d9a23823b198590623c3c00000000000000000000"
-        val result = mockMvc.get(
+        mockMvc.get(
             "$baseEndpoint/$blockId"
         )
             .andExpect { status { isNotFound() } }
@@ -96,7 +96,7 @@ internal class BlockControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get block by invalid ID should return 400`() {
         val blockId = "0x00000008de12"
-        val result = mockMvc.get(
+        mockMvc.get(
             "$baseEndpoint/$blockId"
         )
             .andExpect { status { isBadRequest() } }

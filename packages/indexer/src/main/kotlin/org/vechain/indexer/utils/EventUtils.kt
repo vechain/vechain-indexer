@@ -5,7 +5,7 @@ import org.vechain.indexer.contracts.specifications.ERC1155Contract
 import org.vechain.indexer.contracts.specifications.Signatures
 import org.vechain.indexer.contracts.specifications.VIP210Contract
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.model.TxEvent
+import org.vechain.thor.model.TxEvent
 import org.web3j.abi.TypeReference
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.DynamicArray

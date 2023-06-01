@@ -1,29 +1,50 @@
 package org.vechain.indexer
 
+import io.mockk.MockKAnnotations
 import io.mockk.every
-import io.mockk.mockk
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import io.mockk.slot
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
-import org.vechain.indexer.model.Block
+import org.vechain.indexer.fixtures.BlockFixtures
+import org.vechain.indexer.model.IndexedBlock
 import org.vechain.indexer.repos.BlockRepo
 import org.vechain.indexer.service.ThorService
+import org.vechain.thor.model.Block
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
+@ExtendWith(MockKExtension::class)
 internal class ReOrgIndexerTest {
 
-    private val thorService: ThorService = mockk()
-    private val repo: BlockRepo = mockk()
-    private val mongoTemplate: MongoTemplate = mockk()
+    @MockK
+    lateinit var thorService: ThorService
+
+    @MockK
+    lateinit var repo: BlockRepo
+
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
+
+    lateinit var blockIndexer: BlockIndexer
+
+    @BeforeEach
+    fun setUp() {
+        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
+        MockKAnnotations.init(this)
+        blockIndexer = BlockIndexer(thorService, repo)
+    }
 
     fun mockBlock(num: Long, parentId: String): Block {
         return Block(
-            blockId = "0x${num}",
-            blockNumber = num,
-            blockTimestamp = num,
+            id = "0x${num}",
+            number = num,
+            timestamp = num,
             size = 0,
             gasUsed = 0,
             gasLimit = 0,
@@ -49,17 +70,12 @@ internal class ReOrgIndexerTest {
 
             //Mock the first response and then the response after the re-org
             every {
-                repo.getMaxBlockId()
-            } returns null andThen "0x37"
-
-            //Mock the first response and then the response after the re-org
-            every {
                 repo.getMaxBlockNumber()
             } returns null andThen 37
 
             every {
-                mongoTemplate.insertAll(any<List<Block>>())
-            } returns emptyList<Block>()
+                mongoTemplate.insertAll(any<List<IndexedBlock>>())
+            } returns emptyList<IndexedBlock>()
 
             //Set up capture slots
             val startBlock = slot<Long>()
@@ -71,8 +87,6 @@ internal class ReOrgIndexerTest {
                 println("Deleting blocks")
             }
 
-            val indexer = BlockIndexer(thorService, repo, mongoTemplate)
-
             //Mock 50 blocks to process
             for (i in 0..51) {
 
@@ -82,7 +96,7 @@ internal class ReOrgIndexerTest {
                 )
 
                 every { thorService.getBlock(i.toLong()) } returns mockedBlock
-                every { repo.save(mockedBlock) } returns mockedBlock
+                every { repo.save(IndexedBlock(mockedBlock)) } returns IndexedBlock(mockedBlock)
             }
 
             //Mock a re-org block
@@ -94,12 +108,12 @@ internal class ReOrgIndexerTest {
 
             // Start the indexer
             Thread {
-                indexer.start()
+                blockIndexer.start()
             }.start()
 
             // and wait for the blocks to process
             for (i in 0..120) {
-                if (indexer.currentBlockNumber == 52L) {
+                if (blockIndexer.currentBlockNumber == 52L) {
                     break
                 } else {
                     Thread.sleep(250)

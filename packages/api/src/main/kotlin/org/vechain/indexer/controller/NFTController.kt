@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
-import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -57,7 +57,7 @@ open class NFTController(private val nftService: NFTService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<NFT> {
+    ): List<IndexedNFT> {
         val pageable = toPageable(page, size, direction)
 
         return if (contractAddress.isNullOrEmpty()) nftService.findByOwner(address, pageable)

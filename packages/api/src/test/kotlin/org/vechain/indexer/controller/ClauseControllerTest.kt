@@ -7,7 +7,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
-import org.vechain.indexer.model.WrappedClause
+import org.vechain.indexer.model.IndexedClause
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
@@ -121,8 +121,8 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
 
         expectThat(clauses).isSorted(
-            compareByDescending<WrappedClause> { it.blockNumber }
-                .then(compareByDescending<WrappedClause> { it.txId }
+            compareByDescending<IndexedClause> { it.blockNumber }
+                .then(compareByDescending<IndexedClause> { it.txId }
                     .then(compareByDescending { it.id })
                 )
         )
@@ -143,8 +143,8 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
 
         expectThat(clauses).hasSize(DEFAULT_PAGE_SIZE)
         expectThat(clauses).isSorted(
-            compareByDescending<WrappedClause> { it.blockNumber }
-                .then(compareByDescending<WrappedClause> { it.txId }
+            compareByDescending<IndexedClause> { it.blockNumber }
+                .then(compareByDescending<IndexedClause> { it.txId }
                     .then(compareByDescending { it.id })
                 )
         )

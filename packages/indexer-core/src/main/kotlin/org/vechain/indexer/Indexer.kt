@@ -1,14 +1,9 @@
 package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.repos.BaseIndexedRepo
-import org.vechain.indexer.service.ThorService
+import org.vechain.thor.model.Block
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -16,17 +11,14 @@ enum class Status {
     SYNCING, FULLY_SYNCED
 }
 
-const val INITIAL_BACKOFF_PERIOD = 10000L
+const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    private val thorService: ThorService,
-    private val repo: BaseIndexedRepo<*>,
-    private val mongoTemplate: MongoTemplate,
+    private var genesisBlockId: String,
     private val numBlocksToPurge: Long = 12L
 ) {
 
-    @Value("\${thor.genesis.block.id}")
-    protected var genesisBlockId: String? = null
+    private var previousBlockId: String = genesisBlockId
 
     val name: String
         get() = this.javaClass.simpleName
@@ -38,12 +30,13 @@ abstract class Indexer(
         private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
-    private var previousBlockId = genesisBlockId
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
-        currentBlockNumber = getPreviousBlockNumber() + 1
-        previousBlockId = getPreviousBlockId()
+        val block = getLastSyncedBlock()
+
+        currentBlockNumber = block.number + 1
+        previousBlockId = block.id
 
         // As a precaution assume a reorg happened
         resolveReorg()
@@ -56,7 +49,7 @@ abstract class Indexer(
         try {
             backoffDelay()
 
-            val block = thorService.getBlock(currentBlockNumber)
+            val block = getBlockFromChain(currentBlockNumber)
 
             // Check for reorg.
             if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
@@ -90,7 +83,7 @@ abstract class Indexer(
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
-            val timeSinceLastBlock = maxOf(currentEpoch - block.blockTimestamp.times(1000), 0)
+            val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 1000
 
             logger.info(
@@ -102,7 +95,7 @@ abstract class Indexer(
         currentBlockNumber++
 
         // Set the previous block id.
-        previousBlockId = block.blockId
+        previousBlockId = block.id
 
         timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
     }
@@ -120,33 +113,36 @@ abstract class Indexer(
      */
     private fun resolveReorg() {
         // Delete all records from the previous n blocks
-        repo.deleteAllByBlockNumberBetween(
+        purgeRecords(
             maxOf(currentBlockNumber - numBlocksToPurge - 1, 0),
             maxOf(currentBlockNumber + 1, 1)
         )
 
-        currentBlockNumber = getPreviousBlockNumber() + 1
-        previousBlockId = getPreviousBlockId()
+        val block = getLastSyncedBlock()
 
+        currentBlockNumber = block.number + 1
+        previousBlockId = block.id
         status = Status.SYNCING
     }
 
-    fun getPreviousBlockNumber(): Long {
-        return repo.getMaxBlockNumber() ?: -1
-    }
-
-    private fun getPreviousBlockId(): String? {
-        return repo.getMaxBlockId() ?: genesisBlockId
-    }
+    /**
+     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     */
+    abstract fun getBlockFromChain(blockNumber: Long): Block
 
     /**
-     * Insert a list of indexed documents into a collection in a single batch write
+     * getLastSyncedBlock will return the last block that was successfully processed.
      */
-    fun insertAll(documents: List<IndexedDocument>, documentType: Class<*>) {
-        mongoTemplate.insert(documents, documentType)
-    }
+    abstract fun getLastSyncedBlock(): Block
 
+    /**
+     * purgeRecords will delete all records between the startBlock and endBlock (inclusive)
+     */
+    abstract fun purgeRecords(startBlock: Long, endBlock: Long)
 
+    /**
+     * processBlock contains the business logic for this indexer.
+     */
     abstract fun processBlock(block: Block)
 
 }

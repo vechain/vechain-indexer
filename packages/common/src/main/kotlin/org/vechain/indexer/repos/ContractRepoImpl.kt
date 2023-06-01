@@ -5,27 +5,27 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 
 @Repository
 open class ContractRepoImpl(private val mongoTemplate: MongoTemplate) {
 
-    open fun findById(address: String): Contract? {
-        return mongoTemplate.findById(address, Contract::class.java)
+    open fun findById(address: String): IndexedContract? {
+        return mongoTemplate.findById(address, IndexedContract::class.java)
     }
 
     open fun findByCreatorAndType(
         creator: String?,
         contractType: ContractType?,
         pageable: Pageable
-    ): List<Contract> {
+    ): List<IndexedContract> {
         val query = Query().with(pageable)
 
         if (creator != null) query.addCriteria(Criteria.where("creator").`is`(creator))
         if (contractType != null) addTypeCriteria(contractType, query)
 
-        return mongoTemplate.find(query, Contract::class.java)
+        return mongoTemplate.find(query, IndexedContract::class.java)
     }
 
     private fun addTypeCriteria(contractType: ContractType, query: Query) {

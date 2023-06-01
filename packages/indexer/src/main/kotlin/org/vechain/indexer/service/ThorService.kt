@@ -1,7 +1,6 @@
 package org.vechain.indexer.service
 
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -10,56 +9,40 @@ import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.NotFoundException
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.model.Clause
 import org.vechain.indexer.model.rest.AccountCodeResponse
 import org.vechain.indexer.model.rest.ExecuteCodeRequest
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
-import org.vechain.indexer.model.rest.ExpandedBlockResponse
+import org.vechain.thor.model.Block
+import org.vechain.thor.model.Clause
 
-@Profile("indexer", "blocks-proxy")
 @Service
 class ThorService(private val thorRest: WebClient) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun getBlock(number: Long): Block {
-        val response = thorRest
+        val block = thorRest
             .get()
             .uri("/blocks/$number?expanded=true")
             .retrieve()
-            .bodyToMono(ExpandedBlockResponse::class.java)
+            .bodyToMono(Block::class.java)
             .block()
-            ?: throw BlockNotFoundException(blockNumber = number)
+            ?: throw BlockNotFoundException(message = "Block $number not found", blockNumber = number)
 
-        logger.debug("Block $number found")
+        if (logger.isDebugEnabled) logger.debug("Block $number found")
 
-        return Block(response)
-    }
-
-    fun getBlock(blockId: String): Block {
-        val response = thorRest
-            .get()
-            .uri("/blocks/$blockId?expanded=true")
-            .retrieve()
-            .bodyToMono(ExpandedBlockResponse::class.java)
-            .block()
-            ?: throw BlockNotFoundException(blockId = blockId)
-
-        logger.debug("Block $blockId found")
-
-        return Block(response)
+        return block
     }
 
     fun getBestBlock(): Block {
-        val response =
-            thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(ExpandedBlockResponse::class.java)
+        val block =
+            thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java)
                 .block()
-                ?: throw BlockNotFoundException("Best block not found", -1)
+                ?: throw NotFoundException("Best block not found")
 
-        logger.debug("Best block found: ${response.number}")
+        if (logger.isDebugEnabled) logger.debug("Best block found: ${block.number}")
 
-        return Block(response)
+        return block
     }
 
     fun getAccountCode(address: String): String {
@@ -67,7 +50,7 @@ class ThorService(private val thorRest: WebClient) {
             thorRest.get().uri("/accounts/$address/code").retrieve().bodyToMono(AccountCodeResponse::class.java).block()
                 ?: throw NotFoundException("Account $address not found")
 
-        logger.debug("Account $address found: $response")
+        if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
 
         return response.code
     }
@@ -75,7 +58,7 @@ class ThorService(private val thorRest: WebClient) {
     fun executeReadOnlyCode(clauses: List<Clause>): List<ExecuteCodeResponse> {
 
         val bestBlock = getBestBlock()
-        val blockRef = bestBlock.blockId.substring(0, 18)
+        val blockRef = bestBlock.id.substring(0, 18)
 
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
 

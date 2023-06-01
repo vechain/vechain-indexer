@@ -8,7 +8,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
-import org.vechain.indexer.model.NFT
+import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.utils.HexUtil
 import strikt.api.expect
 import strikt.api.expectThat
@@ -148,8 +148,8 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             expectThat(nfts).hasSize(51)
                 .isSorted(
-                    compareByDescending<NFT> { it.blockNumber }.then(
-                        compareByDescending<NFT> { it.txId }.then(
+                    compareByDescending<IndexedNFT> { it.blockNumber }.then(
+                        compareByDescending<IndexedNFT> { it.txId }.then(
                             compareByDescending { it.id })
                     )
                 )

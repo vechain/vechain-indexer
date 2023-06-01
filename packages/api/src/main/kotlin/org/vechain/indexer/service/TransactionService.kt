@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repos.TransactionRepo
 import org.vechain.indexer.utils.HexUtil
 
@@ -12,7 +12,7 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class TransactionService(private val transactionRepository: TransactionRepo) {
 
-    open fun findById(id: String): Transaction? {
+    open fun findById(id: String): IndexedTransaction? {
         return transactionRepository.findByIdOrNull(HexUtil.normalise(id))
     }
 
@@ -20,7 +20,7 @@ open class TransactionService(private val transactionRepository: TransactionRepo
         address: String,
         includeDelegated: Boolean,
         pageable: Pageable
-    ): List<Transaction> {
+    ): List<IndexedTransaction> {
         val normalisedAddress = HexUtil.normalise(address)
         return if (includeDelegated) transactionRepository.findByOriginOrGasPayer(
             normalisedAddress,
@@ -30,7 +30,7 @@ open class TransactionService(private val transactionRepository: TransactionRepo
         else transactionRepository.findByOrigin(normalisedAddress, pageable)
     }
 
-    open fun findAllDelegated(delegator: String, pageable: Pageable): List<Transaction> {
+    open fun findAllDelegated(delegator: String, pageable: Pageable): List<IndexedTransaction> {
         val normalisedAddress = HexUtil.normalise(delegator)
         return transactionRepository.findByOriginNotAndGasPayer(normalisedAddress, normalisedAddress, pageable)
     }
