@@ -48,4 +48,4 @@ jobs:
           push: true
           provenance: false
           tags: ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-          
+
