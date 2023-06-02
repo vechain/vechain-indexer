@@ -12,7 +12,7 @@ jobs:
     permissions:
       packages: write
   publish-test-report:
-    uses: ./.github/workflows/publish-ecr-image.yml
+    uses: ./.github/workflows/publish-test-results.yml
     needs: test-gradle
     permissions:
       contents: read
@@ -21,6 +21,7 @@ jobs:
       packages: write
   publish-image-to-ecr:
     uses: ./.github/workflows/publish-ecr-image.yml
+    needs: test-gradle
     with:
       imageTag: ${{ github.sha }}
     secrets: inherit
