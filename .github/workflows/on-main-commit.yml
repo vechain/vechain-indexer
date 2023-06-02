@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/test-gradle.yml
     permissions:
       packages: write
-  publish-test-report:
+  publish-test-results:
     uses: ./.github/workflows/publish-test-results.yml
     needs: test-gradle
     permissions:
