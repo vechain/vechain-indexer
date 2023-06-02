@@ -1,7 +1,7 @@
 package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.IndexedTransferEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -46,7 +46,7 @@ class TransferEventTest {
         }
     }
 
-    fun assertValidTransferEvent(transferEvent: TransferEvent) {
+    fun assertValidTransferEvent(transferEvent: IndexedTransferEvent) {
         expect {
             that(transferEvent.id).isNotEmpty()
             that(transferEvent.from).isNotEmpty()

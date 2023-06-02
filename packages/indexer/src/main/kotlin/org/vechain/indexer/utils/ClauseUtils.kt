@@ -2,7 +2,7 @@ package org.vechain.indexer.utils
 
 import org.vechain.devkit.Function
 import org.vechain.indexer.contracts.abi.FunctionDefinition
-import org.vechain.indexer.model.Clause
+import org.vechain.thor.model.Clause
 
 object ClauseUtils {
     fun contractCall(address: String, function: FunctionDefinition, vararg args: Any): Clause {

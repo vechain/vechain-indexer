@@ -4,9 +4,13 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.thor.model.Block
+import org.vechain.thor.model.Clause
+import org.vechain.thor.model.Transaction
+import org.vechain.thor.model.TxOutputs
 
 @Document(collection = "clauses")
-data class WrappedClause @ConstructorBinding constructor(
+data class IndexedClause @ConstructorBinding constructor(
     @Id
     val id: String,
     override val blockId: String,
@@ -23,9 +27,9 @@ data class WrappedClause @ConstructorBinding constructor(
 ) : IndexedDocument {
     constructor(block: Block, tx: Transaction, clause: Clause, index: Int) : this(
         id = DigestUtils.sha1Hex("${tx.id}-$index"),
-        blockId = block.blockId,
-        blockNumber = block.blockNumber,
-        blockTimestamp = block.blockTimestamp,
+        blockId = block.id,
+        blockNumber = block.number,
+        blockTimestamp = block.timestamp,
         txId = tx.id,
         index = index,
         origin = tx.origin,

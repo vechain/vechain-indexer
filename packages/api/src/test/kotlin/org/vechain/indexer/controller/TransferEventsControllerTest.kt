@@ -7,7 +7,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
-import org.vechain.indexer.model.TransferEvent
+import org.vechain.indexer.model.IndexedTransferEvent
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
@@ -112,8 +112,8 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         expectThat(transferEvents)
             .hasSize(size)
             .isSorted(
-                compareByDescending<TransferEvent> { it.blockNumber }
-                    .then(compareByDescending<TransferEvent> { it.txId }
+                compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                    .then(compareByDescending<IndexedTransferEvent> { it.txId }
                         .then(compareByDescending { it.id })
                     )
             )

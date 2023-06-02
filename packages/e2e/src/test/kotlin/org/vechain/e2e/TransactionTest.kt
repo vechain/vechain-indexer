@@ -1,7 +1,7 @@
 package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.Transaction
+import org.vechain.indexer.model.IndexedTransaction
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -64,7 +64,7 @@ class TransactionTest {
         }
     }
 
-    fun assertValidTransaction(transaction: Transaction) {
+    fun assertValidTransaction(transaction: IndexedTransaction) {
 
         expect {
             that(transaction.id).isNotEmpty()

@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document("nfts")
-data class NFT @ConstructorBinding constructor(
+data class IndexedNFT @ConstructorBinding constructor(
     /**
      * sha1 hash of `${contractAddress}-${tokenId}`
      */

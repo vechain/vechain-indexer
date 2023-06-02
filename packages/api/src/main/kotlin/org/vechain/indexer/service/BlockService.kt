@@ -1,13 +1,13 @@
 package org.vechain.indexer.service
 
-import org.vechain.indexer.model.Block
+import org.vechain.indexer.model.IndexedBlock
 
 interface BlockService {
 
-    fun findBestBlock(): Block?
+    fun findBestBlock(): IndexedBlock?
 
-    fun findById(blockId: String): Block?
+    fun findById(blockId: String): IndexedBlock?
 
-    fun findByBlockNumber(blockNumber: Long): Block?
+    fun findByBlockNumber(blockNumber: Long): IndexedBlock?
 
 }

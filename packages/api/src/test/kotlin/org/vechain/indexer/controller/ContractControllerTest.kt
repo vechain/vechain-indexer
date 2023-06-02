@@ -7,7 +7,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import strikt.api.expectThat
 import strikt.assertions.*
 import java.util.*
@@ -184,8 +184,8 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             expectThat(contracts)
                 .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
                 .isSorted(
-                    compareByDescending<Contract> { it.blockNumber }
-                        .then(compareByDescending<Contract> { it.txId }
+                    compareByDescending<IndexedContract> { it.blockNumber }
+                        .then(compareByDescending<IndexedContract> { it.txId }
                             .then(compareByDescending { it.address })
                         )
                 )
@@ -219,7 +219,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
             expectThat(contracts)
                 .hasSize(2)
-                .map(Contract::isVip180).all { isTrue() }
+                .map(IndexedContract::isVip180).all { isTrue() }
         }
 
         @Test
@@ -243,12 +243,12 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             expectThat(contracts)
                 .hasSize(2)
                 .isSorted(
-                    compareByDescending<Contract> { it.blockNumber }
-                        .then(compareByDescending<Contract> { it.txId }
+                    compareByDescending<IndexedContract> { it.blockNumber }
+                        .then(compareByDescending<IndexedContract> { it.txId }
                             .then(compareByDescending { it.address })
                         )
                 )
-                .map(Contract::isVip180).all { isTrue() }
+                .map(IndexedContract::isVip180).all { isTrue() }
         }
 
         @Test
@@ -270,12 +270,12 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             expectThat(contracts)
                 .hasSize(2)
                 .isSorted(
-                    compareByDescending<Contract> { it.blockNumber }
-                        .then(compareByDescending<Contract> { it.txId }
+                    compareByDescending<IndexedContract> { it.blockNumber }
+                        .then(compareByDescending<IndexedContract> { it.txId }
                             .then(compareByDescending { it.address })
                         )
                 )
-                .map(Contract::isVip180).all { isTrue() }
+                .map(IndexedContract::isVip180).all { isTrue() }
         }
 
         @Test
@@ -295,8 +295,8 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             expectThat(contracts)
                 .hasSize(size)
                 .isSorted(
-                    compareByDescending<Contract> { it.blockNumber }
-                        .then(compareByDescending<Contract> { it.txId }
+                    compareByDescending<IndexedContract> { it.blockNumber }
+                        .then(compareByDescending<IndexedContract> { it.txId }
                             .then(compareByDescending { it.address })
                         )
                 )

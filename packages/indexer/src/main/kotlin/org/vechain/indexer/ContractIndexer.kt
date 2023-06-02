@@ -7,14 +7,14 @@ import org.springframework.context.event.EventListener
 import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.Block
-import org.vechain.indexer.model.Contract
+import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.AddressUtil
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.JsonUtils
+import org.vechain.thor.model.Block
 import kotlin.jvm.optionals.getOrNull
 
 @Profile("contracts")
@@ -23,15 +23,14 @@ open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepo: ContractRepo,
-    @Value("\${thor.genesis.block.id}") private val genesisId: String,
+    private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
-    mongoTemplate: MongoTemplate
-) : Indexer(thorService, contractRepo, mongoTemplate) {
+) : VeWorldIndexer(thorService, contractRepo) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
 
-        val contracts: MutableList<Contract> = mutableListOf()
+        val contracts: MutableList<IndexedContract> = mutableListOf()
 
         /**
          * Find all events that are contract deployments, paired with their transaction.
@@ -67,11 +66,11 @@ open class ContractIndexer(
                 contractRepo.save(contract)
             } else {
                 contracts.add(
-                    Contract(
+                    IndexedContract(
                         address = contractAddress,
-                        blockId = block.blockId,
-                        blockNumber = block.blockNumber,
-                        blockTimestamp = block.blockTimestamp,
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
                         txId = tx.id,
                         creator = tx.origin,
                         master = master,
@@ -88,7 +87,7 @@ open class ContractIndexer(
             }
         }
 
-        if (contracts.isNotEmpty()) insertAll(contracts, Contract::class.java)
+        if (contracts.isNotEmpty()) mongoTemplate.insert(contracts, IndexedContract::class.java)
     }
 
     @EventListener(ApplicationStartedEvent::class)
@@ -96,10 +95,12 @@ open class ContractIndexer(
 
         logger.info("Saving built-in contracts")
 
-        val contracts = JsonUtils.mapper.readValue(contractsJson.inputStream, Array<Contract>::class.java)
+        val genBlock = thorService.getBlock(0)
+
+        val contracts = JsonUtils.mapper.readValue(contractsJson.inputStream, Array<IndexedContract>::class.java)
 
         contracts.forEach { contract ->
-            contract.blockId = genesisId
+            contract.blockId = genBlock.id
         }
 
         contractRepo.saveAll(contracts.toList())

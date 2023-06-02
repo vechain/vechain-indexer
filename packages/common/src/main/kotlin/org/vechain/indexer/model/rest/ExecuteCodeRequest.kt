@@ -1,7 +1,7 @@
 package org.vechain.indexer.model.rest
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.vechain.indexer.model.Clause
+import org.vechain.thor.model.Clause
 
 data class ExecuteCodeRequest @ConstructorBinding constructor(
     val clauses: List<Clause>,

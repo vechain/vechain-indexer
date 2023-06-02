@@ -4,18 +4,30 @@ import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.service.ThorService
+import org.springframework.web.reactive.function.client.WebClient
+import org.vechain.thor.model.Block
 
 @Profile("indexer", "blocks-proxy")
 @Component
-class ThorHealthIndicator(private val thorService: ThorService) : HealthIndicator {
+class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
     override fun health(): Health {
         val key = "VeChainThor"
         return try {
-            thorService.getBlock(1)
+            getBlock(1)
             Health.up().withDetail(key, "Available").build()
         } catch (e: Exception) {
             Health.down().withDetail(key, "Unavailable").build()
         }
+    }
+
+    fun getBlock(number: Long): Block {
+
+        return thorRest
+            .get()
+            .uri("/blocks/$number?expanded=true")
+            .retrieve()
+            .bodyToMono(Block::class.java)
+            .block()
+            ?: throw Exception("Failed thorrest healthcheck")
     }
 }
