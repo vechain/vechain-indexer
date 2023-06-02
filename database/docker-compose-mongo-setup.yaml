@@ -6,10 +6,17 @@ services:
     volumes:
       - ./scripts:/scripts
     environment:
-      - GENESIS_BLOCK_ID=0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6
+      - MONGO_HOST=mongo-node1
+      - MONGO_ADMIN_USER=root
+      - MONGO_ADMIN_PASSWORD=password
+      - MONGO_INDEXER_USER=indexer
+      - MONGO_INDEXER_PASSWORD=password
+      - MONGO_API_USER=api
+      - MONGO_API_PASSWORD=password
     restart: "no"
     entrypoint:
-      [ "bash", "/scripts/setup.sh", "mongo-node1" ]
+      [ "bash", "/scripts/setup.sh" ]
+
     networks:
       - vechain-database
 

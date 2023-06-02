@@ -29,8 +29,10 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p static/${{ matrix.package }}
-          cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
-          cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
+          if [ -d "packages/${{ matrix.package }}/build/reports/jacoco/test/html" ]; then
+            cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
+            cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
+          fi
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v2

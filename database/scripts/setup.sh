@@ -1,4 +1,4 @@
 #!/bin/bash
 sleep 5
 
-mongosh --host $1:27017 /scripts/init.js
+mongosh --host $MONGO_HOST:27017 --username $MONGO_ADMIN_USER --password $MONGO_ADMIN_PASSWORD /scripts/init.js
