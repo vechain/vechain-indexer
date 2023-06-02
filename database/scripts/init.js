@@ -3,8 +3,6 @@
 
 adminDb = db.getSiblingDB('admin');
 
-console.log(process.env)
-
 //Create "indexer" user
 adminDb.createUser(
     {
