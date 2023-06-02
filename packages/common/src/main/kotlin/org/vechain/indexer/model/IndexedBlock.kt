@@ -11,6 +11,7 @@ import org.vechain.thor.model.Transaction
 @Document(collection = "blocks")
 data class IndexedBlock @ConstructorBinding @JsonCreator constructor(
     @Id
+    @JsonProperty("id")
     override val blockId: String,
     @JsonProperty("number")
     override val blockNumber: Long,
