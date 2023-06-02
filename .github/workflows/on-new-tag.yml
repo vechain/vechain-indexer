@@ -1,12 +1,15 @@
-name: Publish (Release)
+name: On Release
 
 on:
   release:
     types: [ published ]
 
 jobs:
+  test-gradle:
+    uses: ./.github/workflows/test-gradle.yml
   publish-to-ecr:
     uses: ./.github/workflows/publish-ecr-image.yml
+    needs: test-gradle
     with:
       imageTag: ${{ github.ref_name }}
     secrets: inherit
