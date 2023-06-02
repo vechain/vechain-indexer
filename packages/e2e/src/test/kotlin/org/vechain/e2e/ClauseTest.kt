@@ -3,6 +3,7 @@ package org.vechain.e2e
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.hasSize
+import strikt.assertions.isNotNull
 
 class ClauseTest {
     @Test
@@ -10,7 +11,9 @@ class ClauseTest {
         val clauses = VeWorldAPIClient.getClauses(
             "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
         )
-        expectThat(clauses).hasSize(13)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(13)
     }
 
     @Test
@@ -20,6 +23,8 @@ class ClauseTest {
             page = 0,
             size = 1
         )
-        expectThat(clauses).hasSize(1)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(1)
     }
 }

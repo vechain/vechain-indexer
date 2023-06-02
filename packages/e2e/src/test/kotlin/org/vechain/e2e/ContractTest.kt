@@ -7,6 +7,7 @@ import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
+import strikt.assertions.isNotNull
 
 class ContractTest {
 
@@ -19,14 +20,16 @@ class ContractTest {
         )
 
         // 8 regular contract deployments + 2 deployments from a factory contract
-        expectThat(contracts).hasSize(10)
+        expectThat(contracts.data)
+            .isNotNull()
+            .hasSize(10)
 
-        contracts.forEach { contract ->
+        contracts.data!!.forEach { contract ->
             assertValidContract(contract)
         }
 
         // Get contract by address
-        val contract = VeWorldAPIClient.getContract(contracts[0].address)
+        val contract = VeWorldAPIClient.getContract(contracts.data!![0].address)
 
         assertValidContract(contract)
     }
@@ -35,9 +38,11 @@ class ContractTest {
     fun `get contracts for creator paginated`() {
         val contracts = VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa", 0, 1)
 
-        expectThat(contracts).hasSize(1)
+        expectThat(contracts.data)
+            .isNotNull()
+            .hasSize(1)
 
-        contracts.forEach { contract ->
+        contracts.data!!.forEach { contract ->
             assertValidContract(contract)
         }
     }

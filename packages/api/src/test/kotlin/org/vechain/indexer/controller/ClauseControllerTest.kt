@@ -10,6 +10,7 @@ import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.model.IndexedClause
 import strikt.api.expectThat
 import strikt.assertions.hasSize
+import strikt.assertions.isNotNull
 import strikt.assertions.isSorted
 
 internal class ClauseControllerTest : AbstractIntegrationTest() {
@@ -42,9 +43,11 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).hasSize(20)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(20)
     }
 
     @Test
@@ -61,9 +64,11 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).hasSize(20)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(20)
     }
 
     @Test
@@ -80,9 +85,11 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).hasSize(20)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(20)
     }
 
     @Test
@@ -99,9 +106,11 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).hasSize(size)
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(size)
     }
 
     @Test
@@ -118,14 +127,16 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).isSorted(
-            compareByDescending<IndexedClause> { it.blockNumber }
-                .then(compareByDescending<IndexedClause> { it.txId }
-                    .then(compareByDescending { it.id })
-                )
-        )
+        expectThat(clauses.data)
+            .isNotNull()
+            .isSorted(
+                compareByDescending<IndexedClause> { it.blockNumber }
+                    .then(compareByDescending<IndexedClause> { it.txId }
+                        .then(compareByDescending { it.id })
+                    )
+            )
     }
 
     @Test
@@ -139,15 +150,17 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_CLAUSE_TYPE)
+        val clauses = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_CLAUSE_TYPE)
 
-        expectThat(clauses).hasSize(DEFAULT_PAGE_SIZE)
-        expectThat(clauses).isSorted(
-            compareByDescending<IndexedClause> { it.blockNumber }
-                .then(compareByDescending<IndexedClause> { it.txId }
-                    .then(compareByDescending { it.id })
-                )
-        )
+        expectThat(clauses.data)
+            .isNotNull()
+            .hasSize(DEFAULT_PAGE_SIZE)
+            .isSorted(
+                compareByDescending<IndexedClause> { it.blockNumber }
+                    .then(compareByDescending<IndexedClause> { it.txId }
+                        .then(compareByDescending { it.id })
+                    )
+            )
     }
 
 }

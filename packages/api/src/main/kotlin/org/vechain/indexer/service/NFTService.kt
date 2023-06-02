@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -14,7 +15,7 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: MongoTemplate) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): List<IndexedNFT> {
+    open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
         return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
     }
 
@@ -22,7 +23,7 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
         owner: String,
         contractAddress: String,
         pageable: Pageable
-    ): List<IndexedNFT> {
+    ): Page<IndexedNFT> {
         return nftRepo.findAllByOwnerAndContractAddress(
             HexUtil.normalise(owner),
             contractAddress,

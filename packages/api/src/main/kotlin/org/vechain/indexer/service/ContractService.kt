@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedContract
@@ -22,7 +23,7 @@ open class ContractService(
         creator: String?,
         contractType: ContractType?,
         pageable: Pageable
-    ): List<IndexedContract> {
+    ): Page<IndexedContract> {
         return contractRepoImpl.findByCreatorAndType(
             if (creator != null) HexUtil.normalise(creator) else null,
             contractType,

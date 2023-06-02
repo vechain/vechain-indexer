@@ -8,11 +8,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Page
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.IndexedTransaction
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -80,11 +83,13 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<IndexedTransaction> {
-        return transactionService.findByOrigin(
-            origin,
-            includeDelegated,
-            toPageable(page, size, direction, "blockNumber", "_id")
+    ): PaginatedResponse<List<IndexedTransaction>> {
+        return paginatedResponse(
+            transactionService.findByOrigin(
+                origin,
+                includeDelegated,
+                toPageable(page, size, direction, "blockNumber", "_id")
+            )
         )
     }
 
@@ -108,10 +113,20 @@ open class TransactionController(private val transactionService: TransactionServ
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<IndexedTransaction> {
-        return transactionService.findAllDelegated(
-            delegator,
-            toPageable(page, size, direction, "blockNumber", "_id")
+    ): PaginatedResponse<List<IndexedTransaction>> {
+        return paginatedResponse(
+            transactionService.findAllDelegated(
+                delegator,
+                toPageable(page, size, direction, "blockNumber", "_id")
+            )
         )
     }
+
+    private fun paginatedResponse(page: Page<IndexedTransaction>) = PaginatedResponse(
+        data = page.content,
+        pagination = PaginationDetail(
+            totalPages = page.totalPages,
+            totalElements = page.totalElements
+        )
+    )
 }

@@ -1,5 +1,7 @@
 package org.vechain.indexer.repos
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
@@ -19,13 +21,16 @@ open class ContractRepoImpl(private val mongoTemplate: MongoTemplate) {
         creator: String?,
         contractType: ContractType?,
         pageable: Pageable
-    ): List<IndexedContract> {
+    ): Page<IndexedContract> {
         val query = Query().with(pageable)
 
         if (creator != null) query.addCriteria(Criteria.where("creator").`is`(creator))
         if (contractType != null) addTypeCriteria(contractType, query)
 
-        return mongoTemplate.find(query, IndexedContract::class.java)
+        val count = mongoTemplate.count(query, IndexedContract::class.java)
+        val list = mongoTemplate.find(query, IndexedContract::class.java)
+
+        return PageImpl(list, pageable, count)
     }
 
     private fun addTypeCriteria(contractType: ContractType, query: Query) {

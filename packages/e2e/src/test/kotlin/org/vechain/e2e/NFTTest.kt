@@ -4,10 +4,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedNFT
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isEqualTo
-import strikt.assertions.isGreaterThan
-import strikt.assertions.isNotEmpty
+import strikt.assertions.*
 
 class NFTTest {
     @Test
@@ -18,9 +15,11 @@ class NFTTest {
             size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts).hasSize(102)
+        expectThat(nfts.data)
+            .isNotNull()
+            .hasSize(102)
 
-        nfts.forEach { nft ->
+        nfts.data!!.forEach { nft ->
             assertValidNft(nft)
         }
     }
@@ -29,9 +28,11 @@ class NFTTest {
     fun `get NFTs for address with pagination`() {
         val nfts = VeWorldAPIClient.getNfts(address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa", size = 1)
 
-        expectThat(nfts).hasSize(1)
+        expectThat(nfts.data)
+            .isNotNull()
+            .hasSize(1)
 
-        nfts.forEach { nft ->
+        nfts.data!!.forEach { nft ->
             assertValidNft(nft)
         }
 
@@ -47,12 +48,14 @@ class NFTTest {
         )
 
         expect {
-            that(nfts).hasSize(102)
-            that(nfts.distinctBy { it.contractAddress }.size).isEqualTo(2)
+            that(nfts.data)
+                .isNotNull()
+                .hasSize(102)
+            that(nfts.data!!.distinctBy { it.contractAddress }.size).isEqualTo(2)
         }
 
-        val firstContractAddress = nfts[0].contractAddress
-        val nftAmountForFirstContract = nfts.count { it.contractAddress == firstContractAddress }
+        val firstContractAddress = nfts.data!![0].contractAddress
+        val nftAmountForFirstContract = nfts.data!!.count { it.contractAddress == firstContractAddress }
 
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
@@ -62,7 +65,9 @@ class NFTTest {
             size = Int.MAX_VALUE
         )
 
-        expectThat(nftsWithQuery).hasSize(nftAmountForFirstContract)
+        expectThat(nftsWithQuery.data)
+            .isNotNull()
+            .hasSize(nftAmountForFirstContract)
     }
 
     fun assertValidNft(nft: IndexedNFT) {

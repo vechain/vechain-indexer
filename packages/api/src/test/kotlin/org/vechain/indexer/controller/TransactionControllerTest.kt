@@ -10,10 +10,7 @@ import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.IndexedTransaction
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
-import strikt.assertions.isSorted
+import strikt.assertions.*
 
 internal class TransactionControllerTest : AbstractIntegrationTest() {
 
@@ -73,9 +70,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(39)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(39)
         }
 
         @Test
@@ -87,9 +86,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(39)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(39)
         }
 
         @Test
@@ -101,9 +102,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(39)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(39)
         }
 
         @Test
@@ -115,9 +118,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(39)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(39)
         }
 
         @Test
@@ -130,9 +135,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(40)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(40)
         }
 
         @Test
@@ -146,9 +153,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                     .andExpect { status { isOk() } }
                     .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(39)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(39)
         }
     }
 
@@ -164,9 +173,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(DEFAULT_PAGE_SIZE)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(DEFAULT_PAGE_SIZE)
         }
 
         @Test
@@ -180,9 +191,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(19)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(19)
         }
 
         @Test
@@ -196,9 +209,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(size)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(size)
         }
 
         @Test
@@ -214,9 +229,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(9)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(9)
         }
 
         @Test
@@ -232,9 +249,10 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions)
+            expectThat(transactions.data)
+                .isNotNull()
                 .hasSize(9)
                 .isSorted(
                     compareByDescending<IndexedTransaction> { it.blockNumber }
@@ -259,9 +277,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(1)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(1)
         }
 
         @Test
@@ -270,9 +290,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(1)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(1)
         }
 
         @Test
@@ -281,9 +303,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(1)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(1)
         }
 
         @Test
@@ -292,9 +316,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(1)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(1)
         }
     }
 
@@ -310,9 +336,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(1)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(1)
         }
 
         @Test
@@ -326,9 +354,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).isEmpty()
+            expectThat(transactions.data)
+                .isNotNull()
+                .isEmpty()
         }
 
         @Test
@@ -342,9 +372,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(size)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(size)
         }
 
         @Test
@@ -360,9 +392,11 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions).hasSize(size)
+            expectThat(transactions.data)
+                .isNotNull()
+                .hasSize(size)
         }
 
         @Test
@@ -378,9 +412,10 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_TX_TYPE)
+            val transactions = objectMapper.readValue(result.response.contentAsString, LIST_PAGINATED_TX_TYPE)
 
-            expectThat(transactions)
+            expectThat(transactions.data)
+                .isNotNull()
                 .hasSize(size)
                 .isSorted(
                     compareByDescending<IndexedTransaction> { it.blockNumber }

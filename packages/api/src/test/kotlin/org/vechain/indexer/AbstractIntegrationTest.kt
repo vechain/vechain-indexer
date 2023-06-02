@@ -14,6 +14,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.*
+import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
 import java.util.*
@@ -31,13 +32,19 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<IndexedTransaction>() {}
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
+    protected val LIST_PAGINATED_TX_TYPE = object : TypeReference<PaginatedResponse<List<IndexedTransaction>>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<IndexedContract>() {}
     protected val LIST_CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
+    protected val CONTRACT_PAGINATED_TYPE = object : TypeReference<PaginatedResponse<List<IndexedContract>>>() {}
     protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
+    protected val LIST_PAGINATED_NFT_TYPE = object : TypeReference<PaginatedResponse<List<IndexedNFT>>>() {}
     protected val BLOCK_TYPE = object : TypeReference<IndexedBlock>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
+    protected val LIST_PAGINATED_TRANSFER_EVENT_TYPE =
+        object : TypeReference<PaginatedResponse<List<IndexedTransferEvent>>>() {}
     protected val LIST_CLAUSE_TYPE = object : TypeReference<List<IndexedClause>>() {}
+    protected val LIST_PAGINATED_CLAUSE_TYPE = object : TypeReference<PaginatedResponse<List<IndexedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 

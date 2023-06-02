@@ -15,6 +15,8 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginationDetail
 import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
@@ -83,13 +85,21 @@ open class ContractController(private val contractService: ContractService) {
         @PageableSize @RequestParam(required = false) page: Int?,
         @PageablePage @RequestParam(required = false) size: Int?,
         @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<IndexedContract> {
+    ): PaginatedResponse<List<IndexedContract>> {
         validateContractType(type)
 
-        return contractService.find(
+        val results = contractService.find(
             address,
             ContractType.byNameIgnoreCaseOrNull(type),
             toPageable(page, size, direction)
+        )
+
+        return PaginatedResponse(
+            data = results.content,
+            pagination = PaginationDetail(
+                totalPages = results.totalPages,
+                totalElements = results.totalElements,
+            )
         )
     }
 

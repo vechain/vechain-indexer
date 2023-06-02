@@ -1,6 +1,7 @@
 package org.vechain.indexer.repos
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
@@ -15,18 +16,18 @@ interface TransferEventRepo : BaseIndexedRepo<IndexedTransferEvent>,
         from: String,
         contractAddress: String,
         pageable: Pageable
-    ): List<IndexedTransferEvent>
+    ): Page<IndexedTransferEvent>
 
-    fun findByToOrFrom(to: String, from: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByToOrFrom(to: String, from: String, pageable: Pageable): Page<IndexedTransferEvent>
 
-    fun findByTokenAddress(contractAddress: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByTokenAddress(contractAddress: String, pageable: Pageable): Page<IndexedTransferEvent>
 
-    fun findByToAndTokenAddress(to: String, contractAddress: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByToAndTokenAddress(to: String, contractAddress: String, pageable: Pageable): Page<IndexedTransferEvent>
 
-    fun findByTo(to: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByTo(to: String, pageable: Pageable): Page<IndexedTransferEvent>
 
-    fun findByFrom(from: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByFrom(from: String, pageable: Pageable): Page<IndexedTransferEvent>
 
-    fun findByFromAndTokenAddress(from: String, contractAddress: String, pageable: Pageable): List<IndexedTransferEvent>
+    fun findByFromAndTokenAddress(from: String, contractAddress: String, pageable: Pageable): Page<IndexedTransferEvent>
 
 }

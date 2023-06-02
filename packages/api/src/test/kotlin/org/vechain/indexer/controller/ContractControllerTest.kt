@@ -91,9 +91,11 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts).hasSize(TOTAL_CONTRACTS_NUMBER)
+            expectThat(contracts.data)
+                .isNotNull()
+                .hasSize(TOTAL_CONTRACTS_NUMBER)
         }
 
         @Test
@@ -109,9 +111,11 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts).hasSize(size)
+            expectThat(contracts.data)
+                .isNotNull()
+                .hasSize(size)
         }
 
         @Test
@@ -125,9 +129,11 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts).isEmpty()
+            expectThat(contracts.data)
+                .isNotNull()
+                .isEmpty()
         }
 
         @Test
@@ -143,9 +149,11 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts).hasSize(size)
+            expectThat(contracts.data)
+                .isNotNull()
+                .hasSize(size)
         }
 
         @Test
@@ -161,9 +169,11 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts).hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
+            expectThat(contracts.data)
+                .isNotNull()
+                .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
         }
 
         @Test
@@ -179,9 +189,10 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts)
+            expectThat(contracts.data)
+                .isNotNull()
                 .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
                 .isSorted(
                     compareByDescending<IndexedContract> { it.blockNumber }
@@ -215,9 +226,10 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts)
+            expectThat(contracts.data)
+                .isNotNull()
                 .hasSize(2)
                 .map(IndexedContract::isVip180).all { isTrue() }
         }
@@ -238,9 +250,10 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts)
+            expectThat(contracts.data)
+                .isNotNull()
                 .hasSize(2)
                 .isSorted(
                     compareByDescending<IndexedContract> { it.blockNumber }
@@ -265,9 +278,10 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts)
+            expectThat(contracts.data)
+                .isNotNull()
                 .hasSize(2)
                 .isSorted(
                     compareByDescending<IndexedContract> { it.blockNumber }
@@ -290,9 +304,10 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val contracts = objectMapper.readValue(result.response.contentAsString, LIST_CONTRACT_TYPE)
+            val contracts = objectMapper.readValue(result.response.contentAsString, CONTRACT_PAGINATED_TYPE)
 
-            expectThat(contracts)
+            expectThat(contracts.data)
+                .isNotNull()
                 .hasSize(size)
                 .isSorted(
                     compareByDescending<IndexedContract> { it.blockNumber }

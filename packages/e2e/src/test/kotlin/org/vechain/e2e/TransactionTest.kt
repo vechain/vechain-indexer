@@ -7,20 +7,23 @@ import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
+import strikt.assertions.isNotNull
 
 class TransactionTest {
     @Test
     fun `get transactions for origin`() {
         val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transactions).hasSize(12)
+        expectThat(transactions.data)
+            .isNotNull()
+            .hasSize(12)
 
-        transactions.forEach { transaction ->
+        transactions.data!!.forEach { transaction ->
             assertValidTransaction(transaction)
         }
 
         // Get transaction by id
-        val transaction = VeWorldAPIClient.getTransactionById(transactions[0].id)
+        val transaction = VeWorldAPIClient.getTransactionById(transactions.data!![0].id)
 
         assertValidTransaction(transaction)
 
@@ -31,9 +34,11 @@ class TransactionTest {
         val transactions =
             VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
 
-        expectThat(transactions).hasSize(1)
+        expectThat(transactions.data)
+            .isNotNull()
+            .hasSize(1)
 
-        transactions.forEach { transaction ->
+        transactions.data!!.forEach { transaction ->
             assertValidTransaction(transaction)
         }
 
@@ -43,9 +48,11 @@ class TransactionTest {
     fun `get delegated transactions`() {
         val transactions = VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transactions).hasSize(1)
+        expectThat(transactions.data)
+            .isNotNull()
+            .hasSize(1)
 
-        transactions.forEach { transaction ->
+        transactions.data!!.forEach { transaction ->
             assertValidTransaction(transaction)
         }
     }
@@ -57,9 +64,11 @@ class TransactionTest {
             includeDelegated = true
         )
 
-        expectThat(transactions).hasSize(13)
+        expectThat(transactions.data)
+            .isNotNull()
+            .hasSize(13)
 
-        transactions.forEach { transaction ->
+        transactions.data!!.forEach { transaction ->
             assertValidTransaction(transaction)
         }
     }
