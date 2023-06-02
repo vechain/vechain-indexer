@@ -24,7 +24,7 @@ class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
 
         return thorRest
             .get()
-            .uri("/blocks/$number?expanded=true")
+            .uri("/blocks/$number?expanded=false")
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
