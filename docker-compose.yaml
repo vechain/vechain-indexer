@@ -10,7 +10,7 @@ services:
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     healthcheck:
-      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      test: "curl localhost:8080/veworld/health"
       interval: 20s
       timeout: 5s
       retries: 5
@@ -34,7 +34,7 @@ services:
     hostname: vechain-indexer-api
     env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
     healthcheck:
-      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      test: "curl localhost:8080/veworld/health"
       interval: 20s
       timeout: 5s
       retries: 5
