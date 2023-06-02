@@ -56,9 +56,16 @@ make start
 make infra-all
 ```
 
-- Go to IndexerApplication.kt inside IntelliJ and run/debug:
-
 ![img.png](images/intellij-start.png)
+
+### Connecting to MongoDB
+
+Connect for the various users with the following URIs:
+
+- `indexer` - `mongodb://indexer:password@localhost:27017/vechain?directConnection=true&authMechanism=DEFAULT&authSource=admin`
+- `api` - `mongodb://api:password@localhost:27017/vechain?directConnection=true&authMechanism=DEFAULT&authSource=admin`
+- `root` - `mongodb://root:password@localhost:27017/admin?directConnection=true&authMechanism=DEFAULT`
+- Go to IndexerApplication.kt inside IntelliJ and run/debug:
 
 ### Restarting
 

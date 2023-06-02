@@ -1,9 +1,27 @@
 // Initialise Replica Set
 //rs.initiate()
 
+adminDb = db.getSiblingDB('admin');
+
+//Create "indexer" user
+adminDb.createUser(
+    {
+        user: process.env.MONGO_INDEXER_USER,
+        pwd: process.env.MONGO_INDEXER_PASSWORD,
+        roles: [{role: "readWrite", db: "vechain"}]
+    }
+)
+
+//Create "api" user
+adminDb.createUser(
+    {
+        user: process.env.MONGO_API_USER,
+        pwd: process.env.MONGO_API_PASSWORD,
+        roles: [{role: "read", db: "vechain"}]
+    })
+
 // Create database
 db = db.getSiblingDB("vechain");
-
 
 // Create collections
 db.createCollection("blocks");
