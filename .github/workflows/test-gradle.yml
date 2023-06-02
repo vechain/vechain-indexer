@@ -1,10 +1,15 @@
-name: Gradle Test
+name: Test (Gradle)
 
 on:
   workflow_call:
 
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
 jobs:
-  gradle-test:
+  test-gradle:
     runs-on: ubuntu-latest
     strategy:
       matrix:
