@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
@@ -23,13 +24,16 @@ abstract class Indexer(
     val name: String
         get() = this.javaClass.simpleName
 
-    protected val logger = LoggerFactory.getLogger(this::class.java)
+    protected val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
     var status = Status.SYNCING
+        private set
+
     var currentBlockNumber: Long = 0
         private set
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
+
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     fun start() {
@@ -80,11 +84,17 @@ abstract class Indexer(
     }
 
     private fun postProcessBlock(block: Block) {
+
+        // Every 20 blocks, check if we are fully synced.
+        if (status == Status.FULLY_SYNCED && currentBlockNumber % 20 == 0L) {
+            ensureFullySynced()
+        }
+
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
-            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 1000
+            backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 100
 
             logger.info(
                 "Success @ Block $currentBlockNumber (${timeSinceLastBlock}ms since mine)"
@@ -98,6 +108,16 @@ abstract class Indexer(
         previousBlockId = block.id
 
         timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
+    }
+
+    private fun ensureFullySynced() {
+        if (status == Status.FULLY_SYNCED) {
+            val bestBlock = getBlockFromChain()
+            if (bestBlock.number > currentBlockNumber) {
+                logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, bestBlock=${bestBlock.number})")
+                status = Status.SYNCING
+            }
+        }
     }
 
     private fun backoffDelay() {
@@ -127,8 +147,9 @@ abstract class Indexer(
 
     /**
      * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     * If no blockNumber is provided the best block will be returned.
      */
-    abstract fun getBlockFromChain(blockNumber: Long): Block
+    abstract fun getBlockFromChain(blockNumber: Long? = null): Block
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.

@@ -3,13 +3,10 @@ package org.vechain.indexer
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.service.ThorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
-
-const val BLOCK_TIME = 10_000L
 
 @Component
 class IndexManager(private val indexers: List<Indexer>, private val thorService: ThorService) {
@@ -26,21 +23,5 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
         indexers.forEach { indexer -> executor.submit<Any> { indexer.start(); null } }
     }
 
-    @Scheduled(fixedRate = BLOCK_TIME * 10)
-    fun reSyncingIndexers() {
-        try {
-            val latestBlock = thorService.getBestBlock()
 
-            indexers.forEach { indexer ->
-                if (indexer.currentBlockNumber < latestBlock.number && indexer.status == Status.FULLY_SYNCED) {
-                    logger.info("${indexer.name} - Changing status to SYNCING (indexerBlock=${indexer.currentBlockNumber}, bestBlock=${latestBlock.number})")
-                    indexer.status = Status.SYNCING
-                }
-
-            }
-
-        } catch (e: Exception) {
-            logger.warn("There was an error while checking sync status of indexers", e)
-        }
-    }
 }
