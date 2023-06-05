@@ -4,6 +4,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.*
+import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
 
@@ -23,7 +24,7 @@ object VeWorldAPIClient {
     private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<List<IndexedTransaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
     private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<List<IndexedContract>>() {}
-    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<List<IndexedNFT>>() {}
+    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<IndexedNFT>>>() {}
     private val PAGINATED_TRANSFER_EVENT_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
@@ -80,7 +81,7 @@ object VeWorldAPIClient {
         contractAddress: String? = null,
         page: Int = 0,
         size: Int = Int.MAX_VALUE
-    ): List<IndexedNFT> {
+    ): PaginatedResponse<List<IndexedNFT>> {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
