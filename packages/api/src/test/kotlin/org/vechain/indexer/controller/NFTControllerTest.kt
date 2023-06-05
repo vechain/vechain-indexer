@@ -182,6 +182,35 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get filtered by all contract addresses - with pagination & pagination detail & sorted by blockNumber & txId & id`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+            val page = 0
+            val size = 20
+
+            val res = mockMvc.get(
+                "$baseEndpoint?address=$owner&contractAddress=$contractAddress&page=$page&size=$size"
+            ).andExpect { status { isOk() } }.andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
+
+            expect {
+                that(nfts.data)
+                    .isNotNull()
+                    .hasSize(20)
+                    .isSorted(
+                        compareByDescending<IndexedNFT> { it.blockNumber }.then(
+                            compareByDescending<IndexedNFT> { it.txId }.then(
+                                compareByDescending { it.id })
+                        )
+                    )
+                that(nfts.pagination).isNotNull()
+                that(nfts.pagination!!.totalPages).isEqualTo(3)
+                that(nfts.pagination!!.totalElements).isEqualTo(51)
+            }
+
+        }
+
+        @Test
         fun `Invalid contract address`() {
             mockMvc.get("$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&contractAddress=address1")
                 .andExpect { status { isBadRequest() } }
@@ -225,6 +254,33 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get contracts by NFT owner - with pagination & pagination detail`() {
+            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
+            val page = 0
+            val size = 20
+            val res = mockMvc.get(
+                "$baseEndpoint/contracts?owner=$owner&page=$page&size=$size"
+            ).andExpect { status { isOk() } }.andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+
+            expect {
+                that(contracts.data)
+                    .isNotNull()
+                    .hasSize(2)
+                    .containsExactlyInAnyOrder(
+                        "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+                    )
+                that(contracts.pagination).isNotNull()
+                that(contracts.pagination!!.totalPages).isEqualTo(1)
+                that(contracts.pagination!!.totalElements).isEqualTo(2)
+            }
+        }
+
+        @Test
         fun `get contracts for NFT owner - valid owner address with multiple NFTS - ensure no duplicate contract addresses`() {
 
             val res = mockMvc.get(
@@ -257,7 +313,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 objectMapper.readValue(
                     res.response.contentAsString,
                     object : TypeReference<PaginatedResponse<List<String>>>() {})
-            
+
             expect {
                 that(contracts.data)
                     .isNotNull()
