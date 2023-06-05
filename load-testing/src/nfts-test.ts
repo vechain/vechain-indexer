@@ -12,9 +12,8 @@ export const options = DEFAULT_OPTIONS
  */
 export default () => {
     const account = randomElement(accounts);
-    const direction = "desc"
 
-    const res = http.get(`${env.BASE_URL}/api/v1/nfts?address=${account}&direction=${direction}`);
+    const res = http.get(`${env.BASE_URL}/api/v1/nfts?address=${account}`);
 
     check(res, {
         "status is 200": () => res.status === 200,
