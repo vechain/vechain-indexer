@@ -120,6 +120,29 @@ db.transfer_events.createIndex(
 // nfts
 db.nfts.createIndex({blockNumber: -1}, {name: "nft_blockNumber_-1"});
 db.nfts.createIndex({contractAddress: 1, tokenId: 1}, {name: "nft_contractAddress_1_tokenId_1", unique: true});
+
+db.nfts.createIndex(
+    {
+        owner: 1,
+        blockNumber: -1,
+        txId: -1,
+        _id: -1
+    },
+    {
+        name: "nft_owner_1_blockNumber_-1_txId_-1__id_-1"
+    }
+);
+db.nfts.createIndex(
+    {
+        contractAddress: 1,
+        blockNumber: -1,
+        txId: -1,
+        _id: -1
+    },
+    {
+        name: "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1"
+    }
+);
 db.nfts.createIndex(
     {
         owner: 1,
