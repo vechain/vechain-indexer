@@ -305,6 +305,52 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get contracts by NFT owner - with pagination & pagination detail - distinct partial results`() {
+            val owner = "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
+            val page1 = 0
+            val page2 = 1
+            val size = 1
+
+            val res1 = mockMvc.get(
+                "$baseEndpoint/contracts?owner=$owner&page=$page1&size=$size"
+            ).andExpect { status { isOk() } }.andReturn()
+
+            val res2 = mockMvc.get(
+                "$baseEndpoint/contracts?owner=$owner&page=$page2&size=$size"
+            ).andExpect { status { isOk() } }.andReturn()
+
+            val contracts1 =
+                objectMapper.readValue(
+                    res1.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+
+            val contracts2 =
+                objectMapper.readValue(
+                    res2.response.contentAsString,
+                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+
+            expect {
+                // page 0 results
+                that(contracts1.data)
+                    .isNotNull()
+                    .hasSize(size)
+                    .containsExactly("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
+                that(contracts1.pagination).isNotNull()
+                that(contracts1.pagination!!.totalPages).isEqualTo(2)
+                that(contracts1.pagination!!.totalElements).isEqualTo(2)
+
+                // page 1 results
+                that(contracts2.data)
+                    .isNotNull()
+                    .hasSize(size)
+                    .containsExactly("0x08f30373569af024d15eb47fd477a35db929eaac")
+                that(contracts2.pagination).isNotNull()
+                that(contracts2.pagination!!.totalPages).isEqualTo(2)
+                that(contracts2.pagination!!.totalElements).isEqualTo(2)
+            }
+        }
+
+        @Test
         fun `get contracts by NFT owner - valid owner address with no NFTs owned`() {
             val res = mockMvc.get("$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db4")
                 .andExpect { status { isOk() } }.andReturn()
