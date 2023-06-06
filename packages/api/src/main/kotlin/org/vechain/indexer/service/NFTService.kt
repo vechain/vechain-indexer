@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repos.NFTRepo
@@ -36,24 +35,34 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
-        val ownerCriteria = Criteria.where("owner").`is`(HexUtil.normalise(owner))
-        val query = Query(ownerCriteria).with(pageable)
+        val matchAggregation = Aggregation.match(Criteria.where("owner").`is`(HexUtil.normalise(owner)))
+        val groupAggregation = Aggregation.group("contractAddress")
 
         // count distinct contracts
-        val aggregation = Aggregation.newAggregation(
-            Aggregation.match(ownerCriteria),
-            Aggregation.group("contractAddress"),
+        val countAggregation = Aggregation.newAggregation(
+            matchAggregation,
+            groupAggregation,
             Aggregation.count().`as`("total")
         )
-        val result = mongoTemplate
-            .aggregate(aggregation, IndexedNFT::class.java, Document::class.java)
+        val count = mongoTemplate
+            .aggregate(countAggregation, IndexedNFT::class.java, Document::class.java)
             .uniqueMappedResult
-        val count = if (result == null) 0 else result.getInteger("total")
+        val distinctCount = if (count == null) 0 else count.getInteger("total")
 
         // find distinct contracts
-        val results = mongoTemplate.findDistinct(query, "contractAddress", IndexedNFT::class.java, String::class.java)
+        val contractsAggregation = Aggregation.newAggregation(
+            matchAggregation,
+            groupAggregation,
+            Aggregation.sort(pageable.sort),
+            Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+            Aggregation.limit(pageable.pageSize.toLong())
+        )
+        val distinctContracts = mongoTemplate
+            .aggregate(contractsAggregation, IndexedNFT::class.java, Document::class.java)
+            .mappedResults
+            .map { it["_id"] as String }
 
-        return PageImpl(results, pageable, count.toLong())
+        return PageImpl(distinctContracts, pageable, distinctCount.toLong())
     }
 
 

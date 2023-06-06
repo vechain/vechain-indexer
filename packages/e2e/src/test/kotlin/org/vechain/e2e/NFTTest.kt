@@ -2,6 +2,7 @@ package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.utils.AddressUtil
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -68,6 +69,36 @@ class NFTTest {
         expectThat(nftsWithQuery.data)
             .isNotNull()
             .hasSize(nftAmountForFirstContract)
+    }
+
+    @Test
+    fun `get NFT contracts of owner`() {
+        val nfts = VeWorldAPIClient.getNftContracts(
+            owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            page = 0,
+            size = Int.MAX_VALUE,
+        )
+
+        expectThat(nfts.data)
+            .isNotNull()
+            .hasSize(2)
+            .map { AddressUtil.isValid(it) }
+            .all { isTrue() }
+    }
+
+    @Test
+    fun `get NFT contracts of owner with pagination`() {
+        val nfts = VeWorldAPIClient.getNftContracts(
+            owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+            page = 0,
+            size = 1,
+        )
+
+        expectThat(nfts.data)
+            .isNotNull()
+            .hasSize(1)
+            .map { AddressUtil.isValid(it) }
+            .all { isTrue() }
     }
 
     fun assertValidNft(nft: IndexedNFT) {

@@ -25,6 +25,7 @@ object VeWorldAPIClient {
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
     private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<List<IndexedContract>>() {}
     private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<IndexedNFT>>>() {}
+    private val PAGINATED_NFT_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<String>>>() {}
     private val PAGINATED_TRANSFER_EVENT_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
@@ -93,6 +94,17 @@ object VeWorldAPIClient {
             getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFT_TYPE)
         else
             throw Exception("No address or contractAddress provided")
+    }
+
+    fun getNftContracts(
+        owner: String,
+        page: Int = 0,
+        size: Int = Int.MAX_VALUE
+    ): PaginatedResponse<List<String>> {
+        return getRequest(
+            "$API_URL/nfts/contracts?owner=$owner&page=$page&size=$size",
+            PAGINATED_NFT_CONTRACTS_TYPE
+        )
     }
 
     fun getTransactionById(id: String): IndexedTransaction {
