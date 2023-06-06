@@ -13,17 +13,27 @@ export const options = DEFAULT_OPTIONS
 export default () => {
     const account = randomElement(accounts);
 
-    const res = http.get(`${env.BASE_URL}/api/v1/nfts?address=${account}`);
+    const nfts = http.get(`${env.BASE_URL}/api/v1/nfts?address=${account}`);
 
-    check(res, {
-        "status is 200": () => res.status === 200,
+    const nftContracts = http.get(`${env.BASE_URL}/api/v1/nfts/contracts?owner=${account}`);
+
+    check(nfts, {
+        "status is 200": () => nfts.status === 200,
+        "has results": () => {
+            if (typeof nfts.body === "string") {
+                const body = JSON.parse(nfts.body);
+                return body.data.length > 0 && body.pagination.totalElements > 0;
+            } else {
+                return false;
+            }
+        },
     });
 
-    check(res, {
-        "status is 200": () => res.status === 200,
+    check(nftContracts, {
+        "status is 200": () => nftContracts.status === 200,
         "has results": () => {
-            if (typeof res.body === "string") {
-                const body = JSON.parse(res.body);
+            if (typeof nftContracts.body === "string") {
+                const body = JSON.parse(nftContracts.body);
                 return body.data.length > 0 && body.pagination.totalElements > 0;
             } else {
                 return false;
