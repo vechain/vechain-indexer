@@ -1,14 +1,14 @@
 name: On Pull Request
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-
-concurrency:
-  group: ${{ github.head_ref || github.ref_name }}-build-test
-  cancel-in-progress: true
+      - '*'
 
 jobs:
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
+  publish-image-to-ecr:
+    uses: ./.github/workflows/publish-ecr-image.yml
+    needs: test-gradle
+    with:
+      imageTag: dev-latest
+    secrets: inherit
