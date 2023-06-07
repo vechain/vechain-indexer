@@ -12,4 +12,5 @@ jobs:
     needs: test-gradle
     with:
       imageTag: ${{ github.ref_name }}
+      latestTag: prod-latest
     secrets: inherit

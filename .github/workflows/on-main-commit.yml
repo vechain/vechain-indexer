@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
+      - '*'
 
 jobs:
   test-gradle:
@@ -17,4 +17,5 @@ jobs:
     needs: test-gradle
     with:
       imageTag: ${{ github.sha }}
+      latestTag: dev-latest
     secrets: inherit
