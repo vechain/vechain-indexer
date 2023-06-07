@@ -42,8 +42,7 @@ internal class ContractIndexerTest {
     lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
-
-
+    
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()

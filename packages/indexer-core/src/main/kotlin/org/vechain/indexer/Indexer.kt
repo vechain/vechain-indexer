@@ -77,7 +77,7 @@ abstract class Indexer(
             if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
-            logger.info("Processing @ Block $currentBlockNumber (${status})")
+            logger.info("Processing @ Block $currentBlockNumber ($status)")
             processBlock(block)
 
             postProcessBlock(block)
@@ -118,7 +118,7 @@ abstract class Indexer(
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 100
 
             logger.info(
-                "Success @ Block $currentBlockNumber (${timeSinceLastBlock}ms since mine)"
+                "Success @ Block $currentBlockNumber ($timeSinceLastBlock ms since mine)"
             )
         }
 
