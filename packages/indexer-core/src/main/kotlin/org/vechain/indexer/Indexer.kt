@@ -37,16 +37,15 @@ abstract class Indexer(
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
     private fun initialise() {
-        val lastBlock = getLastSyncedBlock()
+        val block = getLastSyncedBlock()
 
         // To ensure data integrity purge data from the last block
-        if (lastBlock.number > 0) purgeRecords(lastBlock.number)
+        purgeRecords(block.number)
 
-        // Get the previous block and start from there
-        val block = getBlockFromChain(maxOf(lastBlock.number - 1, 0))
-        currentBlockNumber = block.number + 1
-        previousBlockId = block.id
+        // Initialise fields
+        currentBlockNumber = block.number
         status = Status.SYNCING
+        previousBlockId = getBlockFromChain(maxOf(block.number - 1, 0)).id
     }
 
     fun start() {
@@ -134,7 +133,7 @@ abstract class Indexer(
 
     private fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
-            val latestBlock = getBlockFromChain()
+            val latestBlock = getLatestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
                 logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})")
                 status = Status.SYNCING
@@ -150,9 +149,14 @@ abstract class Indexer(
 
     /**
      * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
-     * If no blockNumber is provided the latest block will be returned (this could be the best or finalized block depending on your use-case)
      */
-    abstract fun getBlockFromChain(blockNumber: Long? = null): Block
+    abstract fun getBlockFromChain(blockNumber: Long): Block
+
+    /**
+     * getLatestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     * The latest block could be the best or finalized block depending on your use-case
+     */
+    abstract fun getLatestBlockFromChain(): Block
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.

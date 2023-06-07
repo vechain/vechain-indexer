@@ -20,10 +20,10 @@ class ThorService(private val thorRest: WebClient) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun getBlock(number: Long, expanded: Boolean = true): Block {
+    fun getBlock(number: Long): Block {
         val block = thorRest
             .get()
-            .uri("/blocks/$number?expanded=${expanded}")
+            .uri("/blocks/$number?expanded=true")
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
@@ -34,9 +34,9 @@ class ThorService(private val thorRest: WebClient) {
         return block
     }
 
-    fun getBestBlock(expanded: Boolean = true): Block {
+    fun getBestBlock(): Block {
         val block =
-            thorRest.get().uri("/blocks/best?expanded=${expanded}").retrieve().bodyToMono(Block::class.java)
+            thorRest.get().uri("/blocks/best?expanded=true").retrieve().bodyToMono(Block::class.java)
                 .block()
                 ?: throw NotFoundException("Best block not found")
 
@@ -45,9 +45,9 @@ class ThorService(private val thorRest: WebClient) {
         return block
     }
 
-    fun getFinalisedBlock(expanded: Boolean = true): Block {
+    fun getFinalisedBlock(): Block {
         val block =
-            thorRest.get().uri("/blocks/finalized?expanded=${expanded}").retrieve().bodyToMono(Block::class.java)
+            thorRest.get().uri("/blocks/finalized?expanded=true").retrieve().bodyToMono(Block::class.java)
                 .block()
                 ?: throw NotFoundException("Best block not found")
 

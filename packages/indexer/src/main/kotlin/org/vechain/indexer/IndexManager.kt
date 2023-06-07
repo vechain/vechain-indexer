@@ -16,7 +16,7 @@ class IndexManager(private val indexers: List<Indexer>, private val thorService:
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
 
-        logger.info("Starting indexers for ${indexers.size} chains")
+        logger.info("Starting ${indexers.size} indexers")
 
         val executor = Executors.newFixedThreadPool(indexers.size) as ThreadPoolExecutor
 
