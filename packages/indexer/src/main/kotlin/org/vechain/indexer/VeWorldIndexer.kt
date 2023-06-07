@@ -21,7 +21,7 @@ abstract class VeWorldIndexer(
         return getBlockFromChain(0)
     }
 
-    override fun purgeRecords(startBlock: Long, endBlock: Long) {
-        repo.deleteAllByBlockNumberBetween(startBlock, endBlock)
+    override fun purgeRecords(blockNumber: Long) {
+        repo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 }

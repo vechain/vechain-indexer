@@ -5,7 +5,7 @@ Simply extend the class and implement the abstract methods:
 
 - `getBlockFromChain` - should retrieve a block from a thor node
 - `getLastSyncedBlock` - should calculate the lasted block that was synced by the indexer
-- `purgeRecords` - should remove any records index by the indexer between the provided block numbers
+- `purgeRecords` - should remove any records indexed by the indexer for the given block number
 - `processBlock` - the core business logic of the indexer. Generally the block data will be parsed and stored in a
   database
 

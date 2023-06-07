@@ -1,4 +1,4 @@
 package org.vechain.indexer.exception
 
-class BlockNotFoundException(message: String) :
+class FullySynchronisedException(message: String) :
     Exception(message)

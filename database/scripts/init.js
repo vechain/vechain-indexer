@@ -36,6 +36,7 @@ db.createCollection("nfts");
 
 // blocks
 db.blocks.createIndex({blockNumber: -1}, {name: "block_blockNumber_-1", unique: true});
+db.blocks.createIndex({isFinalized: 1}, {name: "block_isFinalized_1"});
 
 // transactions
 db.transactions.createIndex({blockNumber: -1}, {name: "tx_blockNumber_-1"});

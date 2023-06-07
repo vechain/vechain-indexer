@@ -104,7 +104,7 @@ internal class ReOrgIndexerTest {
                     mockBlock(51, "0x123412341234") andThen
                     mockBlock(51, "0x50")
 
-            every { thorService.getBlock(52) } throws BlockNotFoundException("Block not found", 52)
+            every { thorService.getBlock(52) } throws BlockNotFoundException("Block not found")
 
             // Start the indexer
             Thread {
@@ -121,8 +121,8 @@ internal class ReOrgIndexerTest {
             }
 
             //Check that the re-org happened
-            expect { that(startBlock.captured).isEqualTo(38) }
-            expect { that(endBlock.captured).isEqualTo(52) }
+            expect { that(startBlock.captured).isEqualTo(36) }
+            expect { that(endBlock.captured).isEqualTo(38) }
         }
     }
 
