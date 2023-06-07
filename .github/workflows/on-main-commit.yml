@@ -17,4 +17,5 @@ jobs:
     needs: test-gradle
     with:
       imageTag: ${{ github.sha }}
+      latestTag: dev-latest
     secrets: inherit

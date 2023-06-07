@@ -18,6 +18,12 @@ import org.vechain.indexer.utils.HexUtil
 @Service
 open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: MongoTemplate) {
 
+    companion object {
+        const val TOTAL = "total"
+        val OWNER = IndexedNFT::owner.name
+        val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
+    }
+
     open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
         return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
     }
@@ -35,19 +41,19 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
-        val matchAggregation = Aggregation.match(Criteria.where("owner").`is`(HexUtil.normalise(owner)))
-        val groupAggregation = Aggregation.group("contractAddress")
+        val matchAggregation = Aggregation.match(Criteria.where(OWNER).`is`(HexUtil.normalise(owner)))
+        val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts
         val countAggregation = Aggregation.newAggregation(
             matchAggregation,
             groupAggregation,
-            Aggregation.count().`as`("total")
+            Aggregation.count().`as`(TOTAL)
         )
         val count = mongoTemplate
             .aggregate(countAggregation, IndexedNFT::class.java, Document::class.java)
             .uniqueMappedResult
-        val distinctCount = if (count == null) 0 else count.getInteger("total")
+        val distinctCount = if (count == null) 0 else count.getInteger(TOTAL)
 
         // find distinct contracts
         val contractsAggregation = Aggregation.newAggregation(
