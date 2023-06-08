@@ -6,27 +6,24 @@ on:
     branches:
       - "*"
 
-env:
-  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}
 
 jobs:
   setup-env:
+    name: Setup Environment
     runs-on: ubuntu-latest
-    # Map a step output to a job output
     outputs:
       latest-tag: ${{ steps.latest-tag.outputs.latest-tag }}
     steps:
       - id: latest-tag
         run: echo "latest-tag=${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}" >> "$GITHUB_OUTPUT"
-  # test-gradle:
-  #   uses: ./.github/workflows/test-gradle.yml
-  # publish-test-results:
-  #   uses: ./.github/workflows/publish-test-results.yml
-  #   needs: test-gradle
+  test-gradle:
+    uses: ./.github/workflows/test-gradle.yml
+  publish-test-results:
+    uses: ./.github/workflows/publish-test-results.yml
+    needs: test-gradle
   publish-image-to-ecr:
     uses: ./.github/workflows/publish-ecr-image.yml
-    # needs: test-gradle
-    needs: [setup-env]
+    needs: [setup-env, test-gradle]
     with:
       imageTag: ${{ github.sha }}
       latestTag: ${{needs.setup-env.outputs.latest-tag}}
