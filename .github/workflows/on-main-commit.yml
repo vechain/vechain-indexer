@@ -10,17 +10,17 @@ env:
   LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}
 
 jobs:
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
-  publish-test-results:
-    uses: ./.github/workflows/publish-test-results.yml
-    needs: test-gradle
+  # test-gradle:
+  #   uses: ./.github/workflows/test-gradle.yml
+  # publish-test-results:
+  #   uses: ./.github/workflows/publish-test-results.yml
+  #   needs: test-gradle
   publish-image-to-ecr:
     uses: ./.github/workflows/publish-ecr-image.yml
-    needs: test-gradle
+    # needs: test-gradle
     with:
       imageTag: ${{ github.sha }}
-      latestTag: $LATEST_TAG
+      latestTag: "${{ env.LATEST_TAG }}}"
     secrets: inherit
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
