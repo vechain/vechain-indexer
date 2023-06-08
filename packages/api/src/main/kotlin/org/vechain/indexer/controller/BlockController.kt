@@ -7,22 +7,26 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.BLOCKS_PATH
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.IndexedBlock
 import org.vechain.indexer.service.BlockService
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
+import org.vechain.indexer.utils.RevisionUtils
+import org.vechain.indexer.validation.Revision
 
 @Profile("blocks", "blocks-proxy")
 @Tag(name = "Block", description = "Query blockchain blocks")
+@Validated
 @RestController
 @RequestMapping(BLOCKS_PATH)
 open class BlockController(private val blockService: BlockService) {
 
     @GetMapping("{revision}")
-    @Operation(summary = "Get a block by block number or block id or best block")
+    @Operation(summary = "Get a block by ID, number, 'best' for the latest block or 'finalized' for latest finalized block.")
     @ApiResponses(
         value = [
             ApiResponse(responseCode = "404", description = "Block not found")
@@ -31,18 +35,22 @@ open class BlockController(private val blockService: BlockService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "revision",
-        description = "block ID or number, or 'best' stands for latest block",
+        description = "block ID, number, 'best' for the latest block or 'finalized' for latest finalized block",
         required = true,
         example = "best"
     )
-    open fun getBlock(@PathVariable revision: String): IndexedBlock {
+    open fun getBlock(@Revision @PathVariable revision: String): IndexedBlock {
 
-        val block = if (revision == "best") {
+        val normalisedRevision = RevisionUtils.normalise(revision)
+
+        val block = if (normalisedRevision == "best") {
             blockService.findBestBlock()
-        } else if (HexUtil.isValidBlockID(revision)) {
-            blockService.findById(revision)
+        } else if (normalisedRevision == "finalized") {
+            blockService.findFinalizedBlock()
+        } else if (HexUtils.isValidBlockID(normalisedRevision)) {
+            blockService.findById(normalisedRevision)
         } else {
-            // Try to parse to long
+            // Try parse to a long
             try {
                 val blockNumber = revision.toLong()
                 blockService.findByBlockNumber(blockNumber)

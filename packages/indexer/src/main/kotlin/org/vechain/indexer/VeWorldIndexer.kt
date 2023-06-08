@@ -9,8 +9,11 @@ abstract class VeWorldIndexer(
     private val repo: BaseIndexedRepo<*>
 ) : Indexer(thorService.getBlock(0).id) {
 
-    override fun getBlockFromChain(blockNumber: Long?): Block {
-        blockNumber?.let { return thorService.getBlock(it) }
+    override fun getBlockFromChain(blockNumber: Long): Block {
+        return thorService.getBlock(blockNumber)
+    }
+
+    override fun getLatestBlockFromChain(): Block {
         return thorService.getBestBlock()
     }
 
@@ -21,7 +24,7 @@ abstract class VeWorldIndexer(
         return getBlockFromChain(0)
     }
 
-    override fun purgeRecords(startBlock: Long, endBlock: Long) {
-        repo.deleteAllByBlockNumberBetween(startBlock, endBlock)
+    override fun purgeRecords(blockNumber: Long) {
+        repo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 }

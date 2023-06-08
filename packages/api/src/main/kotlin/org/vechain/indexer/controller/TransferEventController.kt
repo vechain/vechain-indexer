@@ -17,7 +17,7 @@ import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransferEventService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.AddressNullable
 
@@ -32,7 +32,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "To or from address of the transfer event",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -40,7 +40,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -69,7 +69,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "From address of the transfer event",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -77,7 +77,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -97,7 +97,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "To address of the transfer event",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -105,7 +105,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"

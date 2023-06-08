@@ -41,7 +41,7 @@ open class ContractController(private val contractService: ContractService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the contract",
         required = true,
         example = "0x0000000000000000000000417574686f72697479"
@@ -61,7 +61,7 @@ open class ContractController(private val contractService: ContractService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the contract creator",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"

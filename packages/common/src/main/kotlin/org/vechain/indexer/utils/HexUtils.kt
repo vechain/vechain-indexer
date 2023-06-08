@@ -1,7 +1,7 @@
 package org.vechain.indexer.utils
 
 
-object HexUtil {
+object HexUtils {
 
     /**
      * Optional prefix 0x

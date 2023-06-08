@@ -19,7 +19,7 @@ import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.NFTService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.AddressNullable
@@ -41,7 +41,7 @@ open class NFTController(private val nftService: NFTService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the NFT owner",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -49,7 +49,7 @@ open class NFTController(private val nftService: NFTService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "contractAddress",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -88,7 +88,7 @@ open class NFTController(private val nftService: NFTService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "owner",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The address of the NFTs owner",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"

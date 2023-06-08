@@ -10,7 +10,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -122,7 +122,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             expect {
                 that(nfts.data).isNotNull().hasSize(size)
-                that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.data!!.first().owner).isEqualTo(HexUtils.normalise(owner))
                 that(nfts.data!!.first().contractAddress).isEqualTo(contractAddress)
             }
         }
@@ -141,7 +141,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             expect {
                 that(nfts.data).isNotNull().hasSize(size)
-                that(nfts.data!!.first().owner).isEqualTo(HexUtil.normalise(owner))
+                that(nfts.data!!.first().owner).isEqualTo(HexUtils.normalise(owner))
                 that(nfts.data!!.first().contractAddress).isEqualTo(contractAddress)
             }
         }

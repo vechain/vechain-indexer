@@ -35,7 +35,7 @@ object ContractUtils {
     fun getFunctionSignature(methodSignature: String): String {
         val input = methodSignature.toByteArray()
         val hash = Hash.sha3(input)
-        return HexUtil.removePrefix(
+        return HexUtils.removePrefix(
             Numeric.toHexString(hash).substring(0, 10)
         )
     }
@@ -44,7 +44,7 @@ object ContractUtils {
      * @param canonicalName - Example: "Deposit(address,hash256,uint256)"
      */
     fun getEventSignature(canonicalName: String): String {
-        return HexUtil.removePrefix(
+        return HexUtils.removePrefix(
             EventEncoder.buildEventSignature(canonicalName)
         )
     }

@@ -17,7 +17,7 @@ import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.TransactionService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
@@ -61,7 +61,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "origin",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the transaction origin",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -98,7 +98,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "delegator",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "The address of the delegator",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"

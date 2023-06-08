@@ -3,6 +3,7 @@ package org.vechain.indexer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
+import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
 import java.time.LocalDateTime
@@ -16,7 +17,6 @@ const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
     private var genesisBlockId: String,
-    private val numBlocksToPurge: Long = 12L
 ) {
 
     private var previousBlockId: String = genesisBlockId
@@ -36,17 +36,35 @@ abstract class Indexer(
 
     private var backoffPeriod = INITIAL_BACKOFF_PERIOD
 
-    fun start() {
+    private fun initialise() {
         val block = getLastSyncedBlock()
 
-        currentBlockNumber = block.number + 1
-        previousBlockId = block.id
+        // To ensure data integrity purge data from the last block
+        purgeRecords(block.number)
 
-        // As a precaution assume a reorg happened
-        resolveReorg()
+        // Initialise fields
+        currentBlockNumber = block.number
+        status = Status.SYNCING
+        previousBlockId = getBlockFromChain(maxOf(block.number - 1, 0)).id
+    }
+
+    fun start() {
+        // Initialise the indexer
+        initialise()
 
         logger.info("Starting @ Block: $currentBlockNumber")
         run()
+    }
+
+    private fun restart() {
+        // Initialise the indexer
+        initialise()
+
+        // Wait for 10 seconds
+        logger.info("Restarting indexer in 10s...")
+        Thread.sleep(INITIAL_BACKOFF_PERIOD)
+
+        logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
     private tailrec fun run() {
@@ -59,28 +77,31 @@ abstract class Indexer(
             if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
-            logger.info("Processing @ Block $currentBlockNumber (${status})")
+            logger.info("Processing @ Block $currentBlockNumber ($status)")
             processBlock(block)
 
             postProcessBlock(block)
         } catch (ex: BlockNotFoundException) {
-            logger.info("Block Not Found @ $currentBlockNumber")
-            backoffPeriod = 4000
-
-            if (ex.blockNumber == currentBlockNumber)
-                status = Status.FULLY_SYNCED
+            logger.info("Block $currentBlockNumber not found. Indexer may be fully synchronised.")
+            handleFullySynced()
+            ensureFullySynced()
+        } catch (ex: FullySynchronisedException) {
+            logger.info("Fully synchronised @ Block $currentBlockNumber")
+            handleFullySynced()
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
-            resolveReorg()
-            logger.info("Restarting indexer @ Block $currentBlockNumber after resolving reorg...")
+            restart()
         } catch (e: Exception) {
             logger.error("Error while processing block $currentBlockNumber", e)
-            logger.info("Restarting indexer in 10s...")
-            Thread.sleep(INITIAL_BACKOFF_PERIOD)
-            status = Status.SYNCING
+            restart()
         }
 
         run()
+    }
+
+    private fun handleFullySynced() {
+        backoffPeriod = 4000
+        status = Status.FULLY_SYNCED
     }
 
     private fun postProcessBlock(block: Block) {
@@ -97,7 +118,7 @@ abstract class Indexer(
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 100
 
             logger.info(
-                "Success @ Block $currentBlockNumber (${timeSinceLastBlock}ms since mine)"
+                "Success @ Block $currentBlockNumber ($timeSinceLastBlock ms since mine)"
             )
         }
 
@@ -112,9 +133,9 @@ abstract class Indexer(
 
     private fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
-            val bestBlock = getBlockFromChain()
-            if (bestBlock.number > currentBlockNumber) {
-                logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, bestBlock=${bestBlock.number})")
+            val latestBlock = getLatestBlockFromChain()
+            if (latestBlock.number > currentBlockNumber) {
+                logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})")
                 status = Status.SYNCING
             }
         }
@@ -127,29 +148,15 @@ abstract class Indexer(
     }
 
     /**
-     * resolveReorg will delete all the records in a given DB, between the current block and `numBlocksToPurge`
-     *
-     * It will set the previousBlockId to the most recent record in the DB. This allows us to call this function recursively until the reorg is resolved.
+     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    private fun resolveReorg() {
-        // Delete all records from the previous n blocks
-        purgeRecords(
-            maxOf(currentBlockNumber - numBlocksToPurge - 1, 0),
-            maxOf(currentBlockNumber + 1, 1)
-        )
-
-        val block = getLastSyncedBlock()
-
-        currentBlockNumber = block.number + 1
-        previousBlockId = block.id
-        status = Status.SYNCING
-    }
+    abstract fun getBlockFromChain(blockNumber: Long): Block
 
     /**
-     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
-     * If no blockNumber is provided the best block will be returned.
+     * getLatestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     * The latest block could be the best or finalized block depending on your use-case
      */
-    abstract fun getBlockFromChain(blockNumber: Long? = null): Block
+    abstract fun getLatestBlockFromChain(): Block
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.
@@ -157,9 +164,9 @@ abstract class Indexer(
     abstract fun getLastSyncedBlock(): Block
 
     /**
-     * purgeRecords will delete all records between the startBlock and endBlock (inclusive)
+     * purgeRecords will delete all records for the given block number.
      */
-    abstract fun purgeRecords(startBlock: Long, endBlock: Long)
+    abstract fun purgeRecords(blockNumber: Long)
 
     /**
      * processBlock contains the business logic for this indexer.

@@ -3,7 +3,7 @@ package org.vechain.indexer.utils
 import org.web3j.abi.FunctionReturnDecoder
 import java.math.BigInteger
 
-object AddressUtil {
+object AddressUtils {
 
     /**
      * Optional prefix 0x
@@ -20,7 +20,7 @@ object AddressUtil {
 
 
     fun toBigInt(address: String): BigInteger {
-        return BigInteger(HexUtil.removePrefix(address), 16)
+        return BigInteger(HexUtils.removePrefix(address), 16)
     }
 
     fun decode(data: String): String {
@@ -31,7 +31,7 @@ object AddressUtil {
         val address = FunctionReturnDecoder.decodeAddress(data)
 
         require(isValid(address)) { "Failed to decode address for data: $data" }
-        
+
         return address
     }
 

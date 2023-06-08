@@ -16,7 +16,7 @@ import org.vechain.indexer.pageable.PageablePage
 import org.vechain.indexer.pageable.PageableSize
 import org.vechain.indexer.pageable.PageableSortDirection
 import org.vechain.indexer.service.ClauseService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 
@@ -31,7 +31,7 @@ open class ClauseController(private val clauseService: ClauseService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtil.REGEX),
+        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the clause origin or destination",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"

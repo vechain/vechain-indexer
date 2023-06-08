@@ -31,6 +31,23 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
         }
     }
 
+    override fun findFinalizedBlock(): IndexedBlock? {
+        return try {
+            val response =
+                thorRest.get().uri("/blocks/finalized?expanded=true").retrieve()
+                    .bodyToMono(Block::class.java)
+                    .block()
+                    ?: throw NotFoundException("Finalized block not found")
+
+            if (logger.isDebugEnabled) logger.debug("Finalized block found: ${response.number}")
+
+            return IndexedBlock(response)
+        } catch (e: NotFoundException) {
+            logger.warn("Finalized block not found")
+            null
+        }
+    }
+
     override fun findById(blockId: String): IndexedBlock? {
         return try {
             val response = thorRest

@@ -5,14 +5,14 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repos.ClauseRepo
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 
 @Profile("clauses")
 @Service
 open class ClauseService(private val clauseRepo: ClauseRepo) {
 
     open fun findByAddress(address: String, pageable: Pageable): List<IndexedClause> {
-        val addressNorm = HexUtil.normalise(address)
+        val addressNorm = HexUtils.normalise(address)
         return clauseRepo.findByOriginOrTo(addressNorm, addressNorm, pageable)
     }
 

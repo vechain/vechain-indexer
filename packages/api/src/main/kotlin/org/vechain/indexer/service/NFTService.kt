@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repos.NFTRepo
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 
 
 @Profile("nft-events")
@@ -25,7 +25,7 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
     }
 
     open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
-        return nftRepo.findAllByOwner(HexUtil.normalise(owner), pageable)
+        return nftRepo.findAllByOwner(HexUtils.normalise(owner), pageable)
     }
 
     open fun findByOwnerAndContractAddress(
@@ -34,14 +34,14 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
         pageable: Pageable
     ): Page<IndexedNFT> {
         return nftRepo.findAllByOwnerAndContractAddress(
-            HexUtil.normalise(owner),
+            HexUtils.normalise(owner),
             contractAddress,
             pageable
         )
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
-        val matchAggregation = Aggregation.match(Criteria.where(OWNER).`is`(HexUtil.normalise(owner)))
+        val matchAggregation = Aggregation.match(Criteria.where(OWNER).`is`(HexUtils.normalise(owner)))
         val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts

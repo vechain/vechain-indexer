@@ -4,21 +4,21 @@ import jakarta.validation.Constraint
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
-import org.vechain.indexer.utils.AddressUtils
+import org.vechain.indexer.utils.RevisionUtils
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-@Constraint(validatedBy = [AddressValidator::class])
+@Constraint(validatedBy = [RevisionValidator::class])
 @MustBeDocumented
-annotation class Address(
-    val message: String = "The provided address is invalid. It must match ${AddressUtils.REGEX}",
+annotation class Revision(
+    val message: String = "The provided revision is invalid. It must match be a positive integer, a valid block ID, 'best' or 'finalized'",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )
 
-class AddressValidator : ConstraintValidator<Address, String> {
+class RevisionValidator : ConstraintValidator<Revision, String> {
     override fun isValid(value: String, constraintValidatorContext: ConstraintValidatorContext): Boolean {
-        return AddressUtils.isValid(value)
+        return RevisionUtils.isValid(value)
     }
 }

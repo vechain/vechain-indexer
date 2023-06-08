@@ -9,4 +9,8 @@ import org.vechain.indexer.model.IndexedBlock
 interface BlockRepo : BaseIndexedRepo<IndexedBlock> {
     fun findByBlockNumber(blockNumber: Long): IndexedBlock?
     fun findTopByOrderByBlockNumberDesc(): IndexedBlock?
+
+    fun findTopByIsFinalizedOrderByBlockNumberDesc(finalized: Boolean): IndexedBlock?
+
+    fun findTopByIsFinalizedOrderByBlockNumberAsc(finalized: Boolean): IndexedBlock?
 }

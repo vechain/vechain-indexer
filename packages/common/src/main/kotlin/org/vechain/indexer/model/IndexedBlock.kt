@@ -30,7 +30,7 @@ data class IndexedBlock @ConstructorBinding @JsonCreator constructor(
     val com: Boolean,
     val signer: String,
     val isTrunk: Boolean,
-    val isFinalized: Boolean,
+    var isFinalized: Boolean,
     val transactions: List<Transaction>
 ) : IndexedDocument {
     constructor(block: Block) : this(
