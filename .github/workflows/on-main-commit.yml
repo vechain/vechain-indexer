@@ -7,14 +7,14 @@ on:
       - "*"
 
 env:
-  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '$GITHUB_REF_NAME' }}
+  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}
 
 jobs:
   debug-env:
     runs-on: ubuntu-latest
     steps:
       - name: Debug ENV
-        run: echo $LATEST_TAG
+        run: env
   # test-gradle:
   #   uses: ./.github/workflows/test-gradle.yml
   # publish-test-results:
