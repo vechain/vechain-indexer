@@ -52,6 +52,6 @@ jobs:
           client-payload: |
             '{ 
                 "indexerImageTag":  "${{ inputs.indexerImageTag || 'dev-latest' }}", 
-                "apiImageTag":      "${{ inputs.apiImageTag     || 'dev-latest' }}"
+                "apiImageTag":      "${{ inputs.apiImageTag     || 'dev-latest' }}",
                 "environment":      "${{ inputs.environment     || 'dev' }}"
             }'
