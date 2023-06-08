@@ -6,14 +6,14 @@ on:
     branches:
       - "*"
 
-# env:
-#   LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || ${GITHUB_REF##*/}' }}
+env:
+  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '${GITHUB_REF#refs/heads/}' }}
 
 jobs:
   debug-env:
     runs-on: ubuntu-latest
     env:
-      LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '${GITHUB_REF##*/}' }}
+      LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '${GITHUB_REF#refs/heads/}' }}
     steps:
       - name: Debug ENV
         run: echo $LATEST_TAG
