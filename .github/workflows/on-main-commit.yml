@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Debug ENV
-        run: env
+        run: echo $LATEST_TAG
   # test-gradle:
   #   uses: ./.github/workflows/test-gradle.yml
   # publish-test-results:
