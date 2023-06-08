@@ -5,32 +5,32 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repos.TransferEventRepo
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 
 @Profile("transfer-events")
 @Service
 open class TransferEventService(private val transferEventRepo: TransferEventRepo) {
 
     fun find(address: String, tokenAddress: String, toPageable: Pageable): List<IndexedTransferEvent> {
-        val addressNorm = HexUtil.normalise(address)
-        val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+        val addressNorm = HexUtils.normalise(address)
+        val tokenAddressNorm = HexUtils.normalise(tokenAddress)
         return transferEventRepo.findByToOrFromAndTokenAddress(addressNorm, addressNorm, tokenAddressNorm, toPageable)
     }
 
     fun findByAddress(address: String, toPageable: Pageable): List<IndexedTransferEvent> {
-        val addressNorm = HexUtil.normalise(address)
+        val addressNorm = HexUtils.normalise(address)
         return transferEventRepo.findByToOrFrom(addressNorm, addressNorm, toPageable)
     }
 
     fun findByTokenAddress(tokenAddress: String, toPageable: Pageable): List<IndexedTransferEvent> {
-        val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+        val tokenAddressNorm = HexUtils.normalise(tokenAddress)
         return transferEventRepo.findByTokenAddress(tokenAddressNorm, toPageable)
     }
 
     fun findByTo(to: String, tokenAddress: String?, pageable: Pageable): List<IndexedTransferEvent> {
-        val toNorm = HexUtil.normalise(to)
+        val toNorm = HexUtils.normalise(to)
         return if (tokenAddress != null) {
-            val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+            val tokenAddressNorm = HexUtils.normalise(tokenAddress)
             transferEventRepo.findByToAndTokenAddress(toNorm, tokenAddressNorm, pageable)
         } else {
             transferEventRepo.findByTo(toNorm, pageable)
@@ -38,9 +38,9 @@ open class TransferEventService(private val transferEventRepo: TransferEventRepo
     }
 
     fun findByFrom(from: String, tokenAddress: String?, pageable: Pageable): List<IndexedTransferEvent> {
-        val fromNorm = HexUtil.normalise(from)
+        val fromNorm = HexUtils.normalise(from)
         return if (tokenAddress != null) {
-            val tokenAddressNorm = HexUtil.normalise(tokenAddress)
+            val tokenAddressNorm = HexUtils.normalise(tokenAddress)
             transferEventRepo.findByFromAndTokenAddress(fromNorm, tokenAddressNorm, pageable)
         } else {
             transferEventRepo.findByFrom(fromNorm, pageable)

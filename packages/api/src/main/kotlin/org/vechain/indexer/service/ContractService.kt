@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.repos.ContractRepoImpl
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 
 @Profile("contracts")
 @Service
@@ -15,7 +15,7 @@ open class ContractService(
 ) {
 
     open fun findByAddress(address: String): IndexedContract? {
-        return contractRepoImpl.findById(HexUtil.normalise(address))
+        return contractRepoImpl.findById(HexUtils.normalise(address))
     }
 
     open fun find(
@@ -24,7 +24,7 @@ open class ContractService(
         pageable: Pageable
     ): List<IndexedContract> {
         return contractRepoImpl.findByCreatorAndType(
-            if (creator != null) HexUtil.normalise(creator) else null,
+            if (creator != null) HexUtils.normalise(creator) else null,
             contractType,
             pageable
         )

@@ -5,7 +5,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedBlock
 import org.vechain.indexer.repos.BlockRepo
-import org.vechain.indexer.utils.HexUtil
+import org.vechain.indexer.utils.HexUtils
 
 @Profile("blocks")
 @Service
@@ -15,8 +15,12 @@ open class BlockRepoService(private val blockRepo: BlockRepo) : BlockService {
         return blockRepo.findTopByOrderByBlockNumberDesc()
     }
 
+    override fun findFinalizedBlock(): IndexedBlock? {
+        return blockRepo.findTopByIsFinalizedOrderByBlockNumberDesc(true)
+    }
+
     override fun findById(blockId: String): IndexedBlock? {
-        return blockRepo.findByIdOrNull(HexUtil.normalise(blockId))
+        return blockRepo.findByIdOrNull(HexUtils.normalise(blockId))
     }
 
     override fun findByBlockNumber(blockNumber: Long): IndexedBlock? {

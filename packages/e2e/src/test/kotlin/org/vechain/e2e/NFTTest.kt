@@ -2,7 +2,7 @@ package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -82,7 +82,7 @@ class NFTTest {
         expectThat(nfts.data)
             .isNotNull()
             .hasSize(2)
-            .map { AddressUtil.isValid(it) }
+            .map { AddressUtils.isValid(it) }
             .all { isTrue() }
     }
 
@@ -97,7 +97,7 @@ class NFTTest {
         expectThat(nfts.data)
             .isNotNull()
             .hasSize(1)
-            .map { AddressUtil.isValid(it) }
+            .map { AddressUtils.isValid(it) }
             .all { isTrue() }
     }
 

@@ -2,11 +2,11 @@ package org.vechain.indexer.util
 
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-internal class AddressUtilTest {
+internal class AddressUtilsTest {
 
     @ParameterizedTest
     @CsvSource(
@@ -19,7 +19,7 @@ internal class AddressUtilTest {
         "0x8d66da6448c6144e894b7cd91fa1ae65310a4855, true",
     )
     fun `check valid address`(address: String, valid: Boolean) {
-        expectThat(AddressUtil.isValid(address)).isEqualTo(valid)
+        expectThat(AddressUtils.isValid(address)).isEqualTo(valid)
     }
 
     @ParameterizedTest
@@ -29,7 +29,7 @@ internal class AddressUtilTest {
         "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa, false",
     )
     fun `check not valid address`(address: String, notValid: Boolean) {
-        expectThat(AddressUtil.isNotValid(address)).isEqualTo(notValid)
+        expectThat(AddressUtils.isNotValid(address)).isEqualTo(notValid)
     }
 
 }

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ClauseUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.TransactionUtils
@@ -20,8 +20,8 @@ class ContractService(private val thorService: ThorService) {
     private val logger = LogManager.getLogger(this::class.simpleName)
 
     companion object {
-        val SAMPLE_ADDRESS_1 = AddressUtil.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
-        val SAMPLE_ADDRESS_2 = AddressUtil.toBigInt("0x435933c8064b4Ae76bE665428e0307eF2cCFBD68")
+        val SAMPLE_ADDRESS_1 = AddressUtils.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
+        val SAMPLE_ADDRESS_2 = AddressUtils.toBigInt("0x435933c8064b4Ae76bE665428e0307eF2cCFBD68")
     }
 
     /**

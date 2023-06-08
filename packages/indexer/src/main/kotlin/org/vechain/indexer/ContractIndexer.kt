@@ -11,7 +11,7 @@ import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repos.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
-import org.vechain.indexer.utils.AddressUtil
+import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.JsonUtils
 import org.vechain.thor.model.Block
@@ -54,7 +54,7 @@ open class ContractIndexer(
         masterChangeEvents.forEach { (event, tx, clause) ->
 
             val contractAddress = event.address
-            val master = AddressUtil.decode(event.data)
+            val master = AddressUtils.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
             val contract = contractRepo.findById(contractAddress).getOrNull()

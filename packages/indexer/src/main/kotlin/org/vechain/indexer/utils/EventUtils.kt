@@ -26,17 +26,17 @@ object EventUtils {
     private val logger = LoggerFactory.getLogger(EventUtils::class.java)
 
     fun isNftTransferEvent(event: TxEvent): Boolean {
-        return event.topics.size == 4 && HexUtil.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
+        return event.topics.size == 4 && HexUtils.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
     }
 
     fun isFungibleTransferEvent(event: TxEvent): Boolean {
-        return event.topics.size == 3 && HexUtil.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
+        return event.topics.size == 3 && HexUtils.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
     }
 
     fun isTransferSingleEvent(event: TxEvent): Boolean {
         if (event.topics.isEmpty()) return false
 
-        val topicSignature = HexUtil.removePrefix(event.topics[0])
+        val topicSignature = HexUtils.removePrefix(event.topics[0])
 
         return topicSignature == VIP210Contract.TRANSFER_SINGLE_EVENT || topicSignature == ERC1155Contract.TRANSFER_SINGLE_EVENT
     }
@@ -44,13 +44,13 @@ object EventUtils {
     fun isTransferBatchEvent(event: TxEvent): Boolean {
         if (event.topics.isEmpty()) return false
 
-        val topicSignature = HexUtil.removePrefix(event.topics[0])
+        val topicSignature = HexUtils.removePrefix(event.topics[0])
 
         return topicSignature == VIP210Contract.TRANSFER_BATCH_EVENT || topicSignature == ERC1155Contract.TRANSFER_BATCH_EVENT
     }
 
     fun isTransferEvent(event: TxEvent): Boolean {
-        return event.topics.isNotEmpty() && TRANSFER_SIGNATURES.contains(HexUtil.removePrefix(event.topics[0]))
+        return event.topics.isNotEmpty() && TRANSFER_SIGNATURES.contains(HexUtils.removePrefix(event.topics[0]))
     }
 
     fun getEventParams(event: TxEvent): List<TransferParameters> {
@@ -69,8 +69,8 @@ object EventUtils {
 
         return listOf(
             TransferParameters(
-                from = AddressUtil.decode(event.topics[1]),
-                to = AddressUtil.decode(event.topics[2]),
+                from = AddressUtils.decode(event.topics[1]),
+                to = AddressUtils.decode(event.topics[2]),
                 tokenId = null,
                 amount = amount,
                 eventType = TransferEventType.FUNGIBLE_TOKEN
@@ -84,8 +84,8 @@ object EventUtils {
 
         return listOf(
             TransferParameters(
-                from = AddressUtil.decode(event.topics[1]),
-                to = AddressUtil.decode(event.topics[2]),
+                from = AddressUtils.decode(event.topics[1]),
+                to = AddressUtils.decode(event.topics[2]),
                 tokenId = tokenId,
                 amount = BigInteger.ONE,
                 eventType = TransferEventType.NFT

@@ -6,6 +6,8 @@ interface BlockService {
 
     fun findBestBlock(): IndexedBlock?
 
+    fun findFinalizedBlock(): IndexedBlock?
+
     fun findById(blockId: String): IndexedBlock?
 
     fun findByBlockNumber(blockNumber: Long): IndexedBlock?

@@ -37,7 +37,7 @@ internal class ReOrgIndexerTest {
     fun setUp() {
         every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        blockIndexer = BlockIndexer(thorService, repo)
+        blockIndexer = BlockIndexer(thorService, repo, mongoTemplate)
     }
 
     fun mockBlock(num: Long, parentId: String): Block {
