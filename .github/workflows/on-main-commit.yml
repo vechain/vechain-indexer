@@ -10,28 +10,23 @@ env:
   LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}
 
 jobs:
-  debug-env:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug ENV
-        run: env
-  # test-gradle:
-  #   uses: ./.github/workflows/test-gradle.yml
-  # publish-test-results:
-  #   uses: ./.github/workflows/publish-test-results.yml
-  #   needs: test-gradle
-  # publish-image-to-ecr:
-  #   uses: ./.github/workflows/publish-ecr-image.yml
-  #   needs: test-gradle
-  #   with:
-  #     imageTag: ${{ github.sha }}
-  #     latestTag: $LATEST_TAG
-  #   secrets: inherit
-  # deploy-to-ecs:
-  #   uses: ./.github/workflows/deploy-to-ecs.yml
-  #   needs: publish-image-to-ecr
-  #   secrets: inherit
-  #   with:
-  #     indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
-  #     apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
-  #     environment: dev
+  test-gradle:
+    uses: ./.github/workflows/test-gradle.yml
+  publish-test-results:
+    uses: ./.github/workflows/publish-test-results.yml
+    needs: test-gradle
+  publish-image-to-ecr:
+    uses: ./.github/workflows/publish-ecr-image.yml
+    needs: test-gradle
+    with:
+      imageTag: ${{ github.sha }}
+      latestTag: $LATEST_TAG
+    secrets: inherit
+  deploy-to-ecs:
+    uses: ./.github/workflows/deploy-to-ecs.yml
+    needs: publish-image-to-ecr
+    secrets: inherit
+    with:
+      indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
+      apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
+      environment: dev
