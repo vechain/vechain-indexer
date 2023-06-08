@@ -4,18 +4,27 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
+      - '*'
 
 jobs:
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
-  publish-test-results:
-    uses: ./.github/workflows/publish-test-results.yml
-    needs: test-gradle
-  publish-image-to-ecr:
-    uses: ./.github/workflows/publish-ecr-image.yml
-    needs: test-gradle
+  # test-gradle:
+  #   uses: ./.github/workflows/test-gradle.yml
+  # publish-test-results:
+  #   uses: ./.github/workflows/publish-test-results.yml
+  #   needs: test-gradle
+  # publish-image-to-ecr:
+  #   uses: ./.github/workflows/publish-ecr-image.yml
+  #   needs: test-gradle
+  #   with:
+  #     imageTag: ${{ github.sha }}
+  #     latestTag: dev-latest
+  #   secrets: inherit
+  deploy-to-ecs:
+    uses: ./.github/workflows/deploy-to-ecs.yml
+    # needs: publish-image-to-ecr
     with:
-      imageTag: ${{ github.sha }}
-      latestTag: dev-latest
-    secrets: inherit
+      # indexerImageTag: ${{ github.sha }}
+      # apiImageTag: ${{ github.sha }}
+      indexerImageTag: dev-latest
+      apiImageTag: dev-latest
+      environment: dev
