@@ -1,9 +1,6 @@
 name: Push Images to ECR and Scan
 
 on:
-  push:
-    branches:
-      - "*"
   workflow_call:
     inputs:
       imageTag:
@@ -69,4 +66,4 @@ jobs:
         run: |
           aws ecr batch-delete-image \
             --repository-name veworld/${{ matrix.package }} \
-            --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}          
+            --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
