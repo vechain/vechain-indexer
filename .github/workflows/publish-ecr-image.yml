@@ -1,6 +1,9 @@
 name: Push Images to ECR and Scan
 
 on:
+  push:
+    branches:
+      - "*"
   workflow_call:
     inputs:
       imageTag:
@@ -12,12 +15,11 @@ on:
 
 jobs:
   build-and-publish:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        package: [ api, indexer ]
+        package: [api, indexer]
 
     steps:
       - name: Checkout repository
@@ -36,21 +38,37 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
 
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          platforms: linux/arm64
-          build-args: |
-            VEWORLD_PACKAGE=${{ matrix.package }}
-          push: true
-          provenance: false
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.latestTag }}
+      # - name: Build and push
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     platforms: linux/arm64
+      #     build-args: |
+      #       VEWORLD_PACKAGE=${{ matrix.package }}
+      #     push: true
+      #     provenance: false
+      #     tags: |
+      #       ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
+      #       ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.latestTag }}
 
+      # - name: Scan Docker image
+      #   id: docker-scan
+      #   uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+      #   with:
+      #     repository: ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}
+      #     tag: ${{ inputs.imageTag }}
+      #     fail_threshold: high
+
+      - name: On Scan Failure
+        # if: failure() | success()
+        run: |
+          aws ecr batch-delete-image \
+            --repository-name ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }} \
+            --image-ids imageTag=094d951c402cd3bc665b881b14d2c91c0a86c767
+#--image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
+          
