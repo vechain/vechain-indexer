@@ -41,6 +41,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Print Token Length
+        run: echo "${{ secrets.DEVOPS_DISPATCH_TOKEN }}" | wc -c
       - name: Devops Dispatch
         uses: peter-evans/repository-dispatch@v2
         with:
