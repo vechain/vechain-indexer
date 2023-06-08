@@ -1,0 +1,55 @@
+name: Deploy to ECS
+
+on:
+  workflow_call:
+    inputs:
+      indexerImageTag:
+        description: "Indexer image tag to deploy"
+        required: true
+        type: string
+      apiImageTag:
+        description: "API image tag to deploy"
+        required: true
+        type: string
+        default: latest
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      indexerImageTag:
+        description: "Indexer image tag to deploy"
+        required: true
+        type: string
+      apiImageTag:
+        description: "API image tag to deploy"
+        required: true
+        type: string
+        default: latest
+      environment:
+        description: "Environment to deploy to"
+        default: dev
+        required: true
+        type: string
+
+permissions:
+    contents: write
+
+jobs:
+  trigger-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Devops Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.DEVOPS_DISPATCH_TOKEN }}
+          repository: vechainfoundation/devops
+          event-type: deploy-veworld-indexer
+          client-payload: |
+            { 
+                "indexerImageTag":  "${{ inputs.indexerImageTag || 'dev-latest' }}", 
+                "apiImageTag":      "${{ inputs.apiImageTag     || 'dev-latest' }}",
+                "environment":      "${{ inputs.environment     || 'dev' }}"
+            }
