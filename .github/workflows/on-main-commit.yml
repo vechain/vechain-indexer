@@ -4,9 +4,17 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '*'
+      - "main"
+
+env:
+  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '${GITHUB_REF##*/}' }}
 
 jobs:
+  debug-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug ENV
+        run: env
   # test-gradle:
   #   uses: ./.github/workflows/test-gradle.yml
   # publish-test-results:
@@ -17,15 +25,13 @@ jobs:
   #   needs: test-gradle
   #   with:
   #     imageTag: ${{ github.sha }}
-  #     latestTag: dev-latest
+  #     latestTag: $LATEST_TAG
   #   secrets: inherit
-  deploy-to-ecs:
-    uses: ./.github/workflows/deploy-to-ecs.yml
-    # needs: publish-image-to-ecr
-    secrets: inherit
-    with:
-      # indexerImageTag: ${{ github.sha }}
-      # apiImageTag: ${{ github.sha }}
-      indexerImageTag: dev-latest
-      apiImageTag: dev-latest
-      environment: dev
+  # deploy-to-ecs:
+  #   uses: ./.github/workflows/deploy-to-ecs.yml
+  #   needs: publish-image-to-ecr
+  #   secrets: inherit
+  #   with:
+  #     indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
+  #     apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || '$LATEST_TAG' }}
+  #     environment: dev
