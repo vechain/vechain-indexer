@@ -12,12 +12,11 @@ on:
 
 jobs:
   build-and-publish:
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        package: [ api, indexer ]
+        package: [api, indexer]
 
     steps:
       - name: Checkout repository
@@ -54,3 +53,17 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
             ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.latestTag }}
 
+      - name: Scan Docker image
+        id: docker-scan
+        uses: alexjurkiewicz/ecr-scan-image@v1.7.1
+        with:
+          repository: ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}
+          tag: ${{ inputs.imageTag }}
+          fail_threshold: high
+
+      - name: On Scan Failure
+        if: failure() && steps.docker-scan.outcome == 'failure'
+        run: |
+          aws ecr batch-delete-image \
+            --repository-name veworld/${{ matrix.package }} \
+            --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
