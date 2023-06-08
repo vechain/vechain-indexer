@@ -20,7 +20,7 @@ jobs:
     # needs: test-gradle
     with:
       imageTag: ${{ github.sha }}
-      latestTag: "${{ env.LATEST_TAG }}}"
+      latestTag: "$LATEST_TAG"
     secrets: inherit
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
