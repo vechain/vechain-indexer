@@ -13,13 +13,15 @@ jobs:
   debug-env:
     runs-on: ubuntu-latest
     env:
-      BRANCH: ${GITHUB_REF#refs/heads/}
+      BRANCH: ${{ github.ref_name }}
+      CLEAN_BRANCH: ${BRANCH##*/}
       LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '$BRANCH' }}
     steps:
       - name: Debug ENV
         run: | 
-          echo $LATEST_TAG
-          echo $BRANCH
+          BRANCH_2=${{ github.ref_name }}
+          CLEAN_BRANCH_2=${BRANCH##*/}
+          env
   # test-gradle:
   #   uses: ./.github/workflows/test-gradle.yml
   # publish-test-results:
