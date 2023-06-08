@@ -6,22 +6,15 @@ on:
     branches:
       - "*"
 
-# env:
-#   LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || ${GITHUB_REF#refs/heads/} }}
+env:
+  LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '$GITHUB_REF_NAME' }}
 
 jobs:
   debug-env:
     runs-on: ubuntu-latest
-    env:
-      BRANCH: ${{ github.ref_name }}
-      CLEAN_BRANCH: ${BRANCH##*/}
-      LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '$BRANCH' }}
     steps:
       - name: Debug ENV
-        run: | 
-          BRANCH_2=${{ github.ref_name }}
-          CLEAN_BRANCH_2=${BRANCH##*/}
-          env
+        run: echo $LATEST_TAG
   # test-gradle:
   #   uses: ./.github/workflows/test-gradle.yml
   # publish-test-results:
