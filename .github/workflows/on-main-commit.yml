@@ -22,6 +22,7 @@ jobs:
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
     # needs: publish-image-to-ecr
+    secrets: inherit
     with:
       # indexerImageTag: ${{ github.sha }}
       # apiImageTag: ${{ github.sha }}
