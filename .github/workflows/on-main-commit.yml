@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "main"
+      - "*"
 
 env:
   LATEST_TAG: ${{ github.ref == 'refs/heads/main' && 'dev-latest' || '${GITHUB_REF##*/}' }}
