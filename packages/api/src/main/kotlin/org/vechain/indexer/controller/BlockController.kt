@@ -43,19 +43,18 @@ open class BlockController(private val blockService: BlockService) {
 
         val normalisedRevision = RevisionUtils.normalise(revision)
 
-        val block = if (normalisedRevision == "best") {
-            blockService.findBestBlock()
-        } else if (normalisedRevision == "finalized") {
-            blockService.findFinalizedBlock()
-        } else if (HexUtils.isValidBlockID(normalisedRevision)) {
-            blockService.findById(normalisedRevision)
-        } else {
-            // Try parse to a long
-            try {
-                val blockNumber = revision.toLong()
-                blockService.findByBlockNumber(blockNumber)
-            } catch (e: NumberFormatException) {
-                throw BadRequestException("Invalid revision $revision")
+        val block = when {
+            normalisedRevision == "best" -> blockService.findBestBlock()
+            normalisedRevision == "finalized" -> blockService.findFinalizedBlock()
+            HexUtils.isValidBlockID(normalisedRevision) -> blockService.findById(normalisedRevision)
+            else -> {
+                // Try parse to a long
+                try {
+                    val blockNumber = revision.toLong()
+                    blockService.findByBlockNumber(blockNumber)
+                } catch (e: NumberFormatException) {
+                    throw BadRequestException("Invalid revision $revision")
+                }
             }
         }
 
