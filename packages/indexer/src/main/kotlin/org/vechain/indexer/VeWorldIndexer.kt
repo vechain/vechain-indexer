@@ -13,7 +13,7 @@ abstract class VeWorldIndexer(
         return thorService.getBlock(blockNumber)
     }
 
-    override fun getLatestBlockFromChain(): Block {
+    override fun getBestBlockFromChain(): Block {
         return thorService.getBestBlock()
     }
 

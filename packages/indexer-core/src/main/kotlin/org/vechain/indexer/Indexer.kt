@@ -34,7 +34,7 @@ abstract class Indexer(
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
 
-    private var backoffPeriod = INITIAL_BACKOFF_PERIOD
+    private var backoffPeriod = 0L
 
     private fun initialise() {
         val block = getLastSyncedBlock()
@@ -133,7 +133,7 @@ abstract class Indexer(
 
     private fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
-            val latestBlock = getLatestBlockFromChain()
+            val latestBlock = getBestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
                 logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})")
                 status = Status.SYNCING
@@ -153,10 +153,9 @@ abstract class Indexer(
     abstract fun getBlockFromChain(blockNumber: Long): Block
 
     /**
-     * getLatestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
-     * The latest block could be the best or finalized block depending on your use-case
+     * getBestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    abstract fun getLatestBlockFromChain(): Block
+    abstract fun getBestBlockFromChain(): Block
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.
