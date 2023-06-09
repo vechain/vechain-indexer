@@ -3,10 +3,9 @@ package org.vechain.indexer.pageable
 /**
  * All pageable parameters.
  */
-@PageablePage
-@PageableSize
-@PageableSortFields
-@PageableSortDirection
+@PaginationPage
+@PaginationSize
+@PaginationSortDirection
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PageableAll
+annotation class PaginationParameters

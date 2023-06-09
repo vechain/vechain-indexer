@@ -2,17 +2,16 @@ package org.vechain.indexer.pageable
 
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 
 @Parameter(
     `in` = ParameterIn.QUERY,
-    name = "sort",
-    description = "How to sort the results",
+    name = "direction",
+    schema = Schema(type = "String"),
+    description = "The sort direction (DESC or ASC)",
     required = false,
-    example = "blockNumber",
-    array = ArraySchema(schema = Schema(type = "String"))
+    example = "DESC"
 )
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PageableSortFields
+annotation class PaginationSortDirection
