@@ -9,7 +9,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.model.PaginatedResponse
+import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.utils.HexUtils
 import strikt.api.expect
 import strikt.api.expectThat

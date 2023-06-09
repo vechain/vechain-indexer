@@ -16,20 +16,18 @@ class NFTTest {
             size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts.data)
-            .hasSize(102)
-            .isA<List<IndexedNFT>>()
-            .map { assertValidNft(it) }
+        expectThat(nfts.data).hasSize(102).isA<List<IndexedNFT>>()
+
+        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
 
     @Test
     fun `get NFTs for address with pagination`() {
         val nfts = VeWorldAPIClient.getNfts(address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa", size = 1)
 
-        expectThat(nfts.data)
-            .hasSize(1)
-            .isA<List<IndexedNFT>>()
-            .map { assertValidNft(it) }
+        expectThat(nfts.data).hasSize(1).isA<List<IndexedNFT>>()
+
+        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
 
     @Test
@@ -43,8 +41,10 @@ class NFTTest {
 
         expectThat(nfts.data).hasSize(102)
 
-        val firstContractAddress = nfts.data[0].contractAddress
-        val nftAmountForFirstContract = nfts.data.count { it.contractAddress == firstContractAddress }
+        val firstNft: IndexedNFT = nfts.data[0]
+        val firstContractAddress = firstNft.contractAddress
+        val nftAmountForFirstContract =
+            nfts.data.count { nft: IndexedNFT -> nft.contractAddress == firstContractAddress }
 
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
@@ -65,11 +65,8 @@ class NFTTest {
             size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts.data)
-            .hasSize(2)
-            .isA<List<String>>()
-            .map { AddressUtils.isValid(it) }
-            .all { isTrue() }
+        expectThat(nfts.data).hasSize(2)
+        nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
     @Test
@@ -80,11 +77,8 @@ class NFTTest {
             size = 1,
         )
 
-        expectThat(nfts.data)
-            .hasSize(1)
-            .isA<List<String>>()
-            .map { AddressUtils.isValid(it) }
-            .all { isTrue() }
+        expectThat(nfts.data).hasSize(1)
+        nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
     fun assertValidNft(nft: IndexedNFT) {
@@ -96,5 +90,9 @@ class NFTTest {
             that(nft.owner).isNotEmpty()
             that(nft.id).isNotEmpty()
         }
+    }
+
+    fun assertValidContract(contract: String) {
+        expectThat(AddressUtils.isValid(contract)).isTrue()
     }
 }

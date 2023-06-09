@@ -4,6 +4,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.*
+import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
 

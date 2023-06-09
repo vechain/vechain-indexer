@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.stereotype.Service
-import org.vechain.indexer.constants.COUNT_LIMIT
+import org.vechain.indexer.model.rest.COUNT_LIMIT
 
 @Service
 open class CountService(private val mongoTemplate: MongoTemplate) {

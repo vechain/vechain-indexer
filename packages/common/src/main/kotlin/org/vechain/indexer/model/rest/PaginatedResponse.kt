@@ -1,7 +1,8 @@
-package org.vechain.indexer.model
+package org.vechain.indexer.model.rest
 
 import org.springframework.data.domain.Page
-import org.vechain.indexer.constants.COUNT_LIMIT
+
+const val COUNT_LIMIT = 500L
 
 data class PaginatedResponse<T>(
     val data: List<T>,
