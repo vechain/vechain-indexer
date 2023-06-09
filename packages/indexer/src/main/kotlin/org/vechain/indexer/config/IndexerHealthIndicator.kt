@@ -13,7 +13,11 @@ class IndexerHealthIndicator(
     private val indexers: List<Indexer>
 ) : HealthIndicator {
 
-    data class IndexerHealth(val indexerName: String, val status: Status)
+    data class IndexerHealth(
+        val name: String,
+        val status: Status,
+        val currentBlock: Long
+    )
 
     companion object {
         const val PROCESS_TIMEOUT = 60L
@@ -23,7 +27,11 @@ class IndexerHealthIndicator(
         val key = "IndexersHealth"
 
         val indexerHealths = indexers.map { indexer ->
-            IndexerHealth(indexer.name, getIndexerHealth(indexer))
+            IndexerHealth(
+                name = indexer.name,
+                status = getIndexerHealth(indexer),
+                currentBlock = indexer.currentBlockNumber
+            )
         }
 
         val badIndexers = indexerHealths.filter { it.status == Status.DOWN }
