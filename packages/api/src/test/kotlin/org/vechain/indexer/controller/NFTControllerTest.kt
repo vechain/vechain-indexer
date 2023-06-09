@@ -39,9 +39,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull()
-                .hasSize(102)
+            expectThat(nfts.data).hasSize(102)
         }
 
         @Test
@@ -51,9 +49,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull()
-                .hasSize(20)
+            expectThat(nfts.data).hasSize(20)
         }
 
         @Test
@@ -64,8 +60,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull().hasSize(102)
+            expectThat(nfts.data).hasSize(102)
         }
 
         @Test
@@ -76,9 +71,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull()
-                .hasSize(102)
+            expectThat(nfts.data).hasSize(102)
         }
 
         @Test
@@ -90,8 +83,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data).isNotNull()
-            expectThat(nfts.data!!).hasSize(51)
+            expectThat(nfts.data).hasSize(51)
         }
 
         @Test
@@ -104,9 +96,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull()
-                .hasSize(51)
+            expectThat(nfts.data).hasSize(51)
         }
 
         @Test
@@ -121,9 +111,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
             expect {
-                that(nfts.data).isNotNull().hasSize(size)
-                that(nfts.data!!.first().owner).isEqualTo(HexUtils.normalise(owner))
-                that(nfts.data!!.first().contractAddress).isEqualTo(contractAddress)
+                that(nfts.data).hasSize(size)
+                that(nfts.data.first().owner).isEqualTo(HexUtils.normalise(owner))
+                that(nfts.data.first().contractAddress).isEqualTo(contractAddress)
             }
         }
 
@@ -140,9 +130,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
             expect {
-                that(nfts.data).isNotNull().hasSize(size)
-                that(nfts.data!!.first().owner).isEqualTo(HexUtils.normalise(owner))
-                that(nfts.data!!.first().contractAddress).isEqualTo(contractAddress)
+                that(nfts.data).hasSize(size)
+                that(nfts.data.first().owner).isEqualTo(HexUtils.normalise(owner))
+                that(nfts.data.first().contractAddress).isEqualTo(contractAddress)
             }
         }
 
@@ -158,7 +148,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
             ).andExpect { status { isOk() } }.andReturn()
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data).isNotNull()
+            expectThat(nfts.data)
                 .hasSize(51)
                 .isSorted(
                     compareByDescending<IndexedNFT> { it.blockNumber }.then(
@@ -176,9 +166,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
 
-            expectThat(nfts.data)
-                .isNotNull()
-                .hasSize(102)
+            expectThat(nfts.data).hasSize(102)
         }
 
         @Test
@@ -195,7 +183,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             expect {
                 that(nfts.data)
-                    .isNotNull()
                     .hasSize(20)
                     .isSorted(
                         compareByDescending<IndexedNFT> { it.blockNumber }.then(
@@ -207,7 +194,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 that(nfts.pagination!!.totalPages).isEqualTo(3)
                 that(nfts.pagination!!.totalElements).isEqualTo(51)
             }
-
         }
 
         @Test
@@ -236,14 +222,10 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 "$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db5"
             ).andExpect { status { isOk() } }.andReturn()
 
-            val contracts =
-                objectMapper.readValue(
-                    res.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+            val contracts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_CONTRACT_TYPE)
 
             expect {
                 that(contracts.data)
-                    .isNotNull()
                     .hasSize(2)
                     .containsExactlyInAnyOrder(
                         "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
@@ -262,14 +244,10 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 "$baseEndpoint/contracts?owner=$owner&page=$page&size=$size"
             ).andExpect { status { isOk() } }.andReturn()
 
-            val contracts =
-                objectMapper.readValue(
-                    res.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+            val contracts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_CONTRACT_TYPE)
 
             expect {
                 that(contracts.data)
-                    .isNotNull()
                     .hasSize(2)
                     .containsExactlyInAnyOrder(
                         "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
@@ -287,14 +265,10 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 "$baseEndpoint/contracts?owner=0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
             ).andExpect { status { isOk() } }.andReturn()
 
-            val contracts =
-                objectMapper.readValue(
-                    res.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+            val contracts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_CONTRACT_TYPE)
 
             expect {
                 that(contracts.data)
-                    .isNotNull()
                     .hasSize(2)
                     .containsExactlyInAnyOrder(
                         "0x08f30373569af024d15eb47fd477a35db929eaac", "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
@@ -319,20 +293,16 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 "$baseEndpoint/contracts?owner=$owner&page=$page2&size=$size"
             ).andExpect { status { isOk() } }.andReturn()
 
-            val contracts1 =
-                objectMapper.readValue(
-                    res1.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+            val contracts1 = objectMapper.readValue(res1.response.contentAsString, LIST_PAGINATED_NFT_CONTRACT_TYPE)
 
             val contracts2 =
                 objectMapper.readValue(
                     res2.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+                    object : TypeReference<PaginatedResponse<String>>() {})
 
             expect {
                 // page 0 results
                 that(contracts1.data)
-                    .isNotNull()
                     .hasSize(size)
                     .containsExactly("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
                 that(contracts1.pagination).isNotNull()
@@ -341,7 +311,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
                 // page 1 results
                 that(contracts2.data)
-                    .isNotNull()
                     .hasSize(size)
                     .containsExactly("0x08f30373569af024d15eb47fd477a35db929eaac")
                 that(contracts2.pagination).isNotNull()
@@ -355,15 +324,10 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val res = mockMvc.get("$baseEndpoint/contracts?owner=0x0f872421dc479f3c11edd89512731814d0598db4")
                 .andExpect { status { isOk() } }.andReturn()
 
-            val contracts =
-                objectMapper.readValue(
-                    res.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<List<String>>>() {})
+            val contracts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_CONTRACT_TYPE)
 
             expect {
-                that(contracts.data)
-                    .isNotNull()
-                    .isEmpty()
+                that(contracts.data).isEmpty()
                 that(contracts.pagination).isNotNull()
                 that(contracts.pagination!!.totalElements).isEqualTo(0)
             }
