@@ -10,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.repos.*
 import org.vechain.indexer.utils.JsonUtils
 
@@ -32,7 +31,6 @@ abstract class FastAbstractIntegrationTest {
     protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
     protected val CLAUSES_TYPE = object : TypeReference<List<IndexedClause>>() {}
-    protected val CLAUSES_RESPONSE_TYPE = object : TypeReference<PaginatedResponse<List<IndexedClause>>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 

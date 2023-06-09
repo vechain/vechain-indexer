@@ -16,11 +16,9 @@ class NFTTest {
             size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(102)
+        expectThat(nfts.data).hasSize(102)
 
-        nfts.data!!.forEach { nft ->
+        nfts.data.forEach { nft ->
             assertValidNft(nft)
         }
     }
@@ -29,11 +27,9 @@ class NFTTest {
     fun `get NFTs for address with pagination`() {
         val nfts = VeWorldAPIClient.getNfts(address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa", size = 1)
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(1)
+        expectThat(nfts.data).hasSize(1)
 
-        nfts.data!!.forEach { nft ->
+        nfts.data.forEach { nft ->
             assertValidNft(nft)
         }
 
@@ -49,14 +45,12 @@ class NFTTest {
         )
 
         expect {
-            that(nfts.data)
-                .isNotNull()
-                .hasSize(102)
-            that(nfts.data!!.distinctBy { it.contractAddress }.size).isEqualTo(2)
+            that(nfts.data).hasSize(102)
+            that(nfts.data.distinctBy { it.contractAddress }.size).isEqualTo(2)
         }
 
-        val firstContractAddress = nfts.data!![0].contractAddress
-        val nftAmountForFirstContract = nfts.data!!.count { it.contractAddress == firstContractAddress }
+        val firstContractAddress = nfts.data[0].contractAddress
+        val nftAmountForFirstContract = nfts.data.count { it.contractAddress == firstContractAddress }
 
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
@@ -66,9 +60,7 @@ class NFTTest {
             size = Int.MAX_VALUE
         )
 
-        expectThat(nftsWithQuery.data)
-            .isNotNull()
-            .hasSize(nftAmountForFirstContract)
+        expectThat(nftsWithQuery.data).hasSize(nftAmountForFirstContract)
     }
 
     @Test
@@ -80,7 +72,6 @@ class NFTTest {
         )
 
         expectThat(nfts.data)
-            .isNotNull()
             .hasSize(2)
             .map { AddressUtils.isValid(it) }
             .all { isTrue() }
@@ -95,7 +86,6 @@ class NFTTest {
         )
 
         expectThat(nfts.data)
-            .isNotNull()
             .hasSize(1)
             .map { AddressUtils.isValid(it) }
             .all { isTrue() }

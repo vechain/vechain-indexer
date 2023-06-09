@@ -1,5 +1,6 @@
 dependencies {
     implementation(project(":packages:common"))
+    implementation(project(":packages:api"))
 }
 
 task<Exec>("preE2e") {
