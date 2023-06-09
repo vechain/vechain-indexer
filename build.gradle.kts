@@ -166,6 +166,7 @@ allprojects {
 
 dependencies {
     testImplementation(project(":packages:common"))
+    testImplementation(project(":packages:indexer-core"))
     testImplementation(project(":packages:indexer"))
     testImplementation(project(":packages:api"))
 }
