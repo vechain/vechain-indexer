@@ -7,7 +7,7 @@ const val COUNT_LIMIT = 500L
 
 data class PaginatedResponse<T>(
     val data: List<T>,
-    val pagination: PaginationDetail? = null
+    val pagination: PaginationDetail,
 ) where T : Any
 
 data class PaginationDetail(

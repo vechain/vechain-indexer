@@ -25,8 +25,8 @@ object VeWorldAPIClient {
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
     private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<List<IndexedTransaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
-    private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<List<IndexedContract>>() {}
-    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
+    private val PAGINATED_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedContract>>() {}
+    private val PAGINATED_NFTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
     private val PAGINATED_NFT_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENT_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
@@ -75,8 +75,12 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/contracts/$address", CONTRACT_TYPE)
     }
 
-    fun getContractForCreator(address: String, page: Int = 0, size: Int = PAGE_SIZE_LIMIT): List<IndexedContract> {
-        return getRequest("$API_URL/contracts?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
+    fun getContractForCreator(
+        address: String,
+        page: Int = 0,
+        size: Int = PAGE_SIZE_LIMIT
+    ): PaginatedResponse<IndexedContract> {
+        return getRequest("$API_URL/contracts?address=$address&page=$page&size=$size", PAGINATED_CONTRACTS_TYPE)
     }
 
     fun getNfts(
@@ -88,12 +92,12 @@ object VeWorldAPIClient {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
-                PAGINATED_NFT_TYPE
+                PAGINATED_NFTS_TYPE
             )
         else if (address != null)
-            getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFT_TYPE)
+            getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFTS_TYPE)
         else if (contractAddress != null)
-            getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFT_TYPE)
+            getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFTS_TYPE)
         else
             throw Exception("No address or contractAddress provided")
     }

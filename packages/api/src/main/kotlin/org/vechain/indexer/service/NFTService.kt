@@ -35,7 +35,7 @@ open class NFTService(
         val count =
             countRepository.getCount(
                 NFTS_COLLECTION,
-                Aggregation.match(Criteria.where(OWNER).`is`(HexUtils.normalise(owner)))
+                listOf(Aggregation.match(Criteria.where(OWNER).`is`(HexUtils.normalise(owner))))
             )
 
         return PageImpl(slice.content, pageable, count)
@@ -50,8 +50,10 @@ open class NFTService(
 
         val count = countRepository.getCount(
             NFTS_COLLECTION,
-            Aggregation.match(
-                Criteria.where(OWNER).`is`(HexUtils.normalise(owner)).and(CONTRACT_ADDRESS).`is`(contractAddress)
+            listOf(
+                Aggregation.match(
+                    Criteria.where(OWNER).`is`(HexUtils.normalise(owner)).and(CONTRACT_ADDRESS).`is`(contractAddress)
+                )
             )
         )
 
@@ -63,7 +65,7 @@ open class NFTService(
         val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts
-        val distinctCount = countRepository.getCount(NFTS_COLLECTION, matchAggregation, groupAggregation)
+        val distinctCount = countRepository.getCount(NFTS_COLLECTION, listOf(matchAggregation), groupAggregation)
 
         // find distinct contracts
         val contractsAggregation = Aggregation.newAggregation(
