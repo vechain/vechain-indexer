@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.vechain.indexer.model.*
-import org.vechain.indexer.repos.*
+import org.vechain.indexer.repository.*
 import org.vechain.indexer.utils.JsonUtils
 
 /**

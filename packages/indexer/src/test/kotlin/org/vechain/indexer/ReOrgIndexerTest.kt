@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.model.IndexedBlock
-import org.vechain.indexer.repos.BlockRepo
+import org.vechain.indexer.repository.BlockRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.Block
 import strikt.api.expect

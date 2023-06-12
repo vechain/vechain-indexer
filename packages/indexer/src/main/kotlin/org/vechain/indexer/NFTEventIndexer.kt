@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.repos.NFTRepo
+import org.vechain.indexer.repository.NFTRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block

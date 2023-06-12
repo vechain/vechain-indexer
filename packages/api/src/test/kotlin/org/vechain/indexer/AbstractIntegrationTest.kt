@@ -15,7 +15,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
 import org.vechain.indexer.model.*
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.repos.*
+import org.vechain.indexer.repository.*
 import org.vechain.indexer.utils.JsonUtils
 import java.util.*
 

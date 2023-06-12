@@ -8,7 +8,7 @@ import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.repository.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.AddressUtils

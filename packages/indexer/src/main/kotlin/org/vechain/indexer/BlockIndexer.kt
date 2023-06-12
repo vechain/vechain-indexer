@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.query.Query.query
 import org.springframework.data.mongodb.core.query.Update.update
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedBlock
-import org.vechain.indexer.repos.BlockRepo
+import org.vechain.indexer.repository.BlockRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.Block
 

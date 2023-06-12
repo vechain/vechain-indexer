@@ -10,7 +10,8 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.repos.NFTRepo
+import org.vechain.indexer.repository.CountRepository
+import org.vechain.indexer.repository.NFTRepo
 import org.vechain.indexer.utils.HexUtils
 
 
@@ -18,12 +19,12 @@ import org.vechain.indexer.utils.HexUtils
 @Service
 open class NFTService(
     private val nftRepo: NFTRepo,
-    private val countService: CountService,
+    private val countRepository: CountRepository,
     private val mongoTemplate: MongoTemplate
 ) {
 
     companion object {
-        const val COLLECTION_NAME = "nfts"
+        val NFTS_COLLECTION = IndexedNFT::class.java
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
     }
@@ -32,8 +33,8 @@ open class NFTService(
         val slice = nftRepo.findAllByOwner(HexUtils.normalise(owner), pageable)
 
         val count =
-            countService.getCount(
-                COLLECTION_NAME,
+            countRepository.getCount(
+                NFTS_COLLECTION,
                 Aggregation.match(Criteria.where(OWNER).`is`(HexUtils.normalise(owner)))
             )
 
@@ -47,8 +48,8 @@ open class NFTService(
     ): Page<IndexedNFT> {
         val slice = nftRepo.findAllByOwnerAndContractAddress(HexUtils.normalise(owner), contractAddress, pageable)
 
-        val count = countService.getCount(
-            COLLECTION_NAME,
+        val count = countRepository.getCount(
+            NFTS_COLLECTION,
             Aggregation.match(
                 Criteria.where(OWNER).`is`(HexUtils.normalise(owner)).and(CONTRACT_ADDRESS).`is`(contractAddress)
             )
@@ -62,7 +63,7 @@ open class NFTService(
         val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts
-        val distinctCount = countService.getCount(COLLECTION_NAME, matchAggregation, groupAggregation)
+        val distinctCount = countRepository.getCount(NFTS_COLLECTION, matchAggregation, groupAggregation)
 
         // find distinct contracts
         val contractsAggregation = Aggregation.newAggregation(

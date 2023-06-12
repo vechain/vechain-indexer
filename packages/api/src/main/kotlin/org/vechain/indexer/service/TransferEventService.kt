@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.repos.TransferEventRepo
+import org.vechain.indexer.repository.TransferEventRepo
 import org.vechain.indexer.utils.HexUtils
 
 @Profile("transfer-events")
