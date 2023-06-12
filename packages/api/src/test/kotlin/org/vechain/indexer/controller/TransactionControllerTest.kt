@@ -9,6 +9,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.IndexedTransaction
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
@@ -61,6 +62,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get transactions for bad address should return BAD_REQUEST`() {
             mockMvc.get("$baseEndpoint?origin=badAddress&size=$resultsPageSize")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get transactions with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint?origin=$address&size=$size")
                 .andExpect { status { isBadRequest() } }
         }
 
@@ -250,6 +260,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get DELEGATED transactions for bad address should return BAD_REQUEST`() {
             mockMvc.get("$baseEndpoint/delegated?delegator=badAddress")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get delegated transactions with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint/delegated?delegator=$address&size=$size")
                 .andExpect { status { isBadRequest() } }
         }
 

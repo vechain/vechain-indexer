@@ -13,7 +13,6 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNfts(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE,
         )
 
         expectThat(nfts.data).hasSize(102).isA<List<IndexedNFT>>()
@@ -36,7 +35,6 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNfts(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE
         )
 
         expectThat(nfts.data).hasSize(102)
@@ -51,7 +49,6 @@ class NFTTest {
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             contractAddress = firstContractAddress,
             page = 0,
-            size = Int.MAX_VALUE
         )
 
         expectThat(nftsWithQuery.data).hasSize(nftAmountForFirstContract)
@@ -62,7 +59,6 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNftContracts(
             owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE,
         )
 
         expectThat(nfts.data).hasSize(2)

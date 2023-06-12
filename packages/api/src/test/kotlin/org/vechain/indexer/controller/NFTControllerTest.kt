@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.utils.HexUtils
 import strikt.api.expect
@@ -27,14 +28,23 @@ class NFTControllerTest : AbstractIntegrationTest() {
     @Nested
     inner class GetOwnedNFTs {
         @Test
-        fun `get transactions for bad address should return BAD_REQUEST`() {
+        fun `get owned nfts for bad address should return BAD_REQUEST`() {
             mockMvc.get("$baseEndpoint?address=badAddress").andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get owned nfts with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint?address=$address&size=$size")
+                .andExpect { status { isBadRequest() } }
         }
 
         @Test
         fun `valid address should return OKAY`() {
             val res = mockMvc.get(
-                "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&size=${Int.MAX_VALUE}"
+                "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&size=$PAGE_SIZE_LIMIT"
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -55,7 +65,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `mixed case should be valid`() {
             val res = mockMvc.get(
-                "$baseEndpoint?address=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa" + "&size=${Int.MAX_VALUE}"
+                "$baseEndpoint?address=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa&size=$PAGE_SIZE_LIMIT"
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -66,7 +76,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `no prefix should be valid`() {
             val res = mockMvc.get(
-                "$baseEndpoint?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" + "&size=${Int.MAX_VALUE}"
+                "$baseEndpoint?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa&size=$PAGE_SIZE_LIMIT"
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -78,7 +88,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         fun `get filtered NFTs should return less NFTs`() {
             val res = mockMvc.get(
                 "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
-                        "&contractAddress=0xb44111d908ad0af0949a20a130429f92a4cc0dbf&size=${Int.MAX_VALUE}"
+                        "&contractAddress=0xb44111d908ad0af0949a20a130429f92a4cc0dbf&size=$PAGE_SIZE_LIMIT"
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -91,7 +101,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
             val res = mockMvc.get(
-                "$baseEndpoint?address=$owner" + "&contractAddress=$contractAddress" + "&size=${Int.MAX_VALUE}"
+                "$baseEndpoint?address=$owner&contractAddress=$contractAddress&size=$PAGE_SIZE_LIMIT"
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -141,7 +151,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
             val page = 0
-            val size = Int.MAX_VALUE
+            val size = PAGE_SIZE_LIMIT
 
             val res = mockMvc.get(
                 "$baseEndpoint?address=$owner&contractAddress=$contractAddress&page=$page&size=$size"
@@ -161,7 +171,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get filtered by empty contract address`() {
             val res = mockMvc.get(
-                "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&size=${Int.MAX_VALUE}&contractAddress="
+                "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa&size=$PAGE_SIZE_LIMIT&contractAddress="
             ).andExpect { status { isOk() } }.andReturn()
 
             val nfts = objectMapper.readValue(res.response.contentAsString, LIST_PAGINATED_NFT_TYPE)
@@ -209,6 +219,15 @@ class NFTControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get contracts by NFT owner - bad owner address`() {
             mockMvc.get("$baseEndpoint/contracts?owner=badAddress").andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get contracts with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint/contracts?owner=$address&size=$size")
+                .andExpect { status { isBadRequest() } }
         }
 
         @Test
