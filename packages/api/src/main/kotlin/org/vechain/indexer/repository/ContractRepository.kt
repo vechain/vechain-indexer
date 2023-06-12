@@ -24,7 +24,7 @@ open class ContractRepository(
     }
 
     open fun findById(address: String): IndexedContract? {
-        return mongoTemplate.findById(address, IndexedContract::class.java)
+        return mongoTemplate.findById(address, CONTRACTS_COLLECTION)
     }
 
     open fun findByCreatorAndType(
@@ -45,7 +45,7 @@ open class ContractRepository(
             matchOperations.add(MatchOperation(contractTypeCriteria))
         }
 
-        val results = mongoTemplate.find(query, IndexedContract::class.java)
+        val results = mongoTemplate.find(query, CONTRACTS_COLLECTION)
         val count = countRepository.getCount(CONTRACTS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
