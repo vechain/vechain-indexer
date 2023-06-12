@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.IndexedContract
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expectThat
 import strikt.assertions.*
 import java.util.*
@@ -81,6 +82,16 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
     @Nested
     inner class ContractCreatorQueries {
+
+        @Test
+        fun `get contracts with over the limit page size should return BAD REQUEST`() {
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$BASE_ENDPOINT?address=$creatorAddress&size=$size")
+                .andExpect { status { isBadRequest() } }
+        }
+
         @Test
         fun `fetch contracts by origin - no pagination`() {
             val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"

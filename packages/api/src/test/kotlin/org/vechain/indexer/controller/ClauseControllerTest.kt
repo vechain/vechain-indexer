@@ -8,6 +8,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.model.IndexedClause
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
@@ -32,7 +33,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     fun `get clauses for address`() {
         val address = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             baseEndpoint +
                     "?address=$address" +
@@ -51,7 +52,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     fun `get clauses for address no hex prefix`() {
         val address = "438d785fffd68dfed059c6380d9b0d07441e263b"
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             baseEndpoint +
                     "?address=$address" +
@@ -70,7 +71,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     fun `get clauses for address upper case`() {
         val address = "0x438D785FFFD68dfed059c6380d9b0d07441E263B"
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             baseEndpoint +
                     "?address=$address" +

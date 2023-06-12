@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isSorted
@@ -27,10 +28,20 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isNotFound() } }
     }
 
+
+    @Test
+    fun `get transfer events with over the limit page size should return BAD REQUEST`() {
+        val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+        val size = PAGE_SIZE_LIMIT + 1
+
+        mockMvc.get("$baseEndpoint?address=$address&size=$size")
+            .andExpect { status { isBadRequest() } }
+    }
+
     @Test
     fun `get transfer events with valid address should return OK`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
                     "&page=$page" +
@@ -47,7 +58,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get transfer events address with no hex prefix should return OK`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
                     "&page=$page" +
@@ -64,7 +75,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get transfer events address uppercase should return OK`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
                     "&page=$page" +
@@ -122,7 +133,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get transfer events for contract`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
             "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
                     "&page=$page" +
@@ -139,9 +150,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get transfer events for contract no hex prefix`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
-            "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+            "$baseEndpoint?tokenAddress=08f30373569af024d15eb47fd477a35db929eaac" +
                     "&page=$page" +
                     "&size=$size"
         )
@@ -156,9 +167,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get transfer events for contract upper case`() {
         val page = 0
-        val size = Int.MAX_VALUE
+        val size = PAGE_SIZE_LIMIT
         val result = mockMvc.get(
-            "$baseEndpoint?tokenAddress=${"0x08f30373569af024d15eb47fd477a35db929eaac".uppercase()}" +
+            "$baseEndpoint?tokenAddress=0x08F30373569AF024D15EB47FD477A35DB929EAAC" +
                     "&page=$page" +
                     "&size=$size"
         )
@@ -173,10 +184,20 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     @Nested
     inner class FromTransferEvents {
+
+        @Test
+        fun `get from transfer events with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint/from?address=$address&size=$size")
+                .andExpect { status { isBadRequest() } }
+        }
+
         @Test
         fun `get transfer events for from address`() {
             val page = 0
-            val size = Int.MAX_VALUE
+            val size = PAGE_SIZE_LIMIT
             val result = mockMvc.get(
                 "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
                         "&page=$page" +
@@ -193,7 +214,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get transfer events with contract address`() {
             val page = 0
-            val size = Int.MAX_VALUE
+            val size = PAGE_SIZE_LIMIT
             val result = mockMvc.get(
                 "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
                         "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
@@ -211,10 +232,20 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     @Nested
     inner class ToTransferEvents {
+
+        @Test
+        fun `get to transfer events with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc.get("$baseEndpoint/to?address=$address&size=$size")
+                .andExpect { status { isBadRequest() } }
+        }
+
         @Test
         fun `get transfer events for to address`() {
             val page = 0
-            val size = Int.MAX_VALUE
+            val size = PAGE_SIZE_LIMIT
             val result = mockMvc.get(
                 "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
                         "&page=$page" +
@@ -231,7 +262,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get transfer events with to and contract address`() {
             val page = 0
-            val size = Int.MAX_VALUE
+            val size = PAGE_SIZE_LIMIT
             val result = mockMvc.get(
                 "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
                         "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
