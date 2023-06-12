@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedBlock
-import org.vechain.indexer.repos.BlockRepo
+import org.vechain.indexer.repository.BlockRepo
 import org.vechain.indexer.utils.HexUtils
 
 @Profile("blocks")

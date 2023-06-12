@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.repos.ClauseRepo
+import org.vechain.indexer.repository.ClauseRepo
 import org.vechain.indexer.utils.HexUtils
 
 @Profile("clauses")
