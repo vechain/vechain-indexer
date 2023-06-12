@@ -36,8 +36,9 @@ open class ContractRepository(
         val matchOperations = mutableListOf<MatchOperation>()
 
         if (creator != null) {
-            query.addCriteria(Criteria.where(CREATOR).`is`(creator))
-            matchOperations.add(MatchOperation(Criteria.where(CREATOR).`is`(creator)))
+            val contractCreatorCriteria = Criteria.where(CREATOR).`is`(creator)
+            query.addCriteria(contractCreatorCriteria)
+            matchOperations.add(MatchOperation(contractCreatorCriteria))
         }
         if (contractType != null) {
             val contractTypeCriteria = buildTypeCriteria(contractType)
