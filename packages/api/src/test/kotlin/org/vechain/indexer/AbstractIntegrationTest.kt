@@ -34,9 +34,10 @@ abstract class AbstractIntegrationTest {
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<IndexedContract>() {}
     protected val LIST_CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
+    protected val PAGINATED_CONTRACTS_TYPE = object : TypeReference<PaginatedResponse<IndexedContract>>() {}
     protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
-    protected val LIST_PAGINATED_NFT_TYPE = object : TypeReference<PaginatedResponse<IndexedNFT>>() {}
-    protected val LIST_PAGINATED_NFT_CONTRACT_TYPE = object : TypeReference<PaginatedResponse<String>>() {}
+    protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNFT>>() {}
+    protected val PAGINATED_NFT_CONTRACTS_TYPE = object : TypeReference<PaginatedResponse<String>>() {}
     protected val BLOCK_TYPE = object : TypeReference<IndexedBlock>() {}
     protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}

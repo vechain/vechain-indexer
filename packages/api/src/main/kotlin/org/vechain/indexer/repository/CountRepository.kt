@@ -23,13 +23,13 @@ open class CountRepository(private val mongoTemplate: MongoTemplate) {
      */
     open fun getCount(
         collection: Class<*>,
-        matchOperation: MatchOperation? = null,
+        matchOperations: List<MatchOperation> = emptyList(),
         groupOperation: GroupOperation? = null,
         countLimit: Long = COUNT_LIMIT
     ): Long {
         val aggregationOperations: MutableList<AggregationOperation> = mutableListOf()
 
-        if (matchOperation != null) aggregationOperations.add(matchOperation)
+        if (matchOperations.isNotEmpty()) matchOperations.forEach { aggregationOperations.add(it) }
         if (groupOperation != null) aggregationOperations.add(groupOperation)
         aggregationOperations.add(Aggregation.limit(countLimit + 1))
         aggregationOperations.add(Aggregation.count().`as`(COUNT_FIELD))
