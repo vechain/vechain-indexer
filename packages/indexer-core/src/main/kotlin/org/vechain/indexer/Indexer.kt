@@ -85,7 +85,7 @@ abstract class Indexer(
             val block = getBlockFromChain(currentBlockNumber)
 
             // Check for reorg.
-            if (previousBlockId != null && previousBlockId != block.parentID)
+            if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber ($status)")
