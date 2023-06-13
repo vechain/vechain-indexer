@@ -6,19 +6,17 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.TransferEventRepo
-import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
 
 @Profile("transfer-events")
 @Component
 open class TransferEventIndexer(
-    thorService: ThorService,
     transferEventRepo: TransferEventRepo,
     private val mongoTemplate: MongoTemplate,
     @Value("\${thor.url}") private val thorUrl: String
 
-) : VeWorldIndexer(thorService, transferEventRepo, thorUrl) {
+) : VeWorldIndexer(transferEventRepo, thorUrl) {
 
     override fun processBlock(block: Block) {
 

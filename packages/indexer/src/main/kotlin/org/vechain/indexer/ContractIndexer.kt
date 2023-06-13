@@ -26,7 +26,7 @@ open class ContractIndexer(
     private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String
-) : VeWorldIndexer(thorService, contractRepo, thorUrl) {
+) : VeWorldIndexer(contractRepo, thorUrl) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {

@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
@@ -16,13 +17,15 @@ enum class Status {
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    private var genesisBlockId: String,
-    baseThorApi: String,
+    thorApiUrl: String = "http://localhost:8669",
+    private val startBlock: Long = 0L,
 ) {
 
-    protected open val thorClient = ThorClient(baseThorApi)
+    protected open val thorClient = ThorClient(thorApiUrl)
 
-    private var previousBlockId: String = genesisBlockId
+    private var previousBlockId: String? = null
+
+    private var remainingIterations: Long? = null
 
     val name: String
         get() = this.javaClass.simpleName
@@ -40,7 +43,8 @@ abstract class Indexer(
     private var backoffPeriod = 0L
 
     private suspend fun initialise() {
-        val blockNumber = getLastSyncedBlockNumber()
+        // Get the last synced block number. If less than startBlock, start from startBlock
+        val blockNumber = maxOf(getLastSyncedBlockNumber(), startBlock)
 
         // To ensure data integrity purge data from the last block
         purgeRecords(blockNumber)
@@ -51,7 +55,9 @@ abstract class Indexer(
         previousBlockId = getBlockFromChain(maxOf(blockNumber - 1, 0)).id
     }
 
-    suspend fun start() {
+    suspend fun start(iterations: Long? = null) {
+        remainingIterations = iterations
+
         // Initialise the indexer
         initialise()
 
@@ -65,19 +71,21 @@ abstract class Indexer(
 
         // Wait for 10 seconds
         logger.info("Restarting indexer in 10s...")
-        Thread.sleep(INITIAL_BACKOFF_PERIOD)
+        delay(INITIAL_BACKOFF_PERIOD)
 
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
     private tailrec suspend fun run() {
         try {
+            if (hasIndexerFinished()) return
+
             backoffDelay()
 
             val block = getBlockFromChain(currentBlockNumber)
 
             // Check for reorg.
-            if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
+            if (previousBlockId != null && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber ($status)")
@@ -100,6 +108,17 @@ abstract class Indexer(
         }
 
         run()
+    }
+
+    private fun hasIndexerFinished(): Boolean {
+        if (remainingIterations != null) {
+            if (remainingIterations!! <= 0) {
+                logger.info("Indexer finished at block $currentBlockNumber")
+                return true
+            }
+            remainingIterations = remainingIterations?.dec()
+        }
+        return false
     }
 
     private fun handleFullySynced() {
@@ -144,9 +163,9 @@ abstract class Indexer(
         }
     }
 
-    private fun backoffDelay() {
+    private suspend fun backoffDelay() {
         if (status == Status.FULLY_SYNCED) {
-            Thread.sleep(backoffPeriod)
+            delay(backoffPeriod)
         }
     }
 

@@ -12,7 +12,6 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.thor.model.Block
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
-import strikt.assertions.isGreaterThan
 
 @ExtendWith(MockKExtension::class)
 internal class IndexerTests {
@@ -27,8 +26,6 @@ internal class IndexerTests {
 
     private val getBlockNumberSlot = slot<Long>()
     private val processBlockNumberSlot = slot<Block>()
-
-    private val scope = CoroutineScope(Dispatchers.Default)
 
     @BeforeEach
     fun setup() {
@@ -47,89 +44,79 @@ internal class IndexerTests {
         every { responseMocker.getLastSyncedBlockNumber() } returns 0
         every { responseMocker.processBlock(any()) } just Runs
 
+        // Start the indexer in a separate coroutine
         val job = launch {
-            indexer.start()
+            indexer.start(100L)
         }
 
-        delay(1000L)
-        job.cancelAndJoin()
+        job.join()
 
         // Add assertions or verify other expected behavior
-        expectThat(indexer.currentBlockNumber).isGreaterThan(100L)
+        expectThat(indexer.currentBlockNumber).isEqualTo(100L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
         verify(exactly = 1) { responseMocker.purgeRecords(0) }
         verify(atLeast = indexer.currentBlockNumber.toInt()) { responseMocker.processBlock(any()) }
     }
 
+
     @Test
-    fun `Test that indexer switches to FULLY_SYNCED mode`() {
+    fun `Test that indexer switches to FULLY_SYNCED mode`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
-            if (getBlockNumberSlot.captured >= 100L) {
+            if (getBlockNumberSlot.captured >= 99L) {
                 throw BlockNotFoundException("Block not found")
             }
             getTestBlock(getBlockNumberSlot.captured)
         }
+        coEvery { thorClient.getBestBlock() } coAnswers {
+            getTestBlock(99L)
+        }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
 
-        scope.launch {
-            val job = launch {
-                indexer.start()
-            }
-
-            // Run the indexer for 1 second
-            delay(1000L)
-
-            job.cancel() // Cancel the job
-
-            // Optionally, wait for the job to complete gracefully
-            job.join()
+        // Start the indexer in a separate coroutine
+        val job = launch {
+            indexer.start(100L)
         }
 
+        job.join()
+
         // Add assertions or verify other expected behavior
-        expectThat(indexer.currentBlockNumber).isEqualTo(100L)
+        expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.FULLY_SYNCED)
         verify(exactly = 1) { responseMocker.purgeRecords(0) }
         verify(atLeast = indexer.currentBlockNumber.toInt()) { responseMocker.processBlock(any()) }
     }
 
     @Test
-    fun `Test that a reorg triggers a purge`() {
+    fun `Test that a reorg triggers a purge`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             // At block 100, the parent id is invalid
             val parentId = if (getBlockNumberSlot.captured == 100L)
                 "0x02321321"
-            else "0x${getBlockNumberSlot.captured - 1}"
+            else "0x${maxOf(getBlockNumberSlot.captured - 1, 0)}"
             getTestBlock(getBlockNumberSlot.captured, parentId)
         }
 
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
 
-        scope.launch {
-            val job = launch {
-                indexer.start()
-            }
-
-            // Run the indexer for 1 second
-            delay(1000L)
-
-            job.cancel() // Cancel the job
-
-            // Optionally, wait for the job to complete gracefully
-            job.join()
+        // Start the indexer in a separate coroutine
+        val job = launch {
+            indexer.start(101L)
         }
+
+        job.join()
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
-        verify(exactly = 1) { responseMocker.purgeRecords(0) }
+        verify(exactly = 1) { responseMocker.purgeRecords(0L) }
         // The reorg at block 100 should trigger a purge of block 99 data
-        verify(exactly = 1) { responseMocker.purgeRecords(99) }
+        verify(exactly = 1) { responseMocker.purgeRecords(99L) }
     }
 
     @Test
-    fun `Test that an unknown exception triggers a purge`() {
+    fun `Test that an unknown exception triggers a purge`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             getTestBlock(
                 getBlockNumberSlot.captured
@@ -142,26 +129,19 @@ internal class IndexerTests {
             }
         }
 
-        scope.launch {
-            val job = launch {
-                indexer.start()
-            }
-
-            // Run the indexer for 1 second
-            delay(1000L)
-
-            job.cancel() // Cancel the job
-
-            // Optionally, wait for the job to complete gracefully
-            job.join()
+        // Start the indexer in a separate coroutine
+        val job = launch {
+            indexer.start(101L)
         }
+
+        job.join()
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
-        verify(exactly = 1) { responseMocker.purgeRecords(0) }
+        verify(exactly = 1) { responseMocker.purgeRecords(0L) }
         // The exception thrown at block 100 should trigger a purge of block 99 data
-        verify(exactly = 1) { responseMocker.purgeRecords(99) }
+        verify(exactly = 1) { responseMocker.purgeRecords(99L) }
     }
 
 

@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
@@ -16,7 +15,6 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.TransferEventRepo
-import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -28,9 +26,6 @@ import java.math.BigInteger
 class TransferEventIndexerTest {
 
     @MockK
-    lateinit var thorService: ThorService
-
-    @MockK
     lateinit var transferEventRepo: TransferEventRepo
 
     @MockK
@@ -40,21 +35,9 @@ class TransferEventIndexerTest {
 
     @BeforeEach
     fun setUp() {
-        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        transferEventIndexer = TransferEventIndexer(thorService, transferEventRepo, mongoTemplate)
-    }
-
-    @Test
-    fun `Starting block is transfer block - when transfer block is lower`() {
-        val transferEventsStartingBlock = 9L
-
-        every { transferEventRepo.getMaxBlockNumber() } returns transferEventsStartingBlock
-        every { thorService.getBlock(transferEventsStartingBlock) } returns BlockFixtures.BLOCK_9
-
-        val indexerStartingBlock = transferEventIndexer.getLastSyncedBlock()
-
-        expectThat(indexerStartingBlock.number).isEqualTo(transferEventsStartingBlock)
+        transferEventIndexer =
+            TransferEventIndexer(transferEventRepo, mongoTemplate, "http://localhost:8669")
     }
 
     @Test

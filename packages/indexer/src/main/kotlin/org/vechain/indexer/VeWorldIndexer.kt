@@ -1,13 +1,11 @@
 package org.vechain.indexer
 
 import org.vechain.indexer.repository.BaseIndexedRepo
-import org.vechain.indexer.service.ThorService
 
 abstract class VeWorldIndexer(
-    thorService: ThorService,
     private val repo: BaseIndexedRepo<*>,
     thorUrl: String,
-) : Indexer(thorService.getBlock(0).id, thorUrl) {
+) : Indexer(thorUrl) {
 
     override fun getLastSyncedBlockNumber(): Long {
         repo.getLatestRecord()?.let {

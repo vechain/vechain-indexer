@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
@@ -46,7 +45,6 @@ internal class ContractIndexerTest {
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
-        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         contractService = ContractService(thorService)
         MockKAnnotations.init(this)
         contractIndexer = ContractIndexer(
@@ -78,8 +76,7 @@ internal class ContractIndexerTest {
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_5_VIP180_CONTRACTS)
-
-
+        
         val contracts = contractsSlot.captured
         expect {
             that(contracts).hasSize(2)

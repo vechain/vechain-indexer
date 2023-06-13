@@ -20,7 +20,7 @@ open class BlockIndexer(
     private val mongoTemplate: MongoTemplate,
     @Value("\${thor.url}") private val thorUrl: String
 ) :
-    VeWorldIndexer(thorService, blockRepo, thorUrl) {
+    VeWorldIndexer(blockRepo, thorUrl) {
 
     override fun processBlock(block: Block) {
 

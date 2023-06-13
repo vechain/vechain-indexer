@@ -20,10 +20,7 @@ import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
-
-    @MockK
-    lateinit var thorService: ThorService
-
+    
     @MockK
     lateinit var nftRepo: NFTRepo
 
@@ -31,9 +28,8 @@ internal class NFTEventIndexerTest {
 
     @BeforeEach
     fun setUp() {
-        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        nftEventIndexer = NFTEventIndexer(thorService, nftRepo, "http://localhost:8669")
+        nftEventIndexer = NFTEventIndexer(nftRepo, "http://localhost:8669")
     }
 
     @Test
