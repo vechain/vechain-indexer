@@ -1,4 +1,4 @@
-package org.vechain.indexer.repos
+package org.vechain.indexer.repository
 
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.repository.CrudRepository

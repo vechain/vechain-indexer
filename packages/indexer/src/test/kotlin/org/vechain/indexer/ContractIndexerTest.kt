@@ -15,7 +15,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repos.ContractRepo
+import org.vechain.indexer.repository.ContractRepo
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.Block

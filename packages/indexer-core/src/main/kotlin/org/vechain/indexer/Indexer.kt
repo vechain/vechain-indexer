@@ -164,6 +164,7 @@ abstract class Indexer(
         return thorClient.getBestBlock()
     }
 
+
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.
      */

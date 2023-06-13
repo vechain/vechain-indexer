@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-import org.vechain.indexer.repos.BaseIndexedRepo
+import org.vechain.indexer.repository.BaseIndexedRepo
 import org.vechain.indexer.service.ThorService
 
 abstract class VeWorldIndexer(

@@ -15,7 +15,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.repos.TransferEventRepo
+import org.vechain.indexer.repository.TransferEventRepo
 import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat

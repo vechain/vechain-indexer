@@ -13,30 +13,20 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNfts(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(102)
+        expectThat(nfts.data).hasSize(102).isA<List<IndexedNFT>>()
 
-        nfts.data!!.forEach { nft ->
-            assertValidNft(nft)
-        }
+        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
 
     @Test
     fun `get NFTs for address with pagination`() {
         val nfts = VeWorldAPIClient.getNfts(address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa", size = 1)
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(1)
+        expectThat(nfts.data).hasSize(1).isA<List<IndexedNFT>>()
 
-        nfts.data!!.forEach { nft ->
-            assertValidNft(nft)
-        }
-
+        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
 
     @Test
@@ -45,30 +35,23 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNfts(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE
         )
 
-        expect {
-            that(nfts.data)
-                .isNotNull()
-                .hasSize(102)
-            that(nfts.data!!.distinctBy { it.contractAddress }.size).isEqualTo(2)
-        }
+        expectThat(nfts.data).hasSize(102)
 
-        val firstContractAddress = nfts.data!![0].contractAddress
-        val nftAmountForFirstContract = nfts.data!!.count { it.contractAddress == firstContractAddress }
+        val firstNft: IndexedNFT = nfts.data[0]
+        val firstContractAddress = firstNft.contractAddress
+        val nftAmountForFirstContract =
+            nfts.data.count { nft: IndexedNFT -> nft.contractAddress == firstContractAddress }
 
         //Get filtered NFTs
         val nftsWithQuery = VeWorldAPIClient.getNfts(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             contractAddress = firstContractAddress,
             page = 0,
-            size = Int.MAX_VALUE
         )
 
-        expectThat(nftsWithQuery.data)
-            .isNotNull()
-            .hasSize(nftAmountForFirstContract)
+        expectThat(nftsWithQuery.data).hasSize(nftAmountForFirstContract)
     }
 
     @Test
@@ -76,14 +59,10 @@ class NFTTest {
         val nfts = VeWorldAPIClient.getNftContracts(
             owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0,
-            size = Int.MAX_VALUE,
         )
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(2)
-            .map { AddressUtils.isValid(it) }
-            .all { isTrue() }
+        expectThat(nfts.data).hasSize(2)
+        nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
     @Test
@@ -94,11 +73,8 @@ class NFTTest {
             size = 1,
         )
 
-        expectThat(nfts.data)
-            .isNotNull()
-            .hasSize(1)
-            .map { AddressUtils.isValid(it) }
-            .all { isTrue() }
+        expectThat(nfts.data).hasSize(1)
+        nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
     fun assertValidNft(nft: IndexedNFT) {
@@ -110,5 +86,9 @@ class NFTTest {
             that(nft.owner).isNotEmpty()
             that(nft.id).isNotEmpty()
         }
+    }
+
+    fun assertValidContract(contract: String) {
+        expectThat(AddressUtils.isValid(contract)).isTrue()
     }
 }

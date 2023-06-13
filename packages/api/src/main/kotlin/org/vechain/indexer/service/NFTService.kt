@@ -10,22 +10,35 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.repos.NFTRepo
+import org.vechain.indexer.repository.CountRepository
+import org.vechain.indexer.repository.NFTRepo
 import org.vechain.indexer.utils.HexUtils
 
 
 @Profile("nft-events")
 @Service
-open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: MongoTemplate) {
+open class NFTService(
+    private val nftRepo: NFTRepo,
+    private val countRepository: CountRepository,
+    private val mongoTemplate: MongoTemplate
+) {
 
     companion object {
-        const val TOTAL = "total"
+        val NFTS_COLLECTION = IndexedNFT::class.java
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
     }
 
     open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
-        return nftRepo.findAllByOwner(HexUtils.normalise(owner), pageable)
+        val slice = nftRepo.findAllByOwner(HexUtils.normalise(owner), pageable)
+
+        val count =
+            countRepository.getCount(
+                NFTS_COLLECTION,
+                listOf(Aggregation.match(Criteria.where(OWNER).`is`(HexUtils.normalise(owner))))
+            )
+
+        return PageImpl(slice.content, pageable, count)
     }
 
     open fun findByOwnerAndContractAddress(
@@ -33,11 +46,18 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
         contractAddress: String,
         pageable: Pageable
     ): Page<IndexedNFT> {
-        return nftRepo.findAllByOwnerAndContractAddress(
-            HexUtils.normalise(owner),
-            contractAddress,
-            pageable
+        val slice = nftRepo.findAllByOwnerAndContractAddress(HexUtils.normalise(owner), contractAddress, pageable)
+
+        val count = countRepository.getCount(
+            NFTS_COLLECTION,
+            listOf(
+                Aggregation.match(
+                    Criteria.where(OWNER).`is`(HexUtils.normalise(owner)).and(CONTRACT_ADDRESS).`is`(contractAddress)
+                )
+            )
         )
+
+        return PageImpl(slice.content, pageable, count)
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
@@ -45,15 +65,7 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
         val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts
-        val countAggregation = Aggregation.newAggregation(
-            matchAggregation,
-            groupAggregation,
-            Aggregation.count().`as`(TOTAL)
-        )
-        val count = mongoTemplate
-            .aggregate(countAggregation, IndexedNFT::class.java, Document::class.java)
-            .uniqueMappedResult
-        val distinctCount = if (count == null) 0 else count.getInteger(TOTAL)
+        val distinctCount = countRepository.getCount(NFTS_COLLECTION, listOf(matchAggregation), groupAggregation)
 
         // find distinct contracts
         val contractsAggregation = Aggregation.newAggregation(
@@ -68,8 +80,7 @@ open class NFTService(private val nftRepo: NFTRepo, private val mongoTemplate: M
             .mappedResults
             .map { it["_id"] as String }
 
-        return PageImpl(distinctContracts, pageable, distinctCount.toLong())
+        return PageImpl(distinctContracts, pageable, distinctCount)
     }
-
 
 }

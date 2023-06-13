@@ -12,13 +12,12 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.pageable.PageablePage
-import org.vechain.indexer.pageable.PageableSize
-import org.vechain.indexer.pageable.PageableSortDirection
+import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
+import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("clauses")
 @Tag(name = "Clause", description = "Query on chain tx clauses")
@@ -36,11 +35,12 @@ open class ClauseController(private val clauseService: ClauseService) {
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @PaginationParameters
     open fun getClauses(
-        @Address @RequestParam(required = true) address: String,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?
+        @Address @RequestParam address: String,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?
     ): List<IndexedClause> {
         return clauseService.findByAddress(address, toPageable(page, size, direction))
     }

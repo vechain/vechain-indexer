@@ -4,6 +4,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
 import org.vechain.indexer.model.*
+import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import org.vechain.indexer.model.rest.PaginatedResponse
 
 object VeWorldAPIClient {
@@ -13,6 +14,7 @@ object VeWorldAPIClient {
      */
     private const val BASE_URL = "http://localhost:8080"
     private const val API_URL = "http://localhost:8080/api/v1/"
+
     private val REST_TEMPLATE = RestTemplate()
 
     /**
@@ -23,9 +25,9 @@ object VeWorldAPIClient {
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
     private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<List<IndexedTransaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
-    private val PAGINATED_CONTRACT_TYPE = object : ParameterizedTypeReference<List<IndexedContract>>() {}
-    private val PAGINATED_NFT_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<IndexedNFT>>>() {}
-    private val PAGINATED_NFT_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<List<String>>>() {}
+    private val PAGINATED_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedContract>>() {}
+    private val PAGINATED_NFTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
+    private val PAGINATED_NFT_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENT_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
@@ -61,7 +63,7 @@ object VeWorldAPIClient {
     }
 
     fun getClauses(
-        address: String, page: Int = 0, size: Int = Int.MAX_VALUE
+        address: String, page: Int = 0, size: Int = PAGE_SIZE_LIMIT
     ): List<IndexedClause> {
         return getRequest(
             "$API_URL/clauses?address=${address}&page=$page&size=$size",
@@ -73,25 +75,29 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/contracts/$address", CONTRACT_TYPE)
     }
 
-    fun getContractForCreator(address: String, page: Int = 0, size: Int = Int.MAX_VALUE): List<IndexedContract> {
-        return getRequest("$API_URL/contracts?address=$address&page=$page&size=$size", PAGINATED_CONTRACT_TYPE)
+    fun getContractForCreator(
+        address: String,
+        page: Int = 0,
+        size: Int = PAGE_SIZE_LIMIT
+    ): PaginatedResponse<IndexedContract> {
+        return getRequest("$API_URL/contracts?address=$address&page=$page&size=$size", PAGINATED_CONTRACTS_TYPE)
     }
 
     fun getNfts(
         address: String? = null,
         contractAddress: String? = null,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
-    ): PaginatedResponse<List<IndexedNFT>> {
+        size: Int = PAGE_SIZE_LIMIT
+    ): PaginatedResponse<IndexedNFT> {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
-                PAGINATED_NFT_TYPE
+                PAGINATED_NFTS_TYPE
             )
         else if (address != null)
-            getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFT_TYPE)
+            getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFTS_TYPE)
         else if (contractAddress != null)
-            getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFT_TYPE)
+            getRequest("$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size", PAGINATED_NFTS_TYPE)
         else
             throw Exception("No address or contractAddress provided")
     }
@@ -99,8 +105,8 @@ object VeWorldAPIClient {
     fun getNftContracts(
         owner: String,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
-    ): PaginatedResponse<List<String>> {
+        size: Int = PAGE_SIZE_LIMIT
+    ): PaginatedResponse<String> {
         return getRequest(
             "$API_URL/nfts/contracts?owner=$owner&page=$page&size=$size",
             PAGINATED_NFT_CONTRACTS_TYPE
@@ -115,7 +121,7 @@ object VeWorldAPIClient {
         address: String,
         includeDelegated: Boolean = false,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = PAGE_SIZE_LIMIT
     ): List<IndexedTransaction> {
         return getRequest(
             "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
@@ -126,7 +132,7 @@ object VeWorldAPIClient {
     fun getDelegatedTransactions(
         address: String,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = PAGE_SIZE_LIMIT
     ): List<IndexedTransaction> {
         return getRequest("$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
     }
@@ -135,7 +141,7 @@ object VeWorldAPIClient {
         address: String? = null,
         tokenAddress: String? = null,
         page: Int = 0,
-        size: Int = Int.MAX_VALUE
+        size: Int = PAGE_SIZE_LIMIT
     ): List<IndexedTransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(

@@ -11,18 +11,19 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
-import org.vechain.indexer.pageable.PageablePage
-import org.vechain.indexer.pageable.PageableSize
-import org.vechain.indexer.pageable.PageableSortDirection
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.paginatedResponse
+import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.AddressNullable
+import org.vechain.indexer.validation.ValidContractType
+import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("contracts")
 @Tag(name = "Contract", description = "Query on chain contracts")
@@ -63,7 +64,7 @@ open class ContractController(private val contractService: ContractService) {
         name = "address",
         schema = Schema(type = "string", pattern = AddressUtils.REGEX),
         description = "Address of the contract creator",
-        required = true,
+        required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @Parameter(
@@ -77,26 +78,21 @@ open class ContractController(private val contractService: ContractService) {
         required = false,
         example = "VIP180"
     )
+    @PaginationParameters
     open fun getContractsByCreator(
         @AddressNullable @RequestParam(required = false) address: String?,
-        @RequestParam(required = false) type: String?,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?,
-    ): List<IndexedContract> {
-        validateContractType(type)
-
-        return contractService.find(
-            address,
-            ContractType.byNameIgnoreCaseOrNull(type),
-            toPageable(page, size, direction)
+        @ValidContractType @RequestParam(required = false) type: String?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<IndexedContract> {
+        return paginatedResponse(
+            contractService.find(
+                address,
+                ContractType.byNameIgnoreCaseOrNull(type),
+                toPageable(page, size, direction)
+            )
         )
-    }
-
-    private fun validateContractType(type: String?) {
-        if (type != null && ContractType.byNameIgnoreCaseOrNull(type) == null) {
-            throw BadRequestException("Invalid contract type parameter: $type")
-        }
     }
 
 }

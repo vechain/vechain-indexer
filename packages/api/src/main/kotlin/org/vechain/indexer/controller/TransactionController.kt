@@ -13,15 +13,14 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.IndexedTransaction
-import org.vechain.indexer.pageable.PageablePage
-import org.vechain.indexer.pageable.PageableSize
-import org.vechain.indexer.pageable.PageableSortDirection
+import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.TransactionId
+import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transactions")
 @Tag(name = "Transactions", description = "Query on chain transactions")
@@ -74,12 +73,13 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
+    @PaginationParameters
     open fun getTransactionsByOrigin(
         @Address @RequestParam origin: String,
         @RequestParam(required = false) includeDelegated: Boolean = false,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
     ): List<IndexedTransaction> {
         return transactionService.findByOrigin(
             origin,
@@ -103,11 +103,12 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
+    @PaginationParameters
     open fun getDelegatedTransactions(
         @Address @RequestParam delegator: String,
-        @PageableSize @RequestParam(required = false) page: Int?,
-        @PageablePage @RequestParam(required = false) size: Int?,
-        @PageableSortDirection @RequestParam(required = false) direction: String?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
     ): List<IndexedTransaction> {
         return transactionService.findAllDelegated(
             delegator,

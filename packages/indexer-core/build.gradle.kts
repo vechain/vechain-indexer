@@ -1,7 +1,3 @@
-plugins {
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.5.0"
-}
-
 dependencies {
     implementation(project(":packages:thor-model"))
     implementation("com.github.kittinunf.fuel:fuel:2.3.1")

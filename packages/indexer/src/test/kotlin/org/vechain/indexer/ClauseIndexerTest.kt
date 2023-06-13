@@ -13,7 +13,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.repos.ClauseRepo
+import org.vechain.indexer.repository.ClauseRepo
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.TxEvent
 import org.vechain.thor.model.TxOutputs
