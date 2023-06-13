@@ -42,14 +42,21 @@ internal class ContractIndexerTest {
     lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
-    
+
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         contractService = ContractService(thorService)
         MockKAnnotations.init(this)
-        contractIndexer = ContractIndexer(thorService, contractService, contractRepo, mongoTemplate, contractsResource)
+        contractIndexer = ContractIndexer(
+            thorService,
+            contractService,
+            contractRepo,
+            mongoTemplate,
+            contractsResource,
+            "http://localhost:8669"
+        )
     }
 
     // Block #5 -> block_5.json

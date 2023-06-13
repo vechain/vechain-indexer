@@ -33,7 +33,7 @@ internal class NFTEventIndexerTest {
     fun setUp() {
         every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        nftEventIndexer = NFTEventIndexer(thorService, nftRepo)
+        nftEventIndexer = NFTEventIndexer(thorService, nftRepo, "http://localhost:8669")
     }
 
     @Test

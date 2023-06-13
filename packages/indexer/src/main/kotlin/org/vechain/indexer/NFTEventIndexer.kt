@@ -1,6 +1,7 @@
 package org.vechain.indexer
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
@@ -17,8 +18,9 @@ import org.web3j.utils.Numeric
 open class NFTEventIndexer(
     thorService: ThorService,
     private val nftRepo: NFTRepo,
+    @Value("\${thor.url}") private val thorUrl: String
 
-    ) : VeWorldIndexer(thorService, nftRepo) {
+) : VeWorldIndexer(thorService, nftRepo, thorUrl) {
 
     override fun processBlock(block: Block) {
 

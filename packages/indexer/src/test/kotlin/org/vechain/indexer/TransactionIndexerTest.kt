@@ -28,14 +28,14 @@ internal class TransactionIndexerTest {
 
     @MockK
     lateinit var mongoTemplate: MongoTemplate
-    
+
     lateinit var transactionIndexer: TransactionIndexer
 
     @BeforeEach
     fun setUp() {
         every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        transactionIndexer = TransactionIndexer(thorService, transactionRepo, mongoTemplate)
+        transactionIndexer = TransactionIndexer(thorService, transactionRepo, mongoTemplate, "http://localhost:8669")
     }
 
     @Test

@@ -13,8 +13,6 @@ import org.vechain.thor.model.Block
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import strikt.assertions.isGreaterThan
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 
 @ExtendWith(MockKExtension::class)
 internal class IndexerTests {
@@ -22,33 +20,39 @@ internal class IndexerTests {
     @MockK
     private lateinit var responseMocker: IndexerResponseMocker
 
+    @MockK
+    private lateinit var thorClient: ThorClient
+
     private lateinit var indexer: Indexer
 
     private val getBlockNumberSlot = slot<Long>()
     private val processBlockNumberSlot = slot<Block>()
 
+    private val scope = CoroutineScope(Dispatchers.Default)
+
     @BeforeEach
     fun setup() {
         every { responseMocker.purgeRecords(any()) } just Runs
 
-        indexer = TestIndexer(responseMocker)
+        indexer = TestIndexer(responseMocker, thorClient)
     }
 
     @Test
-    fun `Test that SYNCING mode processes blocks`() {
-        every { responseMocker.getBlockFromChain(capture(getBlockNumberSlot)) } answers {
+    fun `Test that SYNCING mode processes blocks`() = runBlocking {
+        coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             getTestBlock(
                 getBlockNumberSlot.captured
             )
         }
-        every { responseMocker.getLastSyncedBlock() } returns getTestBlock(0)
+        every { responseMocker.getLastSyncedBlockNumber() } returns 0
         every { responseMocker.processBlock(any()) } just Runs
 
-        // Run the indexer for 1 second
-        val executor = Executors.newFixedThreadPool(1) as ThreadPoolExecutor
-        executor.submit<Any> { indexer.start(); null }
-        Thread.sleep(1000L)
-        executor.shutdown()
+        val job = launch {
+            indexer.start()
+        }
+
+        delay(1000L)
+        job.cancelAndJoin()
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isGreaterThan(100L)
@@ -59,20 +63,28 @@ internal class IndexerTests {
 
     @Test
     fun `Test that indexer switches to FULLY_SYNCED mode`() {
-        every { responseMocker.getBlockFromChain(capture(getBlockNumberSlot)) } answers {
+        coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             if (getBlockNumberSlot.captured >= 100L) {
                 throw BlockNotFoundException("Block not found")
             }
             getTestBlock(getBlockNumberSlot.captured)
         }
-        every { responseMocker.getLastSyncedBlock() } returns getTestBlock(0) andThen getTestBlock(99)
+        every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
 
-        // Run the indexer for 1 second
-        val executor = Executors.newFixedThreadPool(1) as ThreadPoolExecutor
-        executor.submit<Any> { indexer.start(); null }
-        Thread.sleep(1000L)
-        executor.shutdown()
+        scope.launch {
+            val job = launch {
+                indexer.start()
+            }
+
+            // Run the indexer for 1 second
+            delay(1000L)
+
+            job.cancel() // Cancel the job
+
+            // Optionally, wait for the job to complete gracefully
+            job.join()
+        }
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(100L)
@@ -83,7 +95,7 @@ internal class IndexerTests {
 
     @Test
     fun `Test that a reorg triggers a purge`() {
-        every { responseMocker.getBlockFromChain(capture(getBlockNumberSlot)) } answers {
+        coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             // At block 100, the parent id is invalid
             val parentId = if (getBlockNumberSlot.captured == 100L)
                 "0x02321321"
@@ -91,14 +103,22 @@ internal class IndexerTests {
             getTestBlock(getBlockNumberSlot.captured, parentId)
         }
 
-        every { responseMocker.getLastSyncedBlock() } returns getTestBlock(0) andThen getTestBlock(99)
+        every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
 
-        // Run the indexer for 1 second
-        val executor = Executors.newFixedThreadPool(1) as ThreadPoolExecutor
-        executor.submit<Any> { indexer.start(); null }
-        Thread.sleep(1000L)
-        executor.shutdown()
+        scope.launch {
+            val job = launch {
+                indexer.start()
+            }
+
+            // Run the indexer for 1 second
+            delay(1000L)
+
+            job.cancel() // Cancel the job
+
+            // Optionally, wait for the job to complete gracefully
+            job.join()
+        }
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
@@ -110,23 +130,31 @@ internal class IndexerTests {
 
     @Test
     fun `Test that an unknown exception triggers a purge`() {
-        every { responseMocker.getBlockFromChain(capture(getBlockNumberSlot)) } answers {
+        coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             getTestBlock(
                 getBlockNumberSlot.captured
             )
         }
-        every { responseMocker.getLastSyncedBlock() } returns getTestBlock(0) andThen getTestBlock(99)
+        every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(capture(processBlockNumberSlot)) } answers {
             if (processBlockNumberSlot.captured.number == 100L) {
                 throw Exception("Unknown exception")
             }
         }
 
-        // Run the indexer for 1 second
-        val executor = Executors.newFixedThreadPool(1) as ThreadPoolExecutor
-        executor.submit<Any> { indexer.start(); null }
-        Thread.sleep(1000L)
-        executor.shutdown()
+        scope.launch {
+            val job = launch {
+                indexer.start()
+            }
+
+            // Run the indexer for 1 second
+            delay(1000L)
+
+            job.cancel() // Cancel the job
+
+            // Optionally, wait for the job to complete gracefully
+            job.join()
+        }
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)

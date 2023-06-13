@@ -17,7 +17,10 @@ const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
     private var genesisBlockId: String,
+    baseThorApi: String,
 ) {
+
+    protected open val thorClient = ThorClient(baseThorApi)
 
     private var previousBlockId: String = genesisBlockId
 
@@ -36,19 +39,19 @@ abstract class Indexer(
 
     private var backoffPeriod = 0L
 
-    private fun initialise() {
-        val block = getLastSyncedBlock()
+    private suspend fun initialise() {
+        val blockNumber = getLastSyncedBlockNumber()
 
         // To ensure data integrity purge data from the last block
-        purgeRecords(block.number)
+        purgeRecords(blockNumber)
 
         // Initialise fields
-        currentBlockNumber = block.number
+        currentBlockNumber = blockNumber
         status = Status.SYNCING
-        previousBlockId = getBlockFromChain(maxOf(block.number - 1, 0)).id
+        previousBlockId = getBlockFromChain(maxOf(blockNumber - 1, 0)).id
     }
 
-    fun start() {
+    suspend fun start() {
         // Initialise the indexer
         initialise()
 
@@ -56,7 +59,7 @@ abstract class Indexer(
         run()
     }
 
-    private fun restart() {
+    private suspend fun restart() {
         // Initialise the indexer
         initialise()
 
@@ -67,7 +70,7 @@ abstract class Indexer(
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
-    private tailrec fun run() {
+    private tailrec suspend fun run() {
         try {
             backoffDelay()
 
@@ -104,7 +107,7 @@ abstract class Indexer(
         status = Status.FULLY_SYNCED
     }
 
-    private fun postProcessBlock(block: Block) {
+    private suspend fun postProcessBlock(block: Block) {
 
         // Every 20 blocks, check if we are fully synced.
         if (status == Status.FULLY_SYNCED && currentBlockNumber % 20 == 0L) {
@@ -131,7 +134,7 @@ abstract class Indexer(
         timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
     }
 
-    private fun ensureFullySynced() {
+    private suspend fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
             val latestBlock = getBestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
@@ -150,17 +153,21 @@ abstract class Indexer(
     /**
      * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    abstract fun getBlockFromChain(blockNumber: Long): Block
+    private suspend fun getBlockFromChain(blockNumber: Long): Block {
+        return thorClient.getBlock(blockNumber)
+    }
 
     /**
      * getBestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    abstract fun getBestBlockFromChain(): Block
+    private suspend fun getBestBlockFromChain(): Block {
+        return thorClient.getBestBlock()
+    }
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.
      */
-    abstract fun getLastSyncedBlock(): Block
+    abstract fun getLastSyncedBlockNumber(): Long
 
     /**
      * purgeRecords will delete all records for the given block number.
