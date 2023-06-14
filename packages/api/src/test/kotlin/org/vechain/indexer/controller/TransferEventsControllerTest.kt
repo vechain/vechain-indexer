@@ -8,10 +8,11 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isSorted
+import strikt.assertions.*
 
 internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
@@ -50,9 +51,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(12)
+        expectThat(transferEvents.data).hasSize(12)
     }
 
     @Test
@@ -67,9 +68,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(12)
+        expectThat(transferEvents.data).hasSize(12)
     }
 
     @Test
@@ -84,9 +85,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(12)
+        expectThat(transferEvents.data).hasSize(12)
     }
 
     @Test
@@ -101,9 +102,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(size)
+        expectThat(transferEvents.data).hasSize(size)
     }
 
     @Test
@@ -118,9 +119,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents)
+        expectThat(transferEvents.data)
             .hasSize(size)
             .isSorted(
                 compareByDescending<IndexedTransferEvent> { it.blockNumber }
@@ -142,9 +143,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(70)
+        expectThat(transferEvents.data).hasSize(70)
     }
 
     @Test
@@ -159,9 +160,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(70)
+        expectThat(transferEvents.data).hasSize(70)
     }
 
     @Test
@@ -176,9 +177,41 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             .andExpect { status { isOk() } }
             .andReturn()
 
-        val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-        expectThat(transferEvents).hasSize(70)
+        expectThat(transferEvents.data).hasSize(70)
+    }
+
+    @Test
+    fun `get transfer events with pagination & sorting & pagination detail`() {
+        val page = 0
+        val size = 3
+        val result = mockMvc.get(
+            "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                    "&page=$page" +
+                    "&size=$size"
+        )
+            .andExpect { status { isOk() } }
+            .andReturn()
+
+        val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+
+        expect {
+            that(transferEvents.data)
+                .hasSize(size)
+                .isSorted(
+                    compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                        .then(compareByDescending<IndexedTransferEvent> { it.txId }
+                            .then(compareByDescending { it.id })
+                        )
+                )
+
+            that(transferEvents.pagination.isExactCount).isTrue()
+            that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+            that(transferEvents.pagination.totalPages).isEqualTo(4)
+            that(transferEvents.pagination.totalElements).isEqualTo(12)
+            that(transferEvents.pagination.hasNext).isTrue()
+        }
     }
 
 
@@ -206,9 +239,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-            expectThat(transferEvents).hasSize(4)
+            expectThat(transferEvents.data).hasSize(4)
         }
 
         @Test
@@ -224,9 +257,42 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-            expectThat(transferEvents).hasSize(1)
+            expectThat(transferEvents.data).hasSize(1)
+        }
+
+        @Test
+        fun `get from transfer events with pagination & sorting & pagination detail`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result = mockMvc.get(
+                "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+
+            expect {
+                that(transferEvents.data)
+                    .hasSize(1)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(compareByDescending<IndexedTransferEvent> { it.txId }
+                                .then(compareByDescending { it.id })
+                            )
+                    )
+
+                that(transferEvents.pagination.isExactCount).isTrue()
+                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(transferEvents.pagination.totalPages).isEqualTo(1)
+                that(transferEvents.pagination.totalElements).isEqualTo(1)
+                that(transferEvents.pagination.hasNext).isFalse()
+            }
         }
     }
 
@@ -254,9 +320,9 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-            expectThat(transferEvents).hasSize(8)
+            expectThat(transferEvents.data).hasSize(8)
         }
 
         @Test
@@ -272,9 +338,42 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 .andExpect { status { isOk() } }
                 .andReturn()
 
-            val transferEvents = objectMapper.readValue(result.response.contentAsString, LIST_TRANSFER_EVENT_TYPE)
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
-            expectThat(transferEvents).hasSize(2)
+            expectThat(transferEvents.data).hasSize(2)
+        }
+
+        @Test
+        fun `get from transfer events with pagination & sorting & pagination detail`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result = mockMvc.get(
+                "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val transferEvents = objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+
+            expect {
+                that(transferEvents.data)
+                    .hasSize(2)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(compareByDescending<IndexedTransferEvent> { it.txId }
+                                .then(compareByDescending { it.id })
+                            )
+                    )
+
+                that(transferEvents.pagination.isExactCount).isTrue()
+                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(transferEvents.pagination.totalPages).isEqualTo(1)
+                that(transferEvents.pagination.totalElements).isEqualTo(2)
+                that(transferEvents.pagination.hasNext).isFalse()
+            }
         }
     }
 
