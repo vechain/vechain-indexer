@@ -2,18 +2,13 @@ package org.vechain.indexer
 
 import org.vechain.thor.model.Block
 
-class TestIndexer(private val mocker: IndexerResponseMocker) : Indexer("0x0001") {
+class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
+    Indexer("notarealurl", 0L) {
 
-    override fun getBlockFromChain(blockNumber: Long): Block {
-        return mocker.getBlockFromChain(blockNumber)
-    }
+    override val thorClient: ThorClient = thorClientMock
 
-    override fun getBestBlockFromChain(): Block {
-        return mocker.getLatestBlockFromChain()
-    }
-
-    override fun getLastSyncedBlock(): Block {
-        return mocker.getLastSyncedBlock()
+    override fun getLastSyncedBlockNumber(): Long {
+        return mocker.getLastSyncedBlockNumber()
     }
 
     override fun purgeRecords(blockNumber: Long) {
@@ -26,9 +21,7 @@ class TestIndexer(private val mocker: IndexerResponseMocker) : Indexer("0x0001")
 }
 
 interface IndexerResponseMocker {
-    fun getBlockFromChain(blockNumber: Long): Block
-    fun getLatestBlockFromChain(): Block
-    fun getLastSyncedBlock(): Block
+    fun getLastSyncedBlockNumber(): Long
     fun purgeRecords(blockNumber: Long)
     fun processBlock(block: Block)
 }

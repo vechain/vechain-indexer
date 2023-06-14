@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
@@ -16,10 +17,15 @@ enum class Status {
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    private var genesisBlockId: String,
+    thorApiUrl: String = "http://localhost:8669",
+    private val startBlock: Long = 0L,
 ) {
 
-    private var previousBlockId: String = genesisBlockId
+    protected open val thorClient = ThorClient(thorApiUrl)
+
+    private var previousBlockId: String? = null
+
+    private var remainingIterations: Long? = null
 
     val name: String
         get() = this.javaClass.simpleName
@@ -36,19 +42,22 @@ abstract class Indexer(
 
     private var backoffPeriod = 0L
 
-    private fun initialise() {
-        val block = getLastSyncedBlock()
+    private suspend fun initialise() {
+        // Get the last synced block number. If less than startBlock, start from startBlock
+        val blockNumber = maxOf(getLastSyncedBlockNumber(), startBlock)
 
         // To ensure data integrity purge data from the last block
-        purgeRecords(block.number)
+        purgeRecords(blockNumber)
 
         // Initialise fields
-        currentBlockNumber = block.number
+        currentBlockNumber = blockNumber
         status = Status.SYNCING
-        previousBlockId = getBlockFromChain(maxOf(block.number - 1, 0)).id
+        previousBlockId = getBlockFromChain(maxOf(blockNumber - 1, 0)).id
     }
 
-    fun start() {
+    suspend fun start(iterations: Long? = null) {
+        remainingIterations = iterations
+
         // Initialise the indexer
         initialise()
 
@@ -56,25 +65,27 @@ abstract class Indexer(
         run()
     }
 
-    private fun restart() {
+    private suspend fun restart() {
         // Initialise the indexer
         initialise()
 
         // Wait for 10 seconds
         logger.info("Restarting indexer in 10s...")
-        Thread.sleep(INITIAL_BACKOFF_PERIOD)
+        delay(INITIAL_BACKOFF_PERIOD)
 
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
-    private tailrec fun run() {
+    private tailrec suspend fun run() {
         try {
+            if (hasIndexerFinished()) return
+
             backoffDelay()
 
             val block = getBlockFromChain(currentBlockNumber)
 
             // Check for reorg.
-            if (previousBlockId != genesisBlockId && previousBlockId != block.parentID)
+            if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber ($status)")
@@ -99,12 +110,23 @@ abstract class Indexer(
         run()
     }
 
+    private fun hasIndexerFinished(): Boolean {
+        if (remainingIterations != null) {
+            if (remainingIterations!! <= 0) {
+                logger.info("Indexer finished at block $currentBlockNumber")
+                return true
+            }
+            remainingIterations = remainingIterations?.dec()
+        }
+        return false
+    }
+
     private fun handleFullySynced() {
         backoffPeriod = 4000
         status = Status.FULLY_SYNCED
     }
 
-    private fun postProcessBlock(block: Block) {
+    private suspend fun postProcessBlock(block: Block) {
 
         // Every 20 blocks, check if we are fully synced.
         if (status == Status.FULLY_SYNCED && currentBlockNumber % 20 == 0L) {
@@ -131,7 +153,7 @@ abstract class Indexer(
         timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
     }
 
-    private fun ensureFullySynced() {
+    private suspend fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
             val latestBlock = getBestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
@@ -141,26 +163,31 @@ abstract class Indexer(
         }
     }
 
-    private fun backoffDelay() {
+    private suspend fun backoffDelay() {
         if (status == Status.FULLY_SYNCED) {
-            Thread.sleep(backoffPeriod)
+            delay(backoffPeriod)
         }
     }
 
     /**
      * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    abstract fun getBlockFromChain(blockNumber: Long): Block
+    private suspend fun getBlockFromChain(blockNumber: Long): Block {
+        return thorClient.getBlock(blockNumber)
+    }
 
     /**
      * getBestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
      */
-    abstract fun getBestBlockFromChain(): Block
+    private suspend fun getBestBlockFromChain(): Block {
+        return thorClient.getBestBlock()
+    }
+
 
     /**
      * getLastSyncedBlock will return the last block that was successfully processed.
      */
-    abstract fun getLastSyncedBlock(): Block
+    abstract fun getLastSyncedBlockNumber(): Long
 
     /**
      * purgeRecords will delete all records for the given block number.

@@ -3,8 +3,7 @@
 This package contains an abstract VeChain thor indexer class. This class can be extended to create a custom indexer.
 Simply extend the class and implement the abstract methods:
 
-- `getBlockFromChain` - should retrieve a block from a thor node
-- `getLastSyncedBlock` - should calculate the lasted block that was synced by the indexer
+- `getLastSyncedBlockNumber` - should calculate the number of the last block that was synced by the indexer
 - `purgeRecords` - should remove any records indexed by the indexer for the given block number
 - `processBlock` - the core business logic of the indexer. Generally the block data will be parsed and stored in a
   database

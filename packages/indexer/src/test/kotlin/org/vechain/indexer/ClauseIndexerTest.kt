@@ -8,13 +8,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repository.ClauseRepo
-import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.TxEvent
 import org.vechain.thor.model.TxOutputs
 import strikt.api.expect
@@ -27,9 +25,6 @@ import strikt.assertions.isNotNull
 internal class ClauseIndexerTest {
 
     @MockK
-    lateinit var thorService: ThorService
-
-    @MockK
     lateinit var clauseRepo: ClauseRepo
 
     @MockK
@@ -39,9 +34,8 @@ internal class ClauseIndexerTest {
 
     @BeforeEach
     fun setUp() {
-        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        clauseIndexer = ClauseIndexer(thorService, clauseRepo, mongoTemplate)
+        clauseIndexer = ClauseIndexer(clauseRepo, mongoTemplate, "http://localhost:8669")
     }
 
     @Test

@@ -7,7 +7,7 @@ data class TxEvent(
     val topics: List<String>,
     val data: String
 ) {
-    
+
     /**
      * This can be used for decoding events with Web3J
      */

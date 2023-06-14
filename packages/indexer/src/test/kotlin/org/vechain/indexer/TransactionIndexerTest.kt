@@ -7,12 +7,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepo
-import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -20,8 +18,6 @@ import strikt.assertions.isNull
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionIndexerTest {
-    @MockK
-    lateinit var thorService: ThorService
 
     @MockK
     lateinit var transactionRepo: TransactionRepo
@@ -33,9 +29,8 @@ internal class TransactionIndexerTest {
 
     @BeforeEach
     fun setUp() {
-        every { thorService.getBlock(0) } returns BlockFixtures.BLOCK_0_GENESIS
         MockKAnnotations.init(this)
-        transactionIndexer = TransactionIndexer(thorService, transactionRepo, mongoTemplate)
+        transactionIndexer = TransactionIndexer(transactionRepo, mongoTemplate, "http://localhost:8669")
     }
 
     @Test
@@ -57,9 +52,7 @@ internal class TransactionIndexerTest {
             )
         } returns mutableListOf()
 
-
         transactionIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
-
 
         val txs = transactionsSlot.captured
         expect {

@@ -10,10 +10,9 @@ interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String> {
         pipeline = [
             "{ '\$sort': { 'blockNumber': -1 } }",
             "{ '\$limit': 1 }",
-            "{ '\$project': { blockNumber: 1 } }"
         ]
     )
-    fun getMaxBlockNumber(): Long?
+    fun getLatestRecord(): T?
 
     fun deleteAllByBlockNumberBetween(start: Long, end: Long)
 }

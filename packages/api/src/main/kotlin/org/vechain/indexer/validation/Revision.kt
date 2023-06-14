@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 @Constraint(validatedBy = [RevisionValidator::class])
 @MustBeDocumented
 annotation class Revision(
-    val message: String = "The provided revision is invalid. It must match be a positive integer, a valid block ID, 'best' or 'finalized'",
+    val message: String = "The provided revision is invalid. It must be a positive integer, a valid block ID, 'best' or 'finalized'",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )
