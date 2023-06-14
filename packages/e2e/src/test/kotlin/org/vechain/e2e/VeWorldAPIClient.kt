@@ -28,8 +28,8 @@ object VeWorldAPIClient {
     private val PAGINATED_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedContract>>() {}
     private val PAGINATED_NFTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
     private val PAGINATED_NFT_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
-    private val PAGINATED_TRANSFER_EVENT_TYPE =
-        object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
+    private val PAGINATED_TRANSFER_EVENTS_TYPE =
+        object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
 
 
     fun performHealthCheck() {
@@ -142,18 +142,18 @@ object VeWorldAPIClient {
         tokenAddress: String? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT
-    ): List<IndexedTransferEvent> {
+    ): PaginatedResponse<IndexedTransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(
                 "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress&page=$page&size=$size",
-                PAGINATED_TRANSFER_EVENT_TYPE
+                PAGINATED_TRANSFER_EVENTS_TYPE
             )
         else if (address != null)
-            getRequest("$API_URL/transfers?address=$address&page=$page&size=$size", PAGINATED_TRANSFER_EVENT_TYPE)
+            getRequest("$API_URL/transfers?address=$address&page=$page&size=$size", PAGINATED_TRANSFER_EVENTS_TYPE)
         else if (tokenAddress != null)
             getRequest(
                 "$API_URL/transfers?tokenAddress=$tokenAddress&page=$page&size=$size",
-                PAGINATED_TRANSFER_EVENT_TYPE
+                PAGINATED_TRANSFER_EVENTS_TYPE
             )
         else
             throw Exception("No address or tokenAddress provided")

@@ -14,22 +14,23 @@ class TransferEventTest {
         val transferEvents =
             VeWorldAPIClient.getTransferEvents(address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
-        expectThat(transferEvents).hasSize(16)
+        expectThat(transferEvents.data).hasSize(16)
 
-        transferEvents.forEach { transferEvent ->
+        transferEvents.data.forEach { transferEvent: IndexedTransferEvent ->
             assertValidTransferEvent(transferEvent)
         }
 
-        val tokenAddress = transferEvents.find { it.tokenAddress != null }!!.tokenAddress
+        val tokenAddress =
+            transferEvents.data.find { te: IndexedTransferEvent -> te.tokenAddress != null }!!.tokenAddress
 
         // Get transfer event by token address
         val transferEventsForToken = VeWorldAPIClient.getTransferEvents(
             tokenAddress = tokenAddress,
         )
 
-        expectThat(transferEventsForToken.size).isGreaterThan(0)
+        expectThat(transferEventsForToken.data.size).isGreaterThan(0)
 
-        transferEventsForToken.forEach { transferEvent ->
+        transferEventsForToken.data.forEach { transferEvent: IndexedTransferEvent ->
             assertValidTransferEvent(transferEvent)
         }
     }
@@ -39,9 +40,9 @@ class TransferEventTest {
         val transferEvents =
             VeWorldAPIClient.getTransferEvents("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
 
-        expectThat(transferEvents).hasSize(1)
+        expectThat(transferEvents.data).hasSize(1)
 
-        transferEvents.forEach { transferEvent ->
+        transferEvents.data.forEach { transferEvent: IndexedTransferEvent ->
             assertValidTransferEvent(transferEvent)
         }
     }

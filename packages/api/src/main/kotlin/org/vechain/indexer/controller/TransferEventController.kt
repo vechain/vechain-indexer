@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.AddressUtils
@@ -53,16 +55,18 @@ open class TransferEventController(private val transferEventService: TransferEve
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): List<IndexedTransferEvent> {
+    ): PaginatedResponse<IndexedTransferEvent> {
 
         val pageable = toPageable(page, size, direction)
 
-        return when {
+        val resultsPage = when {
             address != null && tokenAddress != null -> transferEventService.find(address, tokenAddress, pageable)
             address != null -> transferEventService.findByAddress(address, pageable)
             tokenAddress != null -> transferEventService.findByTokenAddress(tokenAddress, pageable)
             else -> throw BadRequestException("Either address or tokenAddress must be provided")
         }
+
+        return paginatedResponse(resultsPage)
     }
 
 
@@ -91,8 +95,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): List<IndexedTransferEvent> {
-        return transferEventService.findByFrom(address, tokenAddress, toPageable(page, size, direction))
+    ): PaginatedResponse<IndexedTransferEvent> {
+        return paginatedResponse(
+            transferEventService.findByFrom(
+                address,
+                tokenAddress,
+                toPageable(page, size, direction)
+            )
+        )
     }
 
     @GetMapping("/to")
@@ -120,7 +130,13 @@ open class TransferEventController(private val transferEventService: TransferEve
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): List<IndexedTransferEvent> {
-        return transferEventService.findByTo(address, tokenAddress, toPageable(page, size, direction))
+    ): PaginatedResponse<IndexedTransferEvent> {
+        return paginatedResponse(
+            transferEventService.findByTo(
+                address,
+                tokenAddress,
+                toPageable(page, size, direction)
+            )
+        )
     }
 }
