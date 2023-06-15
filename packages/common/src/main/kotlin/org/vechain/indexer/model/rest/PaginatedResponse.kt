@@ -8,12 +8,12 @@ import org.springframework.data.domain.Page
 const val PAGE_SIZE_LIMIT = 150
 
 /**
- * The count limit
+ * An API query can count at most this number of elements per response
  */
 const val COUNT_LIMIT = 500L
 
 /**
- * TODO javadoc
+ * API response wrapper object
  */
 data class PaginatedResponse<T>(
     val data: List<T>,
@@ -21,7 +21,7 @@ data class PaginatedResponse<T>(
 ) where T : Any
 
 /**
- *
+ * Wrapper that holds pagination data inside a response
  */
 data class PaginationDetail(
     val isExactCount: Boolean,
