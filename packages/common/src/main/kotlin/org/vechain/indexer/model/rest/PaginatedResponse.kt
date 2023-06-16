@@ -2,14 +2,27 @@ package org.vechain.indexer.model.rest
 
 import org.springframework.data.domain.Page
 
+/**
+ * An API query can return at most this number of elements per page
+ */
 const val PAGE_SIZE_LIMIT = 150
+
+/**
+ * An API query can count at most this number of elements per response
+ */
 const val COUNT_LIMIT = 500L
 
+/**
+ * API response wrapper object
+ */
 data class PaginatedResponse<T>(
     val data: List<T>,
     val pagination: PaginationDetail,
 ) where T : Any
 
+/**
+ * Wrapper that holds pagination data inside a response
+ */
 data class PaginationDetail(
     val isExactCount: Boolean,
     val countLimit: Long,

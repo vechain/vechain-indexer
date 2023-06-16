@@ -23,7 +23,7 @@ object VeWorldAPIClient {
     private val BLOCK_TYPE = object : ParameterizedTypeReference<IndexedBlock>() {}
     private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<List<IndexedClause>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
-    private val PAGINATED_TX_TYPE = object : ParameterizedTypeReference<List<IndexedTransaction>>() {}
+    private val PAGINATED_TXS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedTransaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
     private val PAGINATED_CONTRACTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedContract>>() {}
     private val PAGINATED_NFTS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
@@ -122,10 +122,10 @@ object VeWorldAPIClient {
         includeDelegated: Boolean = false,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT
-    ): List<IndexedTransaction> {
+    ): PaginatedResponse<IndexedTransaction> {
         return getRequest(
             "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
-            PAGINATED_TX_TYPE
+            PAGINATED_TXS_TYPE
         )
     }
 
@@ -133,8 +133,11 @@ object VeWorldAPIClient {
         address: String,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT
-    ): List<IndexedTransaction> {
-        return getRequest("$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size", PAGINATED_TX_TYPE)
+    ): PaginatedResponse<IndexedTransaction> {
+        return getRequest(
+            "$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size",
+            PAGINATED_TXS_TYPE
+        )
     }
 
     fun getTransferEvents(

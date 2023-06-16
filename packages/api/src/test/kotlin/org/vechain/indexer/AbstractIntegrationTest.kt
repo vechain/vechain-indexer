@@ -32,6 +32,7 @@ abstract class AbstractIntegrationTest {
 
     protected val TX_TYPE = object : TypeReference<IndexedTransaction>() {}
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
+    protected val PAGINATED_TXS_TYPE = object : TypeReference<PaginatedResponse<IndexedTransaction>>() {}
     protected val CONTRACT_TYPE = object : TypeReference<IndexedContract>() {}
     protected val LIST_CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
     protected val PAGINATED_CONTRACTS_TYPE = object : TypeReference<PaginatedResponse<IndexedContract>>() {}

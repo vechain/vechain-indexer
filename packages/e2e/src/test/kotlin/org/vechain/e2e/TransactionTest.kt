@@ -12,40 +12,41 @@ class TransactionTest {
     @Test
     fun `get transactions for origin`() {
         val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+        val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(transactions).hasSize(12)
+        expectThat(txs).hasSize(12)
 
-        transactions.forEach { transaction ->
+        txs.forEach { transaction: IndexedTransaction ->
             assertValidTransaction(transaction)
         }
 
         // Get transaction by id
-        val transaction = VeWorldAPIClient.getTransactionById(transactions[0].id)
+        val transaction = VeWorldAPIClient.getTransactionById(txs[0].id)
 
         assertValidTransaction(transaction)
-
     }
 
     @Test
     fun `get transactions for origin with pagination`() {
         val transactions =
             VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
+        val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(transactions).hasSize(1)
+        expectThat(txs).hasSize(1)
 
-        transactions.forEach { transaction ->
+        txs.forEach { transaction: IndexedTransaction ->
             assertValidTransaction(transaction)
         }
-
     }
 
     @Test
     fun `get delegated transactions`() {
         val transactions = VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+        val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(transactions).hasSize(1)
+        expectThat(txs).hasSize(1)
 
-        transactions.forEach { transaction ->
+        txs.forEach { transaction: IndexedTransaction ->
             assertValidTransaction(transaction)
         }
     }
@@ -56,16 +57,16 @@ class TransactionTest {
             address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
             includeDelegated = true
         )
+        val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(transactions).hasSize(13)
+        expectThat(txs).hasSize(13)
 
-        transactions.forEach { transaction ->
+        txs.forEach { transaction: IndexedTransaction ->
             assertValidTransaction(transaction)
         }
     }
 
     fun assertValidTransaction(transaction: IndexedTransaction) {
-
         expect {
             that(transaction.id).isNotEmpty()
             that(transaction.origin).isNotEmpty()
