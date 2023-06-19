@@ -44,6 +44,7 @@ abstract class AbstractIntegrationTest {
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
     protected val PAGINATED_TRANSFER_EVENTS_TYPE = object : TypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
     protected val LIST_CLAUSE_TYPE = object : TypeReference<List<IndexedClause>>() {}
+    protected val PAGINATED_CLAUSES_TYPE = object : TypeReference<PaginatedResponse<IndexedClause>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
