@@ -1,5 +1,15 @@
-// Initialise Replica Set
-//rs.initiate()
+// Initiate replica set
+printjson(rs.initiate())
+
+// Wait for the replica set to finish initialization
+while (true) {
+  var status = rs.isMaster()
+  if (status && status.ismaster) {
+    break
+  }
+  sleep(1000) // Wait for 1 second before checking again
+}
+
 
 /**
  * Create a user if it doesn't exist, otherwise update the password / roles

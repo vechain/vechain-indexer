@@ -59,18 +59,20 @@ infra-up: #@ Start all the infrastructure.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
+DB_MAKE_KEY=openssl rand -base64 756 > database/keys/keyfile; chmod 400 database/keys/keyfile
+DB_REMOVE_KEY=rm -f database/keys/keyfile
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 
 db-all: #@ Remove, clean and start all the database.
 	make db-down db-clean db-up db-setup
 db-clean: #@ Clean all the database data
-	$(DB_COMMAND) down -v --remove-orphans
+	$(DB_COMMAND) down -v --remove-orphans; $(DB_REMOVE_KEY)
 db-down: #@ Stop all the database.
 	$(DB_COMMAND) down
 db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
-	$(DB_SETUP_COMMAND) up; $(DB_SETUP_COMMAND) rm --force
+	$(DB_MAKE_KEY); $(DB_SETUP_COMMAND) up; $(DB_SETUP_COMMAND) rm --force
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml
