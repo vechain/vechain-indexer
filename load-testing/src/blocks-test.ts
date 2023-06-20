@@ -10,14 +10,14 @@ export const options = DEFAULT_OPTIONS
 export default () => {
   const id = randomElement(blockIds);
 
-  const res = http.get(`${env.BASE_URL}/api/v1/blocks?revision=${id}`);
+  const res = http.get(`${env.BASE_URL}/api/v1/blocks/${id}`);
 
   check(res, {
     "status is 200": () => res.status === 200,
     "id has the expected value": () => {
       if (typeof res.body === "string") {
         const body = JSON.parse(res.body);
-        return body.blockId === id;
+        return body.id === id;
       } else {
         return false;
       }
