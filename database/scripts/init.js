@@ -50,7 +50,6 @@ function createCollection(db, collectionName) {
  * - remove any indexes that are NOT in the config
  * @param collection - the collection to configure indexes for
  * @param {Object} config the index configuration
- * @param {Object} config.name the name of the index
  * @param {Object} config.keys the keys of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#index-creation
  * @param {Object} config.options the options of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#options
  */
