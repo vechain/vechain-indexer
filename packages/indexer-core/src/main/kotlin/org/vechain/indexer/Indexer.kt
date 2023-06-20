@@ -46,8 +46,8 @@ abstract class Indexer(
         // Get the last synced block number. If less than startBlock, start from startBlock
         val blockNumber = maxOf(getLastSyncedBlockNumber(), startBlock)
 
-        // To ensure data integrity purge data from the last block
-        purgeRecords(blockNumber)
+        // To ensure data integrity roll back changes made in the last block
+        rollback(blockNumber)
 
         // Initialise fields
         currentBlockNumber = blockNumber
@@ -190,9 +190,10 @@ abstract class Indexer(
     abstract fun getLastSyncedBlockNumber(): Long
 
     /**
-     * purgeRecords will delete all records for the given block number.
+     * rollback will roll back changes made in the given block number.
+     * blockNumber will always be the last synchronized block. It is provided as a parameter here for convenience.
      */
-    abstract fun purgeRecords(blockNumber: Long)
+    abstract fun rollback(blockNumber: Long)
 
     /**
      * processBlock contains the business logic for this indexer.

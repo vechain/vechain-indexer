@@ -14,7 +14,7 @@ abstract class VeWorldIndexer(
         return 0
     }
 
-    override fun purgeRecords(blockNumber: Long) {
+    override fun rollback(blockNumber: Long) {
         repo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 }

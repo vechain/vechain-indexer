@@ -11,8 +11,8 @@ class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: Tho
         return mocker.getLastSyncedBlockNumber()
     }
 
-    override fun purgeRecords(blockNumber: Long) {
-        mocker.purgeRecords(blockNumber)
+    override fun rollback(blockNumber: Long) {
+        mocker.rollback(blockNumber)
     }
 
     override fun processBlock(block: Block) {
@@ -22,6 +22,6 @@ class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: Tho
 
 interface IndexerResponseMocker {
     fun getLastSyncedBlockNumber(): Long
-    fun purgeRecords(blockNumber: Long)
+    fun rollback(blockNumber: Long)
     fun processBlock(block: Block)
 }
