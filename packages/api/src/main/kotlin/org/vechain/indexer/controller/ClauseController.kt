@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.model.IndexedClause
+import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.AddressUtils
@@ -41,8 +43,8 @@ open class ClauseController(private val clauseService: ClauseService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?
-    ): List<IndexedClause> {
-        return clauseService.findByAddress(address, toPageable(page, size, direction))
+    ): PaginatedResponse<IndexedClause> {
+        return paginatedResponse(clauseService.findByAddress(address, toPageable(page, size, direction)))
     }
 
 }
