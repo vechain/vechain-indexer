@@ -21,7 +21,7 @@ object VeWorldAPIClient {
      * Response Types
      */
     private val BLOCK_TYPE = object : ParameterizedTypeReference<IndexedBlock>() {}
-    private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<List<IndexedClause>>() {}
+    private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedClause>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
     private val PAGINATED_TXS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedTransaction>>() {}
     private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
@@ -64,7 +64,7 @@ object VeWorldAPIClient {
 
     fun getClauses(
         address: String, page: Int = 0, size: Int = PAGE_SIZE_LIMIT
-    ): List<IndexedClause> {
+    ): PaginatedResponse<IndexedClause> {
         return getRequest(
             "$API_URL/clauses?address=${address}&page=$page&size=$size",
             PAGINATED_CLAUSE_TYPE
