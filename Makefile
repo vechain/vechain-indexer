@@ -59,8 +59,8 @@ infra-up: #@ Start all the infrastructure.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
-DB_MAKE_KEY=sudo openssl rand -base64 756 > database/keys/keyfile; sudo chmod 400 database/keys/keyfile
-DB_REMOVE_KEY=sudo rm -f database/keys/keyfile
+DB_MAKE_KEY=openssl rand -base64 756 > database/keys/keyfile; chmod 400 database/keys/keyfile
+DB_REMOVE_KEY=rm -f database/keys/keyfile
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 
 db-all: #@ Remove, clean and start all the database.
