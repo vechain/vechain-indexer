@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.NFTRepo
 import org.vechain.indexer.utils.BlockUtils
@@ -22,15 +21,14 @@ open class NFTEventIndexer(
 
     override fun processBlock(block: Block) {
 
-        val transferEvents = BlockUtils.getTransferEventsFromTopics(block)
-
-        val nfts = getNfts(transferEvents)
+        val nfts = parseNfts(block)
 
         if (nfts.isNotEmpty()) nftRepo.saveAll(nfts)
     }
 
-    private fun getNfts(transfers: List<IndexedTransferEvent>): List<IndexedNFT> {
-        return transfers.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
+    private fun parseNfts(block: Block): List<IndexedNFT> {
+        val transferEvents = BlockUtils.getTransferEventsFromTopics(block)
+        return transferEvents.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
             .map {
 
                 val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
