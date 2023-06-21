@@ -13,6 +13,7 @@ on:
 jobs:
   publish-application-images:
     name: Publish Application Images
+    secrets: inherit
     strategy:
       matrix:
         application: [ indexer, api ]
@@ -26,6 +27,7 @@ jobs:
       packageName: ${{ matrix.application }}
   publish-mongo-setup-image:
     name: Publish Mongo Setup Image
+    secrets: inherit
     uses: ./.github/workflows/publish-ecr-image.yml
     with:
       latestTag: ${{ inputs.latestTag }}
