@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         application: [ indexer, api ]
-    uses: ./github/workflows/publish-ecr-image.yml@${{ github.sha }}
+    uses: ./.github/workflows/publish-ecr-image.yml
     with:
       latestTag: ${{ inputs.latestTag }}
       imageTag: ${{ inputs.imageTag }}
@@ -26,7 +26,7 @@ jobs:
       packageName: ${{ matrix.application }}
   publish-mongo-setup-image:
     name: Publish Mongo Setup Image
-    uses: ./github/workflows/publish-ecr-image.yml@${{ github.sha }}
+    uses: ./.github/workflows/publish-ecr-image.yml
     with:
       latestTag: ${{ inputs.latestTag }}
       imageTag: ${{ inputs.imageTag }}
