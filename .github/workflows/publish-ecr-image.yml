@@ -18,6 +18,9 @@ on:
       packageName:
         required: true
         type: string
+      imagePlatform:
+        required: false
+        type: string
 
 jobs:
   build-and-publish:
@@ -53,10 +56,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          platforms: linux/arm64
+          platforms: ${{ inputs.imagePlatform }}
           build-args: |
             ${{ inputs.buildArgs }}
           push: true
+          context: ${{ inputs.workingDirectory }}
           provenance: false
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.imageTag }}
@@ -74,5 +78,5 @@ jobs:
         if: failure() && steps.docker-scan.outcome == 'failure'
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/${{ matrix.package }} \
+            --repository-name veworld/${{ inputs.packageName }} \
             --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}

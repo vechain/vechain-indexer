@@ -25,6 +25,7 @@ jobs:
         VEWORLD_PACKAGE=${{ matrix.application }}
       workingDirectory: ./
       packageName: ${{ matrix.application }}
+      imagePlatform: linux/arm64
   publish-mongo-setup-image:
     name: Publish Mongo Setup Image
     secrets: inherit
