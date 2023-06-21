@@ -15,9 +15,10 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftRepo: NFTRepo,
-    @Value("\${thor.url}") private val thorUrl: String
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
 
-) : VeWorldIndexer(nftRepo, thorUrl) {
+    ) : VeWorldIndexer(nftRepo, thorUrl, startBlock) {
 
     override fun processBlock(block: Block) {
 

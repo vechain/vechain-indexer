@@ -5,7 +5,8 @@ import org.vechain.indexer.repository.BaseIndexedRepo
 abstract class VeWorldIndexer(
     private val repo: BaseIndexedRepo<*>,
     thorUrl: String,
-) : Indexer(thorUrl) {
+    startBlock: Long = 0L
+) : Indexer(thorUrl, startBlock) {
 
     override fun getLastSyncedBlockNumber(): Long {
         repo.getLatestRecord()?.let {
