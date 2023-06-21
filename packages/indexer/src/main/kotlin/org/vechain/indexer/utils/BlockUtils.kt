@@ -73,6 +73,16 @@ object BlockUtils {
     }
 
     /**
+     * Get all NON-FUNGIBLE transfer events from a block.
+     *
+     * DOES NOT include reverted TXs
+     */
+    fun getNFTTransferEventsFromTopics(block: Block): List<IndexedTransferEvent> {
+        val transferEvents = getTransferEventsFromTopics(block)
+        return transferEvents.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
+    }
+
+    /**
      * Gets all VET transfers AND transfers from topics
      */
     fun getAllTransferEvents(block: Block): List<IndexedTransferEvent> {

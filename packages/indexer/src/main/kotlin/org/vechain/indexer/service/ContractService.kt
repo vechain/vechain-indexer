@@ -1,10 +1,14 @@
 package org.vechain.indexer.service
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
+import org.vechain.indexer.model.Archive
+import org.vechain.indexer.model.IndexedContract
+import org.vechain.indexer.repository.ArchiveRepo
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ClauseUtils
 import org.vechain.indexer.utils.ContractUtils
@@ -15,7 +19,7 @@ import java.math.BigInteger
 
 
 @Service
-class ContractService(private val thorService: ThorService) {
+class ContractService(private val thorService: ThorService, private val archiveRepo: ArchiveRepo) {
 
     private val logger = LogManager.getLogger(this::class.simpleName)
 
@@ -258,4 +262,17 @@ class ContractService(private val thorService: ThorService) {
             return false
         }
     }
+
+    fun save(contracts: List<IndexedContract>) {
+        val archives = contracts.map { Archive(buildHashedId("${it.address}-${it.version}"), it) }
+        archiveRepo.saveAll(archives)
+    }
+
+    fun getPreviousVersion(contract: IndexedContract): IndexedContract {
+        val previousVersion = archiveRepo.findById(buildHashedId("${contract.address}-${contract.version - 1}"))
+        if (!previousVersion.isPresent) throw Exception("Previous version not found")
+        return previousVersion.get().data as IndexedContract
+    }
+
+    private fun buildHashedId(plainId: String) = DigestUtils.sha1Hex(plainId)
 }

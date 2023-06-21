@@ -11,6 +11,7 @@ data class IndexedNFT @ConstructorBinding constructor(
      */
     @Id
     val id: String,
+    override val version: Int,
     val tokenId: String,
     val contractAddress: String,
     val owner: String,
@@ -18,4 +19,4 @@ data class IndexedNFT @ConstructorBinding constructor(
     override val blockNumber: Long,
     override val blockId: String,
     override val blockTimestamp: Long,
-) : IndexedDocument
+) : IndexedDocument, Versioned

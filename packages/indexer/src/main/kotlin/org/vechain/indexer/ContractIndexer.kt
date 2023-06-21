@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepo
 import org.vechain.indexer.service.ContractService
@@ -15,7 +16,6 @@ import org.vechain.thor.model.Block
 import org.vechain.thor.model.Clause
 import org.vechain.thor.model.Transaction
 import org.vechain.thor.model.TxEvent
-import kotlin.jvm.optionals.getOrNull
 
 @Profile("contracts")
 @Component
@@ -30,45 +30,77 @@ open class ContractIndexer(
 
     private var builtInContractsLoaded = false
 
-    @OptIn(ExperimentalStdlibApi::class)
+    @Transactional
     override fun processBlock(block: Block) {
 
+        // Load built-in contracts if not loaded yet
         if (!builtInContractsLoaded) {
             insertBuiltInContracts()
         }
 
+        // Get the master change events from the block
+        val masterChangeEvents = parseMasterChangeEvents(block)
+        if (masterChangeEvents.isEmpty()) return
+
+        // Check for existing documents
+        val existingContracts = contractRepo.findAllById(masterChangeEvents.map { (event) -> event.address }).toList()
+
+        // Parse the contracts
+        val contracts = parseContracts(block, masterChangeEvents, existingContracts)
+
+        // Save the NFTs and archive the old ones
+        contractService.save(existingContracts)
+        contractRepo.saveAll(contracts)
+    }
+
+    private fun parseContracts(
+        block: Block,
+        masterChangeEvents: List<Triple<TxEvent, Transaction, Clause>>,
+        existingContracts: List<IndexedContract>
+    ): List<IndexedContract> {
         val contracts: MutableList<IndexedContract> = mutableListOf()
 
-        val masterChangeEvents = parseMasterChangeEvents(block)
-
-        /**
-         * Process each master change event.
-         */
         masterChangeEvents.forEach { (event, tx, clause) ->
 
             val contractAddress = event.address
             val master = AddressUtils.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
-            val contract = contractRepo.findById(contractAddress).getOrNull()
-
-            // If the contract is already indexed, update the master
-            if (contract != null) {
-                contract.previousMasters.add(contract.master)
-                contract.master = master
-                contracts.add(contract)
+            // Handle case of two master change events for the same contract
+            val multipleMasterChangeContract = contracts.find { it.address == contractAddress }
+            if (multipleMasterChangeContract != null) {
+                multipleMasterChangeContract.previousMasters.add(multipleMasterChangeContract.master)
+                multipleMasterChangeContract.master = master
             } else {
-
-                val existing = contracts.find { it.address == contractAddress }
-
-                //To handle events where master event is fired twice for the same contract
-                if (existing != null) {
-                    existing.previousMasters.add(existing.master)
-                    existing.master = master
-                } else {
+                // If the contract is already indexed, update the master
+                val contract = existingContracts.find { it.address == contractAddress }
+                if (contract != null) {
                     contracts.add(
                         IndexedContract(
                             address = contractAddress,
+                            version = contract.version + 1,
+                            blockId = block.id,
+                            blockNumber = block.number,
+                            blockTimestamp = block.timestamp,
+                            txId = tx.id,
+                            creator = tx.origin,
+                            master = master,
+                            rawData = rawData,
+                            isVip180 = contract.isVip180,
+                            isVip181 = contract.isVip181,
+                            isVip210 = contract.isVip210,
+                            isErc20 = contract.isErc20,
+                            isErc721 = contract.isErc721,
+                            isErc1155 = contract.isErc1155,
+                            previousMasters = contract.previousMasters.plus(contract.master).toMutableSet(),
+                        )
+                    )
+                } else {
+                    // If the contract is not indexed yet, index it
+                    contracts.add(
+                        IndexedContract(
+                            address = contractAddress,
+                            version = 1,
                             blockId = block.id,
                             blockNumber = block.number,
                             blockTimestamp = block.timestamp,
@@ -88,8 +120,7 @@ open class ContractIndexer(
                 }
             }
         }
-
-        if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
+        return contracts
     }
 
     /**
@@ -108,6 +139,27 @@ open class ContractIndexer(
                         }
                 }
             }
+    }
+
+    @Transactional
+    override fun rollback(blockNumber: Long) {
+        //Get all contracts that were created in the block
+        val contracts = contractRepo.findAllByBlockNumber(blockNumber)
+
+        //Get previous version of contracts
+        val previousVersions = mutableSetOf<IndexedContract>()
+        contracts.forEach { contract ->
+            if (contract.version > 1) {
+                val previousVersion = contractService.getPreviousVersion(contract)
+                previousVersions.add(previousVersion)
+            }
+        }
+
+        // Remove contracts with version 1
+        contractRepo.deleteAll(contracts.filter { it.version == 1 })
+
+        // Save previous versions
+        contractRepo.saveAll(previousVersions)
     }
 
     /**

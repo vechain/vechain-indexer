@@ -116,6 +116,7 @@ createUser(
 db = db.getSiblingDB("vechain");
 
 // Create collections
+createCollection(db, "archives");
 createCollection(db, "blocks");
 createCollection(db, "transactions");
 createCollection(db, "clauses");

@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
+    override val version: Int,
     override var blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -22,4 +23,4 @@ data class IndexedContract @ConstructorBinding constructor(
     val isErc721: Boolean,
     val isErc1155: Boolean,
     val previousMasters: MutableSet<String>
-) : IndexedDocument
+) : IndexedDocument, Versioned

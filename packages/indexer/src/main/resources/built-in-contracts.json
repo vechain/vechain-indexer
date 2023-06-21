@@ -1,6 +1,7 @@
 [
   {
     "address": "0x0000000000000000000000417574686f72697479",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -19,6 +20,7 @@
   },
   {
     "address": "0x0000000000000000000000000000456e65726779",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -37,6 +39,7 @@
   },
   {
     "address": "0x0000000000000000000000004578656375746f72",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -55,6 +58,7 @@
   },
   {
     "address": "0x0000000000000000000000457874656e73696f6e",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -73,6 +77,7 @@
   },
   {
     "address": "0x0000000000000000000000000000506172616d73",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
@@ -91,6 +96,7 @@
   },
   {
     "address": "0x000000000000000000000050726f746f74797065",
+    "version": 1,
     "blockId": "0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6",
     "blockNumber": 0,
     "blockTimestamp": 1530316800,
