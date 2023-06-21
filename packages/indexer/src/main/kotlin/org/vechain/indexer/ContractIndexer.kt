@@ -1,11 +1,8 @@
 package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.context.event.ApplicationStartedEvent
 import org.springframework.context.annotation.Profile
-import org.springframework.context.event.EventListener
 import org.springframework.core.io.Resource
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepo
@@ -15,6 +12,9 @@ import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.JsonUtils
 import org.vechain.thor.model.Block
+import org.vechain.thor.model.Clause
+import org.vechain.thor.model.Transaction
+import org.vechain.thor.model.TxEvent
 import kotlin.jvm.optionals.getOrNull
 
 @Profile("contracts")
@@ -23,32 +23,23 @@ open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepo: ContractRepo,
-    private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
 ) : VeWorldIndexer(contractRepo, thorUrl, startBlock) {
 
+    private var builtInContractsLoaded = false
+
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
 
+        if (!builtInContractsLoaded) {
+            insertBuiltInContracts()
+        }
+
         val contracts: MutableList<IndexedContract> = mutableListOf()
 
-        /**
-         * Find all events that are contract deployments, paired with their transaction.
-         */
-        val masterChangeEvents = block.transactions
-            .filter { tx -> !tx.reverted }
-            .flatMap { tx ->
-                tx.outputs.flatMapIndexed { idx, output ->
-                    output.events
-                        .filter { event ->
-                            ContractUtils.isMasterEvent(event)
-                        }.map { event ->
-                            Triple(event, tx, tx.clauses[idx])
-                        }
-                }
-            }
+        val masterChangeEvents = parseMasterChangeEvents(block)
 
         /**
          * Process each master change event.
@@ -65,7 +56,7 @@ open class ContractIndexer(
             if (contract != null) {
                 contract.previousMasters.add(contract.master)
                 contract.master = master
-                contractRepo.save(contract)
+                contracts.add(contract)
             } else {
 
                 val existing = contracts.find { it.address == contractAddress }
@@ -98,15 +89,37 @@ open class ContractIndexer(
             }
         }
 
-        if (contracts.isNotEmpty()) mongoTemplate.insert(contracts, IndexedContract::class.java)
+        if (contracts.isNotEmpty()) contractRepo.saveAll(contracts)
     }
 
-    @EventListener(ApplicationStartedEvent::class)
+    /**
+     * Find all events that are contract deployments, paired with their transaction.
+     */
+    private fun parseMasterChangeEvents(block: Block): List<Triple<TxEvent, Transaction, Clause>> {
+        return block.transactions
+            .filter { tx -> !tx.reverted }
+            .flatMap { tx ->
+                tx.outputs.flatMapIndexed { idx, output ->
+                    output.events
+                        .filter { event ->
+                            ContractUtils.isMasterEvent(event)
+                        }.map { event ->
+                            Triple(event, tx, tx.clauses[idx])
+                        }
+                }
+            }
+    }
+
+    /**
+     * Insert built-in contracts into the database.
+     * This should only execute once per session to ensure the built-in contracts have been inserted.
+     */
     fun insertBuiltInContracts() {
 
         // Check if built-in contracts are already inserted
         contractRepo.findAllByBlockNumber(0).firstOrNull()?.let {
             logger.info("Built-in contracts already inserted")
+            builtInContractsLoaded = true
             return
         }
 
@@ -121,5 +134,7 @@ open class ContractIndexer(
         logger.info("Saving ${contracts.size} built-in contracts")
 
         contractRepo.saveAll(contracts.toList())
+
+        builtInContractsLoaded = true
     }
 }

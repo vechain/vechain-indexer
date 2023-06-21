@@ -15,6 +15,4 @@ interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String> {
     fun getLatestRecord(): T?
 
     fun deleteAllByBlockNumberBetween(start: Long, end: Long)
-
-    fun findAllByBlockNumber(blockNumber: Long): List<T>
 }
