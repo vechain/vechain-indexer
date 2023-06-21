@@ -1,4 +1,4 @@
-name: Push Images to ECR and Scan
+name: Push Image to ECR and Scan
 
 on:
   workflow_call:
@@ -9,14 +9,23 @@ on:
       latestTag:
         required: true
         type: string
+      workingDirectory:
+        required: true
+        type: string
+      buildArgs:
+        required: false
+        type: string
+      packageName:
+        required: true
+        type: string
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        package: [ api, indexer ]
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
 
     steps:
       - name: Checkout repository
@@ -46,12 +55,12 @@ jobs:
         with:
           platforms: linux/arm64
           build-args: |
-            VEWORLD_PACKAGE=${{ matrix.package }}
+            ${{ inputs.buildArgs }}
           push: true
           provenance: false
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.latestTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.imageTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.latestTag }}
 
       - name: Scan Docker image
         id: docker-scan

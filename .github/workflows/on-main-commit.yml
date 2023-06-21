@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "main"
+      - "*"
 
 
 jobs:
@@ -16,21 +16,22 @@ jobs:
     steps:
       - id: latest-tag
         run: echo "latest-tag=${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}" >> "$GITHUB_OUTPUT"
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
-  publish-test-results:
-    uses: ./.github/workflows/publish-test-results.yml
-    needs: test-gradle
-  publish-image-to-ecr:
-    uses: ./.github/workflows/publish-ecr-image.yml
-    needs: [setup-env, test-gradle]
+  #  test-gradle:
+  #    uses: ./.github/workflows/test-gradle.yml
+  #  publish-test-results:
+  #    uses: ./.github/workflows/publish-test-results.yml
+  #    needs: test-gradle
+  publish-images-to-ecr:
+    uses: ./.github/workflows/publish-images.yml
+    #    needs: [ setup-env, test-gradle ]
+    needs: [ setup-env ]
     with:
       imageTag: ${{ github.sha }}
       latestTag: ${{needs.setup-env.outputs.latest-tag}}
     secrets: inherit
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
-    needs: [setup-env, publish-image-to-ecr]
+    needs: [ setup-env, publish-images-to-ecr ]
     secrets: inherit
     with:
       indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag}}

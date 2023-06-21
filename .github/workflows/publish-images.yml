@@ -1,0 +1,34 @@
+name: Publish Application Images to ECR
+
+on:
+  workflow_call:
+    inputs:
+      imageTag:
+        required: true
+        type: string
+      latestTag:
+        required: true
+        type: string
+
+jobs:
+  publish-application-images:
+    name: Publish Application Images
+    strategy:
+      matrix:
+        application: [ indexer, api ]
+    uses: ./github/workflows/publish-ecr-image.yml
+    with:
+      latestTag: ${{ inputs.latestTag }}
+      imageTag: ${{ inputs.imageTag }}
+      buildArgs: |
+        VEWORLD_PACKAGE=${{ matrix.application }}
+      workingDirectory: ./
+      packageName: ${{ matrix.application }}
+  publish-mongo-setup-image:
+    name: Publish Mongo Setup Image
+    uses: ./github/workflows/publish-ecr-image.yml
+    with:
+      latestTag: ${{ inputs.latestTag }}
+      imageTag: ${{ inputs.imageTag }}
+      workingDirectory: database
+      packageName: mongo-setup-script

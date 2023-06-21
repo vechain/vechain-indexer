@@ -7,8 +7,8 @@ on:
 jobs:
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
-  publish-to-ecr:
-    uses: ./.github/workflows/publish-ecr-image.yml
+  publish-images-to-ecr:
+    uses: ./.github/workflows/publish-images.yml
     needs: test-gradle
     with:
       imageTag: ${{ github.ref_name }}
