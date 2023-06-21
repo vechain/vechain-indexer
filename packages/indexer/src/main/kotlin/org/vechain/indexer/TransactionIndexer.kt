@@ -13,9 +13,10 @@ import org.vechain.thor.model.Block
 open class TransactionIndexer(
     txRepo: TransactionRepo,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
 ) :
-    VeWorldIndexer(txRepo, thorUrl) {
+    VeWorldIndexer(txRepo, thorUrl, startBlock) {
 
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {

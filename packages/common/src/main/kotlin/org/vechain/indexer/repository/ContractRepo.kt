@@ -7,4 +7,6 @@ import org.vechain.indexer.model.IndexedContract
 
 @Profile("contracts")
 @Repository
-interface ContractRepo : BaseIndexedRepo<IndexedContract>, PagingAndSortingRepository<IndexedContract, String>
+interface ContractRepo : BaseIndexedRepo<IndexedContract>, PagingAndSortingRepository<IndexedContract, String> {
+    fun findAllByBlockNumber(blockNumber: Long): List<IndexedContract>
+}

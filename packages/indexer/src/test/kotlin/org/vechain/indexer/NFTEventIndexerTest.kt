@@ -7,12 +7,10 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.NFTRepo
-import org.vechain.indexer.service.ThorService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -20,7 +18,7 @@ import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
-    
+
     @MockK
     lateinit var nftRepo: NFTRepo
 
@@ -29,7 +27,7 @@ internal class NFTEventIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftEventIndexer = NFTEventIndexer(nftRepo, "http://localhost:8669")
+        nftEventIndexer = NFTEventIndexer(nftRepo, "http://localhost:8669", 0L)
     }
 
     @Test

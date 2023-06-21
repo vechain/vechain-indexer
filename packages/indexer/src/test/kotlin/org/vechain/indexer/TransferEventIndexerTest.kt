@@ -37,7 +37,7 @@ class TransferEventIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
         transferEventIndexer =
-            TransferEventIndexer(transferEventRepo, mongoTemplate, "http://localhost:8669")
+            TransferEventIndexer(transferEventRepo, mongoTemplate, "http://localhost:8669", 0L)
     }
 
     @Test
