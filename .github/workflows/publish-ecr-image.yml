@@ -70,15 +70,13 @@ jobs:
         id: docker-scan
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
-          repository: veworld/${{ matrix.package }}
+          repository: veworld/${{ inputs.packageName}}
           tag: ${{ inputs.imageTag }}
           fail_threshold: high
 
       - name: On Scan Failure
         if: failure() && steps.docker-scan.outcome == 'failure'
-        env:
-          REPO_NAME: veworld/${{ inputs.packageName}}
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/$REPO_NAME \
+            --repository-name veworld/${{ inputs.packageName}} \
             --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
