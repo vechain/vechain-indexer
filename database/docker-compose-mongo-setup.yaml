@@ -2,9 +2,8 @@ version: "3.5"
 
 services:
   mongo-setup:
-    image: mongo:6
-    volumes:
-      - ./scripts:/scripts
+    build:
+      context: .
     environment:
       - MONGO_HOST=mongo-node1
       - MONGO_ADMIN_USER=root
@@ -14,9 +13,6 @@ services:
       - MONGO_API_USER=api
       - MONGO_API_PASSWORD=password
     restart: "no"
-    entrypoint:
-      [ "bash", "/scripts/setup.sh" ]
-
     networks:
       - vechain-database
 

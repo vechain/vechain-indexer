@@ -70,7 +70,7 @@ db-down: #@ Stop all the database.
 db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
-	$(DB_SETUP_COMMAND) up; $(DB_SETUP_COMMAND) rm --force
+	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml
@@ -85,3 +85,4 @@ thor-up: #@ Start VeChainThor
 	$(THOR_COMMAND) up -d --wait --build
 thor-test: #@ Test VeChainThor
 	$(THOR_COMMAND) up thor-tx-script
+
