@@ -14,9 +14,10 @@ import org.vechain.thor.model.Block
 open class ClauseIndexer(
     clauseRepo: ClauseRepo,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
 ) :
-    VeWorldIndexer(clauseRepo, thorUrl) {
+    VeWorldIndexer(clauseRepo, thorUrl, startBlock) {
     override fun processBlock(block: Block) {
         val clauses: List<IndexedClause> = BlockUtils.getAllClauses(block)
 

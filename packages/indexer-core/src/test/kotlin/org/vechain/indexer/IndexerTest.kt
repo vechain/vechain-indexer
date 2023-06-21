@@ -29,7 +29,7 @@ internal class IndexerTests {
 
     @BeforeEach
     fun setup() {
-        every { responseMocker.purgeRecords(any()) } just Runs
+        every { responseMocker.rollback(any()) } just Runs
 
         indexer = TestIndexer(responseMocker, thorClient)
     }
@@ -54,7 +54,7 @@ internal class IndexerTests {
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(100L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
-        verify(exactly = 1) { responseMocker.purgeRecords(0) }
+        verify(exactly = 1) { responseMocker.rollback(0) }
         verify(atLeast = indexer.currentBlockNumber.toInt()) { responseMocker.processBlock(any()) }
     }
 
@@ -83,12 +83,12 @@ internal class IndexerTests {
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.FULLY_SYNCED)
-        verify(exactly = 1) { responseMocker.purgeRecords(0) }
+        verify(exactly = 1) { responseMocker.rollback(0) }
         verify(atLeast = indexer.currentBlockNumber.toInt()) { responseMocker.processBlock(any()) }
     }
 
     @Test
-    fun `Test that a reorg triggers a purge`() = runBlocking {
+    fun `Test that a reorg triggers a rollback`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             // At block 100, the parent id is invalid
             val parentId = if (getBlockNumberSlot.captured == 100L)
@@ -110,13 +110,13 @@ internal class IndexerTests {
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
-        verify(exactly = 1) { responseMocker.purgeRecords(0L) }
-        // The reorg at block 100 should trigger a purge of block 99 data
-        verify(exactly = 1) { responseMocker.purgeRecords(99L) }
+        verify(exactly = 1) { responseMocker.rollback(0L) }
+        // The reorg at block 100 should trigger a rollback of block 99 data
+        verify(exactly = 1) { responseMocker.rollback(99L) }
     }
 
     @Test
-    fun `Test that an unknown exception triggers a purge`() = runBlocking {
+    fun `Test that an unknown exception triggers a rollback`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers {
             getTestBlock(
                 getBlockNumberSlot.captured
@@ -139,9 +139,9 @@ internal class IndexerTests {
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(99L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
-        verify(exactly = 1) { responseMocker.purgeRecords(0L) }
-        // The exception thrown at block 100 should trigger a purge of block 99 data
-        verify(exactly = 1) { responseMocker.purgeRecords(99L) }
+        verify(exactly = 1) { responseMocker.rollback(0L) }
+        // The exception thrown at block 100 should trigger a rollback of block 99 data
+        verify(exactly = 1) { responseMocker.rollback(99L) }
     }
 
 

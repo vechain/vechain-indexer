@@ -53,7 +53,8 @@ internal class ContractIndexerTest {
             contractRepo,
             mongoTemplate,
             contractsResource,
-            "http://localhost:8669"
+            "http://localhost:8669",
+            1L
         )
     }
 
@@ -76,7 +77,7 @@ internal class ContractIndexerTest {
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_5_VIP180_CONTRACTS)
-        
+
         val contracts = contractsSlot.captured
         expect {
             that(contracts).hasSize(2)

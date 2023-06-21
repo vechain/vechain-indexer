@@ -4,7 +4,8 @@ This package contains an abstract VeChain thor indexer class. This class can be 
 Simply extend the class and implement the abstract methods:
 
 - `getLastSyncedBlockNumber` - should calculate the number of the last block that was synced by the indexer
-- `purgeRecords` - should remove any records indexed by the indexer for the given block number
+- `rollback` - should undo the effects of processing a block. This is used when the indexer needs to roll back to
+  a previous block i.e. in the event of a re-org or on startup
 - `processBlock` - the core business logic of the indexer. Generally the block data will be parsed and stored in a
   database
 
@@ -20,5 +21,5 @@ is a small tradeoff for the simplicity of the approach.
 
 Also, it is important that the indexer is implemented in such a way that it is possible to roll back to a previous
 block.
-This is where the purgeRecords method comes in. In some scenarios such as a chain re-org, the indexer will need to roll
+This is where the rollback method comes in. In some scenarios such as a chain re-org, the indexer will need to roll
 back to a previous block in order to maintain data integrity.
