@@ -47,26 +47,12 @@ function createCollection(db, collectionName) {
 /**
  * Configure indexes for a collection
  * - create all indexes in the config
- * - remove any indexes that are NOT in the config
  * @param collection - the collection to configure indexes for
  * @param {Object} config the index configuration
  * @param {Object} config.keys the keys of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#index-creation
  * @param {Object} config.options the options of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#options
  */
 function configureIndexes(collection, config) {
-    //Remove any current indexes that are NOT in the config
-    collection.getIndexes().forEach(function (index) {
-        if (
-            index.name !== "_id_" &&
-            !config.find(function (c) {
-                return c.options.name === index.name;
-            })
-        ) {
-            console.log("Dropping index " + index.name);
-            collection.dropIndex(index.name);
-        }
-    });
-
     //Create any indexes that are in the config
     config.forEach(function (index) {
         console.log(
