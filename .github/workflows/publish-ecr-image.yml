@@ -76,7 +76,9 @@ jobs:
 
       - name: On Scan Failure
         if: failure() && steps.docker-scan.outcome == 'failure'
+        env:
+          REPO_NAME: veworld/${{ inputs.packageName}}
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/${{ inputs.packageName}} \
+            --repository-name veworld/$REPO_NAME \
             --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
