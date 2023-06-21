@@ -1,4 +1,4 @@
-name: Push Images to ECR and Scan
+name: Push Image to ECR and Scan
 
 on:
   workflow_call:
@@ -9,14 +9,26 @@ on:
       latestTag:
         required: true
         type: string
+      workingDirectory:
+        required: true
+        type: string
+      buildArgs:
+        required: false
+        type: string
+      packageName:
+        required: true
+        type: string
+      imagePlatform:
+        required: false
+        type: string
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        package: [ api, indexer ]
+    defaults:
+      run:
+        working-directory: ${{ inputs.workingDirectory }}
 
     steps:
       - name: Checkout repository
@@ -44,20 +56,21 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          platforms: linux/arm64
+          platforms: ${{ inputs.imagePlatform }}
           build-args: |
-            VEWORLD_PACKAGE=${{ matrix.package }}
+            ${{ inputs.buildArgs }}
           push: true
+          context: ${{ inputs.workingDirectory }}
           provenance: false
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.imageTag }}
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ matrix.package }}:${{ inputs.latestTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.imageTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.latestTag }}
 
       - name: Scan Docker image
         id: docker-scan
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
-          repository: veworld/${{ matrix.package }}
+          repository: veworld/${{ inputs.packageName}}
           tag: ${{ inputs.imageTag }}
           fail_threshold: high
 
@@ -65,5 +78,5 @@ jobs:
         if: failure() && steps.docker-scan.outcome == 'failure'
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/${{ matrix.package }} \
+            --repository-name veworld/${{ inputs.packageName}} \
             --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
