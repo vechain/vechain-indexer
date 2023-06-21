@@ -25,8 +25,9 @@ open class ContractIndexer(
     private val contractRepo: ContractRepo,
     private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
-    @Value("\${thor.url}") private val thorUrl: String
-) : VeWorldIndexer(contractRepo, thorUrl) {
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
+) : VeWorldIndexer(contractRepo, thorUrl, startBlock) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
@@ -103,7 +104,11 @@ open class ContractIndexer(
     @EventListener(ApplicationStartedEvent::class)
     fun insertBuiltInContracts() {
 
-        logger.info("Saving built-in contracts")
+        // Check if built-in contracts are already inserted
+        contractRepo.findAllByBlockNumber(0).firstOrNull()?.let {
+            logger.info("Built-in contracts already inserted")
+            return
+        }
 
         val genBlock = thorService.getBlock(0)
 
@@ -112,6 +117,8 @@ open class ContractIndexer(
         contracts.forEach { contract ->
             contract.blockId = genBlock.id
         }
+
+        logger.info("Saving ${contracts.size} built-in contracts")
 
         contractRepo.saveAll(contracts.toList())
     }

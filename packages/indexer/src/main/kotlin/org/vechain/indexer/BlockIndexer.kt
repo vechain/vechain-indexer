@@ -18,9 +18,10 @@ open class BlockIndexer(
     private val thorService: ThorService,
     private val blockRepo: BlockRepo,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.blocks}") private val startBlock: Long,
 ) :
-    VeWorldIndexer(blockRepo, thorUrl) {
+    VeWorldIndexer(blockRepo, thorUrl, startBlock) {
 
     override fun processBlock(block: Block) {
 
