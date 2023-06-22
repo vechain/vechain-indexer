@@ -276,7 +276,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.isExactCount).isTrue()
+                that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(transactions.pagination.totalElements).isEqualTo(39)
                 that(transactions.pagination.totalPages).isEqualTo(1)
@@ -309,7 +309,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.isExactCount).isTrue()
+                that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(transactions.pagination.totalElements).isEqualTo(40)
                 that(transactions.pagination.totalPages).isEqualTo(1)
@@ -495,7 +495,7 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.isExactCount).isTrue()
+                that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(transactions.pagination.totalElements).isEqualTo(1)
                 that(transactions.pagination.totalPages).isEqualTo(1)
