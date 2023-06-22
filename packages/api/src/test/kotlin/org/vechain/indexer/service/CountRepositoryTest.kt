@@ -1,4 +1,4 @@
-package org.vechain.indexer.repository
+package org.vechain.indexer.service
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.repository.impl.CountRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 

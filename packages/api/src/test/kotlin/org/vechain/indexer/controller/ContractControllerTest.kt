@@ -230,7 +230,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(paginationDetail.isExactCount).isTrue()
+                that(paginationDetail.hasCount).isTrue()
                 that(paginationDetail.countLimit).isEqualTo(COUNT_LIMIT)
                 that(paginationDetail.totalPages).isEqualTo(2)
                 that(paginationDetail.totalElements).isEqualTo(18)
@@ -328,7 +328,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                     )
                     .map(IndexedContract::isVip180).all { isTrue() }
 
-                that(paginationDetail.isExactCount).isTrue()
+                that(paginationDetail.hasCount).isTrue()
                 that(paginationDetail.countLimit).isEqualTo(COUNT_LIMIT)
                 that(paginationDetail.totalPages).isEqualTo(2)
                 that(paginationDetail.totalElements).isEqualTo(2)

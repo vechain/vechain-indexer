@@ -1,5 +1,6 @@
-package org.vechain.indexer.repository
+package org.vechain.indexer.repository.impl
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -8,12 +9,13 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.Query
-import org.springframework.stereotype.Repository
+import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 
-@Repository
-open class ContractRepository(
+@Profile("contracts")
+@Component
+open class ContractRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
     private val countRepository: CountRepository
 ) {
@@ -21,10 +23,6 @@ open class ContractRepository(
     companion object {
         val CONTRACTS_COLLECTION = IndexedContract::class.java
         val CREATOR = IndexedContract::creator.name
-    }
-
-    open fun findById(address: String): IndexedContract? {
-        return mongoTemplate.findById(address, CONTRACTS_COLLECTION)
     }
 
     open fun findByCreatorAndType(

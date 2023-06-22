@@ -15,7 +15,7 @@ import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ArchiveRepo
-import org.vechain.indexer.repository.ContractRepo
+import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.Block
@@ -34,7 +34,7 @@ internal class ContractIndexerTest {
     lateinit var archiveRepo: ArchiveRepo
 
     @MockK
-    lateinit var contractRepo: ContractRepo
+    lateinit var contractRepository: ContractRepository
 
     @MockK
     lateinit var contractsResource: Resource
@@ -51,7 +51,7 @@ internal class ContractIndexerTest {
         contractIndexer = ContractIndexer(
             thorService,
             contractService,
-            contractRepo,
+            contractRepository,
             contractsResource,
             "http://localhost:8669",
             1L
@@ -68,11 +68,11 @@ internal class ContractIndexerTest {
             BLOCK_5_VIP180_CONTRACTS,
             "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
         )
-        every { contractRepo.findAllById(any()) } returns mutableListOf()
+        every { contractRepository.findAllById(any()) } returns mutableListOf()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_5_VIP180_CONTRACTS)
@@ -106,11 +106,11 @@ internal class ContractIndexerTest {
             BLOCK_42_ERC1155_VIP210_CONTRACTS,
             "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
         )
-        every { contractRepo.findAllById(any()) } returns emptyList()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
@@ -139,11 +139,11 @@ internal class ContractIndexerTest {
             BLOCK_6_VIP181_CONTRACTS,
             "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         )
-        every { contractRepo.findAllById(any()) } returns emptyList()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
@@ -173,11 +173,11 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
-        every { contractRepo.findAllById(any()) } returns emptyList()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { contractRepo.saveAll(capture(contractsSlot)) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
 
@@ -208,11 +208,11 @@ internal class ContractIndexerTest {
         // Mock data returned for block#16: block, any account code & existing mongo document
         every { archiveRepo.saveAll<Archive>(any()) } returns listOf()
         every { thorService.getAccountCode(any()) } returns "any account code"
-        every { contractRepo.findAllById(any()) } returns listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+        every { contractRepository.findAllById(any()) } returns listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
         val updatedContractSlot = slot<List<IndexedContract>>()
-        every { contractRepo.saveAll(capture(updatedContractSlot)) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(updatedContractSlot)) } returns mutableListOf()
 
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
         expectThat(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.master).isEqualTo(oldMaster)
@@ -232,7 +232,7 @@ internal class ContractIndexerTest {
         expectThat(updatedContract.first().blockTimestamp).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.timestamp)
 
         //Check that updated contract is saved and the old contract is archived
-        verify(exactly = 1) { contractRepo.saveAll(updatedContract) }
+        verify(exactly = 1) { contractRepository.saveAll(updatedContract) }
         verify(exactly = 1) { archiveRepo.saveAll<Archive>(any()) }
     }
 

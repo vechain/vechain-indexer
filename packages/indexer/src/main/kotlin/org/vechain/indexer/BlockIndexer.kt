@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.query.Query.query
 import org.springframework.data.mongodb.core.query.Update.update
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedBlock
-import org.vechain.indexer.repository.BlockRepo
+import org.vechain.indexer.repository.BlockRepository
 import org.vechain.indexer.service.ThorService
 import org.vechain.thor.model.Block
 
@@ -16,12 +16,12 @@ import org.vechain.thor.model.Block
 @Component
 open class BlockIndexer(
     private val thorService: ThorService,
-    private val blockRepo: BlockRepo,
+    private val blockRepository: BlockRepository,
     private val mongoTemplate: MongoTemplate,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.blocks}") private val startBlock: Long,
 ) :
-    VeWorldIndexer(blockRepo, thorUrl, startBlock) {
+    VeWorldIndexer(blockRepository, thorUrl, startBlock) {
 
     override fun processBlock(block: Block) {
 
@@ -30,11 +30,11 @@ open class BlockIndexer(
             finalityCheck()
         }
 
-        blockRepo.save(IndexedBlock(block))
+        blockRepository.save(IndexedBlock(block))
     }
 
     private fun finalityCheck() {
-        blockRepo.findTopByIsFinalizedOrderByBlockNumberAsc(false)?.let {
+        blockRepository.findTopByIsFinalizedOrderByBlockNumberAsc(false)?.let {
             val finalityBlock = thorService.getFinalisedBlock()
             if (finalityBlock.number > it.blockNumber) {
                 logger.info("Finalising blocks in range ${it.blockNumber} - ${finalityBlock.number}")

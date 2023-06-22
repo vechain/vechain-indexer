@@ -12,7 +12,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.ArchiveRepo
-import org.vechain.indexer.repository.NFTRepo
+import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.NFTService
 import strikt.api.expect
 import strikt.api.expectThat
@@ -26,7 +26,7 @@ internal class NFTEventIndexerTest {
     lateinit var archiveRepo: ArchiveRepo
 
     @MockK
-    lateinit var nftRepo: NFTRepo
+    lateinit var nftRepository: NFTRepository
 
     lateinit var nftService: NFTService
 
@@ -35,17 +35,17 @@ internal class NFTEventIndexerTest {
     @BeforeEach
     fun setUp() {
         nftService = NFTService(archiveRepo)
-        nftEventIndexer = NFTEventIndexer(nftRepo, nftService, "http://localhost:8669", 0L)
+        nftEventIndexer = NFTEventIndexer(nftRepository, nftService, "http://localhost:8669", 0L)
     }
 
     @Test
     fun `Process block - with NFT transfer events`() {
         val blockNumber = 8L
 
-        every { nftRepo.findAllById(any()) } returns mutableListOf()
+        every { nftRepository.findAllById(any()) } returns mutableListOf()
 
         val nftsSlot = slot<List<IndexedNFT>>()
-        every { nftRepo.saveAll(capture(nftsSlot)) } returns mutableListOf()
+        every { nftRepository.saveAll(capture(nftsSlot)) } returns mutableListOf()
 
         nftEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
@@ -72,7 +72,7 @@ internal class NFTEventIndexerTest {
 
         nftEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
-        verify { nftRepo wasNot Called }
+        verify { nftRepository wasNot Called }
     }
-    
+
 }

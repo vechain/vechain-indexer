@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.repository.NFTRepo
+import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.IdUtils
@@ -16,11 +16,11 @@ import org.web3j.utils.Numeric
 @Profile("nft-events")
 @Component
 open class NFTEventIndexer(
-    private val nftRepo: NFTRepo,
+    private val nftRepository: NFTRepository,
     private val nftService: NFTService,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-) : VeWorldIndexer(nftRepo, thorUrl, startBlock) {
+) : VeWorldIndexer(nftRepository, thorUrl, startBlock) {
 
     @Transactional
     override fun processBlock(block: Block) {
@@ -31,14 +31,15 @@ open class NFTEventIndexer(
 
         // Check for existing documents
         val existingNfts =
-            nftRepo.findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") }).toList()
+            nftRepository.findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") })
+                .toList()
 
         // Parse the NFTs
         val nfts = parseNfts(block, nftTransfers, existingNfts)
 
         // Save the NFTs and archive the old ones
         if (existingNfts.isNotEmpty()) nftService.save(existingNfts)
-        nftRepo.saveAll(nfts)
+        nftRepository.saveAll(nfts)
     }
 
     private fun parseNfts(
@@ -68,7 +69,7 @@ open class NFTEventIndexer(
     @Transactional
     override fun rollback(blockNumber: Long) {
         //Get all nfts that were created in the block
-        val nfts = nftRepo.findAllByBlockNumber(blockNumber)
+        val nfts = nftRepository.findAllByBlockNumber(blockNumber)
 
         //Get previous version of nfts
         val previousVersions = mutableSetOf<IndexedNFT>()
@@ -80,9 +81,9 @@ open class NFTEventIndexer(
         }
 
         // Remove nfts with version 1
-        nftRepo.deleteAll(nfts.filter { it.version == 1 })
+        nftRepository.deleteAll(nfts.filter { it.version == 1 })
 
         // Save previous versions
-        nftRepo.saveAll(previousVersions)
+        nftRepository.saveAll(previousVersions)
     }
 }

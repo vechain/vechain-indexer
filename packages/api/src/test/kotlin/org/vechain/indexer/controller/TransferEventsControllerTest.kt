@@ -206,7 +206,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                         )
                 )
 
-            that(transferEvents.pagination.isExactCount).isTrue()
+            that(transferEvents.pagination.hasCount).isTrue()
             that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
             that(transferEvents.pagination.totalPages).isEqualTo(4)
             that(transferEvents.pagination.totalElements).isEqualTo(12)
@@ -287,7 +287,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.isExactCount).isTrue()
+                that(transferEvents.pagination.hasCount).isTrue()
                 that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(transferEvents.pagination.totalPages).isEqualTo(1)
                 that(transferEvents.pagination.totalElements).isEqualTo(1)
@@ -368,7 +368,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.isExactCount).isTrue()
+                that(transferEvents.pagination.hasCount).isTrue()
                 that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(transferEvents.pagination.totalPages).isEqualTo(1)
                 that(transferEvents.pagination.totalElements).isEqualTo(2)
