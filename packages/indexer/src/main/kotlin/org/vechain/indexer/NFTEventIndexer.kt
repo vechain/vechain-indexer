@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -10,6 +9,7 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.NFTRepo
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.BlockUtils
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block
 import org.web3j.utils.Numeric
 
@@ -31,7 +31,7 @@ open class NFTEventIndexer(
 
         // Check for existing documents
         val existingNfts =
-            nftRepo.findAllById(nftTransfers.map { buildHashedId("${it.tokenAddress}-${it.id}") }).toList()
+            nftRepo.findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") }).toList()
 
         // Parse the NFTs
         val nfts = parseNfts(block, nftTransfers, existingNfts)
@@ -48,7 +48,7 @@ open class NFTEventIndexer(
     ): List<IndexedNFT> {
         return nftTransfers.map {
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
-            val nftId = buildHashedId("${it.tokenAddress}-${tokenId}")
+            val nftId = IdUtils.buildHashedId("${it.tokenAddress}-${tokenId}")
             val version = (existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1)) ?: 1
 
             IndexedNFT(
@@ -85,7 +85,4 @@ open class NFTEventIndexer(
         // Save previous versions
         nftRepo.saveAll(previousVersions)
     }
-
-    private fun buildHashedId(plainId: String) = DigestUtils.sha1Hex(plainId)
-
 }
