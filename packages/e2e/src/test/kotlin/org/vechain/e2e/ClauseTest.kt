@@ -39,7 +39,7 @@ class ClauseTest {
         expect {
             that(clauses.data).hasSize(3)
 
-            that(clauses.pagination.isExactCount).isTrue()
+            that(clauses.pagination.hasCount).isTrue()
             that(clauses.pagination.countLimit).isEqualTo(COUNT_LIMIT)
             that(clauses.pagination.totalElements).isEqualTo(13)
             that(clauses.pagination.totalPages).isEqualTo(3)

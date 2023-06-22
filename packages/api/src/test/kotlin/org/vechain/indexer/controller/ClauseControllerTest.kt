@@ -183,7 +183,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
                         )
                 )
 
-            that(clauses.pagination.isExactCount).isTrue()
+            that(clauses.pagination.hasCount).isTrue()
             that(clauses.pagination.countLimit).isEqualTo(COUNT_LIMIT)
             that(clauses.pagination.totalElements).isEqualTo(20)
             that(clauses.pagination.totalPages).isEqualTo(2)

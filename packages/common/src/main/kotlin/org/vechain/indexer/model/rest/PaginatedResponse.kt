@@ -24,7 +24,7 @@ data class PaginatedResponse<T>(
  * Wrapper that holds pagination data inside a response
  */
 data class PaginationDetail(
-    val isExactCount: Boolean,
+    val hasCount: Boolean,
     val countLimit: Long,
     val totalPages: Int? = null,
     val totalElements: Long? = null,
@@ -44,15 +44,15 @@ data class PaginationDetail(
  * and the hasNext flag provides an indication whether it's useful to keep querying more pages.
  */
 fun <T : Any> paginatedResponse(page: Page<T>): PaginatedResponse<T> {
-    val isExactCount = page.totalElements < COUNT_LIMIT + 1
+    val hasCount = page.totalElements < COUNT_LIMIT + 1
 
     return PaginatedResponse(
         data = page.content,
         pagination = PaginationDetail(
-            isExactCount = isExactCount,
+            hasCount = hasCount,
             countLimit = COUNT_LIMIT,
-            totalPages = if (isExactCount) page.totalPages else null,
-            totalElements = if (isExactCount) page.totalElements else null,
+            totalPages = if (hasCount) page.totalPages else null,
+            totalElements = if (hasCount) page.totalElements else null,
             hasNext = page.hasNext()
         )
     )
