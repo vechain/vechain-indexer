@@ -8,7 +8,10 @@ import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ArchiveRepo
-import org.vechain.indexer.utils.*
+import org.vechain.indexer.utils.AddressUtils
+import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.IdUtils
+import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.thor.model.Block
 import org.vechain.thor.model.Clause
 import org.vechain.thor.model.Transaction
@@ -31,15 +34,10 @@ class ContractService(private val thorService: ThorService, private val archiveR
      * Calls to the supportsInterface function of the ERC721 interface.
      */
     fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
+        return ContractUtils.isContractType(Contracts.ERC721, rawData) ||
+                ContractUtils.isContractType(Contracts.ERC721, clause.data) ||
+                supportsInterface(ERC721ABI.interfaceId, contractAddress)
 
-        return try {
-            ContractUtils.isContractType(Contracts.ERC721, rawData) ||
-                    ContractUtils.isContractType(Contracts.ERC721, clause.data) ||
-                    supportsInterface(ERC721ABI.interfaceId, contractAddress)
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is ERC721", e)
-            false
-        }
     }
 
     /**
@@ -51,47 +49,43 @@ class ContractService(private val thorService: ThorService, private val archiveR
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
     fun isVip181(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        try {
 
-            val isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData) ||
-                    ContractUtils.isContractType(Contracts.VIP181, clause.data)
-            if (isVip181) return true
+        val isVip181 = ContractUtils.isContractType(Contracts.VIP181, rawData) ||
+                ContractUtils.isContractType(Contracts.VIP181, clause.data)
+        if (isVip181) return true
 
-            val name = ClauseUtils.contractCall(contractAddress, VIP181ABI.name)
-            val symbol = ClauseUtils.contractCall(contractAddress, VIP181ABI.symbol)
-            val totalSupply = ClauseUtils.contractCall(contractAddress, VIP181ABI.totalSupply)
-            val balanceOf = ClauseUtils.contractCall(
-                contractAddress,
-                VIP181ABI.balanceOf,
-                SAMPLE_ADDRESS_1
-            )
+        val name = ContractUtils.createClause(contractAddress, VIP181ABI.name)
+        val symbol = ContractUtils.createClause(contractAddress, VIP181ABI.symbol)
+        val totalSupply = ContractUtils.createClause(contractAddress, VIP181ABI.totalSupply)
+        val balanceOf = ContractUtils.createClause(
+            contractAddress,
+            VIP181ABI.balanceOf,
+            SAMPLE_ADDRESS_1
+        )
 
-            //Differentiator to ERC20
-            val isApprovedForAll = ClauseUtils.contractCall(
-                contractAddress,
-                VIP181ABI.isApprovedForAll,
-                SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
-            )
+        //Differentiator to ERC20
+        val isApprovedForAll = ContractUtils.createClause(
+            contractAddress,
+            VIP181ABI.isApprovedForAll,
+            SAMPLE_ADDRESS_1,
+            SAMPLE_ADDRESS_2
+        )
 
-            val contractCalls = listOf(
-                name,
-                symbol,
-                totalSupply,
-                balanceOf,
-                isApprovedForAll
-            )
+        val contractCalls = listOf(
+            name,
+            symbol,
+            totalSupply,
+            balanceOf,
+            isApprovedForAll
+        )
 
 
-            val response = thorService.executeReadOnlyCode(contractCalls)
+        val response = thorService.executeReadOnlyCode(contractCalls)
 
-            return response.size == contractCalls.size && response.all {
-                TransactionUtils.isSuccessWithData(it)
-            }
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is VIP181", e)
-            return false
+        return response.size == contractCalls.size && response.all {
+            TransactionUtils.isSuccessWithData(it)
         }
+
     }
 
     /**
@@ -100,39 +94,34 @@ class ContractService(private val thorService: ThorService, private val archiveR
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
     fun isErc20(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        try {
 
-            val isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData) ||
-                    ContractUtils.isContractType(Contracts.ERC20, clause.data)
-            if (isErc20) return true
+        val isErc20 = ContractUtils.isContractType(Contracts.ERC20, rawData) ||
+                ContractUtils.isContractType(Contracts.ERC20, clause.data)
+        if (isErc20) return true
 
-            val totalSupply = ClauseUtils.contractCall(contractAddress, ERC20ABI.totalSupply)
-            val balanceOf = ClauseUtils.contractCall(
-                contractAddress,
-                ERC20ABI.balanceOf,
-                SAMPLE_ADDRESS_1
-            )
-            val allowance = ClauseUtils.contractCall(
-                contractAddress,
-                ERC20ABI.allowance,
-                SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
-            )
+        val totalSupply = ContractUtils.createClause(contractAddress, ERC20ABI.totalSupply)
+        val balanceOf = ContractUtils.createClause(
+            contractAddress,
+            ERC20ABI.balanceOf,
+            SAMPLE_ADDRESS_1
+        )
+        val allowance = ContractUtils.createClause(
+            contractAddress,
+            ERC20ABI.allowance,
+            SAMPLE_ADDRESS_1,
+            SAMPLE_ADDRESS_2
+        )
 
-            val contractCalls = listOf(
-                totalSupply,
-                balanceOf,
-                allowance
-            )
+        val contractCalls = listOf(
+            totalSupply,
+            balanceOf,
+            allowance
+        )
 
-            val response = thorService.executeReadOnlyCode(contractCalls)
+        val response = thorService.executeReadOnlyCode(contractCalls)
 
-            return response.size == contractCalls.size && response.all {
-                TransactionUtils.isSuccessWithData(it)
-            }
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is ERC20", e)
-            return false
+        return response.size == contractCalls.size && response.all {
+            TransactionUtils.isSuccessWithData(it)
         }
     }
 
@@ -143,123 +132,107 @@ class ContractService(private val thorService: ThorService, private val archiveR
      */
     fun isVip180(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
-        try {
 
-            val isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData) ||
-                    ContractUtils.isContractType(Contracts.VIP180, clause.data)
-            if (isVip180) return true
+        val isVip180 = ContractUtils.isContractType(Contracts.VIP180, rawData) ||
+                ContractUtils.isContractType(Contracts.VIP180, clause.data)
+        if (isVip180) return true
 
-            val name = ClauseUtils.contractCall(contractAddress, VIP180ABI.name)
-            val decimals = ClauseUtils.contractCall(contractAddress, VIP180ABI.decimals)
-            val symbol = ClauseUtils.contractCall(contractAddress, VIP180ABI.symbol)
-            val totalSupply = ClauseUtils.contractCall(contractAddress, VIP180ABI.totalSupply)
-            val balanceOf = ClauseUtils.contractCall(
-                contractAddress,
-                VIP180ABI.balanceOf,
-                SAMPLE_ADDRESS_1
-            )
-            val allowance = ClauseUtils.contractCall(
-                contractAddress,
-                VIP180ABI.allowance,
-                SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
-            )
+        val name = ContractUtils.createClause(contractAddress, VIP180ABI.name)
+        val decimals = ContractUtils.createClause(contractAddress, VIP180ABI.decimals)
+        val symbol = ContractUtils.createClause(contractAddress, VIP180ABI.symbol)
+        val totalSupply = ContractUtils.createClause(contractAddress, VIP180ABI.totalSupply)
+        val balanceOf = ContractUtils.createClause(
+            contractAddress,
+            VIP180ABI.balanceOf,
+            SAMPLE_ADDRESS_1
+        )
+        val allowance = ContractUtils.createClause(
+            contractAddress,
+            VIP180ABI.allowance,
+            SAMPLE_ADDRESS_1,
+            SAMPLE_ADDRESS_2
+        )
 
-            val contractCalls = listOf(
-                name,
-                symbol,
-                decimals,
-                totalSupply,
-                balanceOf,
-                allowance
-            )
+        val contractCalls = listOf(
+            name,
+            symbol,
+            decimals,
+            totalSupply,
+            balanceOf,
+            allowance
+        )
 
-            val response = thorService.executeReadOnlyCode(contractCalls)
+        val response = thorService.executeReadOnlyCode(contractCalls)
 
-            return response.size == contractCalls.size && response.all {
-                TransactionUtils.isSuccessWithData(it)
-            }
-
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is VIP180", e)
-            return false
+        return response.size == contractCalls.size && response.all {
+            TransactionUtils.isSuccessWithData(it)
         }
+
     }
 
     fun isErc1155(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        return try {
-            ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
-                    ContractUtils.isContractType(Contracts.ERC1155, clause.data) ||
-                    supportsInterface(ERC1155ABI.interfaceId, contractAddress)
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is ERC1155", e)
-            false
-        }
+        return ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
+                ContractUtils.isContractType(Contracts.ERC1155, clause.data) ||
+                supportsInterface(ERC1155ABI.interfaceId, contractAddress)
+
     }
 
     fun isVip210(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        try {
 
-            val isVip210 = ContractUtils.isContractType(Contracts.VIP210, rawData) ||
-                    ContractUtils.isContractType(Contracts.VIP210, clause.data)
 
-            if (isVip210) return true
+        val isVip210 = ContractUtils.isContractType(Contracts.VIP210, rawData) ||
+                ContractUtils.isContractType(Contracts.VIP210, clause.data)
 
-            val balanceOf =
-                ClauseUtils.contractCall(contractAddress, VIP210ABI.balanceOf, SAMPLE_ADDRESS_1, BigInteger.ONE)
-            val balanceOfBatch = ClauseUtils.contractCall(
-                contractAddress,
-                VIP210ABI.balanceOfBatch,
-                arrayOf(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2),
-                arrayOf(BigInteger.ONE, BigInteger.TWO)
-            )
-            val isApprovedForAll = ClauseUtils.contractCall(
-                contractAddress,
-                VIP210ABI.isApprovedForAll,
-                SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
-            )
-            val uri = ClauseUtils.contractCall(contractAddress, VIP210ABI.uri, BigInteger.ONE)
+        if (isVip210) return true
 
-            val contractCalls = listOf(
-                balanceOf,
-                balanceOfBatch,
-                isApprovedForAll,
-                uri
-            )
+        val balanceOf =
+            ContractUtils.createClause(contractAddress, VIP210ABI.balanceOf, SAMPLE_ADDRESS_1, BigInteger.ONE)
+        val balanceOfBatch = ContractUtils.createClause(
+            contractAddress,
+            VIP210ABI.balanceOfBatch,
+            arrayOf(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2),
+            arrayOf(BigInteger.ONE, BigInteger.TWO)
+        )
+        val isApprovedForAll = ContractUtils.createClause(
+            contractAddress,
+            VIP210ABI.isApprovedForAll,
+            SAMPLE_ADDRESS_1,
+            SAMPLE_ADDRESS_2
+        )
+        val uri = ContractUtils.createClause(contractAddress, VIP210ABI.uri, BigInteger.ONE)
 
-            val response = thorService.executeReadOnlyCode(contractCalls)
+        val contractCalls = listOf(
+            balanceOf,
+            balanceOfBatch,
+            isApprovedForAll,
+            uri
+        )
 
-            return response.size == contractCalls.size && response.all {
-                TransactionUtils.isSuccessWithData(it)
-            }
-        } catch (e: Exception) {
-            logger.warn("Error while checking if $contractAddress is VIP210", e)
-            return false
+        val response = thorService.executeReadOnlyCode(contractCalls)
+
+        return response.size == contractCalls.size && response.all {
+            TransactionUtils.isSuccessWithData(it)
         }
+
     }
 
-    fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
-        try {
+    private fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
 
-            val supportsInterface =
-                ClauseUtils.contractCall(
-                    contractAddress,
-                    ERC165.supportsInterface,
-                    Utils.hexToBytes(interfaceId)
-                )
+        val supportsInterface =
+            ContractUtils.createClause(
+                contractAddress,
+                ERC165.supportsInterface,
+                Utils.hexToBytes(interfaceId)
+            )
 
-            val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
+        val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
 
-            val result = response.firstOrNull() ?: return false
+        val result = response.firstOrNull() ?: return false
 
-            if (!TransactionUtils.isSuccessWithData(result)) return false
+        if (!TransactionUtils.isSuccessWithData(result)) return false
 
-            return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
-        } catch (ex: Exception) {
-            logger.warn("Error while checking if $contractAddress supportsInterface: $interfaceId", ex)
-            return false
-        }
+        return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
+
     }
 
     fun parseContracts(

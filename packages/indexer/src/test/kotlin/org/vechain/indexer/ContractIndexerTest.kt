@@ -39,7 +39,7 @@ internal class ContractIndexerTest {
     @MockK
     lateinit var contractsResource: Resource
 
-    lateinit var contractService: ContractService
+    private lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
 
@@ -222,14 +222,17 @@ internal class ContractIndexerTest {
         val updatedContract = updatedContractSlot.captured
         val newMaster = "0xa077d962dfa446661d63c97f68d9628f908a5f43"
 
-        expectThat(updatedContract.size).isEqualTo(1)
-        expectThat(updatedContract.first().version).isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.version + 1)
-        expectThat(updatedContract.first().master).isEqualTo(newMaster)
-        expectThat(updatedContract.first().creator).isEqualTo(oldMaster)
-        expectThat(updatedContract.first().blockId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.id)
-        expectThat(updatedContract.first().txId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.transactions.first().id)
-        expectThat(updatedContract.first().blockNumber).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.number)
-        expectThat(updatedContract.first().blockTimestamp).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.timestamp)
+        val contract = updatedContract.first()
+        expect {
+            that(updatedContract.size).isEqualTo(1)
+            that(contract).get(IndexedContract::version).isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.version + 1)
+            that(contract).get(IndexedContract::master).isEqualTo(newMaster)
+            that(contract).get(IndexedContract::creator).isEqualTo(oldMaster)
+            that(contract).get(IndexedContract::blockId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.id)
+            that(contract).get(IndexedContract::txId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.transactions.first().id)
+            that(contract).get(IndexedContract::blockNumber).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.number)
+            that(contract).get(IndexedContract::blockTimestamp).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.timestamp)
+        }
 
         //Check that updated contract is saved and the old contract is archived
         verify(exactly = 1) { contractRepository.saveAll(updatedContract) }

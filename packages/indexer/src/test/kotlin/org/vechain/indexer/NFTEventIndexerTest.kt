@@ -34,6 +34,7 @@ internal class NFTEventIndexerTest {
 
     @BeforeEach
     fun setUp() {
+        MockKAnnotations.init(this)
         nftService = NFTService(archiveRepo)
         nftEventIndexer = NFTEventIndexer(nftRepository, nftService, "http://localhost:8669", 0L)
     }
