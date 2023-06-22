@@ -4,7 +4,14 @@ services:
   mongo-node1:
     hostname: mongo-node1
     image: mongo:6
-    command: [ "--replSet", "rs0", "--keyFile", "/data/keys/keyfile" ]
+    command: [ "mongod", "--replSet", "rs0", "--keyFile", "/data/keys/keyfile" ]
+    entrypoint:
+      - bash
+      - -c
+      - |
+        chmod 400 /data/keys/keyfile
+        chown 999:999 /data/keys/keyfile
+        exec docker-entrypoint.sh $$@
     expose:
       - 27017
     ports:
