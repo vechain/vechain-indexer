@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.model.IndexedTransaction
-import org.vechain.indexer.repository.TransactionRepo
+import org.vechain.indexer.repository.TransactionRepository
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -20,7 +20,7 @@ import strikt.assertions.isNull
 internal class TransactionIndexerTest {
 
     @MockK
-    lateinit var transactionRepo: TransactionRepo
+    lateinit var transactionRepository: TransactionRepository
 
     @MockK
     lateinit var mongoTemplate: MongoTemplate
@@ -30,7 +30,7 @@ internal class TransactionIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        transactionIndexer = TransactionIndexer(transactionRepo, mongoTemplate, "http://localhost:8669", 0L)
+        transactionIndexer = TransactionIndexer(transactionRepository, mongoTemplate, "http://localhost:8669", 0L)
     }
 
     @Test

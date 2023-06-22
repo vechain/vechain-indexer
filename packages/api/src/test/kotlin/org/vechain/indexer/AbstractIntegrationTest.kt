@@ -49,22 +49,22 @@ abstract class AbstractIntegrationTest {
     protected val objectMapper = JsonUtils.mapper
 
     @Autowired
-    lateinit var transactionRepository: TransactionRepo
+    lateinit var transactionRepository: TransactionRepository
 
     @Autowired
-    lateinit var contractRepository: ContractRepo
+    lateinit var contractRepository: ContractRepository
 
     @Autowired
-    lateinit var nftRepo: NFTRepo
+    lateinit var nftRepository: NFTRepository
 
     @Autowired
-    lateinit var blockRepo: BlockRepo
+    lateinit var blockRepository: BlockRepository
 
     @Autowired
-    lateinit var transferEventRepo: TransferEventRepo
+    lateinit var transferEventRepository: TransferEventRepository
 
     @Autowired
-    lateinit var clauseRepo: ClauseRepo
+    lateinit var clauseRepository: ClauseRepository
 
     @BeforeAll
     fun setup() {
@@ -82,15 +82,23 @@ abstract class AbstractIntegrationTest {
         val clauses: List<IndexedClause> =
             loadDataFromResources("/clauses.json", LIST_CLAUSE_TYPE)
 
-        val repos = listOf(transactionRepository, contractRepository, nftRepo, blockRepo, transferEventRepo, clauseRepo)
+        val repos =
+            listOf(
+                transactionRepository,
+                contractRepository,
+                nftRepository,
+                blockRepository,
+                transferEventRepository,
+                clauseRepository
+            )
         repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
-        nftRepo.saveAll(nfts)
-        blockRepo.saveAll(blocks)
-        transferEventRepo.saveAll(transferEvents)
-        clauseRepo.saveAll(clauses)
+        nftRepository.saveAll(nfts)
+        blockRepository.saveAll(blocks)
+        transferEventRepository.saveAll(transferEvents)
+        clauseRepository.saveAll(clauses)
     }
 
     /**

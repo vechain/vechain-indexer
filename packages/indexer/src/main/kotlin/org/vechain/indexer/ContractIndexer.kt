@@ -8,7 +8,7 @@ import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repository.ContractRepo
+import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.AddressUtils
@@ -22,12 +22,12 @@ import kotlin.jvm.optionals.getOrNull
 open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
-    private val contractRepo: ContractRepo,
+    private val contractRepository: ContractRepository,
     private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
-) : VeWorldIndexer(contractRepo, thorUrl, startBlock) {
+) : VeWorldIndexer(contractRepository, thorUrl, startBlock) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun processBlock(block: Block) {
@@ -59,13 +59,13 @@ open class ContractIndexer(
             val master = AddressUtils.decode(event.data)
             val rawData = thorService.getAccountCode(contractAddress)
 
-            val contract = contractRepo.findById(contractAddress).getOrNull()
+            val contract = contractRepository.findById(contractAddress).getOrNull()
 
             // If the contract is already indexed, update the master
             if (contract != null) {
                 contract.previousMasters.add(contract.master)
                 contract.master = master
-                contractRepo.save(contract)
+                contractRepository.save(contract)
             } else {
 
                 val existing = contracts.find { it.address == contractAddress }
@@ -105,7 +105,7 @@ open class ContractIndexer(
     fun insertBuiltInContracts() {
 
         // Check if built-in contracts are already inserted
-        contractRepo.findAllByBlockNumber(0).firstOrNull()?.let {
+        contractRepository.findAllByBlockNumber(0).firstOrNull()?.let {
             logger.info("Built-in contracts already inserted")
             return
         }
@@ -120,6 +120,6 @@ open class ContractIndexer(
 
         logger.info("Saving ${contracts.size} built-in contracts")
 
-        contractRepo.saveAll(contracts.toList())
+        contractRepository.saveAll(contracts.toList())
     }
 }
