@@ -9,7 +9,10 @@ import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ArchiveRepo
 import org.vechain.indexer.utils.*
+import org.vechain.thor.model.Block
 import org.vechain.thor.model.Clause
+import org.vechain.thor.model.Transaction
+import org.vechain.thor.model.TxEvent
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
@@ -259,7 +262,79 @@ class ContractService(private val thorService: ThorService, private val archiveR
         }
     }
 
-    fun save(contracts: List<IndexedContract>) {
+    fun parseContracts(
+        block: Block,
+        masterChangeEvents: List<Triple<TxEvent, Transaction, Clause>>,
+        existingContracts: List<IndexedContract>
+    ): List<IndexedContract> {
+        val contracts: MutableList<IndexedContract> = mutableListOf()
+
+        masterChangeEvents.forEach { (event, tx, clause) ->
+
+            val contractAddress = event.address
+            val master = AddressUtils.decode(event.data)
+
+            // Handle case of two master change events for the same contract
+            val multipleMasterChangeContract = contracts.find { it.address == contractAddress }
+            if (multipleMasterChangeContract != null) {
+                multipleMasterChangeContract.previousMasters.add(multipleMasterChangeContract.master)
+                multipleMasterChangeContract.master = master
+            } else {
+                // If the contract is already indexed, update the master
+                val contract = existingContracts.find { it.address == contractAddress }
+                if (contract != null) {
+                    contracts.add(
+                        IndexedContract(
+                            address = contractAddress,
+                            version = contract.version + 1,
+                            blockId = block.id,
+                            blockNumber = block.number,
+                            blockTimestamp = block.timestamp,
+                            txId = tx.id,
+                            creator = contract.creator,
+                            master = master,
+                            rawData = contract.rawData,
+                            isVip180 = contract.isVip180,
+                            isVip181 = contract.isVip181,
+                            isVip210 = contract.isVip210,
+                            isErc20 = contract.isErc20,
+                            isErc721 = contract.isErc721,
+                            isErc1155 = contract.isErc1155,
+                            previousMasters = contract.previousMasters.plus(contract.master).toMutableSet(),
+                        )
+                    )
+                } else {
+
+                    val rawData = thorService.getAccountCode(contractAddress)
+
+                    // If the contract is not indexed yet, index it
+                    contracts.add(
+                        IndexedContract(
+                            address = contractAddress,
+                            version = 1,
+                            blockId = block.id,
+                            blockNumber = block.number,
+                            blockTimestamp = block.timestamp,
+                            txId = tx.id,
+                            creator = tx.origin,
+                            master = master,
+                            rawData = rawData,
+                            isVip180 = isVip180(contractAddress, rawData, clause),
+                            isVip181 = isVip181(contractAddress, rawData, clause),
+                            isVip210 = isVip210(contractAddress, rawData, clause),
+                            isErc20 = isErc20(contractAddress, rawData, clause),
+                            isErc721 = isErc721(contractAddress, rawData, clause),
+                            isErc1155 = isErc1155(contractAddress, rawData, clause),
+                            previousMasters = mutableSetOf(),
+                        )
+                    )
+                }
+            }
+        }
+        return contracts
+    }
+
+    fun archive(contracts: List<IndexedContract>) {
         val archives = contracts.map { Archive(IdUtils.buildHashedId("${it.address}-${it.version}"), it) }
         archiveRepo.saveAll(archives)
     }

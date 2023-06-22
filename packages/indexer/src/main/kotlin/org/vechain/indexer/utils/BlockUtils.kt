@@ -146,4 +146,22 @@ object BlockUtils {
             )
         }
     }
+
+    /**
+     * Find all events that are contract deployments, paired with their transaction.
+     */
+    fun extractMasterChangeEvents(block: Block): List<Triple<TxEvent, Transaction, Clause>> {
+        return block.transactions
+            .filter { tx -> !tx.reverted }
+            .flatMap { tx ->
+                tx.outputs.flatMapIndexed { idx, output ->
+                    output.events
+                        .filter { event ->
+                            ContractUtils.isMasterEvent(event)
+                        }.map { event ->
+                            Triple(event, tx, tx.clauses[idx])
+                        }
+                }
+            }
+    }
 }

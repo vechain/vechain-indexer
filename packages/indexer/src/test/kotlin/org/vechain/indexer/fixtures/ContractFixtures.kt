@@ -8,7 +8,8 @@ object ContractFixtures {
      * VIP181 contract with creator = master
      */
     val CONTRACT_WITH_CREATOR_SAME_AS_MASTER = IndexedContract(
-        address = "0x1f734d58eb6a349f038c28f112478bf90981c87e",
+        address = "0xf248673ca9e4b76db70957e463afd521475277cf",
+        version = 1,
         blockId = "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
         blockNumber = 6L,
         blockTimestamp = 1680177334L,

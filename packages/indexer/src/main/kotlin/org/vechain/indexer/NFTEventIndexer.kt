@@ -37,7 +37,7 @@ open class NFTEventIndexer(
         val nfts = parseNfts(block, nftTransfers, existingNfts)
 
         // Save the NFTs and archive the old ones
-        nftService.save(existingNfts)
+        if (existingNfts.isNotEmpty()) nftService.save(existingNfts)
         nftRepo.saveAll(nfts)
     }
 
