@@ -12,13 +12,12 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.service.CountService
 
 @Profile("nft-events")
 @Component
 open class NFTRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countService: CountService
+    private val countRepository: CountRepository
 ) {
 
     open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
@@ -29,7 +28,7 @@ open class NFTRepositoryImpl(
         val matchOperations = listOf(MatchOperation(criteria))
 
         val results = mongoTemplate.find(query, NFTS_COLLECTION)
-        val count = countService.getCount(NFTS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(NFTS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -46,7 +45,7 @@ open class NFTRepositoryImpl(
         val matchOperations = listOf(MatchOperation(criteria))
 
         val results = mongoTemplate.find(query, NFTS_COLLECTION)
-        val count = countService.getCount(NFTS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(NFTS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -56,7 +55,7 @@ open class NFTRepositoryImpl(
         val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
 
         // count distinct contracts
-        val distinctCount = countService.getCount(NFTS_COLLECTION, listOf(matchAggregation), groupAggregation)
+        val distinctCount = countRepository.getCount(NFTS_COLLECTION, listOf(matchAggregation), groupAggregation)
 
         // find distinct contracts
         val contractsAggregation = Aggregation.newAggregation(

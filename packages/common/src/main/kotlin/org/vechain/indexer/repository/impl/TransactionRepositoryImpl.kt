@@ -10,13 +10,12 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransaction
-import org.vechain.indexer.service.CountService
 
 @Profile("transactions")
 @Component
 open class TransactionRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countService: CountService
+    private val countRepository: CountRepository
 ) {
 
     open fun findByOrigin(address: String, pageable: Pageable): Page<IndexedTransaction> {
@@ -27,7 +26,7 @@ open class TransactionRepositoryImpl(
         val matchOperations = listOf(MatchOperation(criteria))
 
         val results = mongoTemplate.find(query, TRANSACTIONS_COLLECTION)
-        val count = countService.getCount(TRANSACTIONS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSACTIONS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -41,7 +40,7 @@ open class TransactionRepositoryImpl(
         val matchOperations = listOf(MatchOperation(criteria))
 
         val results = mongoTemplate.find(query, TRANSACTIONS_COLLECTION)
-        val count = countService.getCount(TRANSACTIONS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSACTIONS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -56,7 +55,7 @@ open class TransactionRepositoryImpl(
         val matchOperations = listOf(MatchOperation(notOriginCriteria), MatchOperation(gasPayerCriteria))
 
         val results = mongoTemplate.find(query, TRANSACTIONS_COLLECTION)
-        val count = countService.getCount(TRANSACTIONS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSACTIONS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }

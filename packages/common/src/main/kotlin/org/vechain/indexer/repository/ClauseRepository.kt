@@ -9,5 +9,7 @@ import org.vechain.indexer.model.IndexedClause
 @Profile("clauses")
 @Repository
 interface ClauseRepository : BaseIndexedRepo<IndexedClause> {
+
     fun findByOriginOrTo(address: String, pageable: Pageable): Page<IndexedClause>
+    
 }

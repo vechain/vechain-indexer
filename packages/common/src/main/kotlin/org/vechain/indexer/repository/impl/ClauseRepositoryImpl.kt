@@ -10,13 +10,12 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.service.CountService
 
 @Profile("clauses")
 @Component
 open class ClauseRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countService: CountService
+    private val countRepository: CountRepository
 ) {
 
     open fun findByOriginOrTo(address: String, pageable: Pageable): Page<IndexedClause> {
@@ -28,7 +27,7 @@ open class ClauseRepositoryImpl(
         val matchOperations = listOf(MatchOperation(criteria))
 
         val results = mongoTemplate.find(query, CLAUSES_COLLECTION)
-        val count = countService.getCount(CLAUSES_COLLECTION, matchOperations)
+        val count = countRepository.getCount(CLAUSES_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }

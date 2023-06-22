@@ -58,7 +58,7 @@ abstract class AbstractIntegrationTest {
     lateinit var nftRepository: NFTRepository
 
     @Autowired
-    lateinit var blockRepo: BlockRepo
+    lateinit var blockRepository: BlockRepository
 
     @Autowired
     lateinit var transferEventRepository: TransferEventRepository
@@ -87,7 +87,7 @@ abstract class AbstractIntegrationTest {
                 transactionRepository,
                 contractRepository,
                 nftRepository,
-                blockRepo,
+                blockRepository,
                 transferEventRepository,
                 clauseRepository
             )
@@ -96,7 +96,7 @@ abstract class AbstractIntegrationTest {
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
         nftRepository.saveAll(nfts)
-        blockRepo.saveAll(blocks)
+        blockRepository.saveAll(blocks)
         transferEventRepository.saveAll(transferEvents)
         clauseRepository.saveAll(clauses)
     }

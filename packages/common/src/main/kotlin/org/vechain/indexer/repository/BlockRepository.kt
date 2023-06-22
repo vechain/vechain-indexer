@@ -6,8 +6,10 @@ import org.vechain.indexer.model.IndexedBlock
 
 @Profile("blocks")
 @Repository
-interface BlockRepo : BaseIndexedRepo<IndexedBlock> {
+interface BlockRepository : BaseIndexedRepo<IndexedBlock> {
+
     fun findByBlockNumber(blockNumber: Long): IndexedBlock?
+
     fun findTopByOrderByBlockNumberDesc(): IndexedBlock?
 
     fun findTopByIsFinalizedOrderByBlockNumberDesc(finalized: Boolean): IndexedBlock?

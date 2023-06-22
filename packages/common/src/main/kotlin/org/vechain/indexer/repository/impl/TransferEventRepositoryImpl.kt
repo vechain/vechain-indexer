@@ -10,13 +10,12 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.service.CountService
 
 @Profile("transfer-events")
 @Component
 open class TransferEventRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countService: CountService
+    private val countRepository: CountRepository
 ) {
 
     fun findByToOrFromAndTokenAddress(
@@ -34,7 +33,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(tokenCriteria), MatchOperation(toOrFromCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -48,7 +47,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(toOrFromCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -61,7 +60,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(tokenCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -74,7 +73,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(toCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -89,7 +88,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(toCriteria), MatchOperation(tokenAddressCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -102,7 +101,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(fromCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
@@ -117,7 +116,7 @@ open class TransferEventRepositoryImpl(
         val matchOperations = listOf(MatchOperation(fromCriteria), MatchOperation(tokenAddressCriteria))
 
         val results = mongoTemplate.find(query, TRANSFERS_COLLECTION)
-        val count = countService.getCount(TRANSFERS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(TRANSFERS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }

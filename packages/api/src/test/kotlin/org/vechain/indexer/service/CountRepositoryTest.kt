@@ -8,13 +8,14 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.repository.impl.CountRepository
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-internal class CountServiceTest : AbstractIntegrationTest() {
+internal class CountRepositoryTest : AbstractIntegrationTest() {
 
     @Autowired
-    lateinit var countService: CountService
+    lateinit var countRepository: CountRepository
 
     @Test
     fun `count all elements of collection`() {
@@ -22,7 +23,7 @@ internal class CountServiceTest : AbstractIntegrationTest() {
         val matchOperations: List<MatchOperation> = emptyList()
         val groupOperation: GroupOperation? = null
 
-        val count = countService.getCount(collection, matchOperations, groupOperation)
+        val count = countRepository.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(121L)
     }
@@ -34,7 +35,7 @@ internal class CountServiceTest : AbstractIntegrationTest() {
         val groupOperation: GroupOperation? = null
         val countLimit = 100L
 
-        val count = countService.getCount(collection, matchOperations, groupOperation, countLimit)
+        val count = countRepository.getCount(collection, matchOperations, groupOperation, countLimit)
 
         expectThat(count).isEqualTo(countLimit + 1)
     }
@@ -49,7 +50,7 @@ internal class CountServiceTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation? = null
 
-        val count = countService.getCount(collection, matchOperations, groupOperation)
+        val count = countRepository.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(61L)
     }
@@ -70,7 +71,7 @@ internal class CountServiceTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation? = null
 
-        val count = countService.getCount(collection, matchOperations, groupOperation)
+        val count = countRepository.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(1L)
     }
@@ -85,7 +86,7 @@ internal class CountServiceTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation = Aggregation.group(IndexedNFT::contractAddress.name)
 
-        val count = countService.getCount(collection, matchOperations, groupOperation)
+        val count = countRepository.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(2L)
     }

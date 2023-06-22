@@ -12,13 +12,12 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
-import org.vechain.indexer.service.CountService
 
 @Profile("contracts")
 @Component
 open class ContractRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countService: CountService
+    private val countRepository: CountRepository
 ) {
 
     companion object {
@@ -46,7 +45,7 @@ open class ContractRepositoryImpl(
         }
 
         val results = mongoTemplate.find(query, CONTRACTS_COLLECTION)
-        val count = countService.getCount(CONTRACTS_COLLECTION, matchOperations)
+        val count = countRepository.getCount(CONTRACTS_COLLECTION, matchOperations)
 
         return PageImpl(results, pageable, count)
     }
