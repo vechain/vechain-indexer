@@ -1,22 +1,23 @@
 package org.vechain.indexer.repository
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Slice
-import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.IndexedNFT
 
 @Profile("nft-events")
 @Repository
-interface NFTRepo : BaseIndexedRepo<IndexedNFT>, PagingAndSortingRepository<IndexedNFT, String> {
+interface NFTRepository : BaseIndexedRepo<IndexedNFT> {
 
-    fun findAllByOwner(owner: String, pageable: Pageable): Slice<IndexedNFT>
+    fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT>
 
-    fun findAllByOwnerAndContractAddress(
+    fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
         pageable: Pageable
-    ): Slice<IndexedNFT>
+    ): Page<IndexedNFT>
+
+    fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String>
 
 }

@@ -14,7 +14,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.repository.TransferEventRepo
+import org.vechain.indexer.repository.TransferEventRepository
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -26,7 +26,7 @@ import java.math.BigInteger
 class TransferEventIndexerTest {
 
     @MockK
-    lateinit var transferEventRepo: TransferEventRepo
+    lateinit var transferEventRepository: TransferEventRepository
 
     @MockK
     lateinit var mongoTemplate: MongoTemplate
@@ -37,7 +37,7 @@ class TransferEventIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
         transferEventIndexer =
-            TransferEventIndexer(transferEventRepo, mongoTemplate, "http://localhost:8669", 0L)
+            TransferEventIndexer(transferEventRepository, mongoTemplate, "http://localhost:8669", 0L)
     }
 
     @Test

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.repository.NFTRepo
+import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
 import org.web3j.utils.Numeric
@@ -15,11 +15,11 @@ import org.web3j.utils.Numeric
 @Profile("nft-events")
 @Component
 open class NFTEventIndexer(
-    private val nftRepo: NFTRepo,
+    private val nftRepository: NFTRepository,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
 
-    ) : VeWorldIndexer(nftRepo, thorUrl, startBlock) {
+    ) : VeWorldIndexer(nftRepository, thorUrl, startBlock) {
 
     override fun processBlock(block: Block) {
 
@@ -27,7 +27,7 @@ open class NFTEventIndexer(
 
         val nfts = getNfts(transferEvents)
 
-        if (nfts.isNotEmpty()) nftRepo.saveAll(nfts)
+        if (nfts.isNotEmpty()) nftRepository.saveAll(nfts)
     }
 
     private fun getNfts(transfers: List<IndexedTransferEvent>): List<IndexedNFT> {

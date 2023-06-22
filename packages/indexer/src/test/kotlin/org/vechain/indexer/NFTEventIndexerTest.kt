@@ -10,7 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.repository.NFTRepo
+import org.vechain.indexer.repository.NFTRepository
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -20,14 +20,14 @@ import strikt.assertions.isEqualTo
 internal class NFTEventIndexerTest {
 
     @MockK
-    lateinit var nftRepo: NFTRepo
+    lateinit var nftRepository: NFTRepository
 
     lateinit var nftEventIndexer: NFTEventIndexer
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftEventIndexer = NFTEventIndexer(nftRepo, "http://localhost:8669", 0L)
+        nftEventIndexer = NFTEventIndexer(nftRepository, "http://localhost:8669", 0L)
     }
 
     @Test
@@ -35,7 +35,7 @@ internal class NFTEventIndexerTest {
         val blockNumber = 8L
 
         val nftsSlot = slot<List<IndexedNFT>>()
-        every { nftRepo.saveAll(capture(nftsSlot)) } returns mutableListOf()
+        every { nftRepository.saveAll(capture(nftsSlot)) } returns mutableListOf()
 
         nftEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
 
@@ -59,6 +59,6 @@ internal class NFTEventIndexerTest {
 
         nftEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
-        verify { nftRepo wasNot Called }
+        verify { nftRepository wasNot Called }
     }
 }

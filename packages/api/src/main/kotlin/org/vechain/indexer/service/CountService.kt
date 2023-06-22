@@ -1,4 +1,4 @@
-package org.vechain.indexer.repository
+package org.vechain.indexer.service
 
 import org.bson.Document
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -6,11 +6,11 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
-import org.springframework.stereotype.Repository
+import org.springframework.stereotype.Component
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 
-@Repository
-open class CountRepository(private val mongoTemplate: MongoTemplate) {
+@Component
+open class CountService(private val mongoTemplate: MongoTemplate) {
 
     companion object {
         const val COUNT_FIELD = "count"

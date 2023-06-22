@@ -1,4 +1,4 @@
-package org.vechain.indexer.repository
+package org.vechain.indexer.service
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,10 +11,10 @@ import org.vechain.indexer.model.IndexedNFT
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-internal class CountRepositoryTest : AbstractIntegrationTest() {
+internal class CountServiceTest : AbstractIntegrationTest() {
 
     @Autowired
-    lateinit var countRepository: CountRepository
+    lateinit var countService: CountService
 
     @Test
     fun `count all elements of collection`() {
@@ -22,7 +22,7 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         val matchOperations: List<MatchOperation> = emptyList()
         val groupOperation: GroupOperation? = null
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation)
+        val count = countService.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(121L)
     }
@@ -34,7 +34,7 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         val groupOperation: GroupOperation? = null
         val countLimit = 100L
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation, countLimit)
+        val count = countService.getCount(collection, matchOperations, groupOperation, countLimit)
 
         expectThat(count).isEqualTo(countLimit + 1)
     }
@@ -49,7 +49,7 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation? = null
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation)
+        val count = countService.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(61L)
     }
@@ -70,7 +70,7 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation? = null
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation)
+        val count = countService.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(1L)
     }
@@ -85,7 +85,7 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         )
         val groupOperation: GroupOperation = Aggregation.group(IndexedNFT::contractAddress.name)
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation)
+        val count = countService.getCount(collection, matchOperations, groupOperation)
 
         expectThat(count).isEqualTo(2L)
     }
