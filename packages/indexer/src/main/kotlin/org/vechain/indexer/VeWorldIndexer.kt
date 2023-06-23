@@ -1,9 +1,9 @@
 package org.vechain.indexer
 
-import org.vechain.indexer.repository.BaseIndexedRepo
+import org.vechain.indexer.repository.BaseIndexedRepository
 
 abstract class VeWorldIndexer(
-    private val repo: BaseIndexedRepo<*>,
+    private val repo: BaseIndexedRepository<*>,
     thorUrl: String,
     startBlock: Long = 0L
 ) : Indexer(thorUrl, startBlock) {

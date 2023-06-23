@@ -1,6 +1,7 @@
 [
   {
     "address": "0x7bfe63ac68e3c6fed9d1006953ee140f29e084c1",
+    "version": 1,
     "blockId": "0x00000004967bc2f8323a5aa91f0fd3855ddb3af164c7a57f5fd0bf5153fbde53",
     "blockNumber": 4,
     "txId": "0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d",
@@ -16,6 +17,7 @@
   },
   {
     "address": "0x1a772e9592f04250860e1416d33b5b8513f7384f",
+    "version": 1,
     "blockId": "0x00000004967bc2f8323a5aa91f0fd3855ddb3af164c7a57f5fd0bf5153fbde53",
     "blockNumber": 4,
     "txId": "0xd5303fb0935afe9eb46568c55069cfef3d8118e24cb77b9e33e1f769f8e7a1d8",
@@ -31,6 +33,7 @@
   },
   {
     "address": "0x98e2bd8c41a2be96e972f73bad2ea82bd719c636",
+    "version": 1,
     "blockId": "0x00000004967bc2f8323a5aa91f0fd3855ddb3af164c7a57f5fd0bf5153fbde53",
     "blockNumber": 4,
     "txId": "0xd1052253e3898c2335853c44782b6b1e4a17f245cef37ab4d0bb27a236c92848",
@@ -46,6 +49,7 @@
   },
   {
     "address": "0x3db411cfaed836b8c2d104a1e31bd4e44afff0e0",
+    "version": 1,
     "blockId": "0x0000000523d736aa1614e99cf11e92840560ed16464c0f446bd4077ca9b592ac",
     "blockNumber": 5,
     "txId": "0x8a1a8758168f5f95f9fdc689f7753f904dd710c3ebff269e6a75c5ff9b062bf4",
@@ -61,6 +65,7 @@
   },
   {
     "address": "0x3a10d6254309a6c0b9257888ba24aa20013b9532",
+    "version": 1,
     "blockId": "0x0000000f3939710247794251c61d70c80a1bafd1c5b366912c71a6d504903ab5",
     "blockNumber": 15,
     "txId": "0xffaca1ae3253c334622190525d175220ca7ff2f122234037e6a8f511d4e52618",
@@ -76,6 +81,7 @@
   },
   {
     "address": "0xc716a6319de4747e2bcf75879115d8a93b51d78c",
+    "version": 1,
     "blockId": "0x0000000f3939710247794251c61d70c80a1bafd1c5b366912c71a6d504903ab5",
     "blockNumber": 15,
     "txId": "0x4d08e81390771620dfd90211cee1f45456e4ab68482e21f7c057a7732257478c",
@@ -91,6 +97,7 @@
   },
   {
     "address": "0x20c706d2e166cdb97946c80c07b538962dbe13e8",
+    "version": 1,
     "blockId": "0x00000014a2fe9fd91ea1842599b5102db724d4a138de166cb26ec37f2566b881",
     "blockNumber": 20,
     "txId": "0x59391436edb801ec105f3074a04552878699b05d7573cacb9fd1f4aef6e7277c",
@@ -106,6 +113,7 @@
   },
   {
     "address": "0x924371d74906664835164c1bfd9cf8279ee97847",
+    "version": 1,
     "blockId": "0x00000014a2fe9fd91ea1842599b5102db724d4a138de166cb26ec37f2566b881",
     "blockNumber": 20,
     "txId": "0x2d8563821ddefa356be836e4665c63db4cca40c3479b1b837a8bed48cfdf07f0",
@@ -121,6 +129,7 @@
   },
   {
     "address": "0xbfee6c235acf1211fd675812db6e74de5ab4e7bf",
+    "version": 1,
     "blockId": "0x00000014a2fe9fd91ea1842599b5102db724d4a138de166cb26ec37f2566b881",
     "blockNumber": 20,
     "txId": "0xd7c58f943a2cf727bf14f80c816d955cbe2f1ec6c7bf3341d072693304d18bc9",
@@ -136,6 +145,7 @@
   },
   {
     "address": "0x8b858258afc4c3412356ef58afb028974af7cb9f",
+    "version": 1,
     "blockId": "0x00000015f5cff11dae1e86095c15d306f9e7a2cb1cd4ccc3d724b62c3875d96d",
     "blockNumber": 21,
     "txId": "0x384164845bf369475c4b74af97ec855f760219fdb6c75af3cadaaeac237e6a1f",
@@ -151,6 +161,7 @@
   },
   {
     "address": "0x331a83bb852591476317d83f1d4ad274950fbca2",
+    "version": 1,
     "blockId": "0x0000001ef36dc901e772ef5cc94d7279a3a8d9a44d3099858d511b3f82df9dc0",
     "blockNumber": 30,
     "txId": "0x8c84b7b49c831455017bdf7610a1cd822dd0fe71bb4fd4e30efdf7c34a5a7994",
@@ -166,6 +177,7 @@
   },
   {
     "address": "0x2c2630ac9352f8a881655c9068cf3744f67b8619",
+    "version": 1,
     "blockId": "0x0000001ef36dc901e772ef5cc94d7279a3a8d9a44d3099858d511b3f82df9dc0",
     "blockNumber": 30,
     "txId": "0xa55042eb50e991f23ba4a4d04be3082ba390dd575fa447db267129629dcc5d0b",
@@ -181,6 +193,7 @@
   },
   {
     "address": "0x11f4b6ba8608e633bca80e96a90123cfc94c8839",
+    "version": 1,
     "blockId": "0x000000223b61246077cc23e0b936101bd605df31a25b5ce80d9d902432d1f8fe",
     "blockNumber": 34,
     "txId": "0x34c763c91eb2775f7dc9dd26757dbd57f00ad19d8d14329f9400bc54c368324d",
@@ -196,6 +209,7 @@
   },
   {
     "address": "0x5bdd4d80cbd259113d1d2c42fb3aba44de0447c2",
+    "version": 1,
     "blockId": "0x000000223b61246077cc23e0b936101bd605df31a25b5ce80d9d902432d1f8fe",
     "blockNumber": 34,
     "txId": "0xe88d77838db05c22c4d8a9450e0942493079f456cdfb0860a4daa66faf2d0bd4",
@@ -211,6 +225,7 @@
   },
   {
     "address": "0x21b836fe8b9de36c130cba0fd418fafd2f2018d9",
+    "version": 1,
     "blockId": "0x000000223b61246077cc23e0b936101bd605df31a25b5ce80d9d902432d1f8fe",
     "blockNumber": 34,
     "txId": "0x99ff70a322515405524978f2d4e06daa9539bcd299427a33854c71ccfd584c7d",
@@ -226,6 +241,7 @@
   },
   {
     "address": "0x23112e4984cdf184c1f95178db421021b3581928",
+    "version": 1,
     "blockId": "0x000000236f9c9880c1fc19f574f21e0ae87f8b76f8bec131b71d44dbaf0f2dc3",
     "blockNumber": 35,
     "txId": "0x2e3d738e1a622d465c28c9b9670ec79c24ed614d65f4c06333abc53b2baeed4b",
@@ -241,6 +257,7 @@
   },
   {
     "address": "0xe9393cf25b2aa7c446f82e04b60d88dfab7349bb",
+    "version": 1,
     "blockId": "0x0000002bb24458c5593e093e23ba7adc08306b966e41d3e87a779e4701112c2d",
     "blockNumber": 43,
     "txId": "0xe75805199eaa98e24bccaddee5fea648f7311bef134270e477fdb667a5bf7a55",
@@ -256,6 +273,7 @@
   },
   {
     "address": "0xdd9e55999a00f3313b28167561c2ec45542c5e14",
+    "version": 1,
     "blockId": "0x0000002bb24458c5593e093e23ba7adc08306b966e41d3e87a779e4701112c2d",
     "blockNumber": 43,
     "txId": "0xd656c28440d161ae55e11d9721e5408b2a5118b8ce8471d2db827a067177ed75",

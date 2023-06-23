@@ -5,7 +5,8 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.vechain.indexer.model.IndexedDocument
 
-interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String>, PagingAndSortingRepository<T, String> {
+interface BaseIndexedRepository<T : IndexedDocument> : CrudRepository<T, String>,
+    PagingAndSortingRepository<T, String> {
 
     @Aggregation(
         pipeline = [
@@ -16,4 +17,6 @@ interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String>, Pagi
     fun getLatestRecord(): T?
 
     fun deleteAllByBlockNumberBetween(start: Long, end: Long)
+
+    fun findAllByBlockNumber(blockNumber: Long): List<T>
 }

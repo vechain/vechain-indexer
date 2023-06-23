@@ -40,7 +40,7 @@ out/
 *.env
 thor/.output/
 packages/e2e/src/test/resources/results.json
-
+keyfile
 
 load-testing/node_modules
 load-testing/dist

@@ -73,6 +73,16 @@ object BlockUtils {
     }
 
     /**
+     * Get all NON-FUNGIBLE transfer events from a block.
+     *
+     * DOES NOT include reverted TXs
+     */
+    fun getNFTTransferEventsFromTopics(block: Block): List<IndexedTransferEvent> {
+        val transferEvents = getTransferEventsFromTopics(block)
+        return transferEvents.filter { it.eventType == TransferEventType.NFT && it.tokenAddress != null }
+    }
+
+    /**
      * Gets all VET transfers AND transfers from topics
      */
     fun getAllTransferEvents(block: Block): List<IndexedTransferEvent> {
@@ -135,5 +145,23 @@ object BlockUtils {
                 eventType = TransferEventType.VET
             )
         }
+    }
+
+    /**
+     * Find all events that are contract deployments, paired with their transaction.
+     */
+    fun extractMasterChangeEvents(block: Block): List<Triple<TxEvent, Transaction, Clause>> {
+        return block.transactions
+            .filter { tx -> !tx.reverted }
+            .flatMap { tx ->
+                tx.outputs.flatMapIndexed { idx, output ->
+                    output.events
+                        .filter { event ->
+                            ContractUtils.isMasterEvent(event)
+                        }.map { event ->
+                            Triple(event, tx, tx.clauses[idx])
+                        }
+                }
+            }
     }
 }

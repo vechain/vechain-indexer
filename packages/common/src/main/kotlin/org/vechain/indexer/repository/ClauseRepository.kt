@@ -8,8 +8,8 @@ import org.vechain.indexer.model.IndexedClause
 
 @Profile("clauses")
 @Repository
-interface ClauseRepository : BaseIndexedRepo<IndexedClause> {
+interface ClauseRepository : BaseIndexedRepository<IndexedClause> {
 
     fun findByOriginOrTo(address: String, pageable: Pageable): Page<IndexedClause>
-    
+
 }

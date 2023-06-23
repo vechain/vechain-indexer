@@ -5,7 +5,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoOperations
 import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.repository.BaseIndexedRepo
+import org.vechain.indexer.repository.BaseIndexedRepository
 import strikt.api.expect
 import strikt.assertions.isGreaterThan
 
@@ -15,7 +15,7 @@ class IntegrationTests : AbstractIntegrationTest() {
     lateinit var mongoOps: MongoOperations
 
     @Autowired
-    lateinit var allRepos: List<BaseIndexedRepo<*>>
+    lateinit var allRepos: List<BaseIndexedRepository<*>>
 
     /**
      * This tests checks that ALL repos have been populated after indexing the thor script output.

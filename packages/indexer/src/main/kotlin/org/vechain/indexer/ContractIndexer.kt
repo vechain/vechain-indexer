@@ -5,17 +5,15 @@ import org.springframework.boot.context.event.ApplicationStartedEvent
 import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.core.io.Resource
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
-import org.vechain.indexer.utils.AddressUtils
-import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
 import org.vechain.indexer.utils.JsonUtils
 import org.vechain.thor.model.Block
-import kotlin.jvm.optionals.getOrNull
 
 @Profile("contracts")
 @Component
@@ -23,86 +21,59 @@ open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepository: ContractRepository,
-    private val mongoTemplate: MongoTemplate,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
 ) : VeWorldIndexer(contractRepository, thorUrl, startBlock) {
 
-    @OptIn(ExperimentalStdlibApi::class)
+    @Transactional
     override fun processBlock(block: Block) {
 
-        val contracts: MutableList<IndexedContract> = mutableListOf()
+        // Get the master change events from the block
+        val masterChangeEvents = extractMasterChangeEvents(block)
+        if (masterChangeEvents.isEmpty()) return
 
-        /**
-         * Find all events that are contract deployments, paired with their transaction.
-         */
-        val masterChangeEvents = block.transactions
-            .filter { tx -> !tx.reverted }
-            .flatMap { tx ->
-                tx.outputs.flatMapIndexed { idx, output ->
-                    output.events
-                        .filter { event ->
-                            ContractUtils.isMasterEvent(event)
-                        }.map { event ->
-                            Triple(event, tx, tx.clauses[idx])
-                        }
-                }
-            }
+        // Check for existing documents
+        val existingContracts =
+            contractRepository.findAllById(masterChangeEvents.map { (event) -> event.address }).toList()
 
-        /**
-         * Process each master change event.
-         */
-        masterChangeEvents.forEach { (event, tx, clause) ->
+        // Parse the contracts
+        val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
 
-            val contractAddress = event.address
-            val master = AddressUtils.decode(event.data)
-            val rawData = thorService.getAccountCode(contractAddress)
+        // Save the NFTs and archive the old ones
+        if (existingContracts.isNotEmpty()) {
+            contractService.archive(existingContracts)
+        }
+        contractRepository.saveAll(contracts)
+    }
 
-            val contract = contractRepository.findById(contractAddress).getOrNull()
+    @Transactional
+    override fun rollback(blockNumber: Long) {
+        //Get all contracts that were created in the block
+        val contracts = contractRepository.findAllByBlockNumber(blockNumber)
 
-            // If the contract is already indexed, update the master
-            if (contract != null) {
-                contract.previousMasters.add(contract.master)
-                contract.master = master
-                contractRepository.save(contract)
-            } else {
-
-                val existing = contracts.find { it.address == contractAddress }
-
-                //To handle events where master event is fired twice for the same contract
-                if (existing != null) {
-                    existing.previousMasters.add(existing.master)
-                    existing.master = master
-                } else {
-                    contracts.add(
-                        IndexedContract(
-                            address = contractAddress,
-                            blockId = block.id,
-                            blockNumber = block.number,
-                            blockTimestamp = block.timestamp,
-                            txId = tx.id,
-                            creator = tx.origin,
-                            master = master,
-                            rawData = rawData,
-                            isVip180 = contractService.isVip180(contractAddress, rawData, clause),
-                            isVip181 = contractService.isVip181(contractAddress, rawData, clause),
-                            isVip210 = contractService.isVip210(contractAddress, rawData, clause),
-                            isErc20 = contractService.isErc20(contractAddress, rawData, clause),
-                            isErc721 = contractService.isErc721(contractAddress, rawData, clause),
-                            isErc1155 = contractService.isErc1155(contractAddress, rawData, clause),
-                            previousMasters = mutableSetOf(),
-                        )
-                    )
-                }
+        //Get previous version of contracts
+        val previousVersions = mutableSetOf<IndexedContract>()
+        contracts.forEach { contract ->
+            if (contract.version > 1) {
+                val previousVersion = contractService.getPreviousVersion(contract)
+                previousVersions.add(previousVersion)
             }
         }
 
-        if (contracts.isNotEmpty()) mongoTemplate.insert(contracts, IndexedContract::class.java)
+        // Remove contracts with version 1
+        contractRepository.deleteAll(contracts.filter { it.version == 1 })
+
+        // Save previous versions
+        contractRepository.saveAll(previousVersions.toList())
     }
 
+    /**
+     * Insert built-in contracts into the database.
+     * This should only execute once per session to ensure the built-in contracts have been inserted.
+     */
     @EventListener(ApplicationStartedEvent::class)
-    fun insertBuiltInContracts() {
+    private fun insertBuiltInContracts() {
 
         // Check if built-in contracts are already inserted
         contractRepository.findAllByBlockNumber(0).firstOrNull()?.let {

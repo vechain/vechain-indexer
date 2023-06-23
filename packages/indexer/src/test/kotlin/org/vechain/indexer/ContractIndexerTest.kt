@@ -7,19 +7,24 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.core.io.Resource
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
+import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION1
+import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION2
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
+import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
+import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block
 import strikt.api.expect
 import strikt.api.expectThat
+import strikt.api.expectThrows
 import strikt.assertions.*
 import java.util.*
 
@@ -30,28 +35,27 @@ internal class ContractIndexerTest {
     lateinit var thorService: ThorService
 
     @MockK
-    lateinit var contractRepository: ContractRepository
+    lateinit var archiveRepository: ArchiveRepository
 
     @MockK
-    lateinit var mongoTemplate: MongoTemplate
+    lateinit var contractRepository: ContractRepository
 
     @MockK
     lateinit var contractsResource: Resource
 
-    lateinit var contractService: ContractService
+    private lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
 
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
-        contractService = ContractService(thorService)
+        contractService = ContractService(thorService, archiveRepository)
         MockKAnnotations.init(this)
         contractIndexer = ContractIndexer(
             thorService,
             contractService,
             contractRepository,
-            mongoTemplate,
             contractsResource,
             "http://localhost:8669",
             1L
@@ -68,12 +72,11 @@ internal class ContractIndexerTest {
             BLOCK_5_VIP180_CONTRACTS,
             "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
         )
-        every { contractRepository.findById(any()) } returns Optional.empty()
+        every { contractRepository.findAllById(any()) } returns mutableListOf()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
-
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_5_VIP180_CONTRACTS)
@@ -86,6 +89,9 @@ internal class ContractIndexerTest {
             that(contracts).map(IndexedContract::isErc721).all { isFalse() }
             that(contracts).map(IndexedContract::isVip181).all { isFalse() }
         }
+
+        // Verify that archive isn't called
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
 
@@ -104,11 +110,11 @@ internal class ContractIndexerTest {
             BLOCK_42_ERC1155_VIP210_CONTRACTS,
             "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
         )
-        every { contractRepository.findById(any()) } returns Optional.empty()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
@@ -122,6 +128,9 @@ internal class ContractIndexerTest {
             that(vip210).isNotNull()
             that(erc1155).isNotNull()
         }
+
+        // Verify that archive isn't called
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     // Block #6 -> block_6.json
@@ -134,11 +143,11 @@ internal class ContractIndexerTest {
             BLOCK_6_VIP181_CONTRACTS,
             "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         )
-        every { contractRepository.findById(any()) } returns Optional.empty()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
@@ -154,6 +163,9 @@ internal class ContractIndexerTest {
             that(contract).get(IndexedContract::isErc20).isFalse()
             that(contract).get(IndexedContract::isVip180).isFalse()
         }
+
+        // Verify that archive isn't called
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     @Test
@@ -165,11 +177,11 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
-        every { contractRepository.findById(any()) } returns Optional.empty()
+        every { contractRepository.findAllById(any()) } returns emptyList()
 
         // Capture entities saved upon the block processing
         val contractsSlot = slot<List<IndexedContract>>()
-        every { mongoTemplate.insert(capture(contractsSlot), IndexedContract::class.java) } returns mutableListOf()
+        every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
 
@@ -189,30 +201,110 @@ internal class ContractIndexerTest {
             that(contract).get(IndexedContract::master).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(contract).get(IndexedContract::rawData).isEqualTo(contractData)
         }
+
+        // Verify that archive isn't called
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     @Test
     fun `Update contract master when contract already indexed`() {
 
         // Mock data returned for block#16: block, any account code & existing mongo document
+        every { archiveRepository.saveAll<Archive>(any()) } returns listOf()
         every { thorService.getAccountCode(any()) } returns "any account code"
-        every { contractRepository.findById(any()) } returns Optional.of(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+        every { contractRepository.findAllById(any()) } returns listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
         // Capture entities saved upon the block processing
-        val updatedContractSlot = slot<IndexedContract>()
-        every { contractRepository.save(capture(updatedContractSlot)) } returnsArgument 0
+        val updatedContractSlot = slot<List<IndexedContract>>()
+        every { contractRepository.saveAll(capture(updatedContractSlot)) } returns mutableListOf()
 
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
         expectThat(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.master).isEqualTo(oldMaster)
+
         contractIndexer.processBlock(BLOCK_16_MASTER_EVENT_UPDATE)
 
         val updatedContract = updatedContractSlot.captured
         val newMaster = "0xa077d962dfa446661d63c97f68d9628f908a5f43"
 
-        expectThat(updatedContract.master).isEqualTo(newMaster)
+        val contract = updatedContract.first()
+        expect {
+            that(updatedContract.size).isEqualTo(1)
+            that(contract).get(IndexedContract::version).isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.version + 1)
+            that(contract).get(IndexedContract::master).isEqualTo(newMaster)
+            that(contract).get(IndexedContract::creator).isEqualTo(oldMaster)
+            that(contract).get(IndexedContract::blockId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.id)
+            that(contract).get(IndexedContract::txId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.transactions.first().id)
+            that(contract).get(IndexedContract::blockNumber).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.number)
+            that(contract).get(IndexedContract::blockTimestamp).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.timestamp)
+        }
 
-        // No inserts should be called here, as this block contains contract master updates only
-        verify { mongoTemplate wasNot Called }
+        //Check that updated contract is saved and the old contract is archived
+        verify(exactly = 1) { contractRepository.saveAll(updatedContract) }
+        verify(exactly = 1) { archiveRepository.saveAll<Archive>(any()) }
+    }
+
+
+    // Rollback tests
+    @Test
+    fun `rollback - successfully restore from archive`() {
+        val blockNumber = 16L
+        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
+
+        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
+            CONTRACT_ROLLBACK_TEST_VERSION2
+        )
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.of(
+            Archive(
+                archiveId,
+                CONTRACT_ROLLBACK_TEST_VERSION1
+            )
+        )
+
+        val deleteAllContractsSlot = slot<List<IndexedContract>>()
+        every { contractRepository.deleteAll(capture(deleteAllContractsSlot)) } returns Unit
+
+        val saveAllContractsSlot = slot<List<IndexedContract>>()
+        every { contractRepository.saveAll(capture(saveAllContractsSlot)) } returns listOf()
+
+        contractIndexer.rollback(blockNumber)
+
+        expectThat(deleteAllContractsSlot.captured.size).isEqualTo(1)
+        val deleteContract = deleteAllContractsSlot.captured.first()
+        compareContracts(deleteContract, CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+
+        expectThat(saveAllContractsSlot.captured.size).isEqualTo(1)
+        val saveContract = saveAllContractsSlot.captured.first()
+        compareContracts(saveContract, CONTRACT_ROLLBACK_TEST_VERSION1)
+    }
+
+    @Test
+    fun `rollback - no archive record - throws exception`() {
+        val blockNumber = 16L
+        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
+
+        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
+            CONTRACT_ROLLBACK_TEST_VERSION2
+        )
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.empty()
+
+        expectThrows<Exception> { contractIndexer.rollback(blockNumber) }
+    }
+
+
+    private fun compareContracts(expected: IndexedContract, actual: IndexedContract) {
+        expect {
+
+            that(actual).get(IndexedContract::address).isEqualTo(expected.address)
+            that(actual).get(IndexedContract::version).isEqualTo(expected.version)
+            that(actual).get(IndexedContract::blockNumber).isEqualTo(expected.blockNumber)
+            that(actual).get(IndexedContract::blockTimestamp).isEqualTo(expected.blockTimestamp)
+            that(actual).get(IndexedContract::txId).isEqualTo(expected.txId)
+            that(actual).get(IndexedContract::creator).isEqualTo(expected.creator)
+            that(actual).get(IndexedContract::master).isEqualTo(expected.master)
+            that(actual).get(IndexedContract::rawData).isEqualTo(expected.rawData)
+        }
     }
 
     private fun getContractData(block: Block, txId: String): String {

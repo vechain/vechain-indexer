@@ -6,7 +6,7 @@ import org.vechain.indexer.model.IndexedBlock
 
 @Profile("blocks")
 @Repository
-interface BlockRepository : BaseIndexedRepo<IndexedBlock> {
+interface BlockRepository : BaseIndexedRepository<IndexedBlock> {
 
     fun findByBlockNumber(blockNumber: Long): IndexedBlock?
 
