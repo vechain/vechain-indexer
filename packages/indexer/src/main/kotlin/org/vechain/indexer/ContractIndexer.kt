@@ -65,7 +65,7 @@ open class ContractIndexer(
         contractRepository.deleteAll(contracts.filter { it.version == 1 })
 
         // Save previous versions
-        contractRepository.saveAll(previousVersions)
+        contractRepository.saveAll(previousVersions.toList())
     }
 
     /**

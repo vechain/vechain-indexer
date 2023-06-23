@@ -8,7 +8,7 @@ import org.vechain.indexer.model.IndexedNFT
 
 @Profile("nft-events")
 @Repository
-interface NFTRepository : BaseIndexedRepo<IndexedNFT> {
+interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
 
     fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT>
 

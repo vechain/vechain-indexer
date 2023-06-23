@@ -9,7 +9,7 @@ import org.vechain.indexer.model.rest.ContractType
 
 @Profile("contracts")
 @Repository
-interface ContractRepository : BaseIndexedRepo<IndexedContract> {
+interface ContractRepository : BaseIndexedRepository<IndexedContract> {
     fun findByCreatorAndType(creator: String?, contractType: ContractType?, pageable: Pageable): Page<IndexedContract>
 
 }

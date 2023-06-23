@@ -6,8 +6,9 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
-import org.vechain.indexer.repository.ArchiveRepo
+import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.thor.model.Clause
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -70,14 +71,14 @@ internal class ContractServiceTest {
     lateinit var thorService: ThorService
 
     @MockK
-    lateinit var archiveRepo: ArchiveRepo
+    lateinit var archiveRepository: ArchiveRepository
 
     private lateinit var contractService: ContractService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        contractService = ContractService(thorService, archiveRepo)
+        contractService = ContractService(thorService, archiveRepository)
     }
 
     // isErc721
@@ -592,6 +593,14 @@ internal class ContractServiceTest {
         val isVip181 = contractService.isVip181("invalid", "0x", clause)
 
         expectThat(isVip181).isFalse()
+    }
+
+    // parseContracts
+    @Test
+    fun `parseContracts - empty`() {
+        val contracts = contractService.parseContracts(BLOCK_42_ERC1155_VIP210_CONTRACTS, emptyList(), emptyList())
+
+        expectThat(contracts).isEmpty()
     }
 
 

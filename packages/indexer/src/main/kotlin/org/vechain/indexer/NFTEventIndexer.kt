@@ -84,6 +84,6 @@ open class NFTEventIndexer(
         nftRepository.deleteAll(nfts.filter { it.version == 1 })
 
         // Save previous versions
-        nftRepository.saveAll(previousVersions)
+        nftRepository.saveAll(previousVersions.toList())
     }
 }

@@ -5,7 +5,8 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.vechain.indexer.model.IndexedDocument
 
-interface BaseIndexedRepo<T : IndexedDocument> : CrudRepository<T, String>, PagingAndSortingRepository<T, String> {
+interface BaseIndexedRepository<T : IndexedDocument> : CrudRepository<T, String>,
+    PagingAndSortingRepository<T, String> {
 
     @Aggregation(
         pipeline = [

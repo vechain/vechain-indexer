@@ -11,16 +11,20 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
+import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION1
+import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION2
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repository.ArchiveRepo
+import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block
 import strikt.api.expect
 import strikt.api.expectThat
+import strikt.api.expectThrows
 import strikt.assertions.*
 import java.util.*
 
@@ -31,7 +35,7 @@ internal class ContractIndexerTest {
     lateinit var thorService: ThorService
 
     @MockK
-    lateinit var archiveRepo: ArchiveRepo
+    lateinit var archiveRepository: ArchiveRepository
 
     @MockK
     lateinit var contractRepository: ContractRepository
@@ -46,7 +50,7 @@ internal class ContractIndexerTest {
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
-        contractService = ContractService(thorService, archiveRepo)
+        contractService = ContractService(thorService, archiveRepository)
         MockKAnnotations.init(this)
         contractIndexer = ContractIndexer(
             thorService,
@@ -87,7 +91,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepo.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
 
@@ -126,7 +130,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepo.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     // Block #6 -> block_6.json
@@ -161,7 +165,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepo.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     @Test
@@ -199,14 +203,14 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepo.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     @Test
     fun `Update contract master when contract already indexed`() {
 
         // Mock data returned for block#16: block, any account code & existing mongo document
-        every { archiveRepo.saveAll<Archive>(any()) } returns listOf()
+        every { archiveRepository.saveAll<Archive>(any()) } returns listOf()
         every { thorService.getAccountCode(any()) } returns "any account code"
         every { contractRepository.findAllById(any()) } returns listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
@@ -236,7 +240,71 @@ internal class ContractIndexerTest {
 
         //Check that updated contract is saved and the old contract is archived
         verify(exactly = 1) { contractRepository.saveAll(updatedContract) }
-        verify(exactly = 1) { archiveRepo.saveAll<Archive>(any()) }
+        verify(exactly = 1) { archiveRepository.saveAll<Archive>(any()) }
+    }
+
+
+    // Rollback tests
+    @Test
+    fun `rollback - successfully restore from archive`() {
+        val blockNumber = 16L
+        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
+
+        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
+            CONTRACT_ROLLBACK_TEST_VERSION2
+        )
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.of(
+            Archive(
+                archiveId,
+                CONTRACT_ROLLBACK_TEST_VERSION1
+            )
+        )
+
+        val deleteAllContractsSlot = slot<List<IndexedContract>>()
+        every { contractRepository.deleteAll(capture(deleteAllContractsSlot)) } returns Unit
+
+        val saveAllContractsSlot = slot<List<IndexedContract>>()
+        every { contractRepository.saveAll(capture(saveAllContractsSlot)) } returns listOf()
+
+        contractIndexer.rollback(blockNumber)
+
+        expectThat(deleteAllContractsSlot.captured.size).isEqualTo(1)
+        val deleteContract = deleteAllContractsSlot.captured.first()
+        compareContracts(deleteContract, CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+
+        expectThat(saveAllContractsSlot.captured.size).isEqualTo(1)
+        val saveContract = saveAllContractsSlot.captured.first()
+        compareContracts(saveContract, CONTRACT_ROLLBACK_TEST_VERSION1)
+    }
+
+    @Test
+    fun `rollback - no archive record - throws exception`() {
+        val blockNumber = 16L
+        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
+
+        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
+            CONTRACT_ROLLBACK_TEST_VERSION2
+        )
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.empty()
+
+        expectThrows<Exception> { contractIndexer.rollback(blockNumber) }
+    }
+
+
+    private fun compareContracts(expected: IndexedContract, actual: IndexedContract) {
+        expect {
+
+            that(actual).get(IndexedContract::address).isEqualTo(expected.address)
+            that(actual).get(IndexedContract::version).isEqualTo(expected.version)
+            that(actual).get(IndexedContract::blockNumber).isEqualTo(expected.blockNumber)
+            that(actual).get(IndexedContract::blockTimestamp).isEqualTo(expected.blockTimestamp)
+            that(actual).get(IndexedContract::txId).isEqualTo(expected.txId)
+            that(actual).get(IndexedContract::creator).isEqualTo(expected.creator)
+            that(actual).get(IndexedContract::master).isEqualTo(expected.master)
+            that(actual).get(IndexedContract::rawData).isEqualTo(expected.rawData)
+        }
     }
 
     private fun getContractData(block: Block, txId: String): String {

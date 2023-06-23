@@ -9,21 +9,27 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
+import org.vechain.indexer.fixtures.NFTFixtures.NFT_ROLLBACK_TEST_VERSION1
+import org.vechain.indexer.fixtures.NFTFixtures.NFT_ROLLBACK_TEST_VERSION2
+import org.vechain.indexer.fixtures.NFTFixtures.NFT_VIP181
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.repository.ArchiveRepo
+import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat
+import strikt.api.expectThrows
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import java.util.*
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
 
     @MockK
-    lateinit var archiveRepo: ArchiveRepo
+    lateinit var archiveRepository: ArchiveRepository
 
     @MockK
     lateinit var nftRepository: NFTRepository
@@ -35,7 +41,7 @@ internal class NFTEventIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftService = NFTService(archiveRepo)
+        nftService = NFTService(archiveRepository)
         nftEventIndexer = NFTEventIndexer(nftRepository, nftService, "http://localhost:8669", 0L)
     }
 
@@ -65,7 +71,7 @@ internal class NFTEventIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepo.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
     }
 
     @Test
@@ -74,6 +80,68 @@ internal class NFTEventIndexerTest {
         nftEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
 
         verify { nftRepository wasNot Called }
+    }
+
+    // Rollback tests
+    @Test
+    fun `rollback - successfully restore from archive`() {
+        val blockNumber = 16L
+        val archiveId = "${NFT_ROLLBACK_TEST_VERSION1.id}-${NFT_ROLLBACK_TEST_VERSION1.version}"
+
+        every { nftRepository.findAllByBlockNumber(blockNumber) } returns mutableListOf(
+            NFT_VIP181,
+            NFT_ROLLBACK_TEST_VERSION2
+        )
+
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.of(
+            Archive(
+                archiveId,
+                NFT_ROLLBACK_TEST_VERSION1
+            )
+        )
+
+        val deleteSlot = slot<List<IndexedNFT>>()
+        every { nftRepository.deleteAll(capture(deleteSlot)) } returns Unit
+
+        val nftsSlot = slot<List<IndexedNFT>>()
+        every { nftRepository.saveAll(capture(nftsSlot)) } returns listOf()
+
+        nftEventIndexer.rollback(blockNumber)
+
+        val deletedNFTs = deleteSlot.captured
+        expectThat(deletedNFTs).hasSize(1)
+        compareNFTs(NFT_VIP181, deletedNFTs.first())
+
+        val savedNFTs = nftsSlot.captured
+        expectThat(savedNFTs).hasSize(1)
+        compareNFTs(NFT_ROLLBACK_TEST_VERSION1, savedNFTs.first())
+    }
+
+    @Test
+    fun `rollback - no archive record - throws exception`() {
+        val blockNumber = 16L
+        val archiveId = "${NFT_ROLLBACK_TEST_VERSION1.id}-${NFT_ROLLBACK_TEST_VERSION1.version}"
+
+        every { nftRepository.findAllByBlockNumber(blockNumber) } returns mutableListOf(
+            NFT_VIP181,
+            NFT_ROLLBACK_TEST_VERSION2
+        )
+
+        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.empty()
+
+        expectThrows<Exception> { nftEventIndexer.rollback(blockNumber) }
+    }
+
+    private fun compareNFTs(expected: IndexedNFT, actual: IndexedNFT) {
+        expect {
+            that(actual.id).isEqualTo(expected.id)
+            that(actual.tokenId).isEqualTo(expected.tokenId)
+            that(actual.contractAddress).isEqualTo(expected.contractAddress)
+            that(actual.owner).isEqualTo(expected.owner)
+            that(actual.txId).isEqualTo(expected.txId)
+            that(actual.blockNumber).isEqualTo(expected.blockNumber)
+            that(actual.blockTimestamp).isEqualTo(expected.blockTimestamp)
+        }
     }
 
 }
