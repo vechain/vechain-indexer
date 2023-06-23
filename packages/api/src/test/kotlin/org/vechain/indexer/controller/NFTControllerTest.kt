@@ -85,6 +85,50 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `uppercase contract address should be valid`() {
+            val owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val contractAddress = "0x" + "08f30373569af024d15eb47fd477a35db929eaac".uppercase()
+
+            val res = mockMvc.get("$baseEndpoint?address=$owner&contractAddress=$contractAddress")
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(20)
+        }
+
+        @Test
+        fun `mixed case contract address should be valid`() {
+            val owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val contractAddress = "0x08f30373569AF024d15eb47FD477a35db929eaAc"
+
+            val res = mockMvc.get("$baseEndpoint?address=$owner&contractAddress=$contractAddress")
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(20)
+        }
+
+        @Test
+        fun `no prefix contract address should be valid`() {
+            val owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val contractAddress = "08f30373569af024d15eb47fd477a35db929eaac"
+
+            val res = mockMvc.get(
+                "$baseEndpoint?address=$owner&contractAddress=$contractAddress"
+            )
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(20)
+        }
+
+        @Test
         fun `get filtered NFTs should return less NFTs`() {
             val res = mockMvc.get(
                 "$baseEndpoint?address=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
