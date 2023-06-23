@@ -22,4 +22,5 @@ is a small tradeoff for the simplicity of the approach.
 Also, it is important that the indexer is implemented in such a way that it is possible to roll back to a previous
 block.
 This is where the rollback method comes in. In some scenarios such as a chain re-org, the indexer will need to roll
-back to a previous block in order to maintain data integrity.
+back to a previous block in order to maintain data integrity. Further to this, any database updates in the processBlock
+method should be atomic i.e. they should either complete fully or fail completely.
