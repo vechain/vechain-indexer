@@ -24,7 +24,11 @@ open class NFTService(
         contractAddress: String,
         pageable: Pageable
     ): Page<IndexedNFT> {
-        return nftRepository.findByOwnerAndContractAddress(HexUtils.normalise(owner), contractAddress, pageable)
+        return nftRepository.findByOwnerAndContractAddress(
+            HexUtils.normalise(owner),
+            HexUtils.normalise(contractAddress),
+            pageable
+        )
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
