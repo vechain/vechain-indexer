@@ -115,7 +115,7 @@ createCollection(db, "nfts");
 // archives
 configureIndexes(db.archives, [
     {
-        keys: {data: {blockNumber: -1}},
+        keys: {"data.blockNumber": -1},
         options: {
             name: "archive_blockNumber_-1",
         }
