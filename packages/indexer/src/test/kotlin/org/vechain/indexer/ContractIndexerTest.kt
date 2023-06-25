@@ -91,7 +91,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
 
@@ -130,7 +130,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
     // Block #6 -> block_6.json
@@ -165,7 +165,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
     @Test
@@ -203,14 +203,14 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
     @Test
     fun `Update contract master when contract already indexed`() {
 
         // Mock data returned for block#16: block, any account code & existing mongo document
-        every { archiveRepository.saveAll<Archive>(any()) } returns listOf()
+        every { archiveRepository.saveAll<Archive<*>>(any()) } returns listOf()
         every { thorService.getAccountCode(any()) } returns "any account code"
         every { contractRepository.findAllById(any()) } returns listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
 
@@ -240,7 +240,7 @@ internal class ContractIndexerTest {
 
         //Check that updated contract is saved and the old contract is archived
         verify(exactly = 1) { contractRepository.saveAll(updatedContract) }
-        verify(exactly = 1) { archiveRepository.saveAll<Archive>(any()) }
+        verify(exactly = 1) { archiveRepository.saveAll<Archive<*>>(any()) }
     }
 
 
