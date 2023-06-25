@@ -36,3 +36,4 @@ jobs:
       indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag}}
       apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
       environment: dev
+      dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
