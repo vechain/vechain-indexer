@@ -71,7 +71,7 @@ internal class NFTEventIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive>(any()) wasNot Called }
+        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
     @Test

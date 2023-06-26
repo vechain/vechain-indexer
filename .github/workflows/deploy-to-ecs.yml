@@ -11,7 +11,10 @@ on:
         description: "API image tag to deploy"
         required: true
         type: string
-        default: latest
+      dbSetupTag:
+        description: "Mongo setup image tag to deploy"
+        required: true
+        type: string
       environment:
         description: "Environment to deploy to"
         required: true
@@ -22,11 +25,17 @@ on:
         description: "Indexer image tag to deploy"
         required: true
         type: string
+        default: dev-latest
       apiImageTag:
         description: "API image tag to deploy"
         required: true
         type: string
-        default: latest
+        default: dev-latest
+      dbSetupTag:
+        description: "Mongo setup image tag to deploy"
+        required: true
+        type: string
+        default: dev-latest
       environment:
         description: "Environment to deploy to"
         default: dev
@@ -34,7 +43,7 @@ on:
         type: string
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
   trigger-deployment:
@@ -51,5 +60,6 @@ jobs:
             { 
                 "indexerImageTag":  "${{ inputs.indexerImageTag || 'dev-latest' }}", 
                 "apiImageTag":      "${{ inputs.apiImageTag     || 'dev-latest' }}",
+                "dbSetupTag":       "${{ inputs.dbSetupTag      || 'dev-latest' }}",
                 "environment":      "${{ inputs.environment     || 'dev' }}"
             }

@@ -3,11 +3,11 @@ printjson(rs.initiate())
 
 // Wait for the replica set to finish initialization
 while (true) {
-  var status = rs.isMaster()
-  if (status && status.ismaster) {
-    break
-  }
-  sleep(1000) // Wait for 1 second before checking again
+    var status = rs.isMaster()
+    if (status && status.ismaster) {
+        break
+    }
+    sleep(1000) // Wait for 1 second before checking again
 }
 
 
@@ -111,6 +111,16 @@ createCollection(db, "transfer_events");
 createCollection(db, "nfts");
 
 // Create indexes
+
+// archives
+configureIndexes(db.archives, [
+    {
+        keys: {"data.blockNumber": -1},
+        options: {
+            name: "archive_blockNumber_-1",
+        }
+    }
+]);
 
 // blocks
 configureIndexes(db.blocks, [

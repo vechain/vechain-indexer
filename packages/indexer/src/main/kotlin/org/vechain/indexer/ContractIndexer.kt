@@ -73,7 +73,7 @@ open class ContractIndexer(
      * This should only execute once per session to ensure the built-in contracts have been inserted.
      */
     @EventListener(ApplicationStartedEvent::class)
-    private fun insertBuiltInContracts() {
+    fun insertBuiltInContracts() {
 
         // Check if built-in contracts are already inserted
         contractRepository.findAllByBlockNumber(0).firstOrNull()?.let {
