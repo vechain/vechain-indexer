@@ -2,6 +2,27 @@ version: "3.5"
 
 services:
 
+  vechain-indexer:
+    build:
+      context: .
+      args:
+        VEWORLD_PACKAGE: indexer
+    restart: "no"
+    env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
+    healthcheck:
+      test: "curl --fail localhost:8080/actuator/health"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    tty: true
+    ports:
+      - 8081:8080
+    networks:
+      - vechain
+      - vechain-database
+      - vechain-thor
+
   vechain-indexer-api:
     build:
       context: .
