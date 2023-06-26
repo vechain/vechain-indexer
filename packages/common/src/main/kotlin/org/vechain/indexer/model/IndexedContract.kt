@@ -1,5 +1,6 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -8,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
+    @JsonIgnore
     override val version: Int,
     override var blockId: String,
     override val blockNumber: Long,
