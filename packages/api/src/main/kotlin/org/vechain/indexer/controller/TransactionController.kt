@@ -12,16 +12,16 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransactionService
-import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
-import org.vechain.indexer.validation.Address
 import org.vechain.indexer.validation.TransactionId
+import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transactions")
@@ -61,7 +61,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "origin",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the transaction origin",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -76,7 +76,7 @@ open class TransactionController(private val transactionService: TransactionServ
     )
     @PaginationParameters
     open fun getTransactionsByOrigin(
-        @Address @RequestParam origin: String,
+        @ValidAddress @RequestParam origin: Address,
         @RequestParam(required = false) includeDelegated: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -101,14 +101,14 @@ open class TransactionController(private val transactionService: TransactionServ
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "delegator",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of the delegator",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getDelegatedTransactions(
-        @Address @RequestParam delegator: String,
+        @ValidAddress @RequestParam delegator: Address,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,

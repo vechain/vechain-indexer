@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransferEventService
-import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
-import org.vechain.indexer.validation.AddressNullable
+import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transfer-events")
@@ -35,7 +35,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To or from address of the transfer event",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -43,20 +43,19 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getTransferEvents(
-        @AddressNullable @RequestParam(required = false) address: String?,
-        @AddressNullable @RequestParam(required = false) tokenAddress: String?,
+        @ValidAddress @RequestParam(required = false) address: Address?,
+        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-
         val pageable = toPageable(page, size, direction)
 
         val resultsPage = when {
@@ -69,13 +68,12 @@ open class TransferEventController(private val transferEventService: TransferEve
         return paginatedResponse(resultsPage)
     }
 
-
     @GetMapping("/from")
     @Operation(summary = "Get transfer events by from address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "From address of the transfer event",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -83,15 +81,15 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getTransferEventsByFrom(
-        @AddressNullable @RequestParam address: String,
-        @AddressNullable @RequestParam(required = false) tokenAddress: String?,
+        @ValidAddress @RequestParam address: Address,
+        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -110,7 +108,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To address of the transfer event",
         required = true,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -118,15 +116,15 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getTransferEventsByTo(
-        @AddressNullable @RequestParam address: String,
-        @AddressNullable @RequestParam(required = false) tokenAddress: String?,
+        @ValidAddress @RequestParam address: Address,
+        @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
