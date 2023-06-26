@@ -1,8 +1,8 @@
 package org.vechain.e2e
 
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.utils.AddressUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -89,6 +89,6 @@ class NFTTest {
     }
 
     fun assertValidContract(contract: String) {
-        expectThat(AddressUtils.isValid(contract)).isTrue()
+        expectThat(Address(contract).isValid()).isTrue()
     }
 }
