@@ -12,14 +12,12 @@ open class ApplicationHealth(private val healthEndpoint: HealthEndpoint) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Scheduled(fixedDelay = 60 * 1000)
+    @Scheduled(fixedDelay = 30 * 1000)
     fun logApplicationHealth() {
         val health = healthEndpoint.health() as SystemHealth
 
         if (health.status != Status.UP) {
             logger.error("Application is UNHEALTHY: {}", health.components.filter { it.value.status != Status.UP })
-        } else {
-            logger.info("Application is healthy")
         }
     }
 
