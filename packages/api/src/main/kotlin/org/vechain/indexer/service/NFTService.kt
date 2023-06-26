@@ -4,9 +4,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.utils.HexUtils
 
 
 @Profile("nft-events")
@@ -15,24 +15,20 @@ open class NFTService(
     private val nftRepository: NFTRepository,
 ) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
-        return nftRepository.findByOwner(HexUtils.normalise(owner), pageable)
+    open fun findByOwner(owner: Address, pageable: Pageable): Page<IndexedNFT> {
+        return nftRepository.findByOwner(owner.value, pageable)
     }
 
     open fun findByOwnerAndContractAddress(
-        owner: String,
-        contractAddress: String,
+        owner: Address,
+        contractAddress: Address,
         pageable: Pageable
     ): Page<IndexedNFT> {
-        return nftRepository.findByOwnerAndContractAddress(
-            HexUtils.normalise(owner),
-            HexUtils.normalise(contractAddress),
-            pageable
-        )
+        return nftRepository.findByOwnerAndContractAddress(owner.value, contractAddress.value, pageable)
     }
 
-    open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
-        return nftRepository.findContractsByNFTOwner(HexUtils.normalise(owner), pageable)
+    open fun findContractsByNFTOwner(owner: Address, pageable: Pageable): Page<String> {
+        return nftRepository.findContractsByNFTOwner(owner.value, pageable)
     }
 
 }

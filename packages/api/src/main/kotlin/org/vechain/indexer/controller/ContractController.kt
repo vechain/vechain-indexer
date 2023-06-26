@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.model.rest.PaginatedResponse
@@ -20,8 +21,7 @@ import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
-import org.vechain.indexer.validation.Address
-import org.vechain.indexer.validation.AddressNullable
+import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidContractType
 import org.vechain.indexer.validation.ValidPageSize
 
@@ -42,12 +42,12 @@ open class ContractController(private val contractService: ContractService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the contract",
         required = true,
         example = "0x0000000000000000000000417574686f72697479"
     )
-    open fun getContractByAddress(@Address @PathVariable address: String): IndexedContract {
+    open fun getContractByAddress(@ValidAddress @PathVariable address: Address): IndexedContract {
         return contractService.findByAddress(address)
             ?: throw ResourceNotFoundException("Contract with address $address was not found")
     }
@@ -62,7 +62,7 @@ open class ContractController(private val contractService: ContractService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
-        schema = Schema(type = "string", pattern = AddressUtils.REGEX),
+        schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the contract creator",
         required = false,
         example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
@@ -80,7 +80,7 @@ open class ContractController(private val contractService: ContractService) {
     )
     @PaginationParameters
     open fun getContractsByCreator(
-        @AddressNullable @RequestParam(required = false) address: String?,
+        @ValidAddress @RequestParam(required = false) address: Address?,
         @ValidContractType @RequestParam(required = false) type: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
