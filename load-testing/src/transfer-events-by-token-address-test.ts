@@ -1,6 +1,6 @@
 import {check} from "k6";
 import http from "k6/http";
-import tokens from "./data/token-addresses.json;
+import tokens from "./data/token-addresses.json";
 import {randomElement} from "./utils/array-utils";
 import env from "./env";
 import {DEFAULT_OPTIONS} from "./constants";
