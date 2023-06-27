@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.thor.model.Block
 
-@Profile("blocks-proxy")
+@Profile("indexer", "blocks-proxy")
 @Component
 class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
     override fun health(): Health {

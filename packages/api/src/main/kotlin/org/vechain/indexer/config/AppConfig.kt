@@ -8,7 +8,7 @@ import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
-@Profile("block-proxy")
+@Profile("blocks")
 @Configuration
 open class AppConfig(@Value("\${thor.url}") private val thorUrl: String) {
 
