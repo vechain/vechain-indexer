@@ -1,11 +1,13 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.utils.IdUtils
 
+@Profile("nft-events")
 @Service
 class NFTService(private val archiveRepository: ArchiveRepository) {
     fun save(nfts: List<IndexedNFT>) {
