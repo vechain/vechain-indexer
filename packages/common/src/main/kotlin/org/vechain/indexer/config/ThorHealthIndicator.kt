@@ -2,10 +2,12 @@ package org.vechain.indexer.config
 
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.thor.model.Block
 
+@Profile("blocks-proxy")
 @Component
 class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
     override fun health(): Health {
