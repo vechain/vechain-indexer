@@ -11,12 +11,11 @@ import org.vechain.thor.model.Block
 @Profile("transactions")
 @Component
 open class TransactionIndexer(
-    private val txRepo: TransactionRepository,
-    private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String,
-    @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
-) :
-    VeWorldIndexer(txRepo, startBlock, thorUrl) {
+  private val txRepo: TransactionRepository,
+  private val mongoTemplate: MongoTemplate,
+  @Value("\${thor.url}") private val thorUrl: String,
+  @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
+) : VeWorldIndexer(txRepo, startBlock, thorUrl) {
     override fun rollback(blockNumber: Long) {
         txRepo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
@@ -24,10 +23,9 @@ open class TransactionIndexer(
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {
             mongoTemplate.insert(
-                block.transactions.map { IndexedTransaction(block, it) },
-                IndexedTransaction::class.java
+              block.transactions.map { IndexedTransaction(block, it) },
+              IndexedTransaction::class.java
             )
         }
     }
-
 }

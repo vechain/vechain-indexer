@@ -14,5 +14,4 @@ class FungibleTokenService(private val fungibleTokensRepository: FungibleTokenCo
 
         return fungibleContracts?.tokenAddresses ?: mutableSetOf()
     }
-
 }

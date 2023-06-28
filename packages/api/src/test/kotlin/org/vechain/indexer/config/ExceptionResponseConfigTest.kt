@@ -38,7 +38,6 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
             that(res.body?.id).isNotNull()
             that(res.body?.timestamp).isNotNull()
         }
-
     }
 
     @Test
@@ -98,5 +97,4 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
             that(res.body?.timestamp).isNotNull()
         }
     }
-
 }

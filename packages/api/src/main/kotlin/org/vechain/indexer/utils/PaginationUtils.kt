@@ -13,15 +13,15 @@ import org.vechain.indexer.exception.BadRequestException
 object PaginationUtils {
 
     fun toPageable(
-        page: Int?,
-        size: Int?,
-        direction: String? = DEFAULT_SORT_DIRECTION,
-        vararg fields: String = DEFAULT_SORT_FIELDS
+      page: Int?,
+      size: Int?,
+      direction: String? = DEFAULT_SORT_DIRECTION,
+      vararg fields: String = DEFAULT_SORT_FIELDS
     ): Pageable {
         return PageRequest.of(
-            page ?: DEFAULT_PAGE_NUMBER,
-            size ?: DEFAULT_PAGE_SIZE,
-            Sort.by(toSortDirection(direction), *fields)
+          page ?: DEFAULT_PAGE_NUMBER,
+          size ?: DEFAULT_PAGE_SIZE,
+          Sort.by(toSortDirection(direction), *fields)
         )
     }
 
@@ -34,5 +34,4 @@ object PaginationUtils {
         }
         return sortDirection
     }
-
 }

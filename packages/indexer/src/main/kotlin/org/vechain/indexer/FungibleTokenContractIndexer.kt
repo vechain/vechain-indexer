@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import java.util.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
@@ -11,17 +12,15 @@ import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
-import java.util.*
 
 @Profile("fungible-token-contracts")
 @Component
 open class FungibleTokenContractIndexer(
-    private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
-    private val archiveService: ArchiveService,
-    @Value("\${thor.url}") private val thorUrl: String,
-    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
+  private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
+  private val archiveService: ArchiveService,
+  @Value("\${thor.url}") private val thorUrl: String,
+  @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
 ) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl) {
-
 
     @Transactional
     override fun processBlock(block: Block) {
@@ -31,10 +30,11 @@ open class FungibleTokenContractIndexer(
         // account -> set of contracts
         val accountContractMap = getContractsForAccount(fungibleTransfers)
 
-        //process each account's contracts
-        val documents = accountContractMap.map { (account, contracts) ->
-            processAccountsContracts(account, contracts, block)
-        }.mapNotNull { it }
+        // process each account's contracts
+        val documents =
+          accountContractMap
+            .map { (account, contracts) -> processAccountsContracts(account, contracts, block) }
+            .mapNotNull { it }
 
         // save all the archives
         archiveService.saveAll(documents.mapNotNull { it.second })
@@ -43,7 +43,9 @@ open class FungibleTokenContractIndexer(
         fungibleTokenContractsRepository.saveAll(documents.map { it.first })
     }
 
-    private fun getContractsForAccount(transferEvents: List<IndexedTransferEvent>): MutableMap<String, SortedSet<String>> {
+    private fun getContractsForAccount(
+      transferEvents: List<IndexedTransferEvent>
+    ): MutableMap<String, SortedSet<String>> {
         // account -> list of contracts
         val accountContractMap: MutableMap<String, SortedSet<String>> = mutableMapOf()
 
@@ -53,9 +55,8 @@ open class FungibleTokenContractIndexer(
             accountContractMap[account] = contracts
         }
 
-        //populate the map
+        // populate the map
         transferEvents.forEach {
-
             val tokenAddress = it.tokenAddress ?: return@forEach
 
             addContract(tokenAddress, it.to)
@@ -67,44 +68,50 @@ open class FungibleTokenContractIndexer(
 
     /**
      * Process the contracts for an account
+     *
      * @returns null if the documents are not updated
      * @returns Pair<newDocument, null> if is the accounts first entry
      * @returns Pair<newDocument, oldDocument> if the documents are updated
      */
     private fun processAccountsContracts(
-        accAddress: String, contracts: SortedSet<String>, block: Block
+      accAddress: String,
+      contracts: SortedSet<String>,
+      block: Block
     ): Pair<IndexedFungibleTokenContracts, IndexedFungibleTokenContracts?>? {
 
-        val previousRecord = fungibleTokenContractsRepository.findByIdOrNull(accAddress)
-        //Return a new document if the account has no previous record
-            ?: return Pair(
-                IndexedFungibleTokenContracts(
-                    tokenOwner = accAddress,
-                    tokenAddresses = contracts,
-                    blockNumber = block.number,
-                    blockId = block.id,
-                    blockTimestamp = block.timestamp,
-                    version = 1
-                ), null
+        val previousRecord =
+          fungibleTokenContractsRepository.findByIdOrNull(accAddress)
+          // Return a new document if the account has no previous record
+          ?: return Pair(
+              IndexedFungibleTokenContracts(
+                tokenOwner = accAddress,
+                tokenAddresses = contracts,
+                blockNumber = block.number,
+                blockId = block.id,
+                blockTimestamp = block.timestamp,
+                version = 1
+              ),
+              null
             )
 
-        //return null if no contracts are added - no update required
+        // return null if no contracts are added - no update required
         if (previousRecord.tokenAddresses.containsAll(contracts)) {
             return null
         }
 
-        //Update the contracts
+        // Update the contracts
         val updatedContracts = previousRecord.tokenAddresses.toSortedSet()
         updatedContracts.addAll(contracts)
 
-        val latestDocument = IndexedFungibleTokenContracts(
+        val latestDocument =
+          IndexedFungibleTokenContracts(
             tokenOwner = accAddress,
             tokenAddresses = updatedContracts,
             blockNumber = block.number,
             blockId = block.id,
             blockTimestamp = block.timestamp,
             version = previousRecord.version + 1
-        )
+          )
 
         return Pair(latestDocument, previousRecord)
     }

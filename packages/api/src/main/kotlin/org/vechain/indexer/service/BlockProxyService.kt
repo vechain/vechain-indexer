@@ -17,10 +17,13 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
     override fun findBestBlock(): IndexedBlock? {
         return try {
             val response =
-                thorRest.get().uri("/blocks/best?expanded=true").retrieve()
-                    .bodyToMono(Block::class.java)
-                    .block()
-                    ?: throw NotFoundException("Best block not found")
+              thorRest
+                .get()
+                .uri("/blocks/best?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block()
+                ?: throw NotFoundException("Best block not found")
 
             if (logger.isDebugEnabled) logger.debug("Best block found: ${response.number}")
 
@@ -34,10 +37,13 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
     override fun findFinalizedBlock(): IndexedBlock? {
         return try {
             val response =
-                thorRest.get().uri("/blocks/finalized?expanded=true").retrieve()
-                    .bodyToMono(Block::class.java)
-                    .block()
-                    ?: throw NotFoundException("Finalized block not found")
+              thorRest
+                .get()
+                .uri("/blocks/finalized?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block()
+                ?: throw NotFoundException("Finalized block not found")
 
             if (logger.isDebugEnabled) logger.debug("Finalized block found: ${response.number}")
 
@@ -50,7 +56,8 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
 
     override fun findById(blockId: String): IndexedBlock? {
         return try {
-            val response = thorRest
+            val response =
+              thorRest
                 .get()
                 .uri("/blocks/$blockId?expanded=true")
                 .retrieve()
@@ -69,7 +76,8 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
 
     override fun findByBlockNumber(blockNumber: Long): IndexedBlock? {
         return try {
-            val response = thorRest
+            val response =
+              thorRest
                 .get()
                 .uri("/blocks/$blockNumber?expanded=true")
                 .retrieve()
@@ -85,5 +93,4 @@ open class BlockProxyService(private val thorRest: WebClient) : BlockService {
             null
         }
     }
-
 }

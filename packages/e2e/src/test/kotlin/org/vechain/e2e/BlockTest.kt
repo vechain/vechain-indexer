@@ -16,15 +16,11 @@ class BlockTest {
 
     @Test
     fun `get best block`() {
-        assertDoesNotThrow {
-            VeWorldAPIClient.getBlock("best")
-        }
+        assertDoesNotThrow { VeWorldAPIClient.getBlock("best") }
     }
 
     @Test
     fun `get block by invalid id`() {
-        assertThrows<Exception> {
-            VeWorldAPIClient.getBlock("invalid")
-        }
+        assertThrows<Exception> { VeWorldAPIClient.getBlock("invalid") }
     }
 }

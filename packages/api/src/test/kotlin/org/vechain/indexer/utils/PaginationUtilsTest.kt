@@ -74,12 +74,10 @@ internal class PaginationUtilsTest {
         val pageable = PaginationUtils.toPageable(page, size)
 
         expect {
-            that(pageable.sort).isEqualTo(
-                Sort.by(
-                    Sort.Direction.fromString(DEFAULT_SORT_DIRECTION),
-                    *DEFAULT_SORT_FIELDS
-                )
-            )
+            that(pageable.sort)
+              .isEqualTo(
+                Sort.by(Sort.Direction.fromString(DEFAULT_SORT_DIRECTION), *DEFAULT_SORT_FIELDS)
+              )
         }
     }
 
@@ -106,10 +104,10 @@ internal class PaginationUtilsTest {
 
         expect {
             catching { PaginationUtils.toPageable(page, size, direction, *fields) }
-                .isFailure()
-                .isA<BadRequestException>()
-                .get(BadRequestException::message)
-                .isEqualTo("Invalid sort direction param: $direction")
+              .isFailure()
+              .isA<BadRequestException>()
+              .get(BadRequestException::message)
+              .isEqualTo("Invalid sort direction param: $direction")
         }
     }
 }

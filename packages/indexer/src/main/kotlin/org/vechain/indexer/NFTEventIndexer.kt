@@ -16,10 +16,10 @@ import org.web3j.utils.Numeric
 @Profile("nft-events")
 @Component
 open class NFTEventIndexer(
-    private val nftRepository: NFTRepository,
-    private val archiveService: ArchiveService,
-    @Value("\${thor.url}") private val thorUrl: String,
-    @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
+  private val nftRepository: NFTRepository,
+  private val archiveService: ArchiveService,
+  @Value("\${thor.url}") private val thorUrl: String,
+  @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
 ) : VeWorldIndexer(nftRepository, startBlock, thorUrl) {
 
     @Transactional
@@ -31,8 +31,9 @@ open class NFTEventIndexer(
 
         // Check for existing documents
         val existingNfts =
-            nftRepository.findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") })
-                .toList()
+          nftRepository
+            .findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") })
+            .toList()
 
         // Parse the NFTs
         val nfts = parseNfts(block, nftTransfers, existingNfts)
@@ -43,9 +44,9 @@ open class NFTEventIndexer(
     }
 
     private fun parseNfts(
-        block: Block,
-        nftTransfers: List<IndexedTransferEvent>,
-        existingNfts: List<IndexedNFT>
+      block: Block,
+      nftTransfers: List<IndexedTransferEvent>,
+      existingNfts: List<IndexedNFT>
     ): List<IndexedNFT> {
         return nftTransfers.map {
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
@@ -53,15 +54,15 @@ open class NFTEventIndexer(
             val version = (existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1)) ?: 1
 
             IndexedNFT(
-                id = nftId,
-                version = version,
-                owner = it.to,
-                contractAddress = it.tokenAddress!!,
-                tokenId = tokenId.toString(10),
-                txId = it.txId,
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
+              id = nftId,
+              version = version,
+              owner = it.to,
+              contractAddress = it.tokenAddress!!,
+              tokenId = tokenId.toString(10),
+              txId = it.txId,
+              blockId = block.id,
+              blockNumber = block.number,
+              blockTimestamp = block.timestamp,
             )
         }
     }

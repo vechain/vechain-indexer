@@ -11,5 +11,4 @@ import org.vechain.indexer.model.IndexedClause
 interface ClauseRepository : BaseIndexedRepository<IndexedClause> {
 
     fun findByOriginOrTo(address: String, pageable: Pageable): Page<IndexedClause>
-
 }

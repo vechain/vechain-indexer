@@ -25,22 +25,22 @@ open class FungibleTokenController(private val fungibleTokenService: FungibleTok
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses where the token owner has had some activity")
     @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+      value =
+        [
+          ApiResponse(responseCode = "400", description = "Invalid address supplied"),
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "owner",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "The address of the fungible token owner",
-        required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+      `in` = ParameterIn.QUERY,
+      name = "owner",
+      schema = Schema(type = "string", pattern = Address.REGEX),
+      description = "The address of the fungible token owner",
+      required = true,
+      example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     open fun getContractsByNFTOwner(
-        @ValidAddress @RequestParam owner: Address,
+      @ValidAddress @RequestParam owner: Address,
     ): Set<String> {
         return fungibleTokenService.getContractsForOwner(owner.value)
     }
-
 }

@@ -32,21 +32,22 @@ open class ClauseController(private val clauseService: ClauseService) {
     @GetMapping
     @Operation(summary = "Get clauses for address")
     @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Address of the clause origin or destination",
-        required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+      `in` = ParameterIn.QUERY,
+      name = "address",
+      schema = Schema(type = "string", pattern = Address.REGEX),
+      description = "Address of the clause origin or destination",
+      required = true,
+      example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getClauses(
-        @ValidAddress @RequestParam("address") address: Address,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?
+      @ValidAddress @RequestParam("address") address: Address,
+      @RequestParam(required = false) page: Int?,
+      @ValidPageSize @RequestParam(required = false) size: Int?,
+      @RequestParam(required = false) direction: String?
     ): PaginatedResponse<IndexedClause> {
-        return paginatedResponse(clauseService.findByAddress(address, toPageable(page, size, direction)))
+        return paginatedResponse(
+          clauseService.findByAddress(address, toPageable(page, size, direction))
+        )
     }
-
 }

@@ -28,22 +28,23 @@ class FungibleTokenContractIndexerTest {
     private lateinit var fungibleTokenContractIndexer: FungibleTokenContractIndexer
     private lateinit var archiveService: ArchiveService
 
-    @MockK
-    lateinit var fungibleTokenContractRepository: FungibleTokenContractsRepository
+    @MockK lateinit var fungibleTokenContractRepository: FungibleTokenContractsRepository
 
-    @MockK
-    lateinit var archiveRepository: ArchiveRepository
+    @MockK lateinit var archiveRepository: ArchiveRepository
 
-    @MockK
-    lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
-        fungibleTokenContractIndexer = FungibleTokenContractIndexer(
-            fungibleTokenContractRepository, archiveService, "http://localhost:8669", 0L
-        )
+        fungibleTokenContractIndexer =
+          FungibleTokenContractIndexer(
+            fungibleTokenContractRepository,
+            archiveService,
+            "http://localhost:8669",
+            0L
+          )
     }
 
     @Test
@@ -51,7 +52,8 @@ class FungibleTokenContractIndexerTest {
         every { fungibleTokenContractRepository.findByIdOrNull(any()) } returns null
 
         val fungibleContractsSlot = slot<List<IndexedFungibleTokenContracts>>()
-        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns mockk()
+        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns
+          mockk()
 
         fungibleTokenContractIndexer.processBlock(BLOCK_2395_FUNGIBLE_TRANSFERS_1)
 
@@ -61,23 +63,25 @@ class FungibleTokenContractIndexerTest {
 
     @Test
     fun `can process subsequent entries`() {
-        val existingContracts = IndexedFungibleTokenContracts(
+        val existingContracts =
+          IndexedFungibleTokenContracts(
             tokenOwner = "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
-            tokenAddresses = sortedSetOf(
-                "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
-            ),
+            tokenAddresses = sortedSetOf("0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"),
             version = 1,
             blockNumber = 2395,
             blockId = "0x0000095b575427e8c57e3f43486763f35af8df29fd4087906288b139473b03df",
             blockTimestamp = 1687853184
-        )
+          )
 
         val fungibleContractsSlot = slot<List<IndexedFungibleTokenContracts>>()
         val archiveSlot = slot<List<Archive<IndexedFungibleTokenContracts>>>()
 
         every { fungibleTokenContractRepository.findByIdOrNull(any()) } returns null
-        every { fungibleTokenContractRepository.findByIdOrNull(existingContracts.tokenOwner) } returns existingContracts
-        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns mockk()
+        every {
+            fungibleTokenContractRepository.findByIdOrNull(existingContracts.tokenOwner)
+        } returns existingContracts
+        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns
+          mockk()
         every { archiveRepository.saveAll(capture(archiveSlot)) } returns mockk()
 
         fungibleTokenContractIndexer.processBlock(BLOCK_2396_FUNGIBLE_TRANSFERS_2)
@@ -87,7 +91,8 @@ class FungibleTokenContractIndexerTest {
             that(archiveSlot.captured[0].data).isEqualTo(existingContracts)
         }
 
-        val updatedContracts = fungibleContractsSlot.captured.find { it.tokenOwner == existingContracts.tokenOwner }
+        val updatedContracts =
+          fungibleContractsSlot.captured.find { it.tokenOwner == existingContracts.tokenOwner }
 
         expect {
             that(updatedContracts).isNotNull()
@@ -97,72 +102,81 @@ class FungibleTokenContractIndexerTest {
 
     @Test
     fun `subsequent entries with existing contracts don't get updated`() {
-        val existingContracts = IndexedFungibleTokenContracts(
+        val existingContracts =
+          IndexedFungibleTokenContracts(
             tokenOwner = "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
-            tokenAddresses = sortedSetOf(
-                "0x057a362324641972bd7d4cb61427abfc0184715c", "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
-            ),
+            tokenAddresses =
+              sortedSetOf(
+                "0x057a362324641972bd7d4cb61427abfc0184715c",
+                "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
+              ),
             version = 1,
             blockNumber = 2395,
             blockId = "0x0000095b575427e8c57e3f43486763f35af8df29fd4087906288b139473b03df",
             blockTimestamp = 1687853184
-        )
+          )
 
         val fungibleContractsSlot = slot<List<IndexedFungibleTokenContracts>>()
 
         every { fungibleTokenContractRepository.findByIdOrNull(any()) } returns null
-        every { fungibleTokenContractRepository.findByIdOrNull(existingContracts.tokenOwner) } returns existingContracts
-        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns mockk()
+        every {
+            fungibleTokenContractRepository.findByIdOrNull(existingContracts.tokenOwner)
+        } returns existingContracts
+        every { fungibleTokenContractRepository.saveAll(capture(fungibleContractsSlot)) } returns
+          mockk()
         every { archiveRepository.saveAll(any<List<Archive<*>>>()) } returns mockk()
 
         fungibleTokenContractIndexer.processBlock(BLOCK_2396_FUNGIBLE_TRANSFERS_2)
 
         verify { archiveRepository.saveAll(any<List<Archive<*>>>()) wasNot Called }
 
-        //Usually its 10, but we expect 1 less
+        // Usually its 10, but we expect 1 less
         expectThat(fungibleContractsSlot.captured.size).isEqualTo(9)
     }
 
     @Test
     fun `can rollback to previous state`() {
-        val previousState = IndexedFungibleTokenContracts(
+        val previousState =
+          IndexedFungibleTokenContracts(
             tokenOwner = "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
-            tokenAddresses = sortedSetOf(
-                "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
-            ),
+            tokenAddresses = sortedSetOf("0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"),
             version = 1,
             blockNumber = 2395,
             blockId = "0x0000095b575427e8c57e3f43486763f35af8df29fd4087906288b139473b03df",
             blockTimestamp = 1687853184
-        )
+          )
 
-        val currentState = IndexedFungibleTokenContracts(
+        val currentState =
+          IndexedFungibleTokenContracts(
             tokenOwner = "0x361277d1b27504f36a3b33d3a52d1f8270331b8c",
-            tokenAddresses = sortedSetOf(
-                "0x057a362324641972bd7d4cb61427abfc0184715c", "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
-            ),
+            tokenAddresses =
+              sortedSetOf(
+                "0x057a362324641972bd7d4cb61427abfc0184715c",
+                "0xe9d3f9be0bb0dcd2f3dbe863fc93762319381455"
+              ),
             version = 2,
             blockNumber = 2396,
             blockId = "0x0000095b575427e8c57e3f43486763f35af8df29fd4087906288b139473b03df",
             blockTimestamp = 1687853184
-        )
+          )
 
-        val archive = Archive(
+        val archive =
+          Archive(
             id = IdUtils.buildArchiveId(previousState),
             data = previousState,
-        )
+          )
 
         val fungibleContractsSlot = mutableListOf<IndexedFungibleTokenContracts>()
         val archiveDeleteSlot = slot<List<String>>()
 
         val bulkOps: BulkOperations = mockk(relaxed = true)
 
-        every {
-            mongoTemplate.bulkOps(any(), IndexedFungibleTokenContracts::class.java)
-        } returns bulkOps
+        every { mongoTemplate.bulkOps(any(), IndexedFungibleTokenContracts::class.java) } returns
+          bulkOps
         every { bulkOps.replaceOne(any(), capture(fungibleContractsSlot)) } returns bulkOps
 
-        every { mongoTemplate.find<IndexedFungibleTokenContracts>(any(), any()) } returns mutableListOf(currentState)
+        every { mongoTemplate.find<IndexedFungibleTokenContracts>(any(), any()) } returns
+          mutableListOf(currentState)
         every { archiveRepository.findAllById(listOf(archive.id)) } returns listOf(archive)
         every { archiveRepository.deleteAllById(capture(archiveDeleteSlot)) } returns Unit
 

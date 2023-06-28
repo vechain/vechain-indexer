@@ -17,15 +17,15 @@ open class CountRepository(private val mongoTemplate: MongoTemplate) {
     }
 
     /**
-     * Count elements matching query up until COUNT_LIMIT + 1 elements
-     * The +1 is used to detect in the same query if there are more results
-     * than the configured limit, for performance & security reasons
+     * Count elements matching query up until COUNT_LIMIT + 1 elements The +1 is used to detect in
+     * the same query if there are more results than the configured limit, for performance &
+     * security reasons
      */
     open fun getCount(
-        collection: Class<*>,
-        matchOperations: List<MatchOperation> = emptyList(),
-        groupOperation: GroupOperation? = null,
-        countLimit: Long = COUNT_LIMIT
+      collection: Class<*>,
+      matchOperations: List<MatchOperation> = emptyList(),
+      groupOperation: GroupOperation? = null,
+      countLimit: Long = COUNT_LIMIT
     ): Long {
         val aggregationOperations: MutableList<AggregationOperation> = mutableListOf()
 
@@ -36,11 +36,11 @@ open class CountRepository(private val mongoTemplate: MongoTemplate) {
 
         val countAggregation = Aggregation.newAggregation(aggregationOperations)
 
-        val count = mongoTemplate
+        val count =
+          mongoTemplate
             .aggregate(countAggregation, collection, Document::class.java)
             .uniqueMappedResult
 
         return count?.getInteger(COUNT_FIELD)?.toLong() ?: 0
     }
-
 }

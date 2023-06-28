@@ -18,8 +18,11 @@ open class ContractService(private val contractRepository: ContractRepository) {
         return contractRepository.findByIdOrNull(address.value)
     }
 
-    open fun find(creator: Address?, contractType: ContractType?, pageable: Pageable): Page<IndexedContract> {
+    open fun find(
+      creator: Address?,
+      contractType: ContractType?,
+      pageable: Pageable
+    ): Page<IndexedContract> {
         return contractRepository.findByCreatorAndType(creator?.value, contractType, pageable)
     }
-
 }

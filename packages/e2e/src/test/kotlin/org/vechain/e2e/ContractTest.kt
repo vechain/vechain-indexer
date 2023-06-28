@@ -12,17 +12,16 @@ class ContractTest {
 
     @Test
     fun `get contracts for creator`() {
-        val contracts = VeWorldAPIClient.getContractForCreator(
+        val contracts =
+          VeWorldAPIClient.getContractForCreator(
             address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             page = 0
-        )
+          )
 
         // 8 regular contract deployments + 2 deployments from a factory contract
         expectThat(contracts.data).hasSize(10)
 
-        contracts.data.forEach { contract: IndexedContract ->
-            assertValidContract(contract)
-        }
+        contracts.data.forEach { contract: IndexedContract -> assertValidContract(contract) }
 
         // Get contract by address
         val contract = VeWorldAPIClient.getContract(contracts.data[0].address)
@@ -32,13 +31,12 @@ class ContractTest {
 
     @Test
     fun `get contracts for creator paginated`() {
-        val contracts = VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa", 0, 1)
+        val contracts =
+          VeWorldAPIClient.getContractForCreator("0xf077b491b355e64048ce21e3a6fc4751eeea77fa", 0, 1)
 
         expectThat(contracts.data).hasSize(1)
 
-        contracts.data.forEach { contract: IndexedContract ->
-            assertValidContract(contract)
-        }
+        contracts.data.forEach { contract: IndexedContract -> assertValidContract(contract) }
     }
 
     fun assertValidContract(contract: IndexedContract) {

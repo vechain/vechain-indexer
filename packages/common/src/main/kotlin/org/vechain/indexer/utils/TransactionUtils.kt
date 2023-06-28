@@ -12,8 +12,8 @@ object TransactionUtils {
 
     fun isSuccessWithData(res: ExecuteCodeResponse): Boolean {
         return !res.reverted &&
-                res.vmError.isNullOrEmpty() &&
-                res.data.startsWith("0x") &&
-                res.data.length > 2
+          res.vmError.isNullOrEmpty() &&
+          res.data.startsWith("0x") &&
+          res.data.length > 2
     }
 }

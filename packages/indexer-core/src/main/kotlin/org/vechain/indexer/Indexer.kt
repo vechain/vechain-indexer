@@ -1,5 +1,7 @@
 package org.vechain.indexer
 
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,18 +9,17 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 enum class Status {
-    SYNCING, FULLY_SYNCED
+    SYNCING,
+    FULLY_SYNCED
 }
 
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    thorApiUrl: String = "http://localhost:8669",
-    private val startBlock: Long = 0L,
+  thorApiUrl: String = "http://localhost:8669",
+  private val startBlock: Long = 0L,
 ) {
 
     protected open val thorClient = ThorClient(thorApiUrl)
@@ -37,6 +38,7 @@ abstract class Indexer(
 
     var currentBlockNumber: Long = 0
         private set
+
     var timeLastProcessed: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
         private set
 
@@ -86,7 +88,7 @@ abstract class Indexer(
 
             // Check for reorg.
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
-                throw ReorgException("Reorg detected")
+              throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber ($status)")
             processBlock(block)
@@ -135,13 +137,12 @@ abstract class Indexer(
 
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
-            val currentEpoch = LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
+            val currentEpoch =
+              LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 100
 
-            logger.info(
-                "Success @ Block $currentBlockNumber ($timeSinceLastBlock ms since mine)"
-            )
+            logger.info("Success @ Block $currentBlockNumber ($timeSinceLastBlock ms since mine)")
         }
 
         // Increment the current block.
@@ -157,7 +158,9 @@ abstract class Indexer(
         if (status == Status.FULLY_SYNCED) {
             val latestBlock = getBestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
-                logger.info("$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})")
+                logger.info(
+                  "$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})"
+                )
                 status = Status.SYNCING
             }
         }
@@ -170,34 +173,30 @@ abstract class Indexer(
     }
 
     /**
-     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if
+     * it doesn't exist.
      */
     private suspend fun getBlockFromChain(blockNumber: Long): Block {
         return thorClient.getBlock(blockNumber)
     }
 
     /**
-     * getBestBlockFromChain will return the latest block from the chain, or throw a BlockNotFoundException if it doesn't exist.
+     * getBestBlockFromChain will return the latest block from the chain, or throw a
+     * BlockNotFoundException if it doesn't exist.
      */
     private suspend fun getBestBlockFromChain(): Block {
         return thorClient.getBestBlock()
     }
 
-
-    /**
-     * getLastSyncedBlock will return the last block that was successfully processed.
-     */
+    /** getLastSyncedBlock will return the last block that was successfully processed. */
     abstract fun getLastSyncedBlockNumber(): Long
 
     /**
-     * rollback will roll back changes made in the given block number.
-     * blockNumber will always be the last synchronized block. It is provided as a parameter here for convenience.
+     * rollback will roll back changes made in the given block number. blockNumber will always be
+     * the last synchronized block. It is provided as a parameter here for convenience.
      */
     abstract fun rollback(blockNumber: Long)
 
-    /**
-     * processBlock contains the business logic for this indexer.
-     */
+    /** processBlock contains the business logic for this indexer. */
     abstract fun processBlock(block: Block)
-
 }

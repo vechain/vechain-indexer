@@ -14,12 +14,13 @@ import org.vechain.indexer.repository.*
 import org.vechain.indexer.utils.JsonUtils
 
 /**
- * To be used for local testing only. Does not spin up mongo container, you can do this manually to speed up tests.
+ * To be used for local testing only. Does not spin up mongo container, you can do this manually to
+ * speed up tests.
  */
 @RunWith(SpringRunner::class)
 @SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = [VeWorldIndexerApiApplication::class]
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  classes = [VeWorldIndexerApiApplication::class]
 )
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
@@ -34,39 +35,30 @@ abstract class FastAbstractIntegrationTest {
 
     protected val objectMapper = JsonUtils.mapper
 
-    @Autowired
-    lateinit var transactionRepository: TransactionRepository
+    @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired
-    lateinit var contractRepository: ContractRepository
+    @Autowired lateinit var contractRepository: ContractRepository
 
-    @Autowired
-    lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NFTRepository
 
-    @Autowired
-    lateinit var blockRepository: BlockRepository
+    @Autowired lateinit var blockRepository: BlockRepository
 
-    @Autowired
-    lateinit var transferEventRepository: TransferEventRepository
+    @Autowired lateinit var transferEventRepository: TransferEventRepository
 
-    @Autowired
-    lateinit var clauseRepository: ClauseRepository
+    @Autowired lateinit var clauseRepository: ClauseRepository
 
     @BeforeAll
     fun setup() {
 
         val transactions: List<IndexedTransaction> =
-            loadDataFromResources("/transactions.json", TX_TYPE)
+          loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<IndexedContract> =
-            loadDataFromResources("/contracts.json", CONTRACT_TYPE)
-        val nfts: List<IndexedNFT> =
-            loadDataFromResources("/nfts.json", NFT_TYPE)
-        val blocks: List<IndexedBlock> =
-            loadDataFromResources("/blocks.json", BLOCKS_TYPE)
+          loadDataFromResources("/contracts.json", CONTRACT_TYPE)
+        val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", NFT_TYPE)
+        val blocks: List<IndexedBlock> = loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
-            loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
-        val clauses: List<IndexedClause> =
-            loadDataFromResources("/clauses.json", CLAUSES_TYPE)
+          loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
+        val clauses: List<IndexedClause> = loadDataFromResources("/clauses.json", CLAUSES_TYPE)
 
         transactionRepository.saveAll(transactions)
         contractRepository.saveAll(contracts)
@@ -76,11 +68,10 @@ abstract class FastAbstractIntegrationTest {
         clauseRepository.saveAll(clauses)
     }
 
-    /**
-     * Load json files from resources
-     */
+    /** Load json files from resources */
     private fun <T> loadDataFromResources(path: String, type: TypeReference<T>): T {
-        val file = AbstractIntegrationTest::class.java.getResource(path)
+        val file =
+          AbstractIntegrationTest::class.java.getResource(path)
             ?: throw Exception("File not found: $path")
 
         val rawJson: String = file.readText()

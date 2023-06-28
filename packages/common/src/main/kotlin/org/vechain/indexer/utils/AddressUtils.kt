@@ -1,8 +1,8 @@
 package org.vechain.indexer.utils
 
+import java.math.BigInteger
 import org.vechain.indexer.model.Address
 import org.web3j.abi.FunctionReturnDecoder
-import java.math.BigInteger
 
 object AddressUtils {
 
@@ -12,8 +12,7 @@ object AddressUtils {
 
     fun decode(data: String): String {
 
-        if (Address(data).isValid())
-            return data
+        if (Address(data).isValid()) return data
 
         val address = FunctionReturnDecoder.decodeAddress(data)
 
@@ -21,5 +20,4 @@ object AddressUtils {
 
         return address
     }
-
 }

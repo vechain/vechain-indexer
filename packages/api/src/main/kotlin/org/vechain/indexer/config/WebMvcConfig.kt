@@ -7,21 +7,16 @@ import org.springframework.validation.beanvalidation.MethodValidationPostProcess
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.vechain.indexer.StringToAddressConverter
 
-
 @Configuration
 open class WebMvcConfig : WebMvcConfigurer {
 
-    /**
-     * Enable parameter validation.
-     */
+    /** Enable parameter validation. */
     @Bean
     open fun methodValidationPostProcessor(): MethodValidationPostProcessor {
         return MethodValidationPostProcessor()
     }
 
-    /**
-     * Register custom data binders for query params
-     */
+    /** Register custom data binders for query params */
     override fun addFormatters(registry: FormatterRegistry) {
         registry.addConverter(StringToAddressConverter())
     }

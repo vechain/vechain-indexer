@@ -4,10 +4,9 @@ import org.vechain.indexer.model.IndexedContract
 
 object ContractFixtures {
 
-    /**
-     * VIP181 contract with creator = master
-     */
-    val CONTRACT_WITH_CREATOR_SAME_AS_MASTER = IndexedContract(
+    /** VIP181 contract with creator = master */
+    val CONTRACT_WITH_CREATOR_SAME_AS_MASTER =
+      IndexedContract(
         address = "0xf248673ca9e4b76db70957e463afd521475277cf",
         version = 1,
         blockId = "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
@@ -24,9 +23,10 @@ object ContractFixtures {
         isErc1155 = false,
         isVip210 = false,
         previousMasters = mutableSetOf(),
-    )
+      )
 
-    val CONTRACT_ROLLBACK_TEST_VERSION1 = IndexedContract(
+    val CONTRACT_ROLLBACK_TEST_VERSION1 =
+      IndexedContract(
         address = "0xc023b1316daa34b949234a38ce373749e7373d34",
         version = 1,
         blockId = "0x000000061980a0bdfdf2fdddcb91834adc92920ac45c05a4519b8c0bd2d5764a",
@@ -43,9 +43,10 @@ object ContractFixtures {
         isErc1155 = false,
         isVip210 = false,
         previousMasters = mutableSetOf(),
-    )
+      )
 
-    val CONTRACT_ROLLBACK_TEST_VERSION2 = IndexedContract(
+    val CONTRACT_ROLLBACK_TEST_VERSION2 =
+      IndexedContract(
         address = "0xc023b1316daa34b949234a38ce373749e7373d34",
         version = 2,
         blockId = "0x000000071fbd72d3ea2ab64456274984fc4533340931399d3844dfee8b3cb3ce",
@@ -62,5 +63,5 @@ object ContractFixtures {
         isErc1155 = false,
         isVip210 = false,
         previousMasters = mutableSetOf(),
-    )
+      )
 }

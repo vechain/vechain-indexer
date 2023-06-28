@@ -8,14 +8,15 @@ import org.springframework.boot.runApplication
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @OpenAPIDefinition(
-    info = Info(
-        title =
-        "VeWorld Indexer API",
-        version = "0.0.1",
-        description = "Blockchain data indexed for fast querying"
+  info =
+    Info(
+      title = "VeWorld Indexer API",
+      version = "0.0.1",
+      description = "Blockchain data indexed for fast querying"
     ),
-    servers = [
-        Server(url = "/", description = "VeWorld Indexer"),
+  servers =
+    [
+      Server(url = "/", description = "VeWorld Indexer"),
     ]
 )
 @EnableScheduling

@@ -9,5 +9,4 @@ object VIP180ABI {
     val name = CommonABI.name
     val symbol = CommonABI.symbol
     val decimals = CommonABI.decimals
-
 }

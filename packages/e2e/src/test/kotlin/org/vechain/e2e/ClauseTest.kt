@@ -12,29 +12,29 @@ import strikt.assertions.isTrue
 class ClauseTest {
     @Test
     fun `get clauses for address`() {
-        val clauses = VeWorldAPIClient.getClauses(
-            "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
-        )
+        val clauses = VeWorldAPIClient.getClauses("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         expectThat(clauses.data).hasSize(13)
     }
 
     @Test
     fun `get clauses for address pagination`() {
-        val clauses = VeWorldAPIClient.getClauses(
+        val clauses =
+          VeWorldAPIClient.getClauses(
             "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
             page = 0,
             size = 1
-        )
+          )
         expectThat(clauses.data).hasSize(1)
     }
 
     @Test
     fun `get clauses for address pagination detail`() {
-        val clauses = VeWorldAPIClient.getClauses(
+        val clauses =
+          VeWorldAPIClient.getClauses(
             "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
             page = 2,
             size = 5
-        )
+          )
 
         expect {
             that(clauses.data).hasSize(3)

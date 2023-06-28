@@ -17,10 +17,6 @@ class IndexManager(private val indexers: List<Indexer>) {
 
         val scope = CoroutineScope(Dispatchers.Default)
 
-        indexers.forEach { indexer ->
-            scope.launch {
-                indexer.start()
-            }
-        }
+        indexers.forEach { indexer -> scope.launch { indexer.start() } }
     }
 }
