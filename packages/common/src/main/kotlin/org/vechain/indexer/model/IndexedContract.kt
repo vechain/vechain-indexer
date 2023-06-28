@@ -10,7 +10,7 @@ data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
     @JsonIgnore
-    override var version: Int,
+    override val version: Int,
     override var blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,

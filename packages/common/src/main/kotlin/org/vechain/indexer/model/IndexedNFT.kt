@@ -13,7 +13,7 @@ data class IndexedNFT @ConstructorBinding constructor(
     @Id
     val id: String,
     @JsonIgnore
-    override var version: Int,
+    override val version: Int,
     val tokenId: String,
     val contractAddress: String,
     val owner: String,

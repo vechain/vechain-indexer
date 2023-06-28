@@ -16,7 +16,7 @@ data class IndexedFungibleTokenContracts @ConstructorBinding constructor(
     val tokenOwner: String,
     val tokenAddresses: SortedSet<String>,
     @JsonIgnore
-    override var version: Int,
+    override val version: Int,
     override val blockNumber: Long,
     override val blockId: String,
     override val blockTimestamp: Long,
