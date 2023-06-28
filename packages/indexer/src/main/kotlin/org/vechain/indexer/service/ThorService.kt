@@ -22,13 +22,13 @@ class ThorService(private val thorRest: WebClient) {
 
     fun getBlock(number: Long): Block {
         val block =
-          thorRest
-            .get()
-            .uri("/blocks/$number?expanded=true")
-            .retrieve()
-            .bodyToMono(Block::class.java)
-            .block()
-            ?: throw BlockNotFoundException(message = "Block $number not found")
+            thorRest
+                .get()
+                .uri("/blocks/$number?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block()
+                ?: throw BlockNotFoundException(message = "Block $number not found")
 
         if (logger.isDebugEnabled) logger.debug("Block $number found")
 
@@ -37,13 +37,13 @@ class ThorService(private val thorRest: WebClient) {
 
     fun getBestBlock(): Block {
         val block =
-          thorRest
-            .get()
-            .uri("/blocks/best?expanded=true")
-            .retrieve()
-            .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Best block not found")
+            thorRest
+                .get()
+                .uri("/blocks/best?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block()
+                ?: throw NotFoundException("Best block not found")
 
         if (logger.isDebugEnabled) logger.debug("Best block found: ${block.number}")
 
@@ -52,13 +52,13 @@ class ThorService(private val thorRest: WebClient) {
 
     fun getFinalisedBlock(): Block {
         val block =
-          thorRest
-            .get()
-            .uri("/blocks/finalized?expanded=true")
-            .retrieve()
-            .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Best block not found")
+            thorRest
+                .get()
+                .uri("/blocks/finalized?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block()
+                ?: throw NotFoundException("Best block not found")
 
         if (logger.isDebugEnabled) logger.debug("Best block found: ${block.number}")
 
@@ -67,13 +67,13 @@ class ThorService(private val thorRest: WebClient) {
 
     fun getAccountCode(address: String): String {
         val response =
-          thorRest
-            .get()
-            .uri("/accounts/$address/code")
-            .retrieve()
-            .bodyToMono(AccountCodeResponse::class.java)
-            .block()
-            ?: throw NotFoundException("Account $address not found")
+            thorRest
+                .get()
+                .uri("/accounts/$address/code")
+                .retrieve()
+                .bodyToMono(AccountCodeResponse::class.java)
+                .block()
+                ?: throw NotFoundException("Account $address not found")
 
         if (logger.isDebugEnabled) logger.debug("Account $address found: $response")
 
@@ -88,14 +88,14 @@ class ThorService(private val thorRest: WebClient) {
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
 
         return thorRest
-          .post()
-          .uri("/accounts/*")
-          .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-          .accept(MediaType.APPLICATION_JSON)
-          .body(BodyInserters.fromValue(request))
-          .retrieve()
-          .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
-          .block()
-          ?: throw Exception("Empty response from Thor")
+            .post()
+            .uri("/accounts/*")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .retrieve()
+            .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
+            .block()
+            ?: throw Exception("Empty response from Thor")
     }
 }

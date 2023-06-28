@@ -15,7 +15,7 @@ object Signatures {
          * event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved)
          */
         val APPROVAL_FOR_ALL_EVENT =
-          ContractUtils.getEventSignature("ApprovalForAll(address,address,bool)")
+            ContractUtils.getEventSignature("ApprovalForAll(address,address,bool)")
 
         /** function name() public view returns (string) */
         val NAME_FUNCTION = ContractUtils.getFunctionSignature("name()")
@@ -31,21 +31,21 @@ object Signatures {
 
         /** function transferFrom(address _from, address _to, uint256 _value) external payable; */
         val TRANSFER_FROM_FUNCTION =
-          ContractUtils.getFunctionSignature("transferFrom(address,address,uint256)")
+            ContractUtils.getFunctionSignature("transferFrom(address,address,uint256)")
 
         /** function approve(address _approved, uint256 _value) external payable; */
         val APPROVE_FUNCTION = ContractUtils.getFunctionSignature("approve(address,uint256)")
 
         /** function setApprovalForAll(address _operator, bool _approved) external; */
         val SET_APPROVAL_FOR_ALL_FUNCTION =
-          ContractUtils.getFunctionSignature("setApprovalForAll(address,bool)")
+            ContractUtils.getFunctionSignature("setApprovalForAll(address,bool)")
 
         /**
          * function isApprovedForAll(address _owner, address _operator) external view returns
          * (bool);
          */
         val IS_APPROVED_FOR_ALL_FUNCTION =
-          ContractUtils.getFunctionSignature("isApprovedForAll(address,address)")
+            ContractUtils.getFunctionSignature("isApprovedForAll(address,address)")
     }
 
     object NFT {
@@ -57,13 +57,13 @@ object Signatures {
          * external payable;
          */
         val SAFE_TRANSFER_FROM_1_FUNCTION =
-          ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256,bytes)")
+            ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256,bytes)")
 
         /**
          * function safeTransferFrom(address _from, address _to, uint256 _tokenId) external payable;
          */
         val SAFE_TRANSFER_FROM_2_FUNCTION =
-          ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256)")
+            ContractUtils.getFunctionSignature("safeTransferFrom(address,address,uint256)")
 
         /** function getApproved(uint256 _tokenId) external view returns (address); */
         val GET_APPROVED_FUNCTION = ContractUtils.getFunctionSignature("getApproved(uint256)")
@@ -72,7 +72,7 @@ object Signatures {
     object ERC165 {
         /** function supportsInterface(bytes4 interfaceId) external view returns (bool); */
         val SUPPORTS_INTERFACE_FUNCTION =
-          ContractUtils.getFunctionSignature("supportsInterface(bytes4)")
+            ContractUtils.getFunctionSignature("supportsInterface(bytes4)")
     }
 
     object Fungible {
@@ -102,7 +102,7 @@ object Signatures {
          * (uint256[] memory);
          */
         val BALANCE_OF_BATCH_FUNCTION =
-          ContractUtils.getFunctionSignature("balanceOfBatch(address[],uint256[])")
+            ContractUtils.getFunctionSignature("balanceOfBatch(address[],uint256[])")
 
         /** function uri(uint256 _id) external view returns (string memory) */
         val URI_FUNCTION = ContractUtils.getFunctionSignature("uri(uint256)")

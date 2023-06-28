@@ -16,11 +16,11 @@ open class ThorConfig(@Value("\${thor.url}") private val thorUrl: String) {
     open fun thorRest(): WebClient {
         val size = 16 * 1024 * 1024
         val strategies =
-          ExchangeStrategies.builder()
-            .codecs { codecs: ClientCodecConfigurer ->
-                codecs.defaultCodecs().maxInMemorySize(size)
-            }
-            .build()
+            ExchangeStrategies.builder()
+                .codecs { codecs: ClientCodecConfigurer ->
+                    codecs.defaultCodecs().maxInMemorySize(size)
+                }
+                .build()
         return WebClient.builder().exchangeStrategies(strategies).baseUrl(thorUrl).build()
     }
 }

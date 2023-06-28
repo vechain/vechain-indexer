@@ -11,7 +11,7 @@ import org.vechain.indexer.repository.NFTRepository
 @Profile("nft-events")
 @Service
 open class NFTService(
-  private val nftRepository: NFTRepository,
+    private val nftRepository: NFTRepository,
 ) {
 
     open fun findByOwner(owner: Address, pageable: Pageable): Page<IndexedNFT> {
@@ -19,14 +19,14 @@ open class NFTService(
     }
 
     open fun findByOwnerAndContractAddress(
-      owner: Address,
-      contractAddress: Address,
-      pageable: Pageable
+        owner: Address,
+        contractAddress: Address,
+        pageable: Pageable
     ): Page<IndexedNFT> {
         return nftRepository.findByOwnerAndContractAddress(
-          owner.value,
-          contractAddress.value,
-          pageable
+            owner.value,
+            contractAddress.value,
+            pageable
         )
     }
 

@@ -27,9 +27,9 @@ allprojects {
 
     spotless {
         kotlin {
-            ktfmt().kotlinlangStyle().configure {
+            ktfmt().googleStyle().configure {
                 it.setBlockIndent(4)
-                it.setContinuationIndent(2)
+                it.setContinuationIndent(4)
             }
         }
     }

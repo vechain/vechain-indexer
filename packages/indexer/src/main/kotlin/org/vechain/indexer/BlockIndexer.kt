@@ -15,11 +15,11 @@ import org.vechain.thor.model.Block
 @Profile("blocks")
 @Component
 open class BlockIndexer(
-  private val thorService: ThorService,
-  private val blockRepository: BlockRepository,
-  private val mongoTemplate: MongoTemplate,
-  @Value("\${thor.url}") private val thorUrl: String,
-  @Value("\${indexer.startBlock.blocks}") private val startBlock: Long,
+    private val thorService: ThorService,
+    private val blockRepository: BlockRepository,
+    private val mongoTemplate: MongoTemplate,
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.blocks}") private val startBlock: Long,
 ) : VeWorldIndexer(blockRepository, startBlock, thorUrl) {
 
     override fun rollback(blockNumber: Long) {
@@ -41,13 +41,13 @@ open class BlockIndexer(
             val finalityBlock = thorService.getFinalisedBlock()
             if (finalityBlock.number > it.blockNumber) {
                 logger.info(
-                  "Finalising blocks in range ${it.blockNumber} - ${finalityBlock.number}"
+                    "Finalising blocks in range ${it.blockNumber} - ${finalityBlock.number}"
                 )
 
                 mongoTemplate.updateMulti(
-                  query(where("blockNumber").gte(it.blockNumber).lte(finalityBlock.number)),
-                  update("isFinalized", true),
-                  IndexedBlock::class.java
+                    query(where("blockNumber").gte(it.blockNumber).lte(finalityBlock.number)),
+                    update("isFinalized", true),
+                    IndexedBlock::class.java
                 )
 
                 return

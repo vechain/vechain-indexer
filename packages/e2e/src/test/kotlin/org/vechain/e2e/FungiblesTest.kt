@@ -9,7 +9,7 @@ class FungiblesTest {
     @Test
     fun `should return some contracts`() {
         val contracts =
-          VeWorldAPIClient.getFungibleTokenContracts("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+            VeWorldAPIClient.getFungibleTokenContracts("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
 
         expectThat(contracts).isNotEmpty()
     }
@@ -17,7 +17,7 @@ class FungiblesTest {
     @Test
     fun `should not return any contracts`() {
         val contracts =
-          VeWorldAPIClient.getFungibleTokenContracts("0x435933c8064b4ae76be665428e0307ef2ccfbd69")
+            VeWorldAPIClient.getFungibleTokenContracts("0x435933c8064b4ae76be665428e0307ef2ccfbd69")
 
         expectThat(contracts).isEmpty()
     }

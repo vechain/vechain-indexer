@@ -22,10 +22,10 @@ open class CountRepository(private val mongoTemplate: MongoTemplate) {
      * security reasons
      */
     open fun getCount(
-      collection: Class<*>,
-      matchOperations: List<MatchOperation> = emptyList(),
-      groupOperation: GroupOperation? = null,
-      countLimit: Long = COUNT_LIMIT
+        collection: Class<*>,
+        matchOperations: List<MatchOperation> = emptyList(),
+        groupOperation: GroupOperation? = null,
+        countLimit: Long = COUNT_LIMIT
     ): Long {
         val aggregationOperations: MutableList<AggregationOperation> = mutableListOf()
 
@@ -37,9 +37,9 @@ open class CountRepository(private val mongoTemplate: MongoTemplate) {
         val countAggregation = Aggregation.newAggregation(aggregationOperations)
 
         val count =
-          mongoTemplate
-            .aggregate(countAggregation, collection, Document::class.java)
-            .uniqueMappedResult
+            mongoTemplate
+                .aggregate(countAggregation, collection, Document::class.java)
+                .uniqueMappedResult
 
         return count?.getInteger(COUNT_FIELD)?.toLong() ?: 0
     }

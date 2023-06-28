@@ -12,7 +12,9 @@ class TransferEventTest {
     @Test
     fun `get transfer events for address`() {
         val transferEvents =
-          VeWorldAPIClient.getTransferEvents(address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+            VeWorldAPIClient.getTransferEvents(
+                address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
+            )
 
         expectThat(transferEvents.data).hasSize(16)
 
@@ -21,15 +23,15 @@ class TransferEventTest {
         }
 
         val tokenAddress =
-          transferEvents.data
-            .find { te: IndexedTransferEvent -> te.tokenAddress != null }!!
-            .tokenAddress
+            transferEvents.data
+                .find { te: IndexedTransferEvent -> te.tokenAddress != null }!!
+                .tokenAddress
 
         // Get transfer event by token address
         val transferEventsForToken =
-          VeWorldAPIClient.getTransferEvents(
-            tokenAddress = tokenAddress,
-          )
+            VeWorldAPIClient.getTransferEvents(
+                tokenAddress = tokenAddress,
+            )
 
         expectThat(transferEventsForToken.data.size).isGreaterThan(0)
 
@@ -41,7 +43,10 @@ class TransferEventTest {
     @Test
     fun `get transfer events for address with pagination`() {
         val transferEvents =
-          VeWorldAPIClient.getTransferEvents("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
+            VeWorldAPIClient.getTransferEvents(
+                "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
+                size = 1
+            )
 
         expectThat(transferEvents.data).hasSize(1)
 

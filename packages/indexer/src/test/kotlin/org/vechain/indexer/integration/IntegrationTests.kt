@@ -30,8 +30,8 @@ class IntegrationTests : AbstractIntegrationTest() {
             mongoOps.count(Query(), name).let { count ->
                 expect {
                     that(count)
-                      .describedAs("Repo ($name) should have 1 or more documents")
-                      .isGreaterThan(0)
+                        .describedAs("Repo ($name) should have 1 or more documents")
+                        .isGreaterThan(0)
                 }
             }
         }

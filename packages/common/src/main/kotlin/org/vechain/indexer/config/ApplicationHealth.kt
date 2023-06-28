@@ -18,8 +18,8 @@ open class ApplicationHealth(private val healthEndpoint: HealthEndpoint) {
 
         if (health.status != Status.UP) {
             logger.error(
-              "Application is UNHEALTHY: {}",
-              health.components.filter { it.value.status != Status.UP }
+                "Application is UNHEALTHY: {}",
+                health.components.filter { it.value.status != Status.UP }
             )
         }
     }

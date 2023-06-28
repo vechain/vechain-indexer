@@ -42,17 +42,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(12)
     }
@@ -62,17 +62,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(12)
     }
@@ -82,17 +82,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(12)
     }
@@ -102,17 +102,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 1
         val size = 5
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(size)
     }
@@ -122,27 +122,27 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = 3
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data)
-          .hasSize(size)
-          .isSorted(
-            compareByDescending<IndexedTransferEvent> { it.blockNumber }
-              .then(
-                compareByDescending<IndexedTransferEvent> { it.txId }
-                  .then(compareByDescending { it.id })
-              )
-          )
+            .hasSize(size)
+            .isSorted(
+                compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                    .then(
+                        compareByDescending<IndexedTransferEvent> { it.txId }
+                            .then(compareByDescending { it.id })
+                    )
+            )
     }
 
     @Test
@@ -150,17 +150,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(70)
     }
@@ -170,17 +170,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?tokenAddress=08f30373569af024d15eb47fd477a35db929eaac" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?tokenAddress=08f30373569af024d15eb47fd477a35db929eaac" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(70)
     }
@@ -190,17 +190,17 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = PAGE_SIZE_LIMIT
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?tokenAddress=0x08F30373569AF024D15EB47FD477A35DB929EAAC" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?tokenAddress=0x08F30373569AF024D15EB47FD477A35DB929EAAC" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expectThat(transferEvents.data).hasSize(70)
     }
@@ -210,28 +210,28 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         val page = 0
         val size = 3
         val result =
-          mockMvc
-            .get(
-              "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                "&page=$page" +
-                "&size=$size"
-            )
-            .andExpect { status { isOk() } }
-            .andReturn()
+            mockMvc
+                .get(
+                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                        "&page=$page" +
+                        "&size=$size"
+                )
+                .andExpect { status { isOk() } }
+                .andReturn()
 
         val transferEvents =
-          objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
 
         expect {
             that(transferEvents.data)
-              .hasSize(size)
-              .isSorted(
-                compareByDescending<IndexedTransferEvent> { it.blockNumber }
-                  .then(
-                    compareByDescending<IndexedTransferEvent> { it.txId }
-                      .then(compareByDescending { it.id })
-                  )
-              )
+                .hasSize(size)
+                .isSorted(
+                    compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                        .then(
+                            compareByDescending<IndexedTransferEvent> { it.txId }
+                                .then(compareByDescending { it.id })
+                        )
+                )
 
             that(transferEvents.pagination.hasCount).isTrue()
             that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
@@ -259,20 +259,20 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expectThat(transferEvents.data).hasSize(4)
         }
@@ -282,21 +282,21 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expectThat(transferEvents.data).hasSize(1)
         }
@@ -306,32 +306,32 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expect {
                 that(transferEvents.data)
-                  .hasSize(1)
-                  .isSorted(
-                    compareByDescending<IndexedTransferEvent> { it.blockNumber }
-                      .then(
-                        compareByDescending<IndexedTransferEvent> { it.txId }
-                          .then(compareByDescending { it.id })
-                      )
-                  )
+                    .hasSize(1)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(
+                                compareByDescending<IndexedTransferEvent> { it.txId }
+                                    .then(compareByDescending { it.id })
+                            )
+                    )
 
                 that(transferEvents.pagination.hasCount).isTrue()
                 that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
@@ -360,20 +360,20 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expectThat(transferEvents.data).hasSize(8)
         }
@@ -383,21 +383,21 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expectThat(transferEvents.data).hasSize(2)
         }
@@ -407,32 +407,32 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                    "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transferEvents =
-              objectMapper.readValue(
-                result.response.contentAsString,
-                PAGINATED_TRANSFER_EVENTS_TYPE
-              )
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
 
             expect {
                 that(transferEvents.data)
-                  .hasSize(2)
-                  .isSorted(
-                    compareByDescending<IndexedTransferEvent> { it.blockNumber }
-                      .then(
-                        compareByDescending<IndexedTransferEvent> { it.txId }
-                          .then(compareByDescending { it.id })
-                      )
-                  )
+                    .hasSize(2)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(
+                                compareByDescending<IndexedTransferEvent> { it.txId }
+                                    .then(compareByDescending { it.id })
+                            )
+                    )
 
                 that(transferEvents.pagination.hasCount).isTrue()
                 that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)

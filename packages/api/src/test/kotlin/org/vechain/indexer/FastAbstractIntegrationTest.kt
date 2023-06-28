@@ -19,8 +19,8 @@ import org.vechain.indexer.utils.JsonUtils
  */
 @RunWith(SpringRunner::class)
 @SpringBootTest(
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  classes = [VeWorldIndexerApiApplication::class]
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    classes = [VeWorldIndexerApiApplication::class]
 )
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
@@ -51,13 +51,13 @@ abstract class FastAbstractIntegrationTest {
     fun setup() {
 
         val transactions: List<IndexedTransaction> =
-          loadDataFromResources("/transactions.json", TX_TYPE)
+            loadDataFromResources("/transactions.json", TX_TYPE)
         val contracts: List<IndexedContract> =
-          loadDataFromResources("/contracts.json", CONTRACT_TYPE)
+            loadDataFromResources("/contracts.json", CONTRACT_TYPE)
         val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", NFT_TYPE)
         val blocks: List<IndexedBlock> = loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
-          loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
+            loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
         val clauses: List<IndexedClause> = loadDataFromResources("/clauses.json", CLAUSES_TYPE)
 
         transactionRepository.saveAll(transactions)
@@ -71,8 +71,8 @@ abstract class FastAbstractIntegrationTest {
     /** Load json files from resources */
     private fun <T> loadDataFromResources(path: String, type: TypeReference<T>): T {
         val file =
-          AbstractIntegrationTest::class.java.getResource(path)
-            ?: throw Exception("File not found: $path")
+            AbstractIntegrationTest::class.java.getResource(path)
+                ?: throw Exception("File not found: $path")
 
         val rawJson: String = file.readText()
 

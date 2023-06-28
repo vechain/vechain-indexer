@@ -10,17 +10,17 @@ const val COUNT_LIMIT = 500L
 
 /** API response wrapper object */
 data class PaginatedResponse<T>(
-  val data: List<T>,
-  val pagination: PaginationDetail,
+    val data: List<T>,
+    val pagination: PaginationDetail,
 ) where T : Any
 
 /** Wrapper that holds pagination data inside a response */
 data class PaginationDetail(
-  val hasCount: Boolean,
-  val countLimit: Long,
-  val totalPages: Int? = null,
-  val totalElements: Long? = null,
-  val hasNext: Boolean,
+    val hasCount: Boolean,
+    val countLimit: Long,
+    val totalPages: Int? = null,
+    val totalElements: Long? = null,
+    val hasNext: Boolean,
 )
 
 /**
@@ -39,14 +39,14 @@ fun <T : Any> paginatedResponse(page: Page<T>): PaginatedResponse<T> {
     val hasCount = page.totalElements < COUNT_LIMIT + 1
 
     return PaginatedResponse(
-      data = page.content,
-      pagination =
-        PaginationDetail(
-          hasCount = hasCount,
-          countLimit = COUNT_LIMIT,
-          totalPages = if (hasCount) page.totalPages else null,
-          totalElements = if (hasCount) page.totalElements else null,
-          hasNext = page.hasNext()
-        )
+        data = page.content,
+        pagination =
+            PaginationDetail(
+                hasCount = hasCount,
+                countLimit = COUNT_LIMIT,
+                totalPages = if (hasCount) page.totalPages else null,
+                totalElements = if (hasCount) page.totalElements else null,
+                hasNext = page.hasNext()
+            )
     )
 }

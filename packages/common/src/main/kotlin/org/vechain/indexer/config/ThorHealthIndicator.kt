@@ -23,11 +23,11 @@ class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
     fun getBlock(number: Long): Block {
 
         return thorRest
-          .get()
-          .uri("/blocks/$number?expanded=false")
-          .retrieve()
-          .bodyToMono(Block::class.java)
-          .block()
-          ?: throw Exception("Failed thorRest healthcheck")
+            .get()
+            .uri("/blocks/$number?expanded=false")
+            .retrieve()
+            .bodyToMono(Block::class.java)
+            .block()
+            ?: throw Exception("Failed thorRest healthcheck")
     }
 }

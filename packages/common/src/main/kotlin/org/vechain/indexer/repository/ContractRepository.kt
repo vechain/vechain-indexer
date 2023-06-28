@@ -11,8 +11,8 @@ import org.vechain.indexer.model.rest.ContractType
 @Repository
 interface ContractRepository : BaseIndexedRepository<IndexedContract> {
     fun findByCreatorAndType(
-      creator: String?,
-      contractType: ContractType?,
-      pageable: Pageable
+        creator: String?,
+        contractType: ContractType?,
+        pageable: Pageable
     ): Page<IndexedContract>
 }

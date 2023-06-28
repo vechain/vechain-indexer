@@ -18,8 +18,8 @@ enum class Status {
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-  thorApiUrl: String = "http://localhost:8669",
-  private val startBlock: Long = 0L,
+    thorApiUrl: String = "http://localhost:8669",
+    private val startBlock: Long = 0L,
 ) {
 
     protected open val thorClient = ThorClient(thorApiUrl)
@@ -88,7 +88,7 @@ abstract class Indexer(
 
             // Check for reorg.
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
-              throw ReorgException("Reorg detected")
+                throw ReorgException("Reorg detected")
 
             logger.info("Processing @ Block $currentBlockNumber ($status)")
             processBlock(block)
@@ -138,7 +138,7 @@ abstract class Indexer(
         // If we are fully synced, recalculate the backoff period.
         if (status == Status.FULLY_SYNCED) {
             val currentEpoch =
-              LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
+                LocalDateTime.now(ZoneOffset.UTC).toInstant(ZoneOffset.UTC).toEpochMilli()
             val timeSinceLastBlock = maxOf(currentEpoch - block.timestamp.times(1000), 0)
             backoffPeriod = maxOf(0, INITIAL_BACKOFF_PERIOD - (timeSinceLastBlock)) + 100
 
@@ -159,7 +159,7 @@ abstract class Indexer(
             val latestBlock = getBestBlockFromChain()
             if (latestBlock.number > currentBlockNumber) {
                 logger.info(
-                  "$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})"
+                    "$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})"
                 )
                 status = Status.SYNCING
             }

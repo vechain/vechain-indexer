@@ -12,10 +12,10 @@ import org.vechain.thor.model.Block
 @Profile("transfer-events")
 @Component
 open class TransferEventIndexer(
-  private val transferEventRepository: TransferEventRepository,
-  private val mongoTemplate: MongoTemplate,
-  @Value("\${thor.url}") private val thorUrl: String,
-  @Value("\${indexer.startBlock.transfers}") private val startBlock: Long,
+    private val transferEventRepository: TransferEventRepository,
+    private val mongoTemplate: MongoTemplate,
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.transfers}") private val startBlock: Long,
 ) : VeWorldIndexer(transferEventRepository, startBlock, thorUrl) {
 
     override fun processBlock(block: Block) {
@@ -23,7 +23,7 @@ open class TransferEventIndexer(
         val transferEvents = BlockUtils.getAllTransferEvents(block)
 
         if (transferEvents.isNotEmpty())
-          mongoTemplate.insert(transferEvents, IndexedTransferEvent::class.java)
+            mongoTemplate.insert(transferEvents, IndexedTransferEvent::class.java)
     }
 
     override fun rollback(blockNumber: Long) {

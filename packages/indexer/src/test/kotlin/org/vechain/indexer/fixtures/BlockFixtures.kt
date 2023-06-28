@@ -24,8 +24,8 @@ object BlockFixtures {
 
     private fun buildBlockFixture(blockNumber: Long): Block {
         return objectMapper.readValue(
-          BlockFixtures::class.java.getResource("/block_${blockNumber}.json")!!.readText(),
-          Block::class.java
+            BlockFixtures::class.java.getResource("/block_${blockNumber}.json")!!.readText(),
+            Block::class.java
         )
     }
 }

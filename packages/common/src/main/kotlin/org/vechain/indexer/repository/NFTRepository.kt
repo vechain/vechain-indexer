@@ -13,9 +13,9 @@ interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
     fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT>
 
     fun findByOwnerAndContractAddress(
-      owner: String,
-      contractAddress: String,
-      pageable: Pageable
+        owner: String,
+        contractAddress: String,
+        pageable: Pageable
     ): Page<IndexedNFT>
 
     fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String>

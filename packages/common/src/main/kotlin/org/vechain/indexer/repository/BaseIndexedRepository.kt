@@ -6,14 +6,14 @@ import org.springframework.data.repository.PagingAndSortingRepository
 import org.vechain.indexer.model.IndexedDocument
 
 interface BaseIndexedRepository<T : IndexedDocument> :
-  CrudRepository<T, String>, PagingAndSortingRepository<T, String> {
+    CrudRepository<T, String>, PagingAndSortingRepository<T, String> {
 
     @Aggregation(
-      pipeline =
-        [
-          "{ '\$sort': { 'blockNumber': -1 } }",
-          "{ '\$limit': 1 }",
-        ]
+        pipeline =
+            [
+                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
     )
     fun getLatestRecord(): T?
 
