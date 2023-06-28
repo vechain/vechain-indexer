@@ -1,16 +1,12 @@
 package org.vechain.indexer.service
 
-import org.apache.logging.log4j.LogManager
 import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
-import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TransactionUtils
 import org.vechain.thor.model.Block
 import org.vechain.thor.model.Clause
@@ -21,9 +17,7 @@ import java.math.BigInteger
 
 
 @Service
-class ContractService(private val thorService: ThorService, private val archiveRepository: ArchiveRepository) {
-
-    private val logger = LogManager.getLogger(this::class.simpleName)
+class ContractService(private val thorService: ThorService) {
 
     companion object {
         val SAMPLE_ADDRESS_1 = AddressUtils.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
@@ -306,17 +300,4 @@ class ContractService(private val thorService: ThorService, private val archiveR
         }
         return contracts
     }
-
-    fun archive(contracts: List<IndexedContract>) {
-        val archives = contracts.map { Archive(IdUtils.buildHashedId("${it.address}-${it.version}"), it) }
-        archiveRepository.saveAll(archives)
-    }
-
-    fun getPreviousVersion(contract: IndexedContract): IndexedContract {
-        val previousVersion =
-            archiveRepository.findById(IdUtils.buildHashedId("${contract.address}-${contract.version - 1}"))
-        if (!previousVersion.isPresent) throw Exception("Previous version not found")
-        return previousVersion.get().data as IndexedContract
-    }
-
 }

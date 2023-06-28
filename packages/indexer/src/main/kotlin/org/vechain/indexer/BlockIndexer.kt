@@ -21,7 +21,11 @@ open class BlockIndexer(
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.blocks}") private val startBlock: Long,
 ) :
-    VeWorldIndexer(blockRepository, thorUrl, startBlock) {
+    VeWorldIndexer(blockRepository, startBlock, thorUrl) {
+
+    override fun rollback(blockNumber: Long) {
+        blockRepository.deleteAllByBlockNumberBetween(blockNumber, blockNumber)
+    }
 
     override fun processBlock(block: Block) {
 

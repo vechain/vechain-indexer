@@ -7,6 +7,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.core.io.Resource
+import org.springframework.data.mongodb.core.BulkOperations
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.exception.ArchiveException
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
@@ -18,6 +22,7 @@ import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.ContractRepository
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.IdUtils
@@ -43,6 +48,11 @@ internal class ContractIndexerTest {
     @MockK
     lateinit var contractsResource: Resource
 
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
+
+    private lateinit var archiveService: ArchiveService
+
     private lateinit var contractService: ContractService
 
     private lateinit var contractIndexer: ContractIndexer
@@ -50,12 +60,14 @@ internal class ContractIndexerTest {
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
-        contractService = ContractService(thorService, archiveRepository)
+        archiveService = ArchiveService(archiveRepository, mongoTemplate)
+        contractService = ContractService(thorService)
         MockKAnnotations.init(this)
         contractIndexer = ContractIndexer(
             thorService,
             contractService,
             contractRepository,
+            archiveService,
             contractsResource,
             "http://localhost:8669",
             1L
@@ -69,8 +81,7 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#5: block & account code
         every { thorService.getAccountCode(any()) } returns getContractData(
-            BLOCK_5_VIP180_CONTRACTS,
-            "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
+            BLOCK_5_VIP180_CONTRACTS, "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
         )
         every { contractRepository.findAllById(any()) } returns mutableListOf()
 
@@ -103,12 +114,10 @@ internal class ContractIndexerTest {
 
         //Mock contract responses
         every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns getContractData(
-            BLOCK_42_ERC1155_VIP210_CONTRACTS,
-            "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
+            BLOCK_42_ERC1155_VIP210_CONTRACTS, "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
         )
         every { thorService.getAccountCode("0x5024d193c8ec0ee084995de603365c3560d7ba6e") } returns getContractData(
-            BLOCK_42_ERC1155_VIP210_CONTRACTS,
-            "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
+            BLOCK_42_ERC1155_VIP210_CONTRACTS, "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
         )
         every { contractRepository.findAllById(any()) } returns emptyList()
 
@@ -140,8 +149,7 @@ internal class ContractIndexerTest {
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns getContractData(
-            BLOCK_6_VIP181_CONTRACTS,
-            "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
+            BLOCK_6_VIP181_CONTRACTS, "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         )
         every { contractRepository.findAllById(any()) } returns emptyList()
 
@@ -248,48 +256,59 @@ internal class ContractIndexerTest {
     @Test
     fun `rollback - successfully restore from archive`() {
         val blockNumber = 16L
-        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
+        val version1ArchiveId = IdUtils.buildArchiveId(CONTRACT_ROLLBACK_TEST_VERSION1)
 
-        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
-            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
-            CONTRACT_ROLLBACK_TEST_VERSION2
+        val bulkOps: BulkOperations = mockk(relaxed = true)
+
+        val deleteAllContractsSlot = mutableListOf<Query>()
+        val saveAllContractsSlot = mutableListOf<IndexedContract>()
+
+        every { mongoTemplate.find<IndexedContract>(any(), any()) } returns mutableListOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER, CONTRACT_ROLLBACK_TEST_VERSION2
         )
-        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.of(
+        every {
+            mongoTemplate.bulkOps(
+                any(), IndexedContract::class.java
+            )
+        } returns bulkOps
+        every { bulkOps.replaceOne(any(), capture(saveAllContractsSlot)) } returns bulkOps
+        every { bulkOps.remove(capture(deleteAllContractsSlot)) } returns bulkOps
+        every { archiveRepository.findAllById(arrayListOf(version1ArchiveId)) } returns listOf(
             Archive(
-                archiveId,
-                CONTRACT_ROLLBACK_TEST_VERSION1
+                version1ArchiveId, CONTRACT_ROLLBACK_TEST_VERSION1
             )
         )
-
-        val deleteAllContractsSlot = slot<List<IndexedContract>>()
-        every { contractRepository.deleteAll(capture(deleteAllContractsSlot)) } returns Unit
-
-        val saveAllContractsSlot = slot<List<IndexedContract>>()
-        every { contractRepository.saveAll(capture(saveAllContractsSlot)) } returns listOf()
+        every { archiveRepository.deleteAllById(any()) } returns Unit
 
         contractIndexer.rollback(blockNumber)
 
-        expectThat(deleteAllContractsSlot.captured.size).isEqualTo(1)
-        val deleteContract = deleteAllContractsSlot.captured.first()
-        compareContracts(deleteContract, CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+        expect {
+            that(deleteAllContractsSlot.size).isEqualTo(1)
+            that(deleteAllContractsSlot[0].queryObject["_id"]).isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.address)
+        }
 
-        expectThat(saveAllContractsSlot.captured.size).isEqualTo(1)
-        val saveContract = saveAllContractsSlot.captured.first()
+        expectThat(saveAllContractsSlot.size).isEqualTo(1)
+        val saveContract = saveAllContractsSlot.first()
         compareContracts(saveContract, CONTRACT_ROLLBACK_TEST_VERSION1)
     }
 
     @Test
-    fun `rollback - no archive record - throws exception`() {
+    fun `rollback - no archive record - throws archive exception`() {
         val blockNumber = 16L
-        val archiveId = "${CONTRACT_ROLLBACK_TEST_VERSION2.address}-${CONTRACT_ROLLBACK_TEST_VERSION2.version - 1}"
 
-        every { contractRepository.findAllByBlockNumber(blockNumber) } returns listOf(
-            CONTRACT_WITH_CREATOR_SAME_AS_MASTER,
-            CONTRACT_ROLLBACK_TEST_VERSION2
+        val deletedArchives = slot<List<String>>()
+
+        every { mongoTemplate.find<IndexedContract>(any(), any()) } returns mutableListOf(
+            CONTRACT_WITH_CREATOR_SAME_AS_MASTER, CONTRACT_ROLLBACK_TEST_VERSION2
         )
-        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.empty()
+        every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
+        every { archiveRepository.findAllById(any()) } returns emptyList()
 
-        expectThrows<Exception> { contractIndexer.rollback(blockNumber) }
+        expectThrows<ArchiveException> {
+            contractIndexer.rollback(blockNumber)
+        }
+
+        verify { mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called }
     }
 
 

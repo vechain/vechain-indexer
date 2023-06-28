@@ -10,7 +10,7 @@ data class IndexedContract @ConstructorBinding constructor(
     @Id
     val address: String,
     @JsonIgnore
-    override val version: Int,
+    override var version: Int,
     override var blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -25,4 +25,8 @@ data class IndexedContract @ConstructorBinding constructor(
     val isErc721: Boolean,
     val isErc1155: Boolean,
     val previousMasters: MutableSet<String>
-) : IndexedDocument, Versioned
+) : VersionedDocument {
+    override fun getDocumentId(): String {
+        return address
+    }
+}

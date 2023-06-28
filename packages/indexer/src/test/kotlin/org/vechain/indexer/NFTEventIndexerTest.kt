@@ -7,6 +7,10 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.exception.ArchiveException
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.fixtures.NFTFixtures.NFT_ROLLBACK_TEST_VERSION1
@@ -16,7 +20,7 @@ import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat
@@ -34,15 +38,18 @@ internal class NFTEventIndexerTest {
     @MockK
     lateinit var nftRepository: NFTRepository
 
-    lateinit var nftService: NFTService
+    @MockK
+    lateinit var mongoTemplate: MongoTemplate
 
-    lateinit var nftEventIndexer: NFTEventIndexer
+    private lateinit var archiveService: ArchiveService
+
+    private lateinit var nftEventIndexer: NFTEventIndexer
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftService = NFTService(archiveRepository)
-        nftEventIndexer = NFTEventIndexer(nftRepository, nftService, "http://localhost:8669", 0L)
+        archiveService = ArchiveService(archiveRepository, mongoTemplate)
+        nftEventIndexer = NFTEventIndexer(nftRepository, archiveService, "http://localhost:8669", 0L)
     }
 
     @Test
@@ -86,50 +93,60 @@ internal class NFTEventIndexerTest {
     @Test
     fun `rollback - successfully restore from archive`() {
         val blockNumber = 16L
-        val archiveId = "${NFT_ROLLBACK_TEST_VERSION1.id}-${NFT_ROLLBACK_TEST_VERSION1.version}"
+        val archiveId = IdUtils.buildArchiveId(NFT_ROLLBACK_TEST_VERSION1)
 
-        every { nftRepository.findAllByBlockNumber(blockNumber) } returns mutableListOf(
+        val deleteSlot = mutableListOf<Query>()
+        val nftsSlot = mutableListOf<IndexedNFT>()
+
+        val bulkOps: BulkOperations = mockk(relaxed = true)
+
+        // Mock the entries in the NFT collection for rollback number
+        every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns mutableListOf(
             NFT_VIP181,
             NFT_ROLLBACK_TEST_VERSION2
         )
-
-        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.of(
+        // Mocking bulk ops allows us to capture the NFTs that get rolled back
+        every { mongoTemplate.bulkOps(any(), IndexedNFT::class.java) } returns bulkOps
+        every { bulkOps.replaceOne(any(), capture(nftsSlot)) } returns bulkOps
+        every { bulkOps.remove(capture(deleteSlot)) } returns bulkOps
+        every { archiveRepository.deleteAllById(any()) } returns Unit
+        every { archiveRepository.findAllById(arrayListOf(archiveId)) } returns listOf(
             Archive(
                 archiveId,
                 NFT_ROLLBACK_TEST_VERSION1
             )
         )
 
-        val deleteSlot = slot<List<IndexedNFT>>()
-        every { nftRepository.deleteAll(capture(deleteSlot)) } returns Unit
-
-        val nftsSlot = slot<List<IndexedNFT>>()
-        every { nftRepository.saveAll(capture(nftsSlot)) } returns listOf()
-
         nftEventIndexer.rollback(blockNumber)
 
-        val deletedNFTs = deleteSlot.captured
-        expectThat(deletedNFTs).hasSize(1)
-        compareNFTs(NFT_VIP181, deletedNFTs.first())
+        expect {
+            that(deleteSlot.size).isEqualTo(1)
+            that(deleteSlot[0].queryObject["_id"]).isEqualTo(NFT_VIP181.id)
+        }
 
-        val savedNFTs = nftsSlot.captured
-        expectThat(savedNFTs).hasSize(1)
-        compareNFTs(NFT_ROLLBACK_TEST_VERSION1, savedNFTs.first())
+        expectThat(nftsSlot).hasSize(1)
+        compareNFTs(NFT_ROLLBACK_TEST_VERSION1, nftsSlot.first())
     }
 
     @Test
     fun `rollback - no archive record - throws exception`() {
         val blockNumber = 16L
-        val archiveId = "${NFT_ROLLBACK_TEST_VERSION1.id}-${NFT_ROLLBACK_TEST_VERSION1.version}"
 
-        every { nftRepository.findAllByBlockNumber(blockNumber) } returns mutableListOf(
+        val deletedArchives = slot<List<String>>()
+
+        every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns mutableListOf(
             NFT_VIP181,
             NFT_ROLLBACK_TEST_VERSION2
         )
+        every { archiveRepository.findAllById(any()) } returns emptyList()
+        every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
 
-        every { archiveRepository.findById(IdUtils.buildHashedId(archiveId)) } returns Optional.empty()
+        expectThrows<ArchiveException> {
+            nftEventIndexer.rollback(blockNumber)
+        }
 
-        expectThrows<Exception> { nftEventIndexer.rollback(blockNumber) }
+        verify { mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called }
+        verify { archiveRepository.deleteAllById(any()) wasNot Called }
     }
 
     private fun compareNFTs(expected: IndexedNFT, actual: IndexedNFT) {

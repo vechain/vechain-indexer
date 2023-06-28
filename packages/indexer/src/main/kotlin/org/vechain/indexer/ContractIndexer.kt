@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
@@ -21,10 +22,11 @@ open class ContractIndexer(
     private val thorService: ThorService,
     private val contractService: ContractService,
     private val contractRepository: ContractRepository,
+    private val archiveService: ArchiveService,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
-) : VeWorldIndexer(contractRepository, thorUrl, startBlock) {
+) : VeWorldIndexer(contractRepository, startBlock, thorUrl) {
 
     @Transactional
     override fun processBlock(block: Block) {
@@ -42,30 +44,14 @@ open class ContractIndexer(
 
         // Save the NFTs and archive the old ones
         if (existingContracts.isNotEmpty()) {
-            contractService.archive(existingContracts)
+            archiveService.saveAll(existingContracts)
         }
         contractRepository.saveAll(contracts)
     }
 
     @Transactional
     override fun rollback(blockNumber: Long) {
-        //Get all contracts that were created in the block
-        val contracts = contractRepository.findAllByBlockNumber(blockNumber)
-
-        //Get previous version of contracts
-        val previousVersions = mutableSetOf<IndexedContract>()
-        contracts.forEach { contract ->
-            if (contract.version > 1) {
-                val previousVersion = contractService.getPreviousVersion(contract)
-                previousVersions.add(previousVersion)
-            }
-        }
-
-        // Remove contracts with version 1
-        contractRepository.deleteAll(contracts.filter { it.version == 1 })
-
-        // Save previous versions
-        contractRepository.saveAll(previousVersions.toList())
+        archiveService.rollback(blockNumber, IndexedContract::class.java)
     }
 
     /**

@@ -13,8 +13,7 @@ object BlockUtils {
      * Get all confirmed transactions from a block
      */
     private fun confirmedTransactions(block: Block): List<Transaction> {
-        return block.transactions
-            .filter { !it.reverted }
+        return block.transactions.filter { !it.reverted }
     }
 
     /**
@@ -96,39 +95,62 @@ object BlockUtils {
         }
     }
 
-    private fun extractTopicTransfers(
-        events: List<TxEvent>,
-        tx: Transaction,
-        block: Block,
-        outputIndex: Int
+    fun extractTopicTransfers(
+        events: List<TxEvent>, tx: Transaction, block: Block, outputIndex: Int
     ): List<IndexedTransferEvent> {
-        return events
-            .filter { EventUtils.isTransferEvent(it) }.flatMapIndexed { eventIndex, event ->
-                val transfers = EventUtils.getEventParams(event)
+        return events.filter { EventUtils.isTransferEvent(it) }.flatMapIndexed { eventIndex, event ->
+            val transfers = EventUtils.getEventParams(event)
 
-                transfers.mapIndexed { transferIndex, transfer ->
-                    IndexedTransferEvent(
-                        id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"),
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        txId = tx.id,
-                        from = transfer.from,
-                        to = transfer.to,
-                        value = transfer.amount,
-                        topics = event.topics,
-                        tokenAddress = event.address,
-                        eventType = transfer.eventType
-                    )
-                }
+            transfers.mapIndexed { transferIndex, transfer ->
+                IndexedTransferEvent(
+                    id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"),
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    txId = tx.id,
+                    from = transfer.from,
+                    to = transfer.to,
+                    value = transfer.amount,
+                    topics = event.topics,
+                    tokenAddress = event.address,
+                    eventType = transfer.eventType
+                )
+            }
+        }
+    }
+
+    fun extractFungibleTransfers(
+        block: Block
+    ): List<IndexedTransferEvent> {
+        return getOutputs(block)
+            .flatMapIndexed { outputIndex, (output, tx) ->
+                output.events
+                    .filter {
+                        EventUtils.isFungibleTransferEvent(it)
+                    }
+                    .mapIndexed { transferIndex, event ->
+
+                        val transfer = EventUtils.getFungibleParameters(event).first()
+
+                        IndexedTransferEvent(
+                            id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${transferIndex}"),
+                            blockId = block.id,
+                            blockNumber = block.number,
+                            blockTimestamp = block.timestamp,
+                            txId = tx.id,
+                            from = transfer.from,
+                            to = transfer.to,
+                            value = transfer.amount,
+                            topics = listOf(),
+                            tokenAddress = event.address,
+                            eventType = TransferEventType.FUNGIBLE_TOKEN
+                        )
+                    }
             }
     }
 
-    private fun extractVetTransfers(
-        transfers: List<TxTransfer>,
-        tx: Transaction,
-        block: Block,
-        outputIndex: Int
+    fun extractVetTransfers(
+        transfers: List<TxTransfer>, tx: Transaction, block: Block, outputIndex: Int
     ): List<IndexedTransferEvent> {
         return transfers.mapIndexed { transferIndex, transfer ->
             IndexedTransferEvent(

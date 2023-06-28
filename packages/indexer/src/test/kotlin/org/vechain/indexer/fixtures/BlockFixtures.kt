@@ -19,6 +19,8 @@ object BlockFixtures {
     val BLOCK_16_MASTER_EVENT_UPDATE = buildBlockFixture(16L)
     val BLOCK_42_ERC1155_VIP210_CONTRACTS = buildBlockFixture(42L)
 
+    val BLOCK_2395_FUNGIBLE_TRANSFERS_1 = buildBlockFixture(2395L)
+    val BLOCK_2396_FUNGIBLE_TRANSFERS_2 = buildBlockFixture(2396L)
 
     private fun buildBlockFixture(blockNumber: Long): Block {
         return objectMapper.readValue(

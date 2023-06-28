@@ -21,6 +21,7 @@ object VeWorldAPIClient {
      * Response Types
      */
     private val BLOCK_TYPE = object : ParameterizedTypeReference<IndexedBlock>() {}
+    private val FUNGIBLE_CONTRACTS_TYPE = object : ParameterizedTypeReference<List<String>>() {}
     private val PAGINATED_CLAUSE_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedClause>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
     private val PAGINATED_TXS_TYPE = object : ParameterizedTypeReference<PaginatedResponse<IndexedTransaction>>() {}
@@ -160,6 +161,10 @@ object VeWorldAPIClient {
             )
         else
             throw Exception("No address or tokenAddress provided")
+    }
+
+    fun getFungibleTokenContracts(address: String): List<String> {
+        return getRequest("$API_URL/fungibles/contracts?owner=$address", FUNGIBLE_CONTRACTS_TYPE)
     }
 
     private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {

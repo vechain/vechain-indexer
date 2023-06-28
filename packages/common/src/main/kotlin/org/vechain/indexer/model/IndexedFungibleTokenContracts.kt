@@ -4,25 +4,24 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import java.util.*
 
-@Document("nfts")
-data class IndexedNFT @ConstructorBinding constructor(
+@Document("fungible-token-contracts")
+data class IndexedFungibleTokenContracts @ConstructorBinding constructor(
+
     /**
-     * sha1 hash of `${contractAddress}-${tokenId}`
+     * The address of the tokens owner
      */
     @Id
-    val id: String,
+    val tokenOwner: String,
+    val tokenAddresses: SortedSet<String>,
     @JsonIgnore
     override var version: Int,
-    val tokenId: String,
-    val contractAddress: String,
-    val owner: String,
-    val txId: String,
     override val blockNumber: Long,
     override val blockId: String,
     override val blockTimestamp: Long,
 ) : VersionedDocument {
     override fun getDocumentId(): String {
-        return id
+        return tokenOwner
     }
 }

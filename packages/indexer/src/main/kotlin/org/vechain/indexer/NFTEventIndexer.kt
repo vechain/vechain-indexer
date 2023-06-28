@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block
@@ -17,10 +17,10 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftRepository: NFTRepository,
-    private val nftService: NFTService,
+    private val archiveService: ArchiveService,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-) : VeWorldIndexer(nftRepository, thorUrl, startBlock) {
+) : VeWorldIndexer(nftRepository, startBlock, thorUrl) {
 
     @Transactional
     override fun processBlock(block: Block) {
@@ -38,7 +38,7 @@ open class NFTEventIndexer(
         val nfts = parseNfts(block, nftTransfers, existingNfts)
 
         // Save the NFTs and archive the old ones
-        if (existingNfts.isNotEmpty()) nftService.save(existingNfts)
+        if (existingNfts.isNotEmpty()) archiveService.saveAll(existingNfts)
         nftRepository.saveAll(nfts)
     }
 
@@ -68,22 +68,6 @@ open class NFTEventIndexer(
 
     @Transactional
     override fun rollback(blockNumber: Long) {
-        //Get all nfts that were created in the block
-        val nfts = nftRepository.findAllByBlockNumber(blockNumber)
-
-        //Get previous version of nfts
-        val previousVersions = mutableSetOf<IndexedNFT>()
-        nfts.forEach { nft ->
-            if (nft.version > 1) {
-                val previousVersion = nftService.getPreviousVersion(nft)
-                previousVersions.add(previousVersion)
-            }
-        }
-
-        // Remove nfts with version 1
-        nftRepository.deleteAll(nfts.filter { it.version == 1 })
-
-        // Save previous versions
-        nftRepository.saveAll(previousVersions.toList())
+        archiveService.rollback(blockNumber, IndexedNFT::class.java)
     }
 }

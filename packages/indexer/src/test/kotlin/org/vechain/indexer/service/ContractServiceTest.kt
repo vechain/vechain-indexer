@@ -78,7 +78,7 @@ internal class ContractServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        contractService = ContractService(thorService, archiveRepository)
+        contractService = ContractService(thorService)
     }
 
     // isErc721
