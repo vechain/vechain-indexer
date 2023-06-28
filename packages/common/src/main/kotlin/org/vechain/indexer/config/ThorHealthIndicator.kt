@@ -28,6 +28,6 @@ class ThorHealthIndicator(private val thorRest: WebClient) : HealthIndicator {
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
-            ?: throw Exception("Failed thorrest healthcheck")
+            ?: throw Exception("Failed thorRest healthcheck")
     }
 }

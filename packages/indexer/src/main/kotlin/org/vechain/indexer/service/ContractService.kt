@@ -15,7 +15,6 @@ import org.vechain.thor.model.TxEvent
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
-
 @Service
 class ContractService(private val thorService: ThorService) {
 
