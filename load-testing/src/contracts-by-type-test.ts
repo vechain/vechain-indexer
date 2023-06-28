@@ -7,7 +7,7 @@ import {DEFAULT_OPTIONS} from "./constants";
 export const options = DEFAULT_OPTIONS
 
 /**
- *  Make a GET request to the NFT endpoint using a random address
+ *  Make a GET request to the contracts endpoint using a random address
  */
 export default () => {
     const contractType = randomElement(["VIP180", "VIP181", "VIP210", "ERC20", "ERC721", "ERC1155"])
