@@ -23,6 +23,7 @@ open class FungibleTokenContractIndexer(
 ) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl) {
 
 
+    @Transactional
     override fun processBlock(block: Block) {
         // get the fungible transfers
         val fungibleTransfers = BlockUtils.extractFungibleTransfers(block)
