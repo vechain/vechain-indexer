@@ -24,7 +24,7 @@ open class BlockIndexer(
     VeWorldIndexer(blockRepository, startBlock, thorUrl) {
 
     override fun rollback(blockNumber: Long) {
-        blockRepository.deleteAllByBlockNumberBetween(blockNumber, blockNumber)
+        blockRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 
     override fun processBlock(block: Block) {

@@ -18,7 +18,7 @@ open class TransactionIndexer(
 ) :
     VeWorldIndexer(txRepo, startBlock, thorUrl) {
     override fun rollback(blockNumber: Long) {
-        txRepo.deleteAllByBlockNumberBetween(blockNumber, blockNumber)
+        txRepo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 
     override fun processBlock(block: Block) {
