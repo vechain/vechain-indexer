@@ -67,7 +67,7 @@ open class ContractController(private val contractService: ContractService) {
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the contract creator",
         required = false,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -78,8 +78,7 @@ open class ContractController(private val contractService: ContractService) {
                 allowableValues = ["VIP180", "VIP181", "VIP210", "ERC20", "ERC721", "ERC1155"]
             ),
         description = "The contract type",
-        required = false,
-        example = "VIP180"
+        required = false
     )
     @PaginationParameters
     open fun getContractsByCreator(

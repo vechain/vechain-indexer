@@ -36,7 +36,7 @@ open class FungibleTokenController(private val fungibleTokenService: FungibleTok
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of the fungible token owner",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
     open fun getContractsByNFTOwner(
         @ValidAddress @RequestParam owner: Address,
