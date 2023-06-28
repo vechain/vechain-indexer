@@ -11,5 +11,4 @@ interface BlockService {
     fun findById(blockId: String): IndexedBlock?
 
     fun findByBlockNumber(blockNumber: Long): IndexedBlock?
-
 }

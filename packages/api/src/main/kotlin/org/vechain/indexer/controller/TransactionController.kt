@@ -34,90 +34,93 @@ open class TransactionController(private val transactionService: TransactionServ
     @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
     @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "400", description = "Invalid txId"),
+      value =
+        [
+          ApiResponse(responseCode = "400", description = "Invalid txId"),
         ]
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "txId",
-        schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
-        description = "A valid transaction ID",
-        required = true,
-        example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
+      `in` = ParameterIn.PATH,
+      name = "txId",
+      schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
+      description = "A valid transaction ID",
+      required = true,
+      example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
     open fun getTransactionById(@TransactionId @PathVariable txId: String): IndexedTransaction {
         return transactionService.findById(txId)
-            ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
+          ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
     }
 
     @GetMapping
     @Operation(summary = "Get all transactions by an origin address")
     @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+      value =
+        [
+          ApiResponse(responseCode = "400", description = "Invalid address supplied"),
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "origin",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Address of the transaction origin",
-        required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+      `in` = ParameterIn.QUERY,
+      name = "origin",
+      schema = Schema(type = "string", pattern = Address.REGEX),
+      description = "Address of the transaction origin",
+      required = true,
+      example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "includeDelegated",
-        schema = Schema(type = "boolean"),
-        description = "Whether to include transactions the address paid gas for",
-        required = false,
-        example = "false"
+      `in` = ParameterIn.QUERY,
+      name = "includeDelegated",
+      schema = Schema(type = "boolean"),
+      description = "Whether to include transactions the address paid gas for",
+      required = false,
+      example = "false"
     )
     @PaginationParameters
     open fun getTransactionsByOrigin(
-        @ValidAddress @RequestParam origin: Address,
-        @RequestParam(required = false) includeDelegated: Boolean = false,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
+      @ValidAddress @RequestParam origin: Address,
+      @RequestParam(required = false) includeDelegated: Boolean = false,
+      @RequestParam(required = false) page: Int?,
+      @ValidPageSize @RequestParam(required = false) size: Int?,
+      @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransaction> {
         return paginatedResponse(
-            transactionService.findByOrigin(
-                origin,
-                includeDelegated,
-                toPageable(page, size, direction, "blockNumber", "_id")
-            )
+          transactionService.findByOrigin(
+            origin,
+            includeDelegated,
+            toPageable(page, size, direction, "blockNumber", "_id")
+          )
         )
     }
 
     @GetMapping("/delegated")
     @Operation(summary = "Get all delegated transactions by a delegator address")
     @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "400", description = "Invalid delegator address"),
+      value =
+        [
+          ApiResponse(responseCode = "400", description = "Invalid delegator address"),
         ]
     )
     @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "delegator",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "The address of the delegator",
-        required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+      `in` = ParameterIn.QUERY,
+      name = "delegator",
+      schema = Schema(type = "string", pattern = Address.REGEX),
+      description = "The address of the delegator",
+      required = true,
+      example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
     )
     @PaginationParameters
     open fun getDelegatedTransactions(
-        @ValidAddress @RequestParam delegator: Address,
-        @RequestParam(required = false) page: Int?,
-        @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?,
+      @ValidAddress @RequestParam delegator: Address,
+      @RequestParam(required = false) page: Int?,
+      @ValidPageSize @RequestParam(required = false) size: Int?,
+      @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransaction> {
         return paginatedResponse(
-            transactionService.findAllDelegated(
-                delegator,
-                toPageable(page, size, direction, "blockNumber", "_id")
-            )
+          transactionService.findAllDelegated(
+            delegator,
+            toPageable(page, size, direction, "blockNumber", "_id")
+          )
         )
     }
 }

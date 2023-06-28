@@ -11,5 +11,4 @@ class StringToAddressConverter : Converter<String, Address> {
     override fun convert(source: String): Address? {
         return if (source.isNullOrEmpty()) null else Address(HexUtils.normalise(source))
     }
-
 }

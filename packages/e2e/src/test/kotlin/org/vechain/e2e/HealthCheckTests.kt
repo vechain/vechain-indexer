@@ -7,8 +7,6 @@ class HealthCheckTests {
 
     @Test
     fun `infrastructure and apps should start`() {
-        assertDoesNotThrow {
-            VeWorldAPIClient.performHealthCheck()
-        }
+        assertDoesNotThrow { VeWorldAPIClient.performHealthCheck() }
     }
 }

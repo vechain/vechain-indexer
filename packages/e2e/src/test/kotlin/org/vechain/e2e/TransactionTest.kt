@@ -11,14 +11,13 @@ import strikt.assertions.isNotEmpty
 class TransactionTest {
     @Test
     fun `get transactions for origin`() {
-        val transactions = VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+        val transactions =
+          VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(12)
 
-        txs.forEach { transaction: IndexedTransaction ->
-            assertValidTransaction(transaction)
-        }
+        txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
 
         // Get transaction by id
         val transaction = VeWorldAPIClient.getTransactionById(txs[0].id)
@@ -29,41 +28,40 @@ class TransactionTest {
     @Test
     fun `get transactions for origin with pagination`() {
         val transactions =
-            VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68", size = 1)
+          VeWorldAPIClient.getTransactionsByOrigin(
+            "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
+            size = 1
+          )
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
 
-        txs.forEach { transaction: IndexedTransaction ->
-            assertValidTransaction(transaction)
-        }
+        txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }
 
     @Test
     fun `get delegated transactions`() {
-        val transactions = VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+        val transactions =
+          VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
 
-        txs.forEach { transaction: IndexedTransaction ->
-            assertValidTransaction(transaction)
-        }
+        txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }
 
     @Test
     fun `get sent and delegated transactions`() {
-        val transactions = VeWorldAPIClient.getTransactionsByOrigin(
+        val transactions =
+          VeWorldAPIClient.getTransactionsByOrigin(
             address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
             includeDelegated = true
-        )
+          )
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(13)
 
-        txs.forEach { transaction: IndexedTransaction ->
-            assertValidTransaction(transaction)
-        }
+        txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }
 
     fun assertValidTransaction(transaction: IndexedTransaction) {

@@ -14,8 +14,8 @@ import org.vechain.indexer.model.IndexedTransaction
 @Profile("transactions")
 @Component
 open class TransactionRepositoryImpl(
-    private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
+  private val mongoTemplate: MongoTemplate,
+  private val countRepository: CountRepository
 ) {
 
     open fun findByOrigin(address: String, pageable: Pageable): Page<IndexedTransaction> {
@@ -34,7 +34,11 @@ open class TransactionRepositoryImpl(
     open fun findByOriginOrGasPayer(address: String, pageable: Pageable): Page<IndexedTransaction> {
         val query = Query().with(pageable)
         val criteria =
-            Criteria.where("").orOperator(Criteria.where(ORIGIN).`is`(address), Criteria.where(GAS_PAYER).`is`(address))
+          Criteria.where("")
+            .orOperator(
+              Criteria.where(ORIGIN).`is`(address),
+              Criteria.where(GAS_PAYER).`is`(address)
+            )
 
         query.addCriteria(criteria)
         val matchOperations = listOf(MatchOperation(criteria))
@@ -52,7 +56,8 @@ open class TransactionRepositoryImpl(
 
         query.addCriteria(notOriginCriteria)
         query.addCriteria(gasPayerCriteria)
-        val matchOperations = listOf(MatchOperation(notOriginCriteria), MatchOperation(gasPayerCriteria))
+        val matchOperations =
+          listOf(MatchOperation(notOriginCriteria), MatchOperation(gasPayerCriteria))
 
         val results = mongoTemplate.find(query, TRANSACTIONS_COLLECTION)
         val count = countRepository.getCount(TRANSACTIONS_COLLECTION, matchOperations)

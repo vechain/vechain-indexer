@@ -8,6 +8,7 @@ const val API_PATH = "$API_ROOT$API_VERSION"
 // API PATHS
 const val CONTRACTS_PATH = "$API_PATH/contracts"
 const val NFTS_PATH = "$API_PATH/nfts"
+const val FUNGIBLE_CONTRACTS_PATH = "$API_PATH/fungibles"
 const val TRANSACTIONS_PATH = "$API_PATH/transactions"
 const val BLOCKS_PATH = "$API_PATH/blocks"
 const val TRANSFER_EVENTS_PATH = "$API_PATH/transfers"

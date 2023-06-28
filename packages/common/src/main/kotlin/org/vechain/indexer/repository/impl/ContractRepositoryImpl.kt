@@ -16,8 +16,8 @@ import org.vechain.indexer.model.rest.ContractType
 @Profile("contracts")
 @Component
 open class ContractRepositoryImpl(
-    private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
+  private val mongoTemplate: MongoTemplate,
+  private val countRepository: CountRepository
 ) {
 
     companion object {
@@ -26,9 +26,9 @@ open class ContractRepositoryImpl(
     }
 
     open fun findByCreatorAndType(
-        creator: String?,
-        contractType: ContractType?,
-        pageable: Pageable
+      creator: String?,
+      contractType: ContractType?,
+      pageable: Pageable
     ): Page<IndexedContract> {
         val query = Query().with(pageable)
         val matchOperations = mutableListOf<MatchOperation>()
@@ -51,14 +51,15 @@ open class ContractRepositoryImpl(
     }
 
     private fun buildTypeCriteria(contractType: ContractType): CriteriaDefinition {
-        val criteriaKey = when (contractType) {
-            ContractType.VIP180 -> IndexedContract::isVip180.name
-            ContractType.VIP181 -> IndexedContract::isVip181.name
-            ContractType.VIP210 -> IndexedContract::isVip210.name
-            ContractType.ERC20 -> IndexedContract::isErc20.name
-            ContractType.ERC721 -> IndexedContract::isErc721.name
-            ContractType.ERC1155 -> IndexedContract::isErc1155.name
-        }
+        val criteriaKey =
+          when (contractType) {
+              ContractType.VIP180 -> IndexedContract::isVip180.name
+              ContractType.VIP181 -> IndexedContract::isVip181.name
+              ContractType.VIP210 -> IndexedContract::isVip210.name
+              ContractType.ERC20 -> IndexedContract::isErc20.name
+              ContractType.ERC721 -> IndexedContract::isErc721.name
+              ContractType.ERC1155 -> IndexedContract::isErc1155.name
+          }
         return Criteria.where(criteriaKey).`is`(true)
     }
 }

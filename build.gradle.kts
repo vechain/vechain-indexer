@@ -7,6 +7,7 @@ plugins {
     kotlin("jvm") version "1.7.22"
     kotlin("plugin.spring") version "1.7.22"
     id("jacoco-report-aggregation")
+    id("com.diffplug.spotless") version "6.19.0"
     jacoco
 }
 
@@ -21,6 +22,16 @@ allprojects {
         plugin("maven-publish")
         plugin("jacoco")
         plugin("jacoco-report-aggregation")
+        plugin("com.diffplug.spotless")
+    }
+
+    spotless {
+        kotlin {
+            ktfmt().kotlinlangStyle().configure {
+                it.setBlockIndent(4)
+                it.setContinuationIndent(2)
+            }
+        }
     }
 
     group = "org.vechain"
@@ -38,8 +49,25 @@ allprojects {
         }
     }
 
+    /**
+     * Create a task to register the pre-commit scripts in './git-hooks` to the '.git/hooks' directory.
+     */
+    tasks.register("installGitHooks") {
+        doLast {
+            val hooksDir = File("${rootDir.path}/.git/hooks")
+            val scriptsDir = File("${rootDir.path}/git-hooks")
+            scriptsDir.listFiles()?.forEach { script ->
+                val hook = File(hooksDir, script.name)
+                hook.writeText(script.readText())
+                hook.setExecutable(true)
+            }
+        }
+    }
+
+
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
+        dependsOn("installGitHooks")
     }
 
     tasks.withType<KotlinCompile> {
@@ -47,6 +75,7 @@ allprojects {
             freeCompilerArgs = listOf("-Xjsr305=strict")
             jvmTarget = "17"
         }
+        dependsOn("installGitHooks")
     }
 
     tasks.jacocoTestReport {
@@ -56,12 +85,14 @@ allprojects {
     tasks.clean {
 
         val dirs = mutableListOf(buildDir.path, "${rootDir.path}/bin")
-        dirs.addAll(subprojects.flatMap {
-            listOf(
-                it.buildDir.path,
-                "${it.projectDir.path}/bin"
-            )
-        })
+        dirs.addAll(
+            subprojects.flatMap {
+                listOf(
+                    it.buildDir.path,
+                    "${it.projectDir.path}/bin",
+                )
+            },
+        )
 
         doFirst { delete(dirs) }
     }
@@ -115,7 +146,7 @@ allprojects {
                     "Test summary: ${result.testCount} tests, " +
                             "${result.successfulTestCount} succeeded, " +
                             "${result.failedTestCount} failed, " +
-                            "${result.skippedTestCount} skipped"
+                            "${result.skippedTestCount} skipped",
                 )
                 if (failedTests.isNotEmpty()) {
                     logger.lifecycle("\tFailed Tests:")

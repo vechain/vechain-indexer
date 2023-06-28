@@ -3,7 +3,7 @@ package org.vechain.indexer
 import org.vechain.thor.model.Block
 
 class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
-    Indexer("notarealurl", 0L) {
+  Indexer("notarealurl", 0L) {
 
     override val thorClient: ThorClient = thorClientMock
 
@@ -22,6 +22,8 @@ class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: Tho
 
 interface IndexerResponseMocker {
     fun getLastSyncedBlockNumber(): Long
+
     fun rollback(blockNumber: Long)
+
     fun processBlock(block: Block)
 }

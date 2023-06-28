@@ -12,32 +12,34 @@ class ThorClient(private val baseUrl: String) {
 
     private val objectMapper = JsonUtils.mapper
 
-    suspend fun getBlock(blockNumber: Long): Block = withContext(Dispatchers.IO) {
-        val (_, _, result) = Fuel.get("${baseUrl}/blocks/$blockNumber?expanded=true").response()
+    suspend fun getBlock(blockNumber: Long): Block =
+      withContext(Dispatchers.IO) {
+          val (_, _, result) = Fuel.get("${baseUrl}/blocks/$blockNumber?expanded=true").response()
 
-        val responseBody = when (result) {
-            is Result.Success -> result.get().toString(Charsets.UTF_8)
-            is Result.Failure -> throw Exception("Request failed with error: ${result.error}")
-            else -> null
-        }
+          val responseBody =
+            when (result) {
+                is Result.Success -> result.get().toString(Charsets.UTF_8)
+                is Result.Failure -> throw Exception("Request failed with error: ${result.error}")
+                else -> null
+            }
 
-        if (responseBody.isNullOrEmpty() || responseBody.trim() == "null"
-        ) throw BlockNotFoundException("Block $blockNumber not found")
+          if (responseBody.isNullOrEmpty() || responseBody.trim() == "null")
+            throw BlockNotFoundException("Block $blockNumber not found")
 
-        return@withContext objectMapper.readValue(responseBody, Block::class.java)
-    }
+          return@withContext objectMapper.readValue(responseBody, Block::class.java)
+      }
 
-    suspend fun getBestBlock(): Block = withContext(Dispatchers.IO) {
-        val (_, _, result) = Fuel.get("${baseUrl}/blocks/best?expanded=true").response()
+    suspend fun getBestBlock(): Block =
+      withContext(Dispatchers.IO) {
+          val (_, _, result) = Fuel.get("${baseUrl}/blocks/best?expanded=true").response()
 
-        val responseBody = when (result) {
-            is Result.Success -> result.get().toString(Charsets.UTF_8)
-            is Result.Failure -> throw Exception("Request failed with error: ${result.error}")
-            else -> null
-        }
+          val responseBody =
+            when (result) {
+                is Result.Success -> result.get().toString(Charsets.UTF_8)
+                is Result.Failure -> throw Exception("Request failed with error: ${result.error}")
+                else -> null
+            }
 
-        return@withContext objectMapper.readValue(responseBody, Block::class.java)
-    }
-
-
+          return@withContext objectMapper.readValue(responseBody, Block::class.java)
+      }
 }

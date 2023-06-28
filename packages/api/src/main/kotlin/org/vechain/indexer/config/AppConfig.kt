@@ -15,14 +15,12 @@ open class AppConfig(@Value("\${thor.url}") private val thorUrl: String) {
     @Bean
     open fun thorRest(): WebClient {
         val size = 16 * 1024 * 1024
-        val strategies = ExchangeStrategies.builder()
+        val strategies =
+          ExchangeStrategies.builder()
             .codecs { codecs: ClientCodecConfigurer ->
                 codecs.defaultCodecs().maxInMemorySize(size)
             }
             .build()
-        return WebClient.builder()
-            .exchangeStrategies(strategies)
-            .baseUrl(thorUrl)
-            .build()
+        return WebClient.builder().exchangeStrategies(strategies).baseUrl(thorUrl).build()
     }
 }

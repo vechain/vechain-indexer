@@ -14,8 +14,7 @@ import strikt.assertions.isEqualTo
 
 internal class CountRepositoryTest : AbstractIntegrationTest() {
 
-    @Autowired
-    lateinit var countRepository: CountRepository
+    @Autowired lateinit var countRepository: CountRepository
 
     @Test
     fun `count all elements of collection`() {
@@ -35,7 +34,8 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
         val groupOperation: GroupOperation? = null
         val countLimit = 100L
 
-        val count = countRepository.getCount(collection, matchOperations, groupOperation, countLimit)
+        val count =
+          countRepository.getCount(collection, matchOperations, groupOperation, countLimit)
 
         expectThat(count).isEqualTo(countLimit + 1)
     }
@@ -43,11 +43,13 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
     @Test
     fun `count elements of collection matching query`() {
         val collection: Class<*> = IndexedNFT::class.java
-        val matchOperations: List<MatchOperation> = listOf(
+        val matchOperations: List<MatchOperation> =
+          listOf(
             Aggregation.match(
-                Criteria.where(IndexedNFT::contractAddress.name).`is`("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
+              Criteria.where(IndexedNFT::contractAddress.name)
+                .`is`("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
             )
-        )
+          )
         val groupOperation: GroupOperation? = null
 
         val count = countRepository.getCount(collection, matchOperations, groupOperation)
@@ -58,17 +60,18 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
     @Test
     fun `count elements of collection matching query with multiple matchers`() {
         val collection: Class<*> = IndexedNFT::class.java
-        val matchOperations: List<MatchOperation> = listOf(
+        val matchOperations: List<MatchOperation> =
+          listOf(
             Aggregation.match(
-                Criteria.where(IndexedNFT::contractAddress.name).`is`("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
+              Criteria.where(IndexedNFT::contractAddress.name)
+                .`is`("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
             ),
             Aggregation.match(
-                Criteria.where(IndexedNFT::owner.name).`is`("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+              Criteria.where(IndexedNFT::owner.name)
+                .`is`("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             ),
-            Aggregation.match(
-                Criteria.where(IndexedNFT::tokenId.name).`is`("45")
-            ),
-        )
+            Aggregation.match(Criteria.where(IndexedNFT::tokenId.name).`is`("45")),
+          )
         val groupOperation: GroupOperation? = null
 
         val count = countRepository.getCount(collection, matchOperations, groupOperation)
@@ -79,11 +82,13 @@ internal class CountRepositoryTest : AbstractIntegrationTest() {
     @Test
     fun `count distinct elements matching query`() {
         val collection: Class<*> = IndexedNFT::class.java
-        val matchOperations: List<MatchOperation> = listOf(
+        val matchOperations: List<MatchOperation> =
+          listOf(
             Aggregation.match(
-                Criteria.where(IndexedNFT::owner.name).`is`("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+              Criteria.where(IndexedNFT::owner.name)
+                .`is`("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             )
-        )
+          )
         val groupOperation: GroupOperation = Aggregation.group(IndexedNFT::contractAddress.name)
 
         val count = countRepository.getCount(collection, matchOperations, groupOperation)

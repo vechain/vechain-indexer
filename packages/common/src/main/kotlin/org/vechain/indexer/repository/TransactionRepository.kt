@@ -15,5 +15,4 @@ interface TransactionRepository : BaseIndexedRepository<IndexedTransaction> {
     fun findByOriginOrGasPayer(address: String, pageable: Pageable): Page<IndexedTransaction>
 
     fun findDelegated(address: String, pageable: Pageable): Page<IndexedTransaction>
-
 }

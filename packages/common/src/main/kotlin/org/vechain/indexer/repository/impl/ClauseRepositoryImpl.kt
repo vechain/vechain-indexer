@@ -14,14 +14,15 @@ import org.vechain.indexer.model.IndexedClause
 @Profile("clauses")
 @Component
 open class ClauseRepositoryImpl(
-    private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
+  private val mongoTemplate: MongoTemplate,
+  private val countRepository: CountRepository
 ) {
 
     open fun findByOriginOrTo(address: String, pageable: Pageable): Page<IndexedClause> {
         val query = Query().with(pageable)
         val criteria =
-            Criteria.where("").orOperator(Criteria.where(ORIGIN).`is`(address), Criteria.where(TO).`is`(address))
+          Criteria.where("")
+            .orOperator(Criteria.where(ORIGIN).`is`(address), Criteria.where(TO).`is`(address))
 
         query.addCriteria(criteria)
         val matchOperations = listOf(MatchOperation(criteria))

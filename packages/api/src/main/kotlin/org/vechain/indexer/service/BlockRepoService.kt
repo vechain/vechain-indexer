@@ -26,5 +26,4 @@ open class BlockRepoService(private val blockRepository: BlockRepository) : Bloc
     override fun findByBlockNumber(blockNumber: Long): IndexedBlock? {
         return blockRepository.findByBlockNumber(blockNumber)
     }
-
 }

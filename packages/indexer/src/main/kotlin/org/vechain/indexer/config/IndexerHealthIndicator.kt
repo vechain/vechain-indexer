@@ -1,17 +1,15 @@
 package org.vechain.indexer.config
 
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.boot.actuate.health.Status
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 
 @Component
-class IndexerHealthIndicator(
-    private val indexers: List<Indexer>
-) : HealthIndicator {
+class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndicator {
 
     data class IndexerHealth(val indexerName: String, val status: Status)
 
@@ -22,9 +20,8 @@ class IndexerHealthIndicator(
     override fun health(): Health {
         val key = "IndexersHealth"
 
-        val indexerHealths = indexers.map { indexer ->
-            IndexerHealth(indexer.name, getIndexerHealth(indexer))
-        }
+        val indexerHealths =
+          indexers.map { indexer -> IndexerHealth(indexer.name, getIndexerHealth(indexer)) }
 
         val badIndexers = indexerHealths.filter { it.status == Status.DOWN }
 

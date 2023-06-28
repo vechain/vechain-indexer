@@ -15,5 +15,4 @@ open class ClauseService(private val clauseRepository: ClauseRepository) {
     open fun findByAddress(address: Address, pageable: Pageable): Page<IndexedClause> {
         return clauseRepository.findByOriginOrTo(address.value, pageable)
     }
-
 }
