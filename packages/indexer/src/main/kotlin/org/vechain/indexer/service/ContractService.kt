@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.apache.logging.log4j.LogManager
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
@@ -19,7 +20,7 @@ import org.vechain.thor.model.TxEvent
 import org.web3j.utils.Numeric
 import java.math.BigInteger
 
-
+@Profile("contracts")
 @Service
 class ContractService(private val thorService: ThorService, private val archiveRepository: ArchiveRepository) {
 
