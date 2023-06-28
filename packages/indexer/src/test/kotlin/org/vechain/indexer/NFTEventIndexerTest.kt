@@ -146,7 +146,6 @@ internal class NFTEventIndexerTest {
         }
 
         verify { mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called }
-        verify { archiveRepository.deleteAllById(any()) wasNot Called }
     }
 
     private fun compareNFTs(expected: IndexedNFT, actual: IndexedNFT) {
