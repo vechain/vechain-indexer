@@ -11,18 +11,18 @@ import org.vechain.indexer.repository.TransferEventRepository
 @Profile("transfer-events")
 @Service
 open class TransferEventService(
-  private val transferEventRepository: TransferEventRepository,
+    private val transferEventRepository: TransferEventRepository,
 ) {
 
     fun find(
-      address: Address,
-      tokenAddress: Address,
-      pageable: Pageable
+        address: Address,
+        tokenAddress: Address,
+        pageable: Pageable
     ): Page<IndexedTransferEvent> {
         return transferEventRepository.findByToOrFromAndTokenAddress(
-          address.value,
-          tokenAddress.value,
-          pageable
+            address.value,
+            tokenAddress.value,
+            pageable
         )
     }
 
@@ -35,9 +35,9 @@ open class TransferEventService(
     }
 
     fun findByTo(
-      to: Address,
-      tokenAddress: Address?,
-      pageable: Pageable
+        to: Address,
+        tokenAddress: Address?,
+        pageable: Pageable
     ): Page<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByToAndTokenAddress(to.value, tokenAddress.value, pageable)
@@ -47,15 +47,15 @@ open class TransferEventService(
     }
 
     fun findByFrom(
-      from: Address,
-      tokenAddress: Address?,
-      pageable: Pageable
+        from: Address,
+        tokenAddress: Address?,
+        pageable: Pageable
     ): Page<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByFromAndTokenAddress(
-              from.value,
-              tokenAddress.value,
-              pageable
+                from.value,
+                tokenAddress.value,
+                pageable
             )
         } else {
             transferEventRepository.findByFrom(from.value, pageable)

@@ -16,10 +16,10 @@ import org.vechain.thor.model.Block
 @Profile("fungible-token-contracts")
 @Component
 open class FungibleTokenContractIndexer(
-  private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
-  private val archiveService: ArchiveService,
-  @Value("\${thor.url}") private val thorUrl: String,
-  @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
+    private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
+    private val archiveService: ArchiveService,
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
 ) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl) {
 
     @Transactional
@@ -32,9 +32,9 @@ open class FungibleTokenContractIndexer(
 
         // process each account's contracts
         val documents =
-          accountContractMap
-            .map { (account, contracts) -> processAccountsContracts(account, contracts, block) }
-            .mapNotNull { it }
+            accountContractMap
+                .map { (account, contracts) -> processAccountsContracts(account, contracts, block) }
+                .mapNotNull { it }
 
         // save all the archives
         archiveService.saveAll(documents.mapNotNull { it.second })
@@ -44,7 +44,7 @@ open class FungibleTokenContractIndexer(
     }
 
     private fun getContractsForAccount(
-      transferEvents: List<IndexedTransferEvent>
+        transferEvents: List<IndexedTransferEvent>
     ): MutableMap<String, SortedSet<String>> {
         // account -> list of contracts
         val accountContractMap: MutableMap<String, SortedSet<String>> = mutableMapOf()
@@ -74,25 +74,25 @@ open class FungibleTokenContractIndexer(
      * @returns Pair<newDocument, oldDocument> if the documents are updated
      */
     private fun processAccountsContracts(
-      accAddress: String,
-      contracts: SortedSet<String>,
-      block: Block
+        accAddress: String,
+        contracts: SortedSet<String>,
+        block: Block
     ): Pair<IndexedFungibleTokenContracts, IndexedFungibleTokenContracts?>? {
 
         val previousRecord =
-          fungibleTokenContractsRepository.findByIdOrNull(accAddress)
-          // Return a new document if the account has no previous record
-          ?: return Pair(
-              IndexedFungibleTokenContracts(
-                tokenOwner = accAddress,
-                tokenAddresses = contracts,
-                blockNumber = block.number,
-                blockId = block.id,
-                blockTimestamp = block.timestamp,
-                version = 1
-              ),
-              null
-            )
+            fungibleTokenContractsRepository.findByIdOrNull(accAddress)
+            // Return a new document if the account has no previous record
+            ?: return Pair(
+                    IndexedFungibleTokenContracts(
+                        tokenOwner = accAddress,
+                        tokenAddresses = contracts,
+                        blockNumber = block.number,
+                        blockId = block.id,
+                        blockTimestamp = block.timestamp,
+                        version = 1
+                    ),
+                    null
+                )
 
         // return null if no contracts are added - no update required
         if (previousRecord.tokenAddresses.containsAll(contracts)) {
@@ -104,14 +104,14 @@ open class FungibleTokenContractIndexer(
         updatedContracts.addAll(contracts)
 
         val latestDocument =
-          IndexedFungibleTokenContracts(
-            tokenOwner = accAddress,
-            tokenAddresses = updatedContracts,
-            blockNumber = block.number,
-            blockId = block.id,
-            blockTimestamp = block.timestamp,
-            version = previousRecord.version + 1
-          )
+            IndexedFungibleTokenContracts(
+                tokenOwner = accAddress,
+                tokenAddresses = updatedContracts,
+                blockNumber = block.number,
+                blockId = block.id,
+                blockTimestamp = block.timestamp,
+                version = previousRecord.version + 1
+            )
 
         return Pair(latestDocument, previousRecord)
     }

@@ -42,47 +42,47 @@ abstract class AbstractIntegrationTest {
         val thorNetwork = Network.newNetwork()
 
         val mongoContainer: GenericContainer<*> =
-          GenericContainer("mongo:6")
-            .withExposedPorts(27017)
-            .withReuse(true)
-            .waitingFor(
-              (LogMessageWaitStrategy())
-                .withRegEx(".*(Waiting for connections).*")
-                .withTimes(1)
-                .withStartupTimeout(Duration.ofSeconds(180L))
-            )
+            GenericContainer("mongo:6")
+                .withExposedPorts(27017)
+                .withReuse(true)
+                .waitingFor(
+                    (LogMessageWaitStrategy())
+                        .withRegEx(".*(Waiting for connections).*")
+                        .withTimes(1)
+                        .withStartupTimeout(Duration.ofSeconds(180L))
+                )
 
         val thorContainer: GenericContainer<*> =
-          GenericContainer("vechain/thor:v2.0.0")
-            .withCommand(
-              "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
-            )
-            .withExposedPorts(8669)
-            .withReuse(true)
-            .withNetwork(thorNetwork)
-            .withCreateContainerCmdModifier { cmd -> cmd.withHostName("thor-node") }
-            .waitingFor(
-              (LogMessageWaitStrategy())
-                .withRegEx(".*(new block packed).*")
-                .withTimes(1)
-                .withStartupTimeout(Duration.ofSeconds(180L))
-            )
+            GenericContainer("vechain/thor:v2.0.0")
+                .withCommand(
+                    "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
+                )
+                .withExposedPorts(8669)
+                .withReuse(true)
+                .withNetwork(thorNetwork)
+                .withCreateContainerCmdModifier { cmd -> cmd.withHostName("thor-node") }
+                .waitingFor(
+                    (LogMessageWaitStrategy())
+                        .withRegEx(".*(new block packed).*")
+                        .withTimes(1)
+                        .withStartupTimeout(Duration.ofSeconds(180L))
+                )
 
         val transactionScript: GenericContainer<*> =
-          GenericContainer(
-              DockerImageName.parse(
-                "ghcr.io/vechainfoundation/thor-transactions-script:06057e4809a5424594701b05419d4ce6513c399c"
-              )
-            )
-            .withNetwork(thorNetwork)
-            .withEnv("NODE_URL", "http://thor-node:8669")
-            .waitingFor(
-              LogMessageWaitStrategy()
-                .withRegEx(".*(Thor TX Script successfully executed).*")
-                .withTimes(1)
-                .withStartupTimeout(Duration.ofSeconds(180L))
-            )
-            .withReuse(true)
+            GenericContainer(
+                    DockerImageName.parse(
+                        "ghcr.io/vechainfoundation/thor-transactions-script:06057e4809a5424594701b05419d4ce6513c399c"
+                    )
+                )
+                .withNetwork(thorNetwork)
+                .withEnv("NODE_URL", "http://thor-node:8669")
+                .waitingFor(
+                    LogMessageWaitStrategy()
+                        .withRegEx(".*(Thor TX Script successfully executed).*")
+                        .withTimes(1)
+                        .withStartupTimeout(Duration.ofSeconds(180L))
+                )
+                .withReuse(true)
     }
 
     internal class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -92,11 +92,11 @@ abstract class AbstractIntegrationTest {
             transactionScript.start()
 
             val mongoUri =
-              "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain"
+                "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain"
             val thorUrl = "http://localhost:${thorContainer.getMappedPort(8669)}"
 
             TestPropertyValues.of("spring.data.mongodb.uri=${mongoUri}", "thor.url=${thorUrl}")
-              .applyTo(configurableApplicationContext.environment)
+                .applyTo(configurableApplicationContext.environment)
         }
     }
 }

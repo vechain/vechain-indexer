@@ -19,9 +19,9 @@ open class ContractService(private val contractRepository: ContractRepository) {
     }
 
     open fun find(
-      creator: Address?,
-      contractType: ContractType?,
-      pageable: Pageable
+        creator: Address?,
+        contractType: ContractType?,
+        pageable: Pageable
     ): Page<IndexedContract> {
         return contractRepository.findByCreatorAndType(creator?.value, contractType, pageable)
     }

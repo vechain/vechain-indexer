@@ -12,7 +12,7 @@ class TransactionTest {
     @Test
     fun `get transactions for origin`() {
         val transactions =
-          VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+            VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(12)
@@ -28,10 +28,10 @@ class TransactionTest {
     @Test
     fun `get transactions for origin with pagination`() {
         val transactions =
-          VeWorldAPIClient.getTransactionsByOrigin(
-            "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
-            size = 1
-          )
+            VeWorldAPIClient.getTransactionsByOrigin(
+                "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
+                size = 1
+            )
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
@@ -42,7 +42,7 @@ class TransactionTest {
     @Test
     fun `get delegated transactions`() {
         val transactions =
-          VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
+            VeWorldAPIClient.getDelegatedTransactions("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
@@ -53,10 +53,10 @@ class TransactionTest {
     @Test
     fun `get sent and delegated transactions`() {
         val transactions =
-          VeWorldAPIClient.getTransactionsByOrigin(
-            address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
-            includeDelegated = true
-          )
+            VeWorldAPIClient.getTransactionsByOrigin(
+                address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
+                includeDelegated = true
+            )
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(13)

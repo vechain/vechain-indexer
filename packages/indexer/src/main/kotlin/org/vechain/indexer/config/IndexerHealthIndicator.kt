@@ -21,7 +21,7 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
         val key = "IndexersHealth"
 
         val indexerHealths =
-          indexers.map { indexer -> IndexerHealth(indexer.name, getIndexerHealth(indexer)) }
+            indexers.map { indexer -> IndexerHealth(indexer.name, getIndexerHealth(indexer)) }
 
         val badIndexers = indexerHealths.filter { it.status == Status.DOWN }
 

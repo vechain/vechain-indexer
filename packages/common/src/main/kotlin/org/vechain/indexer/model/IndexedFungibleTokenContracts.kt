@@ -11,13 +11,13 @@ data class IndexedFungibleTokenContracts
 @ConstructorBinding
 constructor(
 
-  /** The address of the tokens owner */
-  @Id val tokenOwner: String,
-  val tokenAddresses: SortedSet<String>,
-  @JsonIgnore override val version: Int,
-  override val blockNumber: Long,
-  override val blockId: String,
-  override val blockTimestamp: Long,
+    /** The address of the tokens owner */
+    @Id val tokenOwner: String,
+    val tokenAddresses: SortedSet<String>,
+    @JsonIgnore override val version: Int,
+    override val blockNumber: Long,
+    override val blockId: String,
+    override val blockTimestamp: Long,
 ) : VersionedDocument {
     override fun getDocumentId(): String {
         return tokenOwner

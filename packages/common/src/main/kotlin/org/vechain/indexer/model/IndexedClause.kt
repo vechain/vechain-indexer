@@ -13,36 +13,36 @@ import org.vechain.thor.model.TxOutputs
 data class IndexedClause
 @ConstructorBinding
 constructor(
-  @Id val id: String,
-  override val blockId: String,
-  override val blockNumber: Long,
-  override val blockTimestamp: Long,
-  val txId: String,
-  val index: Int,
-  val origin: String,
-  val to: String?,
-  val value: String,
-  val data: String,
-  val reverted: Boolean,
-  val output: TxOutputs?,
+    @Id val id: String,
+    override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
+    val txId: String,
+    val index: Int,
+    val origin: String,
+    val to: String?,
+    val value: String,
+    val data: String,
+    val reverted: Boolean,
+    val output: TxOutputs?,
 ) : IndexedDocument {
     constructor(
-      block: Block,
-      tx: Transaction,
-      clause: Clause,
-      index: Int
+        block: Block,
+        tx: Transaction,
+        clause: Clause,
+        index: Int
     ) : this(
-      id = DigestUtils.sha1Hex("${tx.id}-$index"),
-      blockId = block.id,
-      blockNumber = block.number,
-      blockTimestamp = block.timestamp,
-      txId = tx.id,
-      index = index,
-      origin = tx.origin,
-      to = clause.to,
-      value = clause.value,
-      data = clause.data,
-      reverted = tx.reverted,
-      output = tx.outputs.getOrNull(index)
+        id = DigestUtils.sha1Hex("${tx.id}-$index"),
+        blockId = block.id,
+        blockNumber = block.number,
+        blockTimestamp = block.timestamp,
+        txId = tx.id,
+        index = index,
+        origin = tx.origin,
+        to = clause.to,
+        value = clause.value,
+        data = clause.data,
+        reverted = tx.reverted,
+        output = tx.outputs.getOrNull(index)
     )
 }

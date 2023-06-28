@@ -13,7 +13,7 @@ import org.vechain.indexer.utils.HexUtils
 @Profile("transactions")
 @Service
 open class TransactionService(
-  private val transactionRepository: TransactionRepository,
+    private val transactionRepository: TransactionRepository,
 ) {
 
     open fun findById(id: String): IndexedTransaction? {
@@ -21,9 +21,9 @@ open class TransactionService(
     }
 
     open fun findByOrigin(
-      address: Address,
-      includeDelegated: Boolean,
-      pageable: Pageable
+        address: Address,
+        includeDelegated: Boolean,
+        pageable: Pageable
     ): Page<IndexedTransaction> {
         return if (includeDelegated) {
             transactionRepository.findByOriginOrGasPayer(address.value, pageable)

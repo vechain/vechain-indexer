@@ -12,7 +12,7 @@ import org.web3j.utils.Numeric
 object ContractUtils {
 
     private const val MASTER_EVENT_SIGNATURE =
-      "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
+        "0xb35bf4274d4295009f1ec66ed3f579db287889444366c03d3a695539372e8951"
 
     fun isMasterEvent(event: TxEvent): Boolean {
         return event.topics.isNotEmpty() && event.topics[0] == MASTER_EVENT_SIGNATURE
@@ -20,16 +20,16 @@ object ContractUtils {
 
     private fun rawDataContains(value: String, rawData: String): Boolean {
         val cleansedValue =
-          if (value.startsWith("00")) {
-              value.trimStart('0')
-          } else value
+            if (value.startsWith("00")) {
+                value.trimStart('0')
+            } else value
 
         return rawData.lowercase().contains(cleansedValue.lowercase())
     }
 
     fun isContractType(specification: ContractSpecification, rawData: String): Boolean {
         return specification.functions.all { rawDataContains(value = it, rawData = rawData) } &&
-          specification.events.all { rawDataContains(value = it, rawData = rawData) }
+            specification.events.all { rawDataContains(value = it, rawData = rawData) }
     }
 
     /** @param methodSignature - Example: "baz(uint32,bool)" */

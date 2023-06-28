@@ -12,15 +12,15 @@ import org.vechain.indexer.model.rest.ContractType
 @Constraint(validatedBy = [ContractTypeValidator::class])
 @MustBeDocumented
 annotation class ValidContractType(
-  val message: String = "Invalid contract type parameter",
-  val groups: Array<KClass<*>> = [],
-  val payload: Array<KClass<out Payload>> = []
+    val message: String = "Invalid contract type parameter",
+    val groups: Array<KClass<*>> = [],
+    val payload: Array<KClass<out Payload>> = []
 )
 
 class ContractTypeValidator : ConstraintValidator<ValidContractType, String> {
     override fun isValid(
-      type: String?,
-      constraintValidatorContext: ConstraintValidatorContext
+        type: String?,
+        constraintValidatorContext: ConstraintValidatorContext
     ): Boolean {
         return type == null || ContractType.byNameIgnoreCaseOrNull(type) != null
     }

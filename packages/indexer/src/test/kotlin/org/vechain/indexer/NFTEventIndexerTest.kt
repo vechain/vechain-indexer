@@ -47,7 +47,7 @@ internal class NFTEventIndexerTest {
         MockKAnnotations.init(this)
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
         nftEventIndexer =
-          NFTEventIndexer(nftRepository, archiveService, "http://localhost:8669", 0L)
+            NFTEventIndexer(nftRepository, archiveService, "http://localhost:8669", 0L)
     }
 
     @Test
@@ -67,12 +67,12 @@ internal class NFTEventIndexerTest {
         val nftEvent = nftEvents.first()
         expect {
             that(nftEvent.id)
-              .isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-1"))
+                .isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-1"))
             that(nftEvent.tokenId).isEqualTo("1")
             that(nftEvent.contractAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
             that(nftEvent.owner).isEqualTo("0x361277d1b27504f36a3b33d3a52d1f8270331b8c")
             that(nftEvent.txId)
-              .isEqualTo("0x039d5f9bd7ffadd11a4f5888e88f459b7ff349c8c06e820f3102fa0779867ac6")
+                .isEqualTo("0x039d5f9bd7ffadd11a4f5888e88f459b7ff349c8c06e820f3102fa0779867ac6")
             that(nftEvent.blockNumber).isEqualTo(blockNumber)
             that(nftEvent.blockTimestamp).isEqualTo(1680177343)
         }
@@ -102,14 +102,14 @@ internal class NFTEventIndexerTest {
 
         // Mock the entries in the NFT collection for rollback number
         every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns
-          mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
+            mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
         // Mocking bulk ops allows us to capture the NFTs that get rolled back
         every { mongoTemplate.bulkOps(any(), IndexedNFT::class.java) } returns bulkOps
         every { bulkOps.replaceOne(any(), capture(nftsSlot)) } returns bulkOps
         every { bulkOps.remove(capture(deleteSlot)) } returns bulkOps
         every { archiveRepository.deleteAllById(any()) } returns Unit
         every { archiveRepository.findAllById(arrayListOf(archiveId)) } returns
-          listOf(Archive(archiveId, NFT_ROLLBACK_TEST_VERSION1))
+            listOf(Archive(archiveId, NFT_ROLLBACK_TEST_VERSION1))
 
         nftEventIndexer.rollback(blockNumber)
 
@@ -129,7 +129,7 @@ internal class NFTEventIndexerTest {
         val deletedArchives = slot<List<String>>()
 
         every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns
-          mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
+            mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
         every { archiveRepository.findAllById(any()) } returns emptyList()
         every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
 

@@ -34,26 +34,26 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get transaction by id with valid endpoint should return OK`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint/0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transaction = objectMapper.readValue(result.response.contentAsString, TX_TYPE)
 
             expectThat(transaction.id)
-              .isEqualTo("0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
+                .isEqualTo("0x0569d985aff6e073af33415f5ca4e848742cb483533015486dd96779c6e8251d")
         }
 
         @Test
         fun `get transaction by id with transaction that doesn't exist should return NOT_FOUND`() {
             mockMvc
-              .get(
-                "$baseEndpoint/0x00000005aff6e073af33415f5ca4e848742cb483533015486dd9000000000000"
-              )
-              .andExpect { status { isNotFound() } }
+                .get(
+                    "$baseEndpoint/0x00000005aff6e073af33415f5ca4e848742cb483533015486dd9000000000000"
+                )
+                .andExpect { status { isNotFound() } }
         }
     }
 
@@ -83,16 +83,16 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `valid address should return OKAY`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(39)
         }
@@ -100,16 +100,16 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `uppercase should be valid`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(39)
         }
@@ -117,16 +117,16 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `mixed case should be valid`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(39)
         }
@@ -134,16 +134,16 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `no prefix should be valid`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(39)
         }
@@ -151,17 +151,17 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `include delegated should return 1 more`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&includeDelegated=true" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&includeDelegated=true" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(40)
         }
@@ -169,17 +169,17 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `include delegated false - same as regular call`() {
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
-                    "&includeDelegated=false" +
-                    "&size=$resultsPageSize"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&includeDelegated=false" +
+                            "&size=$resultsPageSize"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(39)
         }
@@ -192,13 +192,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         fun `get txs by origin - pagination defaults`() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val result =
-              mockMvc
-                .get("$baseEndpoint?origin=$origin")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint?origin=$origin")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(DEFAULT_PAGE_SIZE)
         }
@@ -208,13 +208,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val result =
-              mockMvc
-                .get("$baseEndpoint?origin=$origin" + "&page=$page")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint?origin=$origin" + "&page=$page")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(19)
         }
@@ -224,13 +224,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val size = 25
             val result =
-              mockMvc
-                .get("$baseEndpoint?origin=$origin" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint?origin=$origin" + "&size=$size")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(size)
         }
@@ -241,13 +241,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 3
             val size = 10
             val result =
-              mockMvc
-                .get("$baseEndpoint?origin=$origin" + "&page=$page" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint?origin=$origin" + "&page=$page" + "&size=$size")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(9)
         }
@@ -258,20 +258,20 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 3
             val size = 10
             val result =
-              mockMvc
-                .get("$baseEndpoint?origin=$origin" + "&page=$page" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint?origin=$origin" + "&page=$page" + "&size=$size")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data)
-              .hasSize(9)
-              .isSorted(
-                compareByDescending<IndexedTransaction> { it.blockNumber }
-                  .then(compareByDescending { it.id })
-              )
+                .hasSize(9)
+                .isSorted(
+                    compareByDescending<IndexedTransaction> { it.blockNumber }
+                        .then(compareByDescending { it.id })
+                )
         }
 
         @Test
@@ -281,26 +281,26 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=$origin" +
-                    "&includeDelegated=$includeDelegated" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=$origin" +
+                            "&includeDelegated=$includeDelegated" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expect {
                 that(transactions.data)
-                  .hasSize(39)
-                  .isSorted(
-                    compareByDescending<IndexedTransaction> { it.blockNumber }
-                      .then(compareByDescending { it.id })
-                  )
+                    .hasSize(39)
+                    .isSorted(
+                        compareByDescending<IndexedTransaction> { it.blockNumber }
+                            .then(compareByDescending { it.id })
+                    )
 
                 that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
@@ -317,26 +317,26 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get(
-                  "$baseEndpoint?origin=$origin" +
-                    "&includeDelegated=$includeDelegated" +
-                    "&page=$page" +
-                    "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=$origin" +
+                            "&includeDelegated=$includeDelegated" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expect {
                 that(transactions.data)
-                  .hasSize(40)
-                  .isSorted(
-                    compareByDescending<IndexedTransaction> { it.blockNumber }
-                      .then(compareByDescending { it.id })
-                  )
+                    .hasSize(40)
+                    .isSorted(
+                        compareByDescending<IndexedTransaction> { it.blockNumber }
+                            .then(compareByDescending { it.id })
+                    )
 
                 that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
@@ -370,13 +370,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `get DELEGATED transactions should return OKAY`() {
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
         }
@@ -384,13 +386,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `uppercase address should be valid`() {
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=0xF077B491B355E64048cE21E3A6Fc4751eEeA77fa"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
         }
@@ -398,13 +402,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `mixed case address should be valid`() {
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=0xF077b491B355E64048cE21E3A6Fc4751eEeA77fa"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
         }
@@ -412,13 +418,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         @Test
         fun `no hex prefix should be valid`() {
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=f077b491b355E64048cE21E3A6Fc4751eEeA77fa")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
         }
@@ -431,13 +439,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         fun `get delegated txs - pagination defaults`() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint/delegated?delegator=$origin")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
         }
@@ -447,13 +455,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 1
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin" + "&page=$page")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint/delegated?delegator=$origin" + "&page=$page")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).isEmpty()
         }
@@ -463,13 +471,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val origin = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val size = 1
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get("$baseEndpoint/delegated?delegator=$origin" + "&size=$size")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(size)
         }
@@ -480,13 +488,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = 1
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(size)
         }
@@ -497,20 +507,22 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = 1
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data)
-              .hasSize(size)
-              .isSorted(
-                compareByDescending<IndexedTransaction> { it.blockNumber }
-                  .then(compareByDescending { it.id })
-              )
+                .hasSize(size)
+                .isSorted(
+                    compareByDescending<IndexedTransaction> { it.blockNumber }
+                        .then(compareByDescending { it.id })
+                )
         }
 
         @Test
@@ -519,21 +531,23 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
-              mockMvc
-                .get("$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size")
-                .andExpect { status { isOk() } }
-                .andReturn()
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=$origin" + "&page=$page" + "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
             val transactions =
-              objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expect {
                 that(transactions.data)
-                  .hasSize(1)
-                  .isSorted(
-                    compareByDescending<IndexedTransaction> { it.blockNumber }
-                      .then(compareByDescending { it.id })
-                  )
+                    .hasSize(1)
+                    .isSorted(
+                        compareByDescending<IndexedTransaction> { it.blockNumber }
+                            .then(compareByDescending { it.id })
+                    )
 
                 that(transactions.pagination.hasCount).isTrue()
                 that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)

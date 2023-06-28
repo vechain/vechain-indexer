@@ -16,15 +16,15 @@ enum class TransferEventType {
 data class IndexedTransferEvent
 @ConstructorBinding
 constructor(
-  @Id val id: String,
-  override val blockId: String,
-  override val blockNumber: Long,
-  override val blockTimestamp: Long,
-  val txId: String,
-  val from: String,
-  val to: String,
-  val value: BigInteger,
-  val tokenAddress: String?,
-  val topics: List<String>,
-  val eventType: TransferEventType
+    @Id val id: String,
+    override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
+    val txId: String,
+    val from: String,
+    val to: String,
+    val value: BigInteger,
+    val tokenAddress: String?,
+    val topics: List<String>,
+    val eventType: TransferEventType
 ) : IndexedDocument

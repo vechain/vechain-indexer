@@ -19,13 +19,13 @@ import org.vechain.thor.model.Block
 @Profile("contracts")
 @Component
 open class ContractIndexer(
-  private val thorService: ThorService,
-  private val contractService: ContractService,
-  private val contractRepository: ContractRepository,
-  private val archiveService: ArchiveService,
-  @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
-  @Value("\${thor.url}") private val thorUrl: String,
-  @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
+    private val thorService: ThorService,
+    private val contractService: ContractService,
+    private val contractRepository: ContractRepository,
+    private val archiveService: ArchiveService,
+    @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
+    @Value("\${thor.url}") private val thorUrl: String,
+    @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
 ) : VeWorldIndexer(contractRepository, startBlock, thorUrl) {
 
     @Transactional
@@ -37,9 +37,9 @@ open class ContractIndexer(
 
         // Check for existing documents
         val existingContracts =
-          contractRepository
-            .findAllById(masterChangeEvents.map { (event) -> event.address })
-            .toList()
+            contractRepository
+                .findAllById(masterChangeEvents.map { (event) -> event.address })
+                .toList()
 
         // Parse the contracts
         val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
@@ -72,7 +72,10 @@ open class ContractIndexer(
         val genBlock = thorService.getBlock(0)
 
         val contracts =
-          JsonUtils.mapper.readValue(contractsJson.inputStream, Array<IndexedContract>::class.java)
+            JsonUtils.mapper.readValue(
+                contractsJson.inputStream,
+                Array<IndexedContract>::class.java
+            )
 
         contracts.forEach { contract -> contract.blockId = genBlock.id }
 

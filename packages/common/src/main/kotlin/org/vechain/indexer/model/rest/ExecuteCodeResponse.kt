@@ -7,10 +7,10 @@ import org.vechain.thor.model.TxTransfer
 data class ExecuteCodeResponse
 @ConstructorBinding
 constructor(
-  val data: String,
-  val events: List<TxEvent>,
-  val transfers: List<TxTransfer>,
-  val gasUsed: Long,
-  val reverted: Boolean,
-  val vmError: String?
+    val data: String,
+    val events: List<TxEvent>,
+    val transfers: List<TxTransfer>,
+    val gasUsed: Long,
+    val reverted: Boolean,
+    val vmError: String?
 )
