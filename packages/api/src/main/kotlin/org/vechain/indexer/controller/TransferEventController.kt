@@ -38,15 +38,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To or from address of the transfer event",
         required = false,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        required = false
     )
     @PaginationParameters
     open fun getTransferEvents(
@@ -79,15 +78,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "From address of the transfer event",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        required = false
     )
     @PaginationParameters
     open fun getTransferEventsByFrom(
@@ -114,15 +112,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To address of the transfer event",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        required = false
     )
     @PaginationParameters
     open fun getTransferEventsByTo(
