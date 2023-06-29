@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedContract
 
-
 @ChangeUnit(id = "contract-migration", order = "1", author = "nlab")
 class ContractTxIdAddIndexChangeUnit {
 
@@ -20,9 +19,7 @@ class ContractTxIdAddIndexChangeUnit {
     @Execution
     fun execution(mongoTemplate: MongoTemplate) {
         val idx: IndexDefinition =
-            Index()
-                .named(CONTRACTS_TX_ID_IDX)
-                .on(IndexedContract::txId.name, Sort.Direction.DESC)
+            Index().named(CONTRACTS_TX_ID_IDX).on(IndexedContract::txId.name, Sort.Direction.DESC)
 
         mongoTemplate.indexOps(IndexedContract::class.java).ensureIndex(idx)
     }
