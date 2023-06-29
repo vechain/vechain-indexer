@@ -1,6 +1,5 @@
 package org.vechain.indexer.controller
 
-import java.util.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,6 +13,7 @@ import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
+import java.util.*
 
 internal class ContractControllerTest : AbstractIntegrationTest() {
 
@@ -22,7 +22,8 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         const val TOTAL_CONTRACTS_NUMBER = 18
     }
 
-    @Autowired lateinit var mockMvc: MockMvc
+    @Autowired
+    lateinit var mockMvc: MockMvc
 
     @Nested
     inner class ContractIdQueries {
@@ -91,6 +92,15 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
     @Nested
     inner class ContractCreatorQueries {
+
+        @Test
+        fun `get contracts by creator returns BAD REQUEST if no creator nor type params`() {
+            val address = null
+            val type = null
+            mockMvc.get("$BASE_ENDPOINT?address=$address&type=$type").andExpect {
+                status { isBadRequest() }
+            }
+        }
 
         @Test
         fun `get contracts with over the limit page size should return BAD REQUEST`() {
@@ -282,9 +292,9 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 mockMvc
                     .get(
                         "$BASE_ENDPOINT?address=$creatorAddress" +
-                            "&type=$type" +
-                            "&page=$page" +
-                            "&size=$size"
+                                "&type=$type" +
+                                "&page=$page" +
+                                "&size=$size"
                     )
                     .andExpect { status { isOk() } }
                     .andReturn()
@@ -316,9 +326,9 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 mockMvc
                     .get(
                         "$BASE_ENDPOINT?address=$creatorAddress" +
-                            "&type=$type" +
-                            "&page=$page" +
-                            "&size=$size"
+                                "&type=$type" +
+                                "&page=$page" +
+                                "&size=$size"
                     )
                     .andExpect { status { isOk() } }
                     .andReturn()
