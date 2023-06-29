@@ -192,12 +192,6 @@ configureIndexes(db.contracts, [
         },
     },
     {
-        keys: {creator: 1, blockNumber: -1, txId: -1, _id: -1},
-        options: {
-            name: "contract_creator_1_blockNumber_-1_txId_-1__id_-1",
-        },
-    },
-    {
         keys: {creator: 1, isVip180: 1, blockNumber: -1, txId: -1, _id: -1},
         options: {
             name: "contract_creator_1_isVip180_1_blockNumber_-1_txId_-1__id_-1",
@@ -231,6 +225,42 @@ configureIndexes(db.contracts, [
         keys: {creator: 1, isErc1155: 1, blockNumber: -1, txId: -1, _id: -1},
         options: {
             name: "contract_creator_1_isErc1155_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isVip180: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isVip180_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isVip181: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isVip181_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isVip210: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isVip210_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isErc20: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isErc20_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isErc721: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isErc721_1_blockNumber_-1_txId_-1__id_-1",
+        },
+    },
+    {
+        keys: {isErc1155: 1, blockNumber: -1, txId: -1, _id: -1},
+        options: {
+            name: "isErc1155_1_blockNumber_-1_txId_-1__id_-1",
         },
     },
 ]);

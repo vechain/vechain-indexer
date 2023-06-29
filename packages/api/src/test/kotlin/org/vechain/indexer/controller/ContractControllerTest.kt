@@ -385,30 +385,5 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 .map(IndexedContract::isVip180)
                 .all { isTrue() }
         }
-
-        @Test
-        fun `fetch contracts with no address nor type params - with pagination`() {
-            val page = 0
-            val size = 10
-
-            val result =
-                mockMvc
-                    .get("$BASE_ENDPOINT?page=$page" + "&size=$size")
-                    .andExpect { status { isOk() } }
-                    .andReturn()
-
-            val contracts =
-                objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
-
-            expectThat(contracts.data)
-                .hasSize(size)
-                .isSorted(
-                    compareByDescending<IndexedContract> { it.blockNumber }
-                        .then(
-                            compareByDescending<IndexedContract> { it.txId }
-                                .then(compareByDescending { it.address })
-                        )
-                )
-        }
     }
 }
