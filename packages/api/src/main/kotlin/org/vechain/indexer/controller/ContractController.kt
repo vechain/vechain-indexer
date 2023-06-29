@@ -37,9 +37,9 @@ open class ContractController(private val contractService: ContractService) {
     @Operation(summary = "Get contract by address")
     @ApiResponses(
         value =
-        [
-            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
-        ]
+            [
+                ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+            ]
     )
     @Parameter(
         `in` = ParameterIn.PATH,
@@ -58,9 +58,9 @@ open class ContractController(private val contractService: ContractService) {
     @Operation(summary = "Get all deployed contracts (by optional creator or type)")
     @ApiResponses(
         value =
-        [
-            ApiResponse(responseCode = "400", description = "Invalid address supplied"),
-        ]
+            [
+                ApiResponse(responseCode = "400", description = "Invalid address supplied"),
+            ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -74,10 +74,10 @@ open class ContractController(private val contractService: ContractService) {
         `in` = ParameterIn.QUERY,
         name = "type",
         schema =
-        Schema(
-            type = "string",
-            allowableValues = ["VIP180", "VIP181", "VIP210", "ERC20", "ERC721", "ERC1155"]
-        ),
+            Schema(
+                type = "string",
+                allowableValues = ["VIP180", "VIP181", "VIP210", "ERC20", "ERC721", "ERC1155"]
+            ),
         description = "The contract type",
         required = false
     )
