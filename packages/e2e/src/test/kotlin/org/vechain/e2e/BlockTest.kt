@@ -1,5 +1,6 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
@@ -7,6 +8,12 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 class BlockTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("BlockIndexer")
+    }
+
     @Test
     fun `get block by number`() {
         val block = VeWorldAPIClient.getBlock("1")
