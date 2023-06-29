@@ -19,7 +19,10 @@ class ContractTxIdAddIndexChangeUnit {
     @Execution
     fun execution(mongoTemplate: MongoTemplate) {
         val idx: IndexDefinition =
-            Index().named(CONTRACTS_TX_ID_IDX).on(IndexedContract::txId.name, Sort.Direction.DESC)
+            Index()
+                .named(CONTRACTS_TX_ID_IDX)
+                .on(IndexedContract::txId.name, Sort.Direction.DESC)
+                .background()
 
         mongoTemplate.indexOps(IndexedContract::class.java).ensureIndex(idx)
     }
