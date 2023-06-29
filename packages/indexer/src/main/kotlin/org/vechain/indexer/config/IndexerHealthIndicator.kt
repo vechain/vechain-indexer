@@ -4,26 +4,33 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
-import org.springframework.boot.actuate.health.Status
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
 
 @Component
 class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndicator {
 
-    data class IndexerHealth(val indexerName: String, val status: Status)
-
     companion object {
-        const val PROCESS_TIMEOUT = 60L
+        private const val STATUS_UP = "UP"
+        private const val STATUS_DOWN = "DOWN"
+        private const val PROCESS_TIMEOUT = 60L
     }
+
+    data class IndexerHealth(val indexerName: String, val status: String, val syncStatus: Any)
 
     override fun health(): Health {
         val key = "IndexersHealth"
 
         val indexerHealths =
-            indexers.map { indexer -> IndexerHealth(indexer.name, getIndexerHealth(indexer)) }
+            indexers.map { indexer ->
+                IndexerHealth(
+                    indexerName = indexer.name,
+                    status = getIndexerHealth(indexer),
+                    syncStatus = indexer.status
+                )
+            }
 
-        val badIndexers = indexerHealths.filter { it.status == Status.DOWN }
+        val badIndexers = indexerHealths.filter { it.status == STATUS_DOWN }
 
         return if (badIndexers.isNotEmpty()) {
             Health.down().withDetail(key, badIndexers).build()
@@ -32,14 +39,14 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
         }
     }
 
-    private fun getIndexerHealth(indexer: Indexer): Status {
+    private fun getIndexerHealth(indexer: Indexer): String {
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeLastProcessed = indexer.timeLastProcessed
         return if (timeNow.minusSeconds(PROCESS_TIMEOUT) > timeLastProcessed) {
-            Status.DOWN
+            STATUS_DOWN
         } else {
-            Status.UP
+            STATUS_UP
         }
     }
 }
