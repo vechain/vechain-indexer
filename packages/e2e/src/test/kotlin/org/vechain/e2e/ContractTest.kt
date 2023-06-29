@@ -1,5 +1,6 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedContract
 import strikt.api.expect
@@ -9,6 +10,11 @@ import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
 
 class ContractTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("ContractIndexer")
+    }
 
     @Test
     fun `get contracts for creator`() {

@@ -148,15 +148,9 @@ configureIndexes(db.transactions, [
         },
     },
     {
-        keys: {origin: 1, blockNumber: -1, _id: -1},
+        keys: {origin: 1, gasPayer: 1, blockNumber: -1, _id: -1},
         options: {
-            name: "tx_origin_1_blockNumber_-1__id_-1",
-        },
-    },
-    {
-        keys: {gasPayer: 1, blockNumber: -1, _id: -1},
-        options: {
-            name: "tx_gasPayer_1_blockNumber_-1__id_-1",
+            name: "tx_origin_1_gasPayer_1_blockNumber_-1__id_-1",
         },
     },
 ]);

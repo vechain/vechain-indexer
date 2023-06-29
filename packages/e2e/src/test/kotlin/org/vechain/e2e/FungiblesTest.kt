@@ -1,11 +1,18 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEmpty
 import strikt.assertions.isNotEmpty
 
 class FungiblesTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("FungibleTokenContractIndexer")
+    }
+
     @Test
     fun `should return some contracts`() {
         val contracts =

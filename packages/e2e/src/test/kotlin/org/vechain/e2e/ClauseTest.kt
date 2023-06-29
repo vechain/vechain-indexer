@@ -1,5 +1,6 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 import strikt.api.expect
@@ -10,6 +11,12 @@ import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
 class ClauseTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("ClauseIndexer")
+    }
+
     @Test
     fun `get clauses for address`() {
         val clauses = VeWorldAPIClient.getClauses("0x435933c8064b4ae76be665428e0307ef2ccfbd68")

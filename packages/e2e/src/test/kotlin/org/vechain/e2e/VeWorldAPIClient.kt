@@ -11,6 +11,7 @@ object VeWorldAPIClient {
 
     /** Client Config */
     private const val BASE_URL = "http://localhost:8080"
+    private const val INDEXER_URL = "http://localhost:8081"
     private const val API_URL = "http://localhost:8080/api/v1/"
 
     private val REST_TEMPLATE = RestTemplate()
@@ -33,17 +34,17 @@ object VeWorldAPIClient {
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
 
+    data class HealthCheckComponent(
+        val status: String = "DOWN",
+        val details: Map<String, Any> = emptyMap()
+    )
+
+    data class HealthCheckResponse(
+        val status: String = "DOWN",
+        val components: Map<String, HealthCheckComponent> = emptyMap()
+    )
+
     fun performHealthCheck() {
-
-        data class HealthCheckComponent(
-            val status: String = "DOWN",
-            val details: Map<String, String> = emptyMap()
-        )
-
-        data class HealthCheckResponse(
-            val status: String = "DOWN",
-            val components: Map<String, HealthCheckComponent> = emptyMap()
-        )
 
         val res =
             REST_TEMPLATE.exchange(
@@ -61,6 +62,40 @@ object VeWorldAPIClient {
         val mongoStatus = res.body?.components?.get("mongo")?.status
 
         if (mongoStatus != "UP") throw Exception("Health failed with status $mongoStatus")
+    }
+
+    fun performIndexerHealthCheck(indexerComponent: String) {
+
+        for (i in 1..30) {
+            try {
+                val res =
+                    REST_TEMPLATE.exchange(
+                        "$INDEXER_URL/actuator/health",
+                        HttpMethod.GET,
+                        null,
+                        HealthCheckResponse::class.java
+                    )
+
+                if (!res.statusCode.is2xxSuccessful || res.body?.status != "UP")
+                    throw Exception("Health status failed")
+
+                val indexerStatus =
+                    res.body?.components?.get("indexer")?.details?.get("IndexersHealth")
+                        as List<LinkedHashMap<String, String>>
+
+                val syncStatus =
+                    indexerStatus.find { it["indexerName"] == indexerComponent }?.get("syncStatus")
+
+                if (syncStatus != "FULLY_SYNCED")
+                    throw Exception("Health failed with status $syncStatus")
+
+                return
+            } catch (ex: Exception) {
+                Thread.sleep(1_000)
+            }
+        }
+
+        throw Exception("Indexer health check failed")
     }
 
     fun getBlock(revision: String): IndexedBlock {
