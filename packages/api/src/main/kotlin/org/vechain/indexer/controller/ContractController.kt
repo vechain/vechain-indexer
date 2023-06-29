@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedContract
@@ -88,6 +89,9 @@ open class ContractController(private val contractService: ContractService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedContract> {
+        if (address == null && type.isNullOrEmpty())
+            throw BadRequestException("Either contract address or contract type should be non null")
+
         return paginatedResponse(
             contractService.find(
                 address,
