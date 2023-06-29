@@ -11,6 +11,7 @@ import org.web3j.abi.TypeReference
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.DynamicArray
 import org.web3j.abi.datatypes.Event
+import org.web3j.abi.datatypes.Utf8String
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.tx.Contract
 import org.web3j.utils.Numeric
@@ -29,30 +30,26 @@ object EventUtils {
 
     fun isNftTransferEvent(event: TxEvent): Boolean {
         return event.topics.size == 4 &&
-            HexUtils.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
+            HexUtils.compare(event.topics[0], Signatures.Common.TRANSFER_EVENT)
     }
 
     fun isFungibleTransferEvent(event: TxEvent): Boolean {
         return event.topics.size == 3 &&
-            HexUtils.removePrefix(event.topics[0]) == Signatures.Common.TRANSFER_EVENT
-    }
-
-    fun isTransferSingleEvent(event: TxEvent): Boolean {
-        if (event.topics.isEmpty()) return false
-
-        val topicSignature = HexUtils.removePrefix(event.topics[0])
-
-        return topicSignature == VIP210Contract.TRANSFER_SINGLE_EVENT ||
-            topicSignature == ERC1155Contract.TRANSFER_SINGLE_EVENT
+            HexUtils.compare(event.topics[0], Signatures.Common.TRANSFER_EVENT)
     }
 
     fun isTransferBatchEvent(event: TxEvent): Boolean {
-        if (event.topics.isEmpty()) return false
+        return isEvent(event, ERC1155Contract.TRANSFER_BATCH_EVENT) ||
+            isEvent(event, VIP210Contract.TRANSFER_BATCH_EVENT)
+    }
 
-        val topicSignature = HexUtils.removePrefix(event.topics[0])
+    fun isTransferSingleEvent(event: TxEvent): Boolean {
+        return isEvent(event, ERC1155Contract.TRANSFER_SINGLE_EVENT) ||
+            isEvent(event, VIP210Contract.TRANSFER_SINGLE_EVENT)
+    }
 
-        return topicSignature == VIP210Contract.TRANSFER_BATCH_EVENT ||
-            topicSignature == ERC1155Contract.TRANSFER_BATCH_EVENT
+    fun isEvent(event: TxEvent, eventSignature: String): Boolean {
+        return event.topics.isNotEmpty() && HexUtils.compare(event.topics[0], eventSignature)
     }
 
     fun isTransferEvent(event: TxEvent): Boolean {
@@ -102,8 +99,14 @@ object EventUtils {
 
     fun getSingleTransferParameters(event: TxEvent): List<TransferParameters> {
         try {
-            val eventParameters =
-                Contract.staticExtractEventParameters(TRANSFER_SINGLE_EVENT, event.toLog())
+
+            val ev =
+                if (isEvent(event, ERC1155Contract.TRANSFER_SINGLE_EVENT)) ERC_TRANSFER_SINGLE_EVENT
+                else if (isEvent(event, VIP210Contract.TRANSFER_SINGLE_EVENT))
+                    VIP_TRANSFER_SINGLE_EVENT
+                else throw IllegalArgumentException("Invalid event signature")
+
+            val eventParameters = Contract.staticExtractEventParameters(ev, event.toLog())
 
             val tokenId = eventParameters.nonIndexedValues[0] as Uint256
             val amount = eventParameters.nonIndexedValues[1] as Uint256
@@ -120,16 +123,22 @@ object EventUtils {
                 )
             )
         } catch (e: Exception) {
-            logger.warn("Error parsing single transfer event", e)
-            return emptyList()
+            logger.error("Error parsing single transfer event", e)
+            throw e
         }
     }
 
     fun getBatchTransferParameters(event: TxEvent): List<TransferParameters> {
 
         try {
-            val eventParameters =
-                Contract.staticExtractEventParameters(TRANSFER_BATCH_EVENT, event.toLog())
+
+            val ev =
+                if (isEvent(event, ERC1155Contract.TRANSFER_BATCH_EVENT)) ERC_TRANSFER_BATCH_EVENT
+                else if (isEvent(event, VIP210Contract.TRANSFER_BATCH_EVENT))
+                    VIP_TRANSFER_BATCH_EVENT
+                else throw IllegalArgumentException("Invalid event signature")
+
+            val eventParameters = Contract.staticExtractEventParameters(ev, event.toLog())
 
             val tokenIds = eventParameters.nonIndexedValues[0] as DynamicArray<*>
             val amounts = eventParameters.nonIndexedValues[1] as DynamicArray<*>
@@ -147,13 +156,13 @@ object EventUtils {
                 )
             }
         } catch (e: Exception) {
-            logger.warn("Error parsing batch transfer event", e)
-            return emptyList()
+            logger.error("Error parsing batch transfer event", e)
+            throw e
         }
     }
 }
 
-private val TRANSFER_BATCH_EVENT =
+private val ERC_TRANSFER_BATCH_EVENT =
     Event(
         "TransferBatch",
         listOf(
@@ -165,7 +174,20 @@ private val TRANSFER_BATCH_EVENT =
         )
     )
 
-private val TRANSFER_SINGLE_EVENT =
+private val VIP_TRANSFER_BATCH_EVENT =
+    Event(
+        "TransferBatch",
+        listOf(
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<DynamicArray<Uint256>>() {},
+            object : TypeReference<DynamicArray<Uint256>>() {},
+            object : TypeReference<Utf8String>() {}
+        )
+    )
+
+private val ERC_TRANSFER_SINGLE_EVENT =
     Event(
         "TransferSingle",
         listOf<TypeReference<*>>(
@@ -174,6 +196,19 @@ private val TRANSFER_SINGLE_EVENT =
             object : TypeReference<Address>(true) {},
             object : TypeReference<Uint256>() {},
             object : TypeReference<Uint256>() {}
+        )
+    )
+
+private val VIP_TRANSFER_SINGLE_EVENT =
+    Event(
+        "TransferSingle",
+        listOf<TypeReference<*>>(
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<Address>(true) {},
+            object : TypeReference<Uint256>() {},
+            object : TypeReference<Uint256>() {},
+            object : TypeReference<Utf8String>() {}
         )
     )
 

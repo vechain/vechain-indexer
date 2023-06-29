@@ -7,6 +7,10 @@ object HexUtils {
 
     const val BLOCK_ID_REGEX = "^(0x)?[0-9a-fA-F]{64}\$"
 
+    fun compare(hex1: String, hex2: String): Boolean {
+        return normalise(hex1) == normalise(hex2)
+    }
+
     fun isValid(hex: String): Boolean {
         return hex.matches(Regex(REGEX))
     }

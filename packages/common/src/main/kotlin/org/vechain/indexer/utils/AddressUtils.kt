@@ -6,6 +6,8 @@ import org.web3j.abi.FunctionReturnDecoder
 
 object AddressUtils {
 
+    const val ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
     fun toBigInt(address: String): BigInteger {
         return BigInteger(HexUtils.removePrefix(address), 16)
     }
