@@ -14,7 +14,6 @@ plugins {
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 allprojects {
-
     apply {
         plugin("org.jetbrains.kotlin.jvm")
         plugin("org.springframework.boot")
@@ -43,19 +42,18 @@ allprojects {
         maven { url = uri("https://repo.spring.io/snapshot") }
         maven {
             url = uri("https://jitpack.io")
-            content {
-                includeGroup("com.github.vechain")
-            }
+            content { includeGroup("com.github.vechain") }
         }
     }
 
     /**
-     * Create a task to register the pre-commit scripts in './git-hooks` to the '.git/hooks' directory.
+     * Create a task to register the pre-commit scripts in './git-hooks` to the '.git/hooks'
+     * directory.
      */
     tasks.register("installGitHooks") {
         doLast {
             val hooksDir = File("${rootDir.path}/.git/hooks")
-            val scriptsDir = File("${rootDir.path}/git-hooks")
+            val scriptsDir = File("${rootDir.path}/git-scripts")
             scriptsDir.listFiles()?.forEach { script ->
                 val hook = File(hooksDir, script.name)
                 hook.writeText(script.readText())
@@ -63,7 +61,6 @@ allprojects {
             }
         }
     }
-
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
@@ -78,12 +75,9 @@ allprojects {
         dependsOn("installGitHooks")
     }
 
-    tasks.jacocoTestReport {
-        dependsOn(tasks.test)
-    }
+    tasks.jacocoTestReport { dependsOn(tasks.test) }
 
     tasks.clean {
-
         val dirs = mutableListOf(buildDir.path, "${rootDir.path}/bin")
         dirs.addAll(
             subprojects.flatMap {
@@ -98,18 +92,21 @@ allprojects {
     }
 
     /**
-     * This does NOT run the tests prior to generating the report. It only uses the existing test results.
+     * This does NOT run the tests prior to generating the report. It only uses the existing test
+     * results.
      */
     tasks.register<JacocoReport>("codeCoverageReport") {
         // If a subproject applies the 'jacoco' plugin, add the result it to the report
         subprojects {
             val subproject = this
             subproject.plugins.withType<JacocoPlugin>().configureEach {
-                subproject.tasks.matching { it.extensions.findByType<JacocoTaskExtension>() != null }.configureEach {
-                    val testTask = this
-                    sourceSets(subproject.sourceSets.main.get())
-                    executionData(testTask)
-                }
+                subproject.tasks
+                    .matching { it.extensions.findByType<JacocoTaskExtension>() != null }
+                    .configureEach {
+                        val testTask = this
+                        sourceSets(subproject.sourceSets.main.get())
+                        executionData(testTask)
+                    }
             }
         }
 
@@ -128,43 +125,50 @@ allprojects {
         val failedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
         val skippedTests = mutableListOf<Pair<TestDescriptor, Throwable?>>()
 
-        addTestListener(object : TestListener {
-            override fun beforeSuite(suite: TestDescriptor) {}
-            override fun beforeTest(testDescriptor: TestDescriptor) {}
-            override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
-                when (result.resultType) {
-                    TestResult.ResultType.FAILURE -> failedTests.add(Pair(testDescriptor, result.exception))
-                    TestResult.ResultType.SKIPPED -> skippedTests.add(Pair(testDescriptor, result.exception))
-                    else -> {}
+        addTestListener(
+            object : TestListener {
+                override fun beforeSuite(suite: TestDescriptor) {}
+                override fun beforeTest(testDescriptor: TestDescriptor) {}
+                override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+                    when (result.resultType) {
+                        TestResult.ResultType.FAILURE ->
+                            failedTests.add(Pair(testDescriptor, result.exception))
+                        TestResult.ResultType.SKIPPED ->
+                            skippedTests.add(Pair(testDescriptor, result.exception))
+                        else -> {}
+                    }
                 }
-            }
 
-            override fun afterSuite(suite: TestDescriptor, result: TestResult) {
-                logger.lifecycle("----")
-                logger.lifecycle("Test result: ${result.resultType}")
-                logger.lifecycle(
-                    "Test summary: ${result.testCount} tests, " +
+                override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+                    logger.lifecycle("----")
+                    logger.lifecycle("Test result: ${result.resultType}")
+                    logger.lifecycle(
+                        "Test summary: ${result.testCount} tests, " +
                             "${result.successfulTestCount} succeeded, " +
                             "${result.failedTestCount} failed, " +
                             "${result.skippedTestCount} skipped",
-                )
-                if (failedTests.isNotEmpty()) {
-                    logger.lifecycle("\tFailed Tests:")
-                    failedTests.forEach {
-                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}", it.second)
+                    )
+                    if (failedTests.isNotEmpty()) {
+                        logger.lifecycle("\tFailed Tests:")
+                        failedTests.forEach {
+                            logger.lifecycle(
+                                "\t\t${it.first.className} - ${it.first.name}",
+                                it.second
+                            )
+                        }
+                        failedTests.clear()
                     }
-                    failedTests.clear()
-                }
 
-                if (skippedTests.isNotEmpty()) {
-                    logger.lifecycle("\tSkipped Tests:")
-                    skippedTests.forEach {
-                        logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
+                    if (skippedTests.isNotEmpty()) {
+                        logger.lifecycle("\tSkipped Tests:")
+                        skippedTests.forEach {
+                            logger.lifecycle("\t\t${it.first.className} - ${it.first.name}")
+                        }
+                        skippedTests.clear()
                     }
-                    skippedTests.clear()
                 }
             }
-        })
+        )
     }
 
     dependencies {
