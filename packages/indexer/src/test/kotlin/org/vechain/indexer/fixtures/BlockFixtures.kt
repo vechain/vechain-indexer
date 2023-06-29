@@ -17,6 +17,9 @@ object BlockFixtures {
     val BLOCK_10_SEMI_FUNGIBLE_TOKENS = buildBlockFixture(10L)
     val BLOCK_14_VET_TRANSFER = buildBlockFixture(14L)
     val BLOCK_16_MASTER_EVENT_UPDATE = buildBlockFixture(16L)
+    val BLOCK_17_BATCH_TRANSFERS_1 = buildBlockFixture(17L)
+    val BLOCK_18_BATCH_TRANSFERS_2 = buildBlockFixture(18L)
+    val BLOCK_19_BATCH_TRANSFERS_3 = buildBlockFixture(19L)
     val BLOCK_42_ERC1155_VIP210_CONTRACTS = buildBlockFixture(42L)
 
     val BLOCK_2395_FUNGIBLE_TRANSFERS_1 = buildBlockFixture(2395L)
