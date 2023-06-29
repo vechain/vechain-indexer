@@ -1,5 +1,6 @@
 package org.vechain.indexer.controller
 
+import java.util.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,7 +14,6 @@ import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
-import java.util.*
 
 internal class ContractControllerTest : AbstractIntegrationTest() {
 
@@ -150,7 +150,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val page = 1
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&page=$page")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -167,7 +167,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val size = 10
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&page=$page" + "&size=$size")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page&size=$size")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -184,7 +184,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val size = 10
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&page=$page" + "&size=$size")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page&size=$size")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -201,7 +201,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val size = 10
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&page=$page" + "&size=$size")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page&size=$size")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -226,7 +226,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val size = 10
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&page=$page" + "&size=$size")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page&size=$size")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -258,7 +258,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
             val invalidType = "vip199"
 
-            mockMvc.get("$BASE_ENDPOINT?address=$creatorAddress" + "&type=$invalidType").andExpect {
+            mockMvc.get("$BASE_ENDPOINT?address=$creatorAddress&type=$invalidType").andExpect {
                 status { isBadRequest() }
             }
         }
@@ -270,7 +270,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?address=$creatorAddress" + "&type=$type")
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&type=$type")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -365,7 +365,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
             val result =
                 mockMvc
-                    .get("$BASE_ENDPOINT?type=$type" + "&page=$page" + "&size=$size")
+                    .get("$BASE_ENDPOINT?type=$type&page=$page&size=$size")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
