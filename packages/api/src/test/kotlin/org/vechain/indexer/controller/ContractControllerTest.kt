@@ -22,8 +22,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         const val TOTAL_CONTRACTS_NUMBER = 18
     }
 
-    @Autowired
-    lateinit var mockMvc: MockMvc
+    @Autowired lateinit var mockMvc: MockMvc
 
     @Nested
     inner class ContractIdQueries {
@@ -292,9 +291,9 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 mockMvc
                     .get(
                         "$BASE_ENDPOINT?address=$creatorAddress" +
-                                "&type=$type" +
-                                "&page=$page" +
-                                "&size=$size"
+                            "&type=$type" +
+                            "&page=$page" +
+                            "&size=$size"
                     )
                     .andExpect { status { isOk() } }
                     .andReturn()
@@ -326,9 +325,9 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 mockMvc
                     .get(
                         "$BASE_ENDPOINT?address=$creatorAddress" +
-                                "&type=$type" +
-                                "&page=$page" +
-                                "&size=$size"
+                            "&type=$type" +
+                            "&page=$page" +
+                            "&size=$size"
                     )
                     .andExpect { status { isOk() } }
                     .andReturn()
