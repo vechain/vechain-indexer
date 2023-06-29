@@ -37,7 +37,7 @@ open class ClauseController(private val clauseService: ClauseService) {
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the clause origin or destination",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
     @PaginationParameters
     open fun getClauses(

@@ -66,7 +66,7 @@ open class TransactionController(private val transactionService: TransactionServ
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the transaction origin",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -107,7 +107,7 @@ open class TransactionController(private val transactionService: TransactionServ
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of the delegator",
         required = true,
-        example = "0x435933c8064b4Ae76bE665428e0307eF2cCFBD68"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
     @PaginationParameters
     open fun getDelegatedTransactions(
