@@ -1,10 +1,12 @@
 package org.vechain.indexer.utils
 
-import java.math.BigInteger
 import org.vechain.indexer.model.Address
 import org.web3j.abi.FunctionReturnDecoder
+import java.math.BigInteger
 
 object AddressUtils {
+
+    const val ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
     fun toBigInt(address: String): BigInteger {
         return BigInteger(HexUtils.removePrefix(address), 16)

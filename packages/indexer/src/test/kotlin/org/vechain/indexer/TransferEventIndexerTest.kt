@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.math.BigInteger
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -11,16 +10,22 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_17_BATCH_TRANSFERS_1
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_18_BATCH_TRANSFERS_2
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_19_BATCH_TRANSFERS_3
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.TransferEventRepository
+import org.vechain.indexer.utils.AddressUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNotNull
 import strikt.assertions.isNull
+import java.math.BigInteger
 
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {
@@ -142,6 +147,96 @@ class TransferEventIndexerTest {
             that(vetTransfer.value).isEqualTo(BigInteger.valueOf(10000000))
             that(vetTransfer.tokenAddress).isNull()
             that(vetTransfer.topics).hasSize(0)
+        }
+    }
+
+    @Test
+    fun `can pick up batch mint events`() {
+
+        val transfersSlot = mutableListOf<List<IndexedTransferEvent>>()
+        every {
+            mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
+        } returns mutableListOf()
+
+        transferEventIndexer.processBlock(BLOCK_17_BATCH_TRANSFERS_1)
+        transferEventIndexer.processBlock(BLOCK_18_BATCH_TRANSFERS_2)
+        transferEventIndexer.processBlock(BLOCK_19_BATCH_TRANSFERS_3)
+
+        val transfers = transfersSlot.flatten()
+
+        val vip210Batch =
+            transfers.filter {
+                it.txId == "0x91d726dc73b0dd2d0b913e814513142f909d4fbf46945bc199b9015f8ffbfcd7" &&
+                    it.eventType == TransferEventType.SEMI_FUNGIBLE_TOKEN
+            }
+        val erc1155Batch =
+            transfers.filter {
+                it.txId == "0x601ca7c5430d0b49c266dd349f3a792538805b4fff9b822e66581004bae458e9" &&
+                    it.eventType == TransferEventType.SEMI_FUNGIBLE_TOKEN
+            }
+        val erc721Batch =
+            transfers.filter {
+                it.txId == "0xf88748d0803fc08b07a674ffe3d83bb9bc017cc1eb7b2838503ab18dac4b80cc" &&
+                    it.eventType == TransferEventType.NFT
+            }
+        val vip181Batch =
+            transfers.filter {
+                it.txId == "0xa6ff1dc03cc57bb573d32ae999ccd5e72e8807550b1976d0eb20498b0acfb2bd" &&
+                    it.eventType == TransferEventType.NFT
+            }
+        val vip180 =
+            transfers.filter {
+                it.txId == "0x5348365b87fbad243b32fdc14ae8981057132ecaabc5a07f53d8c2f05ddda9b1" &&
+                    it.eventType == TransferEventType.FUNGIBLE_TOKEN
+            }
+        val erc20 =
+            transfers.filter {
+                it.txId == "0xb73d1a49f0c56a15b6b549b271e74aab4e536e060d3c90938aee12f1e41caac4" &&
+                    it.eventType == TransferEventType.FUNGIBLE_TOKEN
+            }
+
+        expect {
+            that(vip210Batch).hasSize(50)
+            that(erc1155Batch).hasSize(50)
+            that(erc721Batch).hasSize(50)
+            that(vip181Batch).hasSize(50)
+            that(vip180).hasSize(50)
+            that(erc20).hasSize(50)
+        }
+    }
+
+    @Test
+    fun `can pick up semi-fungible single transfer events`() {
+        val transfersSlot = mutableListOf<List<IndexedTransferEvent>>()
+        every {
+            mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
+        } returns mutableListOf()
+
+        transferEventIndexer.processBlock(BLOCK_17_BATCH_TRANSFERS_1)
+        transferEventIndexer.processBlock(BLOCK_18_BATCH_TRANSFERS_2)
+        transferEventIndexer.processBlock(BLOCK_19_BATCH_TRANSFERS_3)
+
+        val transfers = transfersSlot.flatten().filter { it.from != AddressUtils.ZERO_ADDRESS }
+
+        val vip210Single =
+            transfers.find {
+                it.from == "0xabef6032b9176c186f6bf984f548bda53349f70a" &&
+                    it.to == "0x865306084235bf804c8bba8a8d56890940ca8f0b" &&
+                    it.eventType == TransferEventType.SEMI_FUNGIBLE_TOKEN &&
+                    it.tokenAddress == "0x898E50B66fC40Ef5ee80dC0d20b113bEb405434b".lowercase()
+            }
+
+        val erc1155Single =
+            transfers.find {
+                it.from == "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0" &&
+                    it.to == "0x99602e4bbc0503b8ff4432bb1857f916c3653b85" &&
+                    it.eventType == TransferEventType.SEMI_FUNGIBLE_TOKEN &&
+                    it.tokenAddress == "0x7721A4612D055AE028c7c6445a25c75A4715ac96".lowercase()
+            }
+
+        expect {
+            that(vip210Single).isNotNull()
+            that(erc1155Single).isNotNull()
         }
     }
 }
