@@ -3,6 +3,7 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.math.BigInteger
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,7 +26,6 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNotNull
 import strikt.assertions.isNull
-import java.math.BigInteger
 
 @ExtendWith(MockKExtension::class)
 class TransferEventIndexerTest {

@@ -1,8 +1,8 @@
 package org.vechain.indexer.utils
 
+import java.math.BigInteger
 import org.vechain.indexer.model.Address
 import org.web3j.abi.FunctionReturnDecoder
-import java.math.BigInteger
 
 object AddressUtils {
 
