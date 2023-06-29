@@ -1,5 +1,6 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedTransaction
 import strikt.api.expect
@@ -9,6 +10,12 @@ import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
 
 class TransactionTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("TransactionIndexer")
+    }
+
     @Test
     fun `get transactions for origin`() {
         val transactions =

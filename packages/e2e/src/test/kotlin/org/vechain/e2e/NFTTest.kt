@@ -1,5 +1,6 @@
 package org.vechain.e2e
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
@@ -8,6 +9,12 @@ import strikt.api.expectThat
 import strikt.assertions.*
 
 class NFTTest {
+
+    @BeforeEach
+    fun `perform healthcheck`() {
+        VeWorldAPIClient.performIndexerHealthCheck("NFTEventIndexer")
+    }
+
     @Test
     fun `get NFTs for address`() {
         val nfts =
