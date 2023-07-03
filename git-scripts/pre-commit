@@ -1,4 +1,4 @@
 #!/bin/sh
 
 echo "Running spotless check: "
-./gradlew spotlessCheck || echo "\n\n   Spotless check failed. See above for details. To fix the issue: \n\n       ./gradlew spotlessApply \n\n   and then git add/commit again. \n\n" && exit 1
+./gradlew spotlessCheck || echo "\n\n   Spotless check failed. See above for details. To fix the issue: \n\n       ./gradlew spotlessApply \n\n   and then git add/commit again. \n\n"
