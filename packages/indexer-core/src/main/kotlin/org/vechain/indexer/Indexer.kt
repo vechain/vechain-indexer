@@ -1,7 +1,5 @@
 package org.vechain.indexer
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -9,10 +7,13 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 enum class Status {
     SYNCING,
-    FULLY_SYNCED
+    FULLY_SYNCED,
+    ERROR
 }
 
 const val INITIAL_BACKOFF_PERIOD = 10_000L
@@ -71,10 +72,6 @@ abstract class Indexer(
         // Initialise the indexer
         initialise()
 
-        // Wait for 10 seconds
-        logger.info("Restarting indexer in 10s...")
-        delay(INITIAL_BACKOFF_PERIOD)
-
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
@@ -83,6 +80,8 @@ abstract class Indexer(
             if (hasIndexerFinished()) return
 
             backoffDelay()
+
+            if (status == Status.ERROR) restart()
 
             val block = getBlockFromChain(currentBlockNumber)
 
@@ -103,10 +102,10 @@ abstract class Indexer(
             handleFullySynced()
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
-            restart()
+            handleError()
         } catch (e: Exception) {
             logger.error("Error while processing block $currentBlockNumber", e)
-            restart()
+            handleError()
         }
 
         run()
@@ -126,6 +125,11 @@ abstract class Indexer(
     private fun handleFullySynced() {
         backoffPeriod = 4000
         status = Status.FULLY_SYNCED
+    }
+
+    private fun handleError() {
+        backoffPeriod = INITIAL_BACKOFF_PERIOD
+        status = Status.ERROR
     }
 
     private suspend fun postProcessBlock(block: Block) {
