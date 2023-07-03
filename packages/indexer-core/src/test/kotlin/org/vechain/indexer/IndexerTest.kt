@@ -16,11 +16,9 @@ import strikt.assertions.isEqualTo
 @ExtendWith(MockKExtension::class)
 internal class IndexerTests {
 
-    @MockK
-    private lateinit var responseMocker: IndexerResponseMocker
+    @MockK private lateinit var responseMocker: IndexerResponseMocker
 
-    @MockK
-    private lateinit var thorClient: ThorClient
+    @MockK private lateinit var thorClient: ThorClient
 
     private lateinit var indexer: Indexer
 
@@ -37,9 +35,9 @@ internal class IndexerTests {
     @Test
     fun `Test that SYNCING mode processes blocks`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    getTestBlock(getBlockNumberSlot.captured)
-                }
+            {
+                getTestBlock(getBlockNumberSlot.captured)
+            }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0
         every { responseMocker.processBlock(any()) } just Runs
 
@@ -58,12 +56,12 @@ internal class IndexerTests {
     @Test
     fun `Test that indexer switches to FULLY_SYNCED mode`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    if (getBlockNumberSlot.captured >= 99L) {
-                        throw BlockNotFoundException("Block not found")
-                    }
-                    getTestBlock(getBlockNumberSlot.captured)
+            {
+                if (getBlockNumberSlot.captured >= 99L) {
+                    throw BlockNotFoundException("Block not found")
                 }
+                getTestBlock(getBlockNumberSlot.captured)
+            }
         coEvery { thorClient.getBestBlock() } coAnswers { getTestBlock(99L) }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
@@ -83,13 +81,13 @@ internal class IndexerTests {
     @Test
     fun `Test that a reorg sets ERROR status`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    // At block 100, the parent id is invalid
-                    val parentId =
-                        if (getBlockNumberSlot.captured == 100L) "0x02321321"
-                        else "0x${maxOf(getBlockNumberSlot.captured - 1, 0)}"
-                    getTestBlock(getBlockNumberSlot.captured, parentId)
-                }
+            {
+                // At block 100, the parent id is invalid
+                val parentId =
+                    if (getBlockNumberSlot.captured == 100L) "0x02321321"
+                    else "0x${maxOf(getBlockNumberSlot.captured - 1, 0)}"
+                getTestBlock(getBlockNumberSlot.captured, parentId)
+            }
 
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
@@ -108,13 +106,13 @@ internal class IndexerTests {
     @Test
     fun `Test that a reorg triggers a rollback`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    // At block 100, the parent id is invalid
-                    val parentId =
-                        if (getBlockNumberSlot.captured == 100L) "0x02321321"
-                        else "0x${maxOf(getBlockNumberSlot.captured - 1, 0)}"
-                    getTestBlock(getBlockNumberSlot.captured, parentId)
-                }
+            {
+                // At block 100, the parent id is invalid
+                val parentId =
+                    if (getBlockNumberSlot.captured == 100L) "0x02321321"
+                    else "0x${maxOf(getBlockNumberSlot.captured - 1, 0)}"
+                getTestBlock(getBlockNumberSlot.captured, parentId)
+            }
 
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(any()) } just Runs
@@ -135,16 +133,16 @@ internal class IndexerTests {
     @Test
     fun `Test that an unknown exception sets ERROR status`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    getTestBlock(getBlockNumberSlot.captured)
-                }
+            {
+                getTestBlock(getBlockNumberSlot.captured)
+            }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(capture(processBlockNumberSlot)) } answers
-                {
-                    if (processBlockNumberSlot.captured.number == 100L) {
-                        throw Exception("Unknown exception")
-                    }
+            {
+                if (processBlockNumberSlot.captured.number == 100L) {
+                    throw Exception("Unknown exception")
                 }
+            }
 
         // Start the indexer in a separate coroutine
         val job = launch { indexer.start(101L) }
@@ -160,16 +158,16 @@ internal class IndexerTests {
     @Test
     fun `Test that an unknown exception triggers a rollback`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
-                {
-                    getTestBlock(getBlockNumberSlot.captured)
-                }
+            {
+                getTestBlock(getBlockNumberSlot.captured)
+            }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
         every { responseMocker.processBlock(capture(processBlockNumberSlot)) } answers
-                {
-                    if (processBlockNumberSlot.captured.number == 100L) {
-                        throw Exception("Unknown exception")
-                    }
+            {
+                if (processBlockNumberSlot.captured.number == 100L) {
+                    throw Exception("Unknown exception")
                 }
+            }
 
         // Start the indexer in a separate coroutine
         val job = launch { indexer.start(102L) }
