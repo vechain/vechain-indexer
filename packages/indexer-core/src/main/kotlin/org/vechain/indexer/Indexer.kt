@@ -1,7 +1,5 @@
 package org.vechain.indexer
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -9,6 +7,8 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 enum class Status {
     SYNCING,
@@ -68,14 +68,18 @@ abstract class Indexer(
     }
 
     private suspend fun restart() {
-        // Initialise the indexer
-        initialise()
+        try {
+            // Initialise the indexer
+            initialise()
 
-        // Wait for 10 seconds
-        logger.info("Restarting indexer in 10s...")
-        delay(INITIAL_BACKOFF_PERIOD)
+            // Wait for 10 seconds
+            logger.info("Restarting indexer in 10s...")
+            delay(INITIAL_BACKOFF_PERIOD)
 
-        logger.info("Restarting indexer @ Block: $currentBlockNumber")
+            logger.info("Restarting indexer @ Block: $currentBlockNumber")
+        } catch (e: Exception) {
+            logger.error("Error restarting indexer", e)
+        }
     }
 
     private tailrec suspend fun run() {
@@ -124,8 +128,12 @@ abstract class Indexer(
     }
 
     private fun handleFullySynced() {
-        backoffPeriod = 4000
-        status = Status.FULLY_SYNCED
+        try {
+            backoffPeriod = 4000
+            status = Status.FULLY_SYNCED
+        } catch (e: Exception) {
+            logger.error("Error while handling fully synced", e)
+        }
     }
 
     private suspend fun postProcessBlock(block: Block) {
@@ -155,14 +163,18 @@ abstract class Indexer(
     }
 
     private suspend fun ensureFullySynced() {
-        if (status == Status.FULLY_SYNCED) {
-            val latestBlock = getBestBlockFromChain()
-            if (latestBlock.number > currentBlockNumber) {
-                logger.info(
-                    "$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})"
-                )
-                status = Status.SYNCING
+        try {
+            if (status == Status.FULLY_SYNCED) {
+                val latestBlock = getBestBlockFromChain()
+                if (latestBlock.number > currentBlockNumber) {
+                    logger.info(
+                        "$name - Changing status to SYNCING (indexerBlock=${currentBlockNumber}, latestBlock=${latestBlock.number})"
+                    )
+                    status = Status.SYNCING
+                }
             }
+        } catch (e: Exception) {
+            logger.error("Error while ensuring fully synced", e)
         }
     }
 
