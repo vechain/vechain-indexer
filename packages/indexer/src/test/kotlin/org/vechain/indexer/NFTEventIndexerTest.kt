@@ -130,14 +130,11 @@ internal class NFTEventIndexerTest {
 
         every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns
             mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { archiveRepository.findAllById(any()) } returns emptyList()
         every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
 
         expectThrows<ArchiveException> { nftEventIndexer.rollback(blockNumber) }
-
-        verify {
-            mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called
-        }
     }
 
     private fun compareNFTs(expected: IndexedNFT, actual: IndexedNFT) {

@@ -5,7 +5,7 @@ server:
 
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,clauses,blocks,contracts,transactions,transfer-events,fungible-token-contracts}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events}
   output:
     ansi:
       enabled: always

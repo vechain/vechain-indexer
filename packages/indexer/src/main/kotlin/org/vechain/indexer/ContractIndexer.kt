@@ -24,9 +24,14 @@ open class ContractIndexer(
     private val contractRepository: ContractRepository,
     private val archiveService: ArchiveService,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
-    @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
-) : VeWorldIndexer(contractRepository, startBlock, thorUrl) {
+    thorClient: ThorClient,
+) :
+    VeWorldIndexer(
+        repository = contractRepository,
+        startBlock = startBlock,
+        thorClient = thorClient
+    ) {
 
     @Transactional
     override fun processBlock(block: Block) {

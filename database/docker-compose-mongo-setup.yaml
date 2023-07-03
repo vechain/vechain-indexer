@@ -5,13 +5,13 @@ services:
     build:
       context: .
     environment:
-      - MONGO_HOST=mongo-node1
-      - MONGO_ADMIN_USER=root
-      - MONGO_ADMIN_PASSWORD=password
-      - MONGO_INDEXER_USER=indexer
-      - MONGO_INDEXER_PASSWORD=password
-      - MONGO_API_USER=api
-      - MONGO_API_PASSWORD=password
+      MONGO_HOST: "mongo-node1"
+      MONGO_ADMIN_USER: "root"
+      MONGO_ADMIN_PASSWORD: "password"
+      MONGO_INDEXER_USER: "indexer"
+      MONGO_INDEXER_PASSWORD: "password"
+      MONGO_API_USER: "api"
+      MONGO_API_PASSWORD: "password"
     restart: "no"
     networks:
       - vechain-database

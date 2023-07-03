@@ -18,9 +18,14 @@ import org.vechain.thor.model.Block
 open class FungibleTokenContractIndexer(
     private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     private val archiveService: ArchiveService,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
-) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl) {
+) :
+    VeWorldIndexer(
+        repository = fungibleTokenContractsRepository,
+        startBlock = startBlock,
+        thorClient = thorClient
+    ) {
 
     @Transactional
     override fun processBlock(block: Block) {

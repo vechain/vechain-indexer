@@ -1,7 +1,5 @@
 package org.vechain.indexer
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -9,6 +7,8 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 enum class Status {
     SYNCING,
@@ -18,11 +18,9 @@ enum class Status {
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    thorApiUrl: String = "http://localhost:8669",
-    private val startBlock: Long = 0L,
+    protected open val thorClient: ThorClient,
+    private val startBlock: Long,
 ) {
-
-    protected open val thorClient = ThorClient(thorApiUrl)
 
     private var previousBlockId: String? = null
 
