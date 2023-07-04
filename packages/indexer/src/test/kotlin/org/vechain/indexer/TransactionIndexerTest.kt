@@ -29,7 +29,12 @@ internal class TransactionIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
         transactionIndexer =
-            TransactionIndexer(transactionRepository, mongoTemplate, "http://localhost:8669", 0L)
+            TransactionIndexer(
+                transactionRepository,
+                mongoTemplate,
+                DefaultThorClient("http://localhost:8669"),
+                0L
+            )
     }
 
     @Test

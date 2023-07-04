@@ -14,10 +14,15 @@ import org.vechain.thor.model.Block
 open class ClauseIndexer(
     private val clauseRepository: ClauseRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.clauses}") private val syncLoggerInterval: Long,
-) : VeWorldIndexer(clauseRepository, startBlock, thorUrl, syncLoggerInterval) {
+    VeWorldIndexer(
+        repository = clauseRepository,
+        startBlock = startBlock,
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
+    ) {
 
     override fun rollback(blockNumber: Long) {
         clauseRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)

@@ -2,13 +2,12 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedFungibleTokenContracts
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.FungibleContractsService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
 import java.util.*
@@ -16,14 +15,20 @@ import java.util.*
 @Profile("fungible-token-contracts")
 @Component
 open class FungibleTokenContractIndexer(
-    private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     private val archiveService: ArchiveService,
-    @Value("\${thor.url}") private val thorUrl: String,
+    private val fungibleContractsService: FungibleContractsService,
+    thorClient: ThorClient,
+    fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     @Value("\${indexer.startBlock.fungibleTokens}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.fungibleTokens}") private val syncLoggerInterval: Long,
-) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl, syncLoggerInterval) {
+) :
+    VeWorldIndexer(
+        repository = fungibleTokenContractsRepository,
+        startBlock = startBlock,
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
+    ) {
 
-    @Transactional
     override fun processBlock(block: Block) {
         // get the fungible transfers
         val fungibleTransfers = BlockUtils.extractFungibleTransfers(block)
@@ -37,11 +42,10 @@ open class FungibleTokenContractIndexer(
                 .map { (account, contracts) -> processAccountsContracts(account, contracts, block) }
                 .mapNotNull { it }
 
-        // save all the archives
-        archiveService.saveAll(documents.mapNotNull { it.second })
-
-        // save all the new/updated documents
-        fungibleTokenContractsRepository.saveAll(documents.map { it.first })
+        fungibleContractsService.saveAll(
+            existing = documents.map { it.first },
+            archived = documents.mapNotNull { it.second }
+        )
     }
 
     private fun getContractsForAccount(
@@ -81,7 +85,7 @@ open class FungibleTokenContractIndexer(
     ): Pair<IndexedFungibleTokenContracts, IndexedFungibleTokenContracts?>? {
 
         val previousRecord =
-            fungibleTokenContractsRepository.findByIdOrNull(accAddress)
+            fungibleContractsService.getExisting(accAddress)
             // Return a new document if the account has no previous record
                 ?: return Pair(
                     IndexedFungibleTokenContracts(
@@ -117,7 +121,6 @@ open class FungibleTokenContractIndexer(
         return Pair(latestDocument, previousRecord)
     }
 
-    @Transactional
     override fun rollback(blockNumber: Long) {
         archiveService.rollback(blockNumber, IndexedFungibleTokenContracts::class.java)
     }

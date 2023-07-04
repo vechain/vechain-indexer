@@ -19,12 +19,10 @@ enum class Status {
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
-    thorApiUrl: String = "http://localhost:8669",
+    protected open val thorClient: ThorClient,
     private val startBlock: Long = 0L,
     private val syncLoggerInterval: Long = 1000L,
 ) {
-
-    protected open val thorClient = ThorClient(thorApiUrl)
 
     private var previousBlockId: String? = null
 

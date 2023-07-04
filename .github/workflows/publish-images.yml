@@ -35,3 +35,4 @@ jobs:
       imageTag: ${{ inputs.imageTag }}
       workingDirectory: database
       packageName: mongo-setup-script
+      imagePlatform: linux/arm64

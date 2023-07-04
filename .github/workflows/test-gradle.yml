@@ -7,6 +7,7 @@ permissions:
   contents: read
   id-token: write
   packages: write
+  checks: write
 
 jobs:
   test-gradle:
@@ -25,6 +26,28 @@ jobs:
       - name: Gradle Test
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
 
+      - name: Debug E2E
+        if: failure() && inputs.package == 'e2e'
+        run: |
+          export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
+          export API_ENV_FILE_NAME=packages/api/.env.example
+          docker network ls
+          docker ps
+          docker ps -a
+          docker network inspect vechain-database || true
+          docker network inspect vechain-thor || true
+          docker network inspect vechain || true
+          docker compose -f database/docker-compose-mongo.yaml logs
+          docker compose -f database/docker-compose-mongo-setup.yaml logs
+          docker compose -f thor/docker-compose.yaml logs
+          docker compose logs
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: success() || failure()
+        with:
+          report_paths: packages/${{ inputs.package }}/build/test-results/test/TEST-*.xml
+
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
         run: |
@@ -33,7 +56,6 @@ jobs:
             cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
             cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
           fi
-
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
         if: github.ref == 'refs/heads/main'

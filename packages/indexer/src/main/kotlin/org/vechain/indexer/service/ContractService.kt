@@ -2,10 +2,12 @@ package org.vechain.indexer.service
 
 import java.math.BigInteger
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.model.IndexedContract
+import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.TransactionUtils
@@ -16,7 +18,11 @@ import org.vechain.thor.model.TxEvent
 import org.web3j.utils.Numeric
 
 @Service
-class ContractService(private val thorService: ThorService) {
+open class ContractService(
+    private val contractRepository: ContractRepository,
+    private val archiveService: ArchiveService,
+    private val thorService: ThorService
+) {
 
     companion object {
         val SAMPLE_ADDRESS_1 = AddressUtils.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
@@ -24,7 +30,7 @@ class ContractService(private val thorService: ThorService) {
     }
 
     /** Calls to the supportsInterface function of the ERC721 interface. */
-    fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
         return ContractUtils.isContractType(Contracts.ERC721, rawData) ||
             ContractUtils.isContractType(Contracts.ERC721, clause.data) ||
             supportsInterface(ERC721ABI.interfaceId, contractAddress)
@@ -38,7 +44,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
-    fun isVip181(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isVip181(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         val isVip181 =
             ContractUtils.isContractType(Contracts.VIP181, rawData) ||
@@ -73,7 +79,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isErc20(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isErc20(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         val isErc20 =
             ContractUtils.isContractType(Contracts.ERC20, rawData) ||
@@ -104,7 +110,7 @@ class ContractService(private val thorService: ThorService) {
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    fun isVip180(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isVip180(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         val isVip180 =
             ContractUtils.isContractType(Contracts.VIP180, rawData) ||
@@ -133,13 +139,13 @@ class ContractService(private val thorService: ThorService) {
             response.all { TransactionUtils.isSuccessWithData(it) }
     }
 
-    fun isErc1155(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isErc1155(contractAddress: String, rawData: String, clause: Clause): Boolean {
         return ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
             ContractUtils.isContractType(Contracts.ERC1155, clause.data) ||
             supportsInterface(ERC1155ABI.interfaceId, contractAddress)
     }
 
-    fun isVip210(contractAddress: String, rawData: String, clause: Clause): Boolean {
+    open fun isVip210(contractAddress: String, rawData: String, clause: Clause): Boolean {
 
         val isVip210 =
             ContractUtils.isContractType(Contracts.VIP210, rawData) ||
@@ -178,7 +184,7 @@ class ContractService(private val thorService: ThorService) {
             response.all { TransactionUtils.isSuccessWithData(it) }
     }
 
-    private fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
+    open fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
 
         val supportsInterface =
             ContractUtils.createClause(
@@ -196,7 +202,7 @@ class ContractService(private val thorService: ThorService) {
         return Numeric.toBigInt(result.data).equals(BigInteger.ONE)
     }
 
-    fun parseContracts(
+    open fun parseContracts(
         block: Block,
         masterChangeEvents: List<Triple<TxEvent, Transaction, Clause>>,
         existingContracts: List<IndexedContract>
@@ -268,5 +274,12 @@ class ContractService(private val thorService: ThorService) {
             }
         }
         return contracts
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun saveContracts(current: List<IndexedContract>, archived: List<IndexedContract>) {
+        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+
+        if (current.isNotEmpty()) contractRepository.saveAll(current)
     }
 }

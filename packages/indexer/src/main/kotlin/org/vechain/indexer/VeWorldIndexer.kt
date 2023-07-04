@@ -3,14 +3,14 @@ package org.vechain.indexer
 import org.vechain.indexer.repository.BaseIndexedRepository
 
 abstract class VeWorldIndexer(
-    private val repo: BaseIndexedRepository<*>,
+    private val repository: BaseIndexedRepository<*>,
     private val startBlock: Long = 0L,
-    thorUrl: String,
+    thorClient: ThorClient,
     syncLoggerInterval: Long = 1000L,
-) : Indexer(thorUrl, startBlock, syncLoggerInterval) {
+) : Indexer(thorClient = thorClient, startBlock = startBlock, syncLoggerInterval = syncLoggerInterval) {
 
     override fun getLastSyncedBlockNumber(): Long {
-        repo.getLatestRecord()?.let {
+        repository.getLatestRecord()?.let {
             return it.blockNumber
         }
         return startBlock

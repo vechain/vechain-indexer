@@ -3,11 +3,11 @@ package org.vechain.indexer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block
@@ -16,14 +16,16 @@ import org.web3j.utils.Numeric
 @Profile("nft-events")
 @Component
 open class NFTEventIndexer(
-    private val nftRepository: NFTRepository,
+    private val nftService: NFTService,
     private val archiveService: ArchiveService,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
+    nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.nfts}") private val syncLoggerInterval: Long,
-) : VeWorldIndexer(nftRepository, startBlock, thorUrl, syncLoggerInterval) {
 
-    @Transactional
+) : VeWorldIndexer(repository = nftRepository, startBlock = startBlock, thorClient = thorClient, syncLoggerInterval = syncLoggerInterval) {
+
+
     override fun processBlock(block: Block) {
 
         // Get the NFT transfer events from the block
@@ -31,19 +33,12 @@ open class NFTEventIndexer(
         if (nftTransfers.isEmpty()) return
 
         // Check for existing documents
-        val existingNfts =
-            nftRepository
-                .findAllById(
-                    nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") }
-                )
-                .toList()
+        val existingNfts = nftService.getExisting(nftTransfers)
 
         // Parse the NFTs
         val nfts = parseNfts(block, nftTransfers, existingNfts)
 
-        // Save the NFTs and archive the old ones
-        if (existingNfts.isNotEmpty()) archiveService.saveAll(existingNfts)
-        nftRepository.saveAll(nfts)
+        nftService.save(current = nfts, archived = existingNfts)
     }
 
     private fun parseNfts(
@@ -70,7 +65,6 @@ open class NFTEventIndexer(
         }
     }
 
-    @Transactional
     override fun rollback(blockNumber: Long) {
         archiveService.rollback(blockNumber, IndexedNFT::class.java)
     }

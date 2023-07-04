@@ -14,10 +14,16 @@ import org.vechain.thor.model.Block
 open class TransferEventIndexer(
     private val transferEventRepository: TransferEventRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.transfers}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.transfers}") private val syncLoggerInterval: Long,
-) : VeWorldIndexer(transferEventRepository, startBlock, thorUrl, syncLoggerInterval) {
+) :
+    VeWorldIndexer(
+        repository = transferEventRepository,
+        startBlock = startBlock,
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
+    ) {
 
     override fun processBlock(block: Block) {
 
