@@ -1,7 +1,5 @@
 package org.vechain.indexer
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -9,6 +7,8 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 enum class Status {
     SYNCING,
@@ -91,7 +91,7 @@ abstract class Indexer(
 
             if (logger.isDebugEnabled)
                 logger.debug("Processing @ Block $currentBlockNumber ($status)")
-            else if (status === Status.FULLY_SYNCED || currentBlockNumber % 1000 == 0L)
+            else if (status != Status.SYNCING || currentBlockNumber % 1000 == 0L)
                 logger.info("Processing @ Block $currentBlockNumber ($status)")
 
             processBlock(block)
