@@ -277,13 +277,9 @@ open class ContractService(
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun saveContracts(
-        currentContracts: List<IndexedContract>,
-        existingContracts: List<IndexedContract>
-    ) {
-        if (existingContracts.isNotEmpty()) {
-            archiveService.saveAll(existingContracts)
-        }
-        contractRepository.saveAll(currentContracts)
+    open fun saveContracts(current: List<IndexedContract>, archived: List<IndexedContract>) {
+        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+
+        if (current.isNotEmpty()) contractRepository.saveAll(current)
     }
 }

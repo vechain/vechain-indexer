@@ -36,7 +36,6 @@ spring.data:
     port: ${MONGO_PORT:27017}
     database: ${MONGO_DATABASE:vechain}
     authentication-database: ${MONGO_AUTHENTICATION_DATABASE:admin}
-    #    uri: "mongodb://indexer:password@localhost:27017,localhost:27018,localhost:27019/vechain?authSource=admin"
     auto-index-creation: false
 
 thor:

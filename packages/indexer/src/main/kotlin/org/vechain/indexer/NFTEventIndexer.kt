@@ -35,7 +35,7 @@ open class NFTEventIndexer(
         // Parse the NFTs
         val nfts = parseNfts(block, nftTransfers, existingNfts)
 
-        nftService.save(nfts, existingNfts)
+        nftService.save(current = nfts, archived = existingNfts)
     }
 
     private fun parseNfts(

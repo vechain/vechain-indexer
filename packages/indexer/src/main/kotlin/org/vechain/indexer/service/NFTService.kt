@@ -14,9 +14,9 @@ open class NFTService(
 ) {
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(nfts: List<IndexedNFT>, existingNfts: List<IndexedNFT>) {
-        if (existingNfts.isNotEmpty()) archiveService.saveAll(existingNfts)
-        nftRepository.saveAll(nfts)
+    open fun save(current: List<IndexedNFT>, archived: List<IndexedNFT>) {
+        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+        if (current.isNotEmpty()) nftRepository.saveAll(current)
     }
 
     open fun getExisting(nftTransfers: List<IndexedTransferEvent>): List<IndexedNFT> {

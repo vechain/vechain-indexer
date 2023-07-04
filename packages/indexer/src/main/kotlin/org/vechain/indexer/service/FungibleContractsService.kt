@@ -19,8 +19,8 @@ open class FungibleContractsService(
         existing: List<IndexedFungibleTokenContracts>,
         archived: List<IndexedFungibleTokenContracts>
     ) {
-        archiveService.saveAll(archived)
-        fungibleTokenContractsRepository.saveAll(existing)
+        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+        if (existing.isNotEmpty()) fungibleTokenContractsRepository.saveAll(existing)
     }
 
     open fun getExisting(address: String): IndexedFungibleTokenContracts? {

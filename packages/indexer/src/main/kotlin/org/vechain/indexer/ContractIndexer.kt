@@ -47,7 +47,7 @@ open class ContractIndexer(
         // Parse the contracts
         val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
 
-        contractService.saveContracts(contracts, existingContracts)
+        contractService.saveContracts(current = contracts, archived = existingContracts)
     }
 
     override fun rollback(blockNumber: Long) {
