@@ -16,7 +16,8 @@ open class ClauseIndexer(
     private val mongoTemplate: MongoTemplate,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
-) : VeWorldIndexer(clauseRepository, startBlock, thorUrl) {
+    @Value("\${indexer.syncLoggerInterval.clauses}") private val syncLoggerInterval: Long,
+) : VeWorldIndexer(clauseRepository, startBlock, thorUrl, syncLoggerInterval) {
 
     override fun rollback(blockNumber: Long) {
         clauseRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)

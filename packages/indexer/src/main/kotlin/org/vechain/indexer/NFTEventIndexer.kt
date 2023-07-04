@@ -20,7 +20,8 @@ open class NFTEventIndexer(
     private val archiveService: ArchiveService,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-) : VeWorldIndexer(nftRepository, startBlock, thorUrl) {
+    @Value("\${indexer.syncLoggerInterval.nfts}") private val syncLoggerInterval: Long,
+) : VeWorldIndexer(nftRepository, startBlock, thorUrl, syncLoggerInterval) {
 
     @Transactional
     override fun processBlock(block: Block) {

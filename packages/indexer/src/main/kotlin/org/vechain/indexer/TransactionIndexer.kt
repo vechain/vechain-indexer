@@ -15,7 +15,8 @@ open class TransactionIndexer(
     private val mongoTemplate: MongoTemplate,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
-) : VeWorldIndexer(txRepo, startBlock, thorUrl) {
+    @Value("\${indexer.syncLoggerInterval.transactions}") private val syncLoggerInterval: Long,
+) : VeWorldIndexer(txRepo, startBlock, thorUrl, syncLoggerInterval) {
     override fun rollback(blockNumber: Long) {
         txRepo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }

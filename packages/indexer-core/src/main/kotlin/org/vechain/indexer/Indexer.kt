@@ -21,6 +21,7 @@ const val INITIAL_BACKOFF_PERIOD = 10_000L
 abstract class Indexer(
     thorApiUrl: String = "http://localhost:8669",
     private val startBlock: Long = 0L,
+    private val syncLoggerInterval: Long = 1000L,
 ) {
 
     protected open val thorClient = ThorClient(thorApiUrl)
@@ -91,7 +92,7 @@ abstract class Indexer(
 
             if (logger.isDebugEnabled)
                 logger.debug("Processing @ Block $currentBlockNumber ($status)")
-            else if (status != Status.SYNCING || currentBlockNumber % 1000 == 0L)
+            else if (status != Status.SYNCING || currentBlockNumber % syncLoggerInterval == 0L)
                 logger.info("Processing @ Block $currentBlockNumber ($status)")
 
             processBlock(block)

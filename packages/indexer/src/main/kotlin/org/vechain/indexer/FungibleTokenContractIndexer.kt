@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import java.util.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
@@ -12,6 +11,7 @@ import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
+import java.util.*
 
 @Profile("fungible-token-contracts")
 @Component
@@ -19,8 +19,9 @@ open class FungibleTokenContractIndexer(
     private val fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     private val archiveService: ArchiveService,
     @Value("\${thor.url}") private val thorUrl: String,
-    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
-) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl) {
+    @Value("\${indexer.startBlock.fungibleTokens}") private val startBlock: Long,
+    @Value("\${indexer.syncLoggerInterval.fungibleTokens}") private val syncLoggerInterval: Long,
+) : VeWorldIndexer(fungibleTokenContractsRepository, startBlock, thorUrl, syncLoggerInterval) {
 
     @Transactional
     override fun processBlock(block: Block) {
@@ -82,7 +83,7 @@ open class FungibleTokenContractIndexer(
         val previousRecord =
             fungibleTokenContractsRepository.findByIdOrNull(accAddress)
             // Return a new document if the account has no previous record
-            ?: return Pair(
+                ?: return Pair(
                     IndexedFungibleTokenContracts(
                         tokenOwner = accAddress,
                         tokenAddresses = contracts,

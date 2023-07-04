@@ -26,7 +26,8 @@ open class ContractIndexer(
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${thor.url}") private val thorUrl: String,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
-) : VeWorldIndexer(contractRepository, startBlock, thorUrl) {
+    @Value("\${indexer.syncLoggerInterval.contracts}") private val syncLoggerInterval: Long,
+) : VeWorldIndexer(contractRepository, startBlock, thorUrl, syncLoggerInterval) {
 
     @Transactional
     override fun processBlock(block: Block) {
