@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import java.util.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -10,7 +11,6 @@ import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.FungibleContractsService
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
-import java.util.*
 
 @Profile("fungible-token-contracts")
 @Component
@@ -87,7 +87,7 @@ open class FungibleTokenContractIndexer(
         val previousRecord =
             fungibleContractsService.getExisting(accAddress)
             // Return a new document if the account has no previous record
-                ?: return Pair(
+            ?: return Pair(
                     IndexedFungibleTokenContracts(
                         tokenOwner = accAddress,
                         tokenAddresses = contracts,

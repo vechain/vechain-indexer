@@ -7,7 +7,12 @@ abstract class VeWorldIndexer(
     private val startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLoggerInterval: Long = 1000L,
-) : Indexer(thorClient = thorClient, startBlock = startBlock, syncLoggerInterval = syncLoggerInterval) {
+) :
+    Indexer(
+        thorClient = thorClient,
+        startBlock = startBlock,
+        syncLoggerInterval = syncLoggerInterval
+    ) {
 
     override fun getLastSyncedBlockNumber(): Long {
         repository.getLatestRecord()?.let {

@@ -22,9 +22,13 @@ open class NFTEventIndexer(
     nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.nfts}") private val syncLoggerInterval: Long,
-
-) : VeWorldIndexer(repository = nftRepository, startBlock = startBlock, thorClient = thorClient, syncLoggerInterval = syncLoggerInterval) {
-
+) :
+    VeWorldIndexer(
+        repository = nftRepository,
+        startBlock = startBlock,
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
+    ) {
 
     override fun processBlock(block: Block) {
 
