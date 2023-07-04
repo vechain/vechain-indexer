@@ -20,5 +20,7 @@ internal class AddressTest {
     )
     fun `check valid address`(address: String, valid: Boolean) {
         expectThat(Address(address).isValid()).isEqualTo(valid)
+
+        expectThat(1).isEqualTo(2)
     }
 }
