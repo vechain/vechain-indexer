@@ -12,7 +12,7 @@ task<Exec>("postE2e") {
     environment("API_ENV_FILE_NAME", "packages/api/.env.example")
     workingDir(rootDir)
     // Not cleaning data in case we need to spin up the containers again and debug
-    commandLine("make", "down", "db-keyfile-remove")
+    //    commandLine("make", "down", "db-keyfile-remove")
 }
 
 tasks.test {
