@@ -55,14 +55,14 @@ internal class ContractIndexerTest {
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+        MockKAnnotations.init(this)
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
         contractService =
             ContractService(
                 thorService = thorService,
-                contractRepository = mockk(relaxed = true),
-                archiveService = mockk(relaxed = true)
+                contractRepository = contractRepository,
+                archiveService = archiveService
             )
-        MockKAnnotations.init(this)
         contractIndexer =
             ContractIndexer(
                 thorService,

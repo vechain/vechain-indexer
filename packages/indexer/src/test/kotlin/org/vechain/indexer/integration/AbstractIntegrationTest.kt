@@ -12,6 +12,7 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
@@ -42,15 +43,7 @@ abstract class AbstractIntegrationTest {
         val thorNetwork = Network.newNetwork()
 
         val mongoContainer: GenericContainer<*> =
-            GenericContainer("mongo:6")
-                .withExposedPorts(27017)
-                .withReuse(true)
-                .waitingFor(
-                    (LogMessageWaitStrategy())
-                        .withRegEx(".*(Waiting for connections).*")
-                        .withTimes(1)
-                        .withStartupTimeout(Duration.ofSeconds(180L))
-                )
+            MongoDBContainer("mongo:6").withExposedPorts(27017).withReuse(true)
 
         val thorContainer: GenericContainer<*> =
             GenericContainer("vechain/thor:v2.0.0")

@@ -48,7 +48,7 @@ abstract class Indexer(
         val blockNumber = maxOf(getLastSyncedBlockNumber(), startBlock)
 
         // To ensure data integrity roll back changes made in the last block
-        rollback(blockNumber)
+        if (blockNumber > 0) rollback(blockNumber)
 
         // Initialise fields
         currentBlockNumber = blockNumber
