@@ -79,7 +79,7 @@ internal class IndexerTests {
     }
 
     @Test
-    fun `Test that a reorg sets ERROR status`() = runBlocking {
+    fun `Test that a reorg sets REORG status`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
             {
                 // At block 100, the parent id is invalid
@@ -99,7 +99,7 @@ internal class IndexerTests {
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(100L)
-        expectThat(indexer.status).isEqualTo(Status.ERROR)
+        expectThat(indexer.status).isEqualTo(Status.REORG)
         verify(exactly = 1) { responseMocker.rollback(0L) }
     }
 
@@ -162,9 +162,11 @@ internal class IndexerTests {
                 getTestBlock(getBlockNumberSlot.captured)
             }
         every { responseMocker.getLastSyncedBlockNumber() } returns 0 andThen 99
+        var calledAlready = false
         every { responseMocker.processBlock(capture(processBlockNumberSlot)) } answers
             {
-                if (processBlockNumberSlot.captured.number == 100L) {
+                if (!calledAlready && processBlockNumberSlot.captured.number == 100L) {
+                    calledAlready = true
                     throw Exception("Unknown exception")
                 }
             }
@@ -175,10 +177,10 @@ internal class IndexerTests {
         job.join()
 
         // Add assertions or verify other expected behavior
-        expectThat(indexer.currentBlockNumber).isEqualTo(100L)
+        expectThat(indexer.currentBlockNumber).isEqualTo(101L)
         expectThat(indexer.status).isEqualTo(Status.SYNCING)
         verify(exactly = 1) { responseMocker.rollback(0L) }
         // The reorg at block 100 should trigger a rollback of block 99 data
-        verify(exactly = 1) { responseMocker.rollback(99L) }
+        verify(exactly = 1) { responseMocker.rollback(100L) }
     }
 }

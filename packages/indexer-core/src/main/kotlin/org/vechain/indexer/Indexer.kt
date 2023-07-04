@@ -13,6 +13,7 @@ import org.vechain.thor.model.Block
 enum class Status {
     SYNCING,
     FULLY_SYNCED,
+    REORG,
     ERROR
 }
 
@@ -44,9 +45,9 @@ abstract class Indexer(
 
     private var backoffPeriod = 0L
 
-    private suspend fun initialise() {
-        // Get the last synced block number. If less than startBlock, start from startBlock
-        val blockNumber = maxOf(getLastSyncedBlockNumber(), startBlock)
+    private suspend fun initialise(
+        blockNumber: Long = maxOf(getLastSyncedBlockNumber(), startBlock)
+    ) {
 
         // To ensure data integrity roll back changes made in the last block
         rollback(blockNumber)
@@ -69,7 +70,8 @@ abstract class Indexer(
 
     private suspend fun restart() {
         // Initialise the indexer
-        initialise()
+        if (status == Status.ERROR) initialise(currentBlockNumber)
+        else if (status == Status.REORG) initialise(currentBlockNumber - 1) else initialise()
 
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
@@ -80,7 +82,7 @@ abstract class Indexer(
 
             backoffDelay()
 
-            if (status == Status.ERROR) restart()
+            if (status == Status.ERROR || status == Status.REORG) restart()
 
             val block = getBlockFromChain(currentBlockNumber)
 
@@ -105,7 +107,7 @@ abstract class Indexer(
             handleFullySynced()
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
-            handleError()
+            handleReorg()
         } catch (e: Exception) {
             logger.error("Error while processing block $currentBlockNumber", e)
             handleError()
@@ -133,6 +135,11 @@ abstract class Indexer(
     private fun handleError() {
         backoffPeriod = INITIAL_BACKOFF_PERIOD
         status = Status.ERROR
+    }
+
+    private fun handleReorg() {
+        backoffPeriod = INITIAL_BACKOFF_PERIOD
+        status = Status.REORG
     }
 
     private suspend fun postProcessBlock(block: Block) {
@@ -174,7 +181,7 @@ abstract class Indexer(
     }
 
     private suspend fun backoffDelay() {
-        if (status == Status.FULLY_SYNCED) {
+        if (status != Status.SYNCING) {
             delay(backoffPeriod)
         }
     }
