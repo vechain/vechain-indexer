@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   test-gradle:
-    uses: ./.github/workflows/test-gradle-all.yml
+    uses: ./.github/workflows/test-gradle.yml
   check-formatting:
     runs-on: ubuntu-latest
     steps:

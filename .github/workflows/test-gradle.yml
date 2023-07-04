@@ -1,24 +1,19 @@
-name: Test Package
+name: Test (Gradle)
 
 on:
   workflow_call:
-    inputs:
-      package:
-        required: true
-        type: string
-      runsOn:
-        required: true
-        type: string
 
 permissions:
   contents: read
   id-token: write
   packages: write
-  checks: write
 
 jobs:
-  test-gradle-package:
-    runs-on: ${{ inputs.runsOn }}
+  test-gradle:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [ api, common, e2e, indexer, indexer-core, thor-model ]
     steps:
       - uses: actions/checkout@v3
 
@@ -28,7 +23,7 @@ jobs:
           java-version: '17'
 
       - name: Gradle Test
-        run: ./gradlew :package:${{ inputs.package }}:cleanTest :package:${{ inputs.package }}:test
+        run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
 
       - name: Debug E2E
         if: failure() && inputs.package == 'e2e'
@@ -55,12 +50,11 @@ jobs:
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p static/${{ inputs.package }}
-          if [ -d "packages/${{ inputs.package }}/build/reports/jacoco/test/html" ]; then
-            cp -r packages/${{ inputs.package }}/build/reports/jacoco/test/html static/${{ inputs.package }}/coverage
-            cp -r packages/${{ inputs.package }}/build/reports/tests/test static/${{ inputs.package }}/tests
+          mkdir -p static/${{ matrix.package }}
+          if [ -d "packages/${{ matrix.package }}/build/reports/jacoco/test/html" ]; then
+            cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
+            cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
           fi
-
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
         if: github.ref == 'refs/heads/main'

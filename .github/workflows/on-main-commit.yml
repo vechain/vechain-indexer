@@ -17,7 +17,7 @@ jobs:
       - id: latest-tag
         run: echo "latest-tag=${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}" >> "$GITHUB_OUTPUT"
   test-gradle:
-    uses: ./.github/workflows/test-gradle-all.yml
+    uses: ./.github/workflows/test-gradle.yml
   publish-test-results:
     uses: ./.github/workflows/publish-test-results.yml
     needs: test-gradle
