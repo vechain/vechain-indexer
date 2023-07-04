@@ -24,12 +24,14 @@ open class ContractIndexer(
     private val archiveService: ArchiveService,
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
+    @Value("\${indexer.syncLoggerInterval.contracts}") private val syncLoggerInterval: Long,
     thorClient: ThorClient,
 ) :
     VeWorldIndexer(
         repository = contractRepository,
         startBlock = startBlock,
-        thorClient = thorClient
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
     ) {
 
     override fun processBlock(block: Block) {

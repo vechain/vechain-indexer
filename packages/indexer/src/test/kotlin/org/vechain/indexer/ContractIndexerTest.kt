@@ -71,6 +71,7 @@ internal class ContractIndexerTest {
                 archiveService,
                 contractsResource,
                 1L,
+                1000L,
                 DefaultThorClient("http://localhost:8669"),
             )
     }

@@ -45,6 +45,7 @@ class FungibleTokenContractIndexerTest {
                 archiveService = archiveService,
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 startBlock = 0L,
+                syncLoggerInterval = 1000L,
                 fungibleContractsService =
                     FungibleContractsService(fungibleTokenContractRepository, archiveService)
             )

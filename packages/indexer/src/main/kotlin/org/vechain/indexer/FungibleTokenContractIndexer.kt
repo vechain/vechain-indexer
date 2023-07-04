@@ -19,12 +19,14 @@ open class FungibleTokenContractIndexer(
     private val fungibleContractsService: FungibleContractsService,
     thorClient: ThorClient,
     fungibleTokenContractsRepository: FungibleTokenContractsRepository,
-    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
+    @Value("\${indexer.startBlock.fungibleTokens}") private val startBlock: Long,
+    @Value("\${indexer.syncLoggerInterval.fungibleTokens}") private val syncLoggerInterval: Long,
 ) :
     VeWorldIndexer(
         repository = fungibleTokenContractsRepository,
         startBlock = startBlock,
-        thorClient = thorClient
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
     ) {
 
     override fun processBlock(block: Block) {

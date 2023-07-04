@@ -16,11 +16,13 @@ open class TransferEventIndexer(
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     @Value("\${indexer.startBlock.transfers}") private val startBlock: Long,
+    @Value("\${indexer.syncLoggerInterval.transfers}") private val syncLoggerInterval: Long,
 ) :
     VeWorldIndexer(
         repository = transferEventRepository,
         startBlock = startBlock,
-        thorClient = thorClient
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
     ) {
 
     override fun processBlock(block: Block) {

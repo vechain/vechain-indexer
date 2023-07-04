@@ -16,11 +16,13 @@ open class ClauseIndexer(
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
+    @Value("\${indexer.syncLoggerInterval.clauses}") private val syncLoggerInterval: Long,
 ) :
     VeWorldIndexer(
         repository = clauseRepository,
         startBlock = startBlock,
-        thorClient = thorClient
+        thorClient = thorClient,
+        syncLoggerInterval = syncLoggerInterval
     ) {
 
     override fun rollback(blockNumber: Long) {

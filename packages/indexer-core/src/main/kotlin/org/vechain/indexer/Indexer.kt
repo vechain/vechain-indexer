@@ -20,7 +20,8 @@ const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
     protected open val thorClient: ThorClient,
-    private val startBlock: Long,
+    private val startBlock: Long = 0L,
+    private val syncLoggerInterval: Long = 1000L,
 ) {
 
     private var previousBlockId: String? = null
@@ -87,7 +88,11 @@ abstract class Indexer(
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
-            logger.info("Processing @ Block $currentBlockNumber ($status)")
+            if (logger.isDebugEnabled)
+                logger.debug("Processing @ Block $currentBlockNumber ($status)")
+            else if (status != Status.SYNCING || currentBlockNumber % syncLoggerInterval == 0L)
+                logger.info("Processing @ Block $currentBlockNumber ($status)")
+
             processBlock(block)
 
             postProcessBlock(block)

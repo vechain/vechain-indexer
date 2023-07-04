@@ -33,7 +33,8 @@ internal class TransactionIndexerTest {
                 transactionRepository,
                 mongoTemplate,
                 DefaultThorClient("http://localhost:8669"),
-                0L
+                0L,
+                1000L
             )
     }
 

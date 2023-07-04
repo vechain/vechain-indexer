@@ -55,7 +55,8 @@ internal class NFTEventIndexerTest {
                 archiveService,
                 DefaultThorClient("http://localhost:8669"),
                 nftRepository,
-                0L
+                0L,
+                1000L
             )
     }
 
