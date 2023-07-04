@@ -79,7 +79,7 @@ internal class IndexerTests {
     }
 
     @Test
-    fun `Test that a reorg sets ERROR status`() = runBlocking {
+    fun `Test that a reorg sets REORG status`() = runBlocking {
         coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
             {
                 // At block 100, the parent id is invalid
@@ -99,7 +99,7 @@ internal class IndexerTests {
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(100L)
-        expectThat(indexer.status).isEqualTo(Status.ERROR)
+        expectThat(indexer.status).isEqualTo(Status.REORG)
         verify(exactly = 1) { responseMocker.rollback(0L) }
     }
 
