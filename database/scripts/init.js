@@ -102,28 +102,28 @@ createUser(
 db = db.getSiblingDB("vechain");
 
 // Create collections
-createCollection(db, "archives");
-createCollection(db, "blocks");
-createCollection(db, "transactions");
-createCollection(db, "clauses");
-createCollection(db, "contracts");
-createCollection(db, "transfer_events");
-createCollection(db, "nfts");
+//createCollection(db, "archives");
+//createCollection(db, "blocks");
+//createCollection(db, "transactions");
+//createCollection(db, "clauses");
+//createCollection(db, "contracts");
+//createCollection(db, "transfer_events");
+//createCollection(db, "nfts");
 
 // Create indexes
 
 // archives
-configureIndexes(db.archives, [
+/*configureIndexes(db.archives, [
     {
         keys: {"data.blockNumber": -1},
         options: {
             name: "archive_blockNumber_-1",
         }
     }
-]);
+]);*/
 
 // blocks
-configureIndexes(db.blocks, [
+/*configureIndexes(db.blocks, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -137,10 +137,10 @@ configureIndexes(db.blocks, [
             name: "block_isFinalized_1",
         },
     },
-]);
+]);*/
 
 // transactions
-configureIndexes(db.transactions, [
+/*configureIndexes(db.transactions, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -153,10 +153,10 @@ configureIndexes(db.transactions, [
             name: "tx_origin_1_gasPayer_1_blockNumber_-1__id_-1",
         },
     },
-]);
+]);*/
 
 // clauses
-configureIndexes(db.clauses, [
+/*configureIndexes(db.clauses, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -175,10 +175,10 @@ configureIndexes(db.clauses, [
             name: "clause_to_1_blockNumber_-1_txId_-1__id_-1",
         },
     },
-]);
+]);*/
 
 // contracts
-configureIndexes(db.contracts, [
+/*configureIndexes(db.contracts, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -257,10 +257,10 @@ configureIndexes(db.contracts, [
             name: "isErc1155_1_blockNumber_-1_txId_-1__id_-1",
         },
     },
-]);
+]);*/
 
 // transfer_events
-configureIndexes(db.transfer_events, [
+/*configureIndexes(db.transfer_events, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -285,10 +285,10 @@ configureIndexes(db.transfer_events, [
             name: "transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1",
         },
     },
-]);
+]);*/
 
 // nfts
-configureIndexes(db.nfts, [
+/*configureIndexes(db.nfts, [
     {
         keys: {blockNumber: -1},
         options: {
@@ -333,4 +333,4 @@ configureIndexes(db.nfts, [
             name: "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1",
         },
     },
-]);
+]);*/

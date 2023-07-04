@@ -62,4 +62,3 @@ indexer:
 mongock:
   migration-scan-package:
     org.vechain.indexer.migration
-  transaction-enabled: true
