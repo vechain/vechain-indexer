@@ -17,6 +17,7 @@ open class ClauseIndexer(
     thorClient: ThorClient,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
     @Value("\${indexer.syncLoggerInterval.clauses}") private val syncLoggerInterval: Long,
+) :
     VeWorldIndexer(
         repository = clauseRepository,
         startBlock = startBlock,
