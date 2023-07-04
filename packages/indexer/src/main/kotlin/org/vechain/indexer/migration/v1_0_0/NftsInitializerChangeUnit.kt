@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedNFT
 
-@ChangeUnit(id = "nfts-initializer", order = "7", author = "nawfal-labrahmi")
+@ChangeUnit(id = "nfts-initializer", order = "8", author = "nawfal-labrahmi")
 class NftsInitializerChangeUnit {
 
     companion object {

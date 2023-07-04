@@ -6,7 +6,7 @@ import io.mongock.api.annotations.RollbackExecution
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.model.IndexedFungibleTokenContracts
 
-@ChangeUnit(id = "fungible-tokens-initializer", order = "8", author = "nawfal-labrahmi")
+@ChangeUnit(id = "fungible-tokens-initializer", order = "9", author = "nawfal-labrahmi")
 class FungibleTokensInitializerChangeUnit {
 
     companion object {

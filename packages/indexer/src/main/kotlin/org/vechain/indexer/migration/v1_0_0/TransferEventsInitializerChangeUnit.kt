@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedTransferEvent
 
-@ChangeUnit(id = "transfer-events-initializer", order = "6", author = "nawfal-labrahmi")
+@ChangeUnit(id = "transfer-events-initializer", order = "7", author = "nawfal-labrahmi")
 class TransferEventsInitializerChangeUnit {
 
     companion object {
