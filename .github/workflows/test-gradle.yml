@@ -47,5 +47,5 @@ jobs:
         with:
           artifact: test-results            # artifact name
           name: JEST Tests                  # Name of the check run which will be created
-          path: 'src/${{ matrix.package }}/build/test-results/*.xml'                     # Path to test results (inside artifact .zip)
+          path: 'src/${{ matrix.package }}/build/test-results/test*.xml'                     # Path to test results (inside artifact .zip)
           reporter: jest-junit

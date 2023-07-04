@@ -70,7 +70,7 @@ db-clean: #@ Clean all the database data
 db-down: #@ Stop all the database.
 	$(DB_COMMAND) down
 db-keyfile-create: #@ Generate the keyfile for the database.
-	$(DB_MAKE_KEY)
+	if [ ! -f database/keys/keyfile ]; then $(DB_MAKE_KEY); fi
 db-keyfile-remove: #@ Remove the keyfile for the database.
 	$(DB_REMOVE_KEY)
 db-up: #@ Start all the database.
