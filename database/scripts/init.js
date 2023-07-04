@@ -40,41 +40,6 @@ function createUser(db, username, password, roles) {
     }
 }
 
-/**
- * Create a collection if it doesn't exist
- * @param db - the database to create the collection in
- * @param collectionName - the name of the collection
- */
-function createCollection(db, collectionName) {
-    if (db.getCollectionNames().indexOf(collectionName) === -1) {
-        console.log("Creating collection: " + collectionName);
-        db.createCollection(collectionName);
-    } else {
-        console.log("Collection (" + collectionName + ") already exists");
-    }
-}
-
-/**
- * Configure indexes for a collection
- * - create all indexes in the config
- * @param collection - the collection to configure indexes for
- * @param {Object} config the index configuration
- * @param {Object} config.keys the keys of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#index-creation
- * @param {Object} config.options the options of the index. See https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#options
- */
-function configureIndexes(collection, config) {
-    //Create any indexes that are in the config
-    config.forEach(function (index) {
-        console.log(
-            "Creating index (" +
-            collection.getName() +
-            "): " +
-            JSON.stringify(index.keys)
-        );
-        collection.createIndex(index.keys, index.options);
-    });
-}
-
 adminDb = db.getSiblingDB("admin");
 
 //Create "indexer" user if it doesn't exist
