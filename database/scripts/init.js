@@ -109,6 +109,7 @@ createCollection(db, "clauses");
 createCollection(db, "contracts");
 createCollection(db, "transfer_events");
 createCollection(db, "nfts");
+createCollection(db, "fungible_token_contracts");
 
 // Create indexes
 

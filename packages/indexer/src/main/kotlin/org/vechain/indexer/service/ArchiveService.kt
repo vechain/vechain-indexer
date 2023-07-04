@@ -42,22 +42,35 @@ open class ArchiveService(
     open fun <T : VersionedDocument> rollback(blockNumber: Long, clazz: Class<T>) {
         val currentDocuments = getCurrentDocuments(blockNumber, clazz)
 
-        if (currentDocuments.isEmpty()) return
+        if (currentDocuments.isEmpty()) {
+            logger.info("{}: No documents to rollback for block {}", clazz.simpleName, blockNumber)
+            return
+        }
 
-        // Split the documents by first time entities and subsequent entities
-        val currentPartitions = currentDocuments.partition { it.version == 1 }
+        val previousDocumentIds =
+            currentDocuments.filter { it.version > 1 }.map { getPreviousVersionId(it) }
 
-        logger.debug(
-            "${clazz.simpleName}: Deleting ${currentPartitions.first.size} first time entities and rolling back ${currentPartitions.second.size} subsequent entities"
+        val previousDocuments =
+            archiveRepository
+                .findAllById(previousDocumentIds)
+                .map { it.data }
+                .filter { clazz.isInstance(it) }
+                .map { clazz.cast(it) }
+                .associateBy { it.getDocumentId() }
+
+        val rollbackOperations = getRollbackOperation(currentDocuments, previousDocuments, clazz)
+
+        val rollback = rollbackOperations.execute()
+
+        if (previousDocumentIds.isNotEmpty()) archiveRepository.deleteAllById(previousDocumentIds)
+
+        logger.info(
+            "{} - Rollback of block {} completed:\n - {} documents rolled back\n - {} documents deleted",
+            clazz.simpleName,
+            blockNumber,
+            rollback.modifiedCount,
+            rollback.deletedCount
         )
-
-        // Replace the documents with version > 1 with the previous version
-        if (currentPartitions.second.isNotEmpty())
-            rollbackCurrentDocuments(currentPartitions.second, clazz)
-
-        // Remove the documents with version == 1
-        if (currentPartitions.first.isNotEmpty())
-            removeCurrentDocuments(currentPartitions.first, clazz)
     }
 
     private fun <T : VersionedDocument> getCurrentDocuments(
@@ -70,80 +83,34 @@ open class ArchiveService(
         return mongoTemplate.find(query, clazz)
     }
 
-    private fun <T : VersionedDocument> rollbackCurrentDocuments(
-        documents: List<T>,
+    private fun <T : VersionedDocument> getRollbackOperation(
+        currentDocuments: List<T>,
+        previousDocuments: Map<String, T>,
         clazz: Class<T>
-    ) {
-
-        val previousDocumentIds = documents.map { getPreviousVersionId(it) }
-
-        // Find the archives for the documents with version > 1
-        val previousDocuments =
-            archiveRepository
-                .findAllById(previousDocumentIds)
-                .map { it.data }
-                .filter { clazz.isInstance(it) }
-                .map { clazz.cast(it) }
-
-        // Check if all previous documents were found
-        if (previousDocumentIds.size != previousDocuments.size) {
-            logger.error(
-                "Could not find all previous documents for rollback (${clazz.simpleName}): {}",
-                JsonUtils.mapper.writeValueAsString(documents.map { it.getDocumentId() })
-            )
-            throw ArchiveException("Could not find all previous documents for rollback")
-        }
-
-        // Perform the rollback
-        if (previousDocuments.isNotEmpty()) {
-            replaceCurrentDocuments(previousDocuments, clazz)
-            archiveRepository.deleteAllById(previousDocumentIds)
-        }
-    }
-
-    private fun <T : VersionedDocument> replaceCurrentDocuments(
-        documents: List<T>,
-        clazz: Class<T>
-    ) {
-        if (documents.isEmpty()) return
-
-        logger.debug(
-            "Replacing documents (${clazz.simpleName}): {}",
-            JsonUtils.mapper.writeValueAsString(documents.map { it.getDocumentId() })
-        )
-
+    ): BulkOperations {
         val bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED, clazz)
 
-        for (document in documents) {
+        for (document in currentDocuments) {
             val query = Query().addCriteria(Criteria.where("_id").`is`(document.getDocumentId()))
-            bulkOperations.replaceOne(query, document)
+
+            // If the document has been updated, replace it with the previous version
+            if (document.version > 1) {
+                val previousDocument = previousDocuments[document.getDocumentId()]
+                if (previousDocument == null) {
+                    logger.error(
+                        "Could not find previous document for rollback (${clazz.simpleName}): {}",
+                        JsonUtils.mapper.writeValueAsString(document)
+                    )
+                    throw ArchiveException("Could not find previous document for rollback")
+                }
+
+                bulkOperations.replaceOne(query, previousDocument)
+            } else {
+                // If the document has not been updated, remove it
+                bulkOperations.remove(query)
+            }
         }
 
-        val update = bulkOperations.execute()
-
-        logger.debug("${clazz.simpleName}: Updated ${update.modifiedCount} documents")
-    }
-
-    private fun <T : VersionedDocument> removeCurrentDocuments(
-        documents: List<T>,
-        clazz: Class<T>
-    ) {
-        if (documents.isEmpty()) return
-
-        logger.debug(
-            "Removing documents (${clazz.simpleName}): {}",
-            JsonUtils.mapper.writeValueAsString(documents.map { it.getDocumentId() })
-        )
-
-        val bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED, clazz)
-
-        for (document in documents) {
-            val query = Query().addCriteria(Criteria.where("_id").`is`(document.getDocumentId()))
-            bulkOperations.remove(query)
-        }
-
-        val removal = bulkOperations.execute()
-
-        logger.debug("${clazz.simpleName}: Removed ${removal.deletedCount} documents")
+        return bulkOperations
     }
 }

@@ -1,12 +1,12 @@
 package org.vechain.indexer.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.util.*
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import java.util.*
 
-@Document("fungible-token-contracts")
+@Document("fungible_token_contracts")
 data class IndexedFungibleTokenContracts
 @ConstructorBinding
 constructor(

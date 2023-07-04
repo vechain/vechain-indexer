@@ -33,7 +33,7 @@ build-k6: #@ Build the K6 docker image.
 start: #@ Remove, clean and start all the infrastructure and the application.
 	make infra-up infra-setup app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make load-test-clean app-down infra-clean load-test-clean
+	make app-down infra-clean
 down: #@ Stop all the infrastructure and the application.
 	make app-down infra-down
 
@@ -59,20 +59,18 @@ infra-up: #@ Start all the infrastructure.
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
-DB_MAKE_KEY=mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile;
-DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 
 db-all: #@ Remove, clean and start all the database.
-	make db-down db-clean db-up db-setup
+	make db-down db-clean db-keyfile-create db-up db-setup
 db-clean: #@ Clean all the database data
 	$(DB_COMMAND) down -v --remove-orphans;
 db-down: #@ Stop all the database.
 	$(DB_COMMAND) down
 db-keyfile-create: #@ Generate the keyfile for the database.
-	$(DB_MAKE_KEY)
+	if [ ! -f database/keys/keyfile ]; then mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile; fi
 db-keyfile-remove: #@ Remove the keyfile for the database.
-	$(DB_REMOVE_KEY)
+	rm -f -R database/keys
 db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.

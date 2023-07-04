@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,6 +27,7 @@ import strikt.api.expectThat
 import strikt.api.expectThrows
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import java.util.*
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
@@ -126,18 +126,12 @@ internal class NFTEventIndexerTest {
     fun `rollback - no archive record - throws exception`() {
         val blockNumber = 16L
 
-        val deletedArchives = slot<List<String>>()
-
         every { mongoTemplate.find<IndexedNFT>(any(), any()) } returns
             mutableListOf(NFT_VIP181, NFT_ROLLBACK_TEST_VERSION2)
         every { archiveRepository.findAllById(any()) } returns emptyList()
-        every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns mockk(relaxed = true)
 
         expectThrows<ArchiveException> { nftEventIndexer.rollback(blockNumber) }
-
-        verify {
-            mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called
-        }
     }
 
     private fun compareNFTs(expected: IndexedNFT, actual: IndexedNFT) {

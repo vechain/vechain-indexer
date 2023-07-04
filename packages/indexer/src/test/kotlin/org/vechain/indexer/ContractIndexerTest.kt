@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -32,6 +31,7 @@ import strikt.api.expect
 import strikt.api.expectThat
 import strikt.api.expectThrows
 import strikt.assertions.*
+import java.util.*
 
 @ExtendWith(MockKExtension::class)
 internal class ContractIndexerTest {
@@ -303,18 +303,12 @@ internal class ContractIndexerTest {
     fun `rollback - no archive record - throws archive exception`() {
         val blockNumber = 16L
 
-        val deletedArchives = slot<List<String>>()
-
         every { mongoTemplate.find<IndexedContract>(any(), any()) } returns
             mutableListOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER, CONTRACT_ROLLBACK_TEST_VERSION2)
-        every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { archiveRepository.findAllById(any()) } returns emptyList()
 
         expectThrows<ArchiveException> { contractIndexer.rollback(blockNumber) }
-
-        verify {
-            mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called
-        }
     }
 
     private fun compareContracts(expected: IndexedContract, actual: IndexedContract) {
