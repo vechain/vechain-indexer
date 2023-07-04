@@ -3,9 +3,11 @@ package org.vechain.indexer.migration.v1_0_0
 import io.mongock.api.annotations.ChangeUnit
 import io.mongock.api.annotations.Execution
 import io.mongock.api.annotations.RollbackExecution
+import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.model.IndexedFungibleTokenContracts
 
+@Profile("fungible-token-contracts")
 @ChangeUnit(id = "fungible-tokens-initializer", order = "9", author = "nawfal-labrahmi")
 class FungibleTokensInitializerChangeUnit {
 

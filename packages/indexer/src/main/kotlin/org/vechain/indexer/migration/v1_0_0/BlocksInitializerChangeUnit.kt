@@ -1,12 +1,14 @@
 package org.vechain.indexer.migration.v1_0_0
 
 import io.mongock.api.annotations.*
+import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedBlock
 
+@Profile("blocks")
 @ChangeUnit(id = "blocks-initializer", order = "2", author = "nawfal-labrahmi")
 class BlocksInitializerChangeUnit {
 

@@ -7,7 +7,6 @@ import java.util.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.core.io.Resource
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
@@ -42,8 +41,6 @@ internal class ContractIndexerTest {
 
     @MockK lateinit var contractRepository: ContractRepository
 
-    @MockK lateinit var contractsResource: Resource
-
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     private lateinit var archiveService: ArchiveService
@@ -65,11 +62,9 @@ internal class ContractIndexerTest {
             )
         contractIndexer =
             ContractIndexer(
-                thorService,
                 contractService,
                 contractRepository,
                 archiveService,
-                contractsResource,
                 1L,
                 1000L,
                 DefaultThorClient("http://localhost:8669"),

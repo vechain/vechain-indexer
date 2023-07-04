@@ -4,9 +4,11 @@ import io.mongock.api.annotations.ChangeUnit
 import io.mongock.api.annotations.Execution
 import io.mongock.api.annotations.RollbackExecution
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.BuiltInContractsLoader
 
+@Profile("contracts")
 @ChangeUnit(id = "built-in-contracts", order = "6", author = "nawfal-labrahmi")
 class BuiltInContractsInitializerChangeUnit {
 
