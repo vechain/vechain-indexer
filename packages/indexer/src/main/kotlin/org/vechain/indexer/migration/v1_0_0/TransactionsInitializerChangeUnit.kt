@@ -18,7 +18,8 @@ class TransactionsInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        if (!mongoTemplate.collectionExists(TRANSACTIONS)) mongoTemplate.createCollection(TRANSACTIONS)
+        if (!mongoTemplate.collectionExists(TRANSACTIONS))
+            mongoTemplate.createCollection(TRANSACTIONS)
     }
 
     @Execution

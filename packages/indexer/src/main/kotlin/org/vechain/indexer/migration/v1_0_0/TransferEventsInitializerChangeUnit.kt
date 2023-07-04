@@ -21,7 +21,8 @@ class TransferEventsInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        if (!mongoTemplate.collectionExists(TRANSFER_EVENTS)) mongoTemplate.createCollection(TRANSFER_EVENTS)
+        if (!mongoTemplate.collectionExists(TRANSFER_EVENTS))
+            mongoTemplate.createCollection(TRANSFER_EVENTS)
     }
 
     @Execution
@@ -75,6 +76,7 @@ class TransferEventsInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        if (mongoTemplate.collectionExists(TRANSFER_EVENTS)) mongoTemplate.dropCollection(TRANSFER_EVENTS)
+        if (mongoTemplate.collectionExists(TRANSFER_EVENTS))
+            mongoTemplate.dropCollection(TRANSFER_EVENTS)
     }
 }

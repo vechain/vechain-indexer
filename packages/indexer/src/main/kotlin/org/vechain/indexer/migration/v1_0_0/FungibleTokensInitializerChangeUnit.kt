@@ -15,11 +15,13 @@ class FungibleTokensInitializerChangeUnit {
 
     @Execution
     fun execution(mongoTemplate: MongoTemplate) {
-        if (!mongoTemplate.collectionExists(FUNGIBLE_TOKENS)) mongoTemplate.createCollection(FUNGIBLE_TOKENS)
+        if (!mongoTemplate.collectionExists(FUNGIBLE_TOKENS))
+            mongoTemplate.createCollection(FUNGIBLE_TOKENS)
     }
 
     @RollbackExecution
     fun rollbackExecution(mongoTemplate: MongoTemplate) {
-        if (mongoTemplate.collectionExists(FUNGIBLE_TOKENS)) mongoTemplate.dropCollection(FUNGIBLE_TOKENS)
+        if (mongoTemplate.collectionExists(FUNGIBLE_TOKENS))
+            mongoTemplate.dropCollection(FUNGIBLE_TOKENS)
     }
 }
