@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedTransferEvent
 
-@ChangeUnit(id="transfer-events-initializer", order = "6", author = "nawfal-labrahmi")
+@ChangeUnit(id = "transfer-events-initializer", order = "6", author = "nawfal-labrahmi")
 class TransferEventsInitializerChangeUnit {
 
     companion object {
@@ -15,7 +15,8 @@ class TransferEventsInitializerChangeUnit {
         const val TRANSFER_BLOCKNUMBER_IDX = "transfer_blockNumber_-1"
         const val TRANSFER_TO_IDX = "transfer_to_1_blockNumber_-1_txId_-1__id_-1"
         const val TRANSFER_FROM_IDX = "transfer_from_1_blockNumber_-1_txId_-1__id_-1"
-        const val TRANSFER_TOKEN_ADDRESS_IDX = "transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1"
+        const val TRANSFER_TOKEN_ADDRESS_IDX =
+            "transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1"
     }
 
     @BeforeExecution

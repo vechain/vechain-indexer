@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedNFT
 
-@ChangeUnit(id="nfts-initializer", order = "7", author = "nawfal-labrahmi")
+@ChangeUnit(id = "nfts-initializer", order = "7", author = "nawfal-labrahmi")
 class NftsInitializerChangeUnit {
 
     companion object {
@@ -16,8 +16,10 @@ class NftsInitializerChangeUnit {
         const val NFT_CONTRACTADDRESS_TOKENID_IDX = "nft_contractAddress_1_tokenId_1"
         const val NFT_OWNER_IDX = "nft_owner_1_blockNumber_-1_txId_-1__id_-1"
         const val NFT_CONTRACTADDRESS_IDX = "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1"
-        const val NFT_OWNER_CONTRACTADDRESS_IDX = "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1"
-        const val NFT_OWNER_CONTRACTADDRESS_TOKENADDRESS_IDX = "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1"
+        const val NFT_OWNER_CONTRACTADDRESS_IDX =
+            "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1"
+        const val NFT_OWNER_CONTRACTADDRESS_TOKENADDRESS_IDX =
+            "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1"
     }
 
     @BeforeExecution

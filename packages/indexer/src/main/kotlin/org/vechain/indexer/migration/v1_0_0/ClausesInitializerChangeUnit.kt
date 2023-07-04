@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedClause
 
-@ChangeUnit(id="clauses-initializer", order = "4", author = "nawfal-labrahmi")
+@ChangeUnit(id = "clauses-initializer", order = "4", author = "nawfal-labrahmi")
 class ClausesInitializerChangeUnit {
 
     companion object {

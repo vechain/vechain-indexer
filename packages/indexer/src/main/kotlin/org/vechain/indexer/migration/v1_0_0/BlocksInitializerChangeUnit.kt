@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedBlock
 
-@ChangeUnit(id="blocks-initializer", order = "2", author = "nawfal-labrahmi")
+@ChangeUnit(id = "blocks-initializer", order = "2", author = "nawfal-labrahmi")
 class BlocksInitializerChangeUnit {
 
     companion object {

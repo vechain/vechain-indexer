@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.Archive
 
-@ChangeUnit(id="archives-initializer", order = "1", author = "nawfal-labrahmi")
+@ChangeUnit(id = "archives-initializer", order = "1", author = "nawfal-labrahmi")
 class ArchivesInitializerChangeUnit {
 
     companion object {

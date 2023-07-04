@@ -7,19 +7,24 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedContract
 
-@ChangeUnit(id="contracts-initializer", order = "5", author = "nawfal-labrahmi")
+@ChangeUnit(id = "contracts-initializer", order = "5", author = "nawfal-labrahmi")
 class ContractsInitializerChangeUnit {
 
     companion object {
         val CONTRACTS = IndexedContract::class.java
         const val CLAUSE_BLOCKNUMBER_IDX = "contract_blockNumber_-1"
 
-        const val CREATOR_ISVIP180_IDX = "contract_creator_1_isVip180_1_blockNumber_-1_txId_-1__id_-1"
-        const val CREATOR_ISVIP181_IDX = "contract_creator_1_isVip181_1_blockNumber_-1_txId_-1__id_-1"
-        const val CREATOR_ISVIP210_IDX = "contract_creator_1_isVip210_1_blockNumber_-1_txId_-1__id_-1"
+        const val CREATOR_ISVIP180_IDX =
+            "contract_creator_1_isVip180_1_blockNumber_-1_txId_-1__id_-1"
+        const val CREATOR_ISVIP181_IDX =
+            "contract_creator_1_isVip181_1_blockNumber_-1_txId_-1__id_-1"
+        const val CREATOR_ISVIP210_IDX =
+            "contract_creator_1_isVip210_1_blockNumber_-1_txId_-1__id_-1"
         const val CREATOR_ISERC20_IDX = "contract_creator_1_isErc20_1_blockNumber_-1_txId_-1__id_-1"
-        const val CREATOR_ISERC721_IDX = "contract_creator_1_isErc721_1_blockNumber_-1_txId_-1__id_-1"
-        const val CREATOR_ISERC1155_IDX = "contract_creator_1_isErc1155_1_blockNumber_-1_txId_-1__id_-1"
+        const val CREATOR_ISERC721_IDX =
+            "contract_creator_1_isErc721_1_blockNumber_-1_txId_-1__id_-1"
+        const val CREATOR_ISERC1155_IDX =
+            "contract_creator_1_isErc1155_1_blockNumber_-1_txId_-1__id_-1"
 
         const val ISVIP180_IDX = "isVip180_1_blockNumber_-1_txId_-1__id_-1"
         const val ISVIP181_IDX = "isVip181_1_blockNumber_-1_txId_-1__id_-1"

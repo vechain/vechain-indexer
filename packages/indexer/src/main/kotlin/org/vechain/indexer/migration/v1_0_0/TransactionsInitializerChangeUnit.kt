@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedTransaction
 
-@ChangeUnit(id="transactions-initializer", order = "3", author = "nawfal-labrahmi")
+@ChangeUnit(id = "transactions-initializer", order = "3", author = "nawfal-labrahmi")
 class TransactionsInitializerChangeUnit {
 
     companion object {
