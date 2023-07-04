@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - '*'
 
 concurrency:
   group: ${{ github.head_ref || github.ref_name }}-build-test

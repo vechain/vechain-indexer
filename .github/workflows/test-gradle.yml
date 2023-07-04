@@ -41,3 +41,11 @@ jobs:
           name: test-results-${{ github.head_ref || github.ref_name }}
           retention-days: 1
           path: static
+
+      - name: Upload Test Results
+        uses: dorny/test-reporter@v1
+        with:
+          artifact: test-results            # artifact name
+          name: JEST Tests                  # Name of the check run which will be created
+          path: 'src/${{ matrix.package }}/build/test-results/*.xml'                     # Path to test results (inside artifact .zip)
+          reporter: jest-junit
