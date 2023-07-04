@@ -181,7 +181,7 @@ abstract class Indexer(
     }
 
     private suspend fun backoffDelay() {
-        if (status == Status.FULLY_SYNCED || status == Status.ERROR) {
+        if (status != Status.SYNCING) {
             delay(backoffPeriod)
         }
     }
