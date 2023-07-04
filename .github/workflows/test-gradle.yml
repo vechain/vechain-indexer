@@ -24,16 +24,12 @@ jobs:
 
       - name: Gradle Test
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
-        env:
-          INDEXER_ENV_FILE_NAME: packages/indexer/.env.example
-          API_ENV_FILE_NAME: packages/api/.env.example
 
       - name: Debug E2E
         if: failure() && matrix.package == 'e2e'
-        env:
-          INDEXER_ENV_FILE_NAME: packages/indexer/.env.example
-          API_ENV_FILE_NAME: packages/api/.env.example
         run: |
+          export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
+          export API_ENV_FILE_NAME=packages/api/.env.example
           docker network ls
           docker network inspect vechain-database || true
           docker network inspect vechain-thor || true
