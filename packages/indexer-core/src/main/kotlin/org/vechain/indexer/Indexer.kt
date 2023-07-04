@@ -70,7 +70,7 @@ abstract class Indexer(
 
     private suspend fun restart() {
         // Initialise the indexer
-        if (status == Status.ERROR) initialise()
+        if (status == Status.ERROR) initialise(currentBlockNumber)
         else if (status == Status.REORG) initialise(currentBlockNumber - 1)
 
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
