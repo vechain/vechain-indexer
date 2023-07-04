@@ -31,6 +31,8 @@ jobs:
           export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
           export API_ENV_FILE_NAME=packages/api/.env.example
           docker network ls
+          docker ps
+          docker ps -a
           docker network inspect vechain-database || true
           docker network inspect vechain-thor || true
           docker network inspect vechain || true
