@@ -23,10 +23,10 @@ open class ArchiveService(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private fun getPreviousVersionId(document: VersionedDocument): String =
+    open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
 
-    fun saveAll(documents: List<VersionedDocument>) {
+    open fun saveAll(documents: List<VersionedDocument>) {
 
         if (documents.isEmpty()) return
 
@@ -38,7 +38,7 @@ open class ArchiveService(
         archiveRepository.saveAll(archives)
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun <T : VersionedDocument> rollback(blockNumber: Long, clazz: Class<T>) {
         val currentDocuments = getCurrentDocuments(blockNumber, clazz)
 
@@ -64,7 +64,7 @@ open class ArchiveService(
         archiveRepository.deleteAllById(previousDocumentIds)
 
         logger.info(
-            "{}: Rollback of block {} completed. {} documents rolled back, {} documents deleted",
+            "{} - Rollback of block {} completed: \n- {} documents rolled back \n- {} documents deleted",
             clazz.simpleName,
             blockNumber,
             rollback.modifiedCount,
@@ -72,7 +72,7 @@ open class ArchiveService(
         )
     }
 
-    private fun <T : VersionedDocument> getCurrentDocuments(
+    open fun <T : VersionedDocument> getCurrentDocuments(
         blockNumber: Long,
         clazz: Class<T>
     ): List<T> {
@@ -82,7 +82,7 @@ open class ArchiveService(
         return mongoTemplate.find(query, clazz)
     }
 
-    private fun <T : VersionedDocument> getRollbackOperation(
+    open fun <T : VersionedDocument> getRollbackOperation(
         currentDocuments: List<T>,
         previousDocuments: Map<String, T>,
         clazz: Class<T>

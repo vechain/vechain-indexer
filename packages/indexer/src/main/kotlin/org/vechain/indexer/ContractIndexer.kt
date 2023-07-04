@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
@@ -33,7 +32,6 @@ open class ContractIndexer(
         thorClient = thorClient
     ) {
 
-    @Transactional
     override fun processBlock(block: Block) {
 
         // Get the master change events from the block
@@ -49,14 +47,9 @@ open class ContractIndexer(
         // Parse the contracts
         val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
 
-        // Save the NFTs and archive the old ones
-        if (existingContracts.isNotEmpty()) {
-            archiveService.saveAll(existingContracts)
-        }
-        contractRepository.saveAll(contracts)
+        contractService.saveContracts(contracts, existingContracts)
     }
 
-    @Transactional
     override fun rollback(blockNumber: Long) {
         archiveService.rollback(blockNumber, IndexedContract::class.java)
     }
