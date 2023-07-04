@@ -51,7 +51,6 @@ jobs:
         if: success() || failure()
         with:
           report_paths: packages/${{ inputs.package }}/build/test-results/test/TEST-*.xml
-          detailed_summary: true
 
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
