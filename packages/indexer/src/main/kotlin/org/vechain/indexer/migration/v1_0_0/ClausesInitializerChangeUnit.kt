@@ -19,7 +19,7 @@ class ClausesInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.createCollection(CLAUSES)
+        if (!mongoTemplate.collectionExists(CLAUSES)) mongoTemplate.createCollection(CLAUSES)
     }
 
     @Execution
@@ -62,6 +62,6 @@ class ClausesInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(CLAUSES)
+        if (mongoTemplate.collectionExists(CLAUSES)) mongoTemplate.dropCollection(CLAUSES)
     }
 }

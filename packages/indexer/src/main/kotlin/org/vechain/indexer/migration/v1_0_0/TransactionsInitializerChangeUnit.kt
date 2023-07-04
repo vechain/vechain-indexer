@@ -18,7 +18,7 @@ class TransactionsInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.createCollection(TRANSACTIONS)
+        if (!mongoTemplate.collectionExists(TRANSACTIONS)) mongoTemplate.createCollection(TRANSACTIONS)
     }
 
     @Execution
@@ -50,6 +50,6 @@ class TransactionsInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(TRANSACTIONS)
+        if (mongoTemplate.collectionExists(TRANSACTIONS)) mongoTemplate.dropCollection(TRANSACTIONS)
     }
 }

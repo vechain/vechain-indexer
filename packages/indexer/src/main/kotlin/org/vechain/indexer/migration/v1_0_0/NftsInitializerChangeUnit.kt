@@ -24,7 +24,7 @@ class NftsInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.createCollection(NFTS)
+        if (!mongoTemplate.collectionExists(NFTS)) mongoTemplate.createCollection(NFTS)
     }
 
     @Execution
@@ -97,6 +97,6 @@ class NftsInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(NFTS)
+        if (mongoTemplate.collectionExists(NFTS)) mongoTemplate.dropCollection(NFTS)
     }
 }

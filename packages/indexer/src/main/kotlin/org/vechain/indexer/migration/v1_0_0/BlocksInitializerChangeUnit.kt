@@ -18,7 +18,7 @@ class BlocksInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.createCollection(BLOCKS)
+        if (!mongoTemplate.collectionExists(BLOCKS)) mongoTemplate.createCollection(BLOCKS)
     }
 
     @Execution
@@ -48,6 +48,6 @@ class BlocksInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(BLOCKS)
+        if (mongoTemplate.collectionExists(BLOCKS)) mongoTemplate.dropCollection(BLOCKS)
     }
 }

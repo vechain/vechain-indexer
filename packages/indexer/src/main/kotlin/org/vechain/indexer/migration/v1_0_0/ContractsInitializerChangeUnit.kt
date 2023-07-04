@@ -189,6 +189,6 @@ class ContractsInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(CONTRACTS)
+        if (mongoTemplate.collectionExists(CONTRACTS)) mongoTemplate.dropCollection(CONTRACTS)
     }
 }

@@ -17,7 +17,7 @@ class ArchivesInitializerChangeUnit {
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.createCollection(ARCHIVES)
+        if (!mongoTemplate.collectionExists(ARCHIVES)) mongoTemplate.createCollection(ARCHIVES)
     }
 
     @Execution
@@ -38,6 +38,6 @@ class ArchivesInitializerChangeUnit {
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.dropCollection(ARCHIVES)
+        if (mongoTemplate.collectionExists(ARCHIVES)) mongoTemplate.dropCollection(ARCHIVES)
     }
 }
