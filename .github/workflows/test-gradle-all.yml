@@ -1,0 +1,24 @@
+name: Test (Gradle)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+  checks: write
+
+jobs:
+  gradle-test:
+    name: Gradle Test Matrix
+    secrets: inherit
+    strategy:
+      matrix:
+        package: [ api, common, e2e, indexer, indexer-core, thor-model ]
+    uses: ./.github/workflows/publish-ecr-image.yml
+    with:
+      package: ${{ matrix.package }}
+      runsOn: ${{ matrix.package == 'e2e' && 'veworld-indexer-e2e' || 'ubuntu-latest' }}
+
+

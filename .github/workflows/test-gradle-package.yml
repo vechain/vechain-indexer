@@ -1,7 +1,14 @@
-name: Test (Gradle)
+name: Test Package
 
 on:
   workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+      runsOn:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -10,11 +17,8 @@ permissions:
   checks: write
 
 jobs:
-  test-gradle:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        package: [ api, common, e2e, indexer, indexer-core, thor-model ]
+  test-gradle-package:
+    runs-on: ${{ inputs.runsOn }}
     steps:
       - uses: actions/checkout@v3
 
@@ -24,10 +28,10 @@ jobs:
           java-version: '17'
 
       - name: Gradle Test
-        run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
+        run: ./gradlew :package:${{ inputs.package }}:cleanTest :package:${{ inputs.package }}:test
 
       - name: Debug E2E
-        if: failure() && matrix.package == 'e2e'
+        if: failure() && inputs.package == 'e2e'
         run: |
           export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
           export API_ENV_FILE_NAME=packages/api/.env.example
@@ -46,15 +50,16 @@ jobs:
         uses: mikepenz/action-junit-report@v3
         if: success() || failure()
         with:
-          report_paths: packages/${{ matrix.package }}/build/test-results/test/TEST-*.xml
+          report_paths: packages/${{ inputs.package }}/build/test-results/test/TEST-*.xml
+          detailed_summary: true
 
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
         run: |
-          mkdir -p static/${{ matrix.package }}
-          if [ -d "packages/${{ matrix.package }}/build/reports/jacoco/test/html" ]; then
-            cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
-            cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
+          mkdir -p static/${{ inputs.package }}
+          if [ -d "packages/${{ inputs.package }}/build/reports/jacoco/test/html" ]; then
+            cp -r packages/${{ inputs.package }}/build/reports/jacoco/test/html static/${{ inputs.package }}/coverage
+            cp -r packages/${{ inputs.package }}/build/reports/tests/test static/${{ inputs.package }}/tests
           fi
 
       - name: Upload Test Results
