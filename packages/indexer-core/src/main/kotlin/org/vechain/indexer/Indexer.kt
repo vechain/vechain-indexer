@@ -89,7 +89,11 @@ abstract class Indexer(
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
                 throw ReorgException("Reorg detected")
 
-            logger.info("Processing @ Block $currentBlockNumber ($status)")
+            if (logger.isDebugEnabled)
+                logger.debug("Processing @ Block $currentBlockNumber ($status)")
+            else if (status === Status.FULLY_SYNCED || currentBlockNumber % 1000 == 0L)
+                logger.info("Processing @ Block $currentBlockNumber ($status)")
+
             processBlock(block)
 
             postProcessBlock(block)
