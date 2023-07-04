@@ -21,7 +21,7 @@ services:
     networks:
       - vechain
       - vechain-database
-        - vechain-thor
+      - vechain-thor
 
   vechain-indexer-api:
     build:
