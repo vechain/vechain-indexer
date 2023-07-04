@@ -25,6 +25,18 @@ jobs:
       - name: Gradle Test
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
 
+      - name: Debug E2E
+        if: failure() && matrix.package == 'e2e'
+        run: |
+          docker network ls
+          docker network inspect vechain-database || true
+          docker network inspect vechain-thor || true
+          docker network inspect vechain || true
+          docker compose -f database/docker-compose-mongo.yaml logs
+          docker compose -f database/docker-compose-mongo-setup.yaml logs
+          docker compose -f thor/docker-compose.yaml logs
+          docker compose -f docker-compose.yaml logs
+
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
         run: |
