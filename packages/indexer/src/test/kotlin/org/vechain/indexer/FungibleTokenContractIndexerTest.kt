@@ -16,6 +16,7 @@ import org.vechain.indexer.model.IndexedFungibleTokenContracts
 import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.FungibleContractsService
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat
@@ -40,10 +41,12 @@ class FungibleTokenContractIndexerTest {
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
         fungibleTokenContractIndexer =
             FungibleTokenContractIndexer(
-                fungibleTokenContractRepository,
-                archiveService,
-                "http://localhost:8669",
-                0L
+                fungibleTokenContractsRepository = fungibleTokenContractRepository,
+                archiveService = archiveService,
+                thorClient = DefaultThorClient("http://localhost:8669"),
+                startBlock = 0L,
+                fungibleContractsService =
+                    FungibleContractsService(fungibleTokenContractRepository, archiveService)
             )
     }
 

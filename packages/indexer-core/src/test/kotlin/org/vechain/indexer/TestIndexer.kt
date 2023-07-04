@@ -3,7 +3,7 @@ package org.vechain.indexer
 import org.vechain.thor.model.Block
 
 class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
-    Indexer("notarealurl", 0L) {
+    Indexer(DefaultThorClient("notarealurl"), 0L) {
 
     override val thorClient: ThorClient = thorClientMock
 

@@ -13,9 +13,9 @@ import org.vechain.thor.model.Block
 open class TransactionIndexer(
     private val txRepo: TransactionRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
-) : VeWorldIndexer(txRepo, startBlock, thorUrl) {
+) : VeWorldIndexer(repository = txRepo, startBlock = startBlock, thorClient = thorClient) {
     override fun rollback(blockNumber: Long) {
         txRepo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }

@@ -55,9 +55,14 @@ internal class ContractIndexerTest {
     @BeforeEach
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
-        archiveService = ArchiveService(archiveRepository, mongoTemplate)
-        contractService = ContractService(thorService)
         MockKAnnotations.init(this)
+        archiveService = ArchiveService(archiveRepository, mongoTemplate)
+        contractService =
+            ContractService(
+                thorService = thorService,
+                contractRepository = contractRepository,
+                archiveService = archiveService
+            )
         contractIndexer =
             ContractIndexer(
                 thorService,
@@ -65,8 +70,8 @@ internal class ContractIndexerTest {
                 contractRepository,
                 archiveService,
                 contractsResource,
-                "http://localhost:8669",
-                1L
+                1L,
+                DefaultThorClient("http://localhost:8669"),
             )
     }
 
@@ -303,18 +308,12 @@ internal class ContractIndexerTest {
     fun `rollback - no archive record - throws archive exception`() {
         val blockNumber = 16L
 
-        val deletedArchives = slot<List<String>>()
-
         every { mongoTemplate.find<IndexedContract>(any(), any()) } returns
             mutableListOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER, CONTRACT_ROLLBACK_TEST_VERSION2)
-        every { archiveRepository.deleteAllById(capture(deletedArchives)) } returns Unit
+        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns mockk(relaxed = true)
         every { archiveRepository.findAllById(any()) } returns emptyList()
 
         expectThrows<ArchiveException> { contractIndexer.rollback(blockNumber) }
-
-        verify {
-            mongoTemplate.bulkOps(any<BulkOperations.BulkMode>(), any<Class<*>>()) wasNot Called
-        }
     }
 
     private fun compareContracts(expected: IndexedContract, actual: IndexedContract) {

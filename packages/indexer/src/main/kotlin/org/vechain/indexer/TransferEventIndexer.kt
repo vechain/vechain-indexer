@@ -14,9 +14,14 @@ import org.vechain.thor.model.Block
 open class TransferEventIndexer(
     private val transferEventRepository: TransferEventRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${thor.url}") private val thorUrl: String,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.transfers}") private val startBlock: Long,
-) : VeWorldIndexer(transferEventRepository, startBlock, thorUrl) {
+) :
+    VeWorldIndexer(
+        repository = transferEventRepository,
+        startBlock = startBlock,
+        thorClient = thorClient
+    ) {
 
     override fun processBlock(block: Block) {
 
