@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.TestDataHelper.Companion.getTestBlock
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.thor.model.Block
-import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
@@ -46,8 +45,6 @@ internal class IndexerTests {
         val job = launch { indexer.start(100L) }
 
         job.join()
-
-        expect { that(1).isEqualTo(12341234) }
 
         // Add assertions or verify other expected behavior
         expectThat(indexer.currentBlockNumber).isEqualTo(100L)
