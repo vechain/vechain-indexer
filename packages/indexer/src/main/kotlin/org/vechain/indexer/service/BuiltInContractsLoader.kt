@@ -12,7 +12,7 @@ open class BuiltInContractsLoader(
     @Value("classpath:built-in-contracts.json") private val contractsJson: Resource
 ) {
 
-    open fun loadBuiltInContracts() : Array<IndexedContract> {
+    open fun loadBuiltInContracts(): Array<IndexedContract> {
         val genesisBlock = thorService.getBlock(0)
 
         val contracts =
