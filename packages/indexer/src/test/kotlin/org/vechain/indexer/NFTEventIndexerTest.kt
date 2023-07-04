@@ -3,6 +3,7 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.util.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -27,7 +28,6 @@ import strikt.api.expectThat
 import strikt.api.expectThrows
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
-import java.util.*
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {

@@ -3,6 +3,7 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.util.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -31,7 +32,6 @@ import strikt.api.expect
 import strikt.api.expectThat
 import strikt.api.expectThrows
 import strikt.assertions.*
-import java.util.*
 
 @ExtendWith(MockKExtension::class)
 internal class ContractIndexerTest {
