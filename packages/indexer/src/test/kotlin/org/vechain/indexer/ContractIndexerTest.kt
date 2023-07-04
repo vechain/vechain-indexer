@@ -56,7 +56,12 @@ internal class ContractIndexerTest {
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
-        contractService = ContractService(thorService)
+        contractService =
+            ContractService(
+                thorService = thorService,
+                contractRepository = mockk(relaxed = true),
+                archiveService = mockk(relaxed = true)
+            )
         MockKAnnotations.init(this)
         contractIndexer =
             ContractIndexer(
@@ -65,8 +70,8 @@ internal class ContractIndexerTest {
                 contractRepository,
                 archiveService,
                 contractsResource,
-                "http://localhost:8669",
-                1L
+                1L,
+                DefaultThorClient("http://localhost:8669"),
             )
     }
 

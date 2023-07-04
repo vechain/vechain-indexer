@@ -15,10 +15,10 @@ import org.vechain.thor.model.Block
 @Profile("fungible-token-contracts")
 @Component
 open class FungibleTokenContractIndexer(
-    fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     private val archiveService: ArchiveService,
     private val fungibleContractsService: FungibleContractsService,
     thorClient: ThorClient,
+    fungibleTokenContractsRepository: FungibleTokenContractsRepository,
     @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
 ) :
     VeWorldIndexer(

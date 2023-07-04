@@ -33,7 +33,13 @@ internal class ClauseIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        clauseIndexer = ClauseIndexer(clauseRepository, mongoTemplate, "http://localhost:8669", 0L)
+        clauseIndexer =
+            ClauseIndexer(
+                clauseRepository,
+                mongoTemplate,
+                DefaultThorClient("http://localhost:8669"),
+                0L
+            )
     }
 
     @Test

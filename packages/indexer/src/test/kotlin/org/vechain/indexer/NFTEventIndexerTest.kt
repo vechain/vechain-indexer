@@ -22,6 +22,7 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat
@@ -39,6 +40,7 @@ internal class NFTEventIndexerTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     private lateinit var archiveService: ArchiveService
+    private lateinit var nftService: NFTService
 
     private lateinit var nftEventIndexer: NFTEventIndexer
 
@@ -46,8 +48,15 @@ internal class NFTEventIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
         archiveService = ArchiveService(archiveRepository, mongoTemplate)
+        nftService = NFTService(nftRepository, archiveService)
         nftEventIndexer =
-            NFTEventIndexer(nftRepository, archiveService, "http://localhost:8669", 0L)
+            NFTEventIndexer(
+                nftService,
+                archiveService,
+                DefaultThorClient("http://localhost:8669"),
+                nftRepository,
+                0L
+            )
     }
 
     @Test

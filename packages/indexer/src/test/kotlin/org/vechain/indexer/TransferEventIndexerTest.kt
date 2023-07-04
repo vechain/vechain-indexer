@@ -43,7 +43,7 @@ class TransferEventIndexerTest {
             TransferEventIndexer(
                 transferEventRepository,
                 mongoTemplate,
-                "http://localhost:8669",
+                DefaultThorClient("http://localhost:8669"),
                 0L
             )
     }

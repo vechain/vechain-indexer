@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
-import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.thor.model.Clause
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -73,14 +72,17 @@ internal class ContractServiceTest {
 
     @MockK lateinit var thorService: ThorService
 
-    @MockK lateinit var archiveRepository: ArchiveRepository
-
     private lateinit var contractService: ContractService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        contractService = ContractService(thorService)
+        contractService =
+            ContractService(
+                thorService = thorService,
+                archiveService = mockk(relaxed = true),
+                contractRepository = mockk(relaxed = true),
+            )
     }
 
     // isErc721
