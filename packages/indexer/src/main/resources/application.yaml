@@ -58,3 +58,8 @@ indexer:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
     transfers: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS:1000}
+
+mongock:
+  migration-scan-package:
+    org.vechain.indexer.migration
+  transaction-enabled: false

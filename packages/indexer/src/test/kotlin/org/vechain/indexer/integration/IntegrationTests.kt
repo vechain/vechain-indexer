@@ -24,17 +24,22 @@ class IntegrationTests : AbstractIntegrationTest() {
         // Sleep while indexer catches chain
         waitForFullySynced()
 
-        val repoNames = mongoOps.collectionNames
+        // Do not take into account mongock collections, archives collection
+        val changeLogCollections = listOf("mongockChangeLog", "mongockLock", "archives")
 
-        repoNames.forEach { name ->
-            mongoOps.count(Query(), name).let { count ->
-                expect {
-                    that(count)
-                        .describedAs("Repo ($name) should have 1 or more documents")
-                        .isGreaterThan(0)
+        val collections = mongoOps.collectionNames
+
+        collections
+            .filter { !changeLogCollections.contains(it) }
+            .forEach { collection ->
+                mongoOps.count(Query(), collection).let { count ->
+                    expect {
+                        that(count)
+                            .describedAs("Repo ($collection) should have 1 or more documents")
+                            .isGreaterThan(0)
+                    }
                 }
             }
-        }
     }
 
     /** This tests checks that ALL repos can be read from. */

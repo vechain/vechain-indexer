@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
-@Document("fungible-token-contracts")
+@Document("fungible_token_contracts")
 data class IndexedFungibleTokenContracts
 @ConstructorBinding
 constructor(
