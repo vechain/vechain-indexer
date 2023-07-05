@@ -106,9 +106,10 @@ object BlockUtils {
                         txId = tx.id,
                         from = transfer.from,
                         to = transfer.to,
-                        value = transfer.amount,
+                        value = transfer.amount.toString(),
                         topics = event.topics,
                         tokenAddress = event.address,
+                        tokenId = transfer.tokenId?.toString(),
                         eventType = transfer.eventType
                     )
                 }
@@ -130,9 +131,10 @@ object BlockUtils {
                         txId = tx.id,
                         from = transfer.from,
                         to = transfer.to,
-                        value = transfer.amount,
+                        value = transfer.amount.toString(),
                         topics = listOf(),
                         tokenAddress = event.address,
+                        tokenId = transfer.tokenId?.toString(),
                         eventType = TransferEventType.FUNGIBLE_TOKEN
                     )
                 }
@@ -154,9 +156,10 @@ object BlockUtils {
                 txId = tx.id,
                 from = transfer.sender,
                 to = transfer.recipient,
-                value = Numeric.decodeQuantity(transfer.amount),
+                value = Numeric.decodeQuantity(transfer.amount).toString(),
                 topics = listOf(),
                 tokenAddress = null,
+                tokenId = null,
                 eventType = TransferEventType.VET
             )
         }

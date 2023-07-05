@@ -68,7 +68,6 @@ object EventUtils {
     }
 
     fun getFungibleParameters(event: TxEvent): List<TransferParameters> {
-
         val amount = Numeric.decodeQuantity(event.data)
 
         return listOf(

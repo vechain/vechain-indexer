@@ -1,6 +1,5 @@
 package org.vechain.indexer.model
 
-import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -23,8 +22,9 @@ constructor(
     val txId: String,
     val from: String,
     val to: String,
-    val value: BigInteger,
+    val value: String,
     val tokenAddress: String?,
+    val tokenId: String?,
     val topics: List<String>,
     val eventType: TransferEventType
 ) : IndexedDocument
