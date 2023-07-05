@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.math.BigInteger
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -104,7 +103,7 @@ class TransferEventIndexerTest {
                 .isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
             that(transferEvent.from).isEqualTo("0x0000000000000000000000000000000000000000")
             that(transferEvent.to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
-            that(transferEvent.value).isEqualTo(BigInteger.ONE)
+            that(transferEvent.value).isEqualTo("1")
             that(transferEvent.tokenAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
             that(transferEvent.topics).hasSize(4).and {
                 that(transferEvent.topics[0])
@@ -145,7 +144,7 @@ class TransferEventIndexerTest {
                 .isEqualTo("0x80f3aadef1e87d54e7e608c64b87df9ab69d631b063cfd60869e7a4574ae2d93")
             that(vetTransfer.from).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(vetTransfer.to).isEqualTo("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
-            that(vetTransfer.value).isEqualTo(BigInteger.valueOf(10000000))
+            that(vetTransfer.value).isEqualTo("10000000")
             that(vetTransfer.tokenAddress).isNull()
             that(vetTransfer.topics).hasSize(0)
         }
