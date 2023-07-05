@@ -24,8 +24,8 @@ class IntegrationTests : AbstractIntegrationTest() {
         // Sleep while indexer catches chain
         waitForFullySynced()
 
-        // Do not take into account mongock collections
-        val changeLogCollections = listOf("mongockChangeLog", "mongockLock")
+        // Do not take into account mongock collections, archives collection
+        val changeLogCollections = listOf("mongockChangeLog", "mongockLock", "archives")
 
         val collections = mongoOps.collectionNames
 
