@@ -25,6 +25,7 @@ constructor(
     val to: String,
     val value: BigInteger,
     val tokenAddress: String?,
+    val tokenId: BigInteger?,
     val topics: List<String>,
     val eventType: TransferEventType
 ) : IndexedDocument

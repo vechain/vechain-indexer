@@ -109,6 +109,7 @@ object BlockUtils {
                         value = transfer.amount,
                         topics = event.topics,
                         tokenAddress = event.address,
+                        tokenId = transfer.tokenId,
                         eventType = transfer.eventType
                     )
                 }
@@ -133,6 +134,7 @@ object BlockUtils {
                         value = transfer.amount,
                         topics = listOf(),
                         tokenAddress = event.address,
+                        tokenId = transfer.tokenId,
                         eventType = TransferEventType.FUNGIBLE_TOKEN
                     )
                 }
@@ -157,6 +159,7 @@ object BlockUtils {
                 value = Numeric.decodeQuantity(transfer.amount),
                 topics = listOf(),
                 tokenAddress = null,
+                tokenId = null,
                 eventType = TransferEventType.VET
             )
         }
