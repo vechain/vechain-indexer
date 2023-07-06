@@ -35,6 +35,6 @@ class BuiltInContractsInitializerChangeUnit {
 
     @RollbackExecution
     fun rollbackExecution(contractRepository: ContractRepository) {
-        contractRepository.deleteAll()
+        contractRepository.deleteAllByBlockNumber(0)
     }
 }

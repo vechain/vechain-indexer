@@ -15,4 +15,6 @@ interface ContractRepository : BaseIndexedRepository<IndexedContract> {
         contractType: ContractType?,
         pageable: Pageable
     ): Page<IndexedContract>
+
+    fun deleteAllByBlockNumber(blockNumber: Long)
 }
