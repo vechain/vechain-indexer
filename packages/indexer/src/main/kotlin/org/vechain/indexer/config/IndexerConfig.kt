@@ -13,6 +13,6 @@ open class IndexerConfig(
 
     @Bean
     open fun thorClient(): ThorClient {
-        return DefaultThorClient(thorUrl)
+        return DefaultThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
     }
 }
