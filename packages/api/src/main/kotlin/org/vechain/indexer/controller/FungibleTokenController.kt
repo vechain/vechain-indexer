@@ -16,7 +16,7 @@ import org.vechain.indexer.service.FungibleTokenService
 import org.vechain.indexer.validation.ValidAddress
 
 @Profile("fungible-token-contracts")
-@Tag(name = "Fungbile Tokens", description = "Query fungible tokens")
+@Tag(name = "Fungible Tokens", description = "Query fungible tokens")
 @Validated
 @RestController
 @RequestMapping(FUNGIBLE_CONTRACTS_PATH)
@@ -38,7 +38,7 @@ open class FungibleTokenController(private val fungibleTokenService: FungibleTok
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
-    open fun getContractsByNFTOwner(
+    open fun getFungibleTokensContractsByOwner(
         @ValidAddress @RequestParam owner: Address,
     ): Set<String> {
         return fungibleTokenService.getContractsForOwner(owner.value)
