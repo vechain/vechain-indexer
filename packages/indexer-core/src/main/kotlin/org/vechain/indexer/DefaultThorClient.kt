@@ -1,8 +1,6 @@
 package org.vechain.indexer
 
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.FuelManager
-import com.github.kittinunf.fuel.core.interceptors.LogRequestAsCurlInterceptor
 import com.github.kittinunf.result.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -17,9 +15,8 @@ class DefaultThorClient(
 
     private val objectMapper = JsonUtils.mapper
 
-    override suspend fun getBlock(blockNumber: Long): Block {
-        FuelManager.instance.addRequestInterceptor(LogRequestAsCurlInterceptor)
-        return withContext(Dispatchers.IO) {
+    override suspend fun getBlock(blockNumber: Long): Block =
+        withContext(Dispatchers.IO) {
             val (_, _, result) =
                 Fuel.get("${baseUrl}/blocks/$blockNumber?expanded=true")
                     .appendHeader(*headers)
@@ -38,7 +35,6 @@ class DefaultThorClient(
 
             return@withContext objectMapper.readValue(responseBody, Block::class.java)
         }
-    }
 
     override suspend fun getBestBlock(): Block =
         withContext(Dispatchers.IO) {
