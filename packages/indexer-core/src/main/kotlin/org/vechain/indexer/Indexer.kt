@@ -6,7 +6,6 @@ import kotlinx.coroutines.delay
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
-import org.vechain.indexer.exception.FullySynchronisedException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.thor.model.Block
 
@@ -70,8 +69,11 @@ abstract class Indexer(
 
     private suspend fun restart() {
         // Initialise the indexer
-        if (status == Status.ERROR) initialise(currentBlockNumber)
-        else if (status == Status.REORG) initialise(currentBlockNumber - 1) else initialise()
+        when (status) {
+            Status.ERROR -> initialise(currentBlockNumber)
+            Status.REORG -> initialise(currentBlockNumber - 1)
+            else -> initialise()
+        }
 
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
@@ -102,9 +104,6 @@ abstract class Indexer(
             logger.info("Block $currentBlockNumber not found. Indexer may be fully synchronised.")
             handleFullySynced()
             ensureFullySynced()
-        } catch (ex: FullySynchronisedException) {
-            logger.info("Fully synchronised @ Block $currentBlockNumber")
-            handleFullySynced()
         } catch (e: ReorgException) {
             logger.error("REORG @ Block $currentBlockNumber")
             handleReorg()
