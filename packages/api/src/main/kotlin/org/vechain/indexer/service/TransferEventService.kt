@@ -63,8 +63,8 @@ open class TransferEventService(
     }
 
     fun findByBlockNumber(
-        addresses: List<Address>,
         blockNumber: Long,
+        addresses: List<Address>,
         toPageable: Pageable
     ): Page<IndexedTransferEvent> {
         return transferEventRepository.findByBlockNumberAndToOrFromIn(

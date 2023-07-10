@@ -162,8 +162,8 @@ open class TransferEventController(private val transferEventService: TransferEve
     ): PaginatedResponse<IndexedTransferEvent> {
         return paginatedResponse(
             transferEventService.findByBlockNumber(
-                addresses,
                 blockNumber,
+                addresses,
                 toPageable(page, size, direction)
             )
         )
