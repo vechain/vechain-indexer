@@ -21,6 +21,7 @@ import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidAddressList
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transfer-events")
@@ -131,6 +132,41 @@ open class TransferEventController(private val transferEventService: TransferEve
     ): PaginatedResponse<IndexedTransferEvent> {
         return paginatedResponse(
             transferEventService.findByTo(address, tokenAddress, toPageable(page, size, direction))
+        )
+    }
+
+    @GetMapping("forBlock")
+    @Operation(summary = "Get transfer events for a specific block")
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "addresses",
+        schema = Schema(type = "array"),
+        description = "Addresses to query. Max 20 addresses",
+        required = true,
+        example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]"
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "blockNumber",
+        schema = Schema(type = "integer", format = "int64"),
+        description = "Block number to query",
+        required = true,
+        example = "1000000"
+    )
+    @PaginationParameters
+    open fun getTransfersForBlock(
+        @ValidAddressList @RequestParam addresses: List<Address>,
+        @RequestParam blockNumber: Long,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        return paginatedResponse(
+            transferEventService.findByBlockNumber(
+                blockNumber,
+                addresses,
+                toPageable(page, size, direction)
+            )
         )
     }
 }
