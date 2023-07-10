@@ -12,7 +12,8 @@ import org.vechain.indexer.model.Address
 @Constraint(validatedBy = [AddressListValidator::class])
 @MustBeDocumented
 annotation class ValidAddressList(
-    val message: String = "The provided address is invalid. It must match ${Address.REGEX}",
+    val message: String =
+        "One of the provided addresses is invalid (must match ${Address.REGEX}) or the number of addresses exceeds the limit of 20",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )

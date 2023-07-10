@@ -153,6 +153,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = true,
         example = "1000000"
     )
+    @PaginationParameters
     open fun getTransfersForBlock(
         @ValidAddressList @RequestParam addresses: List<Address>,
         @RequestParam blockNumber: Long,
