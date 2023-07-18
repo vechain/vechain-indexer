@@ -22,8 +22,6 @@ open class NFTService(
     }
 
     open fun getExisting(nftTransfers: List<IndexedTransferEvent>): List<IndexedNFT> {
-        return nftRepository
-            .findAllById(nftTransfers.map { IdUtils.buildHashedId("${it.tokenAddress}-${it.id}") })
-            .toList()
+        return nftRepository.findAllById(nftTransfers.map { IdUtils.buildNftId(it) }).toList()
     }
 }
