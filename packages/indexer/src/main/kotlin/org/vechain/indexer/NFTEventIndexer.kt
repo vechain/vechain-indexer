@@ -53,7 +53,7 @@ open class NFTEventIndexer(
         return nftTransfers.map {
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
             val nftId = IdUtils.buildNftId(it)
-            val version = (existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1)) ?: 1
+            val version = existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
 
             IndexedNFT(
                 id = nftId,
