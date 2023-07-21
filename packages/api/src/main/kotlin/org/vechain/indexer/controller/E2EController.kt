@@ -22,8 +22,8 @@ open class E2EController(private val e2EService: E2EService) {
         return e2EService.getNftArchives()
     }
 
-    @TestOnly
     @GetMapping("/transfers")
+    @TestOnly
     open fun getNFTTransfers(): List<IndexedTransferEvent> {
         return e2EService.getNftTransfers()
     }
