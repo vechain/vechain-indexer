@@ -1,5 +1,6 @@
 package org.vechain.indexer.controller
 
+import com.fasterxml.jackson.annotation.JsonView
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -14,6 +15,7 @@ import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.model.rest.Views
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.NFTService
@@ -29,6 +31,7 @@ import org.vechain.indexer.validation.ValidPageSize
 open class NFTController(private val nftService: NFTService) {
 
     @GetMapping
+    @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
     @ApiResponses(
         value =

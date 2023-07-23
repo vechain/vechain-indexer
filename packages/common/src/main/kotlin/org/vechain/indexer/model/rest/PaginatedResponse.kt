@@ -1,5 +1,6 @@
 package org.vechain.indexer.model.rest
 
+import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.data.domain.Page
 
 /** An API query can return at most this number of elements per page */
@@ -9,12 +10,14 @@ const val PAGE_SIZE_LIMIT = 150
 const val COUNT_LIMIT = 500L
 
 /** API response wrapper object */
+@JsonView(Views.Public::class)
 data class PaginatedResponse<T>(
     val data: List<T>,
     val pagination: PaginationDetail,
 ) where T : Any
 
 /** Wrapper that holds pagination data inside a response */
+@JsonView(Views.Public::class)
 data class PaginationDetail(
     val hasCount: Boolean,
     val countLimit: Long,
