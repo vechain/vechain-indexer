@@ -33,6 +33,11 @@ object VeWorldAPIClient {
         object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
+    private val NFT_ARCHIVES_TYPE =
+        object : ParameterizedTypeReference<List<Archive<IndexedNFT>>>() {}
+    private val NFTS_TYPE = object : ParameterizedTypeReference<List<IndexedNFT>>() {}
+    private val TRANSFER_EVENTS_TYPE =
+        object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
     data class HealthCheckComponent(
         val status: String = "DOWN",
@@ -213,6 +218,18 @@ object VeWorldAPIClient {
 
     fun getFungibleTokenContracts(address: String): List<String> {
         return getRequest("$API_URL/fungibles/contracts?owner=$address", FUNGIBLE_CONTRACTS_TYPE)
+    }
+
+    fun getNftArchives(): List<Archive<IndexedNFT>> {
+        return getRequest("$API_URL/e2e/nfts-archives", NFT_ARCHIVES_TYPE)
+    }
+
+    fun getNftTransfers(): List<IndexedTransferEvent> {
+        return getRequest("$API_URL/e2e/transfers", TRANSFER_EVENTS_TYPE)
+    }
+
+    fun getNfts(): List<IndexedNFT> {
+        return getRequest("$API_URL/e2e/nfts", NFTS_TYPE)
     }
 
     private fun <T> getRequest(url: String, responseType: ParameterizedTypeReference<T>): T {
