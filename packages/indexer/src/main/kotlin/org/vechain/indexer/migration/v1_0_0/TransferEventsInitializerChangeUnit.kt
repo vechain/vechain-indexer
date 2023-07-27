@@ -19,6 +19,7 @@ class TransferEventsInitializerChangeUnit {
         const val TRANSFER_FROM_IDX = "transfer_from_1_blockNumber_-1_txId_-1__id_-1"
         const val TRANSFER_TOKEN_ADDRESS_IDX =
             "transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1"
+        const val EVENT_TYPE_IDX = "event_type_1_blockNumber_-1_txId_-1__id_-1"
     }
 
     @BeforeExecution
@@ -62,10 +63,20 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
                 .background()
 
+        val eventTypeIdx: IndexDefinition =
+            Index()
+                .named(EVENT_TYPE_IDX)
+                .on(IndexedTransferEvent::eventType.name, Sort.Direction.ASC)
+                .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
+                .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
+                .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
+                .background()
+
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(toIdx)
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(fromIdx)
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(tokenAddressIdx)
+        mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(eventTypeIdx)
     }
 
     @RollbackExecution
@@ -74,6 +85,7 @@ class TransferEventsInitializerChangeUnit {
         mongoTemplate.indexOps(TRANSFER_EVENTS).dropIndex(TRANSFER_TO_IDX)
         mongoTemplate.indexOps(TRANSFER_EVENTS).dropIndex(TRANSFER_FROM_IDX)
         mongoTemplate.indexOps(TRANSFER_EVENTS).dropIndex(TRANSFER_TOKEN_ADDRESS_IDX)
+        mongoTemplate.indexOps(TRANSFER_EVENTS).dropIndex(EVENT_TYPE_IDX)
     }
 
     @RollbackBeforeExecution

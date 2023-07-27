@@ -65,12 +65,16 @@ open class TransferEventService(
     fun findByBlockNumber(
         blockNumber: Long,
         addresses: List<Address>,
-        toPageable: Pageable
+        pageable: Pageable
     ): Page<IndexedTransferEvent> {
         return transferEventRepository.findByBlockNumberAndToOrFromIn(
             blockNumber,
             addresses.map { it.value },
-            toPageable
+            pageable
         )
+    }
+
+    fun findFungibleTokensContractsByAddress(address: Address, pageable: Pageable): Page<String> {
+        return transferEventRepository.findFungibleTokensContractsByAddress(address.value, pageable)
     }
 }

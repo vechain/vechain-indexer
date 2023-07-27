@@ -49,6 +49,8 @@ abstract class AbstractIntegrationTest {
     protected val LIST_CLAUSE_TYPE = object : TypeReference<List<IndexedClause>>() {}
     protected val PAGINATED_CLAUSES_TYPE =
         object : TypeReference<PaginatedResponse<IndexedClause>>() {}
+    protected val PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE =
+        object : TypeReference<PaginatedResponse<String>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
