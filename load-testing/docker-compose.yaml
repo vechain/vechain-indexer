@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-test.js
     environment:
-      - API_URL=https://veworld.mainnet.indexer.dev-vechain.org/
+      - API_URL=https://veworld.mainnet.indexer.dev-vechain.org
     volumes:
       - ./.output:/app/.output
     networks:
