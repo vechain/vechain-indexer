@@ -554,27 +554,32 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 that(contracts1.data)
                     .hasSize(size)
                     .containsExactly("0xf7cd0c570a1007dd356fb705332bace650dfa9fb")
-                that(contracts1.pagination)
+                that(contracts1.pagination.hasCount).isTrue()
+                that(contracts1.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(contracts1.pagination.totalPages).isEqualTo(2)
                 that(contracts1.pagination.totalElements).isEqualTo(2)
+                that(contracts1.pagination.hasNext).isTrue()
 
                 // page 1 results
                 that(contracts2.data)
                     .hasSize(size)
                     .containsExactly("0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8")
-                that(contracts2.pagination)
+                that(contracts2.pagination.hasCount).isTrue()
+                that(contracts2.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(contracts2.pagination.totalPages).isEqualTo(2)
                 that(contracts2.pagination.totalElements).isEqualTo(2)
+                that(contracts2.pagination.hasNext).isFalse()
             }
         }
 
         @Test
         fun `get fungible tokens contracts should return no results for address with no fungible transfers`() {
+            /** In the test fixture, this address doesn't have any from/to transfers. */
+            val address = "0x0f872421dc479f3c11edd89512731814d0598db4"
+
             val res =
                 mockMvc
-                    .get(
-                        "$baseEndpoint/fungible-tokens-contracts?address=0x0f872421dc479f3c11edd89512731814d0598db4"
-                    )
+                    .get("$baseEndpoint/fungible-tokens-contracts?address=$address")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
@@ -597,11 +602,11 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
              * In the test fixture, this address receives some VTHO transfer. It should not should
              * show up in the fungible tokens contracts as we exclude the VTHO contract from them.
              */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
             val res =
                 mockMvc
-                    .get(
-                        "$baseEndpoint/fungible-tokens-contracts?address=0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-                    )
+                    .get("$baseEndpoint/fungible-tokens-contracts?address=$address")
                     .andExpect { status { isOk() } }
                     .andReturn()
 
