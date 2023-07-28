@@ -178,7 +178,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of origin or destination of the fungible tokens transfer events",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
