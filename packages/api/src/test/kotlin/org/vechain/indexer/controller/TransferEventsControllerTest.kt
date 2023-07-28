@@ -18,6 +18,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = TRANSFER_EVENTS_PATH
+        const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"
     }
 
     @Autowired lateinit var mockMvc: MockMvc
@@ -588,6 +589,29 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 that(contracts.pagination)
                 that(contracts.pagination.totalElements).isEqualTo(0)
             }
+        }
+
+        @Test
+        fun `get fungible tokens contracts should not return VTHO transfers`() {
+            /**
+             * In the test fixture, this address receives some VTHO transfer. It should not should
+             * show up in the fungible tokens contracts as we exclude the VTHO contract from them.
+             */
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/fungible-tokens-contracts?address=0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expect { that(contracts.data).isNotEmpty().all { isNotEqualTo(VTHO_CONTRACT_ADDRESS) } }
         }
     }
 }

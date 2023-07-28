@@ -138,34 +138,37 @@ open class TransferEventRepositoryImpl(
     }
 
     fun findFungibleTokensContractsByAddress(address: String, pageable: Pageable): Page<String> {
-        val matchAggregation =
+
+        val notVthoMatchOperation =
+            Aggregation.match(Criteria.where(TOKEN_ADDRESS).ne(VTHO_CONTRACT_ADDRESS))
+        val eventTypeMatchOperation =
+            Aggregation.match(Criteria.where(EVENT_TYPE).`is`(TransferEventType.FUNGIBLE_TOKEN))
+        val addressMatchOperation =
             Aggregation.match(
-                Criteria.where(EVENT_TYPE)
-                    .`is`(TransferEventType.FUNGIBLE_TOKEN)
-                    .andOperator(
-                        Criteria.where("")
-                            .orOperator(
-                                Criteria.where(TO).`is`(address),
-                                Criteria.where(FROM).`is`(address)
-                            )
+                Criteria.where("")
+                    .orOperator(
+                        Criteria.where(TO).`is`(address),
+                        Criteria.where(FROM).`is`(address)
                     )
             )
 
-        val groupAggregation = Aggregation.group(TOKEN_ADDRESS)
+        val groupOperation = Aggregation.group(TOKEN_ADDRESS)
 
         // count distinct fungible token contract addresses
         val fungibleTokensContractsCount =
             countRepository.getCount(
                 TRANSFER_EVENTS_COLLECTION,
-                listOf(matchAggregation),
-                groupAggregation
+                listOf(notVthoMatchOperation, eventTypeMatchOperation, addressMatchOperation),
+                groupOperation
             )
 
         // find distinct fungible token contract addresses
         val fungibleTokensContractsAggregation =
             Aggregation.newAggregation(
-                matchAggregation,
-                groupAggregation,
+                notVthoMatchOperation,
+                eventTypeMatchOperation,
+                addressMatchOperation,
+                groupOperation,
                 Aggregation.sort(pageable.sort),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                 Aggregation.limit(pageable.pageSize.toLong())
@@ -189,5 +192,6 @@ open class TransferEventRepositoryImpl(
         val FROM = IndexedTransferEvent::from.name
         val TOKEN_ADDRESS = IndexedTransferEvent::tokenAddress.name
         val EVENT_TYPE = IndexedTransferEvent::eventType.name
+        const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"
     }
 }
