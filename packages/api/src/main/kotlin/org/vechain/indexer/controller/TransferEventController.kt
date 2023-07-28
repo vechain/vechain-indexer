@@ -171,7 +171,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     }
 
     @GetMapping("/fungible-tokens-contracts")
-    @Operation(summary = "Get all fungible tokens transfers for a given owner address")
+    @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
