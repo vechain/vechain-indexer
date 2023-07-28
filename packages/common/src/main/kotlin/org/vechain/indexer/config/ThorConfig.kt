@@ -21,6 +21,11 @@ open class ThorConfig(@Value("\${thor.url}") private val thorUrl: String) {
                     codecs.defaultCodecs().maxInMemorySize(size)
                 }
                 .build()
-        return WebClient.builder().exchangeStrategies(strategies).baseUrl(thorUrl).build()
+
+        return WebClient.builder()
+            .exchangeStrategies(strategies)
+            .baseUrl(thorUrl)
+            .defaultHeaders { it.add("X-Project-Id", "veworld-indexer") }
+            .build()
     }
 }
