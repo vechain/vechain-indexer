@@ -8,7 +8,7 @@ import {DEFAULT_OPTIONS} from "./constants";
 export const options = DEFAULT_OPTIONS
 
 /**
- *  Make a GET request to the transfer events endpoint using a random address
+ *  Make a GET request to the fungible tokens contracts endpoint using a random address
  */
 export default () => {
     const account = randomElement(accounts);
