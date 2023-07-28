@@ -135,7 +135,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         )
     }
 
-    @GetMapping("forBlock")
+    @GetMapping("/forBlock")
     @Operation(summary = "Get transfer events for a specific block")
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -165,6 +165,31 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findByBlockNumber(
                 blockNumber,
                 addresses,
+                toPageable(page, size, direction)
+            )
+        )
+    }
+
+    @GetMapping("/fungible-tokens-contracts")
+    @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "address",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "The address of origin or destination of the fungible tokens transfer events",
+        required = true,
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+    )
+    @PaginationParameters
+    open fun getFungibleTokensContractsByAddress(
+        @ValidAddress @RequestParam address: Address,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<String> {
+        return paginatedResponse(
+            transferEventService.findFungibleTokensContractsByAddress(
+                address,
                 toPageable(page, size, direction)
             )
         )

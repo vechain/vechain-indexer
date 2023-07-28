@@ -4910,5 +4910,22 @@
     "topics": [],
     "eventType": "VET",
     "_class": "org.vechain.indexer.model.TransferEvent"
+  },
+  {
+    "id": "1aa99f3d79b2c43fadb19c62d404a8e17a215ba6",
+    "blockId": "0x00000014576e6a5e784b7c5ec4d7233bc5debdc4404b4b4ec6cbc9931b57bba9",
+    "blockNumber": 20,
+    "txId": "0x83211703ecc320aac3e89014a08845b6634983387b0ac340e3c80ba910cefe29",
+    "from": "0x865306084235bf804c8bba8a8d56890940ca8f0b",
+    "to": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+    "value": "754",
+    "tokenAddress": "0x0000000000000000000000000000456e65726779",
+    "topics": [
+      "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+      "0x000000000000000000000000865306084235bf804c8bba8a8d56890940ca8f0b",
+      "0x000000000000000000000000f077b491b355e64048ce21e3a6fc4751eeea77fa"
+    ],
+    "eventType": "FUNGIBLE_TOKEN",
+    "_class": "org.vechain.indexer.model.TransferEvent"
   }
 ]

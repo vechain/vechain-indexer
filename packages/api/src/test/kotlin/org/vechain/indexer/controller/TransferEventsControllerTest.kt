@@ -18,6 +18,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = TRANSFER_EVENTS_PATH
+        const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"
     }
 
     @Autowired lateinit var mockMvc: MockMvc
@@ -440,6 +441,182 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 that(transferEvents.pagination.totalElements).isEqualTo(2)
                 that(transferEvents.pagination.hasNext).isFalse()
             }
+        }
+    }
+
+    @Nested
+    inner class FungibleTokensContracts {
+
+        @Test
+        fun `get fungible tokens contracts with no address param should return BAD REQUEST`() {
+            mockMvc.get("$baseEndpoint/fungible-tokens-contracts").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        fun `get fungible tokens contracts with invalid address should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea"
+
+            mockMvc.get("$baseEndpoint/fungible-tokens-contracts?address=$address").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        fun `get fungible tokens contracts with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc
+                .get("$baseEndpoint/fungible-tokens-contracts?address=$address&size=$size")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get fungible tokens contracts should return distinct token contracts in descending order`() {
+            /**
+             * In the test fixture, this address is the origin/destination of several fungible token
+             * transfer events, but only with two contracts:
+             * ["0xf7cd0c570a1007dd356fb705332bace650dfa9fb", "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"]
+             * Most recent transfer first.
+             */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
+            val res =
+                mockMvc
+                    .get("$baseEndpoint/fungible-tokens-contracts?address=$address")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expect {
+                that(contracts.data)
+                    .hasSize(2)
+                    .containsExactly(
+                        "0xf7cd0c570a1007dd356fb705332bace650dfa9fb",
+                        "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"
+                    )
+                that(contracts.pagination)
+                that(contracts.pagination.totalElements).isEqualTo(2)
+            }
+        }
+
+        @Test
+        fun `get fungible tokens contracts should return paginated token contracts`() {
+            /**
+             * In the test fixture, this address is the origin/destination of several fungible token
+             * transfer events, but only with two contracts:
+             * ["0xf7cd0c570a1007dd356fb705332bace650dfa9fb", "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"]
+             * Most recent transfer first.
+             */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
+            val page1 = 0
+            val page2 = 1
+            val size = 1
+
+            val res1 =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/fungible-tokens-contracts?address=$address&page=$page1&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val res2 =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/fungible-tokens-contracts?address=$address&page=$page2&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts1 =
+                objectMapper.readValue(
+                    res1.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            val contracts2 =
+                objectMapper.readValue(
+                    res2.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expect {
+                // page 0 results
+                that(contracts1.data)
+                    .hasSize(size)
+                    .containsExactly("0xf7cd0c570a1007dd356fb705332bace650dfa9fb")
+                that(contracts1.pagination.hasCount).isTrue()
+                that(contracts1.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(contracts1.pagination.totalPages).isEqualTo(2)
+                that(contracts1.pagination.totalElements).isEqualTo(2)
+                that(contracts1.pagination.hasNext).isTrue()
+
+                // page 1 results
+                that(contracts2.data)
+                    .hasSize(size)
+                    .containsExactly("0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8")
+                that(contracts2.pagination.hasCount).isTrue()
+                that(contracts2.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(contracts2.pagination.totalPages).isEqualTo(2)
+                that(contracts2.pagination.totalElements).isEqualTo(2)
+                that(contracts2.pagination.hasNext).isFalse()
+            }
+        }
+
+        @Test
+        fun `get fungible tokens contracts should return no results for address with no fungible transfers`() {
+            /** In the test fixture, this address doesn't have any from/to transfers. */
+            val address = "0x0f872421dc479f3c11edd89512731814d0598db4"
+
+            val res =
+                mockMvc
+                    .get("$baseEndpoint/fungible-tokens-contracts?address=$address")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expect {
+                that(contracts.data).isEmpty()
+                that(contracts.pagination)
+                that(contracts.pagination.totalElements).isEqualTo(0)
+            }
+        }
+
+        @Test
+        fun `get fungible tokens contracts should not return VTHO transfers`() {
+            /**
+             * In the test fixture, this address receives some VTHO transfer. It should not should
+             * show up in the fungible tokens contracts as we exclude the VTHO contract from them.
+             */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
+            val res =
+                mockMvc
+                    .get("$baseEndpoint/fungible-tokens-contracts?address=$address")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expect { that(contracts.data).isNotEmpty().all { isNotEqualTo(VTHO_CONTRACT_ADDRESS) } }
         }
     }
 }
