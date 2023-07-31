@@ -53,7 +53,7 @@ open class TransactionController(private val transactionService: TransactionServ
     }
 
     @GetMapping
-    @Operation(summary = "Get all transactions by an origin address")
+    @Operation(summary = "Get all transactions by an origin or delegator address")
     @ApiResponses(
         value =
             [
@@ -77,7 +77,7 @@ open class TransactionController(private val transactionService: TransactionServ
         example = "false"
     )
     @PaginationParameters
-    open fun getTransactionsByOrigin(
+    open fun getTransactionsByOriginOrDelegator(
         @ValidAddress @RequestParam origin: Address,
         @RequestParam(required = false) includeDelegated: Boolean = false,
         @RequestParam(required = false) page: Int?,
@@ -85,7 +85,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransaction> {
         return paginatedResponse(
-            transactionService.findByOrigin(
+            transactionService.findByOriginOrDelegator(
                 origin,
                 includeDelegated,
                 toPageable(page, size, direction, "blockNumber", "_id")

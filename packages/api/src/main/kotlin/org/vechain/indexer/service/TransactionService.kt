@@ -20,7 +20,7 @@ open class TransactionService(
         return transactionRepository.findByIdOrNull(HexUtils.normalise(id))
     }
 
-    open fun findByOrigin(
+    open fun findByOriginOrDelegator(
         address: Address,
         includeDelegated: Boolean,
         pageable: Pageable
