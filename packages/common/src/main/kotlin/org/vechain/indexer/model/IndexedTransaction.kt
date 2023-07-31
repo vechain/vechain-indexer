@@ -1,14 +1,13 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.thor.model.Block
-import org.vechain.thor.model.Clause
-import org.vechain.thor.model.Transaction
-import org.vechain.thor.model.TxOutputs
+import org.vechain.thor.model.*
 
 @Document(collection = "transactions")
+@JsonView(Views.Public::class)
 data class IndexedTransaction
 @ConstructorBinding
 constructor(
@@ -20,7 +19,7 @@ constructor(
     val chainTag: Long,
     val blockRef: String,
     val expiration: Long,
-    val clauses: List<Clause>,
+    @JsonView(Views.Expanded::class) val clauses: List<Clause>,
     val gasPriceCoef: Long,
     val gas: Long,
     val dependsOn: String?,
@@ -31,7 +30,7 @@ constructor(
     val reward: String,
     val reverted: Boolean,
     val origin: String,
-    val outputs: List<TxOutputs>
+    @JsonView(Views.Expanded::class) val outputs: List<TxOutputs>
 ) : IndexedDocument {
 
     constructor(

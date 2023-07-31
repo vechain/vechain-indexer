@@ -2,6 +2,7 @@ package org.vechain.indexer.model.rest
 
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.data.domain.Page
+import org.vechain.thor.model.Views
 
 /** An API query can return at most this number of elements per page */
 const val PAGE_SIZE_LIMIT = 150

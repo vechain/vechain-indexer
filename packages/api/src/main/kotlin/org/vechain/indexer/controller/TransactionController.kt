@@ -47,7 +47,18 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
-    open fun getTransactionById(@TransactionId @PathVariable txId: String): IndexedTransaction {
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "expanded",
+        schema = Schema(type = "boolean"),
+        description = "Whether to return the expanded transaction model",
+        required = false,
+        example = "false"
+    )
+    open fun getTransactionById(
+        @TransactionId @PathVariable txId: String,
+        @RequestParam(required = false) expanded: Boolean = false
+    ): IndexedTransaction {
         return transactionService.findById(txId)
             ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
     }
@@ -76,10 +87,19 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "expanded",
+        schema = Schema(type = "boolean"),
+        description = "Whether to return the expanded transaction model",
+        required = false,
+        example = "false"
+    )
     @PaginationParameters
     open fun getTransactionsByOriginOrDelegator(
         @ValidAddress @RequestParam origin: Address,
         @RequestParam(required = false) includeDelegated: Boolean = false,
+        @RequestParam(required = false) expanded: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -109,9 +129,18 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "expanded",
+        schema = Schema(type = "boolean"),
+        description = "Whether to return the expanded transaction model",
+        required = false,
+        example = "false"
+    )
     @PaginationParameters
     open fun getDelegatedTransactions(
         @ValidAddress @RequestParam delegator: Address,
+        @RequestParam(required = false) expanded: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.model.rest.Views
+import org.vechain.thor.model.Views
 
 @Document("nfts")
 @JsonView(Views.Public::class)
