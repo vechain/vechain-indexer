@@ -15,6 +15,8 @@ class TransactionsInitializerChangeUnit {
     companion object {
         val TRANSACTIONS = IndexedTransaction::class.java
         const val TX_BLOCKNUMBER_IDX = "tx_blockNumber_-1"
+        const val TX_ORIGIN_IDX = "tx_origin_1_blockNumber_-1__id_-1"
+        const val TX_GAS_PAYER_IDX = "tx_gasPayer_1_blockNumber_-1__id_-1"
         const val TX_ORIGIN_GAS_PAYER_IDX = "tx_origin_1_gasPayer_1_blockNumber_-1__id_-1"
     }
 
@@ -32,6 +34,22 @@ class TransactionsInitializerChangeUnit {
                 .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                 .background()
 
+        val originIdx: IndexDefinition =
+            Index()
+                .named(TX_ORIGIN_IDX)
+                .on(IndexedTransaction::origin.name, Sort.Direction.ASC)
+                .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
+                .on(IndexedTransaction::id.name, Sort.Direction.DESC)
+                .background()
+
+        val gasPayerIdx: IndexDefinition =
+            Index()
+                .named(TX_GAS_PAYER_IDX)
+                .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
+                .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
+                .on(IndexedTransaction::id.name, Sort.Direction.DESC)
+                .background()
+
         val originGasPayerIdx: IndexDefinition =
             Index()
                 .named(TX_ORIGIN_GAS_PAYER_IDX)
@@ -42,12 +60,16 @@ class TransactionsInitializerChangeUnit {
                 .background()
 
         mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(blockNumberIdx)
+        mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(originIdx)
+        mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(gasPayerIdx)
         mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(originGasPayerIdx)
     }
 
     @RollbackExecution
     fun rollbackExecution(mongoTemplate: MongoTemplate) {
         mongoTemplate.indexOps(TRANSACTIONS).dropIndex(TX_BLOCKNUMBER_IDX)
+        mongoTemplate.indexOps(TRANSACTIONS).dropIndex(TX_ORIGIN_IDX)
+        mongoTemplate.indexOps(TRANSACTIONS).dropIndex(TX_GAS_PAYER_IDX)
         mongoTemplate.indexOps(TRANSACTIONS).dropIndex(TX_ORIGIN_GAS_PAYER_IDX)
     }
 
