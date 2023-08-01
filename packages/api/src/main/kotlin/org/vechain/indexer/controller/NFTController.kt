@@ -12,11 +12,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
-import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress

@@ -11,12 +11,13 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.docs.ExpandedParameter
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
-import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
@@ -47,14 +48,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "expanded",
-        schema = Schema(type = "boolean"),
-        description = "Whether to return the expanded transaction model",
-        required = false,
-        example = "false"
-    )
+    @ExpandedParameter
     open fun getTransactionById(
         @TransactionId @PathVariable txId: String,
         @RequestParam(required = false) expanded: Boolean = false
@@ -87,14 +81,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "expanded",
-        schema = Schema(type = "boolean"),
-        description = "Whether to return the expanded transaction model",
-        required = false,
-        example = "false"
-    )
+    @ExpandedParameter
     @PaginationParameters
     open fun getTransactionsByOriginOrDelegator(
         @ValidAddress @RequestParam origin: Address,
@@ -129,14 +116,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "expanded",
-        schema = Schema(type = "boolean"),
-        description = "Whether to return the expanded transaction model",
-        required = false,
-        example = "false"
-    )
+    @ExpandedParameter
     @PaginationParameters
     open fun getDelegatedTransactions(
         @ValidAddress @RequestParam delegator: Address,

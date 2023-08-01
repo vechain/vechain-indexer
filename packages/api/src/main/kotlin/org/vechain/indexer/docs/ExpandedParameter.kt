@@ -1,4 +1,4 @@
-package org.vechain.indexer.pageable
+package org.vechain.indexer.docs
 
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -6,11 +6,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Parameter(
     `in` = ParameterIn.QUERY,
-    name = "size",
-    schema = Schema(type = "Integer"),
-    description = "The results page size",
+    name = "expanded",
+    schema = Schema(type = "boolean"),
+    description = "Whether to return the expanded model",
     required = false,
-    example = "20"
+    example = "false"
 )
 @Target(
     AnnotationTarget.FUNCTION,
@@ -18,4 +18,4 @@ import io.swagger.v3.oas.annotations.media.Schema
     AnnotationTarget.VALUE_PARAMETER
 )
 @Retention(AnnotationRetention.RUNTIME)
-annotation class PaginationSize
+annotation class ExpandedParameter
