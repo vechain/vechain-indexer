@@ -1,4 +1,4 @@
-package org.vechain.indexer.pageable
+package org.vechain.indexer.docs
 
 /** All pageable parameters. */
 @PaginationPage

@@ -10,8 +10,8 @@ import org.vechain.indexer.constants.E2E_PATH
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.rest.Views
 import org.vechain.indexer.service.E2EService
+import org.vechain.thor.model.Views
 
 @Profile("e2e")
 @RestController

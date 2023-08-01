@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Address
@@ -18,7 +19,6 @@ import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
-import org.vechain.indexer.pageable.PaginationParameters
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable

@@ -2,7 +2,7 @@ package org.vechain.indexer.model
 
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.model.rest.Views
+import org.vechain.thor.model.Views
 
 @Document(collection = "archives")
 @JsonView(Views.Internal::class)

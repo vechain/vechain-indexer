@@ -166,7 +166,7 @@ object VeWorldAPIClient {
     }
 
     fun getTransactionById(id: String): IndexedTransaction {
-        return getRequest("$API_URL/transactions/${id}", TX_TYPE)
+        return getRequest("$API_URL/transactions/${id}?expanded=true", TX_TYPE)
     }
 
     fun getTransactionsByOrigin(
@@ -176,7 +176,7 @@ object VeWorldAPIClient {
         size: Int = PAGE_SIZE_LIMIT
     ): PaginatedResponse<IndexedTransaction> {
         return getRequest(
-            "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size",
+            "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size&expanded=true",
             PAGINATED_TXS_TYPE
         )
     }
@@ -187,7 +187,7 @@ object VeWorldAPIClient {
         size: Int = PAGE_SIZE_LIMIT
     ): PaginatedResponse<IndexedTransaction> {
         return getRequest(
-            "$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size",
+            "$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size&expanded=true",
             PAGINATED_TXS_TYPE
         )
     }
