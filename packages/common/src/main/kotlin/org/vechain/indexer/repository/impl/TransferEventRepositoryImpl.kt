@@ -168,8 +168,8 @@ open class TransferEventRepositoryImpl(
                 notVthoMatchOperation,
                 eventTypeMatchOperation,
                 addressMatchOperation,
-                groupOperation,
                 Aggregation.sort(pageable.sort),
+                groupOperation,
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                 Aggregation.limit(pageable.pageSize.toLong())
             )

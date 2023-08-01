@@ -437,7 +437,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 // page 0 results
                 that(contracts1.data)
                     .hasSize(size)
-                    .containsExactly("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
+                    .containsExactly("0x08f30373569af024d15eb47fd477a35db929eaac")
                 that(contracts1.pagination)
                 that(contracts1.pagination.totalPages).isEqualTo(2)
                 that(contracts1.pagination.totalElements).isEqualTo(2)
@@ -445,7 +445,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 // page 1 results
                 that(contracts2.data)
                     .hasSize(size)
-                    .containsExactly("0x08f30373569af024d15eb47fd477a35db929eaac")
+                    .containsExactly("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
                 that(contracts2.pagination)
                 that(contracts2.pagination.totalPages).isEqualTo(2)
                 that(contracts2.pagination.totalElements).isEqualTo(2)

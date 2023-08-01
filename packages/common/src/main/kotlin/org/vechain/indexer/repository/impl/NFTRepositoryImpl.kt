@@ -62,8 +62,8 @@ open class NFTRepositoryImpl(
         val contractsAggregation =
             Aggregation.newAggregation(
                 matchAggregation,
-                groupAggregation,
                 Aggregation.sort(pageable.sort),
+                groupAggregation,
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                 Aggregation.limit(pageable.pageSize.toLong())
             )

@@ -478,7 +478,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             /**
              * In the test fixture, this address is the origin/destination of several fungible token
              * transfer events, but only with two contracts:
-             * ["0xf7cd0c570a1007dd356fb705332bace650dfa9fb", "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"]
+             * ["0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8", "0xf7cd0c570a1007dd356fb705332bace650dfa9fb"]
              * Most recent transfer first.
              */
             val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
@@ -499,8 +499,8 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 that(contracts.data)
                     .hasSize(2)
                     .containsExactly(
+                        "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8",
                         "0xf7cd0c570a1007dd356fb705332bace650dfa9fb",
-                        "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"
                     )
                 that(contracts.pagination)
                 that(contracts.pagination.totalElements).isEqualTo(2)
@@ -508,11 +508,11 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get fungible tokens contracts should return paginated token contracts`() {
+        fun `get fungible tokens contracts should return paginated token contracts`() { // wrong
             /**
              * In the test fixture, this address is the origin/destination of several fungible token
              * transfer events, but only with two contracts:
-             * ["0xf7cd0c570a1007dd356fb705332bace650dfa9fb", "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8"]
+             * ["0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8", "0xf7cd0c570a1007dd356fb705332bace650dfa9fb"]
              * Most recent transfer first.
              */
             val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
@@ -553,7 +553,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 // page 0 results
                 that(contracts1.data)
                     .hasSize(size)
-                    .containsExactly("0xf7cd0c570a1007dd356fb705332bace650dfa9fb")
+                    .containsExactly("0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8")
                 that(contracts1.pagination.hasCount).isTrue()
                 that(contracts1.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(contracts1.pagination.totalPages).isEqualTo(2)
@@ -563,7 +563,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 // page 1 results
                 that(contracts2.data)
                     .hasSize(size)
-                    .containsExactly("0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8")
+                    .containsExactly("0xf7cd0c570a1007dd356fb705332bace650dfa9fb")
                 that(contracts2.pagination.hasCount).isTrue()
                 that(contracts2.pagination.countLimit).isEqualTo(COUNT_LIMIT)
                 that(contracts2.pagination.totalPages).isEqualTo(2)
