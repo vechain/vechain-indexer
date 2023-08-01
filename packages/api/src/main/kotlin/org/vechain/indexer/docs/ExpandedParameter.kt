@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema
     schema = Schema(type = "boolean"),
     description = "Whether to return the expanded model",
     required = false,
-    example = "false"
+    example = "true"
 )
 @Target(
     AnnotationTarget.FUNCTION,

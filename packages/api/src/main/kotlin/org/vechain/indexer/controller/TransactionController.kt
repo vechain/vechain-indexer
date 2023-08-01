@@ -120,7 +120,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @PaginationParameters
     open fun getDelegatedTransactions(
         @ValidAddress @RequestParam delegator: Address,
-        @RequestParam(required = false) expanded: Boolean = false,
+        @RequestParam(required = false) expanded: Boolean = true,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
