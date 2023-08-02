@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
@@ -107,6 +108,15 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
             val size = PAGE_SIZE_LIMIT + 1
 
             mockMvc.get("$BASE_ENDPOINT?address=$creatorAddress&size=$size").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        fun `get contracts with the zero address should return BAD REQUEST`() {
+            val creatorAddress = Address.ZERO_ADDRESS
+
+            mockMvc.get("$BASE_ENDPOINT?address=$creatorAddress").andExpect {
                 status { isBadRequest() }
             }
         }

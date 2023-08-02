@@ -21,4 +21,15 @@ internal class AddressTest {
     fun `check valid address`(address: String, valid: Boolean) {
         expectThat(Address(address).isValid()).isEqualTo(valid)
     }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0x, false",
+        "0X0000000000000000000000000000000000000000, false",
+        "0x0000000000000000, false",
+        "0x0000000000000000000000000000000000000000, true",
+    )
+    fun `check zero address`(address: String, isZero: Boolean) {
+        expectThat(Address(address).isZero()).isEqualTo(isZero)
+    }
 }

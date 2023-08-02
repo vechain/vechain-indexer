@@ -15,10 +15,10 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_18_BATCH_TRANSFERS_2
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_19_BATCH_TRANSFERS_3
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.TransferEventRepository
-import org.vechain.indexer.utils.AddressUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -216,7 +216,7 @@ class TransferEventIndexerTest {
         transferEventIndexer.processBlock(BLOCK_18_BATCH_TRANSFERS_2)
         transferEventIndexer.processBlock(BLOCK_19_BATCH_TRANSFERS_3)
 
-        val transfers = transfersSlot.flatten().filter { it.from != AddressUtils.ZERO_ADDRESS }
+        val transfers = transfersSlot.flatten().filter { it.from != Address.ZERO_ADDRESS }
 
         val vip210Single =
             transfers.find {

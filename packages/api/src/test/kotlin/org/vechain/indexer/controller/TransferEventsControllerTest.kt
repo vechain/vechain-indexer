@@ -7,6 +7,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
@@ -36,6 +37,13 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         mockMvc.get("$baseEndpoint?address=$address&size=$size").andExpect {
             status { isBadRequest() }
         }
+    }
+
+    @Test
+    fun `get transfer events with the zero address should return BAD REQUEST`() {
+        val address = Address.ZERO_ADDRESS
+
+        mockMvc.get("$baseEndpoint?address=$address").andExpect { status { isBadRequest() } }
     }
 
     @Test
@@ -256,6 +264,15 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get from transfer events with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint/from?address=$address").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
         fun `get transfer events for from address`() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
@@ -354,6 +371,13 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             mockMvc.get("$baseEndpoint/to?address=$address&size=$size").andExpect {
                 status { isBadRequest() }
             }
+        }
+
+        @Test
+        fun `get to transfer events with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint/to?address=$address").andExpect { status { isBadRequest() } }
         }
 
         @Test
@@ -471,6 +495,15 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             mockMvc
                 .get("$baseEndpoint/fungible-tokens-contracts?address=$address&size=$size")
                 .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get fungible tokens contracts with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint/fungible-tokens-contracts?address=$address").andExpect {
+                status { isBadRequest() }
+            }
         }
 
         @Test
