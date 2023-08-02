@@ -12,7 +12,8 @@ import org.vechain.indexer.model.Address
 @Constraint(validatedBy = [AddressValidator::class])
 @MustBeDocumented
 annotation class ValidAddress(
-    val message: String = "The provided address is invalid. It must match ${Address.REGEX}",
+    val message: String =
+        "The provided address is invalid. It must match ${Address.REGEX} and not be the zero address",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )
@@ -22,6 +23,6 @@ class AddressValidator : ConstraintValidator<ValidAddress, Address> {
         value: Address?,
         constraintValidatorContext: ConstraintValidatorContext
     ): Boolean {
-        return value == null || value.isValid()
+        return value == null || (value.isValid() && !value.isZero())
     }
 }

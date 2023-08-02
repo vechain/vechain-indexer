@@ -7,6 +7,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
@@ -28,6 +29,13 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     @Test
     fun `get clauses with path param should return NOT_FOUND`() {
         mockMvc.get("$baseEndpoint/pathParam").andExpect { status { isNotFound() } }
+    }
+
+    @Test
+    fun `get clauses with the zero address should return BAD REQUEST`() {
+        val address = Address.ZERO_ADDRESS
+
+        mockMvc.get("${baseEndpoint}?address=$address").andExpect { status { isBadRequest() } }
     }
 
     @Test

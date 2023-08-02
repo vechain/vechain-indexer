@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import org.vechain.indexer.model.rest.PaginatedResponse
@@ -39,6 +40,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
             mockMvc.get("$baseEndpoint?address=$address&size=$size").andExpect {
                 status { isBadRequest() }
             }
+        }
+
+        @Test
+        fun `get owned nfts with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint?address=$address").andExpect { status { isBadRequest() } }
         }
 
         @Test
@@ -322,6 +330,15 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val size = PAGE_SIZE_LIMIT + 1
 
             mockMvc.get("$baseEndpoint/contracts?owner=$address&size=$size").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        fun `get contracts with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint/contracts?owner=$address").andExpect {
                 status { isBadRequest() }
             }
         }

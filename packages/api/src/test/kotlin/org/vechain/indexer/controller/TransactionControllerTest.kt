@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
@@ -78,6 +79,13 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             mockMvc.get("$baseEndpoint?origin=$address&size=$size").andExpect {
                 status { isBadRequest() }
             }
+        }
+
+        @Test
+        fun `get transactions with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint?origin=$address").andExpect { status { isBadRequest() } }
         }
 
         @Test
@@ -371,6 +379,15 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
             val size = PAGE_SIZE_LIMIT + 1
 
             mockMvc.get("$baseEndpoint/delegated?delegator=$address&size=$size").andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        fun `get transactions with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
+
+            mockMvc.get("$baseEndpoint/delegated?delegator=$address").andExpect {
                 status { isBadRequest() }
             }
         }
