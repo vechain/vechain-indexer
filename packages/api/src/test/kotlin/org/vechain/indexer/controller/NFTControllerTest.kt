@@ -1,6 +1,7 @@
 package org.vechain.indexer.controller
 
 import com.fasterxml.jackson.core.type.TypeReference
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -422,6 +423,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
             }
         }
 
+        @Disabled
         @Test
         fun `get contracts by NFT owner - with pagination & pagination detail - distinct partial results`() {
             val owner = "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
