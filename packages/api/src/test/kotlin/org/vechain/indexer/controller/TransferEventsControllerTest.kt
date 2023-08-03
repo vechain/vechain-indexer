@@ -499,6 +499,94 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
     }
 
     @Nested
+    inner class ForBlockTransferEvents {
+
+        @Test
+        fun `get for block transfer events with over the limit page size should return BAD REQUEST`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0x0f872421dc479f3c11edd89512731814d0598db5"
+            val blockNumber = 18
+            val size = PAGE_SIZE_LIMIT + 1
+
+            mockMvc
+                .get(
+                    "$baseEndpoint/forBlock?addresses=$addresses&blockNumber=$blockNumber&size=$size"
+                )
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get for block transfer events with over the limit number of addresses should return BAD REQUEST`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa," +
+                    "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa," +
+                    "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa," +
+                    "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0xf077b491b355e64048ce21e3a6fc4751eeea77fa," +
+                    "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val blockNumber = 18
+
+            mockMvc
+                .get("$baseEndpoint/forBlock?addresses=$addresses&blockNumber=$blockNumber")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get for block transfer events with the zero address should return BAD REQUEST`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0x0000000000000000000000000000000000000000"
+            val blockNumber = 18
+
+            mockMvc
+                .get("$baseEndpoint/forBlock?addresses=$addresses&blockNumber=$blockNumber")
+                .andExpect { status { isBadRequest() } }
+        }
+
+        @Test
+        fun `get for block transfer events for addresses`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0x0f872421dc479f3c11edd89512731814d0598db5"
+            val blockNumber = 18
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/forBlock?addresses=$addresses" +
+                            "&blockNumber=$blockNumber" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expect {
+                that(transferEvents.data)
+                    .hasSize(6)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(
+                                compareByDescending<IndexedTransferEvent> { it.txId }
+                                    .then(compareByDescending { it.id })
+                            )
+                    )
+
+                that(transferEvents.pagination.hasCount).isTrue()
+                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(transferEvents.pagination.totalPages).isEqualTo(1)
+                that(transferEvents.pagination.totalElements).isEqualTo(6)
+                that(transferEvents.pagination.hasNext).isFalse()
+            }
+        }
+    }
+
+    @Nested
     inner class FungibleTokensContracts {
 
         @Test

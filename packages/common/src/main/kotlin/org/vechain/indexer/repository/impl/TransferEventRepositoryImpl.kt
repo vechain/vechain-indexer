@@ -181,7 +181,7 @@ open class TransferEventRepositoryImpl(
                 // post-group aliases should be used
                 Aggregation.sort(
                     Sort.by(
-                        pageable.sort.getOrderFor(NFTRepositoryImpl.BLOCK_NUMBER)!!.direction,
+                        pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
                         BLOCK_NUMBER,
                         TX_ID,
                         TRANSFER_EVENT_ID_ALIAS

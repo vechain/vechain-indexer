@@ -25,6 +25,6 @@ class AddressListValidator : ConstraintValidator<ValidAddressList, List<Address>
         value: List<Address>?,
         constraintValidatorContext: ConstraintValidatorContext
     ): Boolean {
-        return value == null || value.size <= limit || value.all { it.isValid() }
+        return value == null || (value.size <= limit && value.all { it.isValid() && !it.isZero() })
     }
 }
