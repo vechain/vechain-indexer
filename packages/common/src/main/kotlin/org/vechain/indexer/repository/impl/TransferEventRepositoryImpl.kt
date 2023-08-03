@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
@@ -152,7 +153,14 @@ open class TransferEventRepositoryImpl(
                     )
             )
 
-        val groupOperation = Aggregation.group(TOKEN_ADDRESS)
+        val groupOperation =
+            Aggregation.group(TOKEN_ADDRESS)
+                .first(BLOCK_NUMBER)
+                .`as`(BLOCK_NUMBER)
+                .first(TX_ID)
+                .`as`(TX_ID)
+                .first(TRANSFER_EVENT_ID)
+                .`as`(TRANSFER_EVENT_ID_ALIAS)
 
         // count distinct fungible token contract addresses
         val fungibleTokensContractsCount =
@@ -168,8 +176,17 @@ open class TransferEventRepositoryImpl(
                 notVthoMatchOperation,
                 eventTypeMatchOperation,
                 addressMatchOperation,
-                Aggregation.sort(pageable.sort),
                 groupOperation,
+                // Re-sorting is required here because the group stage does not preserve order, and
+                // post-group aliases should be used
+                Aggregation.sort(
+                    Sort.by(
+                        pageable.sort.getOrderFor(NFTRepositoryImpl.BLOCK_NUMBER)!!.direction,
+                        BLOCK_NUMBER,
+                        TX_ID,
+                        TRANSFER_EVENT_ID_ALIAS
+                    )
+                ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                 Aggregation.limit(pageable.pageSize.toLong())
             )
@@ -193,5 +210,9 @@ open class TransferEventRepositoryImpl(
         val TOKEN_ADDRESS = IndexedTransferEvent::tokenAddress.name
         val EVENT_TYPE = IndexedTransferEvent::eventType.name
         const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"
+        val BLOCK_NUMBER = IndexedTransferEvent::blockNumber.name
+        val TX_ID = IndexedTransferEvent::txId.name
+        val TRANSFER_EVENT_ID = IndexedTransferEvent::id.name
+        const val TRANSFER_EVENT_ID_ALIAS = "transferEventId"
     }
 }

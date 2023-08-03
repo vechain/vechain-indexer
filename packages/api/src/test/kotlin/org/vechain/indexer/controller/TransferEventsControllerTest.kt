@@ -1,6 +1,5 @@
 package org.vechain.indexer.controller
 
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,215 +24,143 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     @Autowired lateinit var mockMvc: MockMvc
 
-    @Test
-    fun `get transfer events with path param should return NOT_FOUND`() {
-        mockMvc.get("$baseEndpoint/pathParam").andExpect { status { isNotFound() } }
-    }
-
-    @Test
-    fun `get transfer events with over the limit page size should return BAD REQUEST`() {
-        val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-        val size = PAGE_SIZE_LIMIT + 1
-
-        mockMvc.get("$baseEndpoint?address=$address&size=$size").andExpect {
-            status { isBadRequest() }
+    @Nested
+    inner class AddressOrTokenAddressTransferEvents {
+        @Test
+        fun `get transfer events with path param should return NOT_FOUND`() {
+            mockMvc.get("$baseEndpoint/pathParam").andExpect { status { isNotFound() } }
         }
-    }
 
-    @Test
-    fun `get transfer events with the zero address should return BAD REQUEST`() {
-        val address = Address.ZERO_ADDRESS
+        @Test
+        fun `get transfer events with over the limit page size should return BAD REQUEST`() {
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val size = PAGE_SIZE_LIMIT + 1
 
-        mockMvc.get("$baseEndpoint?address=$address").andExpect { status { isBadRequest() } }
-    }
+            mockMvc.get("$baseEndpoint?address=$address&size=$size").andExpect {
+                status { isBadRequest() }
+            }
+        }
 
-    @Test
-    fun `get transfer events with valid address should return OK`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
+        @Test
+        fun `get transfer events with the zero address should return BAD REQUEST`() {
+            val address = Address.ZERO_ADDRESS
 
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            mockMvc.get("$baseEndpoint?address=$address").andExpect { status { isBadRequest() } }
+        }
 
-        expectThat(transferEvents.data).hasSize(12)
-    }
-
-    @Test
-    fun `get transfer events address with no hex prefix should return OK`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
-
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
-
-        expectThat(transferEvents.data).hasSize(12)
-    }
-
-    @Test
-    fun `get transfer events address uppercase should return OK`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
-
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
-
-        expectThat(transferEvents.data).hasSize(12)
-    }
-
-    @Test
-    fun `get transfer events with paginated result`() {
-        val page = 1
-        val size = 5
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
-
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
-
-        expectThat(transferEvents.data).hasSize(size)
-    }
-
-    @Test
-    fun `check transfer events is sorted by block number & txId & id`() {
-        val page = 0
-        val size = 3
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
-                )
-                .andExpect { status { isOk() } }
-                .andReturn()
-
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
-
-        expectThat(transferEvents.data)
-            .hasSize(size)
-            .isSorted(
-                compareByDescending<IndexedTransferEvent> { it.blockNumber }
-                    .then(
-                        compareByDescending<IndexedTransferEvent> { it.txId }
-                            .then(compareByDescending { it.id })
+        @Test
+        fun `get transfer events with valid address should return OK`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
                     )
-            )
-    }
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
-    @Test
-    fun `get transfer events for contract`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
-                        "&page=$page" +
-                        "&size=$size"
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
                 )
-                .andExpect { status { isOk() } }
-                .andReturn()
 
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            expectThat(transferEvents.data).hasSize(12)
+        }
 
-        expectThat(transferEvents.data).hasSize(70)
-    }
+        @Test
+        fun `get transfer events address with no hex prefix should return OK`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
-    @Test
-    fun `get transfer events for contract no hex prefix`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?tokenAddress=08f30373569af024d15eb47fd477a35db929eaac" +
-                        "&page=$page" +
-                        "&size=$size"
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
                 )
-                .andExpect { status { isOk() } }
-                .andReturn()
 
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            expectThat(transferEvents.data).hasSize(12)
+        }
 
-        expectThat(transferEvents.data).hasSize(70)
-    }
+        @Test
+        fun `get transfer events address uppercase should return OK`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0x0F872421dc479f3c11edd89512731814D0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
-    @Test
-    fun `get transfer events for contract upper case`() {
-        val page = 0
-        val size = PAGE_SIZE_LIMIT
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?tokenAddress=0x08F30373569AF024D15EB47FD477A35DB929EAAC" +
-                        "&page=$page" +
-                        "&size=$size"
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
                 )
-                .andExpect { status { isOk() } }
-                .andReturn()
 
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            expectThat(transferEvents.data).hasSize(12)
+        }
 
-        expectThat(transferEvents.data).hasSize(70)
-    }
+        @Test
+        fun `get transfer events with paginated result`() {
+            val page = 1
+            val size = 5
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
 
-    @Test
-    fun `get transfer events with pagination & sorting & pagination detail`() {
-        val page = 0
-        val size = 3
-        val result =
-            mockMvc
-                .get(
-                    "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
-                        "&page=$page" +
-                        "&size=$size"
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
                 )
-                .andExpect { status { isOk() } }
-                .andReturn()
 
-        val transferEvents =
-            objectMapper.readValue(result.response.contentAsString, PAGINATED_TRANSFER_EVENTS_TYPE)
+            expectThat(transferEvents.data).hasSize(size)
+        }
 
-        expect {
-            that(transferEvents.data)
+        @Test
+        fun `check transfer events is sorted by block number & txId & id`() {
+            val page = 0
+            val size = 3
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expectThat(transferEvents.data)
                 .hasSize(size)
                 .isSorted(
                     compareByDescending<IndexedTransferEvent> { it.blockNumber }
@@ -242,12 +169,114 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                                 .then(compareByDescending { it.id })
                         )
                 )
+        }
 
-            that(transferEvents.pagination.hasCount).isTrue()
-            that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-            that(transferEvents.pagination.totalPages).isEqualTo(4)
-            that(transferEvents.pagination.totalElements).isEqualTo(12)
-            that(transferEvents.pagination.hasNext).isTrue()
+        @Test
+        fun `get transfer events for contract`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expectThat(transferEvents.data).hasSize(70)
+        }
+
+        @Test
+        fun `get transfer events for contract no hex prefix`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?tokenAddress=08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expectThat(transferEvents.data).hasSize(70)
+        }
+
+        @Test
+        fun `get transfer events for contract upper case`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?tokenAddress=0x08F30373569AF024D15EB47FD477A35DB929EAAC" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expectThat(transferEvents.data).hasSize(70)
+        }
+
+        @Test
+        fun `get transfer events with pagination & sorting & pagination detail`() {
+            val page = 0
+            val size = 3
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            expect {
+                that(transferEvents.data)
+                    .hasSize(size)
+                    .isSorted(
+                        compareByDescending<IndexedTransferEvent> { it.blockNumber }
+                            .then(
+                                compareByDescending<IndexedTransferEvent> { it.txId }
+                                    .then(compareByDescending { it.id })
+                            )
+                    )
+
+                that(transferEvents.pagination.hasCount).isTrue()
+                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
+                that(transferEvents.pagination.totalPages).isEqualTo(4)
+                that(transferEvents.pagination.totalElements).isEqualTo(12)
+                that(transferEvents.pagination.hasNext).isTrue()
+            }
         }
     }
 
@@ -507,7 +536,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             }
         }
 
-        @Disabled
         @Test
         fun `get fungible tokens contracts should return distinct token contracts in descending order`() {
             /**
@@ -542,7 +570,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             }
         }
 
-        @Disabled
         @Test
         fun `get fungible tokens contracts should return paginated token contracts`() {
             /**
@@ -608,7 +635,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             }
         }
 
-        @Disabled
         @Test
         fun `get fungible tokens contracts should return no results for address with no fungible transfers`() {
             /** In the test fixture, this address doesn't have any from/to transfers. */

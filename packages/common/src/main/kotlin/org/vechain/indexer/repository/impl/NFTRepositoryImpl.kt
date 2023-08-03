@@ -5,8 +5,10 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -51,19 +53,36 @@ open class NFTRepositoryImpl(
     }
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
-        val matchAggregation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
-        val groupAggregation = Aggregation.group(CONTRACT_ADDRESS)
+        val matchOperation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
+
+        val groupOperation: GroupOperation =
+            Aggregation.group(CONTRACT_ADDRESS)
+                .first(BLOCK_NUMBER)
+                .`as`(BLOCK_NUMBER)
+                .first(TX_ID)
+                .`as`(TX_ID)
+                .first(NFT_ID)
+                .`as`(NFT_ID_ALIAS)
 
         // count distinct contracts
         val distinctCount =
-            countRepository.getCount(NFTS_COLLECTION, listOf(matchAggregation), groupAggregation)
+            countRepository.getCount(NFTS_COLLECTION, listOf(matchOperation), groupOperation)
 
         // find distinct contracts
         val contractsAggregation =
             Aggregation.newAggregation(
-                matchAggregation,
-                Aggregation.sort(pageable.sort),
-                groupAggregation,
+                matchOperation,
+                groupOperation,
+                // Re-sorting is required here because the group stage does not preserve order, and
+                // post-group aliases should be used
+                Aggregation.sort(
+                    Sort.by(
+                        pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
+                        BLOCK_NUMBER,
+                        TX_ID,
+                        NFT_ID_ALIAS
+                    )
+                ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                 Aggregation.limit(pageable.pageSize.toLong())
             )
@@ -80,5 +99,9 @@ open class NFTRepositoryImpl(
         val NFTS_COLLECTION = IndexedNFT::class.java
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
+        val BLOCK_NUMBER = IndexedNFT::blockNumber.name
+        val TX_ID = IndexedNFT::txId.name
+        val NFT_ID = IndexedNFT::id.name
+        const val NFT_ID_ALIAS = "nftId"
     }
 }
