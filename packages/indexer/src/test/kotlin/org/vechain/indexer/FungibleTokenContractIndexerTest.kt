@@ -17,6 +17,7 @@ import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.FungibleContractsService
+import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat

@@ -1,3 +1,4 @@
 package org.vechain.indexer.exception
 
-class ReorgException(message: String?) : Exception(message)
+/** Thrown in case a chain reorg is detected. */
+class ReorgException(message: String) : Exception(message)

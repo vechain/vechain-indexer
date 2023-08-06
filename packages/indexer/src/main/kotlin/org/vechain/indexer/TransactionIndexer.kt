@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepository
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.thor.model.Block
 
 @Profile("transactions")

@@ -11,6 +11,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepository
+import org.vechain.indexer.thor.client.DefaultThorClient
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo

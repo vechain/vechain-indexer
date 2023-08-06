@@ -8,6 +8,7 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.thor.model.Block

@@ -1,6 +1,7 @@
 package org.vechain.indexer
 
 import org.vechain.indexer.repository.BaseIndexedRepository
+import org.vechain.indexer.thor.client.ThorClient
 
 abstract class VeWorldIndexer(
     private val repository: BaseIndexedRepository<*>,

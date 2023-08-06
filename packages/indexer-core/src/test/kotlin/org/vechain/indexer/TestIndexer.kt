@@ -1,5 +1,7 @@
 package org.vechain.indexer
 
+import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.thor.model.Block
 
 class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :

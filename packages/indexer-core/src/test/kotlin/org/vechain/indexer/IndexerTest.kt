@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.TestDataHelper.Companion.getTestBlock
 import org.vechain.indexer.exception.BlockNotFoundException
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.thor.model.Block
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo

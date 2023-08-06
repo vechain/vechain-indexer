@@ -23,6 +23,7 @@ import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat

@@ -1,4 +1,4 @@
-package org.vechain.indexer
+package org.vechain.indexer.thor.client
 
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.result.Result
@@ -8,6 +8,12 @@ import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.utils.JsonUtils
 import org.vechain.thor.model.Block
 
+/**
+ * Default implementation of the {@link org.vechain.indexer.thor.client.ThorClient.class ThorClient}
+ * using the Fuel HTTP library and Jackson JSON mapper.
+ *
+ * @see <a href="https://github.com/kittinunf/fuel">Fuel Library</a>
+ */
 class DefaultThorClient(
     private val baseUrl: String,
     private vararg val headers: Pair<String, Any>
@@ -26,7 +32,9 @@ class DefaultThorClient(
                 when (result) {
                     is Result.Success -> result.get().toString(Charsets.UTF_8)
                     is Result.Failure ->
-                        throw Exception("Request failed with error: ${result.error}")
+                        throw Exception(
+                            "Get block $blockNumber request failed with error: ${result.error}"
+                        )
                     else -> null
                 }
 
@@ -45,7 +53,7 @@ class DefaultThorClient(
                 when (result) {
                     is Result.Success -> result.get().toString(Charsets.UTF_8)
                     is Result.Failure ->
-                        throw Exception("Request failed with error: ${result.error}")
+                        throw Exception("Get best block request failed with error: ${result.error}")
                     else -> null
                 }
 
