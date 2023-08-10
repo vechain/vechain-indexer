@@ -104,10 +104,10 @@ abstract class Indexer(
 
             val block = getBlockFromChain(currentBlockNumber)
 
-            // Check for reorg.
+            // Check for chain re-organization.
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
                 throw ReorgException(
-                    "Chain reorganization detected @ Block $currentBlockNumber with parent block ID ${block.parentID}"
+                    "Chain re-organization detected @ Block $currentBlockNumber with parent block ID ${block.parentID}"
                 )
 
             if (logger.isDebugEnabled)

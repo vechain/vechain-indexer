@@ -5,7 +5,7 @@ Simply extend the class and implement the abstract methods:
 
 - `getLastSyncedBlockNumber` - should calculate the number of the last block that was synced by the indexer.
 - `rollback` - should undo the effects of processing a block. This is used when the indexer needs to roll back to
-  a previous block for example in the event of a re-org or on startup to ensure data integrity.
+  a previous block for example in the event of a re-organization or on startup to ensure data integrity.
 - `processBlock` - the core business logic of the indexer. Generally the block data will be parsed and stored in a
   database.
 

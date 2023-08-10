@@ -154,7 +154,7 @@ internal class IndexerTest {
             }
 
         @Test
-        fun `Indexer should restart at block previous to current block when a reorganization is detected`() =
+        fun `Indexer should restart at block previous to current block when a re-organization is detected`() =
             runBlocking {
                 val startBlock = 0L
                 val iterationsWithoutError = 99L
@@ -174,7 +174,7 @@ internal class IndexerTest {
                     iterationsWithoutError
                 every { responseMocker.processBlock(any()) } just Runs
 
-                // Run indexer for a few iterations more after reorg detected
+                // Run indexer for a few iterations more after re-organization detected
                 val job = launch { indexer.start(reorgBlockNumber + 2) }
                 job.join()
 
@@ -182,9 +182,10 @@ internal class IndexerTest {
                     // Indexer should have advanced processing after successfully restarting
                     // processing of faulty block
                     that(indexer.currentBlockNumber).isEqualTo(reorgBlockNumber)
-                    // Indexer should switch back to SYNCING status after reorg detection
+                    // Indexer should switch back to SYNCING status after re-organization detection
                     expectThat(indexer.status).isEqualTo(Status.SYNCING)
-                    // The reorg at block reorgBlockNumber should trigger a rollback of block
+                    // The re-organization at block reorgBlockNumber should trigger a rollback of
+                    // block
                     // (reorgBlockNumber - 1) data
                     verify(exactly = 1) { responseMocker.rollback(reorgBlockNumber - 1) }
                 }
@@ -285,10 +286,10 @@ internal class IndexerTest {
             }
 
         @Test
-        fun `Indexer should switch to REORG status upon chain reorganization`() = runBlocking {
+        fun `Indexer should switch to REORG status upon chain re-organization`() = runBlocking {
             val reorgBlock = 100L
 
-            // Simulate reorg detection by detecting invalid parent block id at reorgBlock
+            // Simulate re-organization by detecting invalid parent block id at reorgBlock
             coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
                 {
                     // At reorgBlock, the parent id is invalid
@@ -305,7 +306,7 @@ internal class IndexerTest {
             job.join()
 
             expect {
-                // The current block number should match the reorg block
+                // The current block number should match the re-organization block
                 that(indexer.currentBlockNumber).isEqualTo(reorgBlock)
                 // The indexer status should switch to REORG
                 that(indexer.status).isEqualTo(Status.REORG)
