@@ -2,7 +2,7 @@ package org.vechain.indexer.model
 
 /** Common interface to all mongo documents representing blockchain data. */
 interface IndexedDocument {
-    // To determine if a re-org has happened
+    // To determine if a re-organization has happened
     val blockId: String
 
     // To find the starting point on restarts

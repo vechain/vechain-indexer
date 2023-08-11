@@ -19,6 +19,7 @@ import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.TransferEventRepository
+import org.vechain.indexer.thor.client.DefaultThorClient
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize

@@ -13,6 +13,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repository.ClauseRepository
+import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.thor.model.TxEvent
 import org.vechain.thor.model.TxOutputs
 import strikt.api.expect

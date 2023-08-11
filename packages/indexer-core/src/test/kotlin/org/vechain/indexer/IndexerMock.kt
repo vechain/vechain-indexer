@@ -1,8 +1,10 @@
 package org.vechain.indexer
 
+import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.thor.model.Block
 
-class TestIndexer(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
+class IndexerMock(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
     Indexer(DefaultThorClient("notarealurl"), 0L) {
 
     override val thorClient: ThorClient = thorClientMock

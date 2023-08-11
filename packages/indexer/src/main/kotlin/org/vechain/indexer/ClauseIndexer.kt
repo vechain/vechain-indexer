@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repository.ClauseRepository
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
 

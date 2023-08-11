@@ -9,6 +9,7 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.FungibleTokenContractsRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.FungibleContractsService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.thor.model.Block
 

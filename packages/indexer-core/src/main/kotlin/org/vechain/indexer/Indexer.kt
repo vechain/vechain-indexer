@@ -7,15 +7,22 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.thor.model.Block
 
+/** The possible states the indexer can be */
 enum class Status {
+    /** Indexer is processing blocks */
     SYNCING,
+    /** Indexing is up-to-date with the latest on-chain block */
     FULLY_SYNCED,
+    /** A chain re-organization has been detected during processing */
     REORG,
+    /** Indexer encountered an unknown exception during processing */
     ERROR
 }
 
+/** Initial processing backoff duration */
 const val INITIAL_BACKOFF_PERIOD = 10_000L
 
 abstract class Indexer(
@@ -24,8 +31,13 @@ abstract class Indexer(
     private val syncLoggerInterval: Long = 1000L,
 ) {
 
+    /** ID of the block before the currently latest block processed */
     private var previousBlockId: String? = null
 
+    /**
+     * Number of indexer iterations remaining in case a given number of iterations has been
+     * specified
+     */
     private var remainingIterations: Long? = null
 
     val name: String
@@ -44,6 +56,7 @@ abstract class Indexer(
 
     private var backoffPeriod = 0L
 
+    /** Initialises the indexer processing */
     private suspend fun initialise(
         blockNumber: Long = maxOf(getLastSyncedBlockNumber(), startBlock)
     ) {
@@ -57,6 +70,7 @@ abstract class Indexer(
         previousBlockId = getBlockFromChain(maxOf(blockNumber - 1, 0)).id
     }
 
+    /** Starts the indexer processing */
     suspend fun start(iterations: Long? = null) {
         remainingIterations = iterations
 
@@ -67,6 +81,7 @@ abstract class Indexer(
         run()
     }
 
+    /** Restarts the processing based on the current indexer status */
     private suspend fun restart() {
         // Initialise the indexer
         when (status) {
@@ -78,9 +93,10 @@ abstract class Indexer(
         logger.info("Restarting indexer @ Block: $currentBlockNumber")
     }
 
+    /** The core indexer logic */
     private tailrec suspend fun run() {
         try {
-            if (hasIndexerFinished()) return
+            if (hasNoRemainingIterations()) return
 
             backoffDelay()
 
@@ -88,9 +104,11 @@ abstract class Indexer(
 
             val block = getBlockFromChain(currentBlockNumber)
 
-            // Check for reorg.
+            // Check for chain re-organization.
             if (currentBlockNumber > startBlock && previousBlockId != block.parentID)
-                throw ReorgException("Reorg detected")
+                throw ReorgException(
+                    "Chain re-organization detected @ Block $currentBlockNumber with parent block ID ${block.parentID}"
+                )
 
             if (logger.isDebugEnabled)
                 logger.debug("Processing @ Block $currentBlockNumber ($status)")
@@ -115,7 +133,13 @@ abstract class Indexer(
         run()
     }
 
-    private fun hasIndexerFinished(): Boolean {
+    /**
+     * Checks whether there are remaining indexer iterations in case a given number of iterations
+     * has been specified
+     *
+     * @return whether indexer has remaining iterations
+     */
+    private fun hasNoRemainingIterations(): Boolean {
         if (remainingIterations != null) {
             if (remainingIterations!! <= 0) {
                 logger.info("Indexer finished at block $currentBlockNumber")
@@ -141,6 +165,12 @@ abstract class Indexer(
         status = Status.REORG
     }
 
+    /**
+     * Ensures that indexer is fully synced, recalculates the backoff period & increments the
+     * current block number
+     *
+     * @param block the block to undergo post-processing
+     */
     private suspend fun postProcessBlock(block: Block) {
 
         // Every 20 blocks, check if we are fully synced.
@@ -167,6 +197,7 @@ abstract class Indexer(
         timeLastProcessed = LocalDateTime.now(ZoneOffset.UTC)
     }
 
+    /** Ensures that indexer is not behind on-chain best block when in fully synced state */
     private suspend fun ensureFullySynced() {
         if (status == Status.FULLY_SYNCED) {
             val latestBlock = getBestBlockFromChain()
@@ -186,30 +217,46 @@ abstract class Indexer(
     }
 
     /**
-     * getBlockFromChain will return the block from the chain, or throw a BlockNotFoundException if
-     * it doesn't exist.
+     * Returns the block identified by its number from the chain, or throw a BlockNotFoundException
+     * if it doesn't exist.
+     *
+     * @param blockNumber the block number
+     * @return the block corresponding to the number
+     * @throws BlockNotFoundException if no block is found with that number
      */
     private suspend fun getBlockFromChain(blockNumber: Long): Block {
         return thorClient.getBlock(blockNumber)
     }
 
     /**
-     * getBestBlockFromChain will return the latest block from the chain, or throw a
-     * BlockNotFoundException if it doesn't exist.
+     * Returns the latest block from the chain
+     *
+     * @return the chain best block
+     * @throws BlockNotFoundException if not found
      */
     private suspend fun getBestBlockFromChain(): Block {
         return thorClient.getBestBlock()
     }
 
-    /** getLastSyncedBlock will return the last block that was successfully processed. */
+    /**
+     * Returns the last block that was successfully processed.
+     *
+     * @return last synced block number
+     */
     abstract fun getLastSyncedBlockNumber(): Long
 
     /**
-     * rollback will roll back changes made in the given block number. blockNumber will always be
-     * the last synchronized block. It is provided as a parameter here for convenience.
+     * Rolls back changes made in the given block number. The block number will always be the last
+     * synchronized block. It is provided as a parameter here for convenience.
+     *
+     * @param blockNumber the block number to be rolled back
      */
     abstract fun rollback(blockNumber: Long)
 
-    /** processBlock contains the business logic for this indexer. */
+    /**
+     * Holds the business logic for this indexer.
+     *
+     * @param block the block to be processed
+     */
     abstract fun processBlock(block: Block)
 }
