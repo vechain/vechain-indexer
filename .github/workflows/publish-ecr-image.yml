@@ -21,6 +21,9 @@ on:
       imagePlatform:
         required: false
         type: string
+      env:
+        required: true
+        type: string
 
 jobs:
   build-and-publish:
@@ -29,6 +32,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.workingDirectory }}
+
+    environment: ${{ inputs.env }}
 
     steps:
       - name: Checkout repository

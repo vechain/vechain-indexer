@@ -27,6 +27,7 @@ jobs:
     with:
       imageTag: ${{ github.sha }}
       latestTag: ${{needs.setup-env.outputs.latest-tag}}
+      env: dev
     secrets: inherit
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
