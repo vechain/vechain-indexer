@@ -13,4 +13,5 @@ jobs:
     with:
       imageTag: ${{ github.ref_name }}
       latestTag: prod-latest
+      env: Prod
     secrets: inherit

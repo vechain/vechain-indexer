@@ -9,6 +9,9 @@ on:
       latestTag:
         required: true
         type: string
+      env:
+        required: true
+        type: string
 
 jobs:
   publish-application-images:
@@ -26,13 +29,4 @@ jobs:
       workingDirectory: ./
       packageName: ${{ matrix.application }}
       imagePlatform: linux/arm64
-  publish-mongo-setup-image:
-    name: Publish Mongo Setup Image
-    secrets: inherit
-    uses: ./.github/workflows/publish-ecr-image.yml
-    with:
-      latestTag: ${{ inputs.latestTag }}
-      imageTag: ${{ inputs.imageTag }}
-      workingDirectory: database
-      packageName: mongo-setup-script
-      imagePlatform: linux/arm64
+      env: ${{ inputs.env }}
