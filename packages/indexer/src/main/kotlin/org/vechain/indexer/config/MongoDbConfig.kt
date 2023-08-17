@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 @Configuration
 @EnableMongoRepositories(basePackages = ["org.vechain.indexer"])
 open class MongoDbConfig(private val mongoTemplate: MongoTemplate) {
+
     @Bean("mongoTransactionManager")
     open fun mongoTransactionManager(): MongoTransactionManager {
         return MongoTransactionManager(mongoTemplate.mongoDatabaseFactory)
