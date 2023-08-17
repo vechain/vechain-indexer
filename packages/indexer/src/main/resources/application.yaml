@@ -30,8 +30,9 @@ management:
 
 spring.data:
   mongodb:
-    uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
-    auto-index-creation: false
+    uri: ${MONGO_URI:mongodb://@localhost:27017/vechain?authSource=admin}
+    username: ${MONGO_USERNAME:indexer}
+    password: ${MONGO_PASSWORD:password}
 
 thor:
   url: ${THOR_URL:http://localhost:8669}
