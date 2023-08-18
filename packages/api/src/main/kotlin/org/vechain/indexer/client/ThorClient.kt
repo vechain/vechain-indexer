@@ -9,10 +9,14 @@ import org.vechain.thor.model.Block
 @Service
 class ThorClient(private val thorRest: WebClient) {
 
+    private val projectIdHeader = "X-Project-Id"
+    private val projectIdVal = "veworld-indexer"
+
     fun getBestBlock(expanded: Boolean = true): Block {
         return thorRest
             .get()
             .uri("/blocks/best?expanded=$expanded")
+            .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
@@ -23,6 +27,7 @@ class ThorClient(private val thorRest: WebClient) {
         return thorRest
             .get()
             .uri("/blocks/finalized?expanded=$expanded")
+            .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
@@ -33,6 +38,7 @@ class ThorClient(private val thorRest: WebClient) {
         return thorRest
             .get()
             .uri("/blocks/${blockNumber}?expanded=$expanded")
+            .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
@@ -43,6 +49,7 @@ class ThorClient(private val thorRest: WebClient) {
         return thorRest
             .get()
             .uri("/blocks/${blockId}?expanded=$expanded")
+            .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
             .block()
