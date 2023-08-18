@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.core.ParameterizedTypeReference
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.client.ThorClient
@@ -45,10 +46,17 @@ open class OfficialTokenService(
                 "Token registry not loaded from API. Will load from local JSON. ${e.message}"
             )
 
-            getTokenRegistryInfoFromJson(networkType).let { token ->
-                officialTokenAddress = token.map { it.address }
-            }
+            if (officialTokenAddress.isEmpty())
+                getTokenRegistryInfoFromJson(networkType).let { token ->
+                    officialTokenAddress = token.map { it.address }
+                }
         }
+    }
+
+    // Load data every hour on the hour
+    @Scheduled(cron = "0 0 * * * *")
+    fun loadDataHourly() {
+        loadData()
     }
 
     open fun getOfficialTokenAddresses(): List<String> {
