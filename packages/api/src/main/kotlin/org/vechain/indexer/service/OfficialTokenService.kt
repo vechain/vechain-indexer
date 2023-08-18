@@ -38,7 +38,9 @@ open class OfficialTokenService(
         try {
             val tokenRegistry = getTokenRegistryInfoFromApi(networkType)
 
-            logger.info("Token registry loaded from API")
+            logger.info(
+                "${tokenRegistry.size} official tokens loaded from API for network $networkType"
+            )
 
             officialTokenAddress = tokenRegistry.map { it.address }
         } catch (e: Exception) {

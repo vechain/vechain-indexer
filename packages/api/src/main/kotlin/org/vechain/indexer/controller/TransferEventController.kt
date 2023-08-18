@@ -180,6 +180,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "officialTokensOnly",
+        schema = Schema(type = "boolean"),
+        description = "If set to true, only official tokens will be returned. Defaults to false.",
+        required = false,
+        example = "false"
+    )
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
         @ValidAddress @RequestParam address: Address,
