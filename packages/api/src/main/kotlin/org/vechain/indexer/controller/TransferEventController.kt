@@ -180,6 +180,15 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "officialTokensOnly",
+        schema = Schema(type = "boolean"),
+        description =
+            "A flag to indicate if only official tokens should be returned. See https://github.com/vechain/token-registry",
+        required = false,
+        example = "false"
+    )
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
         @ValidAddress @RequestParam address: Address,
