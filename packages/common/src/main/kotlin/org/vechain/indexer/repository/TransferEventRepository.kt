@@ -43,5 +43,9 @@ interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent> 
         pageable: Pageable
     ): Page<IndexedTransferEvent>
 
-    fun findFungibleTokensContractsByAddress(address: String, pageable: Pageable): Page<String>
+    fun findFungibleTokensContractsByAddress(
+        address: String,
+        tokenWhitelist: List<String>,
+        pageable: Pageable
+    ): Page<String>
 }
