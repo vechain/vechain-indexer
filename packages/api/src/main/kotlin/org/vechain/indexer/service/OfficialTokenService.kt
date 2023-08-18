@@ -26,7 +26,14 @@ open class OfficialTokenService(
 
     @EventListener(ApplicationReadyEvent::class)
     fun loadData() {
-        val networkType = thorClient.getNetworkType()
+        val networkType =
+            try {
+                thorClient.getNetworkType()
+            } catch (e: Exception) {
+                logger.warn("Failed to get network type. Setting to OTHER. ${e.message}")
+                NetworkType.OTHER
+            }
+
         try {
             val tokenRegistry = getTokenRegistryInfoFromApi(networkType)
 
