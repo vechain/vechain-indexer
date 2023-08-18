@@ -138,7 +138,11 @@ open class TransferEventRepositoryImpl(
         return PageImpl(results, pageable, count)
     }
 
-    fun findFungibleTokensContractsByAddress(address: String, pageable: Pageable): Page<String> {
+    fun findFungibleTokensContractsByAddress(
+        address: String,
+        tokenWhitelist: List<String>,
+        pageable: Pageable
+    ): Page<String> {
 
         val notVthoMatchOperation =
             Aggregation.match(Criteria.where(TOKEN_ADDRESS).ne(VTHO_CONTRACT_ADDRESS))
@@ -152,6 +156,8 @@ open class TransferEventRepositoryImpl(
                         Criteria.where(FROM).`is`(address)
                     )
             )
+        val tokenWhitelistOperation =
+            Aggregation.match(Criteria.where(TOKEN_ADDRESS).`in`(tokenWhitelist))
 
         val groupOperation =
             Aggregation.group(TOKEN_ADDRESS)
@@ -162,33 +168,43 @@ open class TransferEventRepositoryImpl(
                 .first(TRANSFER_EVENT_ID)
                 .`as`(TRANSFER_EVENT_ID_ALIAS)
 
+        // Constructing the basic operations list
+        val matchOperations =
+            mutableListOf(notVthoMatchOperation, eventTypeMatchOperation, addressMatchOperation)
+
+        // Only add tokenWhitelistOperation if tokenWhitelist is not empty
+        if (tokenWhitelist.isNotEmpty()) {
+            matchOperations.add(tokenWhitelistOperation)
+        }
+
         // count distinct fungible token contract addresses
         val fungibleTokensContractsCount =
             countRepository.getCount(
                 TRANSFER_EVENTS_COLLECTION,
-                listOf(notVthoMatchOperation, eventTypeMatchOperation, addressMatchOperation),
+                matchOperations, // Using plus to concatenate lists
                 groupOperation
             )
 
         // find distinct fungible token contract addresses
         val fungibleTokensContractsAggregation =
             Aggregation.newAggregation(
-                notVthoMatchOperation,
-                eventTypeMatchOperation,
-                addressMatchOperation,
-                groupOperation,
-                // Re-sorting is required here because the group stage does not preserve order, and
-                // post-group aliases should be used
-                Aggregation.sort(
-                    Sort.by(
-                        pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
-                        BLOCK_NUMBER,
-                        TX_ID,
-                        TRANSFER_EVENT_ID_ALIAS
+                matchOperations +
+                    listOf(
+                        groupOperation,
+                        // Re-sorting is required here because the group stage does not preserve
+                        // order, and
+                        // post-group aliases should be used
+                        Aggregation.sort(
+                            Sort.by(
+                                pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
+                                BLOCK_NUMBER,
+                                TX_ID,
+                                TRANSFER_EVENT_ID_ALIAS
+                            )
+                        ),
+                        Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                        Aggregation.limit(pageable.pageSize.toLong())
                     )
-                ),
-                Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                Aggregation.limit(pageable.pageSize.toLong())
             )
         val distinctFungibleTokensContracts =
             mongoTemplate

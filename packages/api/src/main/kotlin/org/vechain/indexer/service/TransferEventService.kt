@@ -12,6 +12,7 @@ import org.vechain.indexer.repository.TransferEventRepository
 @Service
 open class TransferEventService(
     private val transferEventRepository: TransferEventRepository,
+    private val officialTokenService: OfficialTokenService
 ) {
 
     fun find(
@@ -74,7 +75,18 @@ open class TransferEventService(
         )
     }
 
-    fun findFungibleTokensContractsByAddress(address: Address, pageable: Pageable): Page<String> {
-        return transferEventRepository.findFungibleTokensContractsByAddress(address.value, pageable)
+    fun findFungibleTokensContractsByAddress(
+        address: Address,
+        officialTokensOnly: Boolean,
+        pageable: Pageable
+    ): Page<String> {
+        val whitelist =
+            if (officialTokensOnly) officialTokenService.getOfficialTokenAddresses()
+            else emptyList()
+        return transferEventRepository.findFungibleTokensContractsByAddress(
+            address.value,
+            whitelist,
+            pageable
+        )
     }
 }

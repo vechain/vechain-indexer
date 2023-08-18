@@ -18,5 +18,5 @@ data class Block(
     val signer: String,
     val isTrunk: Boolean,
     val isFinalized: Boolean,
-    val transactions: List<Transaction>
+    val transactions: List<Transaction> = emptyList(),
 )

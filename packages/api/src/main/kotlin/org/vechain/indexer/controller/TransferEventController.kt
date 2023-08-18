@@ -183,6 +183,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
         @ValidAddress @RequestParam address: Address,
+        @RequestParam(required = false) officialTokensOnly: Boolean = false,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -190,6 +191,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         return paginatedResponse(
             transferEventService.findFungibleTokensContractsByAddress(
                 address,
+                officialTokensOnly,
                 toPageable(page, size, direction)
             )
         )
