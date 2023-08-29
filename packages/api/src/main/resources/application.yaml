@@ -17,7 +17,7 @@ logging:
 
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:nft-events,clauses,blocks,contracts,transactions,transfer-events,fungible-token-contracts}
+    active: ${SPRING_PROFILES_ACTIVE:nft-events,clauses,blocks,contracts,transactions,transfer-events}
   output:
     ansi:
       enabled: always
