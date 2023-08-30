@@ -216,10 +216,6 @@ object VeWorldAPIClient {
         else throw Exception("No address or tokenAddress provided")
     }
 
-    fun getFungibleTokenContracts(address: String): List<String> {
-        return getRequest("$API_URL/fungibles/contracts?owner=$address", FUNGIBLE_CONTRACTS_TYPE)
-    }
-
     fun getNftArchives(): List<Archive<IndexedNFT>> {
         return getRequest("$API_URL/e2e/nfts-archives", NFT_ARCHIVES_TYPE)
     }
