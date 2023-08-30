@@ -5,8 +5,8 @@ import com.github.kittinunf.result.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.vechain.indexer.exception.BlockNotFoundException
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.JsonUtils
-import org.vechain.thor.model.Block
 
 /**
  * Default implementation of the {@link org.vechain.indexer.thor.client.ThorClient.class ThorClient}

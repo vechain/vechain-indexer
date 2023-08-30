@@ -1,7 +1,7 @@
 package org.vechain.indexer.fixtures
 
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.JsonUtils
-import org.vechain.thor.model.Block
 
 object BlockFixtures {
 

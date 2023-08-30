@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.NotFoundException
 import org.vechain.indexer.model.NetworkType
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 @Service
 class ThorClient(private val thorRest: WebClient) {

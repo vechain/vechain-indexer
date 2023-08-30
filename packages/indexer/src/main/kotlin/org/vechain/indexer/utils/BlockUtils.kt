@@ -4,7 +4,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.thor.model.*
+import org.vechain.indexer.thor.model.*
 import org.web3j.utils.Numeric
 
 object BlockUtils {

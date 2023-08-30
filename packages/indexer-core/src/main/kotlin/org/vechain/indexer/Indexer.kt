@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.ReorgException
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 /** The possible states the indexer can be */
 enum class Status {

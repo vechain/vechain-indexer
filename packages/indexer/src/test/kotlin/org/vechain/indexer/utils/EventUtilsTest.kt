@@ -3,7 +3,7 @@ package org.vechain.indexer.utils
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.thor.model.TxEvent
+import org.vechain.indexer.thor.model.TxEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize

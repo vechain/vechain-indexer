@@ -1,3 +1,3 @@
 dependencies {
-    implementation(project(":packages:thor-model"))
+    implementation(project(":packages:indexer-core"))
 }

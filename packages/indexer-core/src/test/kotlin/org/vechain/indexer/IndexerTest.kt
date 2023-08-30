@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.BlockFixture.Companion.buildBlock
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo

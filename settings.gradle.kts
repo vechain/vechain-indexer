@@ -9,7 +9,6 @@ rootProject.name = "vechain-indexer"
 
 include("packages:api")
 include("packages:common")
-include("packages:thor-model")
 include("packages:indexer-core")
 include("packages:indexer")
 include("packages:e2e")

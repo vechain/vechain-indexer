@@ -1,8 +1,8 @@
 package org.vechain.indexer.model.rest
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.vechain.thor.model.TxEvent
-import org.vechain.thor.model.TxTransfer
+import org.vechain.indexer.thor.model.TxEvent
+import org.vechain.indexer.thor.model.TxTransfer
 
 data class ExecuteCodeResponse
 @ConstructorBinding

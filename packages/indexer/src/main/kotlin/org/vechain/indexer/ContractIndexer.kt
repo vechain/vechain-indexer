@@ -8,8 +8,8 @@ import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
-import org.vechain.thor.model.Block
 
 @Profile("contracts")
 @Component

@@ -12,8 +12,8 @@ import org.vechain.indexer.exception.NotFoundException
 import org.vechain.indexer.model.rest.AccountCodeResponse
 import org.vechain.indexer.model.rest.ExecuteCodeRequest
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
-import org.vechain.thor.model.Block
-import org.vechain.thor.model.Clause
+import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.Clause
 
 @Service
 class ThorService(private val thorRest: WebClient) {

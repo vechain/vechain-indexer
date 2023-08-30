@@ -1,4 +1,4 @@
-package org.vechain.thor.model
+package org.vechain.indexer.thor.model
 
 class Views {
 

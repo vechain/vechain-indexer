@@ -11,7 +11,7 @@ import org.vechain.indexer.model.IndexedBlock
 import org.vechain.indexer.repository.BlockRepository
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 @Profile("blocks")
 @Component

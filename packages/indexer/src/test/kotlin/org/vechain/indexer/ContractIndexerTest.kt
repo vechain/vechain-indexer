@@ -26,8 +26,8 @@ import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.service.ThorService
 import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.IdUtils
-import org.vechain.thor.model.Block
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.api.expectThrows
