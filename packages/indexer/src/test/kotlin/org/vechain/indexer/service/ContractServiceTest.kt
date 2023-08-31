@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
-import org.vechain.thor.model.Clause
+import org.vechain.indexer.thor.model.Clause
 import strikt.api.expectThat
 import strikt.assertions.*
 

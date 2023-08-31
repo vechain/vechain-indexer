@@ -1,6 +1,6 @@
 package org.vechain.indexer.thor.client
 
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 /**
  * Client interface to access the Thorest RESTful API of the VeChain Thor Network.

@@ -1,6 +1,6 @@
 package org.vechain.indexer
 
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 class BlockFixture {
     companion object {

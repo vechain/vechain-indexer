@@ -4,10 +4,10 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.thor.model.Block
-import org.vechain.thor.model.Clause
-import org.vechain.thor.model.Transaction
-import org.vechain.thor.model.TxOutputs
+import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.Transaction
+import org.vechain.indexer.thor.model.TxOutputs
 
 @Document(collection = "clauses")
 data class IndexedClause

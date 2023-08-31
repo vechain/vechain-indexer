@@ -9,7 +9,7 @@ import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.mvc.method.annotation.AbstractMappingJacksonResponseBodyAdvice
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
-import org.vechain.thor.model.Views
+import org.vechain.indexer.thor.model.Views
 
 @RestControllerAdvice
 open class ResponseMappingControllerAdvice : AbstractMappingJacksonResponseBodyAdvice() {

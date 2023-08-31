@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.TransferEventRepository
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.BlockUtils
-import org.vechain.thor.model.Block
 
 @Profile("transfer-events")
 @Component

@@ -9,13 +9,13 @@ import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
+import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.Transaction
+import org.vechain.indexer.thor.model.TxEvent
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.TransactionUtils
-import org.vechain.thor.model.Block
-import org.vechain.thor.model.Clause
-import org.vechain.thor.model.Transaction
-import org.vechain.thor.model.TxEvent
 import org.web3j.utils.Numeric
 
 @Profile("contracts")

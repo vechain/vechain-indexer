@@ -2,7 +2,7 @@ package org.vechain.indexer
 
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.thor.model.Block
+import org.vechain.indexer.thor.model.Block
 
 class IndexerMock(private val mocker: IndexerResponseMocker, thorClientMock: ThorClient) :
     Indexer(DefaultThorClient("notarealurl"), 0L) {

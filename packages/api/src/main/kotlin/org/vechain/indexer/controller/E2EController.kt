@@ -11,7 +11,7 @@ import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.service.E2EService
-import org.vechain.thor.model.Views
+import org.vechain.indexer.thor.model.Views
 
 @Profile("e2e")
 @RestController
