@@ -2,7 +2,7 @@ package org.vechain.indexer
 
 import org.vechain.indexer.thor.model.Block
 
-class BlockFixture {
+class BlockTestBuilder {
     companion object {
         fun buildBlock(num: Long, parentId: String = "0x${maxOf(num - 1, 0)}"): Block {
             return Block(

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.BlockFixture.Companion.buildBlock
+import org.vechain.indexer.BlockTestBuilder.Companion.buildBlock
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block

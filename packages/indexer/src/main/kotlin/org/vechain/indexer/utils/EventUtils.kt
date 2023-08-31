@@ -13,6 +13,7 @@ import org.web3j.abi.datatypes.DynamicArray
 import org.web3j.abi.datatypes.Event
 import org.web3j.abi.datatypes.Utf8String
 import org.web3j.abi.datatypes.generated.Uint256
+import org.web3j.protocol.core.methods.response.Log
 import org.web3j.tx.Contract
 import org.web3j.utils.Numeric
 
@@ -105,7 +106,7 @@ object EventUtils {
                     VIP_TRANSFER_SINGLE_EVENT
                 else throw IllegalArgumentException("Invalid event signature")
 
-            val eventParameters = Contract.staticExtractEventParameters(ev, event.toLog())
+            val eventParameters = Contract.staticExtractEventParameters(ev, buildEventLog(event))
 
             val tokenId = eventParameters.nonIndexedValues[0] as Uint256
             val amount = eventParameters.nonIndexedValues[1] as Uint256
@@ -137,7 +138,7 @@ object EventUtils {
                     VIP_TRANSFER_BATCH_EVENT
                 else throw IllegalArgumentException("Invalid event signature")
 
-            val eventParameters = Contract.staticExtractEventParameters(ev, event.toLog())
+            val eventParameters = Contract.staticExtractEventParameters(ev, buildEventLog(event))
 
             val tokenIds = eventParameters.nonIndexedValues[0] as DynamicArray<*>
             val amounts = eventParameters.nonIndexedValues[1] as DynamicArray<*>
@@ -158,6 +159,15 @@ object EventUtils {
             logger.error("Error parsing batch transfer event", e)
             throw e
         }
+    }
+
+    /** This can be used for decoding events with Web3J */
+    private fun buildEventLog(txEvent: TxEvent): Log {
+        val log = Log()
+        log.address = txEvent.address
+        log.topics = txEvent.topics
+        log.data = txEvent.data
+        return log
     }
 }
 
