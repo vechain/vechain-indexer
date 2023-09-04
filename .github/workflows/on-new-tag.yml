@@ -15,3 +15,12 @@ jobs:
       latestTag: prod-latest
       env: Prod
     secrets: inherit
+  deploy-to-ecs:
+    uses: ./.github/workflows/deploy-to-ecs.yml
+    needs: [ publish-images-to-ecr ]
+    secrets: inherit
+    with:
+      indexerImageTag: ${{ github.ref_name }}
+      apiImageTag: ${{ github.ref_name }}
+      environment: prod
+      dbSetupTag: ${{ github.ref_name }}
