@@ -154,6 +154,46 @@ internal class IndexerTest {
             }
 
         @Test
+        fun `Indexer should restart at current block when thor node rate limit is hit`() =
+            runBlocking {
+                val startBlock = 0L
+                val iterationsWithoutError = 99L
+                val tooManyRequestsBlockNumber = 100L
+
+                var rateLimitedAlready = false
+                coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
+                    {
+                        if (
+                            !rateLimitedAlready &&
+                                getBlockNumberSlot.captured == tooManyRequestsBlockNumber
+                        ) {
+                            rateLimitedAlready = true
+                            throw Exception("Too Many Requests")
+                        }
+                        buildBlock(getBlockNumberSlot.captured)
+                    }
+                every { responseMocker.getLastSyncedBlockNumber() } returns
+                    startBlock andThen
+                    iterationsWithoutError
+
+                every { responseMocker.processBlock(any()) } just Runs
+
+                // Run the indexer for another two iterations after the rate limited block number
+                val job = launch { indexer.start(tooManyRequestsBlockNumber + 2) }
+                job.join()
+
+                expect {
+                    // Indexer should have advanced processing after successfully restarting
+                    // processing of faulty block
+                    that(indexer.currentBlockNumber).isEqualTo(tooManyRequestsBlockNumber + 1)
+                    // Indexer should switch back to SYNCING status error detection
+                    that(indexer.status).isEqualTo(Status.SYNCING)
+                    // Indexer should restart & rollback processing at the error block number
+                    verify(exactly = 1) { responseMocker.rollback(tooManyRequestsBlockNumber) }
+                }
+            }
+
+        @Test
         fun `Indexer should restart at block previous to current block when a re-organization is detected`() =
             runBlocking {
                 val startBlock = 0L
@@ -342,5 +382,34 @@ internal class IndexerTest {
                 that(indexer.status).isEqualTo(Status.ERROR)
             }
         }
+
+        @Test
+        fun `Indexer should switch to ERROR status upon rate limit exception when fetching block`() =
+            runBlocking {
+                val tooManyRequestsBlockNumber = 100L
+
+                // Exception is thrown when attempting to fetch block tooManyRequestsBlockNumber
+                coEvery { thorClient.getBlock(capture(getBlockNumberSlot)) } coAnswers
+                    {
+                        if (getBlockNumberSlot.captured != tooManyRequestsBlockNumber)
+                            buildBlock(getBlockNumberSlot.captured)
+                        else throw Exception("Too Many Requests")
+                    }
+
+                every { responseMocker.getLastSyncedBlockNumber() } returns
+                    0 andThen
+                    tooManyRequestsBlockNumber - 1
+                every { responseMocker.processBlock(capture(processBlockNumberSlot)) } just Runs
+
+                val job = launch { indexer.start(tooManyRequestsBlockNumber + 1) }
+                job.join()
+
+                expect {
+                    // The current block number should match the exception block
+                    that(indexer.currentBlockNumber).isEqualTo(tooManyRequestsBlockNumber)
+                    // The indexer status should switch to ERROR
+                    that(indexer.status).isEqualTo(Status.ERROR)
+                }
+            }
     }
 }
