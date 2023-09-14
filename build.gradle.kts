@@ -187,6 +187,9 @@ allprojects {
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
         implementation("commons-codec:commons-codec:1.15")
 
+        // Core indexer dependency
+        implementation("org.vechain:indexer-core:1.0.0")
+
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
@@ -201,7 +204,6 @@ allprojects {
 
 dependencies {
     testImplementation(project(":packages:common"))
-    testImplementation(project(":packages:indexer-core"))
     testImplementation(project(":packages:indexer"))
     testImplementation(project(":packages:api"))
 }
