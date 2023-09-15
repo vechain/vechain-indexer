@@ -21,17 +21,13 @@ class IndexManager(
     fun start() {
         logger.info("Starting ${indexers.size} indexers")
 
-        val scope = CoroutineScope(Dispatchers.Default)
-
         indexers.forEach { indexer ->
-            scope.launch {
-                try {
-                    indexer.start()
-                } catch (e: Exception) {
-                    logger.error("Error starting indexer ${indexer.javaClass.simpleName}", e)
-                    // Exit the application if one of the indexers fails to start
-                    SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
-                }
+            try {
+                indexer.startInCoroutine()
+            } catch (e: Exception) {
+                logger.error("Error starting indexer ${indexer.javaClass.simpleName}: ", e)
+                // Exit the application if one of the indexers fails to start
+                SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
             }
         }
     }

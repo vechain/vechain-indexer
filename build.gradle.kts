@@ -44,6 +44,9 @@ allprojects {
             url = uri("https://jitpack.io")
             content { includeGroup("com.github.vechain") }
         }
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        }
     }
 
     /**
@@ -188,7 +191,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:1.0.0")
+        implementation("org.vechain:indexer-core:1.0.1")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
