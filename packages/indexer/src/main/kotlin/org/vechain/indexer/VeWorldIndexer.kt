@@ -9,7 +9,7 @@ abstract class VeWorldIndexer(
     thorClient: ThorClient,
     syncLoggerInterval: Long = 1000L,
 ) :
-    Indexer(
+    DebugIndexer(
         thorClient = thorClient,
         startBlock = startBlock,
         syncLoggerInterval = syncLoggerInterval

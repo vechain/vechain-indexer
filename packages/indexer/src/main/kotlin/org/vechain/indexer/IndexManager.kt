@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class IndexManager(
-    private val indexers: List<Indexer>,
+    private val indexers: List<DebugIndexer>,
     private val applicationContext: ApplicationContext
 ) {
 
@@ -23,7 +23,7 @@ class IndexManager(
 
         indexers.forEach { indexer ->
             try {
-                indexer.startInCoroutine()
+                indexer.startInCoroutine(10L)
             } catch (e: Exception) {
                 logger.error("Error starting indexer ${indexer.javaClass.simpleName}: ", e)
                 // Exit the application if one of the indexers fails to start
