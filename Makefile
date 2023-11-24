@@ -22,6 +22,7 @@ load-test-clean: #@ Clean the load tests data.
 # Application Build
 build-gradle: #@ Build the applications with Gradle.
 	./gradlew packages:api:build packages:indexer:build -x test
+.PHONY:build
 build-indexer: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.

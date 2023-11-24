@@ -5,6 +5,7 @@ services:
     build:
       dockerfile: Dockerfile
       context: ./
+    user: root
     ports:
       - "8669:8669"
       - "11235:11235"
@@ -20,6 +21,7 @@ services:
   thor-tx-script:
     hostname: thor-tx-script
     image: ghcr.io/vechainfoundation/thor-transactions-script:06057e4809a5424594701b05419d4ce6513c399c
+    user: root
     depends_on:
       thor-solo:
         condition: service_healthy

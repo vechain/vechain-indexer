@@ -1,6 +1,10 @@
-FROM vechain/thor:v2.0.0
+FROM vechain/thor:v2.1.0
+
+USER root
 
 RUN apk update && apk upgrade && apk add curl
+
+USER thor
 
 ENTRYPOINT thor solo --on-demand \
     --persist \
