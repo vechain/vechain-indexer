@@ -20,7 +20,7 @@ services:
 
   thor-tx-script:
     hostname: thor-tx-script
-    image: ghcr.io/vechainfoundation/thor-transactions-script:06057e4809a5424594701b05419d4ce6513c399c
+    image: ghcr.io/vechainfoundation/thor-transactions-script:a6975cfcd38d65b4b30a0e0a54dfb26468e64b78
     user: root
     depends_on:
       thor-solo:
