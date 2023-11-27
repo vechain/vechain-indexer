@@ -20,15 +20,18 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Build (Gradle)
-build-indexer-gradle: #@ Build the application with Gradle.
+build: build-indexer-local build-api-local #@ Build the application with Gradle.
+	echo "Build completed."
+.PHONY:build
+build-indexer-local: #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test
-build-api-gradle: #@ Build the application with Gradle.
+build-api-local: #@ Build the application with Gradle.
 	./gradlew :package:api:build -x test
 
 # Application Run (local)
-run-indexer: build-indexer-gradle #@ Run the indexer locally.
+run-indexer: build-indexer-local #@ Run the indexer locally.
 	java -jar packages/indexer/build/libs/indexer*.jar
-run-api: build-api-gradle #@ Run the api locally.
+run-api: build-api-local #@ Run the api locally.
 	java -jar packages/api/build/libs/api*.jar
 
 # Application Build (Docker)
