@@ -19,10 +19,19 @@ load-test: #@ Run the load tests.
 load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
-# Application Build
-build-gradle: #@ Build the applications with Gradle.
-	./gradlew packages:api:build packages:indexer:build -x test
-.PHONY:build
+# Application Build (Gradle)
+build-indexer-gradle: #@ Build the application with Gradle.
+	./gradlew :package:indexer:build -x test
+build-api-gradle: #@ Build the application with Gradle.
+	./gradlew :package:api:build -x test
+
+# Application Run (local)
+run-indexer: build-indexer-gradle #@ Run the indexer locally.
+	java -jar packages/indexer/build/libs/indexer*.jar
+run-api: build-api-gradle #@ Run the api locally.
+	java -jar packages/api/build/libs/api*.jar
+
+# Application Build (Docker)
 build-indexer: #@ Build the application with Docker.
 	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
