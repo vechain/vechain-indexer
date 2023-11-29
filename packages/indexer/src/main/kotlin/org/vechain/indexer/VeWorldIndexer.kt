@@ -6,7 +6,7 @@ import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class VeWorldIndexer(
     private val repository: BaseIndexedRepository<*>,
-    private val startBlock: Long = 0L,
+    startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLoggerInterval: Long = 1000L,
 ) :
@@ -20,6 +20,6 @@ abstract class VeWorldIndexer(
         repository.getLatestRecord()?.let {
             return BlockIdentifier(number = it.blockNumber, id = it.blockId)
         }
-        return BlockIdentifier(number = startBlock)
+        return null
     }
 }
