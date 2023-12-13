@@ -53,7 +53,7 @@ jobs:
       - name: Devops Dispatch
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.DEVOPS_DISPATCH_TOKEN }}
+          token: ${{ secrets.VWORLD_INDEX_R_W_DISPATCH_TOKEN_13_12_2024 }}
           repository: vechainfoundation/devops
           event-type: deploy-veworld-indexer
           client-payload: |
