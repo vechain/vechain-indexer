@@ -18,7 +18,7 @@ COPY packages ./packages
 RUN test -n "VEWORLD_PACKAGE"
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
-RUN ./gradlew packages:$VEWORLD_PACKAGE:build publishToMavenLocal -x test
+RUN ./gradlew packages:$VEWORLD_PACKAGE:build -x test
 
 FROM eclipse-temurin:17-jre-jammy AS prod
 
