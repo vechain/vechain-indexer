@@ -2,10 +2,11 @@ package org.vechain.indexer
 
 import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class VeWorldIndexer(
     private val repository: BaseIndexedRepository<*>,
-    private val startBlock: Long = 0L,
+    startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLoggerInterval: Long = 1000L,
 ) :
@@ -15,10 +16,10 @@ abstract class VeWorldIndexer(
         syncLoggerInterval = syncLoggerInterval
     ) {
 
-    override fun getLastSyncedBlockNumber(): Long {
+    override fun getLastSyncedBlock(): BlockIdentifier? {
         repository.getLatestRecord()?.let {
-            return it.blockNumber
+            return BlockIdentifier(number = it.blockNumber, id = it.blockId)
         }
-        return startBlock
+        return null
     }
 }
