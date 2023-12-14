@@ -4,11 +4,17 @@ server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  application:
+    name: vechain-indexer
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,clauses,blocks,contracts,transactions,transfer-events}
   output:
     ansi:
       enabled: always
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:#{null}}
 
 logging:
   level:
