@@ -9,10 +9,6 @@ dependencies {
     implementation("io.mongock:mongodb-springdata-v4-driver:5.3.1")
 }
 
-tasks.getByName<BootJar>("bootJar") {
-    enabled = true
-}
+tasks.getByName<BootJar>("bootJar") { enabled = true }
 
-tasks.getByName<Jar>("jar") {
-    enabled = false
-}
+tasks.getByName<Jar>("jar") { enabled = false }

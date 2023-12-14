@@ -15,7 +15,13 @@ logging:
 #      springframework:
 #        data: DEBUG
 
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:#{null}}
+
 spring:
+  application:
+    name: vechain-api
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:nft-events,clauses,blocks,contracts,transactions,transfer-events}
   output:
