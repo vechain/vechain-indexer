@@ -27,7 +27,7 @@ jobs:
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
 
       - name: Debug E2E
-        if: failure() && inputs.package == 'e2e'
+        if: failure() && matrix.package == 'e2e'
         run: |
           export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
           export API_ENV_FILE_NAME=packages/api/.env.example
@@ -46,7 +46,7 @@ jobs:
         uses: mikepenz/action-junit-report@v3
         if: success() || failure()
         with:
-          report_paths: packages/${{ inputs.package }}/build/test-results/test/TEST-*.xml
+          report_paths: packages/${{ matrix.package }}/build/test-results/test/TEST-*.xml
 
       - name: Copy HTML Test Report
         if: github.ref == 'refs/heads/main'
@@ -56,6 +56,7 @@ jobs:
             cp -r packages/${{ matrix.package }}/build/reports/jacoco/test/html static/${{ matrix.package }}/coverage
             cp -r packages/${{ matrix.package }}/build/reports/tests/test static/${{ matrix.package }}/tests
           fi
+
       - name: Upload Test Results
         uses: actions/upload-artifact@v2
         if: github.ref == 'refs/heads/main'
