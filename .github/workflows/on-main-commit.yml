@@ -6,7 +6,6 @@ on:
     branches:
       - "main"
 
-
 jobs:
   setup-env:
     name: Setup Environment
@@ -16,25 +15,29 @@ jobs:
     steps:
       - id: latest-tag
         run: echo "latest-tag=${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
+
   publish-test-results:
     uses: ./.github/workflows/publish-test-results.yml
     needs: test-gradle
+
   publish-images-to-ecr:
     uses: ./.github/workflows/publish-images.yml
-    needs: [ setup-env, test-gradle ]
+    needs: [setup-env, test-gradle]
     with:
       imageTag: ${{ github.sha }}
-      latestTag: ${{needs.setup-env.outputs.latest-tag}}
+      latestTag: ${{ needs.setup-env.outputs.latest-tag }}
       env: Dev
     secrets: inherit
+
   deploy-to-ecs:
     uses: ./.github/workflows/deploy-to-ecs.yml
-    needs: [ setup-env, publish-images-to-ecr ]
+    needs: [setup-env, publish-images-to-ecr]
     secrets: inherit
     with:
-      indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag}}
+      indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
       apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
       environment: dev
       dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}

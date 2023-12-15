@@ -61,7 +61,7 @@ jobs:
       - name: Check ECR Repository
         id: check-ecr-repo
         env:
-          REPOSITORY: veworld/${{ inputs.packageName}}
+          REPOSITORY: veworld/${{ inputs.packageName }}
         run: |
           if 
             aws ecr describe-repositories --repository-names $REPOSITORY 
@@ -73,7 +73,7 @@ jobs:
 
       - name: Create ECR Repository
         env:
-          REPOSITORY: veworld/${{ inputs.packageName}}
+          REPOSITORY: veworld/${{ inputs.packageName }}
         if: steps.check-ecr-repo.outputs.exists == 'false'
         run: |
           aws ecr create-repository --repository-name $REPOSITORY
@@ -95,7 +95,7 @@ jobs:
         id: docker-scan
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
-          repository: veworld/${{ inputs.packageName}}
+          repository: veworld/${{ inputs.packageName }}
           tag: ${{ inputs.imageTag }}
           fail_threshold: high
 
@@ -103,5 +103,5 @@ jobs:
         if: failure() && steps.docker-scan.outcome == 'failure'
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/${{ inputs.packageName}} \
+            --repository-name veworld/${{ inputs.packageName }} \
             --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
