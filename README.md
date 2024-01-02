@@ -1,8 +1,8 @@
 # VeWorld Indexer
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechainfoundation_veworld-indexer&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Test, Publish & Deploy](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main-commit.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main-commit.yml)
 
-![Gradle Tests](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/gradle-test.yaml/badge.svg?branch=main)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechainfoundation_veworld-indexer&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
 
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=bugs&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=vulnerabilities&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)

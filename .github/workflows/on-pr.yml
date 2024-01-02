@@ -12,6 +12,7 @@ concurrency:
 jobs:
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
+
   check-formatting:
     runs-on: ubuntu-latest
     steps:
@@ -19,8 +20,8 @@ jobs:
 
       - uses: actions/setup-java@v3
         with:
-          distribution: 'oracle'
-          java-version: '17'
+          distribution: "oracle"
+          java-version: "17"
 
       - name: Gradle Spotless
         run: ./gradlew spotlessCheck
