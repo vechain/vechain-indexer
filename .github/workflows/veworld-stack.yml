@@ -43,7 +43,7 @@ jobs:
       TF_WORKSPACE_NAME: ${{ vars.TF_WORKSPACE_NAME }}
     defaults:
       run:
-        working-directory: terraform
+        working-directory: terraform/api
 
     steps:
       - name: Checkout
@@ -52,7 +52,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls api/environments
+          ls environments
 
       - name: Update ENV Yaml
         uses: fjogeleit/yaml-update-action@main
