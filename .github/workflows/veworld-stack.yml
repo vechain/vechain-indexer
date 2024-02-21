@@ -52,7 +52,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls terraform/api/environments
+          ls api/environments
 
       - name: Update ENV Yaml
         uses: fjogeleit/yaml-update-action@main
@@ -137,5 +137,3 @@ jobs:
     #       SLACK_COLOR: ${{ job.status }}
     #       SLACK_MESSAGE: Deployed Veworld Indexer to *${{ github.event.client_payload.environment || inputs.environment || 'dev' }}* environment
     #       SLACK_TITLE: VeWorld Indexer Deployment
-
-    
