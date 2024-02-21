@@ -137,3 +137,5 @@ jobs:
     #       SLACK_COLOR: ${{ job.status }}
     #       SLACK_MESSAGE: Deployed Veworld Indexer to *${{ github.event.client_payload.environment || inputs.environment || 'dev' }}* environment
     #       SLACK_TITLE: VeWorld Indexer Deployment
+
+    
