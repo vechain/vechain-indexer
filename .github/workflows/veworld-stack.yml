@@ -52,7 +52,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls environments
+          ls terraform/api/environments
 
       - name: Update ENV Yaml
         uses: fjogeleit/yaml-update-action@main
