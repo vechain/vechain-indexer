@@ -48,11 +48,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-    #   - name: Debug Path
-    #     run: |
-    #       pwd
-    #       ls -la
-    #       ls terraform/api/environments
+      - name: Debug Path
+        run: |
+          pwd
+          ls -la
+          ls terraform/api/environments
 
       - name: Update ENV Yaml
         uses: fjogeleit/yaml-update-action@main
