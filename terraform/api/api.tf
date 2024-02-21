@@ -419,12 +419,12 @@ resource "aws_wafv2_web_acl_association" "acl_alb_association" {
 }
 
 # enable ebs-snapshot lambda on dev env only
-module "ebs-snapshot" {
-  source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot"
-  count                                 = local.env.environment == "dev" ? 1 : 0
-  region                                = local.env.region
-  environment                           = local.env.environment
-  snapshot_retention_days               = 7
-  snapshot_creation_schedule_expression = "cron(0 23 ? * 5 *)"
-  snapshot_deletion_schedule_expression = "cron(0 22 ? * 5 *)"
-}
+# module "ebs-snapshot" {
+#   source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot"
+#   count                                 = local.env.environment == "dev" ? 1 : 0
+#   region                                = local.env.region
+#   environment                           = local.env.environment
+#   snapshot_retention_days               = 7
+#   snapshot_creation_schedule_expression = "cron(0 23 ? * 5 *)"
+#   snapshot_deletion_schedule_expression = "cron(0 22 ? * 5 *)"
+# }

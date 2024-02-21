@@ -1,21 +1,21 @@
 # Simple alarms for CloudWatch constructed from sub maps as local variables, merged into a simple_alarms_map
 # NB each submap element must have a unique key or it may be overwritten in the merge
 locals {
-  lambda_alarms = { for k in concat([for k, v in module.ebs-snapshot : v.lambda_function_name], [for k, v in module.ebs-snapshot : v.lambda_reaper_name]) : "${k}_lerr" => {
-    alarm_name          = "${k}_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 1
-    threshold           = 1
-    namespace           = "AWS/Lambda"
-    period              = 180
-    statistic           = "Maximum"
-    metric_name         = "Errors"
-    alarm_description   = "ebs schedule lambda error"
-    dimensions = {
-      FunctionName = k
-    }
-    }
-  }
+  # lambda_alarms = { for k in concat([for k, v in module.ebs-snapshot : v.lambda_function_name], [for k, v in module.ebs-snapshot : v.lambda_reaper_name]) : "${k}_lerr" => {
+  #   alarm_name          = "${k}_alarm"
+  #   comparison_operator = "GreaterThanOrEqualToThreshold"
+  #   evaluation_periods  = 1
+  #   threshold           = 1
+  #   namespace           = "AWS/Lambda"
+  #   period              = 180
+  #   statistic           = "Maximum"
+  #   metric_name         = "Errors"
+  #   alarm_description   = "ebs schedule lambda error"
+  #   dimensions = {
+  #     FunctionName = k
+  #   }
+  #   }
+  # }
 
   waf_alarms = { for k, v in module.waf : "${k}_blk_rq" => {
     alarm_name          = "${k}_alarm"
@@ -197,7 +197,7 @@ locals {
     }
   }
 
-  simple_alarms_map = merge(local.lambda_alarms,
+  simple_alarms_map = merge(
     local.waf_alarms,
     local.elb_response_alarms,
     local.elb_5xx_count_alarms,
