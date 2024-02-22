@@ -33,4 +33,5 @@ jobs:
     permissions:
       packages: read
       contents: read
+      pull-requests: read
     secrets: inherit

@@ -27,8 +27,8 @@ on:
 
 # permissions: allow to create PRs to main branch
 permissions:
-  pull-requests: write
-  contents: write
+  pull-requests: read
+  contents: read
 
 jobs:
   deploy:
