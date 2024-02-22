@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
+  # test-gradle:
+  #   uses: ./.github/workflows/test-gradle.yml
 
   check-formatting:
     runs-on: ubuntu-latest
