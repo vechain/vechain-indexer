@@ -25,3 +25,12 @@ jobs:
 
       - name: Gradle Spotless
         run: ./gradlew spotlessCheck
+
+  terraform-plan:
+    uses: ./.github/workflows/veworld-stack.yml
+    with:
+      environment: "veworld-dev"
+    permissions:
+      packages: read
+      contents: read
+    secrets: inherit

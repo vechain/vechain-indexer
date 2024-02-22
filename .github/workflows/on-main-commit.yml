@@ -41,3 +41,12 @@ jobs:
       apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
       environment: dev
       dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
+    
+  deploy-veworld-stack:
+    uses: ./.github/workflows/veworld-stack.yml
+    with:
+      environment: "veworld-dev"
+    permissions:
+      packages: read
+      contents: read
+    secrets: inherit

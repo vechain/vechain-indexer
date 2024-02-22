@@ -1,13 +1,6 @@
 name: VeWorld Indexer Stack
 
 on:
-  push:
-    paths: ["terraform/**", ".github/workflows/veworld-stack.yml"]
-    branches:
-      - main
-  pull_request:
-    paths: ["terraform/**", ".github/workflows/veworld-stack.yml"]
-    branches: [main]
   # trigger deployment manually
   workflow_dispatch:
     inputs:
