@@ -98,7 +98,7 @@ jobs:
 
       - name: Terraform select workspace
         id: workspace
-        run: terraform workspace select ${{ inputs.environment || 'dev' }}
+        run: terraform workspace select ${{ vars.TF_WORKSPACE_NAME }}
 
         #TODO: This is required after selecting the workspace for some reason?
       - name: Terraform Re-Init (2)
