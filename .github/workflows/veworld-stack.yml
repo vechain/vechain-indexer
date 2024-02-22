@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
 
     #This environment sets up the following 'vars' and 'secrtes'
-    environment: veworld-${{ github.event.client_payload.environment || inputs.environment || 'dev' }}
+    environment: ${{ github.event.client_payload.environment || inputs.environment || 'dev' }}
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
