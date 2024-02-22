@@ -13,7 +13,6 @@ terraform {
 }
 
 provider "aws" {
-  # profile = local.env.workspace_account
   region = local.env.region
   default_tags {
     tags = {
@@ -29,7 +28,6 @@ provider "aws" {
 //create aws provider alias for us-east-1
 provider "aws" {
   alias  = "us_east_1"
-  # profile = local.env.workspace_account
   region = "us-east-1"
   default_tags {
     tags = {
@@ -43,7 +41,6 @@ provider "aws" {
 }
 
 provider "awscc" {
-  # profile = local.env.workspace_account
   region = local.env.region
 }
 
