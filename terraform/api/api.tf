@@ -2,6 +2,10 @@ variable "project" {
   default = "veworld"
 }
 
+variable "app_name" {
+  default = ""
+}
+
 data "aws_vpc" "ct_vpc_id" {
   filter {
     name   = "tag:Name"

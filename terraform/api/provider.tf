@@ -13,19 +13,37 @@ terraform {
 }
 
 provider "aws" {
-  profile = local.env.workspace_account
+  # profile = local.env.workspace_account
   region = local.env.region
+  default_tags {
+    tags = {
+      "Terraform" = "true"
+      "Environment" = local.env.environment
+      "Project" = var.project
+      "Commit_Hash" = data.external.git.result.sha
+      "Application" = var.app_name
+    }
+  }
 }
 
 //create aws provider alias for us-east-1
 provider "aws" {
   alias  = "us_east_1"
-  profile = local.env.workspace_account
+  # profile = local.env.workspace_account
   region = "us-east-1"
+  default_tags {
+    tags = {
+      "Terraform" = "true"
+      "Environment" = local.env.environment
+      "Project" = var.project
+      "Commit_Hash" = data.external.git.result.sha
+      "Application" = var.app_name
+    }
+  }
 }
 
 provider "awscc" {
-  profile = local.env.workspace_account
+  # profile = local.env.workspace_account
   region = local.env.region
 }
 
@@ -38,3 +56,13 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_elb_service_account" "default" {}
+
+data "external" "git" {
+  program = [
+    "git",
+    "log",
+    "--pretty=format:{ \"sha\": \"%H\" }",
+    "-1",
+    "HEAD"
+  ]
+}
