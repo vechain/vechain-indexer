@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
 
     #This environment sets up the following 'vars' and 'secrtes'
-    environment: ${{ github.event.client_payload.environment || inputs.environment || 'dev' }}
+    environment: ${{ inputs.environment || 'veworld-dev' }}
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
@@ -80,27 +80,7 @@ jobs:
       # production requires terraform to operate across account via an AWS_PROFILE, so use $TF_variants, if set, default to $AWS_ otherwise
       - name: Init AWS
         run: |
-          mkdir -p ~/.aws
-          ENVIRONMENT="${{ github.event.client_payload.environment || inputs.environment || 'dev' }}"
-          case $ENVIRONMENT in
-            dev)
-              AWS_ACCESS_KEY_ID=${{secrets.AWS_ACCESS_KEY_ID}}
-              AWS_SECRET_ACCESS_KEY=${{secrets.AWS_SECRET_ACCESS_KEY}}
-              ;;
-            prod)
-              AWS_ACCESS_KEY_ID=${{secrets.TF_AWS_ACCESS_KEY_ID}}
-              AWS_SECRET_ACCESS_KEY=${{secrets.TF_AWS_SECRET_ACCESS_KEY}}
-              ;;
-            *)
-              echo "Unknown environment: $ENVIRONMENT"
-              exit 1
-              ;;
-          esac
-
-          cat <<EOM > ~/.aws/credentials
-            [default]
-            aws_access_key_id = $AWS_ACCESS_KEY_ID
-            aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
+          mkdir ~/.aws && cat <<EOM > ~/.aws/credentials
             [$TF_AWS_PROFILE_NAME]
             aws_access_key_id = $AWS_ACCESS_KEY_ID
             aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
