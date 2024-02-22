@@ -12,6 +12,18 @@ on:
         description: The docker image tag to deploy
         required: true
         default: dev-latest
+  workflow_call:
+    inputs:
+      environment:
+        description: Which environment to deploy to ('dev' or 'prod')
+        required: true
+        default: dev
+        type: string
+      imageTag:
+        description: The docker image tag to deploy
+        required: true
+        default: dev-latest
+        type: string
 
 # permissions: allow to create PRs to main branch
 permissions:
