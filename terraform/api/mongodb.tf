@@ -90,7 +90,7 @@ resource "aws_security_group" "mongodb_sg" {
   for_each    = local.env.enabled_nets
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
-  vpc_id      = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
+  vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
   ingress {
     from_port   = 8
     to_port     = 0
@@ -209,7 +209,7 @@ resource "aws_instance" "mongodb_cluster" {
   instance_type           = each.value.instance_type
   iam_instance_profile    = aws_iam_instance_profile.ssm_instance_profile.name
   vpc_security_group_ids  = [aws_security_group.mongodb_sg[each.key].id]
-  subnet_id               = module.vpc[0].database_subnets[0]
+  subnet_id               = data.terraform_remote_state.vpc.outputs.database_subnets[0]
   disable_api_termination = true
   user_data = base64encode(
     templatefile("${path.module}/templates/user-data.sh", {
