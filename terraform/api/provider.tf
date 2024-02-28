@@ -7,8 +7,9 @@ terraform {
   }
   backend "s3" {
     bucket = "veworld-indexer-terraform-state"
-    key    = "dev-vpc-veworld-indexer.tfstate"
+    key    = "veworld-indexer-api.tfstate"
     region = "eu-west-1"
+    workspace_key_prefix = "workspaces"
   }
 }
 
@@ -57,7 +58,7 @@ data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
     bucket = "veworld-indexer-terraform-state"
-    key    = "indexer-vpc.tfstate"
+    key    = "workspaces/${local.env.environment}/veworld-indexer-vpc.tfstate"
     region = "eu-west-1"
   }
 }
