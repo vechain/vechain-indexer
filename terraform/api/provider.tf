@@ -19,7 +19,6 @@ provider "aws" {
       "Terraform" = "true"
       "Environment" = local.env.environment
       "Project" = var.project
-      "Commit_Hash" = data.external.git.result.sha
       "Application" = var.app_name
     }
   }
@@ -34,7 +33,6 @@ provider "aws" {
       "Terraform" = "true"
       "Environment" = local.env.environment
       "Project" = var.project
-      "Commit_Hash" = data.external.git.result.sha
       "Application" = var.app_name
     }
   }
@@ -54,12 +52,12 @@ data "aws_region" "current" {}
 
 data "aws_elb_service_account" "default" {}
 
-data "external" "git" {
-  program = [
-    "git",
-    "log",
-    "--pretty=format:{ \"sha\": \"%H\" }",
-    "-1",
-    "HEAD"
-  ]
+# Import outputs from the vpc module
+data "terraform_remote_state" "vpc" {
+  backend = "s3"
+  config = {
+    bucket = "veworld-indexer-terraform-state"
+    key    = "indexer-vpc.tfstate"
+    region = "eu-west-1"
+  }
 }
