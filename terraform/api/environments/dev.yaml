@@ -2,7 +2,7 @@
 # AWS settings
 region:                          "eu-west-1"
 
-workspace_account:               "veworld-dev-devops"
+workspace_account:               "veWorld-AdministratorAccess"
 
 common_ecr_repo_root:            "veworld"
 
