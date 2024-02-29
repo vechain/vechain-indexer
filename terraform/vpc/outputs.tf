@@ -1,6 +1,6 @@
 output "vpc_id" {
   description = "The ID of the VPC"
-  value       = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : data.aws_vpc.dev_vpc_id.id
+  value       = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
 }
 
 output "private_subnets" {

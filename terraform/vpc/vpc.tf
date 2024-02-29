@@ -5,13 +5,6 @@ data "aws_vpc" "ct_vpc_id" {
   }
 }
 
-data "aws_vpc" "dev_vpc_id" {
-  filter {
-    name   = "tag:Name"
-    values = ["dev-veworld-vpc", "${local.env.environment}-${var.project}-vpc"]
-  }
-}
-
 data "aws_subnets" "ct_pub_subnets" {
   filter {
     name   = "tag:Name"
@@ -89,7 +82,7 @@ module "vpclogs_cloudwatch" {
   create_flow_log_cloudwatch_iam_role             = "true"
   flow_log_log_format                             = null
   flow_log_traffic_type                           = "ALL"
-  vpc_id                                          = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : data.aws_vpc.dev_vpc_id.id
+  vpc_id                                          = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
   flow_log_max_aggregation_interval               = 600
   flow_log_destination_type                       = "cloud-watch-logs"
   flow_log_file_format                            = "plain-text"
@@ -107,7 +100,7 @@ module "vpclogs_s3" {
   app_name                            = var.project
   flow_log_log_format                 = null
   flow_log_traffic_type               = "ALL"
-  vpc_id                              = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : data.aws_vpc.dev_vpc_id.id
+  vpc_id                              = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
   flow_log_max_aggregation_interval   = 600
   flow_log_destination_type           = "s3"
   flow_log_file_format                = "plain-text"
