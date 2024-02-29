@@ -56,7 +56,7 @@ variable "app_name" {
 }
 
 module "vpc" {
-  count   = local.env.environment == "dev" ? 0 : 1
+  count   = local.env.environment == "prod" ? 0 : 1
   source  = "terraform-aws-modules/vpc/aws"
   version = "v4.0.1"
   cidr    = local.env.cidr
@@ -89,7 +89,7 @@ module "vpclogs_cloudwatch" {
   create_flow_log_cloudwatch_iam_role             = "true"
   flow_log_log_format                             = null
   flow_log_traffic_type                           = "ALL"
-  vpc_id                                          = local.env.environment == "dev" ? data.aws_vpc.dev_vpc_id.id : module.vpc[0].vpc_id
+  vpc_id                                          = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : data.aws_vpc.dev_vpc_id.id
   flow_log_max_aggregation_interval               = 600
   flow_log_destination_type                       = "cloud-watch-logs"
   flow_log_file_format                            = "plain-text"
@@ -101,14 +101,13 @@ module "vpclogs_cloudwatch" {
   enable_flow_log_cloudwatch                      = "true"
 }
 
-
 module "vpclogs_s3" {
   source                              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//logs"
   environment                         = local.env.environment
   app_name                            = var.project
   flow_log_log_format                 = null
   flow_log_traffic_type               = "ALL"
-  vpc_id                              = local.env.environment == "dev" ? data.aws_vpc.dev_vpc_id.id : module.vpc[0].vpc_id
+  vpc_id                              = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : data.aws_vpc.dev_vpc_id.id
   flow_log_max_aggregation_interval   = 600
   flow_log_destination_type           = "s3"
   flow_log_file_format                = "plain-text"
