@@ -325,11 +325,11 @@ module "vpc-endpoints" {
 
 locals {
   associated_alb_arns = [for alb in module.ecs-lb-service : alb.alb_arn]
+  waf_yaml = yamldecode(file("./environments/waf.yaml"))
 }
 
 # waf
 module "waf" {
-  count                              = local.env.environment == "prod" ? 1 : 0
   source                             = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf"
   env                                = local.env.environment
   project_name                       = var.project
@@ -344,14 +344,14 @@ module "waf" {
   rate_limit                         = local.env.rate_limit
   rate_limit_exception_list          = local.env.rate_limit_exception_list
   managed_rule_group_statement_rules = []
+  for_each                           = { for rule in try(local.waf_yaml.wafv2_global.rules, []) : rule.global_rule => rule }
 }
 
 resource "aws_wafv2_web_acl_association" "acl_alb_association" {
   for_each     = local.env.environment == "prod" ? local.env.enabled_nets : {}
   resource_arn = module.ecs-lb-service[each.key].alb_arn
-  web_acl_arn  = try(module.waf[0].waf_limiter_arn, "arn:aws:wafv2:eu-west-1:905964754131:regional/webacl/prod-veworld-web-acl/dd94af78-8e6b-4a88-aa18-dc5cae4a325e")
+  web_acl_arn  = try(module.waf[0].waf_limiter_arn, "arn:aws:wafv2:eu-west-1:905964754131:regional/webacl/prod-veworld-web-acl/31a58089-641e-4bbf-8a46-e659b201e917")
 }
-
 
 # enable ebs-snapshot lambda on dev env only
 # module "ebs-snapshot" {
