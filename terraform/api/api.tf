@@ -413,7 +413,7 @@ module "waf" {
   associate_waf                      = true
   rate_limit                         = local.env.rate_limit
   rate_limit_exception_list          = local.env.rate_limit_exception_list
-  managed_rule_group_statement_rules = null
+  managed_rule_group_statement_rules = []
 }
 
 resource "aws_wafv2_web_acl_association" "acl_alb_association" {
