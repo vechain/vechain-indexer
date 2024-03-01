@@ -46,6 +46,7 @@ jobs:
     uses: ./.github/workflows/veworld-stack.yml
     with:
       environment: "veworld-dev"
+      imageTag: "prod-latest"
     permissions:
       packages: read
       contents: read
