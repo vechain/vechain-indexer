@@ -18,10 +18,8 @@ provider "aws" {
   profile = local.env.workspace_account
   default_tags {
     tags = {
-      "Terraform" = "true"
-      "Environment" = local.env.environment
-      "Project" = var.project
-      "Application" = var.app_name
+      Terraform = "true"
+      Project = var.project
     }
   }
 }
@@ -33,10 +31,8 @@ provider "aws" {
   profile = local.env.workspace_account
   default_tags {
     tags = {
-      "Terraform" = "true"
-      "Environment" = local.env.environment
-      "Project" = var.project
-      "Application" = var.app_name
+      Terraform = "true"
+      Project = var.project
     }
   }
 }
