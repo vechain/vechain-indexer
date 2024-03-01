@@ -352,7 +352,6 @@ resource "aws_wafv2_web_acl_association" "acl_alb_association" {
   web_acl_arn  = try(module.waf[0].waf_limiter_arn, "arn:aws:wafv2:eu-west-1:905964754131:regional/webacl/prod-veworld-web-acl/dd94af78-8e6b-4a88-aa18-dc5cae4a325e")
 }
 
-
 # enable ebs-snapshot lambda on dev env only
 # module "ebs-snapshot" {
 #   source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot"
