@@ -32,7 +32,7 @@ permissions:
 
 jobs:
   deploy:
-    name: "Deploy VeWorld Indexer to ${{ github.event.client_payload.environment || inputs.environment || 'dev' }}"
+    name: "Deploy VeWorld Indexer to ${{ inputs.environment || 'dev' }}"
     runs-on: ubuntu-latest
 
     #This environment sets up the following 'vars' and 'secrtes'
@@ -40,10 +40,10 @@ jobs:
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-      TF_AWS_ACCESS_KEY_ID: ${{secrets.TF_AWS_ACCESS_KEY_ID }}
-      TF_AWS_SECRET_ACCESS_KEY: ${{secrets.TF_AWS_SECRET_ACCESS_KEY}}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
+      TF_AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
       TF_AWS_PROFILE_NAME: ${{ vars.TF_AWS_PROFILE_NAME }}
       TF_WORKSPACE_NAME: ${{ vars.TF_WORKSPACE_NAME }}
     defaults:
@@ -66,16 +66,16 @@ jobs:
       - name: Update ENV Yaml
         uses: fjogeleit/yaml-update-action@main
         with:
-          valueFile: "terraform/api/environments/${{vars.TF_WORKSPACE_NAME}}.yaml"
+          valueFile: "terraform/api/environments/${{ vars.TF_WORKSPACE_NAME }}.yaml"
           propertyPath: "image_tag"
-          value: ${{github.event.client_payload.imageTag || inputs.imageTag || 'dev-latest'}}
-          message: "Update VeWorld image tag to ${{github.event.client_payload.imageTag || inputs.imageTag || 'dev-latest'}}"
+          value: ${{ inputs.imageTag || 'dev-latest' }}
+          message: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
           createPR: true
-          title: "Update VeWorld image tag to ${{github.event.client_payload.imageTag || inputs.imageTag || 'dev-latest'}}"
+          title: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
           targetBranch: main
           masterBranchName: main
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update-veworld-image-tag-${{github.event.client_payload.environment || inputs.environment || 'dev'}}}
+          branch: update-veworld-image-tag-${{ inputs.environment || 'dev' }}
 
       # production requires terraform to operate across account via an AWS_PROFILE, so use $TF_variants, if set, default to $AWS_ otherwise
       - name: Init AWS
@@ -124,5 +124,5 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ github.event.client_payload.environment || inputs.environment || 'dev' }}* environment
+          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.environment || 'dev' }}* environment
           SLACK_TITLE: VeWorld Indexer Deployment
