@@ -31,3 +31,10 @@ wafv2_global:
               vendor_name: AWS
               excluded_rule:
                 - name: NoUserAgent_HEADER
+        - name: AWSManagedRulesAmazonIpReputationList_rule
+          priority: 20
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesAmazonIpReputationList
+              vendor_name: AWS
+              excluded_rule: []

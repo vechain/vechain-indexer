@@ -344,7 +344,7 @@ module "waf" {
   rate_limit                         = local.env.rate_limit
   rate_limit_exception_list          = local.env.rate_limit_exception_list
   for_each                           = { for rule in try(local.waf_yaml.wafv2_global.rules, []) : rule.global_rule => rule }
-  managed_rule_group_statement_rules = []
+  managed_rule_group_statement_rules = try(each.value.managed_rule_group_statement_rules, [])
 }
 
 resource "aws_wafv2_web_acl_association" "acl_alb_association" {
