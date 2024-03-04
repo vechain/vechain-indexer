@@ -38,3 +38,38 @@ wafv2_global:
             - name: AWSManagedRulesAmazonIpReputationList
               vendor_name: AWS
               excluded_rule: []
+        - name: AWSManagedRulesKnownBadInputsRuleSet_rule
+          priority: 30
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesKnownBadInputsRuleSet
+              vendor_name: AWS
+              excluded_rule: []
+        - name: AWSManagedRulesAdminProtectionRuleSet_rule
+          priority: 40
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesAdminProtectionRuleSet
+              vendor_name: AWS
+              excluded_rule: []
+        - name: AWSManagedRulesLinuxRuleSet_rule
+          priority: 50
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesLinuxRuleSet
+              vendor_name: AWS
+              excluded_rule: []
+        - name: AWSManagedRulesUnixRuleSet_rule
+          priority: 60
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesUnixRuleSet
+              vendor_name: AWS
+              excluded_rule: []
+        - name: AWSManagedRulesAnonymousIpList_rule
+          priority: 70
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesAnonymousIpList
+              vendor_name: AWS
+              excluded_rule: []
