@@ -38,7 +38,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 
 module "ecs-lb-service" {
   for_each                   = local.env.enabled_nets
-  source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs"
+  source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets             = data.terraform_remote_state.vpc.outputs.public_subnets
   private_subnets            = data.terraform_remote_state.vpc.outputs.private_subnets
@@ -119,7 +119,7 @@ module "ecs-lb-service" {
 
 module "ecs-service" {
   for_each            = local.env.enabled_nets
-  source              = "git::git@github.com:/vechainfoundation/devops.git//ecs"
+  source              = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets      = data.terraform_remote_state.vpc.outputs.public_subnets
   private_subnets     = data.terraform_remote_state.vpc.outputs.private_subnets
@@ -355,7 +355,7 @@ resource "aws_wafv2_web_acl_association" "acl_alb_association" {
 
 # enable ebs-snapshot lambda on dev env only
 # module "ebs-snapshot" {
-#   source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot"
+#   source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot?ref=release/node-hosting/v6"
 #   count                                 = local.env.environment == "dev" ? 1 : 0
 #   region                                = local.env.region
 #   environment                           = local.env.environment
