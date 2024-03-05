@@ -104,8 +104,19 @@ jobs:
         id: validate
         run: terraform validate
 
+      - name: Check environment exists
+        id: check-env
+        run: |
+          state_list=$(terraform state list)
+          if [ -z "$state_list" ]; then
+            echo "::set-output name=state_empty::true"
+          else
+            echo "::set-output name=state_empty::false"
+          fi
+
       - name: Terraform Plan
         id: plan
+        if: steps.check-env.outputs.state_empty == 'true'
         run: terraform plan
 
       - name: Terraform Apply
