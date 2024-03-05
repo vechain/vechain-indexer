@@ -6,27 +6,6 @@ variable "app_name" {
   default = ""
 }
 
-# data "aws_vpc" "ct_vpc_id" {
-#   filter {
-#     name   = "tag:Name"
-#     values = ["aws-controltower-VPC", "${local.env.environment}-${var.project}-vpc"]
-#   }
-# }
-
-# data "aws_subnets" "ct_pub_subnets" {
-#   filter {
-#     name   = "tag:Name"
-#     values = ["aws-controltower-PublicSubnet*"]
-#   }
-# }
-
-# data "aws_subnets" "ct_priv_subnets" {
-#   filter {
-#     name   = "tag:Name"
-#     values = ["aws-controltower-PrivateSubnet*"]
-#   }
-# }
-
 resource "aws_service_discovery_private_dns_namespace" "ns" {
   name = "${local.env.environment}.${var.project}"
   vpc  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -262,7 +241,7 @@ data "aws_security_groups" "ecs_sg_list" {
 }
 
 module "vpc-endpoints" {
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//vpcendpoint"
+  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//vpcendpoint?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
   vpcendpoints_interfaces = [
     {
       id                  = "ec2"
@@ -330,7 +309,7 @@ locals {
 
 # waf
 module "waf" {
-  source                             = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf"
+  source                             = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
   env                                = local.env.environment
   project_name                       = var.project
   waf_cloudfront_enable              = false
