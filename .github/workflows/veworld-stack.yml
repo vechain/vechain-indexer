@@ -100,11 +100,6 @@ jobs:
         id: workspace
         run: terraform workspace select ${{ vars.TF_WORKSPACE_NAME }}
 
-        #TODO: This is required after selecting the workspace for some reason?
-      - name: Terraform Re-Init (2)
-        id: init2
-        run: OS_DEBUG=1 TF_LOG=DEBUG terraform init
-
       - name: Terraform validate
         id: validate
         run: terraform validate
