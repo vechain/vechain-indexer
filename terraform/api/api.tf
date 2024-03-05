@@ -302,14 +302,10 @@ module "vpc-endpoints" {
   ]
 }
 
-locals {
-  associated_alb_arns = [for alb in module.ecs-lb-service : alb.alb_arn]
-  waf_yaml = yamldecode(file("./environments/waf.yaml"))
-}
-
 # waf
 module "waf" {
-  source                             = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
+  count                              = local.env.environment == "prod" ? 1 : 0
+  source                             = "git::git@github.com:/vechainfoundation/devops.git//waf?ref=release/node-hosting/v6"
   env                                = local.env.environment
   project_name                       = var.project
   waf_cloudfront_enable              = false
@@ -322,8 +318,7 @@ module "waf" {
   associate_waf                      = true
   rate_limit                         = local.env.rate_limit
   rate_limit_exception_list          = local.env.rate_limit_exception_list
-  for_each                           = { for rule in try(local.waf_yaml.wafv2_global.rules, []) : rule.global_rule => rule }
-  managed_rule_group_statement_rules = try(each.value.managed_rule_group_statement_rules, [])
+  managed_rule_group_statement_rules = null
 }
 
 resource "aws_wafv2_web_acl_association" "acl_alb_association" {
