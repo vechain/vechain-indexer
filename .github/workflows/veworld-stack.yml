@@ -109,9 +109,9 @@ jobs:
         run: |
           state_list=$(terraform state list)
           if [ -z "$state_list" ]; then
-            echo "::set-output name=state_empty::true"
+            echo "state_empty=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=state_empty::false"
+            echo "state_empty=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Terraform Plan
