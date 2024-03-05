@@ -104,6 +104,10 @@ jobs:
         id: validate
         run: terraform validate
 
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan
+
       - name: Check environment exists
         id: check-env
         run: |
@@ -114,13 +118,8 @@ jobs:
             echo "state_empty=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Terraform Plan
-        id: plan
-        if: ${{ steps.check-env.outputs.state_empty == 'false' }}
-        run: terraform plan
-
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && inputs.environment == 'prod'
+        if: github.ref == 'refs/heads/main' && inputs.environment == 'prod' && steps.check-env.outputs.state_empty == 'false'
         id: apply
         run: terraform apply -auto-approve
 
