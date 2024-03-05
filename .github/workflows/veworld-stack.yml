@@ -116,7 +116,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: ${{ steps.check-env.outputs.state_empty == 'true' }}
+        if: ${{ steps.check-env.outputs.state_empty == 'false' }}
         run: terraform plan
 
       - name: Terraform Apply
