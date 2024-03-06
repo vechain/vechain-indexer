@@ -11,10 +11,12 @@ jobs:
     name: Setup Environment
     runs-on: ubuntu-latest
     outputs:
-      latest-tag: ${{ steps.latest-tag.outputs.latest-tag }}
+      version-tag: ${{ steps.version-tag.outputs.version-tag }}
     steps:
-      - id: latest-tag
-        run: echo "latest-tag=${{ github.ref == 'refs/heads/main' && 'dev-latest' || github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - id: version-tag
+        run: |
+          latest_tag=$(awk '/image_tag/ {print $2}' ./terraform/api/environments/prod.yaml)
+          echo "::set-output name=version-tag::$latest_tag"
 
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
@@ -28,20 +30,20 @@ jobs:
     needs: [setup-env, test-gradle]
     with:
       imageTag: ${{ github.sha }}
-      latestTag: ${{ needs.setup-env.outputs.latest-tag }}
-      env: Dev
+      latestTag: ${{ needs.setup-env.outputs.version-tag }}
+      env: Prod
     secrets: inherit
 
-  deploy-to-ecs:
-    uses: ./.github/workflows/deploy-to-ecs.yml
-    needs: [setup-env, publish-images-to-ecr]
-    secrets: inherit
-    with:
-      indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
-      apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
-      environment: dev
-      dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.latest-tag }}
-    
+  # deploy-to-ecs:
+  #   uses: ./.github/workflows/deploy-to-ecs.yml
+  #   needs: [setup-env, publish-images-to-ecr]
+  #   secrets: inherit
+  #   with:
+  #     indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
+  #     apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
+  #     environment: dev
+  #     dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
+
   deploy-veworld-stack:
     uses: ./.github/workflows/veworld-stack.yml
     with:
