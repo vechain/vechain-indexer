@@ -63,19 +63,19 @@ jobs:
           ls -la
           ls environments
 
-      - name: Update ENV Yaml
-        uses: fjogeleit/yaml-update-action@main
-        with:
-          valueFile: "terraform/api/environments/${{ vars.TF_WORKSPACE_NAME }}.yaml"
-          propertyPath: "image_tag"
-          value: ${{ inputs.imageTag || 'dev-latest' }}
-          message: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
-          createPR: true
-          title: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
-          targetBranch: main
-          masterBranchName: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update-veworld-image-tag-${{ inputs.environment || 'dev' }}
+      # - name: Update ENV Yaml
+      #   uses: fjogeleit/yaml-update-action@main
+      #   with:
+      #     valueFile: "terraform/api/environments/${{ vars.TF_WORKSPACE_NAME }}.yaml"
+      #     propertyPath: "image_tag"
+      #     value: ${{ inputs.imageTag || 'dev-latest' }}
+      #     message: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
+      #     createPR: true
+      #     title: "Update VeWorld image tag to ${{ inputs.imageTag || 'dev-latest' }}"
+      #     targetBranch: main
+      #     masterBranchName: main
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     branch: update-veworld-image-tag-${{ inputs.environment || 'dev' }}
 
       # production requires terraform to operate across account via an AWS_PROFILE, so use $TF_variants, if set, default to $AWS_ otherwise
       - name: Init AWS
