@@ -1,0 +1,97 @@
+region: eu-west-1
+workspace_account: veworld-prod-devops
+common_ecr_repo_root: veworld
+image_tag: 0.0.3
+environment: prod
+certificate_arn: arn:aws:acm:eu-west-1:905964754131:certificate/695573a6-698a-4309-a427-28dd94fe7633
+azs:
+  - eu-west-1a
+  - eu-west-1b
+  - eu-west-1c
+cidr: 172.31.0.0/16
+public_subnets:
+  - 172.31.96.0/20
+  - 172.31.112.0/20
+  - 172.31.0.0/20
+private_subnets:
+  - 172.31.64.0/20
+  - 172.31.32.0/20
+  - 172.31.80.0/20
+database_subnets: null
+rate_limit: '5000'
+rate_limit_exception_list:
+  - 185.57.113.46/32
+  - 81.39.47.171/32
+  - 90.26.60.41/32
+cloudwatch_alarms: true
+slack_alert_channel: C05NA25LG78
+slack_alert_workspace: T03L3PQD8GK
+enabled_nets:
+  main:
+    thor_url: https://mainnet.vechain.org
+    api:
+      cpu: 512
+      memory: 1024
+      min_capacity: 4
+      spring_profile: nft-events,transactions,transfer-events
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+    indexer:
+      cpu: 1024
+      memory: 2048
+      spring_profile: indexer,nft-events,transactions,transfer-events
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      start_block:
+        blocks: '0'
+        clauses: '751'
+        contracts: '409987'
+        fungible_tokens: '0'
+        nfts: '1304112'
+        transactions: '751'
+        transfers: '37840'
+      sync_logger_interval:
+        blocks: '5000'
+        clauses: '5000'
+        contracts: '5000'
+        fungible_tokens: '5000'
+        nfts: '5000'
+        transactions: '5000'
+        transfers: '5000'
+    mongodb:
+      type: atlas
+      fqdn: mainnet.rsmhw.mongodb.net
+      proto: mongodb+srv
+      opts: retryWrites=true&w=majority
+  test:
+    thor_url: https://testnet.vechain.org
+    api:
+      cpu: 512
+      memory: 1024
+      min_capacity: 2
+      spring_profile: nft-events,transactions,transfer-events
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+    indexer:
+      cpu: 1024
+      memory: 2048
+      spring_profile: indexer,nft-events,transactions,transfer-events
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      start_block:
+        blocks: '0'
+        clauses: '15034'
+        contracts: '15101'
+        fungible_tokens: '0'
+        nfts: '1042259'
+        transactions: '15034'
+        transfers: '15034'
+      sync_logger_interval:
+        blocks: '5000'
+        clauses: '5000'
+        contracts: '5000'
+        fungible_tokens: '5000'
+        nfts: '5000'
+        transactions: '5000'
+        transfers: '5000'
+    mongodb:
+      type: atlas
+      fqdn: testnet.rsmhw.mongodb.net
+      proto: mongodb+srv
+      opts: retryWrites=true&w=majority

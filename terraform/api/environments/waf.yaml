@@ -1,0 +1,33 @@
+wafv2_global:
+  rules:
+    - global_rule: prod
+      scope: CLOUDFRONT
+      project_name: veworld
+      waf_cloudfront_enable: true
+      logs_s3_enable: true
+      logs_retension: 90
+      logging_redacted_fields:
+        - all_query_arguments:
+          body:
+          method:
+          query_string:
+          single_header: user-agent
+          single_query_argument:
+          uri_path:
+      logging_filter:
+        - default_behavior: "COUNT"
+          filter:
+            - behavior: "KEEP"
+              requirement: "MEETS_ALL"
+              condition:
+                - label_name_condition: waf-rule-label-veworld-managed-rule-set
+                  action_condition:
+      managed_rule_group_statement_rules:
+        - name: AWSManagedRulesCommonRuleSet_rule
+          priority: 10
+          override_action: count
+          managed_rule_group_statement:
+            - name: AWSManagedRulesCommonRuleSet
+              vendor_name: AWS
+              excluded_rule:
+                - name: NoUserAgent_HEADER
