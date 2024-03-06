@@ -119,12 +119,12 @@ jobs:
           fi
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && inputs.environment == 'prod' && steps.check-env.outputs.state_empty == 'false'
+        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
         id: apply
         run: terraform apply -auto-approve
 
       - name: Slack Notification
-        if: github.ref == 'refs/heads/main' && inputs.environment == 'prod'
+        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
