@@ -16,10 +16,8 @@ jobs:
       version-tag: ${{ steps.version-tag.outputs.version-tag }}
     steps:
       - id: version-tag
-        working-directory: terraform/api/environments
         run: |
-          latest_tag=$(awk '/image_tag/ {print $2}' prod.yaml)
-          echo "::set-output name=version-tag::$latest_tag"
+          echo "::set-output name=version-tag::0.0.4"
 
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
