@@ -10,6 +10,8 @@ jobs:
   setup-env:
     name: Setup Environment
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       version-tag: ${{ steps.version-tag.outputs.version-tag }}
     steps:
