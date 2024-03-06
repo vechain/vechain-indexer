@@ -54,7 +54,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.DEVOPS_REPO_R_W_CONTENT_11_12_2024 }}
-          repository: vechainfoundation/devops
+          repository: vechain/veworld-indexer
           event-type: deploy-veworld-indexer
           client-payload: |
             { 
