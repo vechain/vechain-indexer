@@ -1,54 +1,35 @@
----
-# AWS settings
+image_version:                   0.0.4
 region:                          "eu-west-1"
-
 workspace_account:               "veworld-dev-devops"
-
 common_ecr_repo_root:            "veworld"
-
-image_tag:                       "dev-latest"
-
 environment:                     "dev"
-
 certificate_arn:                 "arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060"
-
-# vpc settings
-
 azs:
   -                              "eu-west-1a"
   -                              "eu-west-1b"
   -                              "eu-west-1c"
-
 cidr:                            "172.31.0.0/20"
-
 public_subnets:
   -                              "172.31.0.0/24"
   -                              "172.31.4.0/24"
   -                              "172.31.8.0/24"
-
 private_subnets:
   -                              "172.31.1.0/24"
   -                              "172.31.5.0/24"
   -                              "172.31.9.0/24"
-
 database_subnets:
   -                              "172.31.2.0/24"
   -                              "172.31.6.0/24"
   -                              "172.31.10.0/24"
-
 rate_limit:                      "5000"
-
 rate_limit_exception_list:
   -                              "185.57.113.46/32"
   -                              "81.39.47.171/32"
   -                              "90.26.60.41/32"
-
 cloudwatch_alarms:               true
 slack_alert_channel:             "C051L4Z7N9K"
 slack_alert_workspace:           "T03L3PQD8GK"
-
 enabled_nets:
-# service settings
   main:
     thor_url:                       "https://mainnet.vechain.org"
     api:
