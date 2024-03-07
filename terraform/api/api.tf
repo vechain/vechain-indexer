@@ -164,6 +164,10 @@ module "ecs-service" {
       value = "CloudWatch"
     },
     {
+      name  = "SLACK_WEBHOOK_URL"
+      value = each.value.indexer.slack_webhook_url
+    },
+    {
       name  = "INDEXER_START_BLOCK_BLOCKS"
       value = each.value.indexer.start_block.blocks
     },
