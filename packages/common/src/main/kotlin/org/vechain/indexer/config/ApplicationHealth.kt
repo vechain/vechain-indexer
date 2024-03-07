@@ -48,7 +48,7 @@ open class ApplicationHealth(
             val payload: Payload =
                 Payload.builder()
                     .text(
-                        "$applicationName is not healthy!! \n \n ${objectMapper.writeValueAsString(health)}"
+                        ":alert: :alert: $applicationName is not healthy :alert: :alert: \n ```\n ${objectMapper.writeValueAsString(health)}\n```"
                     )
                     .build()
 
