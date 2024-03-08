@@ -41,8 +41,9 @@ enabled_nets:
     indexer:
       cpu:                          1024
       memory:                       2048
-      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events
-      ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events"
+      ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
+      slack_webhook_url:            ""
       start_block:
         blocks:                     0
         clauses:                    751
@@ -82,8 +83,9 @@ enabled_nets:
     indexer:
       cpu:                          1024
       memory:                       2048
-      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events
-      ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events"
+      ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
+      slack_webhook_url:            ""
       start_block:
         blocks:                     0
         clauses:                    15034
