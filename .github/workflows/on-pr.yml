@@ -29,9 +29,7 @@ jobs:
   terraform-plan-dev:
     uses: ./.github/workflows/veworld-stack.yml
     with:
-      environment: "veworld-dev"
-      imageTag: "dev-latest"
-      tf_workspace: "dev"
+      environment: "dev"
     permissions:
       packages: read
       contents: read
@@ -41,9 +39,7 @@ jobs:
   terraform-plan-prod:
     uses: ./.github/workflows/veworld-stack.yml
     with:
-      environment: "veworld-dev"
-      imageTag: "prod-latest"
-      tf_workspace: "prod"
+      environment: "prod"
     permissions:
       packages: read
       contents: read
