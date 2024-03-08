@@ -26,7 +26,7 @@ module "ecs-lb-service" {
   common_ecr_repo_url        = each.value.api.ecr_common_repo
   internal_url_name          = "${each.key}.local"
   app_name                   = "${each.key}-api"
-  image_version              = local.env.image_version
+  image_tag                  = local.env.image_tag
   project                    = var.project
   cpu                        = each.value.api.cpu
   memory                     = each.value.api.memory
@@ -105,7 +105,7 @@ module "ecs-service" {
   env                 = local.env.environment
   common_ecr_repo     = true
   common_ecr_repo_url = each.value.indexer.ecr_common_repo
-  image_version       = local.env.image_version
+  image_tag           = local.env.image_tag
   internal_url_name   = "${each.key}.local"
   app_name            = "${each.key}-indexer"
   project             = var.project

@@ -1,4 +1,4 @@
-image_version:                   0.0.4
+image_tag:                       0.0.4
 region:                          eu-west-1
 workspace_account:               veworld-dev-devops
 common_ecr_repo_root:            veworld
