@@ -5,18 +5,13 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Which environment to plan/deploy to ('dev' or 'prod')
+        description: "The environment to deploy"
         required: true
         default: dev
-      tf_workspace:
-        description: Which terraform workspace to use
-        required: true
-        default: dev
-        type: string
-      imageTag:
-        description: The docker image tag to deploy
-        required: true
-        default: dev-latest
+        type: choice
+        options:
+            - dev
+            - prod
   workflow_call:
     inputs:
       environment:
@@ -24,62 +19,42 @@ on:
         required: true
         default: dev
         type: string
-      tf_workspace:
-        description: Which terraform workspace to use
-        required: true
-        default: dev
-        type: string
-      imageTag:
-        description: The docker image tag to deploy
-        required: true
-        default: dev-latest
-        type: string
 
-# permissions: allow to create PRs to main branch
+# Required for authentication through GitHub OIDC
 permissions:
-  pull-requests: read
-  contents: read
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
 
 jobs:
   deploy:
-    name: "Plan/deploy VeWorld Indexer to ${{ inputs.environment || 'dev' }}"
+    name: "Plan/deploy VeWorld Indexer to ${{ inputs.environment }}"
     runs-on: ubuntu-latest
 
-    #This environment sets up the following 'vars' and 'secrtes'
-    environment: ${{ inputs.environment || 'veworld-dev' }}
-
-    env:
-      AWS_REGION: ${{ vars.AWS_REGION }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      TF_AWS_ACCESS_KEY_ID: ${{ secrets.TF_AWS_ACCESS_KEY_ID }}
-      TF_AWS_SECRET_ACCESS_KEY: ${{ secrets.TF_AWS_SECRET_ACCESS_KEY }}
-      TF_AWS_PROFILE_NAME: ${{ vars.TF_AWS_PROFILE_NAME }}
     defaults:
       run:
         working-directory: terraform/api
 
+    env:
+      WORKSPACE: "${{ inputs.environment }}"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
-      - name: Debug Path
-        run: |
-          pwd
-          ls -la
-          ls environments
 
-      # production requires terraform to operate across account via an AWS_PROFILE, so use $TF_variants, if set, default to $AWS_ otherwise
-      - name: Init AWS
+      - name: Determine AWS account ID and role
+        id: account
         run: |
-          mkdir ~/.aws && cat <<EOM > ~/.aws/credentials
-            [$TF_AWS_PROFILE_NAME]
-            aws_access_key_id = $AWS_ACCESS_KEY_ID
-            aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
-          EOM
+            if [ "${{ github.event.inputs.target_environment }}" == "prod" ]; then
+              echo "::set-output name=role_arn::${{ secrets.PROD_AWS_ACC_ROLE }}"
+            else
+              echo "::set-output name=role_arn::${{ secrets.DEV_AWS_ACC_ROLE }}" 
+            fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -87,13 +62,18 @@ jobs:
           terraform_version: 1.7.3
           terraform_wrapper: true
 
-      - name: Terraform Init
-        id: init
-        run: OS_DEBUG=1 TF_LOG=DEBUG terraform init
+      - name: Terraform format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
 
-      - name: Terraform select workspace
+      - name: Terraform initialize
+        id: init
+        run: terraform init
+
+      - name: Terraform workspace
         id: workspace
-        run: terraform workspace select ${{ inputs.tf_workspace }}
+        run: terraform workspace select ${{ env.WORKSPACE }}
 
       - name: Terraform validate
         id: validate
