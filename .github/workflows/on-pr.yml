@@ -11,8 +11,10 @@ concurrency:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write # Required for requesting the JWT
+  contents: read # Required for actions/checkout
+  packages: write # Required for test gradle
+  checks: write # Required for test gradle
 
 jobs:
   test-gradle:
