@@ -56,6 +56,16 @@ jobs:
             aws-region: eu-west-1
             role-to-assume: ${{ steps.account.outputs.role_arn }}
 
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+      - name: Debug Path
+        run: |
+          pwd
+          ls -la
+          ls environments
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
