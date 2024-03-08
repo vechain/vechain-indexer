@@ -40,7 +40,7 @@ jobs:
   terraform-plan-prod:
     uses: ./.github/workflows/veworld-stack.yml
     with:
-      environment: "veworld-prod"
+      environment: "veworld-dev"
       imageTag: "prod-latest"
     permissions:
       packages: read
