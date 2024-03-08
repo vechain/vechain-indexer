@@ -44,7 +44,7 @@ jobs:
       - name: Determine AWS account ID and role
         id: account
         run: |
-            if [ "${{ github.event.inputs.target_environment }}" == "prod" ]; then
+            if [ "${{ inputs.environment }}" == "prod" ]; then
               echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
             else
               echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
