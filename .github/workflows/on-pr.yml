@@ -9,13 +9,6 @@ concurrency:
   group: ${{ github.head_ref || github.ref_name }}-build-test
   cancel-in-progress: true
 
-# Required for authentication through GitHub OIDC
-permissions:
-  id-token: write # Required for requesting the JWT
-  contents: read # Required for actions/checkout
-  packages: write # Required for test gradle
-  checks: write # Required for test gradle
-
 jobs:
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
@@ -40,7 +33,7 @@ jobs:
     permissions:
       packages: read
       contents: read
-      pull-requests: read
+      id-token: write
     secrets: inherit
 
   terraform-plan-prod:
@@ -50,5 +43,5 @@ jobs:
     permissions:
       packages: read
       contents: read
-      pull-requests: read
+      id-token: write
     secrets: inherit
