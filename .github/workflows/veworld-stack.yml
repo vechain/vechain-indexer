@@ -56,11 +56,13 @@ jobs:
             aws-region: eu-west-1
             role-to-assume: ${{ steps.account.outputs.role_arn }}
 
+      # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
-      - name: Debug Path
+
+      - name: Debug path & vars
         run: |
           pwd
           ls -la
