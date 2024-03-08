@@ -45,9 +45,9 @@ jobs:
         id: account
         run: |
             if [ "${{ github.event.inputs.target_environment }}" == "prod" ]; then
-              echo "::set-output name=role_arn::${{ secrets.PROD_AWS_ACC_ROLE }}"
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
             else
-              echo "::set-output name=role_arn::${{ secrets.DEV_AWS_ACC_ROLE }}" 
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
             fi
 
       - name: Configure AWS credentials
