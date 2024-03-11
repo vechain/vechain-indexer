@@ -72,7 +72,7 @@ jobs:
         id: specify-backend
         run: |
           if [ "${{ inputs.environment }}" == "prod" ]; then
-            sed -i "s/{{{ENV}}}/${inputs.environment}/g" provider.tf
+            sed -i "s/ENV/${inputs.environment}/g" provider.tf
           fi
 
       - name: Setup Terraform
