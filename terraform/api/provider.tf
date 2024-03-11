@@ -18,7 +18,6 @@ terraform {
 
 provider "aws" {
   region = local.env.region
-  # profile = local.env.workspace_account
   default_tags {
     tags = {
       Terraform = "true"
@@ -31,7 +30,6 @@ provider "aws" {
 provider "aws" {
   alias  = "us_east_1"
   region = "us-east-1"
-  # profile = local.env.workspace_account
   default_tags {
     tags = {
       Terraform = "true"
@@ -42,7 +40,6 @@ provider "aws" {
 
 provider "awscc" {
   region = local.env.region
-  # profile = local.env.workspace_account
 }
 
 provider "github" {}

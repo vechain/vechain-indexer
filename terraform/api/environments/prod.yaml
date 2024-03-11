@@ -1,4 +1,3 @@
-workspace_account: veworld-prod-devops
 image_tag:                       prod-latest
 region:                          eu-west-1
 common_ecr_repo_root:            veworld
