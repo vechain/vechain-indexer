@@ -3,6 +3,11 @@ output "vpc_id" {
   value       = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
 }
 
+output "vpc_ipv4" {
+  description = "The IPv4 CIDR block of the VPC"
+  value       = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.cidr_block : module.vpc[0].vpc_cidr_block
+}
+
 output "private_subnets" {
   description = "The IDs of the private subnets"
   value       = local.env.environment == "prod" ? data.aws_subnets.ct_priv_subnets.ids : data.aws_subnets.dev_priv_subnets.ids

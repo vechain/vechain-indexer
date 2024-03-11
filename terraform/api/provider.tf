@@ -4,6 +4,10 @@ terraform {
       source = "hashicorp/aws"
       #version = "3.75.1"
     }
+    mongodbatlas = {
+      source  = "mongodb/mongodbatlas"
+      version = ">= 1.12.0"
+    }
   }
 
   backend "s3" {
