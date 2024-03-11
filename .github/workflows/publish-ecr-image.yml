@@ -41,12 +41,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine AWS account ID and role
+        id: account
+        run: |
+            if [ "${{ inputs.env }}" == "prod" ]; then
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            else
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            fi
+
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY_SECRET }}
-          aws-region: eu-west-1
+            aws-region: eu-west-1
+            role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       - name: Login To Amazon ECR
         id: login-ecr

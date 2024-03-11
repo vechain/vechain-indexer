@@ -7,18 +7,6 @@ on:
       - "main"
 
 jobs:
-  setup-env:
-    name: Setup Environment
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      version-tag: ${{ steps.version-tag.outputs.version-tag }}
-    steps:
-      - id: version-tag
-        run: |
-          echo "::set-output name=version-tag::0.0.4"
-
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
 
@@ -26,30 +14,28 @@ jobs:
     uses: ./.github/workflows/publish-test-results.yml
     needs: test-gradle
 
-  publish-images-to-ecr:
+  publish-images-to-ecr-dev:
     uses: ./.github/workflows/publish-images.yml
-    needs: [setup-env, test-gradle]
+    needs: [test-gradle]
     with:
       imageTag: ${{ github.sha }}
-      latestTag: ${{ needs.setup-env.outputs.version-tag }}
-      env: Prod
+      latestTag: dev-latest
+      env: dev
     secrets: inherit
 
-  # deploy-to-ecs:
-  #   uses: ./.github/workflows/deploy-to-ecs.yml
-  #   needs: [setup-env, publish-images-to-ecr]
-  #   secrets: inherit
-  #   with:
-  #     indexerImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
-  #     apiImageTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
-  #     environment: dev
-  #     dbSetupTag: ${{ github.ref == 'refs/heads/main' && github.sha || needs.setup-env.outputs.version-tag }}
+  publish-images-to-ecr-prod:
+    uses: ./.github/workflows/publish-images.yml
+    needs: [test-gradle]
+    with:
+      imageTag: ${{ github.sha }}
+      latestTag: prod-latest
+      env: prod
+    secrets: inherit
 
   deploy-veworld-stack:
     uses: ./.github/workflows/veworld-stack.yml
     with:
       environment: "veworld-dev"
-      imageTag: "prod-latest"
     permissions:
       packages: read
       pull-requests: read
