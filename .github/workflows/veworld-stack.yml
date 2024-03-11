@@ -68,6 +68,13 @@ jobs:
           ls -la
           ls environments
 
+      - name: Point backend to correct environment
+        id: specify-backend
+        run: |
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            sed -i "s/{{{ENV}}}/${inputs.environment}/g" provider.tf
+          fi
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
