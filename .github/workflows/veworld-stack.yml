@@ -71,7 +71,8 @@ jobs:
       - name: Point backend to correct environment
         id: specify-backend
         run: |
-          sed -i "s/ENV/$(echo ${inputs.environment})/g" provider.tf
+          sed -i "s/ENV/${{ inputs.environment }}/g" provider.tf
+        continue-on-error: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
