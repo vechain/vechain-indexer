@@ -1,62 +1,42 @@
----
-# AWS settings
-region:                          "eu-west-1"
-
-workspace_account:               "veworld-dev-devops"
-
-common_ecr_repo_root:            "veworld"
-
-image_tag:                       "dev-latest"
-
-environment:                     "dev"
-
-certificate_arn:                 "arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060"
-
-# vpc settings
-
+image_tag:                       dev-latest
+region:                          eu-west-1
+common_ecr_repo_root:            veworld
+environment:                     dev
+certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060
 azs:
-  -                              "eu-west-1a"
-  -                              "eu-west-1b"
-  -                              "eu-west-1c"
-
-cidr:                            "172.31.0.0/20"
-
+  -                              eu-west-1a
+  -                              eu-west-1b
+  -                              eu-west-1c
+cidr:                            172.31.0.0/20
 public_subnets:
-  -                              "172.31.0.0/24"
-  -                              "172.31.4.0/24"
-  -                              "172.31.8.0/24"
-
+  -                              172.31.0.0/24
+  -                              172.31.4.0/24
+  -                              172.31.8.0/24
 private_subnets:
-  -                              "172.31.1.0/24"
-  -                              "172.31.5.0/24"
-  -                              "172.31.9.0/24"
-
+  -                              172.31.1.0/24
+  -                              172.31.5.0/24
+  -                              172.31.9.0/24
 database_subnets:
-  -                              "172.31.2.0/24"
-  -                              "172.31.6.0/24"
-  -                              "172.31.10.0/24"
-
-rate_limit:                      "5000"
-
+  -                              172.31.2.0/24
+  -                              172.31.6.0/24
+  -                              172.31.10.0/24
+rate_limit:                      5000
 rate_limit_exception_list:
-  -                              "185.57.113.46/32"
-  -                              "81.39.47.171/32"
-  -                              "90.26.60.41/32"
-
+  -                              185.57.113.46/32
+  -                              81.39.47.171/32
+  -                              90.26.60.41/32
 cloudwatch_alarms:               true
-slack_alert_channel:             "C051L4Z7N9K"
-slack_alert_workspace:           "T03L3PQD8GK"
-
+slack_alert_channel:             C051L4Z7N9K
+slack_alert_workspace:           T03L3PQD8GK
 enabled_nets:
-# service settings
   main:
-    thor_url:                       "https://mainnet.vechain.org"
+    thor_url:                       https://mainnet.vechain.org
     api:
       cpu:                          256
       memory:                       512
       min_capacity:                 1
-      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events"
-      ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api"
+      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events
+      ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu:                          1024
       memory:                       2048
@@ -64,41 +44,41 @@ enabled_nets:
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        blocks:                     "0"
-        clauses:                    "751"
-        contracts:                  "409987"
-        fungible_tokens:            "0"
-        nfts:                       "1304112"
-        transactions:               "751"
-        transfers:                  "37840"
+        blocks:                     0
+        clauses:                    751
+        contracts:                  409987
+        fungible_tokens:            0
+        nfts:                       1304112
+        transactions:               751
+        transfers:                  37840
       sync_logger_interval:
-        blocks:                     "5000"
-        clauses:                    "5000"
-        contracts:                  "5000"
-        fungible_tokens:            "5000"
-        nfts:                       "5000"
-        transactions:               "5000"
-        transfers:                  "5000"
+        blocks:                     5000
+        clauses:                    5000
+        contracts:                  5000
+        fungible_tokens:            5000
+        nfts:                       5000
+        transactions:               5000
+        transfers:                  5000
     mongodb:
-      type:                         "ec2"
-      fqdn:                         "dev-mainnet-mongodb.main.local"
-      proto:                        "mongodb"
-      opts:                         "authSource=admin"
-      instance_type:                "r7g.medium"
-      ami_image:                    "ami-0a9d27a9f4f5c0efc"
-      data_volume_size:             "1024"
-      data_volume_type:             "io2"
-      data_volume_iops:             "2000"
+      type:                         ec2
+      fqdn:                         dev-mainnet-mongodb.main.local
+      proto:                        mongodb
+      opts:                         authSource=admin
+      instance_type:                r7g.medium
+      ami_image:                    ami-0a9d27a9f4f5c0efc
+      data_volume_size:             1024
+      data_volume_type:             io2
+      data_volume_iops:             2000
 #uncomment following top level label if testnet not required
 #disabled_nets:
   test:
-    thor_url:                       "https://testnet.vechain.org"
+    thor_url:                       https://testnet.vechain.org
     api:
       cpu:                          256
       memory:                       512
       min_capacity:                 1
-      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events"
-      ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api"
+      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events
+      ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu:                          1024
       memory:                       2048
@@ -106,29 +86,29 @@ enabled_nets:
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        blocks:                     "0"
-        clauses:                    "15034"
-        contracts:                  "15101"
-        fungible_tokens:            "0"
-        nfts:                       "1042259"
-        transactions:               "15034"
-        transfers:                  "15034"
+        blocks:                     0
+        clauses:                    15034
+        contracts:                  15101
+        fungible_tokens:            0
+        nfts:                       1042259
+        transactions:               15034
+        transfers:                  15034
       sync_logger_interval:
-        blocks:                     "5000"
-        clauses:                    "5000"
-        contracts:                  "5000"
-        fungible_tokens:            "5000"
-        nfts:                       "5000"
-        transactions:               "5000"
-        transfers:                  "5000"
+        blocks:                     5000
+        clauses:                    5000
+        contracts:                  5000
+        fungible_tokens:            5000
+        nfts:                       5000
+        transactions:               5000
+        transfers:                  5000
     mongodb:
-      type:                         "ec2"
-      fqdn:                         "dev-testnet-mongodb.test.local"
-      proto:                        "mongodb"
-      opts:                         "authSource=admin"
-      instance_type:                "r7g.medium"
-      ami_image:                    "ami-0a9d27a9f4f5c0efc"
-      data_volume_size:             "500"
-      data_volume_type:             "gp2"
+      type:                         ec2
+      fqdn:                         dev-testnet-mongodb.test.local
+      proto:                        mongodb
+      opts:                         authSource=admin
+      instance_type:                r7g.medium
+      ami_image:                    ami-0a9d27a9f4f5c0efc
+      data_volume_size:             500
+      data_volume_type:             gp2
 #iops must be empty for gp2 type
-      data_volume_iops:             "0"
+      data_volume_iops:             0
