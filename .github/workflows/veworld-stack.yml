@@ -8,10 +8,7 @@ on:
         description: "The environment to deploy"
         required: true
         default: dev
-        type: choice
-        options:
-            - dev
-            - prod
+        type: environment
   workflow_call:
     inputs:
       environment:
