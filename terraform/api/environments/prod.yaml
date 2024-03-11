@@ -1,5 +1,5 @@
 workspace_account: veworld-prod-devops
-image_tag:                   0.0.4
+image_tag:                       0.0.5
 region:                          eu-west-1
 common_ecr_repo_root:            veworld
 environment:                     prod
