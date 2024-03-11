@@ -59,7 +59,7 @@ data "aws_elb_service_account" "default" {}
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
-    bucket = "veworld-indexer-terraform-state"
+    bucket = "veworld-indexer-terraform-state-{{{ENV}}}"
     key    = "workspaces/${local.env.environment}/veworld-indexer-vpc.tfstate"
     region = "eu-west-1"
   }
