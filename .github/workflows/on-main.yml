@@ -32,10 +32,11 @@ jobs:
       env: prod
     secrets: inherit
 
-  deploy-veworld-stack:
+  deploy-veworld-stack-dev:
+    # Will only deploy if dev ECS cluster already exists
     uses: ./.github/workflows/veworld-stack.yml
     with:
-      environment: "veworld-dev"
+      environment: dev
     permissions:
       packages: read
       pull-requests: read
