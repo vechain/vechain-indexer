@@ -4,14 +4,18 @@ variable "domain_name_data" {
       "name" = "coin-api.dev.veworld.vechain.org"
       "zone" = "Z05174081HJUXVROTDH6I"
     },
+    "prod" = {
+      "name" = "coin-api.veworld.vechain.org"
+      "zone" = "Z07511592AUMA3GPYN856"
+    },
     "prod-blue" = {
       "name" = "coin-api.veworld.vechain.org"
       "zone" = "Z07511592AUMA3GPYN856"
-    }
+    },
     "prod-green" = {
       "name" = "coin-api.veworld.vechain.org"
       "zone" = "Z07511592AUMA3GPYN856"
-    }
+    },
   }
 }
 
