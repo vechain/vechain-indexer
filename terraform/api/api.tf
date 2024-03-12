@@ -15,8 +15,66 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 # Module For ECS Load Balanced Service API
 ################################################################################
 
+module "ecs-lb-service-api" {
+  for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
+  source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
+  region                     = local.env.region
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+  cluster_name               = "${var.project}-${local.env.environment}"
+  lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
+  app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
+  env                        = local.env.environment
+  is_create_repo             = true
+  image_repo_url             = each.value.api.ecr_common_repo
+  app_name                   = "${each.key}-api"
+  image_name                 = local.env.image_tag
+  project                    = var.project
+  cpu                        = each.value.api.cpu
+  memory                     = each.value.api.memory
+  cidr                       = local.env.cidr
+  desired_capacity           = each.value.api.min_capacity
+  container_port             = 8080
+  certificate_arn            = local.env.certificate_arn
+  rule_0_path_pattern        = ["/api/v*", "/api-docs", "/swagger-ui/*"]
+  enable_alb                 = "true"
+  namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
+  environment_variables = [
+    {
+      name  = "APPLICATION_NAME"
+      value = "api"
+    },
+    {
+      name  = "ENVIRONMENT_NAME"
+      value = local.env.environment
+    },
+    {
+      name  = "SPRING_PROFILES_ACTIVE"
+      value = each.value.api.spring_profile
+    },
+    {
+      name  = "APP_LOG_LEVEL"
+      value = "INFO"
+    },
+    { name  = "THOR_URL"
+      value = each.value.thor_url
+    },
+    {
+      name  = "MONGO_URI"
+      value = format("%s://api:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+    },
+    {
+      name  = "MONGO_AUTHENTICATION_DATABASE",
+      value = "admin"
+    },
+    {
+      name  = "APP_LOGGER"
+      value = "CloudWatch"
+    }
+  ]
+}
+
 module "ecs-lb-service" {
-  for_each                   = local.env.enabled_nets
+  for_each                   = "${local.env.environment == "prod" ? local.env.enabled_nets : {}}"
   source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets             = data.terraform_remote_state.vpc.outputs.public_subnets
