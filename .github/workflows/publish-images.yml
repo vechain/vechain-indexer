@@ -19,6 +19,7 @@ jobs:
     secrets: inherit
     permissions:
       id-token: write
+      contents: read
     strategy:
       matrix:
         application: [ indexer, api ]
