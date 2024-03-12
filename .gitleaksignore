@@ -7,3 +7,5 @@ cb6f8299482b3a3b5878ddfa55c8fe86721846af:packages/api/src/test/kotlin/org/vechai
 cb6f8299482b3a3b5878ddfa55c8fe86721846af:packages/api/src/test/kotlin/org/vechain/indexer/controller/TransferEventsControllerTest.kt:generic-api-key:181
 e15688e0e17ace1ad8358f345269d0bfeff082be:terraform/api/environments/prod.yaml:slack-web-hook:43
 e15688e0e17ace1ad8358f345269d0bfeff082be:terraform/api/environments/prod.yaml:slack-web-hook:78
+7e4d77e73315d829b2f227426b13ed8f17e81fbc:terraform/api/environments/prod-green.yaml:slack-web-hook:45
+7e4d77e73315d829b2f227426b13ed8f17e81fbc:terraform/api/environments/prod-green.yaml:slack-web-hook:83
