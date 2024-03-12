@@ -16,6 +16,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 ################################################################################
 
 module "ecs-lb-service-api" {
+  # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
   region                     = local.env.region
@@ -24,7 +25,7 @@ module "ecs-lb-service-api" {
   lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
   app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
   env                        = local.env.environment
-  is_create_repo             = true
+  is_create_repo             = false
   image_repo_url             = each.value.api.ecr_common_repo
   app_name                   = "${each.key}-api"
   image_name                 = local.env.image_tag
@@ -74,6 +75,7 @@ module "ecs-lb-service-api" {
 }
 
 module "ecs-lb-service" {
+  # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${local.env.environment == "prod" ? local.env.enabled_nets : {}}"
   source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -153,9 +155,122 @@ module "ecs-lb-service" {
 ################################################################################
 # Module For ECS Non-Load Balanced Service API
 ################################################################################
+module "ecs-backend-service" {
+  # temporary filter to avoid modification of existing prod resources on deployment of blue/green
+  for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
+  source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service"
+  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
+  region              = local.env.region
+  cluster             = "${var.project}-${local.env.environment}"
+  subnets             = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
+  env                 = local.env.environment
+  is_create_repo      = false
+  image_repo_url      = each.value.indexer.ecr_common_repo
+  image_name          = local.env.image_tag
+  app_name            = "${each.key}-indexer"
+  project             = var.project
+  cpu                 = each.value.indexer.cpu
+  memory              = each.value.indexer.memory
+  cidr                = local.env.cidr
+  desired_capacity    = "1"
+  containerPort       = 8080
+  hostPort            = 8080
+  namespace_id        = aws_service_discovery_private_dns_namespace.ns.id
+
+  environment_variables = [
+    {
+      name  = "APPLICATION_NAME"
+      value = "indexer"
+    },
+    {
+      name  = "ENVIRONMENT_NAME"
+      value = local.env.environment
+    },
+    {
+      name  = "SPRING_PROFILES_ACTIVE"
+      value = each.value.indexer.spring_profile
+    },
+    { name  = "THOR_URL"
+      value = each.value.thor_url
+    },
+    {
+      name  = "APP_LOG_LEVEL"
+      value = "INFO"
+    },
+    {
+      name  = "MONGO_URI"
+      value = format("%s://indexer:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+    },
+    {
+      name  = "MONGO_AUTHENTICATION_DATABASE",
+      value = "admin"
+    },
+    {
+      name  = "APP_LOGGER"
+      value = "CloudWatch"
+    },
+    {
+      name  = "SLACK_WEBHOOK_URL"
+      value = each.value.indexer.slack_webhook_url
+    },
+    {
+      name  = "INDEXER_START_BLOCK_BLOCKS"
+      value = each.value.indexer.start_block.blocks
+    },
+    {
+      name  = "INDEXER_START_BLOCK_CLAUSES"
+      value = each.value.indexer.start_block.clauses
+    },
+    {
+      name  = "INDEXER_START_BLOCK_CONTRACTS"
+      value = each.value.indexer.start_block.contracts
+    },
+    {
+      name  = "INDEXER_START_BLOCK_NFTS"
+      value = each.value.indexer.start_block.nfts
+    },
+    {
+      name  = "INDEXER_START_BLOCK_TRANSACTIONS"
+      value = each.value.indexer.start_block.transactions
+    },
+    {
+      name  = "INDEXER_START_BLOCK_TRANSFERS"
+      value = each.value.indexer.start_block.transfers
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_BLOCKS"
+      value = each.value.indexer.sync_logger_interval.blocks
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_CLAUSES"
+      value = each.value.indexer.sync_logger_interval.clauses
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_CONTRACTS"
+      value = each.value.indexer.sync_logger_interval.contracts
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
+      value = each.value.indexer.sync_logger_interval.fungible_tokens
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
+      value = each.value.indexer.sync_logger_interval.nfts
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
+      value = each.value.indexer.sync_logger_interval.transactions
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
+      value = each.value.indexer.sync_logger_interval.transfers
+    },
+  ]
+}
 
 module "ecs-service" {
-  for_each            = local.env.enabled_nets
+  # temporary filter to avoid modification of existing prod resources on deployment of blue/green
+  for_each            = "${local.env.environment == "prod" ? local.env.enabled_nets : {}}"
   source              = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets      = data.terraform_remote_state.vpc.outputs.public_subnets

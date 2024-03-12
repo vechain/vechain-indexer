@@ -103,7 +103,7 @@ resource "aws_security_group" "mongodb_sg" {
     from_port       = 27017
     to_port         = 27017
     protocol        = "tcp"
-    security_groups = [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id]
+    security_groups = "${module.ecs-lb-service != null ? [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id] : [module.ecs-lb-service-api[each.key].security_group_alb_id, module.ecs-backend-service[each.key].security_group_ecs_service_id]}"
 
     description = "mongodb service"
   }
