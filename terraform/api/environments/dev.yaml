@@ -70,7 +70,7 @@ enabled_nets:
       data_volume_type:             io2
       data_volume_iops:             2000
       cluster_tier:                 ""
-      disk_size_gb:                 ""
+      disk_size_gb:                 0
 #uncomment following top level label if testnet not required
 #disabled_nets:
   test:
@@ -115,4 +115,4 @@ enabled_nets:
 #iops must be empty for gp2 type
       data_volume_iops:             0
       cluster_tier:                 ""
-      disk_size_gb:                 ""
+      disk_size_gb:                 0
