@@ -17,6 +17,9 @@ jobs:
   publish-application-images:
     name: Publish Application Images
     secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         application: [ indexer, api ]
