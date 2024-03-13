@@ -2,7 +2,7 @@ module "mongoatlas-main-net" {
   source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
 
   secret_id = local.env.enabled_nets.main.mongodb.secret_arn
-  project_id = "64d6337acba67e1132a3a4e1" # MongoDB Atlas project ID
+  project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
 
@@ -11,7 +11,7 @@ module "mongoatlas-main-net" {
   mongodbatlas_audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
 
   enable_cluster = "${startswith(local.env.environment, "prod-") ? true : false}"
-  cluster_name = "VeWorld-Indexer-MongoCluster"
+  cluster_name = "${local.env.environment}-Mainnet"
   disk_size_gb = local.env.enabled_nets.main.mongodb.disk_size_gb
   num_shards = 1
   cloud_backup = true

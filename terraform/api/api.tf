@@ -11,6 +11,78 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
   vpc  = data.terraform_remote_state.vpc.outputs.vpc_id
 }
 
+######################
+# ALB Security Group
+######################
+
+resource "aws_security_group" "alb-sg" {
+  count       = 1
+  description = "security-group-alb"
+  name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-alb"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 443
+    protocol    = "tcp"
+    to_port     = 443
+  }
+
+  ingress {
+    from_port = 0
+    protocol  = "-1"
+    to_port   = 0
+    self      = true
+  }
+
+  tags = {
+    Environment = local.env.environment
+    Name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-alb"
+  }
+  vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+}
+
+######################
+# ECS Service Security Group
+######################
+
+resource "aws_security_group" "ecs_service_sg" {
+  count       = 1
+  description = "security-group-service"
+
+  name = "${local.env.environment}-${var.project}-${var.app_name}-sg-service"
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+  }
+  ingress {
+    from_port = 0
+    protocol  = "-1"
+    to_port   = 0
+    self      = true
+  }
+  tags = {
+    Environment = local.env.environment
+    Name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-service"
+  }
+
+  vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+}
+
 ################################################################################
 # Module For ECS Cluster creation
 ################################################################################
@@ -30,7 +102,7 @@ module "ecs-cluster" {
 ################################################################################
 
 module "ecs-lb-service-api" {
-  depends_on                 = [ module.ecs-cluster ]
+  depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
@@ -53,7 +125,7 @@ module "ecs-lb-service-api" {
   container_port             = 8080
   certificate_arn            = local.env.certificate_arn
   rule_0_path_pattern        = ["/api/v*", "/api-docs", "/swagger-ui/*"]
-  enable_alb                 = "true"
+  alb_sg                     = [aws_security_group.alb-sg[0].id]
   namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
   environment_variables = [
     {
