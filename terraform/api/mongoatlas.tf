@@ -36,12 +36,12 @@ module "mongoatlas-main-net" {
     }
   ]
 
-  project_ip_access_lists = [
+  project_ip_access_lists = "${startswith(local.env.environment, "prod-") ? [
     {
       ip_address = split("/", data.terraform_remote_state.vpc.outputs.vpc_ipv4)[0]
       comment    = "AWS VPC"
     }
-  ]
+  ] : []}"
 
   enable_mongodbatlas_backup_schedule = "${startswith(local.env.environment, "prod-") ? true : false}"
   mongodbatlas_backup_schedule_config = {
@@ -110,12 +110,12 @@ module "mongoatlas-test-net" {
     }
   ]
 
-  project_ip_access_lists = [
+  project_ip_access_lists = "${startswith(local.env.environment, "prod-") ? [
     {
       ip_address = split("/", data.terraform_remote_state.vpc.outputs.vpc_ipv4)[0]
       comment    = "AWS VPC"
     }
-  ]
+  ] : []}"
 
   enable_mongodbatlas_backup_schedule = "${startswith(local.env.environment, "prod-") ? true : false}"
   mongodbatlas_backup_schedule_config = {
