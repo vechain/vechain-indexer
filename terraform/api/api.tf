@@ -16,6 +16,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 ################################################################################
 
 module "ecs-cluster" {
+  # temporary filter to avoid deployment of new ECS cluster from original prod workspace
   count   = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
   source  = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs_cluster"
   env     = local.env.environment
