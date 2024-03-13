@@ -16,6 +16,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 ################################################################################
 
 module "ecs-cluster" {
+  count   = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
   source  = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs_cluster"
   env     = local.env.environment
   project = var.project
@@ -28,13 +29,14 @@ module "ecs-cluster" {
 ################################################################################
 
 module "ecs-lb-service-api" {
+  depends_on                 = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
-  cluster                    = module.ecs-cluster.name
-  cluster_name               = module.ecs-cluster.name
+  cluster                    = module.ecs-cluster[0].name
+  cluster_name               = module.ecs-cluster[0].name
   lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
   app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
   env                        = local.env.environment
@@ -169,12 +171,13 @@ module "ecs-lb-service" {
 # Module For ECS Non-Load Balanced Service API
 ################################################################################
 module "ecs-backend-service" {
+  depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
-  cluster             = module.ecs-cluster.name
+  cluster             = module.ecs-cluster[0].name
   subnets             = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
   env                 = local.env.environment
   is_create_repo      = false
