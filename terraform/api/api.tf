@@ -12,6 +12,18 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 }
 
 ################################################################################
+# Module For ECS Cluster creation
+################################################################################
+
+module "ecs-cluster" {
+  source  = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs_cluster"
+  env     = local.env.environment
+  project = var.project
+  vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
+  cidr    = data.terraform_remote_state.vpc.outputs.vpc_ipv4
+}
+
+################################################################################
 # Module For ECS Load Balanced Service API
 ################################################################################
 
@@ -21,7 +33,8 @@ module "ecs-lb-service-api" {
   source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
-  cluster_name               = "${var.project}-${local.env.environment}"
+  cluster                    = module.ecs-cluster.name
+  cluster_name               = module.ecs-cluster.name
   lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
   app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
   env                        = local.env.environment
@@ -161,7 +174,7 @@ module "ecs-backend-service" {
   source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
-  cluster             = "${var.project}-${local.env.environment}"
+  cluster             = module.ecs-cluster.name
   subnets             = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
   env                 = local.env.environment
   is_create_repo      = false
