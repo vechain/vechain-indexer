@@ -92,7 +92,7 @@ module "ecs-lb-service-api" {
 
 module "ecs-lb-service" {
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
-  for_each                   = "${local.env.environment == "prod" ? local.env.enabled_nets : {}}"
+  for_each                   = "${startswith(local.env.environment, "prod-") ? {} : local.env.enabled_nets}"
   source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets             = data.terraform_remote_state.vpc.outputs.public_subnets
@@ -287,7 +287,7 @@ module "ecs-backend-service" {
 
 module "ecs-service" {
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
-  for_each            = "${local.env.environment == "prod" ? local.env.enabled_nets : {}}"
+  for_each            = "${startswith(local.env.environment, "prod-") ? {} : local.env.enabled_nets}"
   source              = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets      = data.terraform_remote_state.vpc.outputs.public_subnets

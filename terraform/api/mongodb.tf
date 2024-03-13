@@ -87,6 +87,7 @@ resource "aws_iam_role_policy" "config_role_policy" {
 # MongoDB security group
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
+  # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
   for_each    = "${!startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
@@ -103,7 +104,6 @@ resource "aws_security_group" "mongodb_sg" {
     from_port       = 27017
     to_port         = 27017
     protocol        = "tcp"
-    # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
     security_groups = [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id]
 
     description = "mongodb service"
