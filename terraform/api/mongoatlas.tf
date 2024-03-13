@@ -1,7 +1,7 @@
 module "mongoatlas-main-net" {
   source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
 
-  secret_id = "${startswith(local.env.environment, "prod") ? "arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT" : ""}"
+  secret_id = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = "64d6337acba67e1132a3a4e1" # MongoDB Atlas project ID
 
   create_api_key = false
@@ -75,7 +75,7 @@ module "mongoatlas-main-net" {
 module "mongoatlas-test-net" {
   source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
 
-  secret_id = "arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT"
+  secret_id = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = "64d6337acba67e1132a3a4e1" # MongoDB Atlas project ID
 
   create_api_key = false
