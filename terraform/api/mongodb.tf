@@ -87,7 +87,7 @@ resource "aws_iam_role_policy" "config_role_policy" {
 # MongoDB security group
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
-  for_each    = local.env.enabled_nets
+  for_each    = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -104,7 +104,7 @@ resource "aws_security_group" "mongodb_sg" {
     to_port         = 27017
     protocol        = "tcp"
     # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
-    security_groups = "${module.ecs-lb-service != null ? [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id] : [module.ecs-lb-service-api[each.key].security_group_alb_id, module.ecs-backend-service[each.key].security_group_ecs_service_id]}"
+    security_groups = [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id]
 
     description = "mongodb service"
   }
