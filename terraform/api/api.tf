@@ -18,7 +18,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 resource "aws_security_group" "alb-sg" {
   count       = 1
   description = "security-group-alb"
-  name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-alb"
+  name        = "${local.env.environment}-${var.project}-sg-alb"
   egress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = 0
@@ -49,7 +49,7 @@ resource "aws_security_group" "alb-sg" {
 
   tags = {
     Environment = local.env.environment
-    Name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-alb"
+    Name        = "${local.env.environment}-${var.project}-sg-alb"
   }
   vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
 }
@@ -108,12 +108,12 @@ module "ecs-lb-service-api" {
   source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=ecs-support-loose-image-paths"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
-  cluster                    = module.ecs-cluster[0].name
   cluster_name               = module.ecs-cluster[0].name
   lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
   app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
   env                        = local.env.environment
   is_create_repo             = false
+  secrets_enable             = false
   image_repo_url             = each.value.api.ecr_common_repo
   app_name                   = "${each.key}-api"
   image_name                 = local.env.image_tag
@@ -160,6 +160,18 @@ module "ecs-lb-service-api" {
       value = "CloudWatch"
     }
   ]
+
+  ####### enable autoscailing #######
+  enable_ecs_cpu_based_autoscaling = true
+  enable_ecs_memory_based_autoscaling = true
+  min_capacity = 1
+  max_capacity = 2
+  target_cpu_value = 70
+  target_memory_value = 70
+  disable_scale_in = false
+  # scale_in_cooldown = 300
+  # scale_out_cooldown = 300
+  name = "auto-scaling-group"
 }
 
 module "ecs-lb-service" {
@@ -247,13 +259,14 @@ module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service"
+  source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service?ref=ecs-support-loose-image-paths"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
   subnets             = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
   env                 = local.env.environment
   is_create_repo      = false
+  secrets_enable      = false
   image_repo_url      = each.value.indexer.ecr_common_repo
   image_name          = local.env.image_tag
   app_name            = "${each.key}-indexer"
