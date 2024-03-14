@@ -28,6 +28,7 @@ rate_limit_exception_list:
 cloudwatch_alarms:               true
 slack_alert_channel:             C051L4Z7N9K
 slack_alert_workspace:           T03L3PQD8GK
+mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 enabled_nets:
   main:
     thor_url:                       https://mainnet.vechain.org
