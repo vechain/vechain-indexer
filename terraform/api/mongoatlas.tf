@@ -18,7 +18,7 @@ module "mongoatlas-main-net" {
   cluster_type                 = "REPLICASET"
   auto_scaling_disk_gb_enabled = true
   provider_name                = "AWS"
-  provider_disk_iops           = 2000
+  provider_disk_iops           = 3000
   provider_volume_type         = "STANDARD"
   provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
   mongo_db_major_version       = "6"
