@@ -105,7 +105,7 @@ module "ecs-lb-service-api" {
   depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice"
+  source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=ecs-support-loose-image-paths"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster                    = module.ecs-cluster[0].name
