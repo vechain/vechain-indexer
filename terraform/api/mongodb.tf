@@ -34,7 +34,7 @@ variable "mongo_credential_trigger" {
 ############################################################################################################
 
 resource "aws_config_config_rule" "config_rule" {
-  count    = startswith(local.env.environment, "prod") ? 0 : 1
+  count = startswith(local.env.environment, "prod") ? 0 : 1
   name  = "${local.env.environment}-${var.project}-mongodb-config-rule"
 
   source {
