@@ -301,7 +301,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -521,7 +521,7 @@ data "aws_security_groups" "ecs_sg_list" {
 
 module "vpc-endpoints" {
   source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//vpcendpoint?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
-  vpcendpoints_interfaces = [
+  vpcendpoints_interfaces = "${startswith(local.env.environment, "prod-") ? [] : [
     {
       id                  = "ec2"
       vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -578,7 +578,7 @@ module "vpc-endpoints" {
         Environment = local.env.environment
       }
     }
-  ]
+  ]}"
 }
 
 # waf
