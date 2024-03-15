@@ -149,7 +149,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -301,7 +301,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://indexer:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
