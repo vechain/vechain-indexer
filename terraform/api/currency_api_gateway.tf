@@ -8,14 +8,6 @@ variable "domain_name_data" {
       "name" = "coin-api.veworld.vechain.org"
       "zone" = "Z07511592AUMA3GPYN856"
     },
-    "prod-blue" = {
-      "name" = "coin-api.veworld.vechain.org"
-      "zone" = "Z07511592AUMA3GPYN856"
-    },
-    "prod-green" = {
-      "name" = "coin-api.veworld.vechain.org"
-      "zone" = "Z07511592AUMA3GPYN856"
-    },
   }
 }
 
@@ -27,7 +19,7 @@ locals {
   // https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d
   // https://api.coingecko.com/api/v3/simple/supported_vs_currencies
   // implement this as rest api gateway that sits on top of coin-api.dev.veworld | coin-api.prod.veworld
-  api_domain = var.domain_name_data[terraform.workspace]
+  api_domain = startswith(local.env.environment, "prod-") ? var.domain_name_data.prod : var.domain_name_data[terraform.workspace]
   cors       = {
     "responses" : {
       "200" : {
@@ -396,6 +388,7 @@ locals {
 }
 
 resource "aws_acm_certificate" "domain_cert" {
+  count = local.env.environment == "prod" ? 1 : 0
   domain_name       = local.api_domain.name
   validation_method = "DNS"
   provider          = aws.us_east_1
@@ -405,13 +398,14 @@ resource "aws_acm_certificate" "domain_cert" {
 }
 
 resource "aws_route53_record" "domain_cert_validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.domain_cert.domain_validation_options : dvo.domain_name => {
+  for_each = local.env.environment == "prod" ? {
+    for dvo in aws_acm_certificate.domain_cert[0].domain_validation_options :
+    dvo.domain_name => {
       name  = dvo.resource_record_name
       type  = dvo.resource_record_type
       value = dvo.resource_record_value
     }
-  }
+  } : {}
 
   name    = each.value.name
   type    = each.value.type
@@ -421,7 +415,8 @@ resource "aws_route53_record" "domain_cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "cert_validation_block" {
-  certificate_arn         = aws_acm_certificate.domain_cert.arn
+  count = local.env.environment == "prod" ? 1 : 0
+  certificate_arn         = aws_acm_certificate.domain_cert[0].arn
   provider                = aws.us_east_1
   validation_record_fqdns = [
     for record in aws_route53_record.domain_cert_validation : record.fqdn
@@ -429,6 +424,7 @@ resource "aws_acm_certificate_validation" "cert_validation_block" {
 }
 
 resource "aws_api_gateway_rest_api" "currency_cache" {
+  count = local.env.environment == "prod" ? 1 : 0
   name              = "coin_currency_cache"
   fail_on_warnings  = true
   body              = local.api_integration_json
@@ -439,9 +435,10 @@ resource "aws_api_gateway_rest_api" "currency_cache" {
 }
 // settings for all resources
 resource "aws_api_gateway_method_settings" "all" {
+  count = local.env.environment == "prod" ? 1 : 0
   method_path = "*/*"
-  rest_api_id = aws_api_gateway_rest_api.currency_cache.id
-  stage_name  = aws_api_gateway_stage.default.stage_name
+  rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
+  stage_name  = aws_api_gateway_stage.default[0].stage_name
   settings {
     logging_level          = "ERROR"
     metrics_enabled        = true
@@ -455,8 +452,9 @@ resource "aws_api_gateway_method_settings" "all" {
 
 
 resource "aws_api_gateway_domain_name" "api" {
+  count = local.env.environment == "prod" ? 1 : 0
   domain_name     = local.api_domain.name
-  certificate_arn = aws_acm_certificate_validation.cert_validation_block.certificate_arn
+  certificate_arn = aws_acm_certificate_validation.cert_validation_block[0].certificate_arn
   security_policy = "TLS_1_2"
 
   endpoint_configuration {
@@ -465,25 +463,28 @@ resource "aws_api_gateway_domain_name" "api" {
 }
 
 resource "aws_route53_record" "apigw_domain_alias" {
+  count = local.env.environment == "prod" ? 1 : 0
   name    = local.api_domain.name
   type    = "A"
   zone_id = local.api_domain.zone
 
   alias {
-    name                   = aws_api_gateway_domain_name.api.cloudfront_domain_name
-    zone_id                = aws_api_gateway_domain_name.api.cloudfront_zone_id
+    name                   = aws_api_gateway_domain_name.api[0].cloudfront_domain_name
+    zone_id                = aws_api_gateway_domain_name.api[0].cloudfront_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_api_gateway_base_path_mapping" "currency_cache" {
-  api_id      = aws_api_gateway_rest_api.currency_cache.id
-  domain_name = aws_api_gateway_domain_name.api.domain_name
-  stage_name  = aws_api_gateway_stage.default.stage_name
+  count = local.env.environment == "prod" ? 1 : 0
+  api_id      = aws_api_gateway_rest_api.currency_cache[0].id
+  domain_name = aws_api_gateway_domain_name.api[0].domain_name
+  stage_name  = aws_api_gateway_stage.default[0].stage_name
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
-  rest_api_id = aws_api_gateway_rest_api.currency_cache.id
+  count = local.env.environment == "prod" ? 1 : 0
+  rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
   triggers    = {
     redeployment = sha1(local.api_integration_json)
   }
@@ -493,24 +494,27 @@ resource "aws_api_gateway_deployment" "deployment" {
 }
 
 resource "aws_cloudwatch_log_group" "gw_log_group" {
+  count = local.env.environment == "prod" ? 1 : 0
   name_prefix = "api_gw_log_group"
   retention_in_days = 30
 }
 
 resource "aws_api_gateway_stage" "default" {
-  deployment_id = aws_api_gateway_deployment.deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.currency_cache.id
+  count = local.env.environment == "prod" ? 1 : 0
+  deployment_id = aws_api_gateway_deployment.deployment[0].id
+  rest_api_id   = aws_api_gateway_rest_api.currency_cache[0].id
   stage_name    = "default"
   cache_cluster_enabled = true
   cache_cluster_size = "0.5"
   access_log_settings {
-    destination_arn = aws_cloudwatch_log_group.gw_log_group.arn
+    destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
     format          = "$context.status,$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.protocol,$context.responseLength,$context.requestId,\"$context.resourcePath\",$context.integration.integrationStatus,$context.integration.status,\"$context.error.message\",\"$context.integrationErrorMessage\"\n"
   }
 }
 
 resource "aws_api_gateway_account" "gw_role_account" {
-  cloudwatch_role_arn = aws_iam_role.gw_cloudwatch.arn
+  count = local.env.environment == "prod" ? 1 : 0
+  cloudwatch_role_arn = aws_iam_role.gw_cloudwatch[0].arn
 }
 
 data "aws_iam_policy_document" "gw_assume_role" {
@@ -527,6 +531,7 @@ data "aws_iam_policy_document" "gw_assume_role" {
 }
 
 resource "aws_iam_role" "gw_cloudwatch" {
+  count = local.env.environment == "prod" ? 1 : 0
   name_prefix        = "api_gateway_cloudwatch_global"
   assume_role_policy = data.aws_iam_policy_document.gw_assume_role.json
 }
@@ -549,7 +554,8 @@ data "aws_iam_policy_document" "gw_cloudwatch" {
   }
 }
 resource "aws_iam_role_policy" "gw_cloudwatch" {
+  count = local.env.environment == "prod" ? 1 : 0
   name   = "default"
-  role   = aws_iam_role.gw_cloudwatch.id
+  role   = aws_iam_role.gw_cloudwatch[0].id
   policy = data.aws_iam_policy_document.gw_cloudwatch.json
 }
