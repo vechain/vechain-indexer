@@ -7,14 +7,6 @@ variable "domain_name_data" {
     "prod" = {
       "name" = "coin-api.veworld.vechain.org"
       "zone" = "Z07511592AUMA3GPYN856"
-    },
-    "prod-blue" = {
-      "name" = "coin-api.veworld.vechain.org"
-      "zone" = "Z07511592AUMA3GPYN856"
-    }
-    "prod-green" = {
-      "name" = "coin-api.veworld.vechain.org"
-      "zone" = "Z07511592AUMA3GPYN856"
     }
   }
 }
@@ -27,7 +19,7 @@ locals {
   // https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=1h%2C24h%2C7d
   // https://api.coingecko.com/api/v3/simple/supported_vs_currencies
   // implement this as rest api gateway that sits on top of coin-api.dev.veworld | coin-api.prod.veworld
-  api_domain = startswith(local.env.environment, "prod-") ? var.domain_name_data.prod : var.domain_name_data[terraform.workspace]
+  api_domain = var.domain_name_data[terraform.workspace]
   cors       = {
     "responses" : {
       "200" : {
