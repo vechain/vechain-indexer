@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM amazoncorretto:21.0.2-alpine3.17 AS builder
 
 ARG VEWORLD_PACKAGE
 
@@ -20,7 +20,7 @@ ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
 
 RUN ./gradlew packages:$VEWORLD_PACKAGE:build -x test
 
-FROM eclipse-temurin:17-jre-jammy AS prod
+FROM amazoncorretto:21.0.2-alpine3.17 AS prod
 
 ARG VEWORLD_PACKAGE
 ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
