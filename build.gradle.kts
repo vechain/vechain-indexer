@@ -191,6 +191,16 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter:3.2.3")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.2.3")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.2.3")
+        implementation("org.springframework:spring-core") {
+            version {
+                strictly("6.1.5")
+            }
+        }
+        implementation("org.springframework:spring-web") {
+            version {
+                strictly("6.1.5")
+            }
+        }
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
