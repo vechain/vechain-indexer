@@ -89,7 +89,6 @@ open class OfficialTokenService(
             .uri("/$networkType.json")
             .retrieve()
             .bodyToMono(object : ParameterizedTypeReference<List<TokenRegistry>>() {})
-            .block()
-            ?: throw Exception("Call to token registry API failed")
+            .block() ?: throw Exception("Call to token registry API failed")
     }
 }

@@ -7,8 +7,7 @@ object RevisionUtils {
     fun isValid(revision: String?): Boolean {
         revision?.let {
             return it.matches(Regex(REGEX)) || HexUtils.isValidBlockID(it)
-        }
-            ?: return false
+        } ?: return false
     }
 
     fun isNotValid(revision: String?): Boolean {
