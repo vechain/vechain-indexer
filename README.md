@@ -1,18 +1,18 @@
 # VeWorld Indexer
 
-[![Test, Publish & Deploy](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main-commit.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main-commit.yml)
+[![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main-commit.yml)
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechainfoundation_veworld-indexer&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechain_veworld-indexer&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=bugs&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=vulnerabilities&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=duplicated_lines_density&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=reliability_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=sqale_index&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=ncloc&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=code_smells&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=sqale_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vechainfoundation_veworld-indexer&metric=security_rating&token=e9da123057ea6bd22033e6388a64cc25d2a50f81)](https://sonarcloud.io/summary/new_code?id=vechainfoundation_veworld-indexer)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=bugs&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=vulnerabilities&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=duplicated_lines_density&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=reliability_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=sqale_index&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=ncloc&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=code_smells&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=sqale_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=security_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
 
 - Coverage Reports:
     - [API](https://ideal-fortnight-7vp33mg.pages.github.io/api/coverage/)

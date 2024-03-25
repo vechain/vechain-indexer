@@ -19,8 +19,7 @@ class ThorClient(private val thorRest: WebClient) {
             .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Best block not found")
+            .block() ?: throw NotFoundException("Best block not found")
     }
 
     fun getFinalizedBlock(expanded: Boolean = true): Block {
@@ -30,8 +29,7 @@ class ThorClient(private val thorRest: WebClient) {
             .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Finalized block not found")
+            .block() ?: throw NotFoundException("Finalized block not found")
     }
 
     fun getBlock(blockNumber: Long, expanded: Boolean = true): Block {
@@ -41,8 +39,7 @@ class ThorClient(private val thorRest: WebClient) {
             .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Block not found for block number $blockNumber")
+            .block() ?: throw NotFoundException("Block not found for block number $blockNumber")
     }
 
     fun getBlockById(blockId: String, expanded: Boolean = true): Block {
@@ -52,8 +49,7 @@ class ThorClient(private val thorRest: WebClient) {
             .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
-            .block()
-            ?: throw NotFoundException("Block not found for block id $blockId")
+            .block() ?: throw NotFoundException("Block not found for block id $blockId")
     }
 
     fun getNetworkType(): NetworkType {

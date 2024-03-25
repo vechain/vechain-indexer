@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.0.5"
-    id("io.spring.dependency-management") version "1.1.0"
+    id("org.springframework.boot") version "3.2.3"
+    id("io.spring.dependency-management") version "1.1.4"
     id("maven-publish")
-    kotlin("jvm") version "1.7.22"
-    kotlin("plugin.spring") version "1.7.22"
+    kotlin("jvm") version "1.9.0"
+    kotlin("plugin.spring") version "1.9.0"
     id("jacoco-report-aggregation")
-    id("com.diffplug.spotless") version "6.19.0"
+    id("com.diffplug.spotless") version "6.25.0"
     jacoco
 }
 
@@ -178,10 +178,10 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.1.0")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.1.0")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.1.0")
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.1.0")
+        implementation("org.springframework.boot:spring-boot-starter:3.2.3")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.2.3")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.2.3")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -195,7 +195,7 @@ allprojects {
         implementation("org.vechain:indexer-core:2.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.3")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
