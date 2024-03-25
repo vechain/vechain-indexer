@@ -90,7 +90,7 @@ resource "aws_security_group" "ecs_service_sg" {
 module "ecs-cluster" {
   # temporary filter to avoid deployment of new ECS cluster from original prod workspace
   count   = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
-  source  = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs_cluster"
+  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster"
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -105,7 +105,7 @@ module "ecs-lb-service-api" {
   depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source                     = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=ecs-support-loose-image-paths"
+  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=ecs-support-loose-image-paths"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name               = module.ecs-cluster[0].name
@@ -177,7 +177,7 @@ module "ecs-lb-service-api" {
 module "ecs-lb-service" {
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? {} : local.env.enabled_nets}"
-  source                     = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
+  source                     = "git::git@github.com:/vechain/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets             = data.terraform_remote_state.vpc.outputs.public_subnets
   private_subnets            = data.terraform_remote_state.vpc.outputs.private_subnets
@@ -259,7 +259,7 @@ module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//ecs-backend-service?ref=ecs-support-loose-image-paths"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=ecs-support-loose-image-paths"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
@@ -373,7 +373,7 @@ module "ecs-backend-service" {
 module "ecs-service" {
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? {} : local.env.enabled_nets}"
-  source              = "git::git@github.com:/vechainfoundation/devops.git//ecs?ref=release/node-hosting/v6"
+  source              = "git::git@github.com:/vechain/devops.git//ecs?ref=release/node-hosting/v6"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   public_subnets      = data.terraform_remote_state.vpc.outputs.public_subnets
   private_subnets     = data.terraform_remote_state.vpc.outputs.private_subnets
@@ -520,7 +520,7 @@ data "aws_security_groups" "ecs_sg_list" {
 }
 
 module "vpc-endpoints" {
-  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//vpcendpoint?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
   vpcendpoints_interfaces = "${startswith(local.env.environment, "prod-") ? [] : [
     {
       id                  = "ec2"
@@ -584,7 +584,7 @@ module "vpc-endpoints" {
 # waf
 module "waf" {
   count                              = local.env.environment == "prod" ? 1 : 0
-  source                             = "git::git@github.com:/vechainfoundation/devops.git//waf?ref=release/node-hosting/v6"
+  source                             = "git::git@github.com:/vechain/devops.git//waf?ref=release/node-hosting/v6"
   env                                = local.env.environment
   project_name                       = var.project
   waf_cloudfront_enable              = false
@@ -608,7 +608,7 @@ resource "aws_wafv2_web_acl_association" "acl_alb_association" {
 
 # enable ebs-snapshot lambda on dev env only
 # module "ebs-snapshot" {
-#   source                                = "git::git@github.com:/vechainfoundation/devops.git//ebs_snapshot?ref=release/node-hosting/v6"
+#   source                                = "git::git@github.com:/vechain/devops.git//ebs_snapshot?ref=release/node-hosting/v6"
 #   count                                 = local.env.environment == "dev" ? 1 : 0
 #   region                                = local.env.region
 #   environment                           = local.env.environment
