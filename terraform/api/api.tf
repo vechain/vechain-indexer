@@ -16,7 +16,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 ######################
 
 resource "aws_security_group" "alb-sg" {
-  count       = 1
+  count       = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
   description = "security-group-alb"
   name        = "${local.env.environment}-${var.project}-sg-alb"
   egress {
@@ -59,7 +59,7 @@ resource "aws_security_group" "alb-sg" {
 ######################
 
 resource "aws_security_group" "ecs_service_sg" {
-  count       = 1
+  count       = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
   description = "security-group-service"
 
   name = "${local.env.environment}-${var.project}-${var.app_name}-sg-service"
