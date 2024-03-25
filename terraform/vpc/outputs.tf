@@ -23,6 +23,11 @@ output "database_subnets" {
   value       = local.env.environment == "prod" ? null : data.aws_subnets.database_subnets.ids
 }
 
+output "currency_cache_name" {
+  description = "The name of the api gateway rest api currency cache"
+  value       = local.env.environment == "prod" ? aws_api_gateway_rest_api.currency_cache[0].name : null
+}
+
 # output "cloudwatch_log_group_name" {
 #     value = module.vpclogs_cloudwatch.log_group_name
 # }
