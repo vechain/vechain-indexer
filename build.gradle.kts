@@ -24,6 +24,16 @@ allprojects {
         plugin("com.diffplug.spotless")
     }
 
+    configurations.all {
+        resolutionStrategy {
+            force(
+                "com.google.protobuf:protobuf-java:3.21.7",
+                "org.java-websocket:Java-WebSocket:1.5.0",
+                "org.springframework:spring-web:6.1.5",
+            )
+        }
+    }
+
     spotless {
         kotlin {
             ktfmt().googleStyle().configure {
@@ -181,6 +191,16 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter:3.2.3")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.2.3")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.2.3")
+        implementation("org.springframework:spring-core") {
+            version {
+                strictly("6.1.5")
+            }
+        }
+        implementation("org.springframework:spring-web") {
+            version {
+                strictly("6.1.5")
+            }
+        }
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")

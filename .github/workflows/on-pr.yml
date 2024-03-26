@@ -26,6 +26,9 @@ jobs:
       - name: Gradle Spotless
         run: ./gradlew spotlessCheck
 
+  vulnerability-scan:
+    uses: ./.github/workflows/vulnerability-scan.yml
+
   terraform-plan-dev:
     uses: ./.github/workflows/veworld-stack.yml
     with:
