@@ -127,6 +127,7 @@ module "ecs-lb-service-api" {
   rule_0_path_pattern        = ["/api/v*", "/api-docs", "/swagger-ui/*"]
   alb_sg                     = [aws_security_group.alb-sg[0].id]
   namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
+  https_tg_healthcheck_path  = "/actuator/health"
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -149,7 +150,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
