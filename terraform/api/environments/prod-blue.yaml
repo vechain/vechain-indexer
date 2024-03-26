@@ -69,42 +69,42 @@ enabled_nets:
       disk_size_gb:                 250
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-  # test:
-  #   thor_url:                       https://testnet.vechain.org
-  #   api:
-  #     cpu:                          512
-  #     memory:                       1024
-  #     min_capacity:                 2
-  #     spring_profile:               nft-events,transactions,transfer-events
-  #     ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
-  #   indexer:
-  #     cpu: 1024
-  #     memory: 2048
-  #     spring_profile: indexer,nft-events,transactions,transfer-events
-  #     ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
-  #     slack_webhook_url: https://hooks.slack.com/services/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
-  #     start_block:
-  #       blocks:                     '0'
-  #       clauses:                    '15034'
-  #       contracts:                  '15101'
-  #       fungible_tokens:            '0'
-  #       nfts:                       '1042259'
-  #       transactions:               '15034'
-  #       transfers:                  '15034'
-  #     sync_logger_interval:
-  #       blocks:                     '5000'
-  #       clauses:                    '5000'
-  #       contracts:                  '5000'
-  #       fungible_tokens:            '5000'
-  #       nfts:                       '5000'
-  #       transactions:               '5000'
-  #       transfers:                  '5000'
-  #   mongodb:
-  #     type:                         atlas
-  #     fqdn:                         testnet.rsmhw.mongodb.net
-  #     proto:                        mongodb+srv
-  #     opts:                         retryWrites=true&w=majority
-  #     cluster_tier:                 M10
-  #     disk_size_gb:                 119
-  #     iops:                         1000
-  #     secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+  test:
+    thor_url:                       https://testnet.vechain.org
+    api:
+      cpu:                          512
+      memory:                       1024
+      min_capacity:                 2
+      spring_profile:               nft-events,transactions,transfer-events
+      ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+    indexer:
+      cpu: 1024
+      memory: 2048
+      spring_profile: indexer,nft-events,transactions,transfer-events
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      slack_webhook_url: https://hooks.slack.com/services/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
+      start_block:
+        blocks:                     '0'
+        clauses:                    '15034'
+        contracts:                  '15101'
+        fungible_tokens:            '0'
+        nfts:                       '1042259'
+        transactions:               '15034'
+        transfers:                  '15034'
+      sync_logger_interval:
+        blocks:                     '5000'
+        clauses:                    '5000'
+        contracts:                  '5000'
+        fungible_tokens:            '5000'
+        nfts:                       '5000'
+        transactions:               '5000'
+        transfers:                  '5000'
+    mongodb:
+      type:                         atlas
+      fqdn:                         testnet.rsmhw.mongodb.net
+      proto:                        mongodb+srv
+      opts:                         retryWrites=true&w=majority
+      cluster_tier:                 M10
+      disk_size_gb:                 119
+      iops:                         1000
+      secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
