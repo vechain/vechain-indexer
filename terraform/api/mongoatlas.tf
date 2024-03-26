@@ -76,7 +76,7 @@ module "mongoatlas-test-net" {
   source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
 
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
-  project_id = "64d6337acba67e1132a3a4e1" # MongoDB Atlas project ID
+  project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
 
