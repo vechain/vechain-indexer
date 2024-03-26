@@ -160,6 +160,12 @@ module "ecs-lb-service-api" {
       value = "CloudWatch"
     }
   ]
+  log_metric_filters = [
+    {
+      name    = "AppUnhealthy",
+      pattern = "Application is UNHEALTHY"
+    }
+  ]
 
   ####### enable autoscailing #######
   enable_ecs_cpu_based_autoscaling = true
@@ -278,6 +284,12 @@ module "ecs-backend-service" {
   containerPort       = 8080
   hostPort            = 8080
   namespace_id        = aws_service_discovery_private_dns_namespace.ns.id
+  log_metric_filters = [
+    {
+      name    = "AppUnhealthy",
+      pattern = "Application is UNHEALTHY"
+    }
+  ]
 
   environment_variables = [
     {
@@ -583,7 +595,7 @@ module "vpc-endpoints" {
 
 # waf
 module "waf" {
-  count                              = local.env.environment == "prod" ? 1 : 0
+  count                              = "${startswith(local.env.environment, "prod") ? 1 : 0}"
   source                             = "git::git@github.com:/vechain/devops.git//waf?ref=release/node-hosting/v6"
   env                                = local.env.environment
   project_name                       = var.project
