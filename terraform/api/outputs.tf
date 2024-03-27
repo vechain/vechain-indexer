@@ -1,19 +1,28 @@
-output "security_group_alb_id" {
-  description = "The ID of ALB the security group"
-  value       = aws_security_group.alb-sg[0].id
-}
-
-output "security_group_ecs_service_id" {
-  description = "The ID of the security group"
-  value       = aws_security_group.ecs_service_sg[0].id
-}
-
 output "main_api_dns_name" {
-    description = "The DNS name of the mainnet API"
-    value       = module.ecs-lb-service-api["main"].alb_dns_name
+  description = "The DNS name of the mainnet API"
+  value       = module.ecs-lb-service-api["main"].alb_dns_name
 }
 
 output "test_api_dns_name" {
-    description = "The DNS name of the testnet API"
-    value       = module.ecs-lb-service-api["test"].alb_dns_name
+  description = "The DNS name of the testnet API"
+  value       = module.ecs-lb-service-api["test"].alb_dns_name
+}
+
+output "cluster_name" {
+  description = "The name of the ECS cluster"
+  value       = module.ecs-cluster[0].name
+}
+
+output "api_ecs_service_names" {
+  description = "The names of the load balanced ECS services"
+  value       = [
+    for service in module.ecs-lb-service-api : service.service_name
+  ]
+}
+
+output "indexer_ecs_service_names" {
+  description = "The names of the backend ECS services"
+  value       = [
+    for service in module.ecs-backend-service : service.service_name
+  ]
 }
