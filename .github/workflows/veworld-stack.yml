@@ -9,12 +9,20 @@ on:
         required: true
         default: dev
         type: environment
+      workspace:
+        description: Terraform workspace to use
+        required: true
+        type: string
   workflow_call:
     inputs:
       environment:
         description: Which environment to plan/deploy to ('dev' or 'prod')
         required: true
         default: dev
+        type: string
+      workspace:
+        description: Terraform workspace to use
+        required: true
         type: string
 
 # Required for authentication through GitHub OIDC
@@ -24,15 +32,12 @@ permissions:
 
 jobs:
   deploy:
-    name: "Plan/deploy VeWorld Indexer to ${{ inputs.environment }}"
+    name: "Plan/deploy VeWorld Indexer to ${{ inputs.workspace }}"
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: terraform/api
-
-    env:
-      WORKSPACE: "${{ inputs.environment }}"
 
     steps:
       - name: Checkout
@@ -82,7 +87,7 @@ jobs:
 
       - name: Terraform workspace
         id: workspace
-        run: terraform workspace select ${{ env.WORKSPACE }}
+        run: terraform workspace select ${{ inputs.workspace }}
 
       - name: Terraform validate
         id: validate
@@ -113,5 +118,5 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.environment || 'dev' }}* environment
+          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
           SLACK_TITLE: VeWorld Indexer Deployment
