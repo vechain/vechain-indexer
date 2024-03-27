@@ -42,7 +42,7 @@ jobs:
   terraform-plan-prod:
     uses: ./.github/workflows/veworld-stack.yml
     with:
-      environment: prod
+      environment: prod-blue
     permissions:
       packages: read
       contents: read
