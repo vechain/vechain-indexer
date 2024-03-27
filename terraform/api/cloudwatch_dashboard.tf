@@ -40,7 +40,7 @@ locals {
     "end" : "P0D"
   }
 
-  api_id = data.terraform_remote_state.vpc.outputs.currency_cache_name
+  api_id = try(data.terraform_remote_state.vpc.outputs.currency_cache_name, "")
 
   count = [
     "AWS/ApiGateway", "Count", "ApiName", local.api_id, { id : "m1", region : local.env.region, "visible" : false }
