@@ -124,6 +124,7 @@ module "ecs-lb-service-api" {
   desired_capacity           = each.value.api.min_capacity
   container_port             = 8080
   certificate_arn            = local.env.certificate_arn
+  ecs_sg                     = [aws_security_group.alb-sg[0].id]
   rule_0_path_pattern        = ["/api/v*", "/api-docs", "/swagger-ui/*"]
   alb_sg                     = [aws_security_group.alb-sg[0].id]
   namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
@@ -281,6 +282,7 @@ module "ecs-backend-service" {
   cpu                 = each.value.indexer.cpu
   memory              = each.value.indexer.memory
   cidr                = local.env.cidr
+  security_groups     = [aws_security_group.ecs_service_sg[0].id]
   desired_capacity    = "1"
   containerPort       = 8080
   hostPort            = 8080
