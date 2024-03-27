@@ -512,16 +512,6 @@ module "ecs-service" {
   ]
 }
 
-output "security_group_alb_id" {
-  description = "The ID of ALB the security group"
-  value       = [for security_group_alb_id in module.ecs-lb-service : security_group_alb_id]
-}
-
-output "security_group_ecs_service_id" {
-  description = "The ID of the security group"
-  value       = [for security_group_ecs_service_id in module.ecs-lb-service : security_group_ecs_service_id]
-}
-
 data "aws_security_groups" "ecs_sg_list" {
   filter {
     name   = "vpc-id"
