@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/veworld-stack.yml
     with:
       environment: dev
+      workspace: dev
     permissions:
       packages: read
       contents: read
