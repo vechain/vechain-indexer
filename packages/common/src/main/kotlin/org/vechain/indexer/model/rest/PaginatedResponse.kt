@@ -1,7 +1,6 @@
 package org.vechain.indexer.model.rest
 
 import com.fasterxml.jackson.annotation.JsonView
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Slice
 import org.vechain.indexer.thor.model.Views
 
@@ -31,36 +30,14 @@ data class PaginationDetail(
 /**
  * Builds a paginated API response based on a single results page.
  *
- * The count of response elements of the API request is limited to COUNT_LIMIT + 1, in order to
- * detect if the results number is above the configured count limit.
- *
- * If the count is less or equal to the COUNT_LIMIT, we return the exact count of elements/pages.
- * Otherwise, an exact count of elements/pages is not returned.
- *
- * All the response elements along with the count limit are still always returned, and the hasNext
- * flag provides an indication whether it's useful to keep querying more pages.
+ * hasNext flag provides an indication whether it's useful to keep querying for more pages.
  */
-fun <T : Any> paginatedResponse(page: Page<T>): PaginatedResponse<T> {
-    val hasCount = page.totalElements < COUNT_LIMIT + 1
-
-    return PaginatedResponse(
-        data = page.content,
-        pagination =
-            PaginationDetail(
-                hasCount = hasCount,
-                countLimit = COUNT_LIMIT,
-                totalPages = if (hasCount) page.totalPages else null,
-                totalElements = if (hasCount) page.totalElements else null,
-                hasNext = page.hasNext()
-            )
-    )
-}
-
-fun <T : Any> paginatedResponse2(slice: Slice<T>): PaginatedResponse<T> {
+fun <T : Any> paginatedResponse(slice: Slice<T>): PaginatedResponse<T> {
     return PaginatedResponse(
         data = slice.content,
         pagination =
             PaginationDetail(
+                // Count fields deprecated, kept for backwards compatibility only temporarily
                 hasCount = false,
                 countLimit = 0,
                 totalPages = null,

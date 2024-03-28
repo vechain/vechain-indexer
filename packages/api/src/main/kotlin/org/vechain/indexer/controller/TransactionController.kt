@@ -17,7 +17,7 @@ import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.paginatedResponse2
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.TransactionUtils
@@ -91,7 +91,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransaction> {
-        return paginatedResponse2(
+        return paginatedResponse(
             transactionService.findByOriginOrDelegator(
                 origin,
                 includeDelegated,
@@ -125,7 +125,7 @@ open class TransactionController(private val transactionService: TransactionServ
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransaction> {
-        return paginatedResponse2(
+        return paginatedResponse(
             transactionService.findAllDelegated(
                 delegator,
                 toPageable(page, size, direction, "blockNumber", "_id")

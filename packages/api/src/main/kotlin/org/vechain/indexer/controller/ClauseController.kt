@@ -16,7 +16,7 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.paginatedResponse2
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.ClauseService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
@@ -46,7 +46,7 @@ open class ClauseController(private val clauseService: ClauseService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?
     ): PaginatedResponse<IndexedClause> {
-        return paginatedResponse2(
+        return paginatedResponse(
             clauseService.findByAddress(address, toPageable(page, size, direction))
         )
     }

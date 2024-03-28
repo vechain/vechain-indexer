@@ -18,7 +18,7 @@ import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.paginatedResponse2
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -92,7 +92,7 @@ open class ContractController(private val contractService: ContractService) {
         if (address == null && type.isNullOrEmpty())
             throw BadRequestException("Either contract address or contract type should be non null")
 
-        return paginatedResponse2(
+        return paginatedResponse(
             contractService.find(
                 address,
                 ContractType.byNameIgnoreCaseOrNull(type),

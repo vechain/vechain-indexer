@@ -16,7 +16,7 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.paginatedResponse2
+import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -71,7 +71,7 @@ open class NFTController(private val nftService: NFTService) {
                 nftService.findByOwnerAndContractAddress(address, contractAddress, pageable)
             }
 
-        return paginatedResponse2(resultsPage)
+        return paginatedResponse(resultsPage)
     }
 
     @GetMapping("/contracts")
@@ -99,6 +99,6 @@ open class NFTController(private val nftService: NFTService) {
     ): PaginatedResponse<String> {
         val pageable = toPageable(page, size, direction)
 
-        return paginatedResponse2(nftService.findContractsByNFTOwner(owner, pageable))
+        return paginatedResponse(nftService.findContractsByNFTOwner(owner, pageable))
     }
 }
