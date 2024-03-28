@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: dev
+      workspace: dev
     permissions:
       packages: read
       contents: read

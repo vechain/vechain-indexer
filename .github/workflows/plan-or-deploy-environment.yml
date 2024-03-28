@@ -22,8 +22,8 @@ on:
         type: string
       workspace:
         description: Terraform workspace to use
-        required: false
-        default: ${{ inputs.environment }}
+        required: true
+        default: dev
         type: string
 
 # Required for authentication through GitHub OIDC
