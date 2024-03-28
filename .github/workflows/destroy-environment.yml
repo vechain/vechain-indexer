@@ -1,0 +1,171 @@
+name: Cluster Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to destroy"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod-blue
+          - prod-green
+
+# Prevent parallel deploy/destroy of the node cluster infrastructure in the same workspace
+concurrency: 1
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+  pull-requests: write # This is required for pull request comments
+
+jobs:
+  cluster-destroy:
+    name: "Destroy Node Cluster Infrastructure"
+    runs-on: ubuntu-latest
+    environment: cluster-destroy-${{ inputs.target_color }}-${{ inputs.target_environment }}
+
+    env:
+      FQDN: ${{inputs.target_environment}}.node.vechain.org
+      STAGING_COLOR: to-be-determined
+
+    defaults:
+      run:
+        working-directory: cluster
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get OpenID Connect Token
+        run: |
+          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r '.value' > /tmp/web_identity_token_file
+
+      - name: Setup AWS credentials file
+        run: |
+          mkdir -p ~/.aws && cp ../config/credentials.aws ~/.aws/credentials && touch ~/.aws/config
+
+      - name: Validate AWS configuration
+        run: |
+          echo "AWS configuration checks:"
+          if (aws sts get-caller-identity) then
+            echo "[ERROR] - AWS credentials found. Please ensure there are no AWS credentials in order to use OpenID Connect." && exit 1
+          else
+            echo "[OK] - No AWS credentials found."
+          fi
+
+          if (env | grep AWS_) then
+            echo "[ERROR] - AWS environment variables found. Please ensure there are no AWS environment variables in order to use OpenID Connect." && exit 1
+          else 
+            echo "[OK] - No AWS environment variables found."
+          fi
+
+          credentials_file_path="$HOME/.aws/credentials"
+          if [ -f "$credentials_file_path" ] && grep -q "arn:aws:iam" "$credentials_file_path"; then
+            echo "[OK] - The file '$credentials_file_path' exists and contains the AWS IAM ARN."
+          elif [ -f "$credentials_file_path" ]; then
+            echo "[ERROR] - The file '$credentials_file_path' exists but does not contain the AWS IAM ARN. Have you configured it?" && exit 1
+          else
+            echo "[ERROR] - The file '$credentials_file_path' does not exist." && exit 1
+          fi
+
+      - name: Determine deployment target
+        run: |
+          if [ "${{ inputs.target_color }}" = "ci" ]; then
+            echo "Deployment target: '${{ inputs.target_color}}-${{ inputs.target_environment}}'." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ "${{ inputs.target_environment }}" = "prod" ]; then
+            profile="prod-node-devops"
+          else
+            profile="node-devops"
+          fi
+
+          HOSTED_ZONE_ID=$(aws route53 list-hosted-zones --profile=$profile --query "HostedZones[?Name == '${{ env.FQDN }}.'].Id" --output text | sed 's#/hostedzone/##g')
+      # Required to access terraform modules from remote repositories
+      # e.g. github.com/vechainfoundation/terraform_infrastructure_modules
+      - name: Setup TERRAFORM_MODULES_PAT for cross-repo access
+        run: git config --global url."https://oauth2:${{ secrets.TERRAFORM_MODULES_PAT }}@github.com".insteadOf https://github.com
+
+      - name: Setup terraform
+        uses: hashicorp/setup-terraform@v2
+        if: inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci'
+        with:
+          terraform_version: 1.6
+
+      - name: Initialize terraform
+        if: inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci'
+        id: init
+        run: terraform init
+
+      - name: Select terraform workspace
+        if: inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci'
+        id: workspace
+        run: terraform workspace select ${{ inputs.target_color }}-${{ inputs.target_environment }}
+
+      # The S3 buckets for ALB Access Logs and CloutTrail in production are delete-protected and not destroyed through terraform.
+      - name: Remove terraform delete-protected resources from state
+        if: inputs.target_color == env.STAGING_COLOR && inputs.target_environment == 'prod'
+        id: state
+        run: |
+          terraform state rm module.mainnet.aws_s3_bucket.lb_logs
+          terraform state rm module.testnet.aws_s3_bucket.lb_logs
+          terraform state rm module.cloudtrail.aws_s3_bucket.bucket
+        continue-on-error: true
+
+      - name: Plan terraform destroy
+        if: inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci'
+        id: plan
+        run: terraform plan -out "destroy.plan" -destroy -no-color
+
+      - name: Terraform destroy
+        if: inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci'
+        id: destroy
+        run: terraform apply "destroy.plan" -no-color
+
+      - name: Post comment to the pull request
+        uses: actions/github-script@v6
+        if: (inputs.target_color == env.STAGING_COLOR || inputs.target_color == 'ci') && (github.event_name == 'pull_request')
+        with:
+          script: |
+            // 1. Retrieve existing bot comments for the PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Node Cluster Destruction Report: \`${{ inputs.target_color }}-${{ inputs.target_environment }}\`')
+            })
+
+            // 2. Prepare format of the comment
+            const output = `## :arrow_down: Node Cluster Destruction Report: \`${{ inputs.target_color }}-${{ inputs.target_environment }}\`
+
+            |                  Step                   |               Status              |
+            |-----------------------------------------|-----------------------------------|
+            | :gear: Terraform Initialization         | \`${{ steps.init.outcome }}\`     |
+            | :placard: Terraform Select Workspace    | \`${{ steps.workspace.outcome }}\`|
+            | :x: Terraform Destroy                   | \`${{ steps.destroy.outcome }}\`  |
+
+            > Workflow \`${{ github.workflow }}\` triggered by @${{ github.actor }}. For more details [go to the workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`;
+
+            // 3. If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }

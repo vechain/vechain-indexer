@@ -35,12 +35,23 @@ jobs:
       env: prod
     secrets: inherit
 
-  deploy-veworld-stack-dev:
-    # Will only deploy if dev ECS cluster already exists
-    uses: ./.github/workflows/veworld-stack.yml
+  identify-live-color:
+    uses: ./.github/workflows/identify-live-color.yml
     with:
-      environment: dev
-    needs: [publish-images-to-ecr-dev]
+      dns_record_name: 
+      hosted_zone_id: 
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  deploy-non-live-color:
+    # Will only deploy if environment already exists
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
+    needs: [publish-images-to-ecr-dev, identify-live-color]
+    with:
+      environment: prod
+      workspace: ${{ needs.identify-live-color.outputs.live_color }}
     permissions:
       packages: read
       contents: read

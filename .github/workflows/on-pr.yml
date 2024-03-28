@@ -30,10 +30,9 @@ jobs:
     uses: ./.github/workflows/vulnerability-scan.yml
 
   terraform-plan-dev:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: dev
-      workspace: dev
     permissions:
       packages: read
       contents: read
@@ -41,7 +40,7 @@ jobs:
     secrets: inherit
 
   terraform-plan-prod-blue:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: prod
       workspace: prod-blue
@@ -52,12 +51,22 @@ jobs:
     secrets: inherit
 
   terraform-plan-prod-green:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: prod
       workspace: prod-green
     permissions:
       packages: read
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  test-live-color-identification:
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_name: indexer.mainnet.vechain.org.
+      hosted_zone_id: Z058676337BU4AOFL6DMM
+    permissions:
       contents: read
       id-token: write
     secrets: inherit

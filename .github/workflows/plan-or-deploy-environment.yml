@@ -16,13 +16,14 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: Which environment to plan/deploy to ('dev' or 'prod')
+        description: Which environment to plan/deploy to
         required: true
         default: dev
         type: string
       workspace:
         description: Terraform workspace to use
-        required: true
+        required: false
+        default: ${{ inputs.environment }}
         type: string
 
 # Required for authentication through GitHub OIDC
