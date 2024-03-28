@@ -23,14 +23,9 @@ permissions:
   pull-requests: write # This is required for pull request comments
 
 jobs:
-  cluster-destroy:
+  destroy-cluster:
     name: "Destroy Node Cluster Infrastructure"
     runs-on: ubuntu-latest
-    environment: cluster-destroy-${{ inputs.target_color }}-${{ inputs.target_environment }}
-
-    env:
-      FQDN: ${{inputs.target_environment}}.node.vechain.org
-      STAGING_COLOR: to-be-determined
 
     defaults:
       run:
