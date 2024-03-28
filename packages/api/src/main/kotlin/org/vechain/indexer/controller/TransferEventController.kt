@@ -17,7 +17,7 @@ import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.model.rest.paginatedResponse
+import org.vechain.indexer.model.rest.paginatedResponse2
 import org.vechain.indexer.service.TransferEventService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
@@ -68,7 +68,7 @@ open class TransferEventController(private val transferEventService: TransferEve
                 else -> throw BadRequestException("Either address or tokenAddress must be provided")
             }
 
-        return paginatedResponse(resultsPage)
+        return paginatedResponse2(resultsPage)
     }
 
     @GetMapping("/from")
@@ -96,7 +96,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        return paginatedResponse(
+        return paginatedResponse2(
             transferEventService.findByFrom(
                 address,
                 tokenAddress,
@@ -130,7 +130,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        return paginatedResponse(
+        return paginatedResponse2(
             transferEventService.findByTo(address, tokenAddress, toPageable(page, size, direction))
         )
     }
@@ -161,7 +161,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        return paginatedResponse(
+        return paginatedResponse2(
             transferEventService.findByBlockNumber(
                 blockNumber,
                 addresses,
@@ -196,7 +196,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
-        return paginatedResponse(
+        return paginatedResponse2(
             transferEventService.findFungibleTokensContractsByAddress(
                 address,
                 officialTokensOnly,

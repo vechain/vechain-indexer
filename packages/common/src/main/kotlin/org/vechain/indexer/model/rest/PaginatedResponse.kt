@@ -2,6 +2,7 @@ package org.vechain.indexer.model.rest
 
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.Slice
 import org.vechain.indexer.thor.model.Views
 
 /** An API query can return at most this number of elements per page */
@@ -51,6 +52,20 @@ fun <T : Any> paginatedResponse(page: Page<T>): PaginatedResponse<T> {
                 totalPages = if (hasCount) page.totalPages else null,
                 totalElements = if (hasCount) page.totalElements else null,
                 hasNext = page.hasNext()
+            )
+    )
+}
+
+fun <T : Any> paginatedResponse2(slice: Slice<T>): PaginatedResponse<T> {
+    return PaginatedResponse(
+        data = slice.content,
+        pagination =
+            PaginationDetail(
+                hasCount = false,
+                countLimit = 0,
+                totalPages = null,
+                totalElements = null,
+                hasNext = slice.hasNext()
             )
     )
 }
