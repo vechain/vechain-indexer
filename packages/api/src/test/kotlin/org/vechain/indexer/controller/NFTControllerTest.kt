@@ -108,6 +108,42 @@ class NFTControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get owned NFTs - hasNext true when remaining results`() {
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&page=1" +
+                            "&size=50"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(50)
+            expectThat(nfts.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `get owned NFTs - hasNext false when no remaining results`() {
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&page=2" +
+                            "&size=50"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(2)
+            expectThat(nfts.pagination.hasNext).isFalse()
+        }
+
+        @Test
         fun `uppercase contract address should be valid`() {
             val owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
             val contractAddress = "0x" + "08f30373569af024d15eb47fd477a35db929eaac".uppercase()
@@ -299,8 +335,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                                     .then(compareByDescending { it.id })
                             )
                     )
-                that(nfts.pagination.totalPages).isEqualTo(3)
-                that(nfts.pagination.totalElements).isEqualTo(51)
+                that(nfts.pagination.hasNext).isTrue()
             }
         }
 
@@ -366,8 +401,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
                         "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
                     )
-                that(contracts.pagination)
-                that(contracts.pagination.totalElements).isEqualTo(2)
             }
         }
 
@@ -392,9 +425,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
                         "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
                     )
-                that(contracts.pagination)
-                that(contracts.pagination.totalPages).isEqualTo(1)
-                that(contracts.pagination.totalElements).isEqualTo(2)
             }
         }
 
@@ -417,8 +447,6 @@ class NFTControllerTest : AbstractIntegrationTest() {
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
                         "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
                     )
-                that(contracts.pagination)
-                that(contracts.pagination.totalElements).isEqualTo(2)
             }
         }
 
@@ -455,17 +483,13 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 that(contracts1.data)
                     .hasSize(size)
                     .containsExactly("0x08f30373569af024d15eb47fd477a35db929eaac")
-                that(contracts1.pagination)
-                that(contracts1.pagination.totalPages).isEqualTo(2)
-                that(contracts1.pagination.totalElements).isEqualTo(2)
+                that(contracts1.pagination.hasNext).isTrue()
 
                 // page 1 results
                 that(contracts2.data)
                     .hasSize(size)
                     .containsExactly("0xb44111d908ad0af0949a20a130429f92a4cc0dbf")
-                that(contracts2.pagination)
-                that(contracts2.pagination.totalPages).isEqualTo(2)
-                that(contracts2.pagination.totalElements).isEqualTo(2)
+                that(contracts2.pagination.hasNext).isFalse()
             }
         }
 
@@ -482,8 +506,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
 
             expect {
                 that(contracts.data).isEmpty()
-                that(contracts.pagination)
-                that(contracts.pagination.totalElements).isEqualTo(0)
+                that(contracts.pagination.hasNext).isFalse()
             }
         }
     }

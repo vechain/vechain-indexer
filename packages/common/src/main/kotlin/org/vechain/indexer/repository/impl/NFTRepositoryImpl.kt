@@ -2,16 +2,14 @@ package org.vechain.indexer.repository.impl
 
 import org.bson.Document
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
-import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
 
@@ -22,37 +20,7 @@ open class NFTRepositoryImpl(
     private val countRepository: CountRepository
 ) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): Page<IndexedNFT> {
-        val query = Query().with(pageable)
-        val criteria = Criteria.where(OWNER).`is`(owner)
-
-        query.addCriteria(criteria)
-        val matchOperations = listOf(MatchOperation(criteria))
-
-        val results = mongoTemplate.find(query, NFTS_COLLECTION)
-        val count = countRepository.getCount(NFTS_COLLECTION, matchOperations)
-
-        return PageImpl(results, pageable, count)
-    }
-
-    open fun findByOwnerAndContractAddress(
-        owner: String,
-        contractAddress: String,
-        pageable: Pageable
-    ): Page<IndexedNFT> {
-        val query = Query().with(pageable)
-        val criteria = Criteria.where(OWNER).`is`(owner).and(CONTRACT_ADDRESS).`is`(contractAddress)
-
-        query.addCriteria(criteria)
-        val matchOperations = listOf(MatchOperation(criteria))
-
-        val results = mongoTemplate.find(query, NFTS_COLLECTION)
-        val count = countRepository.getCount(NFTS_COLLECTION, matchOperations)
-
-        return PageImpl(results, pageable, count)
-    }
-
-    open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Page<String> {
+    open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String> {
         val matchOperation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
 
         val groupOperation: GroupOperation =
@@ -84,7 +52,7 @@ open class NFTRepositoryImpl(
                     )
                 ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                Aggregation.limit(pageable.pageSize.toLong())
+                Aggregation.limit(pageable.pageSize.toLong() + 1)
             )
         val distinctContracts =
             mongoTemplate
@@ -92,7 +60,19 @@ open class NFTRepositoryImpl(
                 .mappedResults
                 .map { it["_id"] as String }
 
-        return PageImpl(distinctContracts, pageable, distinctCount)
+        val hasNext: Boolean
+        var results: List<String> = emptyList()
+
+        if (distinctContracts.isEmpty()) hasNext = false
+        else if (distinctContracts.size > pageable.pageSize) {
+            hasNext = true
+            results = distinctContracts.toMutableList().slice(0 until pageable.pageSize)
+        } else {
+            hasNext = false
+            results = distinctContracts
+        }
+
+        return SliceImpl(results, pageable, hasNext)
     }
 
     companion object {
