@@ -18,7 +18,7 @@ module "mongoatlas-main-net" {
   cluster_type                 = "REPLICASET"
   auto_scaling_disk_gb_enabled = true
   provider_name                = "AWS"
-  provider_disk_iops           = local.env.enabled_nets.main.mongodb.iops
+  provider_disk_iops           = try(local.env.enabled_nets.main.mongodb.iops, null)
   provider_volume_type         = "STANDARD"
   provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
   mongo_db_major_version       = "6"
@@ -92,7 +92,7 @@ module "mongoatlas-test-net" {
   cluster_type                 = "REPLICASET"
   auto_scaling_disk_gb_enabled = true
   provider_name                = "AWS"
-  provider_disk_iops           = local.env.enabled_nets.test.mongodb.iops
+  provider_disk_iops           = try(local.env.enabled_nets.test.mongodb.iops, null)
   provider_volume_type         = "STANDARD"
   provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
   mongo_db_major_version       = "6"
