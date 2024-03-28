@@ -33,16 +33,29 @@ jobs:
     uses: ./.github/workflows/veworld-stack.yml
     with:
       environment: dev
+      workspace: dev
     permissions:
       packages: read
       contents: read
       id-token: write
     secrets: inherit
 
-  terraform-plan-prod:
+  terraform-plan-prod-blue:
     uses: ./.github/workflows/veworld-stack.yml
     with:
       environment: prod
+      workspace: prod-blue
+    permissions:
+      packages: read
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  terraform-plan-prod-green:
+    uses: ./.github/workflows/veworld-stack.yml
+    with:
+      environment: prod
+      workspace: prod-green
     permissions:
       packages: read
       contents: read

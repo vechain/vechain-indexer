@@ -34,7 +34,7 @@ variable "mongo_credential_trigger" {
 ############################################################################################################
 
 resource "aws_config_config_rule" "config_rule" {
-  count = local.env.environment == "prod" ? 0 : 1
+  count = startswith(local.env.environment, "prod") ? 0 : 1
   name  = "${local.env.environment}-${var.project}-mongodb-config-rule"
 
   source {
@@ -46,7 +46,7 @@ resource "aws_config_config_rule" "config_rule" {
 }
 
 resource "aws_config_configuration_recorder" "config_recorder" {
-  count    = local.env.environment == "prod" ? 0 : 1
+  count    = startswith(local.env.environment, "prod") ? 0 : 1
   name     = "example"
   role_arn = aws_iam_role.config_role.arn
 }
@@ -87,7 +87,8 @@ resource "aws_iam_role_policy" "config_role_policy" {
 # MongoDB security group
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
-  for_each    = local.env.enabled_nets
+  # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
+  for_each    = "${local.env.environment == "prod" || local.env.environment == "dev" ? local.env.enabled_nets : {}}"
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id

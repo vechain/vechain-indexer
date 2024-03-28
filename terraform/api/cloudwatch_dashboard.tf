@@ -40,7 +40,7 @@ locals {
     "end" : "P0D"
   }
 
-  api_id = aws_api_gateway_rest_api.currency_cache.name
+  api_id = try(data.terraform_remote_state.vpc.outputs.currency_cache_name, "")
 
   count = [
     "AWS/ApiGateway", "Count", "ApiName", local.api_id, { id : "m1", region : local.env.region, "visible" : false }
@@ -126,24 +126,21 @@ locals {
           title: "Coin Api <coin_id>/market_chart GET",
           view: "timeSeries"
         }
-      }      
-      
+      }
     ]
   }
-
 }
 
 module "aws_cloudwatch_dashboard_gw" {
   source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard"
   create_cloudwatch_dashboard = true
-  dashboard_name              = "coin-currency-cache-dashboard"
+  dashboard_name              = "coin-currency-cache-${local.env.environment}-dashboard"
   dashboard_body = jsonencode(local.api_gateway_dash_code)
 }
-
 
 module "aws_cloudwatch_dashboard" {
   source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard"
   create_cloudwatch_dashboard = true
-  dashboard_name              = "veworld-indexer-dashboard"
+  dashboard_name              = "veworld-indexer-${local.env.environment}-dashboard"
   dashboard_body              = jsonencode(local.dashboard_body)
 }

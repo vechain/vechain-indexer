@@ -28,6 +28,7 @@ rate_limit_exception_list:
 cloudwatch_alarms:               true
 slack_alert_channel:             C051L4Z7N9K
 slack_alert_workspace:           T03L3PQD8GK
+mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 enabled_nets:
   main:
     thor_url:                       https://mainnet.vechain.org
@@ -69,6 +70,9 @@ enabled_nets:
       data_volume_size:             1024
       data_volume_type:             io2
       data_volume_iops:             2000
+      cluster_tier:                 ""
+      disk_size_gb:                 0
+      secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
 #uncomment following top level label if testnet not required
 #disabled_nets:
   test:
@@ -112,3 +116,6 @@ enabled_nets:
       data_volume_type:             gp2
 #iops must be empty for gp2 type
       data_volume_iops:             0
+      cluster_tier:                 ""
+      disk_size_gb:                 0
+      secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo

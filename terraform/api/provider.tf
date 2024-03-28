@@ -4,6 +4,10 @@ terraform {
       source = "hashicorp/aws"
       #version = "3.75.1"
     }
+    mongodbatlas = {
+      source  = "mongodb/mongodbatlas"
+      version = ">= 1.12.0"
+    }
   }
 
   backend "s3" {
@@ -57,7 +61,7 @@ data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
     bucket = "veworld-indexer-terraform-state-{{{ENV}}}"
-    key    = "workspaces/${local.env.environment}/veworld-indexer-vpc.tfstate"
+    key    = "workspaces/${startswith(local.env.environment, "prod-") ? "prod" : local.env.environment}/veworld-indexer-vpc.tfstate"
     region = "eu-west-1"
   }
 }
