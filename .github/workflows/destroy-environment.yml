@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   identify-live-color:
-    name: "Check selected color is not live"
+    name: "Identify live and dead colors"
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_name: indexer.mainnet.vechain.org.
@@ -34,7 +34,7 @@ jobs:
     secrets: inherit
 
   check-selected-color:
-    name: "Check selected color is not live"
+    name: "Check color selected for destruction is not live"
     runs-on: ubuntu-latest
     needs: identify-live-color
     steps:
