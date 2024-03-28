@@ -17,7 +17,6 @@ import org.vechain.indexer.model.TransferEventType
 @Component
 open class TransferEventRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
 ) {
 
     fun findFungibleTokensContractsByAddress(
@@ -59,14 +58,6 @@ open class TransferEventRepositoryImpl(
             matchOperations.add(tokenWhitelistOperation)
         }
 
-        // count distinct fungible token contract addresses
-        val fungibleTokensContractsCount =
-            countRepository.getCount(
-                TRANSFER_EVENTS_COLLECTION,
-                matchOperations, // Using plus to concatenate lists
-                groupOperation
-            )
-
         // find distinct fungible token contract addresses
         val fungibleTokensContractsAggregation =
             Aggregation.newAggregation(
@@ -85,6 +76,8 @@ open class TransferEventRepositoryImpl(
                             )
                         ),
                         Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                        // We retrieve an additional element on purpose to detect remaining elements
+                        // in the next page
                         Aggregation.limit(pageable.pageSize.toLong() + 1)
                     )
             )

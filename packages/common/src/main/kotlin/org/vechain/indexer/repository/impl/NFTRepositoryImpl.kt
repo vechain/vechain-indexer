@@ -17,7 +17,6 @@ import org.vechain.indexer.model.IndexedNFT
 @Component
 open class NFTRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
 ) {
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String> {
@@ -31,10 +30,6 @@ open class NFTRepositoryImpl(
                 .`as`(TX_ID)
                 .first(NFT_ID)
                 .`as`(NFT_ID_ALIAS)
-
-        // count distinct contracts
-        val distinctCount =
-            countRepository.getCount(NFTS_COLLECTION, listOf(matchOperation), groupOperation)
 
         // find distinct contracts
         val contractsAggregation =
@@ -52,11 +47,13 @@ open class NFTRepositoryImpl(
                     )
                 ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                // We retrieve an additional element on purpose to detect remaining elements in the
+                // next page
                 Aggregation.limit(pageable.pageSize.toLong() + 1)
             )
         val distinctContracts =
             mongoTemplate
-                .aggregate(contractsAggregation, IndexedNFT::class.java, Document::class.java)
+                .aggregate(contractsAggregation, NFTS_COLLECTION, Document::class.java)
                 .mappedResults
                 .map { it["_id"] as String }
 
