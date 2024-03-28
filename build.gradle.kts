@@ -201,6 +201,11 @@ allprojects {
                 strictly("6.1.5")
             }
         }
+        implementation("io.netty:netty-codec-http") {
+            version {
+                strictly("4.1.108.Final")
+            }
+        }
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
