@@ -45,13 +45,13 @@ jobs:
       id-token: write
     secrets: inherit
 
-  deploy-non-live-color:
-    # Will only deploy if environment already exists
+  deploy-dead-color:
+    # To be used as testing/dev environment, deployed only if environment already exists
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     needs: [publish-images-to-ecr-dev, identify-live-color]
     with:
       environment: prod
-      workspace: ${{ needs.identify-live-color.outputs.live_color }}
+      workspace: ${{ needs.identify-live-color.outputs.dead_color }}
     permissions:
       packages: read
       contents: read

@@ -16,6 +16,9 @@ on:
       live_color:
         description: "The live color environment (prod-blue or prod-green)"
         value: ${{ jobs.identify-live.outputs.live_color }}
+      dead_color:
+        description: "The dead color environment (opposite of live_color)"
+        value: ${{ jobs.identify-live.outputs.dead_color }}
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -48,12 +51,14 @@ jobs:
           echo "::set-output name=dns_value::$dns_value"
 
       - name: Define live_colour output variable
-        id: define_live_color_var
+        id: define_color_vars
         run: |
           if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-blue* ]]; then
             echo "live_color=prod-blue" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-green" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-green* ]]; then
             echo "live_color=prod-green" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-blue" >> $GITHUB_OUTPUT
           else
             echo "Error: DNS record value does not match expected patterns (prod-blue* or prod-green*)"
             exit 1
@@ -61,4 +66,6 @@ jobs:
 
     # Define the outputs section to pass data back to the calling workflow
     outputs:
-      live_color: ${{ steps.define_live_color_var.outputs.live_color }}
+      live_color: ${{ steps.define_color_vars.outputs.live_color }}
+      dead_color: ${{ steps.define_color_vars.outputs.dead_color }}
+
