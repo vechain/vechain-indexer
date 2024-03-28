@@ -10,7 +10,6 @@ import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransaction
-import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.api.expectThat
@@ -161,6 +160,46 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
+        fun `get transactions by origin - hasNext false when no remaining results`() {
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&page=3" +
+                            "&size=10" +
+                            "&expanded=true"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transactions =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+
+            expectThat(transactions.data).hasSize(9)
+            expectThat(transactions.pagination.hasNext).isFalse()
+        }
+
+        @Test
+        fun `get transactions by origin - hasNext true when remaining results`() {
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&page=2" +
+                            "&size=10" +
+                            "&expanded=true"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transactions =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+
+            expectThat(transactions.data).hasSize(10)
+            expectThat(transactions.pagination.hasNext).isTrue()
+        }
+
+        @Test
         fun `include delegated should return 1 more`() {
             val result =
                 mockMvc
@@ -177,6 +216,27 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(40)
+        }
+
+        @Test
+        fun `get transactions by origin including delegated - hasNext true when remaining results`() {
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?origin=0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&includeDelegated=true" +
+                            "&page=0" +
+                            "&size=39" +
+                            "&expanded=true"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transactions =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+
+            expectThat(transactions.data).hasSize(39)
+            expectThat(transactions.pagination.hasNext).isTrue()
         }
 
         @Test
@@ -317,10 +377,6 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.hasCount).isTrue()
-                that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transactions.pagination.totalElements).isEqualTo(39)
-                that(transactions.pagination.totalPages).isEqualTo(1)
                 that(transactions.pagination.hasNext).isFalse()
             }
         }
@@ -354,10 +410,6 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.hasCount).isTrue()
-                that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transactions.pagination.totalElements).isEqualTo(40)
-                that(transactions.pagination.totalPages).isEqualTo(1)
                 that(transactions.pagination.hasNext).isFalse()
             }
         }
@@ -454,6 +506,24 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                 objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
 
             expectThat(transactions.data).hasSize(1)
+        }
+
+        @Test
+        fun `get delegated transactions - hasNext false when no remaining results`() {
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/delegated?delegator=f077b491b355E64048cE21E3A6Fc4751eEeA77fa" +
+                            "&expanded=true"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transactions =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_TXS_TYPE)
+
+            expectThat(transactions.data).hasSize(1)
+            expectThat(transactions.pagination.hasNext).isFalse()
         }
     }
 
@@ -574,10 +644,6 @@ internal class TransactionControllerTest : AbstractIntegrationTest() {
                             .then(compareByDescending { it.id })
                     )
 
-                that(transactions.pagination.hasCount).isTrue()
-                that(transactions.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transactions.pagination.totalElements).isEqualTo(1)
-                that(transactions.pagination.totalPages).isEqualTo(1)
                 that(transactions.pagination.hasNext).isFalse()
             }
         }
