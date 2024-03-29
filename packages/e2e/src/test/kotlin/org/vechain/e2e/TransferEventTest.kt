@@ -6,6 +6,7 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
+import strikt.assertions.isFalse
 import strikt.assertions.isGreaterThan
 import strikt.assertions.isNotEmpty
 
@@ -24,6 +25,7 @@ class TransferEventTest {
             )
 
         expectThat(transferEvents.data).hasSize(19)
+        expectThat(transferEvents.pagination.hasNext).isFalse()
 
         transferEvents.data.forEach { transferEvent: IndexedTransferEvent ->
             assertValidTransferEvent(transferEvent)
@@ -56,6 +58,7 @@ class TransferEventTest {
             )
 
         expectThat(transferEvents.data).hasSize(1)
+        expectThat(transferEvents.pagination.hasNext).isFalse()
 
         transferEvents.data.forEach { transferEvent: IndexedTransferEvent ->
             assertValidTransferEvent(transferEvent)
