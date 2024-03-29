@@ -4,7 +4,6 @@ import org.bson.Document
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
@@ -12,6 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("nft-events")
 @Component
@@ -57,19 +57,7 @@ open class NFTRepositoryImpl(
                 .mappedResults
                 .map { it["_id"] as String }
 
-        val hasNext: Boolean
-        var results: List<String> = emptyList()
-
-        if (distinctContracts.isEmpty()) hasNext = false
-        else if (distinctContracts.size > pageable.pageSize) {
-            hasNext = true
-            results = distinctContracts.toMutableList().slice(0 until pageable.pageSize)
-        } else {
-            hasNext = false
-            results = distinctContracts
-        }
-
-        return SliceImpl(results, pageable, hasNext)
+        return buildResultsSlice(distinctContracts, pageable)
     }
 
     companion object {

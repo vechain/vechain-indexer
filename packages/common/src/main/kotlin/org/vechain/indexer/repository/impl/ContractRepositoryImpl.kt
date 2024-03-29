@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
+import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("contracts")
 @Component
@@ -57,19 +58,7 @@ open class ContractRepositoryImpl(
                 .aggregate(contractsAggregation, CONTRACTS_COLLECTION, CONTRACTS_COLLECTION)
                 .mappedResults
 
-        val hasNext: Boolean
-        var results: List<IndexedContract> = emptyList()
-
-        if (contracts.isEmpty()) hasNext = false
-        else if (contracts.size > pageable.pageSize) {
-            hasNext = true
-            results = contracts.toMutableList().slice(0 until pageable.pageSize)
-        } else {
-            hasNext = false
-            results = contracts
-        }
-
-        return SliceImpl(results, pageable, hasNext)
+        return buildResultsSlice(contracts, pageable)
     }
 
     private fun buildTypeCriteria(contractType: ContractType): CriteriaDefinition {

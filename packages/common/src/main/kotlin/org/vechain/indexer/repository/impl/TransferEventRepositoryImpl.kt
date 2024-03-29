@@ -4,7 +4,6 @@ import org.bson.Document
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
@@ -12,6 +11,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
+import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("transfer-events")
 @Component
@@ -91,20 +91,7 @@ open class TransferEventRepositoryImpl(
                 .mappedResults
                 .map { it["_id"] as String }
 
-        val hasNext: Boolean
-        var results: List<String> = emptyList()
-
-        if (distinctFungibleTokensContracts.isEmpty()) hasNext = false
-        else if (distinctFungibleTokensContracts.size > pageable.pageSize) {
-            hasNext = true
-            results =
-                distinctFungibleTokensContracts.toMutableList().slice(0 until pageable.pageSize)
-        } else {
-            hasNext = false
-            results = distinctFungibleTokensContracts
-        }
-
-        return SliceImpl(results, pageable, hasNext)
+        return buildResultsSlice(distinctFungibleTokensContracts, pageable)
     }
 
     companion object {
