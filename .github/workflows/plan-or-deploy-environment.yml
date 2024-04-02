@@ -103,7 +103,7 @@ jobs:
         id: plan
         run: terraform plan -out "apply.plan"
 
-      - name: Should proceed with deployment?
+      - name: Should proceed with deployment? (PR builds will never deploy)
         if: github.ref == 'refs/heads/main' || inputs.force == 'true'
         id: check-env
         run: |
@@ -124,6 +124,7 @@ jobs:
         run: terraform apply "apply.plan"
 
       - name: Slack Notification
+        if: steps.apply.outcome == 'success'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
