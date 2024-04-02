@@ -118,7 +118,7 @@ jobs:
             echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
-      - name: Terraform Apply (if branch=main and env already exists)
+      - name: Terraform Apply
         if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false') || (inputs.force == 'true')
         id: apply
         run: terraform apply "apply.plan"
