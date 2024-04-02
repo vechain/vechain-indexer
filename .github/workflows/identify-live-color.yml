@@ -11,7 +11,7 @@ on:
         description: "The hosted zone ID of the DNS record"
         required: true
         type: string
-    # Map the workflow outputs to job outputs
+    # Map the job outputs to workflow outputs
     outputs:
       live_color:
         description: "The live color environment (prod-blue or prod-green)"
@@ -68,4 +68,3 @@ jobs:
     outputs:
       live_color: ${{ steps.define_color_vars.outputs.live_color }}
       dead_color: ${{ steps.define_color_vars.outputs.dead_color }}
-
