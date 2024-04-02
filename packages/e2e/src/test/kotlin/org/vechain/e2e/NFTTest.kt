@@ -24,6 +24,7 @@ class NFTTest {
             )
 
         expectThat(nfts.data).hasSize(102).isA<List<IndexedNFT>>()
+        expectThat(nfts.pagination.hasNext).isFalse()
 
         nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
@@ -37,6 +38,7 @@ class NFTTest {
             )
 
         expectThat(nfts.data).hasSize(1).isA<List<IndexedNFT>>()
+        expectThat(nfts.pagination.hasNext).isTrue()
 
         nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
     }
@@ -51,6 +53,7 @@ class NFTTest {
             )
 
         expectThat(nfts.data).hasSize(102)
+        expectThat(nfts.pagination.hasNext).isFalse()
 
         val firstNft: IndexedNFT = nfts.data[0]
         val firstContractAddress = firstNft.contractAddress
@@ -77,6 +80,7 @@ class NFTTest {
             )
 
         expectThat(nfts.data).hasSize(2)
+        expectThat(nfts.pagination.hasNext).isFalse()
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
@@ -90,6 +94,7 @@ class NFTTest {
             )
 
         expectThat(nfts.data).hasSize(1)
+        expectThat(nfts.pagination.hasNext).isTrue()
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 

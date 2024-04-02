@@ -1,8 +1,8 @@
 package org.vechain.indexer.service
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
@@ -24,15 +24,19 @@ open class TransactionService(
         address: Address,
         includeDelegated: Boolean,
         pageable: Pageable
-    ): Page<IndexedTransaction> {
+    ): Slice<IndexedTransaction> {
         return if (includeDelegated) {
-            transactionRepository.findByOriginOrGasPayer(address.value, pageable)
+            transactionRepository.findByOriginOrGasPayer(address.value, address.value, pageable)
         } else {
             transactionRepository.findByOrigin(address.value, pageable)
         }
     }
 
-    open fun findAllDelegated(delegator: Address, pageable: Pageable): Page<IndexedTransaction> {
-        return transactionRepository.findDelegated(delegator.value, pageable)
+    open fun findAllDelegated(delegator: Address, pageable: Pageable): Slice<IndexedTransaction> {
+        return transactionRepository.findByGasPayerAndOriginNot(
+            delegator.value,
+            delegator.value,
+            pageable
+        )
     }
 }

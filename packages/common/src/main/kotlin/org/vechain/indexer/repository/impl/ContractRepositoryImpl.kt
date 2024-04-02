@@ -1,53 +1,64 @@
 package org.vechain.indexer.repository.impl
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.*
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.CriteriaDefinition
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ContractType
+import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("contracts")
 @Component
 open class ContractRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
-    private val countRepository: CountRepository
 ) {
-
-    companion object {
-        val CONTRACTS_COLLECTION = IndexedContract::class.java
-        val CREATOR = IndexedContract::creator.name
-    }
 
     open fun findByCreatorAndType(
         creator: String?,
         contractType: ContractType?,
-        pageable: Pageable
-    ): Page<IndexedContract> {
-        val query = Query().with(pageable)
+        pageable: Pageable,
+    ): Slice<IndexedContract> {
+
         val matchOperations = mutableListOf<MatchOperation>()
 
         if (creator != null) {
-            val contractCreatorCriteria = Criteria.where(CREATOR).`is`(creator)
-            query.addCriteria(contractCreatorCriteria)
-            matchOperations.add(MatchOperation(contractCreatorCriteria))
+            matchOperations.add(MatchOperation(Criteria.where(CREATOR).`is`(creator)))
         }
+
         if (contractType != null) {
-            val contractTypeCriteria = buildTypeCriteria(contractType)
-            query.addCriteria(contractTypeCriteria)
-            matchOperations.add(MatchOperation(contractTypeCriteria))
+            matchOperations.add(MatchOperation(buildTypeCriteria(contractType)))
         }
 
-        val results = mongoTemplate.find(query, CONTRACTS_COLLECTION)
-        val count = countRepository.getCount(CONTRACTS_COLLECTION, matchOperations)
+        val contractsAggregation =
+            Aggregation.newAggregation(
+                matchOperations +
+                    listOf(
+                        Aggregation.sort(
+                            Sort.by(
+                                pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
+                                BLOCK_NUMBER,
+                                TX_ID,
+                                CONTRACT_ID,
+                            )
+                        ),
+                        Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                        // We retrieve an additional element on purpose to detect remaining elements
+                        // in the next page
+                        Aggregation.limit(pageable.pageSize.toLong() + 1)
+                    )
+            )
 
-        return PageImpl(results, pageable, count)
+        val contracts =
+            mongoTemplate
+                .aggregate(contractsAggregation, CONTRACTS_COLLECTION, CONTRACTS_COLLECTION)
+                .mappedResults
+
+        return buildResultsSlice(contracts, pageable)
     }
 
     private fun buildTypeCriteria(contractType: ContractType): CriteriaDefinition {
@@ -61,5 +72,13 @@ open class ContractRepositoryImpl(
                 ContractType.ERC1155 -> IndexedContract::isErc1155.name
             }
         return Criteria.where(criteriaKey).`is`(true)
+    }
+
+    companion object {
+        val CONTRACTS_COLLECTION = IndexedContract::class.java
+        val CREATOR = IndexedContract::creator.name
+        val BLOCK_NUMBER = IndexedContract::blockNumber.name
+        val TX_ID = IndexedContract::txId.name
+        val CONTRACT_ID = IndexedContract::address.name
     }
 }

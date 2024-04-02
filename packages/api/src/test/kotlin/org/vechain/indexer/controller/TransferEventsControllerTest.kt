@@ -9,7 +9,6 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.api.expectThat
@@ -172,7 +171,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `get transfer events for contract`() {
+        fun `get all transfer events for contract`() {
             val page = 0
             val size = PAGE_SIZE_LIMIT
             val result =
@@ -192,6 +191,58 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 )
 
             expectThat(transferEvents.data).hasSize(70)
+        }
+
+        @Test
+        fun `get transfer events for contract - hasNext true when remaining results`() {
+            val page = 5
+            val size = 10
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 70
+            // On page 5 (sixth page, size 10) we're retrieving results from 50 to 60
+            // There are still results in the dataset, so 'hasNext' must be true
+            expectThat(transferEvents.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `get transfer events for contract - hasNext false when no remaining results`() {
+            val page = 6
+            val size = 10
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?tokenAddress=0x08f30373569af024d15eb47fd477a35db929eaac" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 70
+            // On page 6 (seventh page, size 10) we're retrieving results from 60 to 70
+            // This is the last page of the dataset, so 'hasNext' must be false
+            expectThat(transferEvents.pagination.hasNext).isFalse()
         }
 
         @Test
@@ -271,10 +322,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.hasCount).isTrue()
-                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transferEvents.pagination.totalPages).isEqualTo(4)
-                that(transferEvents.pagination.totalElements).isEqualTo(12)
                 that(transferEvents.pagination.hasNext).isTrue()
             }
         }
@@ -323,6 +370,58 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 )
 
             expectThat(transferEvents.data).hasSize(4)
+        }
+
+        @Test
+        fun `get transfer events for from address - hasNext true when remaining results`() {
+            val page = 0
+            val size = 2
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 4
+            // On page 0 (first page, size 2) we're retrieving results from 0 to 2
+            // There are still results in the dataset, so 'hasNext' must be true
+            expectThat(transferEvents.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `get transfer events for from address - hasNext false when no remaining results`() {
+            val page = 1
+            val size = 2
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/from?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 4
+            // On page 1 (second page, size 2) we're retrieving results from 2 to 4
+            // This is the last page of the dataset, so 'hasNext' must be false
+            expectThat(transferEvents.pagination.hasNext).isFalse()
         }
 
         @Test
@@ -381,10 +480,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.hasCount).isTrue()
-                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transferEvents.pagination.totalPages).isEqualTo(1)
-                that(transferEvents.pagination.totalElements).isEqualTo(1)
                 that(transferEvents.pagination.hasNext).isFalse()
             }
         }
@@ -431,6 +526,58 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 )
 
             expectThat(transferEvents.data).hasSize(8)
+        }
+
+        @Test
+        fun `get transfer events for to address - hasNext true when remaining results`() {
+            val page = 2
+            val size = 2
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 8
+            // On page 2 (third page, size 2) we're retrieving results from 4 to 6
+            // There are still results in the dataset, so 'hasNext' must be true
+            expectThat(transferEvents.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `get transfer events for to address - hasNext false when no remaining results`() {
+            val page = 0
+            val size = PAGE_SIZE_LIMIT
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/to?address=0x0f872421dc479f3c11edd89512731814d0598db5" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 8
+            // On page 3 (fourth page, size 2) we're retrieving results from 6 to 8
+            // This is the last page of the dataset, so 'hasNext' must be false
+            expectThat(transferEvents.pagination.hasNext).isFalse()
         }
 
         @Test
@@ -489,10 +636,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.hasCount).isTrue()
-                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transferEvents.pagination.totalPages).isEqualTo(1)
-                that(transferEvents.pagination.totalElements).isEqualTo(2)
                 that(transferEvents.pagination.hasNext).isFalse()
             }
         }
@@ -577,12 +720,70 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                             )
                     )
 
-                that(transferEvents.pagination.hasCount).isTrue()
-                that(transferEvents.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(transferEvents.pagination.totalPages).isEqualTo(1)
-                that(transferEvents.pagination.totalElements).isEqualTo(6)
                 that(transferEvents.pagination.hasNext).isFalse()
             }
+        }
+
+        @Test
+        fun `get for block transfer events for addresses - hasNext true when remaining results`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0x0f872421dc479f3c11edd89512731814d0598db5"
+            val blockNumber = 18
+            val page = 0
+            val size = 3
+
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/forBlock?addresses=$addresses" +
+                            "&blockNumber=$blockNumber" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 6
+            // On page 0 (first page, size 3) we're retrieving results from 0 to 3
+            // There are still results the dataset, so 'hasNext' must be true
+            expectThat(transferEvents.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `get for block transfer events for addresses - hasNext false when no remaining results`() {
+            val addresses =
+                "0xf077b491b355e64048ce21e3a6fc4751eeea77fa,0x0f872421dc479f3c11edd89512731814d0598db5"
+            val blockNumber = 18
+            val page = 1
+            val size = 3
+
+            val result =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/forBlock?addresses=$addresses" +
+                            "&blockNumber=$blockNumber" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val transferEvents =
+                objectMapper.readValue(
+                    result.response.contentAsString,
+                    PAGINATED_TRANSFER_EVENTS_TYPE
+                )
+
+            // Total elements: 8
+            // On page 1 (second page, size 2) we're retrieving results from 3 to 6
+            // This is the last page of the dataset, so 'hasNext' must be false
+            expectThat(transferEvents.pagination.hasNext).isFalse()
         }
     }
 
@@ -653,8 +854,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                         "0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8",
                         "0xf7cd0c570a1007dd356fb705332bace650dfa9fb",
                     )
-                that(contracts.pagination)
-                that(contracts.pagination.totalElements).isEqualTo(2)
+                that(contracts.pagination.hasNext).isFalse()
             }
         }
 
@@ -705,22 +905,74 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
                 that(contracts1.data)
                     .hasSize(size)
                     .containsExactly("0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8")
-                that(contracts1.pagination.hasCount).isTrue()
-                that(contracts1.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(contracts1.pagination.totalPages).isEqualTo(2)
-                that(contracts1.pagination.totalElements).isEqualTo(2)
                 that(contracts1.pagination.hasNext).isTrue()
 
                 // page 1 results
                 that(contracts2.data)
                     .hasSize(size)
                     .containsExactly("0xf7cd0c570a1007dd356fb705332bace650dfa9fb")
-                that(contracts2.pagination.hasCount).isTrue()
-                that(contracts2.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-                that(contracts2.pagination.totalPages).isEqualTo(2)
-                that(contracts2.pagination.totalElements).isEqualTo(2)
                 that(contracts2.pagination.hasNext).isFalse()
             }
+        }
+
+        @Test
+        fun `get fungible tokens contracts - hasNext false when no remaining results`() {
+            /**
+             * In the test fixture, this address is the origin/destination of several fungible token
+             * transfer events, but only with two contracts:
+             * ["0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8", "0xf7cd0c570a1007dd356fb705332bace650dfa9fb"]
+             * Most recent transfer first.
+             */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
+            val page = 0
+            val size = 2
+
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/fungible-tokens-contracts?address=$address&page=$page&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expectThat(contracts.pagination.hasNext).isFalse()
+        }
+
+        @Test
+        fun `get fungible tokens contracts - hasNext true when remaining results`() {
+            /**
+             * In the test fixture, this address is the origin/destination of several fungible token
+             * transfer events, but only with two contracts:
+             * ["0x7333f3f9fc145cb887e7d809b485c2f24aa3cdb8", "0xf7cd0c570a1007dd356fb705332bace650dfa9fb"]
+             * Most recent transfer first.
+             */
+            val address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+
+            val page = 0
+            val size = 1
+
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint/fungible-tokens-contracts?address=$address&page=$page&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(
+                    res.response.contentAsString,
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                )
+
+            expectThat(contracts.pagination.hasNext).isTrue()
         }
 
         @Test
@@ -742,8 +994,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
             expect {
                 that(contracts.data).isEmpty()
-                that(contracts.pagination)
-                that(contracts.pagination.totalElements).isEqualTo(0)
+                that(contracts.pagination.hasNext).isFalse()
             }
         }
 
