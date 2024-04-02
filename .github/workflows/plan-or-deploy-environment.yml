@@ -103,14 +103,19 @@ jobs:
         id: plan
         run: terraform plan -out "apply.plan"
 
-      - name: Check environment exists
+      - name: Should proceed with deployment?
+        if: github.ref == 'refs/heads/main' || inputs.force == 'true'
         id: check-env
         run: |
           state_list=$(terraform state list)
-          if [ -z "$state_list" ]; then
+          if [ "${{ inputs.force }}" == "true" ]; then
+            echo "Force apply enabled, proceeding with deployment"
+          elif [ -z "$state_list" ]; then
             echo "state_empty=false" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
           else
             echo "state_empty=true" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
       - name: Terraform Apply (if branch=main and env already exists)
@@ -119,7 +124,6 @@ jobs:
         run: terraform apply "apply.plan"
 
       - name: Slack Notification
-        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
