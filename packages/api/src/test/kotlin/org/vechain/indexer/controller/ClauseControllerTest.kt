@@ -9,12 +9,11 @@ import org.vechain.indexer.constants.CLAUSES_PATH
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
-import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
 import strikt.assertions.isSorted
 import strikt.assertions.isTrue
 
@@ -62,7 +61,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val size = PAGE_SIZE_LIMIT
         val result =
             mockMvc
-                .get(baseEndpoint + "?address=$address" + "&page=$page" + "&size=$size")
+                .get("$baseEndpoint?address=$address&page=$page&size=$size")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -79,7 +78,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val size = PAGE_SIZE_LIMIT
         val result =
             mockMvc
-                .get(baseEndpoint + "?address=$address" + "&page=$page" + "&size=$size")
+                .get("$baseEndpoint?address=$address&page=$page&size=$size")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -90,13 +89,49 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
     }
 
     @Test
+    fun `get clauses for address - hasNext true when remaining results`() {
+        val address = "0x438D785FFFD68dfed059c6380d9b0d07441E263B"
+        val page = 2
+        val size = 5
+        val result =
+            mockMvc
+                .get("$baseEndpoint?address=$address&page=$page&size=$size")
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+        val clauses =
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSES_TYPE)
+
+        expectThat(clauses.data).hasSize(5)
+        expectThat(clauses.pagination.hasNext).isTrue()
+    }
+
+    @Test
+    fun `get clauses for address - hasNext false when no remaining results`() {
+        val address = "0x438D785FFFD68dfed059c6380d9b0d07441E263B"
+        val page = 3
+        val size = 5
+        val result =
+            mockMvc
+                .get("$baseEndpoint?address=$address&page=$page&size=$size")
+                .andExpect { status { isOk() } }
+                .andReturn()
+
+        val clauses =
+            objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSES_TYPE)
+
+        expectThat(clauses.data).hasSize(5)
+        expectThat(clauses.pagination.hasNext).isFalse()
+    }
+
+    @Test
     fun `get all clauses for contract address with paginated result`() {
         val contractAddress = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
         val page = 0
         val size = 4
         val result =
             mockMvc
-                .get(baseEndpoint + "?address=$contractAddress" + "&page=$page" + "&size=$size")
+                .get("$baseEndpoint?address=$contractAddress&page=$page&size=$size")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -113,7 +148,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val size = 10
         val result =
             mockMvc
-                .get(baseEndpoint + "?address=$origin" + "&page=$page" + "&size=$size")
+                .get("$baseEndpoint?address=$origin&page=$page&size=$size")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -135,10 +170,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val origin = "0x438d785fffd68dfed059c6380d9b0d07441e263b"
 
         val result =
-            mockMvc
-                .get(baseEndpoint + "?address=$origin")
-                .andExpect { status { isOk() } }
-                .andReturn()
+            mockMvc.get("$baseEndpoint?address=$origin").andExpect { status { isOk() } }.andReturn()
 
         val clauses =
             objectMapper.readValue(result.response.contentAsString, PAGINATED_CLAUSES_TYPE)
@@ -161,7 +193,7 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
         val size = 10
         val result =
             mockMvc
-                .get(baseEndpoint + "?address=$origin" + "&page=$page" + "&size=$size")
+                .get("$baseEndpoint?address=$origin&page=$page&size=$size")
                 .andExpect { status { isOk() } }
                 .andReturn()
 
@@ -179,10 +211,6 @@ internal class ClauseControllerTest : AbstractIntegrationTest() {
                         )
                 )
 
-            that(clauses.pagination.hasCount).isTrue()
-            that(clauses.pagination.countLimit).isEqualTo(COUNT_LIMIT)
-            that(clauses.pagination.totalElements).isEqualTo(20)
-            that(clauses.pagination.totalPages).isEqualTo(2)
             that(clauses.pagination.hasNext).isTrue()
         }
     }

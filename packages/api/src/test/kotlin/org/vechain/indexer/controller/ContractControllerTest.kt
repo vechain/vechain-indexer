@@ -10,9 +10,7 @@ import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.model.rest.COUNT_LIMIT
 import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
-import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
 
@@ -219,7 +217,6 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
                 objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
 
             expectThat(contracts.data)
-                .hasSize(TOTAL_CONTRACTS_NUMBER - (page * size))
                 .isSorted(
                     compareByDescending<IndexedContract> { it.blockNumber }
                         .then(
@@ -230,7 +227,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `fetch contracts by origin - paginated search - sorted by blockNumber & txId & address - pagination detail`() {
+        fun `fetch contracts by origin - hasNext true when remaining results`() {
             val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
             val page = 0
             val size = 10
@@ -242,25 +239,27 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
             val contracts =
                 objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
-            val paginationDetail = contracts.pagination
 
-            expect {
-                that(contracts.data)
-                    .hasSize(size)
-                    .isSorted(
-                        compareByDescending<IndexedContract> { it.blockNumber }
-                            .then(
-                                compareByDescending<IndexedContract> { it.txId }
-                                    .then(compareByDescending { it.address })
-                            )
-                    )
+            expectThat(contracts.data).hasSize(10)
+            expectThat(contracts.pagination.hasNext).isTrue()
+        }
 
-                that(paginationDetail.hasCount).isTrue()
-                that(paginationDetail.countLimit).isEqualTo(COUNT_LIMIT)
-                that(paginationDetail.totalPages).isEqualTo(2)
-                that(paginationDetail.totalElements).isEqualTo(18)
-                that(paginationDetail.hasNext).isTrue()
-            }
+        @Test
+        fun `fetch contracts by origin - hasNext false when no remaining results`() {
+            val creatorAddress = "f077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val page = 1
+            val size = 10
+            val result =
+                mockMvc
+                    .get("$BASE_ENDPOINT?address=$creatorAddress&page=$page&size=$size")
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
+
+            expectThat(contracts.data).hasSize(8)
+            expectThat(contracts.pagination.hasNext).isFalse()
         }
 
         @Test
@@ -291,7 +290,7 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `fetch contracts by origin and contract type - with pagination`() {
+        fun `fetch contracts by origin and contract type - with sorting`() {
             val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
             val type = "vip180"
             val page = 0
@@ -325,7 +324,31 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
         }
 
         @Test
-        fun `fetch contracts by origin and contract type - with pagination sorting & pagination detail`() {
+        fun `fetch contracts by origin and contract type - hasNext true when remaining results`() {
+            val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            val type = "vip180"
+            val page = 0
+            val size = 1
+
+            val result =
+                mockMvc
+                    .get(
+                        "$BASE_ENDPOINT?address=$creatorAddress" +
+                            "&type=$type" +
+                            "&page=$page" +
+                            "&size=$size"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+
+            val contracts =
+                objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
+
+            expectThat(contracts.pagination.hasNext).isTrue()
+        }
+
+        @Test
+        fun `fetch contracts by origin and contract type - hasNext false when no remaining results`() {
             val creatorAddress = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
             val type = "vip180"
             val page = 1
@@ -344,27 +367,8 @@ internal class ContractControllerTest : AbstractIntegrationTest() {
 
             val contracts =
                 objectMapper.readValue(result.response.contentAsString, PAGINATED_CONTRACTS_TYPE)
-            val paginationDetail = contracts.pagination
 
-            expect {
-                that(contracts.data)
-                    .hasSize(size)
-                    .isSorted(
-                        compareByDescending<IndexedContract> { it.blockNumber }
-                            .then(
-                                compareByDescending<IndexedContract> { it.txId }
-                                    .then(compareByDescending { it.address })
-                            )
-                    )
-                    .map(IndexedContract::isVip180)
-                    .all { isTrue() }
-
-                that(paginationDetail.hasCount).isTrue()
-                that(paginationDetail.countLimit).isEqualTo(COUNT_LIMIT)
-                that(paginationDetail.totalPages).isEqualTo(2)
-                that(paginationDetail.totalElements).isEqualTo(2)
-                that(paginationDetail.hasNext).isFalse()
-            }
+            expectThat(contracts.pagination.hasNext).isFalse()
         }
 
         @Test

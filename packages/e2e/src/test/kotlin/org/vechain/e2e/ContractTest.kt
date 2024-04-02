@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedContract
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isGreaterThan
-import strikt.assertions.isNotEmpty
+import strikt.assertions.*
 
 class ContractTest {
 
@@ -27,6 +25,8 @@ class ContractTest {
         // 8 regular contract deployments + 2 deployments from a factory contract
         expectThat(contracts.data).hasSize(10)
 
+        expectThat(contracts.pagination.hasNext).isFalse()
+
         contracts.data.forEach { contract: IndexedContract -> assertValidContract(contract) }
 
         // Get contract by address
@@ -45,6 +45,7 @@ class ContractTest {
             )
 
         expectThat(contracts.data).hasSize(1)
+        expectThat(contracts.pagination.hasNext).isTrue()
 
         contracts.data.forEach { contract: IndexedContract -> assertValidContract(contract) }
     }
