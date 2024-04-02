@@ -1,0 +1,108 @@
+name: Cluster Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to destroy"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - prod-blue
+          - prod-green
+
+# Prevent parallel deploy/destroy of the node cluster infrastructure in the same workspace
+concurrency: 1
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  identify-live-color:
+    name: "Identify live and dead colors"
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_name: indexer.mainnet.vechain.org.
+      hosted_zone_id: Z058676337BU4AOFL6DMM
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  check-selected-color:
+    name: "Check color selected for destruction is not live"
+    runs-on: ubuntu-latest
+    needs: identify-live-color
+    steps:
+      - name: Check selected color is not live
+        run: |
+          if [ "${{ inputs.environment }}" == "${{ needs.identify-live-color.outputs.live_color }}" ]; then
+            echo "Selected color is live, aborting destruction."
+            exit 1
+          fi
+
+  destroy-environment:
+    name: "Destroy ${{ inputs.environment }} Infrastructure"
+    runs-on: ubuntu-latest
+    needs: [identify-live-color, check-selected-color]
+    if: ${{ inputs.environment }} == ${{ needs.identify-live-color.outputs.dead_color }}
+    defaults:
+      run:
+        working-directory: terraform/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Determine AWS account ID and role
+        id: account
+        run: |
+            if [ "${{ inputs.environment }}" == "prod" ]; then
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            else
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ steps.account.outputs.role_arn }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Point backend to correct environment
+        id: specify-backend
+        run: |
+          sed -i "s/{{{ENV}}}/${{ inputs.environment }}/g" provider.tf
+        continue-on-error: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+          terraform_wrapper: true
+
+      - name: Terraform initialize
+        id: init
+        run: terraform init
+
+      - name: Terraform workspace
+        id: workspace
+        run: terraform workspace select ${{ inputs.environment }}
+
+      - name: Plan terraform destroy
+        id: plan
+        run: terraform plan -out "destroy.plan" -destroy
+
+      - name: Terraform destroy
+        id: destroy
+        run: terraform apply "destroy.plan"

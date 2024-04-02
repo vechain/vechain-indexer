@@ -1,0 +1,70 @@
+name: identify-live-color
+
+on:
+  workflow_call:
+    inputs:
+      dns_record_name:
+        description: "The DNS record value to check"
+        required: true
+        type: string
+      hosted_zone_id:
+        description: "The hosted zone ID of the DNS record"
+        required: true
+        type: string
+    # Map the job outputs to workflow outputs
+    outputs:
+      live_color:
+        description: "The live color environment (prod-blue or prod-green)"
+        value: ${{ jobs.identify-live.outputs.live_color }}
+      dead_color:
+        description: "The dead color environment (opposite of live_color)"
+        value: ${{ jobs.identify-live.outputs.dead_color }}
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  identify-live:
+    name: "Identify and output live prod environment color"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set AWS IAM role variable
+        id: account
+        run: echo "role_arn=${{ secrets.DNS_ACCOUNT_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
+
+      - name: Get DNS record value
+        id: get_dns_value
+        run: |
+          dns_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_name }}'].ResourceRecords[].Value" --output text)
+          echo "::set-output name=dns_value::$dns_value"
+
+      - name: Define live_colour output variable
+        id: define_color_vars
+        run: |
+          if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-blue* ]]; then
+            echo "live_color=prod-blue" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-green" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-green* ]]; then
+            echo "live_color=prod-green" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-blue" >> $GITHUB_OUTPUT
+          else
+            echo "Error: DNS record value does not match expected patterns (prod-blue* or prod-green*)"
+            exit 1
+          fi
+
+    # Define the outputs section to pass data back to the calling workflow
+    outputs:
+      live_color: ${{ steps.define_color_vars.outputs.live_color }}
+      dead_color: ${{ steps.define_color_vars.outputs.dead_color }}

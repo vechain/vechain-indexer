@@ -1,18 +1,64 @@
-name: On Release
+name: Blue/Green Deployment Workflow
 
 on:
   release:
     types: [published]
 
 jobs:
-  test-gradle:
-    uses: ./.github/workflows/test-gradle.yml
-
-  publish-images-to-ecr:
-    uses: ./.github/workflows/publish-images.yml
-    needs: test-gradle
+  identify-live-color:
+    uses: ./.github/workflows/identify-live-color.yml
     with:
-      imageTag: ${{ github.ref_name }}
-      latestTag: prod-latest
-      env: Prod
+      dns_record_name: indexer.mainnet.vechain.org.
+      hosted_zone_id: Z058676337BU4AOFL6DMM
+    permissions:
+      contents: read
+      id-token: write
     secrets: inherit
+
+  specify-deployment-type:
+    runs-on: ubuntu-latest
+    needs: identify-live-color
+    outputs:
+      blue-green-deployment-required: ${{ steps.ask.outputs.blue-green-deployment-required }}
+    steps:
+      - name: Ask for user input
+        id: ask
+        run: |
+          echo "Is a blue/green deployment required? (yes/no)"
+          read userInput
+          if [[ "$userInput" == yes ]]; then
+            echo "blue-green-deployment-required=true" >> $GITHUB_OUTPUT
+          else
+            echo "blue-green-deployment-required=false" >> $GITHUB_OUTPUT
+          fi
+
+  deploy-live-color:
+    runs-on: ubuntu-latest
+    needs: [identify-live-color, specify-deployment-type]
+    if: ${{ needs.specify-deployment-type.outputs.blue-green-deployment-required == 'false' }}
+    steps:
+      - name: Run regular deployment
+        uses: ./.github/workflows/plan-or-deploy-environment.yml
+        with:
+          environment: prod
+          workspace: ${{ needs.identify-live-color.outputs.live_color }}
+    permissions:
+      packages: read
+      contents: read
+      id-token: write
+
+  deploy-dead-color:
+    runs-on: ubuntu-latest
+    needs: [identify-live-color, specify-deployment-type]
+    if: ${{ needs.specify-deployment-type.outputs.blue-green-deployment-required == 'true' }}
+    steps:
+      - name: Run blue/green deployment
+        uses: ./.github/workflows/plan-or-deploy-environment.yml
+        with:
+          environment: prod
+          workspace: ${{ needs.identify-live-color.outputs.dead_color }}
+          force: true
+    permissions:
+      packages: read
+      contents: read
+      id-token: write

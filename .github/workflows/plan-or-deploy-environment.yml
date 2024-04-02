@@ -16,14 +16,20 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: Which environment to plan/deploy to ('dev' or 'prod')
+        description: Which environment to plan/deploy to
         required: true
         default: dev
         type: string
       workspace:
         description: Terraform workspace to use
         required: true
+        default: dev
         type: string
+      force:
+        description: Whether to force apply
+        required: false
+        default: false
+        type: boolean
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -97,23 +103,28 @@ jobs:
         id: plan
         run: terraform plan -out "apply.plan"
 
-      - name: Check environment exists
+      - name: Should proceed with deployment? (PR builds will never deploy)
+        if: github.ref == 'refs/heads/main' || inputs.force == 'true'
         id: check-env
         run: |
           state_list=$(terraform state list)
-          if [ -z "$state_list" ]; then
+          if [ "${{ inputs.force }}" == "true" ]; then
+            echo "Force apply enabled, proceeding with deployment"
+          elif [ -z "$state_list" ]; then
             echo "state_empty=false" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
           else
             echo "state_empty=true" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
+        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false') || (inputs.force == 'true')
         id: apply
         run: terraform apply "apply.plan"
 
       - name: Slack Notification
-        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
+        if: steps.apply.outcome == 'success'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

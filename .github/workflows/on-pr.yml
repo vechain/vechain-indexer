@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/vulnerability-scan.yml
 
   terraform-plan-dev:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: dev
       workspace: dev
@@ -41,7 +41,7 @@ jobs:
     secrets: inherit
 
   terraform-plan-prod-blue:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: prod
       workspace: prod-blue
@@ -52,7 +52,7 @@ jobs:
     secrets: inherit
 
   terraform-plan-prod-green:
-    uses: ./.github/workflows/veworld-stack.yml
+    uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: prod
       workspace: prod-green

@@ -101,8 +101,8 @@ jobs:
           context: ${{ inputs.workingDirectory }}
           provenance: false
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.imageTag }}
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName}}:${{ inputs.latestTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName }}:${{ inputs.imageTag }}
+            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName }}:${{ inputs.latestTag }}
 
       - name: Scan Docker image
         id: docker-scan
