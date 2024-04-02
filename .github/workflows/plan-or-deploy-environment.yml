@@ -25,6 +25,11 @@ on:
         required: true
         default: dev
         type: string
+      force:
+        description: Whether to force apply
+        required: false
+        default: false
+        type: boolean
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -108,8 +113,8 @@ jobs:
             echo "state_empty=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false'
+      - name: Terraform Apply (if branch=main and env already exists)
+        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false') || (inputs.force == 'true')
         id: apply
         run: terraform apply "apply.plan"
 
