@@ -44,7 +44,7 @@ jobs:
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     strategy:
       matrix:
-        color: [ blue, green ]
+        color: [blue, green]
     with:
       environment: prod
       workspace: prod-${{ matrix.color }}
