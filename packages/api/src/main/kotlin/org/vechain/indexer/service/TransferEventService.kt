@@ -1,8 +1,8 @@
 package org.vechain.indexer.service
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
@@ -19,7 +19,7 @@ open class TransferEventService(
         address: Address,
         tokenAddress: Address,
         pageable: Pageable
-    ): Page<IndexedTransferEvent> {
+    ): Slice<IndexedTransferEvent> {
         return transferEventRepository.findByToOrFromAndTokenAddress(
             address.value,
             tokenAddress.value,
@@ -27,11 +27,11 @@ open class TransferEventService(
         )
     }
 
-    fun findByAddress(address: Address, pageable: Pageable): Page<IndexedTransferEvent> {
-        return transferEventRepository.findByToOrFrom(address.value, pageable)
+    fun findByAddress(address: Address, pageable: Pageable): Slice<IndexedTransferEvent> {
+        return transferEventRepository.findByToOrFrom(address.value, address.value, pageable)
     }
 
-    fun findByTokenAddress(tokenAddress: Address, pageable: Pageable): Page<IndexedTransferEvent> {
+    fun findByTokenAddress(tokenAddress: Address, pageable: Pageable): Slice<IndexedTransferEvent> {
         return transferEventRepository.findByTokenAddress(tokenAddress.value, pageable)
     }
 
@@ -39,7 +39,7 @@ open class TransferEventService(
         to: Address,
         tokenAddress: Address?,
         pageable: Pageable
-    ): Page<IndexedTransferEvent> {
+    ): Slice<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByToAndTokenAddress(to.value, tokenAddress.value, pageable)
         } else {
@@ -51,7 +51,7 @@ open class TransferEventService(
         from: Address,
         tokenAddress: Address?,
         pageable: Pageable
-    ): Page<IndexedTransferEvent> {
+    ): Slice<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByFromAndTokenAddress(
                 from.value,
@@ -67,7 +67,7 @@ open class TransferEventService(
         blockNumber: Long,
         addresses: List<Address>,
         pageable: Pageable
-    ): Page<IndexedTransferEvent> {
+    ): Slice<IndexedTransferEvent> {
         return transferEventRepository.findByBlockNumberAndToOrFromIn(
             blockNumber,
             addresses.map { it.value },
@@ -79,7 +79,7 @@ open class TransferEventService(
         address: Address,
         officialTokensOnly: Boolean,
         pageable: Pageable
-    ): Page<String> {
+    ): Slice<String> {
         val whitelist =
             if (officialTokensOnly) officialTokenService.getOfficialTokenAddresses()
             else emptyList()

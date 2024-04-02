@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.IndexedTransaction
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isGreaterThan
-import strikt.assertions.isNotEmpty
+import strikt.assertions.*
 
 class TransactionTest {
 
@@ -23,6 +21,7 @@ class TransactionTest {
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(12)
+        expectThat(transactions.pagination.hasNext).isFalse()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
 
@@ -42,6 +41,7 @@ class TransactionTest {
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
+        expectThat(transactions.pagination.hasNext).isTrue()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }
@@ -53,6 +53,7 @@ class TransactionTest {
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(1)
+        expectThat(transactions.pagination.hasNext).isFalse()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }
@@ -67,6 +68,7 @@ class TransactionTest {
         val txs: List<IndexedTransaction> = transactions.data
 
         expectThat(txs).hasSize(13)
+        expectThat(transactions.pagination.hasNext).isFalse()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
     }

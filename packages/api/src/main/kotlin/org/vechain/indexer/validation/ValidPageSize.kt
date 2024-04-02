@@ -12,7 +12,7 @@ import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 @Constraint(validatedBy = [PageSizeValidator::class])
 @MustBeDocumented
 annotation class ValidPageSize(
-    val message: String = "The maximum allowed page size is $PAGE_SIZE_LIMIT",
+    val message: String = "The page size must be between 1 and $PAGE_SIZE_LIMIT",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )
@@ -22,6 +22,6 @@ class PageSizeValidator : ConstraintValidator<ValidPageSize, Int> {
         value: Int?,
         constraintValidatorContext: ConstraintValidatorContext
     ): Boolean {
-        return value == null || value <= PAGE_SIZE_LIMIT
+        return value == null || value in 1..PAGE_SIZE_LIMIT
     }
 }
