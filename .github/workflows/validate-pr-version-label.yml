@@ -2,8 +2,7 @@ name: Pull Request Label Check
 
 on:
   pull_request:
-    branches:
-      - main
+    types: [opened, reopened, labeled, unlabeled]
 
 jobs:
   check-labels:
@@ -27,5 +26,3 @@ jobs:
             console.error('Invalid number of labels applied.');
             process.exit(1);
           }
-
-          
