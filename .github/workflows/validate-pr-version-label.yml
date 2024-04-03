@@ -1,0 +1,35 @@
+name: Check PR Labels
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for Labels
+        id: check_labels
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = await github.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number
+            });
+
+            const labelNames = labels.data.map(label => label.name);
+            const patchLabelExists = labelNames.includes('patch');
+            const minorLabelExists = labelNames.includes('minor');
+            const majorLabelExists = labelNames.includes('major');
+
+            if ((patchLabelExists + minorLabelExists + majorLabelExists) !== 1) {
+              core.setFailed('Exactly one of the labels "patch", "minor", or "major" must be present on the pull request.');
+            }
+
+      - name: Finish
+        if: success()
+        run: echo "Labels check passed!"
