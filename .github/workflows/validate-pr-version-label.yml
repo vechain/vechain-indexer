@@ -1,35 +1,20 @@
-name: Check PR Labels
-
+name: Validate PR Label
 on:
   pull_request:
-    branches:
-      - main
-
+    branches: main
 jobs:
-  check_labels:
+  labeler:
     runs-on: ubuntu-latest
     steps:
-      - name: Check for Labels
-        id: check_labels
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const labels = await github.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number
-            });
+      - name: Check version labels
+        run: |
+          num_major=$(jq '.pull_request.labels[] | select(.name == "major") | length' "$GITHUB_EVENT_PATH")
+          num_minor=$(jq '.pull_request.labels[] | select(.name == "minor") | length' "$GITHUB_EVENT_PATH")
+          num_patch=$(jq '.pull_request.labels[] | select(.name == "patch") | length' "$GITHUB_EVENT_PATH")
 
-            const labelNames = labels.data.map(label => label.name);
-            const patchLabelExists = labelNames.includes('patch');
-            const minorLabelExists = labelNames.includes('minor');
-            const majorLabelExists = labelNames.includes('major');
+          total=$(($num_major + $num_minor + $num_patch))
 
-            if ((patchLabelExists + minorLabelExists + majorLabelExists) !== 1) {
-              core.setFailed('Exactly one of the labels "patch", "minor", or "major" must be present on the pull request.');
-            }
-
-      - name: Finish
-        if: success()
-        run: echo "Labels check passed!"
+          if [ "$total" != 1 ]; then
+            echo "Please apply exactly one version label (patch/minor/major) to the PR"
+            exit 1
+          fi
