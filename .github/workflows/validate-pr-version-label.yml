@@ -20,9 +20,9 @@ jobs:
           const majorCount = labels.filter(label => label === 'major').length;
           
           if (patchCount + minorCount + majorCount === 1) {
-            console.log('Exactly one of the required labels applied.');
+            console.log('Pull request has a valid version label');
             process.exit(0);
           } else {
-            console.error('Invalid number of labels applied.');
+            console.error('Please apply exactly one version label (patch, minor, or major)');
             process.exit(1);
           }
