@@ -114,6 +114,7 @@ module "ecs-lb-service-api" {
   env                        = local.env.environment
   is_create_repo             = false
   secrets_enable             = false
+  assign_public_ip           = false
   image_repo_url             = each.value.api.ecr_common_repo
   app_name                   = "${each.key}-api"
   image_name                 = local.env.image_tag
