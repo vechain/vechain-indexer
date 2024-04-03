@@ -1,20 +1,29 @@
-name: Validate PR Label
+name: Pull Request Label Check
+
 on:
   pull_request:
-    branches: main
+    branches:
+      - main
+
 jobs:
-  labeler:
+  check-labels:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check version labels
-        run: |
-          num_major=$(jq '.pull_request.labels[] | select(.name == "major") | length' "$GITHUB_EVENT_PATH")
-          num_minor=$(jq '.pull_request.labels[] | select(.name == "minor") | length' "$GITHUB_EVENT_PATH")
-          num_patch=$(jq '.pull_request.labels[] | select(.name == "patch") | length' "$GITHUB_EVENT_PATH")
-
-          total=$(($num_major + $num_minor + $num_patch))
-
-          if [ "$total" != 1 ]; then
-            echo "Please apply exactly one version label (patch/minor/major) to the PR"
-            exit 1
-          fi
+    - name: Check PR labels
+      id: check_labels
+      uses: actions/github-script@v4
+      with:
+        script: |
+          const labels = context.payload.pull_request.labels.map(label => label.name);
+          const patchCount = labels.filter(label => label === 'patch').length;
+          const minorCount = labels.filter(label => label === 'minor').length;
+          const majorCount = labels.filter(label => label === 'major').length;
+          
+          if (patchCount + minorCount + majorCount === 1) {
+            console.log('Exactly one of the required labels applied.');
+            process.exit(0);
+          } else {
+            console.error('Invalid number of labels applied.');
+            process.exit(1);
+          }
