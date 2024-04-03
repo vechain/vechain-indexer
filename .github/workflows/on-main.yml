@@ -17,22 +17,16 @@ jobs:
   vulnerability-scan:
     uses: ./.github/workflows/vulnerability-scan.yml
 
-  publish-images-to-ecr-dev:
+  publish-images-to-ecr:
     uses: ./.github/workflows/publish-images.yml
     needs: [test-gradle]
+    strategy:
+      matrix:
+        env: [dev, prod]
     with:
       imageTag: ${{ github.sha }}
-      latestTag: dev-latest
-      env: dev
-    secrets: inherit
-
-  publish-images-to-ecr-prod:
-    uses: ./.github/workflows/publish-images.yml
-    needs: [test-gradle]
-    with:
-      imageTag: ${{ github.sha }}
-      latestTag: prod-latest
-      env: prod
+      latestTag: ${{ matrix.env }}-latest
+      env: ${{ matrix.env }}
     secrets: inherit
 
   identify-live-color:
@@ -48,7 +42,7 @@ jobs:
   deploy-dead-color:
     # To be used as testing/dev environment, deployed only if environment already exists
     uses: ./.github/workflows/plan-or-deploy-environment.yml
-    needs: [publish-images-to-ecr-dev, identify-live-color]
+    needs: [publish-images-to-ecr, identify-live-color]
     with:
       environment: prod
       workspace: ${{ needs.identify-live-color.outputs.dead_color }}

@@ -40,22 +40,14 @@ jobs:
       id-token: write
     secrets: inherit
 
-  terraform-plan-prod-blue:
+  terraform-plan-prod:
     uses: ./.github/workflows/plan-or-deploy-environment.yml
+    strategy:
+      matrix:
+        color: [blue, green]
     with:
       environment: prod
-      workspace: prod-blue
-    permissions:
-      packages: read
-      contents: read
-      id-token: write
-    secrets: inherit
-
-  terraform-plan-prod-green:
-    uses: ./.github/workflows/plan-or-deploy-environment.yml
-    with:
-      environment: prod
-      workspace: prod-green
+      workspace: prod-${{ matrix.color }}
     permissions:
       packages: read
       contents: read
