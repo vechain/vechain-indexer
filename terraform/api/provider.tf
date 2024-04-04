@@ -13,9 +13,9 @@ terraform {
   backend "s3" {
     # The states of DEV and PROD environments are stored in separate S3 buckets in their
     # respective AWS accounts. The {{{ENV}}} placeholder is replaced manually (dev/prod)
-    bucket = "veworld-indexer-terraform-state-{{{ENV}}}"
-    key    = "veworld-indexer-api.tfstate"
-    region = "eu-west-1"
+    bucket               = "veworld-indexer-terraform-state-{{{ENV}}}"
+    key                  = "veworld-indexer-api.tfstate"
+    region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
   }
 }
@@ -24,8 +24,9 @@ provider "aws" {
   region = local.env.region
   default_tags {
     tags = {
-      Terraform = "true"
-      Project = var.project
+      Commit_Hash = data.external.git.result.sha
+      Terraform   = "true"
+      Project     = var.project
     }
   }
 }
@@ -36,8 +37,9 @@ provider "aws" {
   region = "us-east-1"
   default_tags {
     tags = {
-      Terraform = "true"
-      Project = var.project
+      Commit_Hash = data.external.git.result.sha
+      Terraform   = "true"
+      Project     = var.project
     }
   }
 }
@@ -55,6 +57,10 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_elb_service_account" "default" {}
+
+data "external" "git" {
+  program = ["git", "log", "--pretty=format:{ \"sha\": \"%H\" }", "-1", "HEAD"]
+}
 
 # Import outputs from the vpc module
 data "terraform_remote_state" "vpc" {
