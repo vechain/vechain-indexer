@@ -17,7 +17,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 
 resource "aws_security_group" "alb-sg" {
   count       = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
-  description = "security-group-alb"
+  description = "security-group-alb-test"
   name        = "${local.env.environment}-${var.project}-sg-alb"
   egress {
     cidr_blocks = ["0.0.0.0/0"]
@@ -268,7 +268,7 @@ module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=ecs-support-loose-image-paths"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=main"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
