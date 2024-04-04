@@ -20,7 +20,7 @@ database_subnets:                null
 
 
 
-rate_limit:                      '5000'
+rate_limit:                      '4000'
 rate_limit_exception_list:
   -                              185.57.113.46/32
   -                              81.39.47.171/32

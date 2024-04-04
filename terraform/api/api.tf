@@ -17,7 +17,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
 
 resource "aws_security_group" "alb-sg" {
   count       = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
-  description = "security-group-alb-test"
+  description = "security-group-alb"
   name        = "${local.env.environment}-${var.project}-sg-alb"
   egress {
     cidr_blocks = ["0.0.0.0/0"]
