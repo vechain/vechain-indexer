@@ -14,20 +14,30 @@ open class NFTService(
     private val nftRepository: NFTRepository,
 ) {
 
-    open fun findByOwner(owner: Address, pageable: Pageable): Slice<IndexedNFT> {
-        return nftRepository.findByOwner(owner.value, pageable)
-    }
-
-    open fun findByOwnerAndContractAddress(
+    open fun findOwnedNFTs(
         owner: Address,
-        contractAddress: Address,
-        pageable: Pageable
+        contractAddress: Address?,
+        tokenId: String?,
+        pageable: Pageable,
     ): Slice<IndexedNFT> {
-        return nftRepository.findByOwnerAndContractAddress(
-            owner.value,
-            contractAddress.value,
-            pageable
-        )
+        if (contractAddress != null) {
+            return if (!tokenId.isNullOrEmpty()) {
+                nftRepository.findByOwnerAndContractAddressAndTokenId(
+                    owner.value,
+                    contractAddress.value,
+                    tokenId,
+                    pageable
+                )
+            } else {
+                nftRepository.findByOwnerAndContractAddress(
+                    owner.value,
+                    contractAddress.value,
+                    pageable
+                )
+            }
+        } else {
+            return nftRepository.findByOwner(owner.value, pageable)
+        }
     }
 
     open fun findContractsByNFTOwner(owner: Address, pageable: Pageable): Slice<String> {
