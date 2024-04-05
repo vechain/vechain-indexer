@@ -18,5 +18,12 @@ interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
         pageable: Pageable
     ): Slice<IndexedNFT>
 
+    fun findByOwnerAndContractAddressAndTokenId(
+        owner: String,
+        contractAddress: String,
+        tokenId: String,
+        pageable: Pageable
+    ): Slice<IndexedNFT>
+
     fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String>
 }
