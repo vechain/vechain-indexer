@@ -347,6 +347,73 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 )
                 .andExpect { status { isBadRequest() } }
         }
+
+        @Test
+        fun `get owned NFT by contract addresses & tokenId - found`() {
+            val owner = "0x0f872421dc479f3c11edd89512731814d0598db5"
+            val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+            val tokenId = "5"
+
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=$owner&contractAddress=$contractAddress&tokenId=$tokenId"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(1)
+            val nft = nfts.data.first()
+
+            expect {
+                that(nft.id).isEqualTo("d0e5a87a3a0cf30069547c8cfa5178c01c223273")
+                that(nft.tokenId).isEqualTo(tokenId)
+                that(nft.contractAddress).isEqualTo(contractAddress)
+                that(nft.owner).isEqualTo(owner)
+                that(nft.txId)
+                    .isEqualTo("0x7656cbb0874648e3ccc81126c967455623c570e19827875b8b1455862faf1178")
+                that(nft.blockNumber).isEqualTo(17)
+                that(nft.blockId)
+                    .isEqualTo("0x00000011b347fd82354d66867d0e9a9a207eb2fbac21cbe85388878193935984")
+            }
+        }
+
+        @Test
+        fun `get owned NFT by contract addresses & tokenId - not found`() {
+            val owner = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+            val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+            val tokenId = "5"
+
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=$owner&contractAddress=$contractAddress&tokenId=$tokenId"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).isEmpty()
+        }
+
+        @Test
+        fun `get owned NFTs by contract addresses & tokenId - empty tokenId not taken into account`() {
+            val owner = "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
+            val contractAddress = "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+            val tokenId = ""
+
+            val res =
+                mockMvc
+                    .get(
+                        "$baseEndpoint?address=$owner&contractAddress=$contractAddress&tokenId=$tokenId"
+                    )
+                    .andExpect { status { isOk() } }
+                    .andReturn()
+            val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
+
+            expectThat(nfts.data).hasSize(2).map(IndexedNFT::owner).all { isEqualTo(owner) }
+        }
     }
 
     @Nested
