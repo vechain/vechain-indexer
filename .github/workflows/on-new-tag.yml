@@ -1,8 +1,16 @@
-name: Blue/Green Deployment Workflow
+name: Prod Deployment Workflow
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      name:
+        type: choice
+        description: Deployment strategy
+        options: 
+        - regular
+        - blue/green
 
 jobs:
   identify-live-color:
