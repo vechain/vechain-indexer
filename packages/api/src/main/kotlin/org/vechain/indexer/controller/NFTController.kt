@@ -58,20 +58,16 @@ open class NFTController(private val nftService: NFTService) {
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @RequestParam(required = false) tokenId: String?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedNFT> {
         val pageable = toPageable(page, size, direction)
 
-        val resultsPage =
-            if (contractAddress == null) {
-                nftService.findByOwner(address, pageable)
-            } else {
-                nftService.findByOwnerAndContractAddress(address, contractAddress, pageable)
-            }
-
-        return paginatedResponse(resultsPage)
+        return paginatedResponse(
+            nftService.findOwnedNFTs(address, contractAddress, tokenId, pageable)
+        )
     }
 
     @GetMapping("/contracts")
