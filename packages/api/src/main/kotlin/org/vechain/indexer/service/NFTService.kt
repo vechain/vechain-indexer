@@ -20,7 +20,7 @@ open class NFTService(
         tokenId: String?,
         pageable: Pageable,
     ): Slice<IndexedNFT> {
-        if (contractAddress != null) {
+        return if (contractAddress != null) {
             return if (!tokenId.isNullOrEmpty()) {
                 nftRepository.findByOwnerAndContractAddressAndTokenId(
                     owner.value,
@@ -36,7 +36,7 @@ open class NFTService(
                 )
             }
         } else {
-            return nftRepository.findByOwner(owner.value, pageable)
+            nftRepository.findByOwner(owner.value, pageable)
         }
     }
 
