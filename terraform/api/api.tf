@@ -123,7 +123,6 @@ module "ecs-lb-service-api" {
   cpu                        = each.value.api.cpu
   memory                     = each.value.api.memory
   cidr                       = local.env.cidr
-  desired_capacity           = each.value.api.min_capacity
   container_port             = 8080
   certificate_arn            = local.env.certificate_arn
   ecs_sg                     = [aws_security_group.alb-sg[0].id]
@@ -175,7 +174,7 @@ module "ecs-lb-service-api" {
   enable_ecs_cpu_based_autoscaling = true
   enable_ecs_memory_based_autoscaling = true
   min_capacity = 1
-  max_capacity = 4
+  max_capacity = each.value.api.max_capacity
   target_cpu_value = 70
   target_memory_value = 70
   disable_scale_in = false
