@@ -15,6 +15,26 @@ terraform {
   }
 }
 
+# Import outputs from the api module
+data "terraform_remote_state" "api-blue" {
+  backend = "s3"
+  config = {
+    bucket = "veworld-indexer-terraform-state-prod"
+    key    = "workspaces/prod-blue/veworld-indexer-api.tfstate"
+    region = "eu-west-1"
+  }
+}
+
+# Import outputs from the api module
+data "terraform_remote_state" "api-green" {
+  backend = "s3"
+  config = {
+    bucket = "veworld-indexer-terraform-state-prod"
+    key    = "workspaces/prod-green/veworld-indexer-api.tfstate"
+    region = "eu-west-1"
+  }
+}
+
 provider "aws" {
   region = local.env.region
   default_tags {

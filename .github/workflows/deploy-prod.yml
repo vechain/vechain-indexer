@@ -1,0 +1,73 @@
+name: Prod Deployment Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment-strategy:
+        description: 'Deployment strategy'
+        required: true
+        type: choice
+        options:
+          - regular
+          - blue/green
+      version:
+        description: 'The version of this release'
+        required: true
+
+jobs:
+  identify-live-color:
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_name: indexer.mainnet.vechain.org.
+      hosted_zone_id: Z058676337BU4AOFL6DMM
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  deploy-live-color:
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    if: ${{ inputs.deployment-strategy == 'regular' }}
+    steps:
+      - name: Run regular deployment (deploy to live prod color)
+        uses: ./.github/workflows/plan-or-deploy-environment.yml
+        with:
+          environment: prod
+          workspace: ${{ needs.identify-live-color.outputs.live_color }}
+    permissions:
+      packages: read
+      contents: read
+      id-token: write
+
+  deploy-dead-color:
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    if: ${{ inputs.deployment-strategy == 'blue/green' }}
+    steps:
+      - name: Run blue/green deployment (deploy dead prod color)
+        uses: ./.github/workflows/plan-or-deploy-environment.yml
+        with:
+          environment: prod
+          workspace: ${{ needs.identify-live-color.outputs.dead_color }}
+          # Force ensures environment is spun up if it does not already exist
+          force: true
+    permissions:
+      packages: read
+      contents: read
+      id-token: write
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [deploy-live-color, deploy-dead-color]
+    if: ${{ needs.deploy-live-color.result == 'success' || needs.deploy-dead-color.result == 'success' }}
+    steps:
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: Release ${{ inputs.version }}
+          draft: true
+          prerelease: false
