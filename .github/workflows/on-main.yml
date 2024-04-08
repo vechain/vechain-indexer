@@ -7,6 +7,11 @@ on:
       - "main"
 
 jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
   test-gradle:
     uses: ./.github/workflows/test-gradle.yml
 

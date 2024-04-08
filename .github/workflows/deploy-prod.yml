@@ -15,6 +15,11 @@ on:
         required: true
 
 jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
   identify-live-color:
     uses: ./.github/workflows/identify-live-color.yml
     with:
