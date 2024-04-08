@@ -35,7 +35,7 @@ enabled_nets:
     api:
       cpu:                          512
       memory:                       1024
-      min_capacity:                 4
+      max_capacity:                 4
       spring_profile:               nft-events,transactions,transfer-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
@@ -74,7 +74,7 @@ enabled_nets:
     api:
       cpu:                          512
       memory:                       1024
-      min_capacity:                 2
+      max_capacity:                 2
       spring_profile:               nft-events,transactions,transfer-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
