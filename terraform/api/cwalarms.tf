@@ -155,7 +155,7 @@ locals {
   ecs_highcpu_alarms = merge(local.ecs_backend_highcpu_alarm, local.ecs_lb_highcpu_alarm)
 
   ecs_backend_highmem_alarm = { 
-    for k, v in module.ecs-backend-service : "${v.service_name}_hicpu" => {
+    for k, v in module.ecs-backend-service : "${v.service_name}_himem" => {
     alarm_name          = "${v.service_name}_highmem_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
@@ -172,7 +172,7 @@ locals {
    }
   }
   ecs_lb_highmem_alarm = { 
-    for k, v in module.ecs-lb-service-api : "${v.service_name}_hicpu" => {
+    for k, v in module.ecs-lb-service-api : "${v.service_name}_himem" => {
     alarm_name          = "${v.service_name}_highmem_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
