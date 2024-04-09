@@ -17,8 +17,8 @@ locals {
   #   }
   # }
 
-  waf_alarms = { for k, v in module.waf : "${k}_blk_rq" => {
-    alarm_name          = "${k}_alarm"
+  waf_alarms = {for k, v in module.waf : "${k}_blk_rq" => {
+    alarm_name          = "${local.env.environment}_WAF_blocked_requests_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 1
     threshold           = 1000
@@ -35,8 +35,8 @@ locals {
     }
   }
 
-  elb_response_alarms = { for k, v in module.ecs-lb-service-api : "${k}_slo_req" => {
-    alarm_name          = "${k}_response_alarm"
+  elb_response_alarms = { for k, v in module.ecs-lb-service-api : "${v.service_name}_slo_req" => {
+    alarm_name          = "${v.service_name}_response_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 1000
@@ -51,8 +51,8 @@ locals {
     }
   }
 
-  elb_5xx_count_alarms = { for k, v in module.ecs-lb-service-api : "${k}_hi_5xx" => {
-    alarm_name          = "${k}_5xx_count_alarm"
+  elb_5xx_count_alarms = { for k, v in module.ecs-lb-service-api : "${v.service_name}_hi_5xx" => {
+    alarm_name          = "${v.service_name}_5xx_count_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 1
@@ -67,8 +67,8 @@ locals {
     }
   }
 
-  elb_connect_rate_alarms = { for k, v in module.ecs-lb-service-api : "${k}_hi_conr" => {
-    alarm_name          = "${k}_connect_rate_alarm"
+  elb_connect_rate_alarms = { for k, v in module.ecs-lb-service-api : "${v.service_name}_hi_conr" => {
+    alarm_name          = "${v.service_name}_connect_rate_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 100
@@ -83,8 +83,8 @@ locals {
     }
   }
 
-  elb_low_health_alarm = { for k, v in module.ecs-lb-service-api : "${k}_lo_h" => {
-    alarm_name          = "${k}_low_health_alarm"
+  elb_low_health_alarm = { for k, v in module.ecs-lb-service-api : "${v.service_name}_lo_h" => {
+    alarm_name          = "${v.service_name}_low_health_alarm"
     comparison_operator = "LessThanThreshold"
     evaluation_periods  = 3
     threshold           = 1
@@ -100,8 +100,8 @@ locals {
     }
   }
 
-  elb_hi_unhealthy_alarm = { for k, v in module.ecs-lb-service-api : "${k}_hi_unh" => {
-    alarm_name          = "${k}_hi_unhealthy_alarm"
+  elb_hi_unhealthy_alarm = { for k, v in module.ecs-lb-service-api : "${v.service_name}_hi_unh" => {
+    alarm_name          = "${v.service_name}_hi_unhealthy_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 1
@@ -127,7 +127,7 @@ locals {
       period              = 300
       statistic           = "Average"
       metric_name         = "CPUUtilization"
-      alarm_description   = "${v.service_name} hi CPU"
+      alarm_description   = "${v.service_name} high CPU load"
       dimensions = {
         ServiceName = v.service_name
         ClusterName = module.ecs-cluster[0].name
@@ -144,7 +144,7 @@ locals {
       period              = 300
       statistic           = "Average"
       metric_name         = "CPUUtilization"
-      alarm_description   = "${v.service_name} hi CPU"
+      alarm_description   = "${v.service_name} high CPU load"
       dimensions = {
         ServiceName = v.service_name
         ClusterName = module.ecs-cluster[0].name
@@ -155,8 +155,8 @@ locals {
   ecs_highcpu_alarms = merge(local.ecs_backend_highcpu_alarm, local.ecs_lb_highcpu_alarm)
 
   ecs_backend_highmem_alarm = { 
-    for k, v in module.ecs-backend-service : "${k}_hicpu" => {
-    alarm_name          = "${k}_highcpu_alarm"
+    for k, v in module.ecs-backend-service : "${v.service_name}_hicpu" => {
+    alarm_name          = "${v.service_name}_highmem_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 75
@@ -164,7 +164,7 @@ locals {
     period              = 300
     statistic           = "Average"
     metric_name         = "MemoryUtilization"
-    alarm_description   = "${k} hi Mem"
+    alarm_description   = "${v.service_name} high memory consumption"
     dimensions = {
       ServiceName = v.service_name
       ClusterName = module.ecs-cluster[0].name
@@ -172,8 +172,8 @@ locals {
    }
   }
   ecs_lb_highmem_alarm = { 
-    for k, v in module.ecs-lb-service-api : "${k}_hicpu" => {
-    alarm_name          = "${k}_highcpu_alarm"
+    for k, v in module.ecs-lb-service-api : "${v.service_name}_hicpu" => {
+    alarm_name          = "${v.service_name}_highmem_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 3
     threshold           = 75
@@ -181,7 +181,7 @@ locals {
     period              = 300
     statistic           = "Average"
     metric_name         = "MemoryUtilization"
-    alarm_description   = "${k} hi Mem"
+    alarm_description   = "${v.service_name} high memory consumption"
     dimensions = {
       ServiceName = v.service_name
       ClusterName = module.ecs-cluster[0].name
@@ -248,7 +248,8 @@ locals {
     local.ecs_highmem_alarms,
     local.log_metric_alarm,
     local.ec2_highcpu_alarm,
-  local.ec2_failure_alarm)
+    local.ec2_failure_alarm
+  )
 }
 
 # Expression alarms for CloudWatch constructed from sub maps as local variables, merged into a expressions_alarms_map
