@@ -30,7 +30,8 @@ jobs:
     needs: [identify-live-color]
     if: ${{ inputs.deployment-strategy == 'regular' }}
     steps:
-      - uses: actions/checkout@v4
+      - name: checkout
+        uses: actions/checkout@v4
       - name: Run regular deployment (deploy to live prod color)
         uses: ./.github/workflows/plan-or-deploy-environment.yml
         with:
