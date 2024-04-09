@@ -24,7 +24,6 @@ jobs:
 
   publish-images-to-ecr:
     uses: ./.github/workflows/publish-images.yml
-    needs: [test-gradle]
     strategy:
       matrix:
         env: [dev, prod]
