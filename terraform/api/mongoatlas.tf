@@ -38,7 +38,7 @@ module "mongoatlas-main-net" {
 
   project_ip_access_lists = (startswith(local.env.environment, "prod-") ? [
     {
-      ip_address = split("/", data.terraform_remote_state.vpc.outputs.vpc_ipv4)[0]
+      ip_address = "${split("/", data.terraform_remote_state.vpc.outputs.vpc_ipv4)[0]}/32"
       comment    = "AWS VPC"
     }
   ] : [])
