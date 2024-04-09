@@ -1,0 +1,104 @@
+name: Manual Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  identify-live-color:
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_name: indexer.mainnet.vechain.org.
+      hosted_zone_id: Z058676337BU4AOFL6DMM
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  fetch-lb-dns-names:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
+      - name: Get load balancer DNS names
+        id: get-lb-dns-names
+        run: |
+          set -e
+          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text)
+          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text)
+          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text)
+          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text)
+          
+          echo "blue_main_dns=$blue_main_dns" >> $GITHUB_OUTPUT
+          echo "blue_test_dns=$blue_test_dns" >> $GITHUB_OUTPUT
+          echo "green_main_dns=$green_main_dns" >> $GITHUB_OUTPUT
+          echo "green_test_dns=$green_test_dns" >> $GITHUB_OUTPUT
+
+    outputs:
+      blue_main_dns: ${{ steps.get-lb-dns-names.outputs.blue_main_dns }}
+      blue_test_dns: ${{ steps.get-lb-dns-names.outputs.blue_test_dns }}
+      green_main_dns: ${{ steps.get-lb-dns-names.outputs.green_main_dns }}
+      green_test_dns: ${{ steps.get-lb-dns-names.outputs.green_test_dns }}
+
+  deploy-vpc-stack:
+    name: Deploy VPC stack to switch live environment
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform/vpc
+
+    needs: [fetch-lb-dns-names, identify-live-color]
+    env:
+      environment: prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Point backend to correct environment
+        id: specify-backend
+        run: |
+          sed -i "s/{{{ENV}}}/${{ env.environment }}/g" provider.tf
+        continue-on-error: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+          terraform_wrapper: true
+
+      - name: Terraform initialize
+        id: init
+        run: terraform init
+
+      - name: Terraform workspace
+        id: workspace
+        run: terraform workspace select ${{ env.environment }}
+
+      - name: Terraform validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}

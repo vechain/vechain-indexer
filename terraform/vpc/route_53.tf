@@ -14,8 +14,8 @@ locals {
   live_mainnet_lb    = var.live_color == "blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
   live_testnet_lb    = var.live_color == "blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
   # If the dead environment has been torn down, dead records will be nullified
-  dead_mainnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
-  dead_testnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
+  dead_mainnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
+  dead_testnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
 }
 
 resource "aws_route53_zone" "veworld_public_zone" {
