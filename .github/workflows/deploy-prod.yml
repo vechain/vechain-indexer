@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deployment-strategy:
-        description: 'Deployment strategy test'
+        description: 'Deployment strategy'
         required: true
         type: choice
         options:
@@ -15,11 +15,6 @@ on:
         required: true
 
 jobs:
-  checkout:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
   identify-live-color:
     uses: ./.github/workflows/identify-live-color.yml
     with:
@@ -35,6 +30,7 @@ jobs:
     needs: [identify-live-color]
     if: ${{ inputs.deployment-strategy == 'regular' }}
     steps:
+      - uses: actions/checkout@v4
       - name: Run regular deployment (deploy to live prod color)
         uses: ./.github/workflows/plan-or-deploy-environment.yml
         with:
@@ -50,6 +46,7 @@ jobs:
     needs: [identify-live-color]
     if: ${{ inputs.deployment-strategy == 'blue/green' }}
     steps:
+      - uses: actions/checkout@v4
       - name: Run blue/green deployment (deploy dead prod color)
         uses: ./.github/workflows/plan-or-deploy-environment.yml
         with:
