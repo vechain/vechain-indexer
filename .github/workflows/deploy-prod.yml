@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       deployment-strategy:
-        description: 'Deployment strategy'
+        description: 'Deployment strategy test'
         required: true
         type: choice
         options:
