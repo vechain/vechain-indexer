@@ -37,6 +37,7 @@ jobs:
       packages: read
       contents: read
       id-token: write
+    secrets: inherit
 
   deploy-dead-color:
     needs: [identify-live-color]
@@ -52,6 +53,7 @@ jobs:
       packages: read
       contents: read
       id-token: write
+    secrets: inherit
 
   create-release:
     runs-on: ubuntu-latest
