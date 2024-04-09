@@ -111,11 +111,11 @@ jobs:
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif [ -z "$state_list" ]; then
-            echo "state_empty=false" >> $GITHUB_OUTPUT
-            echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
-          else
             echo "state_empty=true" >> $GITHUB_OUTPUT
             echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
+          else
+            echo "state_empty=false" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
           fi
 
       - name: Terraform Apply
