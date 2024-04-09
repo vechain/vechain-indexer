@@ -107,19 +107,19 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force == 'true'
         id: check-env
         run: |
-          state_list=$(terraform state list)
+          cluster_services=$(aws ecs list-services --cluster ${{ inputs.workspace }}-veworld-cluster --query 'length(serviceArns)' --output text)
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
-          elif [ -z "$state_list" ]; then
-            echo "state_empty=true" >> $GITHUB_OUTPUT
-            echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
-          else
-            echo "state_empty=false" >> $GITHUB_OUTPUT
+          elif (( $cluster_services > 0 )); then
+            echo "env_exists=true" >> $GITHUB_OUTPUT
             echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
+          else
+            echo "env_exists=false" >> $GITHUB_OUTPUT
+            echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
       - name: Terraform Apply
-        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.state_empty == 'false') || (inputs.force == 'true')
+        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.env_exists == 'true') || (inputs.force == 'true')
         id: apply
         run: terraform apply "apply.plan"
 
