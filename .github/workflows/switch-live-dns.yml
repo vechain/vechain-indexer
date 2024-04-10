@@ -6,6 +6,7 @@ on:
 jobs:
 
   identify-live-color:
+    name: Identify live color
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_name: indexer.mainnet.vechain.org.
@@ -16,10 +17,11 @@ jobs:
     secrets: inherit
 
   fetch-lb-dns-names:
+    name: Fetch load balancer DNS names
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-    
+
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -48,7 +50,7 @@ jobs:
       green_test_dns: ${{ steps.get-lb-dns-names.outputs.green_test_dns }}
 
   deploy-vpc-stack:
-    name: Deploy VPC stack to switch live environment
+    name: Deploy VPC stack & switch DNS
     runs-on: ubuntu-latest
 
     defaults:
