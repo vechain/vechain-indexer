@@ -65,6 +65,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Log Switching Details
+        run: |
+          echo "Current live color: ${{ needs.identify-live-color.outputs.live_color }}"
+          echo "New live color: ${{ needs.identify-live-color.outputs.dead_color }}"
+          echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.live_color }} to ${{ needs.identify-live-color.outputs.dead_color }}"
+
+      - name: Check Dead ENV is Ready
+        id: check-dead-env-is-ready
+        run: |
+          cluster_services=$(aws ecs list-services --cluster ${{ env.environment }}-${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+          if (( $cluster_services > 0 )); then
+            echo "env_exists=true" >> $GITHUB_OUTPUT
+            echo "The ${{ needs.identify-live-color.outputs.dead_color }} environment exists, proceeding with deployment"
+          else
+            echo "env_exists=false" >> $GITHUB_OUTPUT
+            echo "The ${{ needs.identify-live-color.outputs.dead_color }} has no services running. Please ensure the environment is ready for traffic"
+            exit 0
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -103,4 +122,5 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        if: steps.check-dead-env-is-ready.outputs.env_exists == 'true'
         run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
