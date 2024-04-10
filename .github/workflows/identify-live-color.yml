@@ -1,4 +1,4 @@
-name: identify-live-color
+name: Identify Live Color
 
 on:
   workflow_call:
@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   identify-live:
-    name: "Identify and output live prod environment color"
+    name: "Identify live & dead prod environments"
     runs-on: ubuntu-latest
 
     steps:
@@ -50,7 +50,7 @@ jobs:
           dns_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_name }}'].ResourceRecords[].Value" --output text)
           echo "::set-output name=dns_value::$dns_value"
 
-      - name: Define live_colour output variable
+      - name: Define output variables
         id: define_color_vars
         run: |
           if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-blue* ]]; then

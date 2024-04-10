@@ -1,4 +1,4 @@
-name: On Pull Request
+name: Pull Request - Test & Plan
 
 on:
   pull_request:

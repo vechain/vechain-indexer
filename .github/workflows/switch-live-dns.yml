@@ -89,15 +89,15 @@ jobs:
           terraform_version: 1.7.3
           terraform_wrapper: true
 
-      - name: Terraform initialize
+      - name: Terraform Initialize
         id: init
         run: terraform init
 
-      - name: Terraform workspace
+      - name: Terraform Workspace
         id: workspace
         run: terraform workspace select ${{ env.environment }}
 
-      - name: Terraform validate
+      - name: Terraform Validate
         id: validate
         run: terraform validate
 
