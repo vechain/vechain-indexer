@@ -55,6 +55,13 @@ jobs:
       id-token: write
     secrets: inherit
 
+  log-live-environment:
+    name: Log Live Environment
+    needs: [identify-live-color]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.live_color }}"
+
   create-release:
     runs-on: ubuntu-latest
     needs: [deploy-live-color, deploy-dead-color]
