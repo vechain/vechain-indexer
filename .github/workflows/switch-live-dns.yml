@@ -76,11 +76,11 @@ jobs:
         run: |
           cluster_services=$(aws ecs list-services --cluster ${{ env.environment }}-${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
           if (( $cluster_services > 0 )); then
-            echo "env_exists=true" >> $GITHUB_OUTPUT
-            echo "The ${{ needs.identify-live-color.outputs.dead_color }} environment exists, proceeding with deployment"
+            echo "env_ready=true" >> $GITHUB_OUTPUT
+            echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster is ready, proceeding with deployment"
           else
-            echo "env_exists=false" >> $GITHUB_OUTPUT
-            echo "The ${{ needs.identify-live-color.outputs.dead_color }} has no services running. Please ensure the environment is ready for traffic"
+            echo "env_ready=false" >> $GITHUB_OUTPUT
+            echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
             exit 0
           fi
 
@@ -122,5 +122,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        if: steps.check-dead-env-is-ready.outputs.env_exists == 'true'
+        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
+
+        ## Terraform apply step to be added after sufficient testing
