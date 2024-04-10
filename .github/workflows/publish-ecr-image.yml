@@ -1,4 +1,4 @@
-name: Push Image to ECR and Scan
+name: Build & Publish Docker Image
 
 on:
   workflow_call:

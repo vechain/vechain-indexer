@@ -1,4 +1,4 @@
-name: Test, Publish & Deploy
+name: Main Merge - Publish Images & Deploy Dead Color (if exists)
 
 on:
   workflow_dispatch:
@@ -23,17 +23,28 @@ jobs:
     uses: ./.github/workflows/vulnerability-scan.yml
 
   publish-images-to-ecr:
-    uses: ./.github/workflows/publish-images.yml
+    name: Build Images & Publish to ECR
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         env: [dev, prod]
+        application: [ indexer, api ]
+    uses: ./.github/workflows/publish-ecr-image.yml
     with:
-      imageTag: ${{ github.sha }}
       latestTag: ${{ matrix.env }}-latest
+      imageTag: ${{ github.sha }}
+      buildArgs: |
+        VEWORLD_PACKAGE=${{ matrix.application }}
+      workingDirectory: ./
+      packageName: ${{ matrix.application }}
+      imagePlatform: linux/arm64
       env: ${{ matrix.env }}
-    secrets: inherit
 
   identify-live-color:
+    name: Identify Live Color
     uses: ./.github/workflows/identify-live-color.yml
     with:
       dns_record_name: indexer.mainnet.vechain.org.
@@ -44,7 +55,8 @@ jobs:
     secrets: inherit
 
   deploy-dead-color:
-    # To be used as testing/dev environment, deployed only if environment already exists
+    name: Deploy Dead Color (if env exists)
+    # Can be used as testing/dev environment, deployed only if environment already exists
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     needs: [publish-images-to-ecr, identify-live-color]
     with:

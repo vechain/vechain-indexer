@@ -1,4 +1,4 @@
-name: VeWorld Indexer Stack
+name: Plan and/or Deploy VeWorld Indexer stack
 
 on:
   # trigger deployment manually
@@ -82,20 +82,20 @@ jobs:
           terraform_version: 1.7.3
           terraform_wrapper: true
 
-      - name: Terraform format
+      - name: Terraform Format
         id: fmt
         run: terraform fmt -check -recursive
         continue-on-error: true
 
-      - name: Terraform initialize
+      - name: Terraform Initialize
         id: init
         run: terraform init
 
-      - name: Terraform workspace
+      - name: Terraform Workspace
         id: workspace
         run: terraform workspace select ${{ inputs.workspace }}
 
-      - name: Terraform validate
+      - name: Terraform Validate
         id: validate
         run: terraform validate
 
