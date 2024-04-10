@@ -1,8 +1,8 @@
 locals {
   dashboard_body = {
     "widgets" : [
-      for k, v in merge({for k, v in module.ecs-backend-service : v.service_name => v.service_name}, {
-        for k, v in module.ecs-lb-service-api : v.service_name => v.service_name
+      for k, v in merge({for k, v in module.ecs-backend-service : v.service_name => v.cluster_name}, {
+        for k, v in module.ecs-lb-service-api : v.service_name => v.cluster_name
       }) : {
         "type" : "metric",
         "x" : 0,
