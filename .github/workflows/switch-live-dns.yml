@@ -1,4 +1,4 @@
-name: Manual Workflow
+name: Switch Live Environment
 
 on:
   workflow_dispatch:
