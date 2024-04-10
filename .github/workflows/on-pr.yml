@@ -30,6 +30,7 @@ jobs:
     uses: ./.github/workflows/vulnerability-scan.yml
 
   terraform-plan-dev:
+    name: Terraform Plan Dev
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
       environment: dev
@@ -41,6 +42,7 @@ jobs:
     secrets: inherit
 
   terraform-plan-prod:
+    name: Terraform Plan Prod
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     strategy:
       matrix:
