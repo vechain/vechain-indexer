@@ -1,4 +1,4 @@
-name: Identify Live Color
+name: Identify Live/Dead Environments
 
 on:
   workflow_call:
@@ -27,16 +27,16 @@ permissions:
 
 jobs:
   identify-live:
-    name: "Identify live & dead prod environments"
+    name: "Identify Live/Dead Environments"
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set AWS IAM role variable
         id: account
-        run: echo "role_arn=${{ secrets.DNS_ACCOUNT_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+        run: echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
