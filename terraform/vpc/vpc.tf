@@ -76,7 +76,7 @@ module "vpc" {
 
 # Modules
 module "vpclogs_cloudwatch" {
-  source                                          = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//logs"
+  source                                          = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//logs?ref=v.1.0.2"
   environment                                     = local.env.environment
   create_flow_log_cloudwatch_log_group            = "true"
   create_flow_log_cloudwatch_iam_role             = "true"
@@ -95,7 +95,7 @@ module "vpclogs_cloudwatch" {
 }
 
 module "vpclogs_s3" {
-  source                              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//logs"
+  source                              = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//logs?ref=v.1.0.2"
   environment                         = local.env.environment
   app_name                            = var.project
   flow_log_log_format                 = null
