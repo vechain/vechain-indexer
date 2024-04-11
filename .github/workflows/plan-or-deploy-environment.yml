@@ -118,16 +118,16 @@ jobs:
             echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
-      - name: Terraform Apply
-        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.env_exists == 'true') || (inputs.force == 'true')
-        id: apply
-        run: terraform apply "apply.plan"
+      # - name: Terraform Apply
+      #   if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.env_exists == 'true') || (inputs.force == 'true')
+      #   id: apply
+      #   run: terraform apply "apply.plan"
 
-      - name: Slack Notification
-        if: steps.apply.outcome == 'success'
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
-          SLACK_TITLE: VeWorld Indexer Deployment
+      # - name: Slack Notification
+      #   if: steps.apply.outcome == 'success'
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_COLOR: ${{ job.status }}
+      #     SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
+      #     SLACK_TITLE: VeWorld Indexer Deployment
