@@ -151,3 +151,17 @@ make test-api
 make load-test
 ```
 
+## Deployment & Testing
+
+The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag.
+
+### Regular Deployment
+Selecting the `regular` deployment strategy will trigger a deployment to the current live production environment. Most deployments will follow this process. Ensure any changes being deployed via this strategy have been sufficiently tested before triggering (testing process described below).
+
+### Blue/Green Deployment
+For code changes requiring a full reindex from the genesis block, deploy via the `blue/green` strategy. This will trigger a deployment to the dead color. Following deployment, a sufficient amount of time will need to be left (ie a few days) until the database has caught up with the latest block. After this point, the live environment can be switched from the current live color to the dead color. To do this, run the [Switch Live Environment](https://github.com/vechain/veworld-indexer/actions/workflows/switch-live-dns.yml) workflow. This will update the appropriate DNS records to redirect traffic to the alternate color environment. 
+
+Following the DNS switch, please wait at least 48 hours before tearing down the old live (now dead) environment. This is to allow any remote DNS caches to update to the new live environment. To tear down the now dead color environment, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow.
+
+### Testing
+The only permanent environment We do not run a permanent testing environment for the VeWorld Indexer. Testing should be done on a transient prod environment (the dead color)
