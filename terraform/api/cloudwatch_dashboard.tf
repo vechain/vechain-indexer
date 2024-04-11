@@ -132,14 +132,14 @@ locals {
 }
 
 module "aws_cloudwatch_dashboard_gw" {
-  source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard"
+  source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard?ref=v.1.0.2"
   create_cloudwatch_dashboard = true
   dashboard_name              = "coin-currency-cache-${local.env.environment}-dashboard"
   dashboard_body = jsonencode(local.api_gateway_dash_code)
 }
 
 module "aws_cloudwatch_dashboard" {
-  source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard"
+  source                      = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchdashboard?ref=v.1.0.2"
   create_cloudwatch_dashboard = true
   dashboard_name              = "veworld-indexer-${local.env.environment}-dashboard"
   dashboard_body              = jsonencode(local.dashboard_body)

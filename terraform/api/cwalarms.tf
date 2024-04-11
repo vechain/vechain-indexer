@@ -259,7 +259,7 @@ locals {
 }
 
 module "cloud_watch_alarms" {
-  source                   = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchalarm"
+  source                   = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchalarm?ref=v.1.0.2"
   sns_topic_enabled        = true
   topic_name               = "${local.env.environment}-CloudWatchAlarms"
   email_subscriptions      = []

@@ -90,7 +90,7 @@ resource "aws_security_group" "ecs_service_sg" {
 module "ecs-cluster" {
   # temporary filter to avoid deployment of new ECS cluster from original prod workspace
   count   = "${startswith(local.env.environment, "prod-") ? 1 : 0}"
-  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster"
+  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.1.0.2"
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -526,7 +526,7 @@ data "aws_security_groups" "ecs_sg_list" {
 }
 
 module "vpc-endpoints" {
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=500221e7cd25e73865bb0d8e27cb3a2bf9ccd775"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.2"
   vpcendpoints_interfaces = "${startswith(local.env.environment, "prod-") ? [] : [
     {
       id                  = "ec2"
