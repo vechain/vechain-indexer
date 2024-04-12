@@ -164,4 +164,8 @@ For code changes requiring a full reindex from the genesis block, deploy via the
 Following the DNS switch, please wait at least 48 hours before tearing down the old live (now dead) environment. This is to allow any remote DNS caches to update to the new live environment. To tear down the now dead color environment, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow.
 
 ### Testing
-The only permanent environment We do not run a permanent testing environment for the VeWorld Indexer. Testing should be done on a transient prod environment (the dead color)
+Since blue/green deployments are fairly infrequent, the dead color can be used as a transient testing environment when needed. This is preferable to using the dev environment because the dead color is an exact replica of the live environment, whereas dev is a more lightweight, stripped-down version, missing some key components like a mongo atlas cluster. Deployment to the dead color will be performed automatically on merge to main, *as long as the dead environment already exists*. The environment will therefore need to be deployed manually (either by deploying the terraform locally or by triggering a [Prod Deployment](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml) of the dead color).
+
+When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.
+
+Further details on the CICD process can be found [here](https://vechainfoundation-my.sharepoint.com/:w:/g/personal/dougal_rea_vechain_org/EcuW_jUEDh5PhS8jzH5PJ0EBw9pY8EqSd5IWKCJIG8rGVQ?e=i0Pa0N)
