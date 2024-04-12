@@ -19,6 +19,18 @@ on:
       dead_color:
         description: "The dead color environment (opposite of live_color)"
         value: ${{ jobs.identify-live.outputs.dead_color }}
+  workflow_dispatch:
+    inputs:
+      dns_record_name:
+        description: "The DNS record value to check"
+        required: true
+        type: string
+        default: "mainnet.live.prod.veworld.vechain.org."
+      hosted_zone_id:
+        description: "The hosted zone ID of the DNS record"
+        required: true
+        type: string
+        default: "Z074702037Q8JBHKIAYSD"
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -63,6 +75,11 @@ jobs:
             echo "Error: DNS record value does not match expected patterns (prod-blue* or prod-green*)"
             exit 1
           fi
+      
+      - name: Output live/dead color environments
+        run: |
+          echo "Live color environment is ${{ steps.define_color_vars.outputs.live_color }}"
+          echo "Dead color environment is ${{ steps.define_color_vars.outputs.dead_color }}"
 
     # Define the outputs section to pass data back to the calling workflow
     outputs:
