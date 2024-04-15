@@ -36,9 +36,9 @@ jobs:
       - id: set-deployment-color
         run: |
           if [ "${{ inputs.deployment-strategy }}" == "regular (live environment)" ]; then
-            echo "DEPLOYMENT_COLOR=prod-${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.deployment-strategy }}" == "blue/green (dead environment)" ]; then
-            echo "DEPLOYMENT_COLOR=prod-${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
           fi
   
   deploy-prod-env:
