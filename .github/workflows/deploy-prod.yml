@@ -8,8 +8,8 @@ on:
         required: true
         type: choice
         options:
-          - regular
-          - blue/green
+          - regular (live environment)
+          - blue/green (dead environment)
       version:
         description: 'The version of this release'
         required: true
@@ -64,6 +64,8 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
+    needs: [deploy-live-color]
+    if: needs.deploy-live-color.result == 'success'
     steps:
       - name: Create release
         uses: actions/create-release@v1
