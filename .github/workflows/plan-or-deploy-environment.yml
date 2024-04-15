@@ -119,7 +119,7 @@ jobs:
           fi
 
       - name: Terraform Apply
-        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.env_exists == 'true') || (inputs.force == 'true')
+        if: (github.ref == 'refs/heads/main' && steps.check-env.outputs.env_exists == 'true') || inputs.force
         id: apply
         run: terraform apply "apply.plan"
 
