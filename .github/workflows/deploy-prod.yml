@@ -27,7 +27,7 @@ jobs:
 
   deploy-live-color:
     needs: [identify-live-color]
-    if: ${{ inputs.deployment-strategy == 'regular' }}
+    if: ${{ inputs.deployment-strategy == 'regular (live environment)' }}
     name: Run regular deployment (deploy to live prod color)
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
@@ -41,7 +41,7 @@ jobs:
 
   deploy-dead-color:
     needs: [identify-live-color]
-    if: ${{ inputs.deployment-strategy == 'blue/green' }}
+    if: ${{ inputs.deployment-strategy == 'blue/green (dead environment)' }}
     name: Run blue/green deployment (deploy dead prod color)
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
@@ -64,8 +64,8 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [deploy-live-color]
-    if: needs.deploy-live-color.result == 'success'
+    needs: [deploy-live-color, deploy-dead-color]
+    if: always() && (needs.deploy-live-color.result != 'failure' && needs.deploy-dead-color.result != 'failure')
     steps:
       - name: Create release
         uses: actions/create-release@v1
