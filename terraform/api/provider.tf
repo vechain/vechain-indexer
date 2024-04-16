@@ -20,6 +20,14 @@ terraform {
   }
 }
 
+provider "mongodbatlas" {
+  public_key  = jsondecode(data.aws_secretsmanager_secret_version.atlas_api_keys.secret_string)["public_key"]
+  private_key = jsondecode(data.aws_secretsmanager_secret_version.atlas_api_keys.secret_string)["private_key"]
+}
+data "aws_secretsmanager_secret_version" "atlas_api_keys" {
+  secret_id = local.env.enabled_nets.main.mongodb.secret_arn
+}
+
 provider "aws" {
   region = local.env.region
   default_tags {

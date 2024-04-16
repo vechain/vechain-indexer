@@ -152,7 +152,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
+      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -244,7 +244,7 @@ module "ecs-lb-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_api_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://api:%s@%s/vechain?%s", each.value.mongodb.proto, "placeholder", each.value.mongodb.fqdn, each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -264,11 +264,12 @@ module "ecs-lb-service" {
 ################################################################################
 # Module For ECS Non-Load Balanced Service API
 ################################################################################
+
 module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.2"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.4"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
@@ -317,7 +318,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
+      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -444,7 +445,7 @@ module "ecs-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://indexer:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_ssm_parameter.mongo_index_password[0].value), each.value.mongodb.fqdn, each.value.mongodb.opts)
+      value = format("%s://indexer:%s@%s/vechain?%s", each.value.mongodb.proto, "placeholder", each.value.mongodb.fqdn, each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",

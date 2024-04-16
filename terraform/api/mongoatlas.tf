@@ -1,5 +1,5 @@
 module "mongoatlas-main-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=00fddea3f30eae476f473be7d45a87ff2b799567"
 
   secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
@@ -73,7 +73,7 @@ module "mongoatlas-main-net" {
 }
 
 module "mongoatlas-test-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=terragrunt/simple-mongodb-atlas"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=00fddea3f30eae476f473be7d45a87ff2b799567"
 
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
@@ -143,5 +143,76 @@ module "mongoatlas-test-net" {
       retention_unit     = "months"
       retention_value    = 1
     }
+  }
+}
+
+# Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
+# These secrets are used by the API and Indexer ECS services to connect to the MongoDB Atlas clusters
+
+resource "random_password" "api_db_user_password" {
+  length  = 12
+  special = true
+}
+resource "random_password" "indexer_db_user_password" {
+  length  = 12
+  special = true
+}
+
+resource "aws_secretsmanager_secret" "api_db_user_secret" {
+  name       = "/${local.env.environment}/${local.env.project}/mongo_api_password"
+}
+resource "aws_secretsmanager_secret" "indexer_db_user_secret" {
+  name       = "/${local.env.environment}/${local.env.project}/mongo_indexer_password"
+}
+
+resource "aws_secretsmanager_secret_version" "api_db_user_secret_version" {
+  secret_id     = aws_secretsmanager_secret.api_db_user_secret.id
+  secret_string = random_password.api_db_user_password.result
+}
+resource "aws_secretsmanager_secret_version" "indexer_db_user_secret_version" {
+  secret_id     = aws_secretsmanager_secret.indexer_db_user_secret.id
+  secret_string = random_password.indexer_db_user_password.result
+}
+
+resource "mongodbatlas_database_user" "api_db_user" {
+  count              = startswith(local.env.environment, "prod-") ? 1 : 0
+  username           = "api-${local.env.environment}"
+  password           = random_password.api_db_user_password.result
+  project_id         = local.env.mongoatlas_project_id
+  auth_database_name = "admin"
+
+  roles {
+    role_name     = "readAnyDatabase"
+    database_name = "admin"
+  }
+
+  scopes {
+    name = "${local.env.environment}-Mainnet"
+    type = "CLUSTER"
+  }
+  scopes {
+    name = "${local.env.environment}-Testnet"
+    type = "CLUSTER"
+  }
+}
+resource "mongodbatlas_database_user" "indexer_db_user" {
+  count              = startswith(local.env.environment, "prod-") ? 1 : 0
+  username           = "indexer-${local.env.environment}"
+  password           = random_password.indexer_db_user_password.result
+  project_id         = local.env.mongoatlas_project_id
+  auth_database_name = "admin"
+
+  roles {
+    role_name     = "readWriteAnyDatabase"
+    database_name = "admin"
+  }
+
+  scopes {
+    name = "${local.env.environment}-Mainnet"
+    type = "CLUSTER"
+  }
+  scopes {
+    name = "${local.env.environment}-Testnet"
+    type = "CLUSTER"
   }
 }
