@@ -120,8 +120,8 @@ jobs:
       - name: Destroy Lingering Secrets
         run: |
           echo "Deleting lingering secrets..."
-          aws secretsmanager delete-secret --secret-id secrets/${{ env.dead_color }}/test-indexer --force-delete-without-recovery
-          aws secretsmanager delete-secret --secret-id secrets/${{ env.dead_color }}/main-indexer --force-delete-without-recovery
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
       - name: "Please delete the following maunally:"
         run: |
           echo "Load balancers are deletion protected and will require manual destruction, along with any associated S3 buckets. Please delete the following manually:"
