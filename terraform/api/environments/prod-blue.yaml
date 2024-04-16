@@ -1,6 +1,6 @@
 image_tag:                       prod-latest
 region:                          eu-west-1
-common_ecr_repo_root:            veworld
+project:                         veworld
 environment:                     prod-blue
 certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/695573a6-698a-4309-a427-28dd94fe7633
 azs:

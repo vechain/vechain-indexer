@@ -165,19 +165,6 @@ resource "aws_ssm_parameter" "mongo_admin_password" {
   value = random_password.mongo_admin_password[0].result
 }
 
-resource "aws_ssm_parameter" "mongo_index_password" {
-  count = (var.mongo_credential_trigger != "" ? 0 : 1)
-  name  = "/${local.env.environment}/${var.project}/mongo_index_password"
-  type  = "SecureString"
-  value = random_password.mongo_index_password[0].result
-}
-
-resource "aws_ssm_parameter" "mongo_api_password" {
-  count = (var.mongo_credential_trigger != "" ? 0 : 1)
-  name  = "/${local.env.environment}/${var.project}/mongo_api_password"
-  type  = "SecureString"
-  value = random_password.mongo_api_password[0].result
-}
 ############################################################################################################
 # MongoDB instance
 ############################################################################################################
@@ -217,9 +204,9 @@ resource "aws_instance" "mongodb_cluster" {
       admin_username   = "admin",
       admin_password   = "${aws_ssm_parameter.mongo_admin_password[0].value}",
       indexer_username = "indexer",
-      indexer_password = "${aws_ssm_parameter.mongo_index_password[0].value}",
+      indexer_password = "${aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string}",
       api_username     = "api",
-      api_password     = "${aws_ssm_parameter.mongo_api_password[0].value}",
+      api_password     = "${aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string}",
       awsregion        = "${local.env.region}",
       hostname         = "mongodb-${each.key}"
       log_group        = aws_cloudwatch_log_group.mongo_log_group[each.key].name

@@ -145,3 +145,74 @@ module "mongoatlas-test-net" {
     }
   }
 }
+
+# Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
+# These secrets are used by the API and Indexer ECS services to connect to the MongoDB Atlas clusters
+
+resource "random_password" "api_db_user_password" {
+  length  = 12
+  special = true
+}
+resource "random_password" "indexer_db_user_password" {
+  length  = 12
+  special = true
+}
+
+resource "aws_secretsmanager_secret" "api_db_user_secret" {
+  name       = "/${local.env.environment}/${local.env.project}/mongo_api_password"
+}
+resource "aws_secretsmanager_secret" "indexer_db_user_secret" {
+  name       = "/${local.env.environment}/${local.env.project}/mongo_indexer_password"
+}
+
+resource "aws_secretsmanager_secret_version" "api_db_user_secret_version" {
+  secret_id     = aws_secretsmanager_secret.api_db_user_secret.id
+  secret_string = random_password.api_db_user_password.result
+}
+resource "aws_secretsmanager_secret_version" "indexer_db_user_secret_version" {
+  secret_id     = aws_secretsmanager_secret.indexer_db_user_secret.id
+  secret_string = random_password.indexer_db_user_password.result
+}
+
+resource "mongodbatlas_database_user" "api_db_user" {
+  username           = "api-${local.env.environment}"
+  password           = random_password.api_db_user_password.result
+  project_id         = local.env.mongoatlas_project_id
+  auth_database_name = "admin"
+
+  roles {
+    role_name     = "readAnyDatabase"
+    database_name = "admin"
+  }
+
+  scopes {
+    name = "${local.env.environment}-Mainnet"
+    type = "CLUSTER"
+  }
+  scopes {
+    name = "${local.env.environment}-Testnet"
+    type = "CLUSTER"
+  
+  }
+}
+resource "mongodbatlas_database_user" "indexer_db_user" {
+  username           = "indexer-${local.env.environment}"
+  password           = random_password.indexer_db_user_password.result
+  project_id         = local.env.mongoatlas_project_id
+  auth_database_name = "admin"
+
+  roles {
+    role_name     = "readWriteAnyDatabase"
+    database_name = "admin"
+  }
+
+  scopes {
+    name = "${local.env.environment}-Mainnet"
+    type = "CLUSTER"
+  }
+  scopes {
+    name = "${local.env.environment}-Testnet"
+    type = "CLUSTER"
+  
+  }
+}
