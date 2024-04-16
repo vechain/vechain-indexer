@@ -152,7 +152,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string, "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
+      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -318,7 +318,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string, "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
+      value = format("%s://indexer-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
