@@ -175,6 +175,7 @@ resource "aws_secretsmanager_secret_version" "indexer_db_user_secret_version" {
 }
 
 resource "mongodbatlas_database_user" "api_db_user" {
+  count              = startswith(local.env.environment, "prod-") ? 1 : 0
   username           = "api-${local.env.environment}"
   password           = random_password.api_db_user_password.result
   project_id         = local.env.mongoatlas_project_id
@@ -192,10 +193,10 @@ resource "mongodbatlas_database_user" "api_db_user" {
   scopes {
     name = "${local.env.environment}-Testnet"
     type = "CLUSTER"
-  
   }
 }
 resource "mongodbatlas_database_user" "indexer_db_user" {
+  count              = startswith(local.env.environment, "prod-") ? 1 : 0
   username           = "indexer-${local.env.environment}"
   password           = random_password.indexer_db_user_password.result
   project_id         = local.env.mongoatlas_project_id
@@ -213,6 +214,5 @@ resource "mongodbatlas_database_user" "indexer_db_user" {
   scopes {
     name = "${local.env.environment}-Testnet"
     type = "CLUSTER"
-  
   }
 }
