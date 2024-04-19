@@ -108,7 +108,30 @@ module "mongoatlas-test-net" {
 
   create_api_key = false
   slack_api_token = ""
-  alerts = {}
+  alerts = {
+    alert_type_1 = {
+      event_type = "HOST_MONGOT_CRASHING_OOM"
+      enabled    = true
+
+      notifications = [
+        {
+          type_name     = "GROUP"
+          interval_min  = 60
+          delay_min     = 0
+          email_enabled = true
+          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+        },
+        {
+          type_name     = "SLACK"
+          interval_min  = 60
+          delay_min     = 0
+          slack_enabled = true
+          slack_channel_name = "veworld-x-devops"
+          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+        }
+      ]
+    }
+  }
 
   audit_enabled               = false
   audit_config                = {
