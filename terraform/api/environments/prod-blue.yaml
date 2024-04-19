@@ -1,6 +1,6 @@
 image_tag:                       prod-latest
 region:                          eu-west-1
-common_ecr_repo_root:            veworld
+project:                         veworld
 environment:                     prod-blue
 certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/695573a6-698a-4309-a427-28dd94fe7633
 azs:
@@ -67,7 +67,7 @@ enabled_nets:
       opts:                         retryWrites=true&w=majority
       cluster_tier:                 M20
       disk_size_gb:                 250
-      iops:                         3000
+      iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
   test:
     thor_url:                       https://testnet.vechain.org
@@ -106,5 +106,5 @@ enabled_nets:
       opts:                         retryWrites=true&w=majority
       cluster_tier:                 M10
       disk_size_gb:                 119
-      iops:                         3000
+      iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT

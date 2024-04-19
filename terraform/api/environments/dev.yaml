@@ -1,6 +1,6 @@
 image_tag:                       dev-latest
 region:                          eu-west-1
-common_ecr_repo_root:            veworld
+project:                         veworld
 environment:                     dev
 certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060
 azs:

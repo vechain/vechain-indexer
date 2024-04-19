@@ -36,7 +36,7 @@ jobs:
   check-selected-color:
     name: "Check color selected for destruction is not live"
     runs-on: ubuntu-latest
-    needs: identify-live-color
+    needs: [identify-live-color]
     steps:
       - name: Check selected color is not live
         run: |
@@ -109,3 +109,21 @@ jobs:
       - name: Terraform destroy
         id: destroy
         run: terraform apply "destroy.plan"
+
+  destroy-lingering-resources:
+    name: Destroy Lingering Resources
+    needs: [identify-live-color]
+    runs-on: ubuntu-latest
+    env: 
+      dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
+    steps:
+      - name: Destroy Lingering Secrets
+        run: |
+          echo "Deleting lingering secrets..."
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
+      - name: "Please delete the following maunally:"
+        run: |
+          echo "Load balancers are deletion protected and will require manual destruction, along with any associated S3 buckets. Please delete the following manually:"
+          echo "Load balancers: ${{ env.dead_color }}-main-api-veworld-alb, ${{ env.dead_color }}-test-api-veworld-alb"
+          echo "S3 buckets: ${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket, ${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket"
