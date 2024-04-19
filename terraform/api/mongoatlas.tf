@@ -1,41 +1,69 @@
 module "mongoatlas-main-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=00fddea3f30eae476f473be7d45a87ff2b799567"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=simple-mongodb-atlas-addition"
 
   secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
+  slack_api_token = "arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd"
+  alerts = {
+    alert_type_1 = {
+      event_type = "HOST_MONGOT_CRASHING_OOM"
+      enabled    = true
 
-  mongodbatlas_audit_enabled               = false
-  mongodbatlas_audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
-  mongodbatlas_audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
-
-  enable_cluster               = startswith(local.env.environment, "prod-") ? true : false
-  cluster_name                 = "${local.env.environment}-Mainnet"
-  disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
-  num_shards                   = 1
-  cloud_backup                 = true
-  cluster_type                 = "REPLICASET"
-  auto_scaling_disk_gb_enabled = true
-  provider_name                = "AWS"
-  provider_disk_iops           = try(local.env.enabled_nets.main.mongodb.iops, null)
-  provider_volume_type         = "STANDARD"
-  provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
-  mongo_db_major_version       = "6"
-  replication_specs = [
-    {
-      num_shards = 1
-      regions_config = [
+      notifications = [
         {
-          region_name     = "EU_WEST_1"
-          electable_nodes = 3
-          priority        = 7
-          read_only_nodes = 0
+          type_name     = "GROUP"
+          interval_min  = 60
+          delay_min     = 0
+          email_enabled = true
+          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
         },
+        {
+          type_name     = "SLACK"
+          interval_min  = 60
+          delay_min     = 0
+          slack_enabled = true
+          slack_channel_name = "veworld-x-devops"
+          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+        }
       ]
     }
-  ]
+  }
 
+  audit_enabled               = false
+  audit_config                = {
+    audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
+    audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
+  }
+
+  enable_cluster                 = startswith(local.env.environment, "prod-") ? true : false
+  cluster_config                 = {
+    cluster_name                 = "${local.env.environment}-Mainnet"
+    disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
+    num_shards                   = 1
+    cloud_backup                 = true
+    cluster_type                 = "REPLICASET"
+    auto_scaling_disk_gb_enabled = true
+    provider_name                = "AWS"
+    provider_disk_iops           = try(local.env.enabled_nets.main.mongodb.iops, null)
+    provider_volume_type         = "STANDARD"
+    provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
+    mongo_db_major_version       = "6"
+    replication_specs = [
+      {
+        num_shards = 1
+        regions_config = [
+          {
+            region_name     = "EU_WEST_1"
+            electable_nodes = 3
+            priority        = 7
+            read_only_nodes = 0
+          },
+        ]
+      }
+    ]
+  }
   project_ip_access_lists = (startswith(local.env.environment, "prod-") ? [
     {
       cidr_block = data.terraform_remote_state.vpc.outputs.vpc_ipv4
@@ -73,42 +101,48 @@ module "mongoatlas-main-net" {
 }
 
 module "mongoatlas-test-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=00fddea3f30eae476f473be7d45a87ff2b799567"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=simple-mongodb-atlas-addition"
 
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
+  slack_api_token = ""
+  alerts = {}
 
-  mongodbatlas_audit_enabled               = false
-  mongodbatlas_audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
-  mongodbatlas_audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
+  audit_enabled               = false
+  audit_config                = {
+    audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
+    audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
+  }
 
   enable_cluster               = startswith(local.env.environment, "prod-") ? true : false
-  cluster_name                 = "${local.env.environment}-Testnet"
-  disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
-  num_shards                   = 1
-  cloud_backup                 = true
-  cluster_type                 = "REPLICASET"
-  auto_scaling_disk_gb_enabled = true
-  provider_name                = "AWS"
-  provider_disk_iops           = try(local.env.enabled_nets.test.mongodb.iops, null)
-  provider_volume_type         = "STANDARD"
-  provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
-  mongo_db_major_version       = "6"
-  replication_specs = [
-    {
-      num_shards = 1
-      regions_config = [
-        {
-          region_name     = "EU_WEST_1"
-          electable_nodes = 3
-          priority        = 7
-          read_only_nodes = 0
-        },
-      ]
-    }
-  ]
+  cluster_config               = {
+    cluster_name                 = "${local.env.environment}-Testnet"
+    disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
+    num_shards                   = 1
+    cloud_backup                 = true
+    cluster_type                 = "REPLICASET"
+    auto_scaling_disk_gb_enabled = true
+    provider_name                = "AWS"
+    provider_disk_iops           = try(local.env.enabled_nets.test.mongodb.iops, null)
+    provider_volume_type         = "STANDARD"
+    provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
+    mongo_db_major_version       = "6"
+    replication_specs = [
+      {
+        num_shards = 1
+        regions_config = [
+          {
+            region_name     = "EU_WEST_1"
+            electable_nodes = 3
+            priority        = 7
+            read_only_nodes = 0
+          },
+        ]
+      }
+    ]
+  }
 
   project_ip_access_lists = (startswith(local.env.environment, "prod-") ? [
     {
