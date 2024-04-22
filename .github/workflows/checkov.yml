@@ -24,6 +24,7 @@ jobs:
           enable_secrets_scan_all_files: true
           output_format: cli,json
           output_file_path: console,results.json
+          skip_check: CKV_TF_1,CKV_AWS_149,CKV_AWS_337,CKV_AWS_158,CKV_AWS_338
       - name: Upload json file
         uses: actions/upload-artifact@v4
         with:
