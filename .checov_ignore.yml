@@ -8,3 +8,6 @@ skip-check:
     - CKV_AWS_337 # We don't use KMS CMK for SSM parameters.
     - CKV_AWS_158 # We don't use KMS CMK for Cloudwatch Log Groups.
     - CKV_AWS_338 # We don't enforce CloudWatch log groups retention logs for 1 year.
+skip_paths:
+- terraform/api/cloudwatch_dashboard.tf # commit hash
+- terraform/api/cwalarms.tf # commit hash
