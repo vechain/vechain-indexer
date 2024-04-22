@@ -1,0 +1,10 @@
+# File for Checkov to ignore certain checks!
+framework: terraform
+quiet: true
+soft-fail: true
+skip-check:
+    - CKV_TF_1 # We don't use commit hash for versioned modules.
+    - CKV_AWS_149 # We don't use KMS CMK for Secrets Manager.
+    - CKV_AWS_337 # We don't use KMS CMK for SSM parameters.
+    - CKV_AWS_158 # We don't use KMS CMK for Cloudwatch Log Groups.
+    - CKV_AWS_338 # We don't enforce CloudWatch log groups retention logs for 1 year.
