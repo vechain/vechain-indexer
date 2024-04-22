@@ -1,10 +1,10 @@
 # File for Checkov to ignore certain checks!
 skip_checks:
-    - CKV_TF_1 # We don't use commit hash for versioned modules.
-    - CKV_AWS_149 # We don't use KMS CMK for Secrets Manager.
-    - CKV_AWS_337 # We don't use KMS CMK for SSM parameters.
-    - CKV_AWS_158 # We don't use KMS CMK for Cloudwatch Log Groups.
-    - CKV_AWS_338 # We don't enforce CloudWatch log groups retention logs for 1 year.
+    - CKV_TF_1: "Ensure Terraform module sources use a commit hash"
+    - CKV_AWS_149: "Ensure that Secrets Manager secret is encrypted using KMS CMK"
+    - CKV_AWS_337: "Ensure SSM parameters are using KMS CMK"
+    - CKV_AWS_158: "Ensure that CloudWatch Log Group is encrypted by KMS"
+    - CKV_AWS_338: "Ensure CloudWatch log groups retains logs for at least 1 year"
 skip_paths:
 - terraform/api/cloudwatch_dashboard.tf # commit hash
 - terraform/api/cwalarms.tf # commit hash
