@@ -1,6 +1,0 @@
-# File for Checkov to ignore certain checks!
-CKV_TF_1: "Ensure Terraform module sources use a commit hash"
-CKV_AWS_149: "Ensure that Secrets Manager secret is encrypted using KMS CMK"
-CKV_AWS_337: "Ensure SSM parameters are using KMS CMK"
-CKV_AWS_158: "Ensure that CloudWatch Log Group is encrypted by KMS"
-CKV_AWS_338: "Ensure CloudWatch log groups retains logs for at least 1 year"
