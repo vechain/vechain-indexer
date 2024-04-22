@@ -1,8 +1,5 @@
 # File for Checkov to ignore certain checks!
-framework: terraform
-quiet: true
-soft-fail: true
-skip-check:
+skip_checks:
     - CKV_TF_1 # We don't use commit hash for versioned modules.
     - CKV_AWS_149 # We don't use KMS CMK for Secrets Manager.
     - CKV_AWS_337 # We don't use KMS CMK for SSM parameters.
