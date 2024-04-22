@@ -5,6 +5,4 @@ skip_checks:
     - CKV_AWS_337: "Ensure SSM parameters are using KMS CMK"
     - CKV_AWS_158: "Ensure that CloudWatch Log Group is encrypted by KMS"
     - CKV_AWS_338: "Ensure CloudWatch log groups retains logs for at least 1 year"
-skip_paths:
-- terraform/api/cloudwatch_dashboard.tf # commit hash
-- terraform/api/cwalarms.tf # commit hash
+    
