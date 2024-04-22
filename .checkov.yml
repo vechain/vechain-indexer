@@ -1,6 +1,5 @@
 # File for Checkov to ignore certain checks!
-framework:
-  name: terraform
+framework: terraform
 quiet: true
 soft-fail: true
 skip-check:
