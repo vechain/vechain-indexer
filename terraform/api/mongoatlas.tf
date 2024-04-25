@@ -1,5 +1,5 @@
 module "mongoatlas-main-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=simple-mongodb-atlas-addition"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.1.0.13"
 
   secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
@@ -101,7 +101,7 @@ module "mongoatlas-main-net" {
 }
 
 module "mongoatlas-test-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=simple-mongodb-atlas-addition"
+  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.1.0.13"
 
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
