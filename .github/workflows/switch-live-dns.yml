@@ -77,7 +77,7 @@ jobs:
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ env.environment }}-${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+          cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
           if (( $cluster_services > 0 )); then
             echo "env_ready=true" >> $GITHUB_OUTPUT
             echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster is ready, proceeding with deployment"
