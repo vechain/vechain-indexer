@@ -5,7 +5,7 @@ module "mongoatlas-main-net" {
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
-  slack_api_token = "arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd"
+  slack_api_token = local.env.slack_secret_arn
   alerts = {
     alert_type_1 = {
       event_type = "HOST_MONGOT_CRASHING_OOM"
@@ -107,7 +107,7 @@ module "mongoatlas-test-net" {
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key = false
-  slack_api_token = "arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd"
+  slack_api_token = local.env.slack_secret_arn
   alerts = {
     alert_type_1 = {
       event_type = "HOST_MONGOT_CRASHING_OOM"
