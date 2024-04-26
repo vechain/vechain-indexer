@@ -74,10 +74,16 @@ jobs:
           echo "New live color: ${{ needs.identify-live-color.outputs.dead_color }}"
           echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.live_color }} to ${{ needs.identify-live-color.outputs.dead_color }}"
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ env.environment }}-${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+          cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
           if (( $cluster_services > 0 )); then
             echo "env_ready=true" >> $GITHUB_OUTPUT
             echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster is ready, proceeding with deployment"
@@ -86,12 +92,6 @@ jobs:
             echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
             exit 0
           fi
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
