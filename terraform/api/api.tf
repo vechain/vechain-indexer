@@ -269,7 +269,7 @@ module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.2"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.4"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
