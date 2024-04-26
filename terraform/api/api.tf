@@ -105,7 +105,7 @@ module "ecs-lb-service-api" {
   depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each                   = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.2"
+  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.14"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name               = module.ecs-cluster[0].name
@@ -116,9 +116,9 @@ module "ecs-lb-service-api" {
   is_create_repo             = false
   secrets_enable             = false
   assign_public_ip           = false
-  image_repo_url             = each.value.api.ecr_common_repo
+  ecr_repo_uri               = each.value.api.ecr_common_repo
   app_name                   = "${each.key}-api"
-  image_name                 = local.env.image_tag
+  ecr_image_tag              = local.env.image_tag
   project                    = var.project
   cpu                        = each.value.api.cpu
   memory                     = each.value.api.memory
@@ -269,7 +269,7 @@ module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   # temporary filter to avoid modification of existing prod resources on deployment of blue/green
   for_each            = "${startswith(local.env.environment, "prod-") ? local.env.enabled_nets : {}}"
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.4"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.14"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster[0].name
@@ -277,8 +277,8 @@ module "ecs-backend-service" {
   env                 = local.env.environment
   is_create_repo      = false
   secrets_enable      = false
-  image_repo_url      = each.value.indexer.ecr_common_repo
-  image_name          = local.env.image_tag
+  ecr_repo_uri        = each.value.indexer.ecr_common_repo
+  ecr_image_tag       = local.env.image_tag
   app_name            = "${each.key}-indexer"
   project             = var.project
   cpu                 = each.value.indexer.cpu
