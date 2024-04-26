@@ -1,21 +1,21 @@
 variable "live_color" {
   type        = string
-  description = "The environment that will receive live traffic. Allowed values are 'blue' or 'green'. This variable is required."
+  description = "The environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
 
   validation {
-    condition     = var.live_color == "blue" || var.live_color == "green"
-    error_message = "Invalid value for live_color. Allowed values are 'blue' or 'green', e.g. `terraform apply --var=live_color=blue`"
+    condition     = var.live_color == "prod-blue" || var.live_color == "prod-green"
+    error_message = "Invalid value for live_color. Allowed values are 'prod-blue' or 'prod-green', e.g. `terraform apply --var=live_color=prod-blue`"
   }
 
   default = "unspecified"
 }
 
 locals {
-  live_mainnet_lb    = var.live_color == "blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
-  live_testnet_lb    = var.live_color == "blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
+  live_mainnet_lb    = var.live_color == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
+  live_testnet_lb    = var.live_color == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
   # If the dead environment has been torn down, dead records will be nullified
-  dead_mainnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
-  dead_testnet_lb    = var.live_color == "blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
+  dead_mainnet_lb    = var.live_color == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
+  dead_testnet_lb    = var.live_color == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
 }
 
 resource "aws_route53_zone" "veworld_public_zone" {
