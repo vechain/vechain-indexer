@@ -3,6 +3,11 @@ name: Switch Live Environment
 on:
   workflow_dispatch:
 
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
 jobs:
 
   identify-live-color:
@@ -128,4 +133,7 @@ jobs:
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
 
-        ## Terraform apply step to be added after sufficient testing
+      - name: Terraform Apply
+        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+        id: apply
+        run: terraform apply "apply.plan"
