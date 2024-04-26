@@ -54,6 +54,13 @@ open class NFTController(private val nftService: NFTService) {
         description = "The contract address",
         required = false
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "tokenId",
+        schema = Schema(type = "string"),
+        description = "The NFT tokenId",
+        required = false
+    )
     @PaginationParameters
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,
