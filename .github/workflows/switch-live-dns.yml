@@ -3,6 +3,11 @@ name: Switch Live Environment
 on:
   workflow_dispatch:
 
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
 jobs:
 
   identify-live-color:
@@ -74,6 +79,12 @@ jobs:
           echo "New live color: ${{ needs.identify-live-color.outputs.dead_color }}"
           echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.live_color }} to ${{ needs.identify-live-color.outputs.dead_color }}"
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
@@ -86,12 +97,6 @@ jobs:
             echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
             exit 0
           fi
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
@@ -128,4 +133,7 @@ jobs:
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
 
-        ## Terraform apply step to be added after sufficient testing
+      - name: Terraform Apply
+        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+        id: apply
+        run: terraform apply "apply.plan"
