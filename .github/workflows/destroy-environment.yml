@@ -51,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
+      account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
     steps:
       - name: Determine AWS account ID and role
         id: account
@@ -101,7 +102,7 @@ jobs:
         working-directory: terraform/api
 
     env:
-     account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
+      account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
