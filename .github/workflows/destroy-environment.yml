@@ -117,11 +117,27 @@ jobs:
     env: 
       dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
     steps:
+      - name: Determine AWS account ID and role
+        id: account
+        run: |
+            if [ "${{ env.account }}" == "prod" ]; then
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            else
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ steps.account.outputs.role_arn }}
+
       - name: Destroy Lingering Secrets
         run: |
           echo "Deleting lingering secrets..."
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
+
       - name: "Please delete the following maunally:"
         run: |
           echo "Load balancers are deletion protected and will require manual destruction, along with any associated S3 buckets. Please delete the following manually:"
