@@ -45,10 +45,56 @@ jobs:
             exit 1
           fi
 
+  destroy-lingering-resources:
+    name: Destroy Lingering Resources
+    needs: [identify-live-color]
+    runs-on: ubuntu-latest
+    env: 
+      dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
+    steps:
+      - name: Determine AWS account ID and role
+        id: account
+        run: |
+            if [ "${{ env.account }}" == "prod" ]; then
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            else
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ steps.account.outputs.role_arn }}
+
+      - name: Destroy Lingering Secrets
+        run: |
+          echo "Deleting lingering secrets..."
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
+
+      - name: "Destroy Lingering Load Balancers and S3 Buckets"
+        run: |
+          echo "Deleting LB logs S3 buckets..."
+          aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force
+          aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force
+
+          echo "Fetching load balancer ARNs..."
+          dead_main_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text)
+          dead_test_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text)
+
+          echo "Disabling deletion protection for load balancers..."
+          aws elbv2 modify-load-balancer-attributes --load-balancer-arns $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false
+          aws elbv2 modify-load-balancer-attributes --load-balancer-arns $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false
+
+          echo "Destroying load balancers: ${{ env.dead_color }}-main-api-veworld-alb, ${{ env.dead_color }}-test-api-veworld-alb"
+          aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_lb_arn
+          aws elbv2 delete-load-balancer --load-balancer-arn $dead_test_lb_arn
+
   destroy-environment:
     name: "Destroy ${{ inputs.environment }} Infrastructure"
     runs-on: ubuntu-latest
-    needs: [identify-live-color, check-selected-color]
+    needs: [identify-live-color, check-selected-color, destroy-lingering-resources]
     if: ${{ inputs.environment }} == ${{ needs.identify-live-color.outputs.dead_color }}
     defaults:
       run:
@@ -109,37 +155,3 @@ jobs:
       - name: Terraform destroy
         id: destroy
         run: terraform apply "destroy.plan"
-
-  destroy-lingering-resources:
-    name: Destroy Lingering Resources
-    needs: [identify-live-color]
-    runs-on: ubuntu-latest
-    env: 
-      dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
-    steps:
-      - name: Determine AWS account ID and role
-        id: account
-        run: |
-            if [ "${{ env.account }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ steps.account.outputs.role_arn }}
-
-      - name: Destroy Lingering Secrets
-        run: |
-          echo "Deleting lingering secrets..."
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
-
-      - name: "Please delete the following maunally:"
-        run: |
-          echo "Load balancers are deletion protected and will require manual destruction, along with any associated S3 buckets. Please delete the following manually:"
-          echo "Load balancers: ${{ env.dead_color }}-main-api-veworld-alb, ${{ env.dead_color }}-test-api-veworld-alb"
-          echo "S3 buckets: ${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket, ${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket"
