@@ -47,7 +47,7 @@ jobs:
 
   destroy-lingering-resources:
     name: Destroy Lingering Resources
-    needs: [identify-live-color]
+    needs: [identify-live-color, check-selected-color]
     runs-on: ubuntu-latest
     env: 
       dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
