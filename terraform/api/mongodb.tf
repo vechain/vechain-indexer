@@ -104,7 +104,7 @@ resource "aws_security_group" "mongodb_sg" {
     from_port       = 27017
     to_port         = 27017
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb-sg, aws_security_group.ecs_service_sg]
+    security_groups = [aws_security_group.alb-sg.id, aws_security_group.ecs_service_sg.id]
 
     description = "mongodb service"
   }
