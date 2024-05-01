@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   for_each                   = local.env.enabled_nets
-  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.15"
+  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.14"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name               = module.ecs-cluster.name
@@ -315,7 +315,7 @@ data "aws_security_groups" "ecs_sg_list" {
 }
 
 module "vpc-endpoints" {
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.14"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.2"
   vpcendpoints_interfaces = local.env.environment == "dev" ? [
     {
       id                  = "ec2"
