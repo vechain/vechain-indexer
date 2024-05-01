@@ -130,7 +130,7 @@ locals {
       alarm_description   = "${v.service_name} high CPU load"
       dimensions = {
         ServiceName = v.service_name
-        ClusterName = module.ecs-cluster[0].name
+        ClusterName = module.ecs-cluster.name
       }
     }
   }
@@ -147,7 +147,7 @@ locals {
       alarm_description   = "${v.service_name} high CPU load"
       dimensions = {
         ServiceName = v.service_name
-        ClusterName = module.ecs-cluster[0].name
+        ClusterName = module.ecs-cluster.name
       }
     }
   }
@@ -167,7 +167,7 @@ locals {
     alarm_description   = "${v.service_name} high memory consumption"
     dimensions = {
       ServiceName = v.service_name
-      ClusterName = module.ecs-cluster[0].name
+      ClusterName = module.ecs-cluster.name
     }
    }
   }
@@ -184,7 +184,7 @@ locals {
     alarm_description   = "${v.service_name} high memory consumption"
     dimensions = {
       ServiceName = v.service_name
-      ClusterName = module.ecs-cluster[0].name
+      ClusterName = module.ecs-cluster.name
     }
    }
   }
