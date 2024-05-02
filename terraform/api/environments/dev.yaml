@@ -33,7 +33,7 @@ slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:937628727224:s
 datadog:
   account_id:                     937628727224
   account_name:                   AWSAdministratorAccess
-  app_id:                         arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
+  app_id:                         arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/datadog_keys-oLrGKU
 enabled_nets:
   main:
     thor_url:                       https://mainnet.vechain.org
