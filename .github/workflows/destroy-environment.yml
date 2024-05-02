@@ -87,8 +87,8 @@ jobs:
           dead_test_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text)
 
           echo "Disabling deletion protection for load balancers..."
-          aws elbv2 modify-load-balancer-attributes --load-balancer-arns $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false
-          aws elbv2 modify-load-balancer-attributes --load-balancer-arns $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false
+          aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false
+          aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false
 
           echo "Destroying load balancers: ${{ env.dead_color }}-main-api-veworld-alb, ${{ env.dead_color }}-test-api-veworld-alb"
           aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_lb_arn
