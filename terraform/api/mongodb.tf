@@ -88,7 +88,7 @@ resource "aws_iam_role_policy" "config_role_policy" {
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
   # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
-  for_each    = "${local.env.environment == "prod" || local.env.environment == "dev" ? local.env.enabled_nets : {}}"
+  for_each    = local.env.environment == "dev" ? local.env.enabled_nets : {}
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -104,7 +104,7 @@ resource "aws_security_group" "mongodb_sg" {
     from_port       = 27017
     to_port         = 27017
     protocol        = "tcp"
-    security_groups = [module.ecs-lb-service[each.key].security_group_alb_id, module.ecs-service[each.key].security_group_ecs_service_id]
+    security_groups = [aws_security_group.alb-sg.id, aws_security_group.ecs_service_sg.id]
 
     description = "mongodb service"
   }
@@ -409,7 +409,7 @@ resource "aws_iam_instance_profile" "ssm_instance_profile" {
 
 resource "aws_route53_record" "mongodb_node" {
   for_each = { for i, v in local.env.enabled_nets : i => v.mongodb if v.mongodb.type == "ec2" }
-  zone_id  = module.ecs-lb-service[each.key].private_zone_id
+  zone_id  = "Z05174081HJUXVROTDH6I"
   name     = each.value.fqdn
   type     = "A"
   records  = [aws_instance.mongodb_cluster[each.key].private_ip]
