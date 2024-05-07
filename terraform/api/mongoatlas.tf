@@ -37,7 +37,7 @@ module "mongoatlas-main-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster                 = startswith(local.env.environment, "prod-") ? true : false
+  enable_cluster                 = startswith(local.env.environment, "prod") ? true : false
   cluster_config                 = {
     cluster_name                 = "${local.env.environment}-Mainnet"
     disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
@@ -65,7 +65,7 @@ module "mongoatlas-main-net" {
     ]
   }
 
-  enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod-") ? true : false
+  enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod") ? true : false
   mongodbatlas_backup_schedule_config = {
     reference_hour_of_day    = 7
     reference_minute_of_hour = 00
@@ -133,7 +133,7 @@ module "mongoatlas-test-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster               = startswith(local.env.environment, "prod-") ? true : false
+  enable_cluster               = startswith(local.env.environment, "prod") ? true : false
   cluster_config               = {
     cluster_name                 = "${local.env.environment}-Testnet"
     disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
@@ -219,7 +219,7 @@ resource "aws_secretsmanager_secret_version" "indexer_db_user_secret_version" {
 }
 
 resource "mongodbatlas_database_user" "api_db_user" {
-  count              = startswith(local.env.environment, "prod-") ? 1 : 0
+  count              = startswith(local.env.environment, "prod") ? 1 : 0
   username           = "api-${local.env.environment}"
   password           = random_password.api_db_user_password.result
   project_id         = local.env.mongoatlas_project_id
@@ -240,7 +240,7 @@ resource "mongodbatlas_database_user" "api_db_user" {
   }
 }
 resource "mongodbatlas_database_user" "indexer_db_user" {
-  count              = startswith(local.env.environment, "prod-") ? 1 : 0
+  count              = startswith(local.env.environment, "prod") ? 1 : 0
   username           = "indexer-${local.env.environment}"
   password           = random_password.indexer_db_user_password.result
   project_id         = local.env.mongoatlas_project_id
