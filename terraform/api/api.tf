@@ -185,7 +185,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   for_each            = local.env.enabled_nets
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.14"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=container-healthchecks-on-backend-module"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster.name
@@ -211,7 +211,10 @@ module "ecs-backend-service" {
       pattern = "Application is UNHEALTHY"
     }
   ]
-
+  healthcheck = {
+    command             = ["CMD-SHELL", "curl -f https://localhost:8080/actuator/health || exit 1"]
+    start_delay         = 30
+  }
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
