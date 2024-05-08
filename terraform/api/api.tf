@@ -86,7 +86,7 @@ resource "aws_security_group" "ecs_service_sg" {
 ################################################################################
 
 module "ecs-cluster" {
-  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.1.0.2"
+  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.1.0.19"
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
   for_each                   = local.env.enabled_nets
-  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.14"
+  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.19"
   region                     = local.env.region
   vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name               = module.ecs-cluster.name
@@ -185,7 +185,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on          = [ module.ecs-cluster ]
   for_each            = local.env.enabled_nets
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=container-healthchecks-on-backend-module"
+  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.19"
   vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
   region              = local.env.region
   cluster             = module.ecs-cluster.name
@@ -318,7 +318,7 @@ data "aws_security_groups" "ecs_sg_list" {
 }
 
 module "vpc-endpoints" {
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.2"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.19"
   vpcendpoints_interfaces = local.env.environment == "dev" ? [
     {
       id                  = "ec2"
