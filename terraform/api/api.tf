@@ -212,7 +212,7 @@ module "ecs-backend-service" {
     }
   ]
   healthcheck = {
-    command             = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+    command             = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
     start_delay         = 30
   }
   environment_variables = [
