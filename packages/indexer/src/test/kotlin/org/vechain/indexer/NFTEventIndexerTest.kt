@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.*
 import org.apache.commons.codec.digest.DigestUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -12,8 +11,8 @@ import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.exception.ArchiveException
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MULTIPLE_TXS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.fixtures.NFTFixtures.NFT_ROLLBACK_TEST_VERSION1
 import org.vechain.indexer.fixtures.NFTFixtures.NFT_ROLLBACK_TEST_VERSION2
 import org.vechain.indexer.fixtures.NFTFixtures.NFT_VIP181
@@ -70,7 +69,7 @@ internal class NFTEventIndexerTest {
         val nftsSlot = slot<List<IndexedNFT>>()
         every { nftRepository.saveAll(capture(nftsSlot)) } returns mutableListOf()
 
-        nftEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
+        nftEventIndexer.processBlock(BLOCK_MULTIPLE_TXS)
 
         val nftEvents = nftsSlot.captured
         expectThat(nftEvents).hasSize(10)
@@ -78,12 +77,12 @@ internal class NFTEventIndexerTest {
         val nftEvent = nftEvents.first()
         expect {
             that(nftEvent.id)
-                .isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-1"))
-            that(nftEvent.tokenId).isEqualTo("1")
+                .isEqualTo(DigestUtils.sha1Hex("0x1f734d58eb6a349f038c28f112478bf90981c87e-0"))
+            that(nftEvent.tokenId).isEqualTo("0")
             that(nftEvent.contractAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
-            that(nftEvent.owner).isEqualTo("0x361277d1b27504f36a3b33d3a52d1f8270331b8c")
+            that(nftEvent.owner).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
             that(nftEvent.txId)
-                .isEqualTo("0x039d5f9bd7ffadd11a4f5888e88f459b7ff349c8c06e820f3102fa0779867ac6")
+                .isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
             that(nftEvent.blockNumber).isEqualTo(blockNumber)
             that(nftEvent.blockTimestamp).isEqualTo(1680177343)
         }
@@ -95,7 +94,7 @@ internal class NFTEventIndexerTest {
     @Test
     fun `Process block - with no NFT transfer events`() {
 
-        nftEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
+        nftEventIndexer.processBlock(BLOCK_NO_CLAUSES)
 
         verify { nftRepository wasNot Called }
     }
