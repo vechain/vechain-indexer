@@ -30,6 +30,10 @@ slack_alert_channel:             C05NA25LG78
 slack_alert_workspace:           T03L3PQD8GK
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
+datadog:
+  account_id:                     905964754131
+  account_name:                   AWSAdministratorAccess
+  app_id:                         arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
 enabled_nets:
   main:
     thor_url:                       https://mainnet.vechain.org
