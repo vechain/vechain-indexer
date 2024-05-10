@@ -6,7 +6,7 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Clause
 import strikt.api.expectThat
@@ -477,11 +477,7 @@ internal class ContractServiceTest {
     @Test
     fun `parseContracts - empty`() {
         val contracts =
-            contractService.parseContracts(
-                BLOCK_42_ERC1155_VIP210_CONTRACTS,
-                emptyList(),
-                emptyList()
-            )
+            contractService.parseContracts(BLOCK_ERC1155_VIP210_CONTRACTS, emptyList(), emptyList())
 
         expectThat(contracts).isEmpty()
     }

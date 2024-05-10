@@ -3,7 +3,6 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import java.util.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -11,10 +10,10 @@ import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.exception.ArchiveException
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_16_MASTER_EVENT_UPDATE
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_42_ERC1155_VIP210_CONTRACTS
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_5_VIP180_CONTRACTS
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_6_VIP181_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_ERC1155_VIP210_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MASTER_EVENT_UPDATE
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION1
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION2
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
@@ -72,7 +71,7 @@ internal class ContractIndexerTest {
             )
     }
 
-    // Block #5 -> block_5.json
+    // Block #5 -> block_vip180_contracts.json
     // This block contains 2 ERC20/VIP180 contract deployment transactions
     @Test
     fun `Extract erc20 vip180 contract types`() {
@@ -80,7 +79,7 @@ internal class ContractIndexerTest {
         // Mock data returned for block#5: block & account code
         every { thorService.getAccountCode(any()) } returns
             getContractData(
-                BLOCK_5_VIP180_CONTRACTS,
+                BLOCK_VIP180_CONTRACTS,
                 "0x75c96bf8661b665d3053ab9dcc1b1241d6e4e6750c355b14009d88e607add34a"
             )
         every { contractRepository.findAllById(any()) } returns mutableListOf()
@@ -90,7 +89,7 @@ internal class ContractIndexerTest {
         every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
-        contractIndexer.processBlock(BLOCK_5_VIP180_CONTRACTS)
+        contractIndexer.processBlock(BLOCK_VIP180_CONTRACTS)
 
         val contracts = contractsSlot.captured
         expect {
@@ -105,7 +104,7 @@ internal class ContractIndexerTest {
         verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
-    // Block #42 -> block_42.json
+    // Block #42 -> block_erc1155_vip210_contracts.json
     // This block contains 1 ERC1155 and 1 VIP210 contract deployment transaction
     // The contracts do not implement each other's interfaces
     @Test
@@ -114,12 +113,12 @@ internal class ContractIndexerTest {
         // Mock contract responses
         every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns
             getContractData(
-                BLOCK_42_ERC1155_VIP210_CONTRACTS,
+                BLOCK_ERC1155_VIP210_CONTRACTS,
                 "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
             )
         every { thorService.getAccountCode("0x5024d193c8ec0ee084995de603365c3560d7ba6e") } returns
             getContractData(
-                BLOCK_42_ERC1155_VIP210_CONTRACTS,
+                BLOCK_ERC1155_VIP210_CONTRACTS,
                 "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
             )
         every { contractRepository.findAllById(any()) } returns emptyList()
@@ -129,7 +128,7 @@ internal class ContractIndexerTest {
         every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
-        contractIndexer.processBlock(BLOCK_42_ERC1155_VIP210_CONTRACTS)
+        contractIndexer.processBlock(BLOCK_ERC1155_VIP210_CONTRACTS)
 
         val contracts = contractsSlot.captured
 
@@ -145,7 +144,7 @@ internal class ContractIndexerTest {
         verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
     }
 
-    // Block #6 -> block_6.json
+    // Block #6 -> block_vip181_contracts.json
     // This block contains 1 ERC20/VIP180 contract deployment transaction
     @Test
     fun `Extract erc721 vip181 contract types`() {
@@ -153,7 +152,7 @@ internal class ContractIndexerTest {
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns
             getContractData(
-                BLOCK_6_VIP181_CONTRACTS,
+                BLOCK_VIP181_CONTRACTS,
                 "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
             )
         every { contractRepository.findAllById(any()) } returns emptyList()
@@ -163,7 +162,7 @@ internal class ContractIndexerTest {
         every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
         // Process block for contract indexing
-        contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
+        contractIndexer.processBlock(BLOCK_VIP181_CONTRACTS)
 
         val contracts = contractsSlot.captured
         expect { that(contracts).hasSize(1) }
@@ -184,7 +183,7 @@ internal class ContractIndexerTest {
         // Known fixture
         val blockNumber = 6L
         val txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
-        val contractData = getContractData(BLOCK_6_VIP181_CONTRACTS, txId)
+        val contractData = getContractData(BLOCK_VIP181_CONTRACTS, txId)
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
@@ -194,7 +193,7 @@ internal class ContractIndexerTest {
         val contractsSlot = slot<List<IndexedContract>>()
         every { contractRepository.saveAll(capture(contractsSlot)) } returns mutableListOf()
 
-        contractIndexer.processBlock(BLOCK_6_VIP181_CONTRACTS)
+        contractIndexer.processBlock(BLOCK_VIP181_CONTRACTS)
 
         val contracts = contractsSlot.captured
         expect { that(contracts).all { isA<IndexedContract>() }.hasSize(1) }
@@ -238,7 +237,7 @@ internal class ContractIndexerTest {
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
         expectThat(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.master).isEqualTo(oldMaster)
 
-        contractIndexer.processBlock(BLOCK_16_MASTER_EVENT_UPDATE)
+        contractIndexer.processBlock(BLOCK_MASTER_EVENT_UPDATE)
 
         val updatedContract = updatedContractSlot.captured
         val newMaster = "0xa077d962dfa446661d63c97f68d9628f908a5f43"
@@ -251,16 +250,16 @@ internal class ContractIndexerTest {
                 .isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.version + 1)
             that(contract).get(IndexedContract::master).isEqualTo(newMaster)
             that(contract).get(IndexedContract::creator).isEqualTo(oldMaster)
-            that(contract).get(IndexedContract::blockId).isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.id)
+            that(contract).get(IndexedContract::blockId).isEqualTo(BLOCK_MASTER_EVENT_UPDATE.id)
             that(contract)
                 .get(IndexedContract::txId)
-                .isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.transactions.first().id)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.transactions.first().id)
             that(contract)
                 .get(IndexedContract::blockNumber)
-                .isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.number)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.number)
             that(contract)
                 .get(IndexedContract::blockTimestamp)
-                .isEqualTo(BLOCK_16_MASTER_EVENT_UPDATE.timestamp)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.timestamp)
         }
 
         // Check that updated contract is saved and the old contract is archived

@@ -30,14 +30,10 @@ object BlockUtils {
      *
      * DOES NOT include reverted TXs
      */
-    private fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
-        return confirmedTransactions(block)
-            .flatMap { tx -> tx.outputs.map { output -> Pair(output, tx) } }
-            .sortedWith(
-                // Sort by txId, then output index. We use indexes to create MongoDB IDs, so this is
-                // important.
-                compareBy({ it.second.id }, { it.second.outputs.indexOf(it.first) })
-            )
+    fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
+        return confirmedTransactions(block).flatMap { tx ->
+            tx.outputs.map { output -> Pair(output, tx) }
+        }
     }
 
     /**
@@ -61,14 +57,20 @@ object BlockUtils {
     }
 
     /**
-     * Get all NON-FUNGIBLE transfer events from a block.
+     * Get all NON-FUNGIBLE transfer events from a block. Optionally filter by token address.
      *
      * DOES NOT include reverted TXs
      */
-    fun getNFTTransferEventsFromTopics(block: Block): List<IndexedTransferEvent> {
+    fun getNftTransferEventsFromTopics(
+        block: Block,
+        tokenAddress: String? = null
+    ): List<IndexedTransferEvent> {
         val transferEvents = getTransferEventsFromTopics(block)
+
         return transferEvents.filter {
-            it.eventType == TransferEventType.NFT && it.tokenAddress != null
+            it.eventType == TransferEventType.NFT &&
+                it.tokenAddress != null &&
+                (tokenAddress == null || HexUtils.compare(it.tokenAddress!!, tokenAddress))
         }
     }
 

@@ -34,7 +34,7 @@ open class NFTEventIndexer(
     override fun processBlock(block: Block) {
 
         // Get the NFT transfer events from the block
-        val nftTransfers = BlockUtils.getNFTTransferEventsFromTopics(block)
+        val nftTransfers = BlockUtils.getNftTransferEventsFromTopics(block)
         if (nftTransfers.isEmpty()) return
 
         // Check for existing documents
