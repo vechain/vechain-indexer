@@ -8,13 +8,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_10_SEMI_FUNGIBLE_TOKENS
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_14_VET_TRANSFER
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_17_BATCH_TRANSFERS_1
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_18_BATCH_TRANSFERS_2
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_19_BATCH_TRANSFERS_3
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_BATCH_TRANSFERS_1
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_BATCH_TRANSFERS_2
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_BATCH_TRANSFERS_3
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MULTIPLE_TXS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SEMI_FUNGIBLE_TOKENS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VET_TRANSFER
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
@@ -57,7 +57,7 @@ class TransferEventIndexerTest {
             mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
         } returns mutableListOf()
 
-        transferEventIndexer.processBlock(BLOCK_10_SEMI_FUNGIBLE_TOKENS)
+        transferEventIndexer.processBlock(BLOCK_SEMI_FUNGIBLE_TOKENS)
 
         val transfers = transfersSlot.captured
 
@@ -70,7 +70,7 @@ class TransferEventIndexerTest {
     @Test
     fun `Process block - with no transfer events`() {
 
-        transferEventIndexer.processBlock(BLOCK_3_NO_CLAUSES)
+        transferEventIndexer.processBlock(BLOCK_NO_CLAUSES)
 
         verify { mongoTemplate wasNot Called }
     }
@@ -84,36 +84,36 @@ class TransferEventIndexerTest {
             mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
         } returns mutableListOf()
 
-        transferEventIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
+        transferEventIndexer.processBlock(BLOCK_MULTIPLE_TXS)
 
         val transfers = transfersSlot.captured
         expect { that(transfers).hasSize(10) }
-        val transferEvent =
-            transfers.first {
-                it.id ==
-                    DigestUtils.sha1Hex(
-                        "0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-TOPIC-9-0-0"
-                    )
-            }
         expect {
-            that(transferEvent.blockId)
+            that(transfers[0].id)
+                .isEqualTo(
+                    DigestUtils.sha1Hex(
+                        "0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e-TOPIC-0-0-0"
+                    )
+                )
+            that(transfers[0].eventType).isEqualTo(TransferEventType.NFT)
+            that(transfers[0].blockId)
                 .isEqualTo("0x00000008de120e47e15edb8d9a23823b198590623c3c9f938c5f623f13e7402e")
-            that(transferEvent.blockNumber).isEqualTo(blockNumber)
-            that(transferEvent.blockTimestamp).isEqualTo(1680177343)
-            that(transferEvent.txId)
+            that(transfers[0].blockNumber).isEqualTo(blockNumber)
+            that(transfers[0].blockTimestamp).isEqualTo(1680177343)
+            that(transfers[0].txId)
                 .isEqualTo("0xe896f18857b416ea5553be739848911ee75593012f4853e775f39bef10eeae2e")
-            that(transferEvent.from).isEqualTo("0x0000000000000000000000000000000000000000")
-            that(transferEvent.to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
-            that(transferEvent.value).isEqualTo("1")
-            that(transferEvent.tokenAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
-            that(transferEvent.topics).hasSize(4).and {
-                that(transferEvent.topics[0])
+            that(transfers[0].from).isEqualTo("0x0000000000000000000000000000000000000000")
+            that(transfers[0].to).isEqualTo("0xd7f75a0a1287ab2916848909c8531a0ea9412800")
+            that(transfers[0].value).isEqualTo("1")
+            that(transfers[0].tokenAddress).isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
+            that(transfers[0].topics).hasSize(4).and {
+                that(transfers[0].topics[0])
                     .isEqualTo("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-                that(transferEvent.topics[1])
+                that(transfers[0].topics[1])
                     .isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000")
-                that(transferEvent.topics[2])
+                that(transfers[0].topics[2])
                     .isEqualTo("0x000000000000000000000000d7f75a0a1287ab2916848909c8531a0ea9412800")
-                that(transferEvent.topics[3])
+                that(transfers[0].topics[3])
                     .isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000")
             }
         }
@@ -128,7 +128,7 @@ class TransferEventIndexerTest {
             mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
         } returns mutableListOf()
 
-        transferEventIndexer.processBlock(BLOCK_14_VET_TRANSFER)
+        transferEventIndexer.processBlock(BLOCK_VET_TRANSFER)
 
         val transfers = transfersSlot.captured
 
@@ -159,9 +159,9 @@ class TransferEventIndexerTest {
             mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
         } returns mutableListOf()
 
-        transferEventIndexer.processBlock(BLOCK_17_BATCH_TRANSFERS_1)
-        transferEventIndexer.processBlock(BLOCK_18_BATCH_TRANSFERS_2)
-        transferEventIndexer.processBlock(BLOCK_19_BATCH_TRANSFERS_3)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_1)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_2)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_3)
 
         val transfers = transfersSlot.flatten()
 
@@ -213,9 +213,9 @@ class TransferEventIndexerTest {
             mongoTemplate.insert(capture(transfersSlot), IndexedTransferEvent::class.java)
         } returns mutableListOf()
 
-        transferEventIndexer.processBlock(BLOCK_17_BATCH_TRANSFERS_1)
-        transferEventIndexer.processBlock(BLOCK_18_BATCH_TRANSFERS_2)
-        transferEventIndexer.processBlock(BLOCK_19_BATCH_TRANSFERS_3)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_1)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_2)
+        transferEventIndexer.processBlock(BLOCK_BATCH_TRANSFERS_3)
 
         val transfers = transfersSlot.flatten().filter { it.from != Address.ZERO_ADDRESS }
 
