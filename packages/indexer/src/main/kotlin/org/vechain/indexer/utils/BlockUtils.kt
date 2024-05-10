@@ -67,16 +67,10 @@ object BlockUtils {
     ): List<IndexedTransferEvent> {
         val transferEvents = getTransferEventsFromTopics(block)
 
-        if (tokenAddress == null) {
-            return transferEvents.filter {
-                it.eventType == TransferEventType.NFT && it.tokenAddress != null
-            }
-        }
-
         return transferEvents.filter {
             it.eventType == TransferEventType.NFT &&
                 it.tokenAddress != null &&
-                HexUtils.compare(it.tokenAddress!!, tokenAddress)
+                (tokenAddress == null || HexUtils.compare(it.tokenAddress!!, tokenAddress))
         }
     }
 
