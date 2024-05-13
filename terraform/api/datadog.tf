@@ -2,43 +2,86 @@ module "datadog_integration_aws" {
   source = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=223-module-for-datadog"
   account_id = local.env.datadog.account_id
   account_name = local.env.datadog.account_name
-  role_name  = "CustomDatadogAWSIntegrationRole"
+  role_name  = "DatadogAWSIntegrationRole"
   aws_permissions_list = [
-    "logs:PutLogEvents",
-    "logs:DescribeLogStreams",
-    "logs:CreateLogStream",
+                    "apigateway:GET",
+                "autoscaling:Describe*",
+                "backup:List*",
+                "budgets:ViewBudget",
+                "cloudfront:GetDistributionConfig",
+                "cloudfront:ListDistributions",
+                "cloudtrail:DescribeTrails",
+                "cloudtrail:GetTrailStatus",
+                "cloudtrail:LookupEvents",
+                "cloudwatch:Describe*",
+                "cloudwatch:Get*",
+                "cloudwatch:List*",
+                "codedeploy:List*",
+                "codedeploy:BatchGet*",
+                "dynamodb:List*",
+                "dynamodb:Describe*",
+                "ec2:Describe*",
+                "ec2:GetTransitGatewayPrefixListReferences",
+                "ec2:SearchTransitGatewayRoutes",
+                "ecs:Describe*",
+                "ecs:List*",
+                "elasticache:Describe*",
+                "elasticache:List*",
+                "elasticfilesystem:DescribeFileSystems",
+                "elasticfilesystem:DescribeTags",
+                "elasticfilesystem:DescribeAccessPoints",
+                "elasticloadbalancing:Describe*",
+                "elasticmapreduce:List*",
+                "elasticmapreduce:Describe*",
+                "es:ListTags",
+                "es:ListDomainNames",
+                "es:DescribeElasticsearchDomains",
+                "events:CreateEventBus",
+                "health:DescribeEvents",
+                "health:DescribeEventDetails",
+                "health:DescribeAffectedEntities",
+                "lambda:GetPolicy",
+                "lambda:List*",
+                "logs:DeleteSubscriptionFilter",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:DescribeSubscriptionFilters",
+                "logs:FilterLogEvents",
+                "logs:PutSubscriptionFilter",
+                "logs:TestMetricFilter",
+                "organizations:Describe*",
+                "organizations:List*",
+                "rds:Describe*",
+                "rds:List*",
+                "route53:List*",
+                "s3:GetBucketLogging",
+                "s3:GetBucketLocation",
+                "s3:GetBucketNotification",
+                "s3:GetBucketTagging",
+                "s3:ListAllMyBuckets",
+                "s3:PutBucketNotification",
+                "ses:Get*",
+                "sns:List*",
+                "sns:Publish",
+                "sqs:ListQueues",
+                "states:ListStateMachines",
+                "states:DescribeStateMachine",
+                "tag:GetResources",
+                "tag:GetTagKeys",
+                "tag:GetTagValues",
 
-  // Application Load Balancer (ELB) permissions
-  "elasticloadbalancing:Describe*",
-
-  // AWS Billing permissions (Note: Billing permissions are sensitive and should be tightly controlled)
-  "aws-portal:ViewBilling",
-  "aws-portal:ViewUsage",
-
-  // CloudFront permissions
-  "cloudfront:Get*",
-  "cloudfront:List*",
-
-  // ElastiCache permissions
-  "elasticache:Describe*",
-
-  // ECS permissions
-  "ecs:Describe*",
-
-  // RDS permissions
-  "rds:Describe*",
   ]
   
   filter_tags = []
-  host_tags   = ["Env:${local.env.environment}", "datadog:enabled"]
+  host_tags   = ["aws_account:${local.env.datadog.account_id}, Env:${local.env.environment}", "datadog:enabled"]
   namespace_rules = {
     auto_scaling = false
     opsworks     = false
   }
-  excluded_regions = ["us-west-1", "us-west-2"]
+  excluded_regions = ["us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-2, eu-west-3, eu-central-1, eu-north-1, ap-south-1, ap-northeast-1, ap-northeast-2, ap-southeast-1, ap-southeast-2, sa-east-1"]
 
-  dashboard_title       = "Your Dashboard Title"
-  dashboard_description = "A brief description of the dashboard"
+  dashboard_title       = "VeWorld Indexer Dashboard"
+  dashboard_description = "Monitoring dashboard for VeWorld Indexer"
   layout_type          = "ordered"
   is_read_only         = false
   alert_id             = "some-alert-id"
