@@ -8,9 +8,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_8_MULTIPLE_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MULTIPLE_TXS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.repository.ClauseRepository
 import org.vechain.indexer.thor.client.DefaultThorClient
@@ -53,7 +53,7 @@ internal class ClauseIndexerTest {
         every { mongoTemplate.insert(capture(clausesSlot), IndexedClause::class.java) } returns
             mutableListOf()
 
-        clauseIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
+        clauseIndexer.processBlock(BLOCK_SINGLE_CLAUSE)
 
         val clauses = clausesSlot.captured
         expect { that(clauses).hasSize(1) }
@@ -118,7 +118,7 @@ internal class ClauseIndexerTest {
         every { mongoTemplate.insert(capture(clausesSlot), IndexedClause::class.java) } returns
             mutableListOf()
 
-        clauseIndexer.processBlock(BLOCK_8_MULTIPLE_CLAUSES)
+        clauseIndexer.processBlock(BLOCK_MULTIPLE_TXS)
 
         val clauses = clausesSlot.captured
         expect { that(clauses).hasSize(10) }
@@ -127,7 +127,7 @@ internal class ClauseIndexerTest {
     @Test
     fun `Extract clauses from block - No clause`() {
 
-        clauseIndexer.processBlock(BLOCK_3_NO_CLAUSES)
+        clauseIndexer.processBlock(BLOCK_NO_CLAUSES)
 
         verify { mongoTemplate wasNot Called }
     }

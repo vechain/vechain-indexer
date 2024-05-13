@@ -7,8 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_3_NO_CLAUSES
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_4_SINGLE_CLAUSE
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepository
 import org.vechain.indexer.thor.client.DefaultThorClient
@@ -42,7 +42,7 @@ internal class TransactionIndexerTest {
     @Test
     fun `Process block - With no transactions`() {
 
-        transactionIndexer.processBlock(BLOCK_3_NO_CLAUSES)
+        transactionIndexer.processBlock(BLOCK_NO_CLAUSES)
 
         verify { mongoTemplate wasNot Called }
     }
@@ -55,7 +55,7 @@ internal class TransactionIndexerTest {
             mongoTemplate.insert(capture(transactionsSlot), IndexedTransaction::class.java)
         } returns mutableListOf()
 
-        transactionIndexer.processBlock(BLOCK_4_SINGLE_CLAUSE)
+        transactionIndexer.processBlock(BLOCK_SINGLE_CLAUSE)
 
         val txs = transactionsSlot.captured
         expect { that(txs).hasSize(1) }
