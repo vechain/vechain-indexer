@@ -18,7 +18,6 @@ module "datadog_integration_aws" {
                 "cloudwatch:List*",
                 "codedeploy:List*",
                 "codedeploy:BatchGet*",
-                "directconnect:Describe*",
                 "dynamodb:List*",
                 "dynamodb:Describe*",
                 "ec2:Describe*",
@@ -38,13 +37,9 @@ module "datadog_integration_aws" {
                 "es:ListDomainNames",
                 "es:DescribeElasticsearchDomains",
                 "events:CreateEventBus",
-                "fsx:DescribeFileSystems",
-                "fsx:ListTagsForResource",
                 "health:DescribeEvents",
                 "health:DescribeEventDetails",
                 "health:DescribeAffectedEntities",
-                "kinesis:List*",
-                "kinesis:Describe*",
                 "lambda:GetPolicy",
                 "lambda:List*",
                 "logs:DeleteSubscriptionFilter",
@@ -58,8 +53,6 @@ module "datadog_integration_aws" {
                 "organizations:List*",
                 "rds:Describe*",
                 "rds:List*",
-                "redshift:DescribeClusters",
-                "redshift:DescribeLoggingStatus",
                 "route53:List*",
                 "s3:GetBucketLogging",
                 "s3:GetBucketLocation",
@@ -73,13 +66,10 @@ module "datadog_integration_aws" {
                 "sqs:ListQueues",
                 "states:ListStateMachines",
                 "states:DescribeStateMachine",
-                "support:DescribeTrustedAdvisor*",
-                "support:RefreshTrustedAdvisorCheck",
                 "tag:GetResources",
                 "tag:GetTagKeys",
                 "tag:GetTagValues",
-                "xray:BatchGetTraces",
-                "xray:GetTraceSummaries"
+
   ]
   
   filter_tags = []
