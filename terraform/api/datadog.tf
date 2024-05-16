@@ -48,13 +48,9 @@ module "datadog_integration_aws" {
   filter_tags = []
   host_tags   = [" Env:${local.env.project}"]
   namespace_rules = {
-    auto_scaling = false
-    opsworks     = false
-  }
-  account_specific_namespace_rules = {
     "us-east-1" = true  // Enable monitoring for us-east-1
     "eu-west-1" = true  // Enable monitoring for us-east-1
-  } 
+  }
 
   dashboard_title       = "${local.env.project} Dashboard"
   dashboard_description = "Monitoring dashboard for ${local.env.project}"
