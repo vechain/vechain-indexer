@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    id("org.sonarqube") version "4.4.1.3373"
     id("org.springframework.boot") version "3.2.3"
     id("io.spring.dependency-management") version "1.1.4"
     id("maven-publish")
@@ -12,6 +13,14 @@ plugins {
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
+
+sonar {
+  properties {
+    property("sonar.projectKey", "vechain_veworld-indexer")
+    property("sonar.organization", "vechain")
+    property("sonar.host.url", "https://sonarcloud.io")
+  }
+}
 
 allprojects {
     apply {
