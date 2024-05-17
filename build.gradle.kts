@@ -14,13 +14,6 @@ plugins {
 
 java.sourceCompatibility = JavaVersion.VERSION_17
 
-sonar {
-  properties {
-    property("sonar.projectKey", "vechain_veworld-indexer")
-    property("sonar.organization", "vechain")
-    property("sonar.host.url", "https://sonarcloud.io")
-  }
-}
 
 allprojects {
     apply {
