@@ -10,7 +10,6 @@ plugins {
     id("com.diffplug.spotless") version "6.25.0"
     id("org.sonarqube") version "4.4.1.3373"
     jacoco
-    id("org.sonarqube") version "4.4.1.3373"
 }
 
 sonar {
