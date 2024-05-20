@@ -21,7 +21,13 @@ sonar {
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_17
+bootJar {
+    enabled = false
+}
 
+jar {
+    enabled = true
+}
 
 allprojects {
     apply {
