@@ -8,6 +8,7 @@ plugins {
     kotlin("plugin.spring") version "1.9.0"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "6.25.0"
+    id("org.sonarqube") version "4.4.1.3373"
     jacoco
 }
 
