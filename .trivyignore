@@ -1,0 +1,5 @@
+# MEDIUM, no impact in our setting, falsely marked as fixed by trivy
+# org.bouncycastle:bcprov-jdk15on package has been moved, no way to force version upgrade
+CVE-2024-29857
+CVE-2024-30171
+CVE-2024-30172

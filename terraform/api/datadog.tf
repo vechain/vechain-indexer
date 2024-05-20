@@ -1,41 +1,22 @@
 module "datadog_integration_aws" {
-  source = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=223-module-for-datadog"
-  account_id = local.env.datadog.account_id
-  account_name = local.env.datadog.account_name
+  source = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=v.1.0.23"
+  project_name = "${local.env.project}"
   role_name  = "DatadogAWSIntegrationRole"
   aws_permissions_list = [
-                    "apigateway:GET",
+                "apigateway:GET",
                 "autoscaling:Describe*",
-                "backup:List*",
-                "budgets:ViewBudget",
-                "cloudfront:GetDistributionConfig",
-                "cloudfront:ListDistributions",
                 "cloudtrail:DescribeTrails",
                 "cloudtrail:GetTrailStatus",
                 "cloudtrail:LookupEvents",
                 "cloudwatch:Describe*",
                 "cloudwatch:Get*",
                 "cloudwatch:List*",
-                "codedeploy:List*",
-                "codedeploy:BatchGet*",
-                "dynamodb:List*",
-                "dynamodb:Describe*",
                 "ec2:Describe*",
                 "ec2:GetTransitGatewayPrefixListReferences",
                 "ec2:SearchTransitGatewayRoutes",
                 "ecs:Describe*",
                 "ecs:List*",
-                "elasticache:Describe*",
-                "elasticache:List*",
-                "elasticfilesystem:DescribeFileSystems",
-                "elasticfilesystem:DescribeTags",
-                "elasticfilesystem:DescribeAccessPoints",
                 "elasticloadbalancing:Describe*",
-                "elasticmapreduce:List*",
-                "elasticmapreduce:Describe*",
-                "es:ListTags",
-                "es:ListDomainNames",
-                "es:DescribeElasticsearchDomains",
                 "events:CreateEventBus",
                 "health:DescribeEvents",
                 "health:DescribeEventDetails",
@@ -49,10 +30,6 @@ module "datadog_integration_aws" {
                 "logs:FilterLogEvents",
                 "logs:PutSubscriptionFilter",
                 "logs:TestMetricFilter",
-                "organizations:Describe*",
-                "organizations:List*",
-                "rds:Describe*",
-                "rds:List*",
                 "route53:List*",
                 "s3:GetBucketLogging",
                 "s3:GetBucketLocation",
@@ -60,36 +37,29 @@ module "datadog_integration_aws" {
                 "s3:GetBucketTagging",
                 "s3:ListAllMyBuckets",
                 "s3:PutBucketNotification",
-                "ses:Get*",
-                "sns:List*",
-                "sns:Publish",
                 "sqs:ListQueues",
                 "states:ListStateMachines",
                 "states:DescribeStateMachine",
                 "tag:GetResources",
                 "tag:GetTagKeys",
                 "tag:GetTagValues",
-
   ]
   
   filter_tags = []
-  host_tags   = ["aws_account:${local.env.datadog.account_id}, Env:${local.env.environment}", "datadog:enabled"]
-  namespace_rules = {
-    auto_scaling = false
-    opsworks     = false
-  }
+  host_tags   = [" Env:${local.env.project}"]
   excluded_regions = ["us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-2, eu-west-3, eu-central-1, eu-north-1, ap-south-1, ap-northeast-1, ap-northeast-2, ap-southeast-1, ap-southeast-2, sa-east-1"]
 
-  dashboard_title       = "VeWorld Indexer Dashboard"
-  dashboard_description = "Monitoring dashboard for VeWorld Indexer"
+  dashboard_title       = "${local.env.project} Dashboard"
+  dashboard_description = "Monitoring dashboard for ${local.env.project}"
   layout_type          = "ordered"
-  is_read_only         = false
   alert_id             = "some-alert-id"
   widget_type          = "timeseries"
   widget_title         = "Widget Title"
   widget_time_span     = "10m"
-  secret_id            = local.env.datadog.app_id
+  secret_id            = local.env.datadog.secret_arn
 }
+
+
 
 
 
