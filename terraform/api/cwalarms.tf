@@ -263,7 +263,7 @@ module "cloud_watch_alarms" {
   sns_topic_enabled        = true
   topic_name               = "${local.env.environment}-CloudWatchAlarms"
   email_subscriptions      = []
-  create_slack_integration = false
+  create_slack_integration = true
   configuration_name       = substr("${local.env.environment}-${var.project}", 0, 28)
 
   slack_channel_id   = local.env.slack_alert_channel
