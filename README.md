@@ -172,6 +172,25 @@ together and be kept in sync at all times.
 - Change units should be kept backwards compatible as much as possible.
 - Change units should be kept light & fast, so as not to present a risk to application's startup. New indexes in heavy collections in particular should be created in the background and carefully monitored.
 
+### Domains and URLs
+The domains and URLs for the VeWorld Indexer project are the following:
+
+#### Public URLs
+- Live Mainnet Production: https://indexer.mainnet.vechain.org
+- Live Testnet Production: https://indexer.testnet.vechain.org
+
+#### Internal URLs
+The domains above are held by CNAME records which forward traffic to the following URLs. Besides internal testing purposes, these are used to delgate the concern of route switching between environments away from the vecahin-domains repository/AWS account. These CNAME records in turn point to the DNS of the current live environment's application load balancers:
+
+- Live Mainnet Production: https://mainnet.live.prod.veworld.vechain.org
+- Live Testnet Production: https://testnet.live.prod.veworld.vechain.org
+
+When it exists, the non-live (or dead) environment can be accessed via the following domains. These are to be used internally for testing purposes:
+
+- Dead Mainnet Production: https://mainnet.dead.prod.veworld.vechain.org
+- Dead Testnet Production: https://testnet.dead.prod.veworld.vechain.org
+
+
 ## Deployment & Testing
 
 The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag. If in doubt about which environment is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.
@@ -191,3 +210,6 @@ Since blue/green deployments are fairly infrequent, the dead color can be used a
 When testing is complete, or when a DNS switch has migrated traffic from one environment to the other, the dead environment can be safely torn down until needed again. To do this, run the [Cluster Destroy](https://github.com/vechain/veworld-indexer/actions/workflows/destroy-environment.yml) workflow, and select the appropriate environment when prompted.
 
 Further details on the CICD process can be found [here](https://vechainfoundation-my.sharepoint.com/:w:/g/personal/dougal_rea_vechain_org/EcuW_jUEDh5PhS8jzH5PJ0EBw9pY8EqSd5IWKCJIG8rGVQ?e=i0Pa0N)
+
+### Terraform
+The infrastructure for the VeWorld Indexer is managed by two terrafrom projects, `terraform/api` and `terraform/vpc`. Any infrastructure which needs to exist permanently (for example the hosted zone and DNS records for the internal domains) are defined in `vpc`, while any environment-specific infrastructure, such as ECS services, load balancers, IAM roles etc are defined in `api`.
