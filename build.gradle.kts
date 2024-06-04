@@ -8,10 +8,20 @@ plugins {
     kotlin("plugin.spring") version "1.9.0"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "6.25.0"
+    id("org.sonarqube") version "4.4.1.3373"
     jacoco
 }
 
+sonar {
+  properties {
+    property("sonar.projectKey", "vechain_veworld-indexer")
+    property("sonar.organization", "vechain")
+    property("sonar.host.url", "https://sonarcloud.io")
+  }
+}
+
 java.sourceCompatibility = JavaVersion.VERSION_17
+
 
 allprojects {
     apply {

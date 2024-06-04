@@ -83,13 +83,14 @@ module "datadog_integration_aws" {
   dashboard_title       = "VeWorld Indexer Dashboard"
   dashboard_description = "Monitoring dashboard for VeWorld Indexer"
   layout_type          = "ordered"
-  is_read_only         = false
   alert_id             = "some-alert-id"
   widget_type          = "timeseries"
   widget_title         = "Widget Title"
   widget_time_span     = "10m"
-  secret_id            = local.env.datadog.app_id
+  secret_id            = local.env.datadog.secret_arn
 }
+
+
 
 
 
