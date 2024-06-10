@@ -98,33 +98,33 @@ module "ecs-cluster" {
 ################################################################################
 
 module "ecs-lb-service-api" {
-  depends_on                 = [ module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg ]
-  for_each                   = local.env.enabled_nets
-  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.19"
-  region                     = local.env.region
-  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
-  cluster_name               = module.ecs-cluster.name
-  autoscale_cluster_name     = module.ecs-cluster.name
-  lb_subnets                 = data.terraform_remote_state.vpc.outputs.public_subnets
-  app_subnets                = data.terraform_remote_state.vpc.outputs.private_subnets
-  env                        = local.env.environment
-  is_create_repo             = false
-  secrets_enable             = false
-  assign_public_ip           = false
-  ecr_repo_uri               = each.value.api.ecr_common_repo
-  app_name                   = "${each.key}-api"
-  ecr_image_tag              = local.env.image_tag
-  project                    = var.project
-  cpu                        = each.value.api.cpu
-  memory                     = each.value.api.memory
-  cidr                       = local.env.cidr
-  container_port             = 8080
-  certificate_arn            = local.env.certificate_arn
-  ecs_sg                     = [aws_security_group.alb-sg.id]
-  rule_0_path_pattern        = ["/api/v*", "/api-docs", "/swagger-ui/*"]
-  alb_sg                     = [aws_security_group.alb-sg.id]
-  namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path  = "/actuator/health"
+  depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
+  for_each                  = local.env.enabled_nets
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.19"
+  region                    = local.env.region
+  vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
+  cluster_name              = module.ecs-cluster.name
+  autoscale_cluster_name    = module.ecs-cluster.name
+  lb_subnets                = data.terraform_remote_state.vpc.outputs.public_subnets
+  app_subnets               = data.terraform_remote_state.vpc.outputs.private_subnets
+  env                       = local.env.environment
+  is_create_repo            = false
+  secrets_enable            = false
+  assign_public_ip          = false
+  ecr_repo_uri              = each.value.api.ecr_common_repo
+  app_name                  = "${each.key}-api"
+  ecr_image_tag             = local.env.image_tag
+  project                   = var.project
+  cpu                       = each.value.api.cpu
+  memory                    = each.value.api.memory
+  cidr                      = local.env.cidr
+  container_port            = 8080
+  certificate_arn           = local.env.certificate_arn
+  ecs_sg                    = [aws_security_group.alb-sg.id]
+  rule_0_path_pattern       = ["/api/v*", "/api-docs", "/swagger-ui/*"]
+  alb_sg                    = [aws_security_group.alb-sg.id]
+  namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
+  https_tg_healthcheck_path = "/actuator/health"
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -162,17 +162,21 @@ module "ecs-lb-service-api" {
     {
       name    = "AppUnhealthy",
       pattern = "Application is UNHEALTHY"
+    },
+    {
+      name    = "REORG"
+      pattern = "REORG Detected"
     }
   ]
 
   ####### enable autoscailing #######
-  enable_ecs_cpu_based_autoscaling = true
+  enable_ecs_cpu_based_autoscaling    = true
   enable_ecs_memory_based_autoscaling = true
-  min_capacity = 1
-  max_capacity = each.value.api.max_capacity
-  target_cpu_value = 70
-  target_memory_value = 70
-  disable_scale_in = false
+  min_capacity                        = 1
+  max_capacity                        = each.value.api.max_capacity
+  target_cpu_value                    = 70
+  target_memory_value                 = 70
+  disable_scale_in                    = false
   # scale_in_cooldown = 300
   # scale_out_cooldown = 300
   name = "auto-scaling-group"
@@ -183,28 +187,28 @@ module "ecs-lb-service-api" {
 ################################################################################
 
 module "ecs-backend-service" {
-  depends_on          = [ module.ecs-cluster ]
-  for_each            = local.env.enabled_nets
-  source              = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.19"
-  vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
-  region              = local.env.region
-  cluster             = module.ecs-cluster.name
-  subnets             = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
-  env                 = local.env.environment
-  is_create_repo      = false
-  secrets_enable      = false
-  ecr_repo_uri        = each.value.indexer.ecr_common_repo
-  ecr_image_tag       = local.env.image_tag
-  app_name            = "${each.key}-indexer"
-  project             = var.project
-  cpu                 = each.value.indexer.cpu
-  memory              = each.value.indexer.memory
-  cidr                = local.env.cidr
-  security_groups     = [aws_security_group.ecs_service_sg.id]
-  desired_capacity    = "1"
-  containerPort       = 8080
-  hostPort            = 8080
-  namespace_id        = aws_service_discovery_private_dns_namespace.ns.id
+  depends_on       = [module.ecs-cluster]
+  for_each         = local.env.enabled_nets
+  source           = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.19"
+  vpc_id           = data.terraform_remote_state.vpc.outputs.vpc_id
+  region           = local.env.region
+  cluster          = module.ecs-cluster.name
+  subnets          = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
+  env              = local.env.environment
+  is_create_repo   = false
+  secrets_enable   = false
+  ecr_repo_uri     = each.value.indexer.ecr_common_repo
+  ecr_image_tag    = local.env.image_tag
+  app_name         = "${each.key}-indexer"
+  project          = var.project
+  cpu              = each.value.indexer.cpu
+  memory           = each.value.indexer.memory
+  cidr             = local.env.cidr
+  security_groups  = [aws_security_group.ecs_service_sg.id]
+  desired_capacity = "1"
+  containerPort    = 8080
+  hostPort         = 8080
+  namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
   log_metric_filters = [
     {
       name    = "AppUnhealthy",
@@ -212,8 +216,8 @@ module "ecs-backend-service" {
     }
   ]
   healthcheck = {
-    command             = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
-    start_delay         = 30
+    command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
+    start_delay = 30
   }
   environment_variables = [
     {
@@ -381,7 +385,7 @@ module "vpc-endpoints" {
 
 # waf
 module "waf" {
-  count                              = "${startswith(local.env.environment, "prod") ? 1 : 0}"
+  count                              = startswith(local.env.environment, "prod") ? 1 : 0
   source                             = "git::git@github.com:/vechain/devops.git//waf?ref=release/node-hosting/v6"
   env                                = local.env.environment
   project_name                       = var.project
