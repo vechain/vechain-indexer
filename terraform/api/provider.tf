@@ -66,9 +66,9 @@ data "aws_region" "current" {}
 
 data "aws_elb_service_account" "default" {}
 
-#data "external" "git" {
-#  program = ["git", "log", "--pretty=format:{ \"sha\": \"%H\" }", "-1", "HEAD"]
-#}
+data "external" "git" {
+  program = ["git", "log", "--pretty=format:{ \"sha\": \"%H\" }", "-1", "HEAD"]
+}
 
 # Import outputs from the vpc module
 data "terraform_remote_state" "vpc" {
