@@ -178,7 +178,7 @@ locals {
 
   log_metric_filters_list = flatten([
     [
-      for enabled_net_key, enabled_net in local.env_variables_data.enabled_nets : [
+      for enabled_net_key, enabled_net in local.env.enabled_nets : [
         for log_metric_api in enabled_net.api.log_metric_filters : {
           name      = log_metric_api.name
           pattern   = log_metric_api.pattern
@@ -187,7 +187,7 @@ locals {
       ]
     ],
     [
-      for enabled_net_key, enabled_net in local.env_variables_data.enabled_nets : [
+      for enabled_net_key, enabled_net in local.env.enabled_nets : [
         for log_metric_indexer in enabled_net.indexer.log_metric_filters : {
           name      = log_metric_indexer.name
           pattern   = log_metric_indexer.pattern
