@@ -209,12 +209,12 @@ module "ecs-backend-service" {
   log_metric_filters = [
     {
       name      = "AppUnhealthy",
-      pattern   = "Application is UNHEALTHY"
+      pattern   = "Application is UNHEALTHY",
       threshold = 2
     },
     {
-      name      = "REORG"
-      pattern   = "REORG Detected"
+      name      = "REORG",
+      pattern   = "REORG Detected",
       threshold = 1
     }
   ]
