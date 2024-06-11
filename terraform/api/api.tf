@@ -158,7 +158,7 @@ module "ecs-lb-service-api" {
       value = "CloudWatch"
     }
   ]
-  log_metric_filters = [for filter in local.env.log_metric_filters : {
+  log_metric_filters = [for filter in each.value.api.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
   }]
@@ -203,7 +203,7 @@ module "ecs-backend-service" {
   containerPort    = 8080
   hostPort         = 8080
   namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
-  log_metric_filters = [for filter in local.env.log_metric_filters : {
+  log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
   }]
