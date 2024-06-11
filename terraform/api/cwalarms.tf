@@ -199,7 +199,7 @@ locals {
 
   log_metric_alarm = {
     for k, v in local.log_metric_filters_list :
-    "${v.name}_lma" => {
+    "${k}_${v.name}_lma" => {
       alarm_name          = "${v.name}_logmetric_alarm"
       comparison_operator = "GreaterThanOrEqualToThreshold"
       evaluation_periods  = 1
