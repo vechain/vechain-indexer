@@ -1,10 +1,27 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version =  "~> 3.0"
+    }
+  }
+  backend "s3" {
+    bucket = "datadog-terraform-state-veworld-prod"
+    key    = "prod/datadog/datadog.tfstate"
+    region = "eu-west-1"
+  }
+}
+
+provider "aws" {
+  region = "eu-west-1"
+}
+
 module "datadog_integration_aws" {
-  source = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=223-module-for-datadog"
-  account_id = local.env.datadog.account_id
-  account_name = local.env.datadog.account_name
-  role_name  = "DatadogAWSIntegrationRole"
+  source              = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=datadog-module-enhancement"
+  project_name        = "VeWorld-prod"
+  role_name           = "DatadogAWSIntegrationRole"
   aws_permissions_list = [
-                    "apigateway:GET",
+                "apigateway:GET",
                 "autoscaling:Describe*",
                 "backup:List*",
                 "budgets:ViewBudget",
@@ -23,8 +40,6 @@ module "datadog_integration_aws" {
                 "ec2:Describe*",
                 "ec2:GetTransitGatewayPrefixListReferences",
                 "ec2:SearchTransitGatewayRoutes",
-                "ecs:Describe*",
-                "ecs:List*",
                 "elasticache:Describe*",
                 "elasticache:List*",
                 "elasticfilesystem:DescribeFileSystems",
@@ -69,28 +84,21 @@ module "datadog_integration_aws" {
                 "tag:GetResources",
                 "tag:GetTagKeys",
                 "tag:GetTagValues",
-
   ]
-  
-  filter_tags = []
-  host_tags   = ["aws_account:${local.env.datadog.account_id}, Env:${local.env.environment}", "datadog:enabled"]
-  namespace_rules = {
-    auto_scaling = false
-    opsworks     = false
+
+  filter_tags          = []
+  host_tags            = ["Env:veworld-prod"]
+  excluded_regions     = ["us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-2, eu-west-3, eu-central-1, eu-north-1, ap-south-1, ap-northeast-1, ap-northeast-2, ap-southeast-1, ap-southeast-2, sa-east-1"]
+  secret_id             = "arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v"
+
+  datadog_integration_aws  = true
+  create_api_gateway_group = true
+  create_ecs_group         = true
+  create_elb_group         = true
+  create_s3_group          = true
+  create_lambda_group      = true  
+  create_monitor           = true 
+
+  monitors = {
   }
-  excluded_regions = ["us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-2, eu-west-3, eu-central-1, eu-north-1, ap-south-1, ap-northeast-1, ap-northeast-2, ap-southeast-1, ap-southeast-2, sa-east-1"]
-
-  dashboard_title       = "VeWorld Indexer Dashboard"
-  dashboard_description = "Monitoring dashboard for VeWorld Indexer"
-  layout_type          = "ordered"
-  alert_id             = "some-alert-id"
-  widget_type          = "timeseries"
-  widget_title         = "Widget Title"
-  widget_time_span     = "10m"
-  secret_id            = local.env.datadog.secret_arn
 }
-
-
-
-
-
