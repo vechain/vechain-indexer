@@ -161,7 +161,7 @@ module "ecs-lb-service-api" {
   log_metric_filters = [
     {
       name      = "AppUnhealthy",
-      pattern   = "Application is UNHEALTHY"
+      pattern   = "Application is UNHEALTHY",
       threshold = 2
     }
   ]

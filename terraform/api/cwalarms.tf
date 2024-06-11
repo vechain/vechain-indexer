@@ -1,21 +1,6 @@
 # Simple alarms for CloudWatch constructed from sub maps as local variables, merged into a simple_alarms_map
 # NB each submap element must have a unique key or it may be overwritten in the merge
 locals {
-  # lambda_alarms = { for k in concat([for k, v in module.ebs-snapshot : v.lambda_function_name], [for k, v in module.ebs-snapshot : v.lambda_reaper_name]) : "${k}_lerr" => {
-  #   alarm_name          = "${k}_alarm"
-  #   comparison_operator = "GreaterThanOrEqualToThreshold"
-  #   evaluation_periods  = 1
-  #   threshold           = 1
-  #   namespace           = "AWS/Lambda"
-  #   period              = 180
-  #   statistic           = "Maximum"
-  #   metric_name         = "Errors"
-  #   alarm_description   = "ebs schedule lambda error"
-  #   dimensions = {
-  #     FunctionName = k
-  #   }
-  #   }
-  # }
 
   waf_alarms = {for k, v in module.waf : "${k}_blk_rq" => {
     alarm_name          = "${local.env.environment}_WAF_blocked_requests_alarm"
@@ -191,17 +176,34 @@ locals {
 
   ecs_highmem_alarms = merge(local.ecs_backend_highmem_alarm, local.ecs_lb_highmem_alarm)
 
-  log_metric_alarm = { for k in concat(flatten([for k, v in module.ecs-backend-service : v.log_metric_names]), flatten([for k, v in module.ecs-lb-service-api : v.log_metric_names])) : "${k}_lma" => {
-    alarm_name          = "${k}_logmetric_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 1
-    threshold           = each.value.
-    namespace           = "LogMetrics"
-    period              = 180
-    stat                = "Sum"
-    statistic           = "Sum"
-    metric_name         = k
-    alarm_description   = "${k} log metric"
+  log_metric_alarm = {
+    for k, v in concat(
+      flatten([for k, v in module.ecs-backend-service : [
+        for log_metric in v.log_metric_filters : {
+          name        = log_metric.name
+          threshold   = log_metric.threshold
+          namespace   = "LogMetrics"
+        }
+      ]]),
+      flatten([for k, v in module.ecs-lb-service-api : [
+        for log_metric in v.log_metric_filters : {
+          name        = log_metric.name
+          threshold   = log_metric.threshold
+          namespace   = "LogMetrics"
+        }
+      ]])
+    ) :
+    "${v.name}_lma" => {
+      alarm_name          = "${v.name}_logmetric_alarm"
+      comparison_operator = "GreaterThanOrEqualToThreshold"
+      evaluation_periods  = 1
+      threshold           = v.threshold
+      namespace           = "LogMetrics"
+      period              = 180
+      stat                = "Sum"
+      statistic           = "Sum"
+      metric_name         = v.name
+      alarm_description   = "${v.name} log metric"
     }
   }
 

@@ -32,9 +32,8 @@ provider "aws" {
   region = local.env.region
   default_tags {
     tags = {
-      #Commit_Hash = data.external.git.result.sha
-      Terraform = "true"
-      Project   = var.project
+      Terraform   = "true"
+      Project     = var.project
     }
   }
 }
@@ -45,9 +44,8 @@ provider "aws" {
   region = "us-east-1"
   default_tags {
     tags = {
-      #Commit_Hash = data.external.git.result.sha
-      Terraform = "true"
-      Project   = var.project
+      Terraform   = "true"
+      Project     = var.project
     }
   }
 }
