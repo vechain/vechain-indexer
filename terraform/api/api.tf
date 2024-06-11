@@ -160,12 +160,9 @@ module "ecs-lb-service-api" {
   ]
   log_metric_filters = [
     {
-      name    = "AppUnhealthy",
-      pattern = "Application is UNHEALTHY"
-    },
-    {
-      name    = "REORG"
-      pattern = "REORG Detected"
+      name      = "AppUnhealthy",
+      pattern   = "Application is UNHEALTHY"
+      threshold = 2
     }
   ]
 
@@ -211,8 +208,14 @@ module "ecs-backend-service" {
   namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
   log_metric_filters = [
     {
-      name    = "AppUnhealthy",
-      pattern = "Application is UNHEALTHY"
+      name      = "AppUnhealthy",
+      pattern   = "Application is UNHEALTHY"
+      threshold = 2
+    },
+    {
+      name      = "REORG"
+      pattern   = "REORG Detected"
+      threshold = 1
     }
   ]
   healthcheck = {

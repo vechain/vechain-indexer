@@ -195,13 +195,13 @@ locals {
     alarm_name          = "${k}_logmetric_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 1
-    threshold           = 2
+    threshold           = each.value.
     namespace           = "LogMetrics"
     period              = 180
     stat                = "Sum"
     statistic           = "Sum"
     metric_name         = k
-    alarm_description   = "${k}-AppUnhealthy log metric"
+    alarm_description   = "${k} log metric"
     }
   }
 
