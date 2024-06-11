@@ -176,23 +176,29 @@ locals {
 
   ecs_highmem_alarms = merge(local.ecs_backend_highmem_alarm, local.ecs_lb_highmem_alarm)
 
+  log_metric_filters_list = flatten([
+    [
+      for enabled_net_key, enabled_net in local.env_variables_data.enabled_nets : [
+        for log_metric_api in enabled_net.api.log_metric_filters : {
+          name      = log_metric_api.name
+          pattern   = log_metric_api.pattern
+          threshold = log_metric_api.threshold
+        }
+      ]
+    ],
+    [
+      for enabled_net_key, enabled_net in local.env_variables_data.enabled_nets : [
+        for log_metric_indexer in enabled_net.indexer.log_metric_filters : {
+          name      = log_metric_indexer.name
+          pattern   = log_metric_indexer.pattern
+          threshold = log_metric_indexer.threshold
+        }
+      ]
+    ]
+  ])
+
   log_metric_alarm = {
-    for k, v in concat(
-      flatten([for k, v in module.ecs-backend-service : [
-        for log_metric in v.log_metric_filters : {
-          name        = log_metric.name
-          threshold   = log_metric.threshold
-          namespace   = "LogMetrics"
-        }
-      ]]),
-      flatten([for k, v in module.ecs-lb-service-api : [
-        for log_metric in v.log_metric_filters : {
-          name        = log_metric.name
-          threshold   = log_metric.threshold
-          namespace   = "LogMetrics"
-        }
-      ]])
-    ) :
+    for k, v in log_metric_filters_list :
     "${v.name}_lma" => {
       alarm_name          = "${v.name}_logmetric_alarm"
       comparison_operator = "GreaterThanOrEqualToThreshold"

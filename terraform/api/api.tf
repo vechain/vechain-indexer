@@ -158,13 +158,10 @@ module "ecs-lb-service-api" {
       value = "CloudWatch"
     }
   ]
-  log_metric_filters = [
-    {
-      name      = "AppUnhealthy",
-      pattern   = "Application is UNHEALTHY",
-      threshold = 2
-    }
-  ]
+  log_metric_filters = [for filter in local.env.log_metric_filters : {
+    name    = filter.name
+    pattern = filter.pattern
+  }]
 
   ####### enable autoscailing #######
   enable_ecs_cpu_based_autoscaling    = true
@@ -206,18 +203,10 @@ module "ecs-backend-service" {
   containerPort    = 8080
   hostPort         = 8080
   namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
-  log_metric_filters = [
-    {
-      name      = "AppUnhealthy",
-      pattern   = "Application is UNHEALTHY",
-      threshold = 2
-    },
-    {
-      name      = "REORG",
-      pattern   = "REORG Detected",
-      threshold = 1
-    }
-  ]
+  log_metric_filters = [for filter in local.env.log_metric_filters : {
+    name    = filter.name
+    pattern = filter.pattern
+  }]
   healthcheck = {
     command     = ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
     start_delay = 30
