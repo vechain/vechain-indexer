@@ -1,7 +1,7 @@
 locals {
   configuration_name = substr("${local.env.environment}-${var.project}", 0, 28)
 }
-resource "aws_sns_topic" "sns_topic" {
+resource "aws_sns_topic" "chatbot_sns_topic" {
   name = "${local.env.environment}-CloudWatchAlarms"
   # Add other SNS topic configuration as needed
 }
@@ -13,7 +13,7 @@ resource "awscc_chatbot_slack_channel_configuration" "slack_integration" {
   slack_workspace_id = local.env.slack_workspace_id
   iam_role_arn       = aws_iam_role.cloudwatch_read.arn
   guardrail_policies = ["arn:aws:iam::aws:policy/ReadOnlyAccess"]
-  sns_topic_arns     = [aws_sns_topic.sns_topic.arn]
+  sns_topic_arns     = [aws_sns_topic.chatbot_sns_topic.arn]
 }
 
 # IAM Resources for CloudWatch Alarms
