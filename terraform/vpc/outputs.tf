@@ -28,10 +28,7 @@ output "currency_cache_name" {
   value       = local.env.environment == "prod" ? aws_api_gateway_rest_api.currency_cache[0].name : null
 }
 
-# output "cloudwatch_log_group_name" {
-#     value = module.vpclogs_cloudwatch.log_group_name
-# }
-
-# output "s3_bucket_name" {
-#     value = module.vpclogs_s3.bucket_name
-# }
+output "chatbot_sns_topic_name" {
+  description = "The name of the chatbot/slack SNS topic"
+  value       = aws_sns_topic.chatbot_sns_topic.name
+}
