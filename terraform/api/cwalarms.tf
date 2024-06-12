@@ -268,14 +268,10 @@ locals {
 
 module "cloud_watch_alarms" {
   source                   = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchalarm?ref=v.1.0.2"
-  sns_topic_enabled        = true
+  sns_topic_enabled        = false
   topic_name               = "${local.env.environment}-CloudWatchAlarms"
   email_subscriptions      = []
-  create_slack_integration = true
-  configuration_name       = substr("${local.env.environment}-${var.project}", 0, 28)
-
-  slack_channel_id   = local.env.slack_alert_channel
-  slack_workspace_id = local.env.slack_alert_workspace
+  create_slack_integration = false
 
   simple_alarms     = local.simple_alarms_map
   expression_alarms = local.expression_alarms_map
