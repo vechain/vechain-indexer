@@ -4,6 +4,8 @@ common_ecr_repo_root:            veworld
 environment:                     prod
 application:                     veworld
 root_domain:                     vechain.org
+slack_alert_channel:             C05NA25LG78
+slack_alert_workspace:           T03L3PQD8GK
 certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/695573a6-698a-4309-a427-28dd94fe7633
 azs:
   -                              eu-west-1a

@@ -1,5 +1,8 @@
+locals {
+  configuration_name = substr("${local.env.environment}-${var.project}", 0, 28)
+}
 resource "aws_sns_topic" "sns_topic" {
-  name = local.env.topic_name
+  name = "${local.env.environment}-CloudWatchAlarms"
   # Add other SNS topic configuration as needed
 }
 
@@ -9,7 +12,7 @@ resource "awscc_chatbot_slack_channel_configuration" "slack_integration" {
   slack_workspace_id = local.env.slack_workspace_id
   iam_role_arn       = aws_iam_role.cloudwatch_read.arn
   guardrail_policies = ["arn:aws:iam::aws:policy/ReadOnlyAccess"]
-  sns_topic_arns     = aws_sns_topic.sns_topic[0].arn
+  sns_topic_arns     = aws_sns_topic.sns_topic.arn
 }
 
 # IAM Resources for CloudWatch Alarms
@@ -19,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "attachment" {
 }
 
 resource "aws_iam_role" "cloudwatch_read" {
-  name = "${awscc_chatbot_slack_channel_configuration.slack_integration.configuration_name}-AwsChatBot-Slack-CloudWatch-ReadOnly"
+  name = "${local.configuration_name}-AwsChatBot-Slack-CloudWatch-ReadOnly"
 
   assume_role_policy = <<EOF
 {
@@ -39,7 +42,7 @@ EOF
 }
 
 resource "aws_iam_policy" "cloudwatch_policy" {
-  name        = "${awscc_chatbot_slack_channel_configuration.slack_integration.configuration_name}-AwsChatBot-Slack-CloudWatch-ReadOnly"
+  name        = "${local.configuration_name}-AwsChatBot-Slack-CloudWatch-ReadOnly"
   description = "IAM policy for CloudWatch access"
 
   policy = <<EOF
