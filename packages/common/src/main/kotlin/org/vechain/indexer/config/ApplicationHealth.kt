@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.slack.api.Slack
 import com.slack.api.webhook.Payload
+import java.time.LocalDateTime
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.HealthEndpoint
@@ -11,6 +12,8 @@ import org.springframework.boot.actuate.health.Status
 import org.springframework.boot.actuate.health.SystemHealth
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+
+const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 
 @Component
 open class ApplicationHealth(
@@ -21,6 +24,7 @@ open class ApplicationHealth(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val objectMapper = ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+    private var lastAlertTime = LocalDateTime.now().minusMinutes(SLACK_MESSAGE_INTERVAL_MINUTES)
 
     @Scheduled(fixedDelay = 60 * 1000)
     fun logApplicationHealth() {
@@ -40,6 +44,14 @@ open class ApplicationHealth(
         if (slackWebhookUrl == null) {
             logger.warn("Slack webhook url is not configured")
             return
+        }
+
+        if (
+            LocalDateTime.now().minusMinutes(SLACK_MESSAGE_INTERVAL_MINUTES).isBefore(lastAlertTime)
+        ) {
+            return
+        } else {
+            lastAlertTime = LocalDateTime.now()
         }
 
         try {
