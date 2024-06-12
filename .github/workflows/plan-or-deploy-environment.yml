@@ -107,7 +107,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ inputs.workspace }}-veworld-cluster --query 'length(serviceArns)' --output text)
+          cluster_services=$(aws ecs list-services --cluster ${{ inputs.workspace }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif (( $cluster_services > 0 )); then

@@ -41,6 +41,10 @@ enabled_nets:
       max_capacity:                 4
       spring_profile:               nft-events,transactions,transfer-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      log_metric_filters:
+        - name: "AppUnhealthy"
+          pattern: "Application is UNHEALTHY"
+          threshold: 2
     indexer:
       cpu: 1024
       memory: 2048
@@ -63,6 +67,13 @@ enabled_nets:
         nfts:                       '5000'
         transactions:               '5000'
         transfers:                  '5000'
+      log_metric_filters:
+        - name: "AppUnhealthy"
+          pattern: "Application is UNHEALTHY"
+          threshold: 2
+        - name: "REORG"
+          pattern: "REORG Detected"
+          threshold: 1
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
@@ -80,6 +91,10 @@ enabled_nets:
       max_capacity:                 2
       spring_profile:               nft-events,transactions,transfer-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      log_metric_filters:
+        - name: "AppUnhealthy"
+          pattern: "Application is UNHEALTHY"
+          threshold: 2
     indexer:
       cpu: 1024
       memory: 2048
@@ -102,6 +117,13 @@ enabled_nets:
         nfts:                       '5000'
         transactions:               '5000'
         transfers:                  '5000'
+      log_metric_filters:
+        - name: "AppUnhealthy"
+          pattern: "Application is UNHEALTHY"
+          threshold: 2
+        - name: "REORG"
+          pattern: "REORG Detected"
+          threshold: 1
     mongodb:
       type:                         atlas
       fqdn:                         testnet.rsmhw.mongodb.net
