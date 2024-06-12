@@ -17,7 +17,7 @@ provider "aws" {
 }
 
 module "datadog_integration_aws" {
-  source              = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=datadog-module-enhancement"
+  source              = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=v.1.0.34"
   project_name        = "VeWorld-prod"
   role_name           = "DatadogAWSIntegrationRole"
   aws_permissions_list = [
