@@ -7,6 +7,7 @@ resource "aws_sns_topic" "sns_topic" {
 }
 
 resource "awscc_chatbot_slack_channel_configuration" "slack_integration" {
+  count              = local.env.environment == "prod" ? 1 : 0
   configuration_name = substr("${local.env.environment}-${var.project}", 0, 28)
   slack_channel_id   = local.env.slack_channel_id
   slack_workspace_id = local.env.slack_workspace_id
