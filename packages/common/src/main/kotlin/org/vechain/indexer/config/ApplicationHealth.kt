@@ -50,8 +50,6 @@ open class ApplicationHealth(
             LocalDateTime.now().minusMinutes(SLACK_MESSAGE_INTERVAL_MINUTES).isBefore(lastAlertTime)
         ) {
             return
-        } else {
-            lastAlertTime = LocalDateTime.now()
         }
 
         try {
@@ -65,6 +63,8 @@ open class ApplicationHealth(
                     .build()
 
             slack.send(slackWebhookUrl, payload)
+
+            lastAlertTime = LocalDateTime.now()
         } catch (e: Exception) {
             logger.error("Failed to send slack message", e)
         }
