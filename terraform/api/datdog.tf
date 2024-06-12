@@ -1,21 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-      version =  "~> 3.0"
-    }
-  }
-  backend "s3" {
-    bucket = "datadog-terraform-state-veworld-prod"
-    key    = "prod/datadog/datadog.tfstate"
-    region = "eu-west-1"
-  }
-}
-
-provider "aws" {
-  region = "eu-west-1"
-}
-
 module "datadog_integration_aws" {
   source              = "git::git@github.com:vechain/terraform_infrastructure_modules.git//datadog?ref=v.1.0.34"
   project_name        = "VeWorld-prod"
