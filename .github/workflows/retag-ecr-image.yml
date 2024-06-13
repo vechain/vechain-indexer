@@ -59,10 +59,10 @@ jobs:
         aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest' >MANIFEST.json
         {
           echo 'MANIFEST<<EOF'
-          echo "MANIFEST.json"
+          cat "MANIFEST.json"
           echo EOF
         } >> "$GITHUB_OUTPUT"
-        echo "MANIFEST.json"
+        cat "MANIFEST.json"
 
     - name: Create new tag
       run: |
