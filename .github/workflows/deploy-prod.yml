@@ -84,6 +84,7 @@ jobs:
     if: always() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
     with:
       environment: prod
+      version: ${{ inputs.version }}
       workspace: ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
       # Force ensures environment is spun up if it does not already exist
       force: true
