@@ -56,10 +56,9 @@ jobs:
     - name: Get the image manifest
       id: get-manifest
       run: |
-        MANIFEST=$(aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest')
         {
           echo 'MANIFEST<<EOF'
-          echo "$MANIFEST"
+          $(aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest')
           echo EOF
         } >> "$GITHUB_OUTPUT"
 
