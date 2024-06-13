@@ -47,6 +47,9 @@ jobs:
   retag-ecr-images:
     name: Retag ECR Images
     needs: [check-existing-release]
+    permissions:
+      id-token: write
+      contents: read
     if: needs.check-existing-release.outputs.NEW_RELEASE == 'true'
     strategy:
       matrix:
@@ -74,9 +77,10 @@ jobs:
           fi
     
   deploy-prod-env:
-    needs: [check-existing-release, set-deployment-env]
+    needs: [retag-ecr-images, set-deployment-env]
     name: Run Deployment - ${{ inputs.deployment-strategy}}
     uses: ./.github/workflows/plan-or-deploy-environment.yml
+    if: success() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
     with:
       environment: prod
       workspace: ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
