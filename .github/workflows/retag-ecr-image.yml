@@ -1,0 +1,65 @@
+name: Retag ECR Image
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'The environment/account where the image resides'
+        required: true
+        type: string
+      repo_name:
+        description: 'The name of the ECR repository'
+        required: true
+        type: string
+      existing_tag:
+        description: 'The existing tag of the image - to identify which image to tag'
+        required: true
+        type: string
+      new_tag:
+        description: 'The new tag to add to the image'
+        required: true
+        type: string
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Determine AWS account ID and role
+      id: account
+      run: |
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+          else
+              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+          fi
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
+
+    - name: Login To Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Get the image manifest
+      id: get-manifest
+      run: |
+        MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.repo_name }} --image-ids imageTag=${{ inputs.existing_tag }} --query 'images[0].imageManifest' --output text)
+        echo "MANIFEST=$MANIFEST" >> $GITHUB_OUTPUT
+
+    - name: Create new tag
+      run: |
+        MANIFEST=${{ steps.get-manifest.outputs.MANIFEST }}
+        aws ecr put-image --repository-name ${{ inputs.repo_name }} --image-tag ${{ inputs.new_tag }} --image-manifest "$MANIFEST"

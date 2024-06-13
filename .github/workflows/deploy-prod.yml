@@ -8,8 +8,8 @@ on:
         required: true
         type: choice
         options:
-          - regular (live environment)
-          - blue/green (dead environment)
+          - live environment
+          - dead environment
       version:
         description: 'The version of this release'
         required: true
@@ -42,7 +42,23 @@ jobs:
             echo "NEW_RELEASE=false" >> $GITHUB_OUTPUT
           else
             echo "NEW_RELEASE=true" >> $GITHUB_OUTPUT
-          fi
+
+  retag-ecr-images:
+    name: Retag ECR Images
+    needs: [check-existing-release]
+    if: needs.check-existing-release.outputs.NEW_RELEASE == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ecr_repo: [veworld/indexer, veworld/api]
+    steps:
+      - name: Trigger ECR Retag Workflow
+        uses: ./.github/workflows/retag-ecr-image.yml
+        with:
+          environment: prod
+          repo_name: ${{ matrix.ecr_repo }}
+          existing_tag: prod-latest
+          new_tag: ${{ inputs.version }}
 
   set-deployment-env:
     needs: [identify-live-color]
@@ -53,14 +69,14 @@ jobs:
     steps:
       - id: set-deployment-color
         run: |
-          if [ "${{ inputs.deployment-strategy }}" == "regular (live environment)" ]; then
+          if [ "${{ inputs.deployment-strategy }}" == "live environment" ]; then
             echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.deployment-strategy }}" == "blue/green (dead environment)" ]; then
+          elif [ "${{ inputs.deployment-strategy }}" == "dead environment" ]; then
             echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
           fi
-  
+    
   deploy-prod-env:
-    needs: [identify-live-color, set-deployment-env]
+    needs: [check-existing-release, set-deployment-env]
     name: Run Deployment - ${{ inputs.deployment-strategy}}
     uses: ./.github/workflows/plan-or-deploy-environment.yml
     with:
