@@ -62,6 +62,7 @@ jobs:
           echo "MANIFEST.json"
           echo EOF
         } >> "$GITHUB_OUTPUT"
+        echo "MANIFEST.json"
 
     - name: Create new tag
       run: |
