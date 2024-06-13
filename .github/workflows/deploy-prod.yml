@@ -47,6 +47,7 @@ jobs:
   retag-ecr-images:
     name: Retag ECR Images
     needs: [check-existing-release]
+    secrets: inherit
     permissions:
       id-token: write
       contents: read
