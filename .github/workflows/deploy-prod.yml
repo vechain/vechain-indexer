@@ -48,18 +48,15 @@ jobs:
     name: Retag ECR Images
     needs: [check-existing-release]
     if: needs.check-existing-release.outputs.NEW_RELEASE == 'true'
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         ecr_repo: [veworld/indexer, veworld/api]
-    steps:
-      - name: Trigger ECR Retag Workflow
-        uses: ./.github/workflows/retag-ecr-image.yml
-        with:
-          environment: prod
-          repo_name: ${{ matrix.ecr_repo }}
-          existing_tag: prod-latest
-          new_tag: ${{ inputs.version }}
+    uses: ./.github/workflows/retag-ecr-image.yml
+    with:
+      environment: prod
+      repo_name: ${{ matrix.ecr_repo }}
+      existing_tag: prod-latest
+      new_tag: ${{ inputs.version }}
 
   set-deployment-env:
     needs: [identify-live-color]
