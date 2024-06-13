@@ -67,4 +67,4 @@ jobs:
     - name: Create new tag
       run: |
         MANIFEST=${{ steps.get-manifest.outputs.MANIFEST }}
-        aws ecr put-image --repository-name ${{ inputs.repo_name }} --image-tag ${{ inputs.new_tag }} --image-manifest "$MANIFEST"
+        aws ecr put-image --repository-name ${{ inputs.repo_name }} --image-tag ${{ inputs.new_tag }} --image-manifest "$(cat MANIFEST.json)"
