@@ -81,7 +81,7 @@ jobs:
     needs: [retag-ecr-images, set-deployment-env]
     name: Run Deployment - ${{ inputs.deployment-strategy}}
     uses: ./.github/workflows/plan-or-deploy-environment.yml
-    if: success() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
+    if: always() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
     with:
       environment: prod
       workspace: ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
