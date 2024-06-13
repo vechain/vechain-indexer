@@ -76,7 +76,7 @@ jobs:
           elif [ "${{ inputs.deployment-strategy }}" == "dead environment" ]; then
             echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
           fi
-    
+
   deploy-prod-env:
     needs: [retag-ecr-images, set-deployment-env]
     name: Run Deployment - ${{ inputs.deployment-strategy}}
