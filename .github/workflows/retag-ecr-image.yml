@@ -56,7 +56,7 @@ jobs:
     - name: Get the image manifest
       id: get-manifest
       run: |
-        $(aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest') > MANIFEST.json
+        aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest' >MANIFEST.json
         {
           echo 'MANIFEST<<EOF'
           echo "MANIFEST.json"
