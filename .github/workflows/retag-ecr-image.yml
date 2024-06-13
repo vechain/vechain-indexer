@@ -57,7 +57,11 @@ jobs:
       id: get-manifest
       run: |
         MANIFEST=$(aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest')
-        echo "MANIFEST=$MANIFEST" >> $GITHUB_OUTPUT
+        {
+          echo 'MANIFEST<<EOF'
+          echo "$MANIFEST"
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
 
     - name: Create new tag
       run: |
