@@ -8,8 +8,8 @@ on:
         required: true
         type: choice
         options:
-          - regular (live environment)
-          - blue/green (dead environment)
+          - live environment
+          - dead environment
       version:
         description: 'The version of this release'
         required: true
@@ -26,6 +26,42 @@ jobs:
       id-token: write
     secrets: inherit
 
+  check-existing-release:
+    name: Check Existing Releases
+    runs-on: ubuntu-latest
+    outputs:
+      NEW_RELEASE: ${{ steps.check-release.outputs.NEW_RELEASE }}
+    steps:
+      - name: Check if deployment version already exists
+        id: check-release
+        run: |
+          VERSION=${{ inputs.version }}
+          RELEASES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases)
+          if echo "$RELEASES" | jq -e ".[] | select(.tag_name==\"$VERSION\")"; then
+            echo "NEW_RELEASE=false" >> $GITHUB_OUTPUT
+          else
+            echo "NEW_RELEASE=true" >> $GITHUB_OUTPUT
+          fi
+
+  retag-ecr-images:
+    name: Retag ECR Images
+    needs: [check-existing-release]
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+    if: needs.check-existing-release.outputs.NEW_RELEASE == 'true'
+    strategy:
+      matrix:
+        ecr_repo: [veworld/indexer, veworld/api]
+    uses: ./.github/workflows/retag-ecr-image.yml
+    with:
+      environment: prod
+      repo_name: ${{ matrix.ecr_repo }}
+      existing_tag: prod-latest
+      new_tag: ${{ inputs.version }}
+
   set-deployment-env:
     needs: [identify-live-color]
     name: Determine Deployment Color
@@ -35,18 +71,20 @@ jobs:
     steps:
       - id: set-deployment-color
         run: |
-          if [ "${{ inputs.deployment-strategy }}" == "regular (live environment)" ]; then
+          if [ "${{ inputs.deployment-strategy }}" == "live environment" ]; then
             echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.deployment-strategy }}" == "blue/green (dead environment)" ]; then
+          elif [ "${{ inputs.deployment-strategy }}" == "dead environment" ]; then
             echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
           fi
-  
+
   deploy-prod-env:
-    needs: [identify-live-color, set-deployment-env]
+    needs: [retag-ecr-images, set-deployment-env]
     name: Run Deployment - ${{ inputs.deployment-strategy}}
     uses: ./.github/workflows/plan-or-deploy-environment.yml
+    if: always() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
     with:
       environment: prod
+      version: ${{ inputs.version }}
       workspace: ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
       # Force ensures environment is spun up if it does not already exist
       force: true
