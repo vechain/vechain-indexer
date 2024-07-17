@@ -187,7 +187,7 @@ module "ecs-backend-service" {
   vpc_id           = data.terraform_remote_state.vpc.outputs.vpc_id
   region           = local.env.region
   cluster          = module.ecs-cluster.name
-  subnets          = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
+  subnets          = concat(data.terraform_remote_state.vpc.outputs.private_subnets)
   env              = local.env.environment
   is_create_repo   = false
   secrets_enable   = false
