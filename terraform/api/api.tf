@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.26"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=Make-optional-commands-var-backwards-compatible"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name              = module.ecs-cluster.name
@@ -183,7 +183,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on       = [module.ecs-cluster]
   for_each         = local.env.enabled_nets
-  source           = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.26"
+  source           = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=Make-optional-commands-var-backwards-compatible"
   vpc_id           = data.terraform_remote_state.vpc.outputs.vpc_id
   region           = local.env.region
   cluster          = module.ecs-cluster.name
