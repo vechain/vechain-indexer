@@ -1,9 +1,7 @@
 package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
-import org.vechain.indexer.model.IndexedClause
-import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.TransferEventType
+import org.vechain.indexer.model.*
 import org.vechain.indexer.thor.model.*
 import org.web3j.utils.Numeric
 
@@ -34,6 +32,44 @@ object BlockUtils {
         return confirmedTransactions(block).flatMap { tx ->
             tx.outputs.map { output -> Pair(output, tx) }
         }
+    }
+
+    fun getActivities(block: Block): List<IndexedActivity> {
+        val activities = mutableListOf<IndexedActivity>()
+
+        for (tx in block.transactions) {
+            val txIdArgs = arrayOf(tx.id)
+            activities.add(
+                IndexedActivity(tx, block, tx.origin, ActivityType.TRANSACTION, txIdArgs)
+            )
+
+            if (tx.gasPayer != tx.origin) {
+                val delegatedTxIdArgs = arrayOf(tx.id, tx.gasPayer)
+                activities.add(
+                    IndexedActivity(
+                        tx,
+                        block,
+                        tx.gasPayer,
+                        ActivityType.DELEGATED_TRANSACTION,
+                        delegatedTxIdArgs
+                    )
+                )
+            }
+
+            val transferEvents = TxUtils.getTransferEvents(tx)
+
+            transferEvents.mapIndexed { index, (transfer, type) ->
+                val toIdArgs = arrayOf(tx.id, index.toString(), transfer.from)
+                activities.add(IndexedActivity(tx, block, transfer.from, type, toIdArgs))
+
+                if (transfer.from != transfer.to) {
+                    val fromIdArgs = arrayOf(tx.id, index.toString(), transfer.to)
+                    activities.add(IndexedActivity(tx, block, transfer.to, type, fromIdArgs))
+                }
+            }
+        }
+
+        return activities
     }
 
     /**
