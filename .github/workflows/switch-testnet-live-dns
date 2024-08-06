@@ -2,6 +2,9 @@ name: Switch Testnet Live Environment
 
 on:
   workflow_dispatch:
+  
+  pull_request: 
+    branches: [main]
 
 # Required for authentication through GitHub OIDC
 permissions:
