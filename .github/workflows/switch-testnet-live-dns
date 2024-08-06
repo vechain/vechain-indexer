@@ -2,7 +2,9 @@ name: Switch Testnet Live Environment
 
 on:
   workflow_dispatch:
-  
+  push:
+    branches:
+     - 'switch-single-dns'
   pull_request: 
     branches: [main]
 
