@@ -7,8 +7,6 @@ on:
   push:
     branches:
      - 'switch-single-dns'
-  pull_request: 
-    branches: [main]
 
 # Required for authentication through GitHub OIDC
 permissions:
