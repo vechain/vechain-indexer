@@ -34,16 +34,12 @@ jobs:
       id: switch
       run: |
         HOSTED_ZONE_ID="Z074702037Q8JBHKIAYSD"
-        CURRENT_RECORD="${{ github.event.inputs.current_record }}"
+        LIVE_RECORD="testnet.live.prod.veworld.vechain.org"
+        DEAD_RECORD="testnet.dead.prod.veworld.vechain.org"
         
-        if [[ "$CURRENT_RECORD" == "testnet.live.prod.veworld.vechain.org" ]]; then
-          NEW_RECORD="testnet.dead.prod.veworld.vechain.org"
-        else
-          NEW_RECORD="testnet.live.prod.veworld.vechain.org"
-        fi
-        
-        CURRENT_IP=$(aws route53 list-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --query "ResourceRecordSets[?Name == '$CURRENT_RECORD.'].ResourceRecords[0].Value" --output text)
-        NEW_IP=$(aws route53 list-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --query "ResourceRecordSets[?Name == '$NEW_RECORD.'].ResourceRecords[0].Value" --output text)
+  
+        CURRENT_IP=$(aws route53 list-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --query "ResourceRecordSets[?Name == '$DEAD_RECORD.'].ResourceRecords[0].Value" --output text)
+        NEW_IP=$(aws route53 list-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --query "ResourceRecordSets[?Name == '$LIVE_RECORD.'].ResourceRecords[0].Value" --output text)
         
         echo "Switching $CURRENT_RECORD (IP: $CURRENT_IP) with $NEW_RECORD (IP: $NEW_IP)"
 
