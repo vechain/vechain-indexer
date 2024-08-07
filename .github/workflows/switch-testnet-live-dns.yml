@@ -33,7 +33,7 @@ jobs:
     - name: Switch Route 53 Records
       id: switch
       run: |
-        HOSTED_ZONE_ID="YOUR_HOSTED_ZONE_ID"
+        HOSTED_ZONE_ID="Z074702037Q8JBHKIAYSD"
         CURRENT_RECORD="${{ github.event.inputs.current_record }}"
         
         if [[ "$CURRENT_RECORD" == "testnet.live.prod.veworld.vechain.org" ]]; then
