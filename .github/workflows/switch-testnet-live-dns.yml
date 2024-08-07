@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    
+    env:
+      HOSTED_ZONE_ID: Z074702037Q8JBHKIAYSD
 
     steps:
     - name: Configure AWS credentials
@@ -33,7 +36,7 @@ jobs:
     - name: Switch Route 53 Records
       id: switch
       run: |
-        HOSTED_ZONE_ID="Z074702037Q8JBHKIAYSD"
+        HOSTED_ZONE_ID=${{ env.HOSTED_ZONE_ID }}
         LIVE_RECORD="testnet.live.prod.veworld.vechain.org"
         DEAD_RECORD="testnet.dead.prod.veworld.vechain.org"
         
