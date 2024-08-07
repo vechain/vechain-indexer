@@ -9,6 +9,9 @@ permissions:
   contents: read # This is required for actions/checkout
 
 jobs:
+  switch-test-net:
+    uses: ./.github/workflows/switch-testnet-live-dns.yml
+    secrets: inherit
 
   identify-live-color:
     name: Identify live color
@@ -124,16 +127,17 @@ jobs:
         id: workspace
         run: terraform workspace select ${{ env.environment }}
 
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate
+     # - name: Terraform Validate
+      #  id: validate
+      #  run: terraform validate
 
-      - name: Terraform Plan
-        id: plan
-        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
+      #- name: Terraform Plan
+      #  id: plan
+      #  if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+      #  run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
 
-      - name: Terraform Apply
-        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        id: apply
-        run: terraform apply "apply.plan"
+     # - name: Terraform Apply
+      #  if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+      #  id: apply
+      #  run: terraform apply "apply.plan"
+     
