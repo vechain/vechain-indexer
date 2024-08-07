@@ -20,6 +20,8 @@ on:
 jobs:
   switch-records:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
     - name: Checkout repository
