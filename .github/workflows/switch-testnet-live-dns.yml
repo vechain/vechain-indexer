@@ -53,7 +53,7 @@ jobs:
             {
               \"Action\": \"UPSERT\",
               \"ResourceRecordSet\": {
-                \"Name\": \"$CURRENT_RECORD\",
+                \"Name\": \"$DEAD_RECORD\",
                 \"Type\": \"A\",
                 \"TTL\": 300,
                 \"ResourceRecords\": [{\"Value\": \"$NEW_IP\"}]
@@ -62,7 +62,7 @@ jobs:
             {
               \"Action\": \"UPSERT\",
               \"ResourceRecordSet\": {
-                \"Name\": \"$NEW_RECORD\",
+                \"Name\": \"$LIVE_RECORD\",
                 \"Type\": \"A\",
                 \"TTL\": 300,
                 \"ResourceRecords\": [{\"Value\": \"$CURRENT_IP\"}]
