@@ -1,12 +1,21 @@
 name: Switch Route 53 Records
 
 on:
+  workflow_call: 
+    
   workflow_dispatch:
-    inputs:
-      current_record:
-        description: 'Current active record (testnet.live.prod.veworld.vechain.org or testnet.dead.prod.veworld.vechain.org)'
-        required: true
-        default: 'testnet.live.prod.veworld.vechain.org'
+   inputs:
+    current_record:
+      description: 'Current active record (testnet.live.prod.veworld.vechain.org or testnet.dead.prod.veworld.vechain.org)'
+      required: true
+      default: 'testnet.live.prod.veworld.vechain.org'
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - main
+  
 
 jobs:
   switch-records:
