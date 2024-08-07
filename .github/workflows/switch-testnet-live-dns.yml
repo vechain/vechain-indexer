@@ -48,8 +48,28 @@ jobs:
         
         echo "Switching $CURRENT_RECORD (IP: $CURRENT_IP) with $NEW_RECORD (IP: $NEW_IP)"
 
-      env:
-        AWS_DEFAULT_REGION: us-east-1
+        aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch "{
+          \"Changes\": [
+            {
+              \"Action\": \"UPSERT\",
+              \"ResourceRecordSet\": {
+                \"Name\": \"$CURRENT_RECORD\",
+                \"Type\": \"A\",
+                \"TTL\": 300,
+                \"ResourceRecords\": [{\"Value\": \"$NEW_IP\"}]
+              }
+            },
+            {
+              \"Action\": \"UPSERT\",
+              \"ResourceRecordSet\": {
+                \"Name\": \"$NEW_RECORD\",
+                \"Type\": \"A\",
+                \"TTL\": 300,
+                \"ResourceRecords\": [{\"Value\": \"$CURRENT_IP\"}]
+              }
+            }
+          ]
+        }"
 
     - name: Confirm Switch
       run: |
