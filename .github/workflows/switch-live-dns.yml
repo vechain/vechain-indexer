@@ -6,7 +6,6 @@ on:
       testnet_only:
         description: "Do you want to switch just the testnet?"
         required: false
-        default: false
         type: boolean
 
 # Required for authentication through GitHub OIDC
