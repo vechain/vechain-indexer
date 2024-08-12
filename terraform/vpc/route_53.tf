@@ -12,7 +12,6 @@ variable "live_color" {
 variable "testnet_only" {
   type        = bool
   description = "If true, only the testnet records will be created. If false, both mainnet and testnet records will be created. This variable is optional."
-  default     = false
 }
 
 locals {
