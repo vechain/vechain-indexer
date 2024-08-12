@@ -12,6 +12,10 @@ variable "live_color" {
 variable "testnet_only" {
   type        = bool
   description = "If true, only the testnet records will be created. If false, both mainnet and testnet records will be created. This variable is optional."
+   validation {
+    condition     = var.testnet_only == true || var.testnet_only == false
+    error_message = "value for testnet_only must be a boolean, e.g. `terraform apply --var=testnet_only=true`"
+  }
 }
 
 locals {
