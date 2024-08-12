@@ -2,6 +2,12 @@ name: Switch Live Environment
 
 on:
   workflow_dispatch:
+    inputs:
+      testnet_only:
+        description: "Do you wnat to switch just the testnet?"
+        required: false
+        default: false
+        type: boolean
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -131,10 +137,10 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }}
+        run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }} --var=testnet_only=${{ github.event.inputs.testnet_only }}
 
-      - name: Terraform Apply
-        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        id: apply
-        run: terraform apply "apply.plan"
+      #- name: Terraform Apply
+      #  if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+      #  id: apply
+      #  run: terraform apply "apply.plan"
      
