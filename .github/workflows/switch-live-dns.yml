@@ -102,6 +102,16 @@ jobs:
             echo "The ${{ needs.identify-live-color.outputs.dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
             exit 0
           fi
+      - name: Check test_only
+        id: check-test-only
+        run: |
+          if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
+            echo "test_only=true" >> $GITHUB_OUTPUT
+            echo "Switching only the testnet environment"
+          else
+            echo "test_only=false" >> $GITHUB_OUTPUT
+            echo "Switching both the testnet and mainnet environments"
+          fi
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
