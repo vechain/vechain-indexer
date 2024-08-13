@@ -25,7 +25,9 @@ locals {
   dead_mainnet_lb    = var.live_color == "prod-blue" && var.testnet_only == true ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : (var.live_color != "prod-blue" && var.testnet_only == true ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : (var.live_color == "prod-blue" && var.testnet_only == false ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : (var.live_color != "prod-blue" && var.testnet_only == false ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : "place.holder.domain")))
   dead_testnet_lb    = var.live_color == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet, "place.holder.domain")
 }
-
+output "live_mainnet_lb" {
+  value = local.live_mainnet_lb
+}
 resource "aws_route53_zone" "veworld_public_zone" {
   count = startswith(local.env.environment, "prod") ? 1 : 0
   name  = "${local.env.environment}.${local.env.application}.${local.env.root_domain}"
