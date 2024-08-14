@@ -83,7 +83,7 @@ jobs:
         run: |
           echo "Current live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
           echo "New live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-          echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.dead_color }}"
+          echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

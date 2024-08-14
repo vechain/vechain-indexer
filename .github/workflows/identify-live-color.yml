@@ -50,7 +50,11 @@ jobs:
   identify-live:
     name: "Identify Live/Dead Environments"
     runs-on: ubuntu-latest
-
+    outputs:
+      mainnet_live_color: ${{ steps.define_color_vars.outputs.mainnet_live_color }}
+      mainnet_dead_color: ${{ steps.define_color_vars.outputs.mainnet_dead_color }}
+      testnet_live_color: ${{ steps.define_color_vars.outputs.testnet_live_color }}
+      testnet_dead_color: ${{ steps.define_color_vars.outputs.testnet_dead_color }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,10 +112,4 @@ jobs:
           echo "Dead color for mainnet environment is ${{ steps.define_color_vars.outputs.mainnet_dead_color }}"
           echo "Live color for testnet environment is ${{ steps.define_color_vars.outputs.testnet_live_color }}"
           echo "Dead color for testnet environment is ${{ steps.define_color_vars.outputs.testnet_dead_color }}"
-
-    # Define the outputs section to pass data back to the calling workflow
-    outputs:
-      mainnet_live_color: ${{ steps.define_color_vars.outputs.mainnet_live_color }}
-      mainnet_dead_color: ${{ steps.define_color_vars.outputs.mainnet_dead_color }}
-      testnet_live_color: ${{ steps.define_color_vars.outputs.testnet_live_color }}
-      testnet_dead_color: ${{ steps.define_color_vars.outputs.testnet_dead_color }}
+    
