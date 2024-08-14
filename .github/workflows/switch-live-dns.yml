@@ -19,7 +19,8 @@ jobs:
     name: Identify live color
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z074702037Q8JBHKIAYSD
     permissions:
       contents: read
@@ -146,10 +147,10 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }} --var="testnet_only=${{ github.event.inputs.testnet_only }}"
+        run: terraform plan -out "apply.plan" --var=live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}  --var=live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }} --var="testnet_only=${{ github.event.inputs.testnet_only }}"
 
-      - name: Terraform Apply
-        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        id: apply
-        run: terraform apply "apply.plan"
+      #- name: Terraform Apply
+      #  if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+      #  id: apply
+      #  run: terraform apply "apply.plan"
      
