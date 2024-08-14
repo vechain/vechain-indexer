@@ -1,6 +1,6 @@
 variable "live_color_mainnet" {
   type        = string
-  description = "The environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
+  description = "The mainnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
 
   validation {
     condition     = var.live_color_mainnet == "prod-blue" || var.live_color_mainnet == "prod-green"
@@ -12,7 +12,7 @@ variable "live_color_mainnet" {
 
 variable "live_color_testnet" {
   type        = string
-  description = "The environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
+  description = "The testnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
 
   validation {
     condition     = var.live_color_testnet == "prod-blue" || var.live_color_testnet == "prod-green"
@@ -37,9 +37,7 @@ locals {
   dead_mainnet_lb    = var.live_color_mainnet == "prod-blue" && var.testnet_only == true ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet != "prod-blue" && var.testnet_only == true ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet == "prod-blue" && var.testnet_only == false ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet != "prod-blue" && var.testnet_only == false ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet, "place.holder.domain") : "place.holder.domain")))
   dead_testnet_lb    = var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet, "place.holder.domain")
 }
-output "live_mainnet_lb" {
-  value = local.live_mainnet_lb
-}
+
 resource "aws_route53_zone" "veworld_public_zone" {
   count = startswith(local.env.environment, "prod") ? 1 : 0
   name  = "${local.env.environment}.${local.env.application}.${local.env.root_domain}"
