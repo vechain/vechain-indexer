@@ -3,8 +3,12 @@ name: Identify Live/Dead Environments
 on:
   workflow_call:
     inputs:
-      dns_record_name:
-        description: "The DNS record value to check"
+      dns_record_mainnet_name:
+        description: "The mainnet DNS record value to check"
+        required: true
+        type: string
+      dns_record_testnet_name:
+        description: "The testnet DNS record value to check"
         required: true
         type: string
       hosted_zone_id:
