@@ -17,12 +17,18 @@ on:
         type: string
     # Map the job outputs to workflow outputs
     outputs:
-      live_color:
-        description: "The live color environment (prod-blue or prod-green)"
-        value: ${{ jobs.identify-live.outputs.live_color }}
-      dead_color:
-        description: "The dead color environment (opposite of live_color)"
-        value: ${{ jobs.identify-live.outputs.dead_color }}
+      mainnet_live_color:
+        description: "The live color environment for mainnet (prod-blue or prod-green)"
+        value: ${{ jobs.identify-live.outputs.mainnet_live_color }}
+      mainnet_dead_color:
+        description: "The dead color environment for mainnet (opposite of live_color)"
+        value: ${{ jobs.identify-live.outputs.mainnet_dead_color }}
+      testnet_live_color:
+        description: "The live color environment for testnet (prod-blue or prod-green)"
+        value: ${{ jobs.identify-live.outputs.testnet_live_color }}
+      testnet_dead_color:
+        description: "The dead color environment for testnet (opposite of live_color)"
+        value: ${{ jobs.identify-live.outputs.testnet_dead_color }}
   workflow_dispatch:
     inputs:
       dns_record_mainnet_name:
