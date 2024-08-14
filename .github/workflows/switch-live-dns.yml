@@ -148,8 +148,8 @@ jobs:
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         run: terraform plan -out "apply.plan" --var=live_color=${{ needs.identify-live-color.outputs.dead_color }} --var="testnet_only=${{ github.event.inputs.testnet_only }}"
 
-      - name: Terraform Apply
-        if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        id: apply
-        run: terraform apply "apply.plan"
+      #- name: Terraform Apply
+      #  if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
+      #  id: apply
+      #  run: terraform apply "apply.plan"
      
