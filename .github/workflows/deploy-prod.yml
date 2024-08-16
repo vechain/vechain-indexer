@@ -19,7 +19,8 @@ jobs:
     name: Identify Live and Dead Colors
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z074702037Q8JBHKIAYSD
     permissions:
       contents: read
@@ -72,9 +73,9 @@ jobs:
       - id: set-deployment-color
         run: |
           if [ "${{ inputs.deployment-strategy }}" == "live environment" ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
           elif [ "${{ inputs.deployment-strategy }}" == "dead environment" ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
           fi
 
   deploy-prod-env:
@@ -99,7 +100,7 @@ jobs:
     needs: [identify-live-color]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.live_color }}"
+      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
 
   create-release:
     runs-on: ubuntu-latest

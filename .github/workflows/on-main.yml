@@ -47,7 +47,8 @@ jobs:
     name: Identify Live Color
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z074702037Q8JBHKIAYSD
     permissions:
       contents: read
@@ -61,7 +62,7 @@ jobs:
     needs: [publish-images-to-ecr, identify-live-color]
     with:
       environment: prod
-      workspace: ${{ needs.identify-live-color.outputs.dead_color }}
+      workspace: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
     permissions:
       packages: read
       contents: read
