@@ -80,7 +80,8 @@ jobs:
         run: |
           dns_mainnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_mainnet_name }}'].ResourceRecords[].Value" --output text)
           dns_testnet_value=$(aws route53 list-resource-record-sets --hosted-zone-id ${{ inputs.hosted_zone_id }} --query "ResourceRecordSets[?Name == '${{ inputs.dns_record_testnet_name }}'].ResourceRecords[].Value" --output text)
-
+          echo "dns_mainnet_value=$dns_mainnet_value" >> $GITHUB_OUTPUT
+          echo "dns_testnet_value=$dns_testnet_value" >> $GITHUB_OUTPUT
       - name: Define output variables
         id: define_color_vars
         run: |
