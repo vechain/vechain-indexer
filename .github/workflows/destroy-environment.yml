@@ -26,7 +26,8 @@ jobs:
     name: "Identify live and dead colors"
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z074702037Q8JBHKIAYSD
     permissions:
       contents: read
@@ -40,7 +41,7 @@ jobs:
     steps:
       - name: Check selected color is not live
         run: |
-          if [ "${{ inputs.environment }}" == "${{ needs.identify-live-color.outputs.live_color }}" ]; then
+          if [ "${{ inputs.environment }}" == "${{ needs.identify-live-color.outputs.mainnet_live_color }}" ]; then
             echo "Selected color is live, aborting destruction."
             exit 1
           fi
@@ -50,7 +51,7 @@ jobs:
     needs: [identify-live-color, check-selected-color]
     runs-on: ubuntu-latest
     env: 
-      dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
+      dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
       account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
     steps:
       - name: Determine AWS account ID and role
@@ -98,7 +99,7 @@ jobs:
     name: "Destroy ${{ inputs.environment }} Infrastructure"
     runs-on: ubuntu-latest
     needs: [identify-live-color, check-selected-color, destroy-lingering-resources]
-    if: ${{ inputs.environment }} == ${{ needs.identify-live-color.outputs.dead_color }}
+    if: ${{ inputs.environment }} == ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
     defaults:
       run:
         working-directory: terraform/api
