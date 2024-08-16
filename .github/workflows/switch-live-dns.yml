@@ -79,28 +79,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log Switching Details
-        run: |
-          echo "Current live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
-          echo "New live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-          echo "Preparing to switch live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
-    
       - name: Check test_only
         id: check-test-only
         run: |
           if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
             echo "test_only=true" >> $GITHUB_OUTPUT
             echo "Switching only the testnet environment"
+            echo "Current testnet live color: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
+            echo "New testent live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+            echo "Preparing to switch testnet live environment from ${{ needs.identify-live-color.outputs.testnet_live_color }} to ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+
           else
             echo "test_only=false" >> $GITHUB_OUTPUT
             echo "Switching both the testnet and mainnet environments"
+            echo "Current mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
+            echo "New mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
+            echo "Preparing to switch mainnet live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
+            echo "Current testnet live color: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
+            echo "New testent live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+            echo "Preparing to switch testnet live environment from ${{ needs.identify-live-color.outputs.testnet_live_color }} to ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
           fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
       
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
