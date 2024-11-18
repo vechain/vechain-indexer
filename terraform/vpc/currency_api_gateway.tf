@@ -566,13 +566,14 @@ resource "aws_iam_role_policy" "gw_cloudwatch" {
   policy = data.aws_iam_policy_document.gw_cloudwatch.json
 }
 
-resource "aws_sqs_queue" "dlq" {
-  name = "lambda_dlq"
-}
-
 resource "aws_kms_key" "lambda_env_var_encryption" {
   description = "KMS key for encrypting Lambda environment variables"
 }
+resource "aws_sqs_queue" "dlq" {
+  name = "lambda_dlq"
+  kms_master_key_id = aws_kms_key.lambda_env_var_encryption.arn
+}
+
 
 resource "aws_lambda_function" "coingecko_proxy" {
   filename         = "./coingecko-proxy/lambda.js"
@@ -589,10 +590,14 @@ resource "aws_lambda_function" "coingecko_proxy" {
   kms_key_arn = aws_kms_key.lambda_env_var_encryption.arn
   reserved_concurrent_executions = 10
   dead_letter_config {
-    target_arn = aws_sqs_queue.dlq.arn  # Configure Dead Letter Queue (DLQ)
+    target_arn = aws_sqs_queue.dlq.arn
   }
   tracing_config {
-    mode = "Active"  # Enable X-Ray tracing
+    mode = "Active"
+  }
+  vpc_config {
+    subnet_ids         = local.env.public_subnets
+    security_group_ids = module.vpc[0].vpc_id
   }
 }
 
