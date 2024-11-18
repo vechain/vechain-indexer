@@ -432,6 +432,10 @@ resource "aws_api_gateway_rest_api" "currency_cache" {
   endpoint_configuration {
     types = ["EDGE"]
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 // settings for all resources
 resource "aws_api_gateway_method_settings" "all" {
@@ -442,11 +446,12 @@ resource "aws_api_gateway_method_settings" "all" {
   settings {
     logging_level          = "ERROR"
     metrics_enabled        = true
-    data_trace_enabled     = true
+    data_trace_enabled     = false
     throttling_burst_limit = 5000
     throttling_rate_limit  = 10000
     caching_enabled        = true
     cache_ttl_in_seconds   = 30
+    cache_data_encrypted   = true
   }
 }
 
@@ -506,6 +511,7 @@ resource "aws_api_gateway_stage" "default" {
   stage_name    = "default"
   cache_cluster_enabled = true
   cache_cluster_size = "0.5"
+  xray_tracing_enabled = true
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
     format          = "$context.status,$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.protocol,$context.responseLength,$context.requestId,\"$context.resourcePath\",$context.integration.integrationStatus,$context.integration.status,\"$context.error.message\",\"$context.integrationErrorMessage\"\n"
@@ -560,6 +566,14 @@ resource "aws_iam_role_policy" "gw_cloudwatch" {
   policy = data.aws_iam_policy_document.gw_cloudwatch.json
 }
 
+resource "aws_sqs_queue" "dlq" {
+  name = "lambda_dlq"
+}
+
+resource "aws_kms_key" "lambda_env_var_encryption" {
+  description = "KMS key for encrypting Lambda environment variables"
+}
+
 resource "aws_lambda_function" "coingecko_proxy" {
   filename         = "./coingecko-proxy/lambda.js"
   function_name    = "coingecko_proxy"
@@ -571,6 +585,14 @@ resource "aws_lambda_function" "coingecko_proxy" {
     variables = {
       COINGECKO_API_URL = "https://api.coingecko.com/api/v3"
     }
+  }
+  kms_key_arn = aws_kms_key.lambda_env_var_encryption.arn
+  reserved_concurrent_executions = 10
+  dead_letter_config {
+    target_arn = aws_sqs_queue.dlq.arn  # Configure Dead Letter Queue (DLQ)
+  }
+  tracing_config {
+    mode = "Active"  # Enable X-Ray tracing
   }
 }
 
