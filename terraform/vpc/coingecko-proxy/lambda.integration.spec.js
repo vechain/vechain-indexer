@@ -60,7 +60,7 @@ describe('Lambda Integration Tests', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
-    expect(data).toHaveProperty('data'); // Adjust based on actual response structure
+    expect(data["asset_platform_id"]).toBe("vechain"); // Adjust based on actual response structure
   });
 
   test('GET /coins/list', async () => {

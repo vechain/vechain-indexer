@@ -1,0 +1,17 @@
+{
+    "name": "veworld-indexer-vpc",
+    "version": "1.0.0",
+    "description": "VPC configuration for veworld indexer",
+    "scripts": {
+        "test": "LAMBDA_FUNCTION_NAME=coingeckoProxy AWS_REGION=eu-west-1 jest"
+    },
+    "author": "Luc Grandin <luc.grandin@vechain.org>",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "^2.1692.0"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "jest-fetch-mock": "^3.0.3"
+    }
+}
