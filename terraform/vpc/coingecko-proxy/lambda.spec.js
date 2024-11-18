@@ -11,15 +11,22 @@ beforeEach(() => {
 describe("Lambda Function Tests", () => {
   it.each(
     Object.keys(aws_console_tests).map((testName) => [
+      aws_console_tests[testName].httpMethod,
       aws_console_tests[testName].path,
       aws_console_tests[testName].queryStringParameters,
       aws_console_tests[testName].pathParameters,
       aws_console_tests[testName].expectedResponse,
       aws_console_tests[testName].mockedCoingeckoResponse
     ])
-  )("should return the expected response for %s", async (path, queryStringParameters, pathParameters, expectedResponse, mockedCoingeckoResponse) => {
-    fetch.mockResponse(JSON.stringify(mockedCoingeckoResponse));
+  )("should return the expected response for %s", async (httpMethod, path, queryStringParameters, pathParameters, expectedResponse, mockedCoingeckoResponse) => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        json: () => mockedCoingeckoResponse,
+        ok: true,
+      })
+    );
     const response = await lambdaHandler.handler({
+      httpMethod,
       path,
       queryStringParameters,
       pathParameters,

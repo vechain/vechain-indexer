@@ -15,7 +15,7 @@ const validationSchema = {
     rootType: "object",
     requiredFields: ["prices"],
     types: {
-      prices: "array",
+      prices: "object",
     },
   },
   tokenEndpoint: {

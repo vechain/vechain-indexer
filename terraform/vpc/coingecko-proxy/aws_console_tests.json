@@ -61,7 +61,12 @@
     "pathParameters": {
       "coin_id": "vechain"
     },
-    "expectedResponse": 200
+    "expectedResponse": 200,
+    "mockedCoingeckoResponse": {
+      "id": "vechain",
+      "symbol": "vet",
+      "name": "VeChain"
+    }
   },
   "list": {
     "httpMethod": "GET",
@@ -84,7 +89,12 @@
     "pathParameters": {
       "coin_id": "vechain"
     },
-    "expectedResponse": 200
+    "expectedResponse": 200,
+    "mockedCoingeckoResponse": {
+      "id": "vechain",
+      "symbol": "vet",
+      "name": "VeChain"
+    }
   },
   "markets": {
     "httpMethod": "GET",

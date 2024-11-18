@@ -19,6 +19,8 @@ const invokeLambda = async (event) => {
   }
 };
 
+// For integration test make sure that the lambda is running
+// The code that you want to test
 describe('Lambda Integration Tests', () => {
   test('GET /coins/market-chart', async () => {
     const event = {
@@ -32,7 +34,7 @@ describe('Lambda Integration Tests', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
-    expect(data).toHaveProperty('data'); // Adjust based on actual response structure
+    expect(Array.isArray(data.prices)).toBe(true); // Expect an array of market data
   });
 
   test('GET /simple/supported_vs_currencies', async () => {
