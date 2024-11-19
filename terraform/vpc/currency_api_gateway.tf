@@ -503,6 +503,11 @@ resource "aws_cloudwatch_log_group" "gw_log_group" {
   retention_in_days = 30
 }
 
+resource "aws_api_gateway_client_certificate" "client_cert" {
+  count = local.env.environment == "prod" ? 1 : 0
+  description = "Client certificate for API Gateway"
+}
+
 resource "aws_api_gateway_stage" "default" {
   count = local.env.environment == "prod" ? 1 : 0
   deployment_id = aws_api_gateway_deployment.deployment[0].id
@@ -511,6 +516,7 @@ resource "aws_api_gateway_stage" "default" {
   cache_cluster_enabled = true
   cache_cluster_size = "0.5"
   xray_tracing_enabled = true
+  client_certificate_id = aws_api_gateway_client_certificate.client_cert[0].id
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
     format          = "$context.status,$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.protocol,$context.responseLength,$context.requestId,\"$context.resourcePath\",$context.integration.integrationStatus,$context.integration.status,\"$context.error.message\",\"$context.integrationErrorMessage\"\n"
@@ -568,7 +574,87 @@ resource "aws_iam_role_policy" "gw_cloudwatch" {
 resource "aws_kms_key" "lambda_env_var_encryption" {
   description = "KMS key for encrypting Lambda environment variables"
   enable_key_rotation = true
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Id      = "key-default-1",
+    Statement = [
+      {
+        Sid       = "Enable IAM User Permissions",
+        Effect    = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        },
+        Action    = "kms:*",
+        Resource  = "*"
+      },
+      {
+        Sid       = "Allow access for Key Administrators",
+        Effect    = "Allow",
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/AdminRole"
+          ]
+        },
+        Action    = [
+          "kms:Create*",
+          "kms:Describe*",
+          "kms:Enable*",
+          "kms:List*",
+          "kms:Put*",
+          "kms:Update*",
+          "kms:Revoke*",
+          "kms:Disable*",
+          "kms:Get*",
+          "kms:Delete*",
+          "kms:TagResource",
+          "kms:UntagResource",
+          "kms:ScheduleKeyDeletion",
+          "kms:CancelKeyDeletion"
+        ],
+        Resource  = "*"
+      },
+      {
+        Sid       = "Allow use of the key",
+        Effect    = "Allow",
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole"
+          ]
+        },
+        Action    = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+        Resource  = "*"
+      },
+      {
+        Sid       = "Allow attachment of persistent resources",
+        Effect    = "Allow",
+        Principal = {
+          AWS = [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole"
+          ]
+        },
+        Action    = [
+          "kms:CreateGrant",
+          "kms:ListGrants",
+          "kms:RevokeGrant"
+        ],
+        Resource  = "*",
+        Condition = {
+          Bool = {
+            "kms:GrantIsForAWSResource" = true
+          }
+        }
+      }
+    ]
+  })
 }
+
 resource "aws_sqs_queue" "dlq" {
   name = "lambda_dlq"
   kms_master_key_id = aws_kms_key.lambda_env_var_encryption.arn
