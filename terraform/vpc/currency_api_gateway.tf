@@ -680,7 +680,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
   function_name    = "coingecko_proxy"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "index.handler"
-  runtime          = "nodejs16.x"
+  runtime          = "nodejs20.x"
   source_code_hash = filebase64sha256("./coingecko-proxy/lambda.js")
   environment {
     variables = {
