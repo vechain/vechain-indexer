@@ -445,7 +445,7 @@ resource "aws_api_gateway_method_settings" "all" {
   settings {
     logging_level          = "ERROR"
     metrics_enabled        = true
-    data_trace_enabled     = false
+    data_trace_enabled     = true
     throttling_burst_limit = 5000
     throttling_rate_limit  = 10000
     caching_enabled        = true
@@ -510,7 +510,6 @@ resource "aws_api_gateway_stage" "default" {
   stage_name    = "default"
   cache_cluster_enabled = true
   cache_cluster_size = "0.5"
-  xray_tracing_enabled = true
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
     format          = "$context.status,$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.protocol,$context.responseLength,$context.requestId,\"$context.resourcePath\",$context.integration.integrationStatus,$context.integration.status,\"$context.error.message\",\"$context.integrationErrorMessage\"\n"
@@ -567,12 +566,27 @@ resource "aws_iam_role_policy" "gw_cloudwatch" {
 
 resource "aws_kms_key" "lambda_env_var_encryption" {
   description = "KMS key for encrypting Lambda environment variables"
+  enable_key_rotation = true
 }
 resource "aws_sqs_queue" "dlq" {
   name = "lambda_dlq"
   kms_master_key_id = aws_kms_key.lambda_env_var_encryption.arn
 }
 
+resource "aws_signer_signing_profile" "lambda_signing_profile" {
+  name     = "lambda_signing_profile"
+  platform_id = "AWSLambda-SHA384-ECDSA"
+}
+
+resource "aws_lambda_code_signing_config" "lambda_code_signing_config" {
+  allowed_publishers {
+    signing_profile_version_arns = [aws_signer_signing_profile.lambda_signing_profile.arn]
+  }
+
+  policies {
+    untrusted_artifact_on_deployment = "Enforce"
+  }
+}
 
 resource "aws_lambda_function" "coingecko_proxy" {
   filename         = "./coingecko-proxy/lambda.js"
@@ -598,6 +612,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
     subnet_ids         = local.env.public_subnets
     security_group_ids = [data.aws_vpc.ct_vpc_id.id]
   }
+  code_signing_config_arn = aws_lambda_code_signing_config.lambda_code_signing_config.arn
 }
 
 resource "aws_iam_role" "lambda_exec" {
@@ -622,20 +637,28 @@ resource "aws_iam_policy_attachment" "lambda_exec_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_api_gateway_integration" "lambda_proxy" {
-  rest_api_id             = aws_api_gateway_rest_api.currency_cache[0].id
-  resource_id             = aws_api_gateway_resource.coingecko.id
-  http_method             = aws_api_gateway_method.coingecko.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.coingecko_proxy.invoke_arn
+resource "aws_api_gateway_request_validator" "request_validator" {
+  rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
+  name        = "request_validator"
+  validate_request_body = false
+  validate_request_parameters = true
 }
 
 resource "aws_api_gateway_method" "coingecko" {
   rest_api_id   = aws_api_gateway_rest_api.currency_cache[0].id
   resource_id   = aws_api_gateway_resource.coingecko.id
-  http_method   = "ANY"
-  authorization = "NONE"
+  http_method   = "GET"
+  authorization = "AWS_IAM"
+  request_validator_id = aws_api_gateway_request_validator.request_validator.id
+}
+
+resource "aws_api_gateway_integration" "lambda_proxy" {
+  rest_api_id             = aws_api_gateway_rest_api.currency_cache[0].id
+  resource_id             = aws_api_gateway_resource.coingecko.id
+  http_method             = aws_api_gateway_method.coingecko.http_method
+  integration_http_method = "GET"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.coingecko_proxy.invoke_arn
 }
 
 resource "aws_api_gateway_resource" "coingecko" {
