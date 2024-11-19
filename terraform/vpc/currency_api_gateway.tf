@@ -445,7 +445,7 @@ resource "aws_api_gateway_method_settings" "all" {
   settings {
     logging_level          = "ERROR"
     metrics_enabled        = true
-    data_trace_enabled     = true
+    data_trace_enabled     = false
     throttling_burst_limit = 5000
     throttling_rate_limit  = 10000
     caching_enabled        = true
@@ -510,6 +510,7 @@ resource "aws_api_gateway_stage" "default" {
   stage_name    = "default"
   cache_cluster_enabled = true
   cache_cluster_size = "0.5"
+  xray_tracing_enabled = true
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
     format          = "$context.status,$context.identity.sourceIp,$context.requestTime,$context.httpMethod,$context.protocol,$context.responseLength,$context.requestId,\"$context.resourcePath\",$context.integration.integrationStatus,$context.integration.status,\"$context.error.message\",\"$context.integrationErrorMessage\"\n"
