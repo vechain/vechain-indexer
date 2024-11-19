@@ -385,6 +385,13 @@ locals {
   }
 
   api_integration_json = jsonencode(local.api_integration_model)
+
+  security_group_ids = {
+    "dev"  = aws_security_group.sg_dev.id
+    "prod" = aws_security_group.sg_prod.id
+    "prod-blue" = aws_security_group.sg_prod_blue.id
+    "prod-green" = aws_security_group.sg_prod_green.id
+  }
 }
 
 resource "aws_acm_certificate" "domain_cert" {
@@ -572,87 +579,8 @@ resource "aws_iam_role_policy" "gw_cloudwatch" {
 }
 
 resource "aws_kms_key" "lambda_env_var_encryption" {
-  description = "KMS key for encrypting Lambda environment variables"
+  description         = "KMS key for encrypting Lambda environment variables"
   enable_key_rotation = true
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Id      = "key-default-1",
-    Statement = [
-      {
-        Sid       = "Enable IAM User Permissions",
-        Effect    = "Allow",
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        },
-        Action    = "kms:*",
-        Resource  = "*"
-      },
-      {
-        Sid       = "Allow access for Key Administrators",
-        Effect    = "Allow",
-        Principal = {
-          AWS = [
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/AdminRole"
-          ]
-        },
-        Action    = [
-          "kms:Create*",
-          "kms:Describe*",
-          "kms:Enable*",
-          "kms:List*",
-          "kms:Put*",
-          "kms:Update*",
-          "kms:Revoke*",
-          "kms:Disable*",
-          "kms:Get*",
-          "kms:Delete*",
-          "kms:TagResource",
-          "kms:UntagResource",
-          "kms:ScheduleKeyDeletion",
-          "kms:CancelKeyDeletion"
-        ],
-        Resource  = "*"
-      },
-      {
-        Sid       = "Allow use of the key",
-        Effect    = "Allow",
-        Principal = {
-          AWS = [
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole"
-          ]
-        },
-        Action    = [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:DescribeKey"
-        ],
-        Resource  = "*"
-      },
-      {
-        Sid       = "Allow attachment of persistent resources",
-        Effect    = "Allow",
-        Principal = {
-          AWS = [
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/LambdaExecutionRole"
-          ]
-        },
-        Action    = [
-          "kms:CreateGrant",
-          "kms:ListGrants",
-          "kms:RevokeGrant"
-        ],
-        Resource  = "*",
-        Condition = {
-          Bool = {
-            "kms:GrantIsForAWSResource" = true
-          }
-        }
-      }
-    ]
-  })
 }
 
 resource "aws_sqs_queue" "dlq" {
@@ -660,28 +588,66 @@ resource "aws_sqs_queue" "dlq" {
   kms_master_key_id = aws_kms_key.lambda_env_var_encryption.arn
 }
 
-resource "aws_signer_signing_profile" "lambda_signing_profile" {
-  name     = "lambda_signing_profile"
-  platform_id = "AWSLambda-SHA384-ECDSA"
+resource "aws_iam_policy" "lambda_sqs_policy" {
+  name        = "LambdaSQSPolicy"
+  description = "Policy for Lambda to send messages to SQS"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:SendMessage"
+        ],
+        Resource = aws_sqs_queue.dlq.arn
+      }
+    ]
+  })
 }
 
-resource "aws_lambda_code_signing_config" "lambda_code_signing_config" {
-  allowed_publishers {
-    signing_profile_version_arns = [aws_signer_signing_profile.lambda_signing_profile.arn]
-  }
+resource "aws_iam_role_policy_attachment" "lambda_exec_policy_attachment" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_sqs_policy.arn
+}
 
-  policies {
-    untrusted_artifact_on_deployment = "Enforce"
-  }
+resource "aws_iam_policy" "lambda_vpc_policy" {
+  name        = "LambdaVPCPolicy"
+  description = "Policy for Lambda to manage network interfaces in VPC"
+  policy      = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface",
+          "ec2:AttachNetworkInterface"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_policy_vpc" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_vpc_policy.arn
+}
+
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "./coingecko-proxy/lambda.js"
+  output_path = "./coingecko-proxy/lambda.zip"
 }
 
 resource "aws_lambda_function" "coingecko_proxy" {
-  filename         = "./coingecko-proxy/lambda.js"
+  filename         = data.archive_file.lambda_zip.output_path
   function_name    = "coingecko_proxy"
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "index.handler"
+  handler          = "lambda.handler"
   runtime          = "nodejs20.x"
-  source_code_hash = filebase64sha256("./coingecko-proxy/lambda.js")
+  source_code_hash = filebase64sha256(data.archive_file.lambda_zip.output_path)
   environment {
     variables = {
       COINGECKO_API_URL = "https://api.coingecko.com/api/v3"
@@ -696,14 +662,14 @@ resource "aws_lambda_function" "coingecko_proxy" {
     mode = "Active"
   }
   vpc_config {
-    subnet_ids         = local.env.public_subnets
-    security_group_ids = [data.aws_vpc.ct_vpc_id.id]
+    subnet_ids         = data.aws_subnets.ct_pub_subnets.ids
+    security_group_ids = [lookup(local.security_group_ids, local.env.environment)]
   }
-  code_signing_config_arn = aws_lambda_code_signing_config.lambda_code_signing_config.arn
+  timeout = 10
 }
 
 resource "aws_iam_role" "lambda_exec" {
-  name = "lambda_exec_role"
+  name = "LambdaExecutionRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -716,12 +682,6 @@ resource "aws_iam_role" "lambda_exec" {
       }
     ]
   })
-}
-
-resource "aws_iam_policy_attachment" "lambda_exec_policy" {
-  name       = "lambda_exec_policy_attachment"
-  roles      = [aws_iam_role.lambda_exec.name]
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 resource "aws_api_gateway_request_validator" "request_validator" {

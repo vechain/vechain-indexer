@@ -26,6 +26,112 @@ data "aws_subnets" "dev_pub_subnets" {
   }
 }
 
+resource "aws_security_group" "sg_dev" {
+  name        = "veworld-sg-dev"
+  description = "Security group for development environment"
+  vpc_id      = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "veworld-sg-dev"
+    Environment = local.env.environment
+    Project     = var.project
+  }
+}
+
+resource "aws_security_group" "sg_prod_blue" {
+  name        = "veworld-sg-prod-blue"
+  description = "Security group for production blue environment"
+  vpc_id      = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "veworld-sg-prod-blue"
+    Environment = local.env.environment
+    Project     = var.project
+  }
+}
+
+resource "aws_security_group" "sg_prod_green" {
+  name        = "veworld-sg-prod-green"
+  description = "Security group for production green environment"
+  vpc_id      = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "veworld-sg-prod-green"
+    Environment = local.env.environment
+    Project     = var.project
+  }
+}
+
+resource "aws_security_group" "sg_prod" {
+  name        = "veworld-sg-prod"
+  description = "Security group for production environment"
+  vpc_id      = local.env.environment == "prod" ? data.aws_vpc.ct_vpc_id.id : module.vpc[0].vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "veworld-sg-prod"
+    Environment = local.env.environment
+    Project     = var.project
+  }
+}
+
+
+
 data "aws_subnets" "dev_priv_subnets" {
   filter {
     name   = "tag:Name"

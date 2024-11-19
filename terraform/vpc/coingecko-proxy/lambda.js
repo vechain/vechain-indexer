@@ -91,6 +91,41 @@ function validateResponse(data, schema) {
   return true; // Validation passed
 }
 
+
+const getResponseData = async (route, queryStringParameters, validatorId) => {
+  let queryParams = new URLSearchParams(queryStringParameters).toString();
+  
+  if (queryParams) {
+    queryParams = `?${queryParams}`;
+  }
+  
+  try {
+    const response = await fetch(process.env.BASE_URL + route + queryParams, {
+      headers: {
+        accept: "application/json",
+        "x-cg-demo-api-key": process.env.COINGECKO_API_KEY,
+      },
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Coingecko returned error data:", data);
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    
+    validateResponse(data, validationSchema[validatorId]);
+    
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data),
+    };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return INTERNAL_SERVER_ERROR;
+  }
+};
+
 exports.handler = async (event) => {
   if (!process.env.COINGECKO_API_KEY || !process.env.BASE_URL) {
     console.error("Missing environment variables");
@@ -132,38 +167,4 @@ exports.handler = async (event) => {
     statusCode: 404,
     body: JSON.stringify({ message: "Not Found" }),
   };
-};
-
-const getResponseData = async (route, queryStringParameters, validatorId) => {
-  let queryParams = new URLSearchParams(queryStringParameters).toString();
-
-  if (queryParams) {
-    queryParams = `?${queryParams}`;
-  }
-
-  try {
-    const response = await fetch(process.env.BASE_URL + route + queryParams, {
-      headers: {
-        accept: "application/json",
-        "x-cg-demo-api-key": process.env.COINGECKO_API_KEY,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Coingecko returned error data:", data);
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    validateResponse(data, validationSchema[validatorId]);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify(data),
-    };
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return INTERNAL_SERVER_ERROR;
-  }
 };
