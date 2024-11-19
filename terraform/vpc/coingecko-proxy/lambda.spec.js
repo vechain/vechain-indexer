@@ -16,23 +16,32 @@ describe("Lambda Function Tests", () => {
       aws_console_tests[testName].queryStringParameters,
       aws_console_tests[testName].pathParameters,
       aws_console_tests[testName].expectedResponse,
-      aws_console_tests[testName].mockedCoingeckoResponse
+      aws_console_tests[testName].mockedCoingeckoResponse,
     ])
-  )("should return the expected response for %s", async (httpMethod, path, queryStringParameters, pathParameters, expectedResponse, mockedCoingeckoResponse) => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => mockedCoingeckoResponse,
-        ok: true,
-      })
-    );
-    const response = await lambdaHandler.handler({
+  )(
+    "should return the expected response for %s",
+    async (
       httpMethod,
       path,
       queryStringParameters,
       pathParameters,
-    });
+      expectedResponse,
+      mockedCoingeckoResponse
+    ) => {
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          json: () => mockedCoingeckoResponse,
+          ok: true,
+        })
+      );
+      const response = await lambdaHandler.handler({
+        httpMethod,
+        path,
+        queryStringParameters,
+        pathParameters,
+      });
 
-    expect(response.statusCode).toEqual(expectedResponse);
-  });
-  
+      expect(response.statusCode).toEqual(expectedResponse);
+    }
+  );
 });

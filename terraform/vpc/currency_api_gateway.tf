@@ -426,7 +426,6 @@ resource "aws_acm_certificate_validation" "cert_validation_block" {
 resource "aws_api_gateway_rest_api" "currency_cache" {
   count = local.env.environment == "prod" ? 1 : 0
   name              = "coin_currency_cache"
-  fail_on_warnings  = true
   body              = local.api_integration_json
   put_rest_api_mode = "merge"
   endpoint_configuration {
@@ -580,7 +579,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
   function_name    = "coingecko_proxy"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "index.handler"
-  runtime          = "nodejs20.x"
+  runtime          = "nodejs16.x"
   source_code_hash = filebase64sha256("./coingecko-proxy/lambda.js")
   environment {
     variables = {
@@ -597,7 +596,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
   }
   vpc_config {
     subnet_ids         = local.env.public_subnets
-    security_group_ids = module.vpc[0].vpc_id
+    security_group_ids = [data.aws_vpc.ct_vpc_id.id]
   }
 }
 

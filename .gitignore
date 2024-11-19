@@ -54,3 +54,5 @@ mongo-data
 app-logs
 
 sample-data
+
+node_modules/

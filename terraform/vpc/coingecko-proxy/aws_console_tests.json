@@ -1,5 +1,5 @@
 {
-  "marketChart":{
+  "marketChart": {
     "httpMethod": "GET",
     "path": "/coins/market-chart",
     "pathParameters": {
@@ -12,34 +12,16 @@
     "expectedResponse": 200,
     "mockedCoingeckoResponse": {
       "prices": [
-        [
-          1620000000000,
-          0.1
-        ],
-        [
-          1620000000001,
-          0.2
-        ]
+        [1620000000000, 0.1],
+        [1620000000001, 0.2]
       ],
       "market_caps": [
-        [
-          1620000000000,
-          100
-        ],
-        [
-          1620000000001,
-          200
-        ]
+        [1620000000000, 100],
+        [1620000000001, 200]
       ],
       "total_volumes": [
-        [
-          1620000000000,
-          1000
-        ],
-        [
-          1620000000001,
-          2000
-        ]
+        [1620000000000, 1000],
+        [1620000000001, 2000]
       ]
     }
   },
@@ -50,23 +32,7 @@
       "coin_id": "vechain"
     },
     "expectedResponse": 200,
-    "mockedCoingeckoResponse": [
-      "usd",
-      "eur"
-    ]
-  },
-  "tokenEndpoint": {
-    "httpMethod": "GET",
-    "path": "/coins/token-endpoint",
-    "pathParameters": {
-      "coin_id": "vechain"
-    },
-    "expectedResponse": 200,
-    "mockedCoingeckoResponse": {
-      "id": "vechain",
-      "symbol": "vet",
-      "name": "VeChain"
-    }
+    "mockedCoingeckoResponse": ["usd", "eur"]
   },
   "list": {
     "httpMethod": "GET",

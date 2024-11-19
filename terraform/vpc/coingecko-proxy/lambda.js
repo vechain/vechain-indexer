@@ -18,15 +18,6 @@ const validationSchema = {
       prices: "object",
     },
   },
-  tokenEndpoint: {
-    rootType: "object",
-    requiredFields: ["id", "name", "symbol"],
-    types: {
-      id: "string",
-      name: "string",
-      symbol: "string",
-    },
-  },
   list: {
     rootType: "array:object",
     requiredFields: [],
@@ -71,7 +62,11 @@ function validateResponse(data, schema) {
     return true; // Root array validation passed
   }
 
-  if (rootType !== "object" || typeof data !== "object" || Array.isArray(data)) {
+  if (
+    rootType !== "object" ||
+    typeof data !== "object" ||
+    Array.isArray(data)
+  ) {
     throw new Error(
       `Response validation error. Invalid root type. Expected '${rootType}', got '${typeof data}'`
     );
@@ -120,12 +115,6 @@ exports.handler = async (event) => {
       `/coins/${pathParameters.coin_id}/market_chart`,
       queryStringParameters,
       "marketChart"
-    );
-  } else if (path === "/coins/token-endpoint") {
-    return getResponseData(
-      `/coins/${pathParameters.coin_id}`,
-      {},
-      "tokenEndpoint"
     );
   } else if (path === "/coins/list") {
     return getResponseData(
