@@ -68,6 +68,7 @@ locals {
       "type" : "MOCK"
     }
   }
+  lambda_invoke_arn = aws_lambda_function.coingecko_proxy.invoke_arn
   api_integration_model = {
     //openapi specification for api gateway
     "openapi" : "3.0.1",
@@ -110,9 +111,9 @@ locals {
               }
             },
             "passthroughBehavior" : "when_no_match",
-            "type" : "HTTP_PROXY",
+            "type" : "AWS_PROXY",
             "httpMethod" : "GET",
-            "uri" : "https://api.coingecko.com/api/v3/simple/supported_vs_currencies",
+            "uri" : "${local.lambda_invoke_arn}"
           }
         }
       },
@@ -152,9 +153,9 @@ locals {
               }
             },
             "passthroughBehavior" : "when_no_match",
-            "type" : "HTTP_PROXY",
+            "type" : "AWS_PROXY",
             "httpMethod" : "GET",
-            "uri" : "https://api.coingecko.com/api/v3/coins/{coin_id}",
+            "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.path.coin_id" : "method.request.path.coin_id"
             },
@@ -222,9 +223,9 @@ locals {
               }
             },
             "passthroughBehavior" : "when_no_match",
-            "type" : "HTTP_PROXY",
+            "type" : "AWS_PROXY",
             "httpMethod" : "GET",
-            "uri" : "https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
+            "uri" : "${local.lambda_invoke_arn}", 
             "requestParameters" : {
               "integration.request.path.coin_id" : "method.request.path.coin_id",
               "integration.request.querystring.days" : "method.request.querystring.days",
@@ -314,9 +315,9 @@ locals {
               }
             },
             "passthroughBehavior" : "when_no_match",
-            "type" : "HTTP_PROXY",
+            "type" : "AWS_PROXY",
             "httpMethod" : "GET",
-            "uri" : "https://api.coingecko.com/api/v3/coins/markets",
+            "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.querystring.vs_currency" : "method.request.querystring.vs_currency",
               "integration.request.querystring.order" : "method.request.querystring.order",
@@ -369,9 +370,9 @@ locals {
               }
             },
             "passthroughBehavior" : "when_no_match",
-            "type" : "HTTP_PROXY",
+            "type" : "AWS_PROXY",
             "httpMethod" : "GET",
-            "uri" : "https://api.coingecko.com/api/v3/coins/list",
+            "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.querystring.include_platform" : "method.request.querystring.include_platform",
             },
@@ -427,7 +428,7 @@ resource "aws_api_gateway_rest_api" "currency_cache" {
   count             = local.env.environment == "prod" ? 1 : 0
   name              = "coin_currency_cache"
   body              = local.api_integration_json
-  put_rest_api_mode = "merge"
+  put_rest_api_mode = "overwrite"
   endpoint_configuration {
     types = ["EDGE"]
   }
@@ -467,6 +468,13 @@ resource "aws_api_gateway_domain_name" "api" {
   }
 }
 
+resource "aws_api_gateway_base_path_mapping" "currency_cache" {
+  count       = local.env.environment == "prod" ? 1 : 0
+  api_id      = aws_api_gateway_rest_api.currency_cache[0].id
+  stage_name  = aws_api_gateway_stage.default[0].stage_name
+  domain_name = aws_api_gateway_domain_name.api[0].domain_name
+}
+
 resource "aws_route53_record" "apigw_domain_alias" {
   count   = local.env.environment == "prod" ? 1 : 0
   name    = local.api_domain.name
@@ -480,13 +488,6 @@ resource "aws_route53_record" "apigw_domain_alias" {
   }
 }
 
-resource "aws_api_gateway_base_path_mapping" "currency_cache" {
-  count       = local.env.environment == "prod" ? 1 : 0
-  api_id      = aws_api_gateway_rest_api.currency_cache[0].id
-  domain_name = aws_api_gateway_domain_name.api[0].domain_name
-  stage_name  = aws_api_gateway_stage.default[0].stage_name
-}
-
 resource "aws_api_gateway_deployment" "deployment" {
   count       = local.env.environment == "prod" ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
@@ -498,11 +499,6 @@ resource "aws_api_gateway_deployment" "deployment" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "gw_log_group" {
-  count             = local.env.environment == "prod" ? 1 : 0
-  name_prefix       = "api_gw_log_group"
-  retention_in_days = 30
-}
 
 resource "aws_api_gateway_client_certificate" "client_cert" {
   count       = local.env.environment == "prod" ? 1 : 0
@@ -529,6 +525,11 @@ resource "aws_api_gateway_account" "gw_role_account" {
   cloudwatch_role_arn = aws_iam_role.gw_cloudwatch[0].arn
 }
 
+resource "aws_cloudwatch_log_group" "gw_log_group" {
+  count             = local.env.environment == "prod" ? 1 : 0
+  name_prefix       = "api_gw_log_group"
+  retention_in_days = 30
+}
 data "aws_iam_policy_document" "gw_assume_role" {
   statement {
     effect = "Allow"
@@ -717,29 +718,6 @@ resource "aws_api_gateway_request_validator" "request_validator" {
   name                        = "request_validator"
   validate_request_body       = false
   validate_request_parameters = true
-}
-
-resource "aws_api_gateway_method" "coingecko" {
-  rest_api_id          = aws_api_gateway_rest_api.currency_cache[0].id
-  resource_id          = aws_api_gateway_resource.coingecko.id
-  http_method          = "GET"
-  authorization        = "AWS_IAM"
-  request_validator_id = aws_api_gateway_request_validator.request_validator.id
-}
-
-resource "aws_api_gateway_integration" "lambda_proxy" {
-  rest_api_id             = aws_api_gateway_rest_api.currency_cache[0].id
-  resource_id             = aws_api_gateway_resource.coingecko.id
-  http_method             = aws_api_gateway_method.coingecko.http_method
-  integration_http_method = "GET"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.coingecko_proxy.invoke_arn
-}
-
-resource "aws_api_gateway_resource" "coingecko" {
-  rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
-  parent_id   = aws_api_gateway_rest_api.currency_cache[0].root_resource_id
-  path_part   = "{proxy+}"
 }
 
 resource "aws_lambda_permission" "apigw" {
