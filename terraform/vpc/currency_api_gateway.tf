@@ -112,7 +112,7 @@ locals {
             },
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
-            "httpMethod" : "GET",
+            "httpMethod" : "POST",
             "uri" : "${local.lambda_invoke_arn}"
           }
         }
@@ -154,7 +154,7 @@ locals {
             },
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
-            "httpMethod" : "GET",
+            "httpMethod" : "POST",
             "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.path.coin_id" : "method.request.path.coin_id"
@@ -224,7 +224,7 @@ locals {
             },
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
-            "httpMethod" : "GET",
+            "httpMethod" : "POST",
             "uri" : "${local.lambda_invoke_arn}", 
             "requestParameters" : {
               "integration.request.path.coin_id" : "method.request.path.coin_id",
@@ -316,7 +316,7 @@ locals {
             },
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
-            "httpMethod" : "GET",
+            "httpMethod" : "POST",
             "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.querystring.vs_currency" : "method.request.querystring.vs_currency",
@@ -371,7 +371,7 @@ locals {
             },
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
-            "httpMethod" : "GET",
+            "httpMethod" : "POST",
             "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.querystring.include_platform" : "method.request.querystring.include_platform",

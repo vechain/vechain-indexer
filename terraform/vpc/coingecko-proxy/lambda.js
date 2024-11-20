@@ -145,7 +145,7 @@ exports.handler = async (event) => {
       {},
       "supportedVsCurrencies"
     );
-  } else if (path === "/coins/market-chart") {
+  } else if (/^\/coins\/[a-z-]+\/market-chart$/.test(path)) {
     return getResponseData(
       `/coins/${pathParameters.coin_id}/market_chart`,
       queryStringParameters,
@@ -157,7 +157,7 @@ exports.handler = async (event) => {
       queryStringParameters,
       "list"
     );
-  } else if (path === "/coins") {
+  } else if (/^\/coins\/[a-z-]+$/.test(path)) {
     return getResponseData(`/coins/${pathParameters.coin_id}`, {}, "coins");
   } else if (path === "/coins/markets") {
     return getResponseData(`/coins/markets`, queryStringParameters, "markets");
