@@ -1,7 +1,7 @@
 {
   "marketChart": {
     "httpMethod": "GET",
-    "path": "/coins/market-chart",
+    "path": "/coins/market_chart",
     "pathParameters": {
       "coin_id": "vechain"
     },

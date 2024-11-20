@@ -145,7 +145,7 @@ exports.handler = async (event) => {
       {},
       "supportedVsCurrencies"
     );
-  } else if (/^\/coins\/[a-z-]+\/market-chart$/.test(path)) {
+  } else if (/^\/coins\/[a-z-]+\/market_chart$/.test(path)) {
     return getResponseData(
       `/coins/${pathParameters.coin_id}/market_chart`,
       queryStringParameters,
