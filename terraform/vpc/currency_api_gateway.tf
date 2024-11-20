@@ -20,7 +20,7 @@ locals {
   // https://api.coingecko.com/api/v3/simple/supported_vs_currencies
   // implement this as rest api gateway that sits on top of coin-api.dev.veworld | coin-api.prod.veworld
   api_domain = var.domain_name_data[terraform.workspace]
-  cors       = {
+  cors = {
     "responses" : {
       "200" : {
         "description" : "200 response",
@@ -385,17 +385,10 @@ locals {
   }
 
   api_integration_json = jsonencode(local.api_integration_model)
-
-  security_group_ids = {
-    "dev"  = aws_security_group.sg_dev.id
-    "prod" = aws_security_group.sg_prod.id
-    "prod-blue" = aws_security_group.sg_prod_blue.id
-    "prod-green" = aws_security_group.sg_prod_green.id
-  }
 }
 
 resource "aws_acm_certificate" "domain_cert" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count             = local.env.environment == "prod" ? 1 : 0
   domain_name       = local.api_domain.name
   validation_method = "DNS"
   provider          = aws.us_east_1
@@ -422,16 +415,16 @@ resource "aws_route53_record" "domain_cert_validation" {
 }
 
 resource "aws_acm_certificate_validation" "cert_validation_block" {
-  count = local.env.environment == "prod" ? 1 : 0
-  certificate_arn         = aws_acm_certificate.domain_cert[0].arn
-  provider                = aws.us_east_1
+  count           = local.env.environment == "prod" ? 1 : 0
+  certificate_arn = aws_acm_certificate.domain_cert[0].arn
+  provider        = aws.us_east_1
   validation_record_fqdns = [
     for record in aws_route53_record.domain_cert_validation : record.fqdn
   ]
 }
 
 resource "aws_api_gateway_rest_api" "currency_cache" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count             = local.env.environment == "prod" ? 1 : 0
   name              = "coin_currency_cache"
   body              = local.api_integration_json
   put_rest_api_mode = "merge"
@@ -443,9 +436,10 @@ resource "aws_api_gateway_rest_api" "currency_cache" {
     create_before_destroy = true
   }
 }
+
 // settings for all resources
 resource "aws_api_gateway_method_settings" "all" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count       = local.env.environment == "prod" ? 1 : 0
   method_path = "*/*"
   rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
   stage_name  = aws_api_gateway_stage.default[0].stage_name
@@ -463,7 +457,7 @@ resource "aws_api_gateway_method_settings" "all" {
 
 
 resource "aws_api_gateway_domain_name" "api" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count           = local.env.environment == "prod" ? 1 : 0
   domain_name     = local.api_domain.name
   certificate_arn = aws_acm_certificate_validation.cert_validation_block[0].certificate_arn
   security_policy = "TLS_1_2"
@@ -474,7 +468,7 @@ resource "aws_api_gateway_domain_name" "api" {
 }
 
 resource "aws_route53_record" "apigw_domain_alias" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count   = local.env.environment == "prod" ? 1 : 0
   name    = local.api_domain.name
   type    = "A"
   zone_id = local.api_domain.zone
@@ -487,16 +481,16 @@ resource "aws_route53_record" "apigw_domain_alias" {
 }
 
 resource "aws_api_gateway_base_path_mapping" "currency_cache" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count       = local.env.environment == "prod" ? 1 : 0
   api_id      = aws_api_gateway_rest_api.currency_cache[0].id
   domain_name = aws_api_gateway_domain_name.api[0].domain_name
   stage_name  = aws_api_gateway_stage.default[0].stage_name
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count       = local.env.environment == "prod" ? 1 : 0
   rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
-  triggers    = {
+  triggers = {
     redeployment = sha1(local.api_integration_json)
   }
   lifecycle {
@@ -505,24 +499,24 @@ resource "aws_api_gateway_deployment" "deployment" {
 }
 
 resource "aws_cloudwatch_log_group" "gw_log_group" {
-  count = local.env.environment == "prod" ? 1 : 0
-  name_prefix = "api_gw_log_group"
+  count             = local.env.environment == "prod" ? 1 : 0
+  name_prefix       = "api_gw_log_group"
   retention_in_days = 30
 }
 
 resource "aws_api_gateway_client_certificate" "client_cert" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count       = local.env.environment == "prod" ? 1 : 0
   description = "Client certificate for API Gateway"
 }
 
 resource "aws_api_gateway_stage" "default" {
-  count = local.env.environment == "prod" ? 1 : 0
-  deployment_id = aws_api_gateway_deployment.deployment[0].id
-  rest_api_id   = aws_api_gateway_rest_api.currency_cache[0].id
-  stage_name    = "default"
+  count                 = local.env.environment == "prod" ? 1 : 0
+  deployment_id         = aws_api_gateway_deployment.deployment[0].id
+  rest_api_id           = aws_api_gateway_rest_api.currency_cache[0].id
+  stage_name            = "default"
   cache_cluster_enabled = true
-  cache_cluster_size = "0.5"
-  xray_tracing_enabled = true
+  cache_cluster_size    = "0.5"
+  xray_tracing_enabled  = true
   client_certificate_id = aws_api_gateway_client_certificate.client_cert[0].id
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.gw_log_group[0].arn
@@ -531,7 +525,7 @@ resource "aws_api_gateway_stage" "default" {
 }
 
 resource "aws_api_gateway_account" "gw_role_account" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count               = local.env.environment == "prod" ? 1 : 0
   cloudwatch_role_arn = aws_iam_role.gw_cloudwatch[0].arn
 }
 
@@ -549,7 +543,7 @@ data "aws_iam_policy_document" "gw_assume_role" {
 }
 
 resource "aws_iam_role" "gw_cloudwatch" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count              = local.env.environment == "prod" ? 1 : 0
   name_prefix        = "api_gateway_cloudwatch_global"
   assume_role_policy = data.aws_iam_policy_document.gw_assume_role.json
 }
@@ -572,7 +566,7 @@ data "aws_iam_policy_document" "gw_cloudwatch" {
   }
 }
 resource "aws_iam_role_policy" "gw_cloudwatch" {
-  count = local.env.environment == "prod" ? 1 : 0
+  count  = local.env.environment == "prod" ? 1 : 0
   name   = "default"
   role   = aws_iam_role.gw_cloudwatch[0].id
   policy = data.aws_iam_policy_document.gw_cloudwatch.json
@@ -584,14 +578,14 @@ resource "aws_kms_key" "lambda_env_var_encryption" {
 }
 
 resource "aws_sqs_queue" "dlq" {
-  name = "lambda_dlq"
+  name              = "lambda_dlq"
   kms_master_key_id = aws_kms_key.lambda_env_var_encryption.arn
 }
 
 resource "aws_iam_policy" "lambda_sqs_policy" {
   name        = "LambdaSQSPolicy"
   description = "Policy for Lambda to send messages to SQS"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
@@ -613,7 +607,7 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_policy_attachment" {
 resource "aws_iam_policy" "lambda_vpc_policy" {
   name        = "LambdaVPCPolicy"
   description = "Policy for Lambda to manage network interfaces in VPC"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
@@ -635,10 +629,47 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_policy_vpc" {
   policy_arn = aws_iam_policy.lambda_vpc_policy.arn
 }
 
+resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  name              = "/aws/lambda/coingecko_proxy"
+  retention_in_days = 30
+}
+
+resource "aws_iam_policy" "lambda_logging_policy" {
+  name        = "LambdaLoggingPolicy"
+  description = "Policy for Lambda to write logs to CloudWatch"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_policy_logging" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_logging_policy.arn
+}
+
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_file = "./coingecko-proxy/lambda.js"
   output_path = "./coingecko-proxy/lambda.zip"
+}
+
+data "aws_secretsmanager_secret" "coingecko_api_key" {
+  name = "coingecko_api_key"
+}
+
+data "aws_secretsmanager_secret_version" "coingecko_api_key" {
+  secret_id = data.aws_secretsmanager_secret.coingecko_api_key.id
 }
 
 resource "aws_lambda_function" "coingecko_proxy" {
@@ -650,20 +681,17 @@ resource "aws_lambda_function" "coingecko_proxy" {
   source_code_hash = filebase64sha256(data.archive_file.lambda_zip.output_path)
   environment {
     variables = {
-      COINGECKO_API_URL = "https://api.coingecko.com/api/v3"
+      BASE_URL          = "https://api.coingecko.com/api/v3"
+      COINGECKO_API_KEY = jsondecode(data.aws_secretsmanager_secret_version.coingecko_api_key.secret_string).COINGECKO_API_KEY
     }
   }
-  kms_key_arn = aws_kms_key.lambda_env_var_encryption.arn
+  kms_key_arn                    = aws_kms_key.lambda_env_var_encryption.arn
   reserved_concurrent_executions = 10
   dead_letter_config {
     target_arn = aws_sqs_queue.dlq.arn
   }
   tracing_config {
     mode = "Active"
-  }
-  vpc_config {
-    subnet_ids         = data.aws_subnets.ct_pub_subnets.ids
-    security_group_ids = [lookup(local.security_group_ids, local.env.environment)]
   }
   timeout = 10
 }
@@ -685,17 +713,17 @@ resource "aws_iam_role" "lambda_exec" {
 }
 
 resource "aws_api_gateway_request_validator" "request_validator" {
-  rest_api_id = aws_api_gateway_rest_api.currency_cache[0].id
-  name        = "request_validator"
-  validate_request_body = false
+  rest_api_id                 = aws_api_gateway_rest_api.currency_cache[0].id
+  name                        = "request_validator"
+  validate_request_body       = false
   validate_request_parameters = true
 }
 
 resource "aws_api_gateway_method" "coingecko" {
-  rest_api_id   = aws_api_gateway_rest_api.currency_cache[0].id
-  resource_id   = aws_api_gateway_resource.coingecko.id
-  http_method   = "GET"
-  authorization = "AWS_IAM"
+  rest_api_id          = aws_api_gateway_rest_api.currency_cache[0].id
+  resource_id          = aws_api_gateway_resource.coingecko.id
+  http_method          = "GET"
+  authorization        = "AWS_IAM"
   request_validator_id = aws_api_gateway_request_validator.request_validator.id
 }
 
