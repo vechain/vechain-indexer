@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+const aws_console_tests = require("./aws_console_tests.json");
 
 const lambda = new AWS.Lambda({
   region: process.env.AWS_REGION,
@@ -22,15 +23,16 @@ const invokeLambda = async (event) => {
 // For integration test make sure that the lambda is running
 // The code that you want to test
 describe("Lambda Integration Tests", () => {
-  test("GET /coins/market-chart", async () => {
-    const event = {
-      httpMethod: "GET",
-      path: "/coins/market-chart",
-      pathParameters: { coin_id: "vechain" },
-      queryStringParameters: { vs_currency: "usd", days: "30" },
-    };
+  test("GET /coins/{coin_id}", async () => {
+    const response = await invokeLambda(aws_console_tests.coins);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBeTruthy();
+    const data = JSON.parse(response.body);
+    expect(data.asset_platform_id).toEqual("vechain");
+  });
 
-    const response = await invokeLambda(event);
+  test("GET /coins/{coin_id}/market_chart", async () => {
+    const response = await invokeLambda(aws_console_tests.marketChart);
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
@@ -38,13 +40,9 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("GET /simple/supported_vs_currencies", async () => {
-    const event = {
-      httpMethod: "GET",
-      path: "/simple/supported_vs_currencies",
-      queryStringParameters: null,
-    };
-
-    const response = await invokeLambda(event);
+    const response = await invokeLambda(
+      aws_console_tests.supportedVsCurrencies
+    );
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
@@ -52,13 +50,7 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("GET /coins/list", async () => {
-    const event = {
-      httpMethod: "GET",
-      path: "/coins/list",
-      queryStringParameters: { include_platform: "true" },
-    };
-
-    const response = await invokeLambda(event);
+    const response = await invokeLambda(aws_console_tests.list);
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
@@ -66,19 +58,7 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("GET /coins/markets", async () => {
-    const event = {
-      httpMethod: "GET",
-      path: "/coins/markets",
-      queryStringParameters: {
-        vs_currency: "usd",
-        order: "market_cap_desc",
-        per_page: "10",
-        page: "1",
-        sparkline: "false",
-      },
-    };
-
-    const response = await invokeLambda(event);
+    const response = await invokeLambda(aws_console_tests.markets);
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
@@ -86,23 +66,15 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("Unsupported path returns 404", async () => {
-    const event = {
-      httpMethod: "GET",
-      path: "/unknown/path",
-    };
-
-    const response = await invokeLambda(event);
+    const response = await invokeLambda(aws_console_tests.unknownPath);
     expect(response.statusCode).toBe(404);
     expect(JSON.parse(response.body)).toEqual({ message: "Not Found" });
   });
 
   test("Unsupported HTTP method returns 405", async () => {
-    const event = {
-      httpMethod: "POST",
-      path: "/coins/markets",
-    };
-
-    const response = await invokeLambda(event);
+    const response = await invokeLambda(
+      aws_console_tests.unsupportedHttpMethod
+    );
     expect(response.statusCode).toBe(405);
     expect(JSON.parse(response.body)).toEqual({
       message: "Method Not Allowed",

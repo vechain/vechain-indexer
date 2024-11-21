@@ -25,11 +25,9 @@ const validationSchema = {
   },
   coins: {
     rootType: "object",
-    requiredFields: ["id", "name", "symbol"],
+    requiredFields: ["asset_platform_id"],
     types: {
-      id: "string",
-      name: "string",
-      symbol: "string",
+      asset_platform_id: "string",
     },
   },
   markets: {
@@ -91,14 +89,13 @@ function validateResponse(data, schema) {
   return true; // Validation passed
 }
 
-
 const getResponseData = async (route, queryStringParameters, validatorId) => {
   let queryParams = new URLSearchParams(queryStringParameters).toString();
-  
+
   if (queryParams) {
     queryParams = `?${queryParams}`;
   }
-  
+
   try {
     const response = await fetch(process.env.BASE_URL + route + queryParams, {
       headers: {
@@ -106,16 +103,16 @@ const getResponseData = async (route, queryStringParameters, validatorId) => {
         "x-cg-demo-api-key": process.env.COINGECKO_API_KEY,
       },
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       console.error("Coingecko returned error data:", data);
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    
+
     validateResponse(data, validationSchema[validatorId]);
-    
+
     return {
       statusCode: 200,
       body: JSON.stringify(data),
@@ -145,22 +142,40 @@ exports.handler = async (event) => {
       {},
       "supportedVsCurrencies"
     );
-  } else if (/^\/coins\/[a-z-]+\/market_chart$/.test(path)) {
-    return getResponseData(
-      `/coins/${pathParameters.coin_id}/market_chart`,
-      queryStringParameters,
-      "marketChart"
-    );
   } else if (path === "/coins/list") {
+    if (!queryStringParameters) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Missing query parameters" }),
+      };
+    }
     return getResponseData(
       `/coins/list?include_platform=true`,
       queryStringParameters,
       "list"
     );
+  } else if (path === "/coins/markets") {
+    if (!queryStringParameters) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Missing query parameters" }),
+      };
+    }
+    return getResponseData(`/coins/markets`, queryStringParameters, "markets");
+  } else if (/^\/coins\/[a-z-]+\/market_chart$/.test(path)) {
+    if (!queryStringParameters) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "Missing query parameters" }),
+      };
+    }
+    return getResponseData(
+      `/coins/${pathParameters.coin_id}/market_chart`,
+      queryStringParameters,
+      "marketChart"
+    );
   } else if (/^\/coins\/[a-z-]+$/.test(path)) {
     return getResponseData(`/coins/${pathParameters.coin_id}`, {}, "coins");
-  } else if (path === "/coins/markets") {
-    return getResponseData(`/coins/markets`, queryStringParameters, "markets");
   }
 
   return {

@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "VPC configuration for veworld indexer",
     "scripts": {
-        "test:unit": "LAMBDA_FUNCTION_NAME=coingeckoProxy AWS_REGION=eu-west-1 jest lambda.spec.js",
-        "test:integration": "LAMBDA_FUNCTION_NAME=coingeckoProxy AWS_REGION=eu-west-1 jest lambda.integration.spec.js"
+        "test:unit": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest lambda.spec.js",
+        "test:integration": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest lambda.integration.spec.js"
     },
     "author": "Luc Grandin <luc.grandin@vechain.org>",
     "license": "ISC",

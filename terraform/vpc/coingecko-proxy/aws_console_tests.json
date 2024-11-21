@@ -1,7 +1,7 @@
 {
   "marketChart": {
     "httpMethod": "GET",
-    "path": "/coins/market_chart",
+    "path": "/coins/vechain/market_chart",
     "pathParameters": {
       "coin_id": "vechain"
     },
@@ -28,9 +28,6 @@
   "supportedVsCurrencies": {
     "httpMethod": "GET",
     "path": "/simple/supported_vs_currencies",
-    "pathParameters": {
-      "coin_id": "vechain"
-    },
     "expectedResponse": 200,
     "mockedCoingeckoResponse": ["usd", "eur"]
   },
@@ -51,15 +48,13 @@
   },
   "coins": {
     "httpMethod": "GET",
-    "path": "/coins",
+    "path": "/coins/vechain",
     "pathParameters": {
       "coin_id": "vechain"
     },
     "expectedResponse": 200,
     "mockedCoingeckoResponse": {
-      "id": "vechain",
-      "symbol": "vet",
-      "name": "VeChain"
+      "asset_platform_id": "vechain"
     }
   },
   "markets": {
@@ -94,7 +89,7 @@
     "expectedResponse": 404,
     "mockedCoingeckoResponse": null
   },
-  "wrongHttpMethod": {
+  "unsupportedHttpMethod": {
     "httpMethod": "POST",
     "path": "/coins/markets",
     "queryStringParameters": {
