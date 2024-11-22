@@ -605,31 +605,6 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_sqs_policy.arn
 }
 
-resource "aws_iam_policy" "lambda_vpc_policy" {
-  name        = "LambdaVPCPolicy"
-  description = "Policy for Lambda to manage network interfaces in VPC"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "ec2:CreateNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DeleteNetworkInterface",
-          "ec2:AttachNetworkInterface"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_exec_policy_vpc" {
-  role       = aws_iam_role.lambda_exec.name
-  policy_arn = aws_iam_policy.lambda_vpc_policy.arn
-}
-
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/coingecko_proxy"
   retention_in_days = 30
@@ -673,6 +648,18 @@ data "aws_secretsmanager_secret_version" "coingecko_api_key" {
   secret_id = data.aws_secretsmanager_secret.coingecko_api_key.id
 }
 
+resource "aws_lambda_code_signing_config" "coin_lambda_code_signing" {
+  allowed_publishers {
+    signing_profile_version_arns = [
+      "arn:aws:signer:${local.env.region}:${data.aws_caller_identity.current.account_id}:signing-profile/example-signing-profile"
+    ]
+  }
+
+  policies {
+    untrusted_artifact_on_deployment = "Enforce"
+  }
+}
+
 resource "aws_lambda_function" "coingecko_proxy" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "coingecko_proxy"
@@ -695,6 +682,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
     mode = "Active"
   }
   timeout = 10
+  code_signing_config_arn = aws_lambda_code_signing_config.coin_lambda_code_signing.arn
 }
 
 resource "aws_iam_role" "lambda_exec" {
