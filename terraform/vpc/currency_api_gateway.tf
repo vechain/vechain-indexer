@@ -386,6 +386,8 @@ locals {
   }
 
   api_integration_json = jsonencode(local.api_integration_model)
+  work_dir = "${path.module}/coingecko-proxy"
+  dist_file = "${path.module}/coingecko-proxy/lambda.zip"
 }
 
 resource "aws_acm_certificate" "domain_cert" {
@@ -640,6 +642,18 @@ data "archive_file" "lambda_zip" {
   output_path = "./coingecko-proxy/lambda.zip"
 }
 
+resource "terraform_data" "lambda_archive" {
+  triggers_replace = timestamp()
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash"]
+    working_dir = local.work_dir
+    command = "test-and-archive.sh"
+  }
+
+  input = local.dist_file
+}
+
 data "aws_secretsmanager_secret" "coingecko_api_key" {
   name = "coingecko_api_key"
 }
@@ -661,12 +675,12 @@ resource "aws_lambda_code_signing_config" "coin_lambda_code_signing" {
 }
 
 resource "aws_lambda_function" "coingecko_proxy" {
-  filename         = data.archive_file.lambda_zip.output_path
+  filename         = terraform_data.lambda_archive.output
   function_name    = "coingecko_proxy"
   role             = aws_iam_role.lambda_exec.arn
   handler          = "lambda.handler"
   runtime          = "nodejs20.x"
-  source_code_hash = filebase64sha256(data.archive_file.lambda_zip.output_path)
+  source_code_hash = filebase64sha256(terraform_data.lambda_archive.output)
   environment {
     variables = {
       BASE_URL          = "https://api.coingecko.com/api/v3"
