@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.2.3"
+    id("org.springframework.boot") version "3.3.6"
     id("io.spring.dependency-management") version "1.1.4"
     id("maven-publish")
     kotlin("jvm") version "1.9.0"
@@ -39,7 +39,7 @@ allprojects {
             force(
                 "com.google.protobuf:protobuf-java:3.21.7",
                 "org.java-websocket:Java-WebSocket:1.5.0",
-                "org.springframework:spring-web:6.1.6",
+                "org.springframework:spring-web:6.1.13",
             )
         }
     }
@@ -198,9 +198,9 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.2.3")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.2.3")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.2.3")
+        implementation("org.springframework.boot:spring-boot-starter:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.3.6")
         implementation("org.springframework:spring-webflux") {
             version {
                 strictly("6.1.13")
@@ -208,25 +208,25 @@ allprojects {
         }
         implementation("org.springframework:spring-core") {
             version {
-                strictly("6.1.6")
+                strictly("6.1.13")
             }
         }
         implementation("org.springframework:spring-web") {
             version {
-                strictly("6.1.6")
+                strictly("6.1.13")
             }
         }
         implementation("io.netty:netty-codec-http") {
             version {
-                strictly("4.1.108.Final")
+                strictly("4.1.115.Final")
             }
         }
         implementation("io.netty:netty-common") {
             version {
-                strictly("4.1.115")
+                strictly("4.1.115.Final")
             }
         }
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.3.6")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -240,7 +240,7 @@ allprojects {
         implementation("org.vechain:indexer-core:2.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.3")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.3.6")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
