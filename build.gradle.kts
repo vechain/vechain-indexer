@@ -37,7 +37,7 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             force(
-                "com.google.protobuf:protobuf-java:3.21.7",
+                "com.google.protobuf:protobuf-java:3.25.5",
                 "org.java-websocket:Java-WebSocket:1.5.0",
                 "org.springframework:spring-web:6.1.13",
             )
