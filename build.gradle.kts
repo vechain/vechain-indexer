@@ -198,9 +198,14 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter:3.2.3")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.2.3")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.2.3")
+        implementation("org.springframework:spring-webflux") {
+            version {
+                strictly("6.1.13")
+            }
+        }
         implementation("org.springframework:spring-core") {
             version {
                 strictly("6.1.6")
@@ -214,6 +219,11 @@ allprojects {
         implementation("io.netty:netty-codec-http") {
             version {
                 strictly("4.1.108.Final")
+            }
+        }
+        implementation("io.netty:netty-common") {
+            version {
+                strictly("4.1.115")
             }
         }
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.2.3")
@@ -230,7 +240,7 @@ allprojects {
         implementation("org.vechain:indexer-core:2.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.3.6")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.3")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
