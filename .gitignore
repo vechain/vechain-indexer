@@ -58,3 +58,4 @@ sample-data
 node_modules/
 lambda.zip
 apply.plan
+dist/

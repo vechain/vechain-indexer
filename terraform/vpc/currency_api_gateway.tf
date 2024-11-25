@@ -225,7 +225,7 @@ locals {
             "passthroughBehavior" : "when_no_match",
             "type" : "AWS_PROXY",
             "httpMethod" : "POST",
-            "uri" : "${local.lambda_invoke_arn}", 
+            "uri" : "${local.lambda_invoke_arn}",
             "requestParameters" : {
               "integration.request.path.coin_id" : "method.request.path.coin_id",
               "integration.request.querystring.days" : "method.request.querystring.days",
@@ -386,8 +386,8 @@ locals {
   }
 
   api_integration_json = jsonencode(local.api_integration_model)
-  work_dir = "${path.module}/coingecko-proxy"
-  dist_file = "${path.module}/coingecko-proxy/lambda.zip"
+  work_dir             = "${path.module}/coingecko-proxy"
+  dist_file            = "${path.module}/coingecko-proxy/lambda.zip"
 }
 
 resource "aws_acm_certificate" "domain_cert" {
@@ -648,7 +648,7 @@ resource "terraform_data" "lambda_archive" {
   provisioner "local-exec" {
     interpreter = ["/bin/bash"]
     working_dir = local.work_dir
-    command = "test-and-archive.sh"
+    command     = "test-and-archive.sh"
   }
 
   input = local.dist_file
@@ -695,7 +695,7 @@ resource "aws_lambda_function" "coingecko_proxy" {
   tracing_config {
     mode = "Active"
   }
-  timeout = 10
+  timeout                 = 10
   code_signing_config_arn = aws_lambda_code_signing_config.coin_lambda_code_signing.arn
 }
 
