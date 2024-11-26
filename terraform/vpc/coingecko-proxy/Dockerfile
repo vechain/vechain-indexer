@@ -42,7 +42,7 @@ RUN yarn build
 # select only few files
 COPY --from=test ["/var/task/dist/src/lambda.js", "./"]
 
-RUN deterministic-zip -r package.zip /lambda.js
+RUN deterministic-zip -r package.zip lambda.js
 RUN echo foo
 
 FROM scratch
