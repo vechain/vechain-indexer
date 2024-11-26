@@ -1,18 +1,29 @@
 {
-    "name": "veworld-indexer-vpc",
-    "version": "1.0.0",
-    "description": "VPC configuration for veworld indexer",
-    "scripts": {
-        "test:unit": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest lambda.spec.js",
-        "test:integration": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest lambda.integration.spec.js"
-    },
-    "author": "Luc Grandin <luc.grandin@vechain.org>",
-    "license": "ISC",
-    "dependencies": {
-        "aws-sdk": "^2.1692.0"
-    },
-    "devDependencies": {
-        "jest": "^29.7.0",
-        "jest-fetch-mock": "^3.0.3"
-    }
+  "name": "veworld-indexer-vpc",
+  "version": "1.0.0",
+  "description": "VPC configuration for veworld indexer",
+  "scripts": {
+    "test:js:unit": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest dist/tests/lambda.spec.js",
+    "test:js:integration": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest dist/tests/lambda.integration.spec.js",
+    "test:unit": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest tests/lambda.spec.ts",
+    "test:integration": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest tests/lambda.integration.spec.ts",
+    "test": "LAMBDA_FUNCTION_NAME=coingecko_proxy AWS_REGION=eu-west-1 jest",
+    "build": "tsc"
+  },
+  "author": "Luc Grandin <luc.grandin@vechain.org>",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.26.0",
+    "@babel/preset-typescript": "^7.26.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.9.3",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "jest-fetch-mock": "^3.0.3",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  }
 }
