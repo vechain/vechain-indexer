@@ -1,4 +1,4 @@
-export const awsConsoleTests = {
+export const lambdaTestData = {
   marketChart: {
     httpMethod: "GET",
     path: "/coins/vechain/market_chart",

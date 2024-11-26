@@ -1,3 +1,6 @@
+import { validationSchema as coingeckoValidationSchema } from "./coingecko/query";
+import { validateResponse } from "./utils/validate-data";
+
 const INTERNAL_SERVER_ERROR = {
   statusCode: 500,
   body: JSON.stringify({
@@ -6,90 +9,7 @@ const INTERNAL_SERVER_ERROR = {
   }),
 };
 
-const validationSchema = {
-  supportedVsCurrencies: {
-    rootType: "array:string",
-    requiredFields: [],
-  },
-  marketChart: {
-    rootType: "object",
-    requiredFields: ["prices"],
-    types: {
-      prices: "object",
-    },
-  },
-  list: {
-    rootType: "array:object",
-    requiredFields: [],
-    types: {},
-  },
-  coins: {
-    rootType: "object",
-    requiredFields: ["asset_platform_id"],
-    types: {
-      asset_platform_id: "string",
-    },
-  },
-  markets: {
-    rootType: "array:object",
-    requiredFields: [],
-    types: {},
-  },
-};
-
-function validateType(value, expectedType) {
-  if (expectedType.startsWith("array:")) {
-    if (!Array.isArray(value)) {
-      return false;
-    }
-    const arrayType = expectedType.split(":")[1];
-    return value.every((item) => typeof item === arrayType);
-  }
-  return typeof value === expectedType;
-}
-
-function validateResponse(data, schema) {
-  const { rootType, requiredFields, types } = schema;
-
-  if (rootType.startsWith("array:")) {
-    if (!validateType(data, rootType)) {
-      throw new Error(
-        `Response validation error. Invalid root type. Expected '${rootType}', got '${typeof data}'`
-      );
-    }
-    return true; // Root array validation passed
-  }
-
-  if (
-    rootType !== "object" ||
-    typeof data !== "object" ||
-    Array.isArray(data)
-  ) {
-    throw new Error(
-      `Response validation error. Invalid root type. Expected '${rootType}', got '${typeof data}'`
-    );
-  }
-
-  for (const field of requiredFields || []) {
-    if (!(field in data)) {
-      throw new Error(
-        `Response validation error. Missing required field: ${field}`
-      );
-    }
-
-    const expectedType = types[field];
-    if (!validateType(data[field], expectedType)) {
-      throw new Error(
-        `Response validation error. Invalid type for field '${field}'. Expected '${expectedType}', got '${typeof data[
-          field
-        ]}'`
-      );
-    }
-  }
-  return true; // Validation passed
-}
-
-const getResponseData = async (route, queryStringParameters, validatorId) => {
+const getResponseData = async (route: any, queryStringParameters: any, validatorId: any) => {
   let queryParams = new URLSearchParams(queryStringParameters).toString();
 
   if (queryParams) {
@@ -111,7 +31,7 @@ const getResponseData = async (route, queryStringParameters, validatorId) => {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    validateResponse(data, validationSchema[validatorId]);
+    validateResponse(data, coingeckoValidationSchema[validatorId]);
 
     return {
       statusCode: 200,

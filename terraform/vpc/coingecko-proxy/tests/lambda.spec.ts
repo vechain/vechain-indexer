@@ -1,6 +1,6 @@
 import fetch from "jest-fetch-mock"
 import {handler as lambdaHandler} from "../src/lambda";
-import {awsConsoleTests} from "./aws_console_tests";
+import {lambdaTestData} from "./lambda-test-data";
 
 beforeEach(() => {
   fetch.resetMocks();
@@ -10,13 +10,13 @@ beforeEach(() => {
 
 describe("Lambda Function Tests", () => {
   it.each(
-    Object.keys(awsConsoleTests).map((testName) => [
-      awsConsoleTests[testName].httpMethod,
-      awsConsoleTests[testName].path,
-      awsConsoleTests[testName].queryStringParameters,
-      awsConsoleTests[testName].pathParameters,
-      awsConsoleTests[testName].expectedResponse,
-      awsConsoleTests[testName].mockedCoingeckoResponse,
+    (Object.keys(lambdaTestData) as (keyof typeof lambdaTestData)[]).map((testName: keyof typeof lambdaTestData) => [
+      lambdaTestData[testName].httpMethod,
+      lambdaTestData[testName].path,
+      'queryStringParameters' in lambdaTestData[testName] ? lambdaTestData[testName].queryStringParameters : {},
+      'pathParameters' in lambdaTestData[testName] ? lambdaTestData[testName].pathParameters : {},
+      lambdaTestData[testName].expectedResponse,
+      lambdaTestData[testName].mockedCoingeckoResponse,
     ])
   )(
     "should return the expected response for %s",
@@ -32,7 +32,7 @@ describe("Lambda Function Tests", () => {
         Promise.resolve({
           json: () => mockedCoingeckoResponse,
           ok: true,
-        } as Response)
+        } as unknown as Response)
       );
       const response = await lambdaHandler({
         httpMethod,
