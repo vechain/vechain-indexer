@@ -1,4 +1,18 @@
 export const lambdaTestData = {
+  priceList: {
+    httpMethod: "GET",
+    path: "/price-list",
+    queryStringParameters: {
+      vs_currency: "usd",
+    },
+    expectedResponse: 200,
+    mockedResponse: {
+      vet: "0.01602273",
+      vtho: "0.00093",
+      veusd: "1",
+      sha: "0.00034201",
+    },
+  },
   marketChart: {
     httpMethod: "GET",
     path: "/coins/vechain/market_chart",
@@ -10,7 +24,7 @@ export const lambdaTestData = {
       days: "30",
     },
     expectedResponse: 200,
-    mockedCoingeckoResponse: {
+    mockedResponse: {
       prices: [
         [1620000000000, 0.1],
         [1620000000001, 0.2],
@@ -29,7 +43,7 @@ export const lambdaTestData = {
     httpMethod: "GET",
     path: "/simple/supported_vs_currencies",
     expectedResponse: 200,
-    mockedCoingeckoResponse: ["usd", "eur"],
+    mockedResponse: ["usd", "eur"],
   },
   list: {
     httpMethod: "GET",
@@ -38,7 +52,7 @@ export const lambdaTestData = {
       include_platform: "true",
     },
     expectedResponse: 200,
-    mockedCoingeckoResponse: [
+    mockedResponse: [
       {
         id: "vechain",
         symbol: "vet",
@@ -53,7 +67,7 @@ export const lambdaTestData = {
       coin_id: "vechain",
     },
     expectedResponse: 200,
-    mockedCoingeckoResponse: {
+    mockedResponse: {
       asset_platform_id: "vechain",
     },
   },
@@ -68,7 +82,7 @@ export const lambdaTestData = {
       sparkline: "false",
     },
     expectedResponse: 200,
-    mockedCoingeckoResponse: [
+    mockedResponse: [
       {
         id: "vechain",
         symbol: "vet",
@@ -88,7 +102,7 @@ export const lambdaTestData = {
     pathParameters: null,
     queryStringParameters: null,
     expectedResponse: 404,
-    mockedCoingeckoResponse: null,
+    mockedResponse: null,
   },
   unsupportedHttpMethod: {
     httpMethod: "POST",
@@ -97,6 +111,6 @@ export const lambdaTestData = {
       vs_currency: "usd",
     },
     expectedResponse: 405,
-    mockedCoingeckoResponse: null,
+    mockedResponse: null,
   },
 };

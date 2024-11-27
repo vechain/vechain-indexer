@@ -1,3 +1,5 @@
+import { ValidationSchemaType } from "./types";
+
 export const validateType = (value: any, expectedType: any) => {
   if (expectedType.startsWith("array:")) {
     if (!Array.isArray(value)) {
@@ -9,7 +11,7 @@ export const validateType = (value: any, expectedType: any) => {
   return typeof value === expectedType;
 };
 
-export const validateResponse = (data: any, schema: {rootType: any, requiredFields: any, types: any}) => {
+export const validateResponse = (data: any, schema: ValidationSchemaType) => {
   const { rootType, requiredFields, types } = schema;
 
   if (rootType.startsWith("array:")) {
@@ -38,7 +40,7 @@ export const validateResponse = (data: any, schema: {rootType: any, requiredFiel
       );
     }
 
-    const expectedType = types[field];
+    const expectedType = types?.[field];
     if (!validateType(data[field], expectedType)) {
       throw new Error(
         `Response validation error. Invalid type for field '${field}'. Expected '${expectedType}', got '${typeof data[

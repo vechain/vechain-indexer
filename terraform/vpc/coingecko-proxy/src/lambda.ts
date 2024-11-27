@@ -1,50 +1,17 @@
-import { validationSchema as coingeckoValidationSchema } from "./coingecko/query";
-import { validateResponse } from "./utils/validate-data";
+import { INTERNAL_SERVER_ERROR } from "./utils/errors";
+import { getResponseData as getCoingeckoResponseData } from "./coingecko/query";
+import { getResponseData as getVechainStatsResponseData } from "./vechain-stats/query";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 
-const INTERNAL_SERVER_ERROR = {
-  statusCode: 500,
-  body: JSON.stringify({
-    message: "Internal Server Error",
-    error: "Error fetching price data",
-  }),
-};
-
-const getResponseData = async (route: any, queryStringParameters: any, validatorId: any) => {
-  let queryParams = new URLSearchParams(queryStringParameters).toString();
-
-  if (queryParams) {
-    queryParams = `?${queryParams}`;
-  }
-
-  try {
-    const response = await fetch(process.env.BASE_URL + route + queryParams, {
-      headers: {
-        accept: "application/json",
-        "x-cg-demo-api-key": process.env.COINGECKO_API_KEY as string,
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Coingecko returned error data:", data);
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    validateResponse(data, coingeckoValidationSchema[validatorId]);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify(data),
-    };
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return INTERNAL_SERVER_ERROR;
-  }
-};
-
-export const handler = async (event: any) => {
-  if (!process.env.COINGECKO_API_KEY || !process.env.BASE_URL) {
+export const handler = async (
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
+  if (
+    !process.env.COINGECKO_API_KEY ||
+    !process.env.COINGECKO_BASE_URL ||
+    !process.env.VECHAIN_STATS_BASE_URL ||
+    !process.env.VECHAIN_STATS_API_KEY
+  ) {
     console.error("Missing environment variables");
     return INTERNAL_SERVER_ERROR;
   }
@@ -56,8 +23,16 @@ export const handler = async (event: any) => {
     };
   }
 
-  if (path === "/simple/supported_vs_currencies") {
-    return getResponseData(
+
+  if (path === "/price-list") {
+    console.log("price-list");
+    return getVechainStatsResponseData(
+      `/token/price-list`,
+      queryStringParameters,
+      "price-list"
+    )
+  } else if (path === "/simple/supported_vs_currencies") {
+    return getCoingeckoResponseData(
       `/simple/supported_vs_currencies`,
       {},
       "supportedVsCurrencies"
@@ -69,7 +44,7 @@ export const handler = async (event: any) => {
         body: JSON.stringify({ message: "Missing query parameters" }),
       };
     }
-    return getResponseData(
+    return getCoingeckoResponseData(
       `/coins/list?include_platform=true`,
       queryStringParameters,
       "list"
@@ -81,7 +56,11 @@ export const handler = async (event: any) => {
         body: JSON.stringify({ message: "Missing query parameters" }),
       };
     }
-    return getResponseData(`/coins/markets`, queryStringParameters, "markets");
+    return getCoingeckoResponseData(
+      `/coins/markets`,
+      queryStringParameters,
+      "markets"
+    );
   } else if (/^\/coins\/[a-z-]+\/market_chart$/.test(path)) {
     if (!queryStringParameters) {
       return {
@@ -89,13 +68,17 @@ export const handler = async (event: any) => {
         body: JSON.stringify({ message: "Missing query parameters" }),
       };
     }
-    return getResponseData(
-      `/coins/${pathParameters.coin_id}/market_chart`,
+    return getCoingeckoResponseData(
+      `/coins/${pathParameters!.coin_id}/market_chart`,
       queryStringParameters,
       "marketChart"
     );
   } else if (/^\/coins\/[a-z-]+$/.test(path)) {
-    return getResponseData(`/coins/${pathParameters.coin_id}`, {}, "coins");
+    return getCoingeckoResponseData(
+      `/coins/${pathParameters!.coin_id}`,
+      {},
+      "coins"
+    );
   }
 
   return {
