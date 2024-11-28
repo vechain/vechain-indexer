@@ -2,6 +2,7 @@ import { APIGatewayProxyEventQueryStringParameters } from "aws-lambda";
 import { INTERNAL_SERVER_ERROR } from "../utils/errors";
 import { validateResponse } from "../utils/validate-data";
 import { validationSchema } from "./validation-schema";
+import { getSecretValues } from "../utils/secret-manager";
 
 export const getResponseData = async (
   route: string,
@@ -12,6 +13,8 @@ export const getResponseData = async (
     queryStringParameters as unknown as URLSearchParams
   ).toString();
 
+  let coingecko_api_key = await (await getSecretValues([])).coingecko_api_key
+
   if (queryParams) {
     queryParams = `?${queryParams}`;
   }
@@ -20,7 +23,7 @@ export const getResponseData = async (
     const response = await fetch(process.env.BASE_URL + route + queryParams, {
       headers: {
         accept: "application/json",
-        "x-cg-demo-api-key": process.env.COINGECKO_API_KEY as string,
+        "x-cg-demo-api-key": coingecko_api_key,
       },
     });
 

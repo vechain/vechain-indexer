@@ -6,13 +6,27 @@ import {
   APIGatewayProxyEventPathParameters,
   APIGatewayProxyEventQueryStringParameters,
 } from "aws-lambda";
+jest.mock("aws-sdk", () => {
+  const mockSecretsManager = {
+    getSecretValue: jest.fn().mockImplementation((value) => {
+      return {
+        promise: jest.fn().mockImplementation(() => {
+          return {
+            [value.SecretId]: "secretValue"
+          }
+        })
+      }
+    }),
+  };
+  return {
+    SecretsManager: jest.fn(() => mockSecretsManager),
+  };
+});
 
 beforeEach(() => {
   fetch.resetMocks();
-  process.env.COINGECKO_BASE_URL = "https://coingecko.base.url"; // Mock base URL
-  process.env.COINGECKO_API_KEY = "mock-api-key"; // Mock API key
-  process.env.VECHAIN_STATS_BASE_URL = "https://vechain-stats.base.url"; // Mock base URL
-  process.env.VECHAIN_STATS_API_KEY = "mock-api-key"; // Mock API key
+  process.env.COINGECKO_BASE_URL = "https://coingecko.base.url";
+  process.env.VECHAIN_STATS_BASE_URL = "https://vechain-stats.base.url"; 
 });
 
 describe("Lambda Function Tests", () => {

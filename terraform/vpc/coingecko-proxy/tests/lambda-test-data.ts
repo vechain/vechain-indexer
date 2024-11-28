@@ -11,6 +11,8 @@ export const lambdaTestData = {
       vtho: "0.00093",
       veusd: "1",
       sha: "0.00034201",
+      b3tr: "0.05567417",
+      vot3: "0.05567417"
     },
   },
   marketChart: {

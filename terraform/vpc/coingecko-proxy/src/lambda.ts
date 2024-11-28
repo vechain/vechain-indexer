@@ -2,19 +2,21 @@ import { INTERNAL_SERVER_ERROR } from "./utils/errors";
 import { getResponseData as getCoingeckoResponseData } from "./coingecko/query";
 import { getResponseData as getVechainStatsResponseData } from "./vechain-stats/query";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import { getSecretValues } from "./utils/secret-manager";
 
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   if (
-    !process.env.COINGECKO_API_KEY ||
     !process.env.COINGECKO_BASE_URL ||
-    !process.env.VECHAIN_STATS_BASE_URL ||
-    !process.env.VECHAIN_STATS_API_KEY
+    !process.env.VECHAIN_STATS_BASE_URL
   ) {
     console.error("Missing environment variables");
     return INTERNAL_SERVER_ERROR;
   }
+
+  await getSecretValues(["coingecko_api_key", "vechain_stats_api_key"]);
+
   const { httpMethod, pathParameters, path, queryStringParameters } = event;
   if (httpMethod !== "GET") {
     return {
@@ -24,7 +26,6 @@ export const handler = async (
   }
 
   if (path === "/price-list") {
-    console.log("price-list");
     return getVechainStatsResponseData(
       `/token/price-list`,
       queryStringParameters,
