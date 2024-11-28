@@ -28,5 +28,6 @@ jobs:
     with:
       gradle: true
       packages: '["api", "indexer"]'
+      download-coverage-report: false
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
