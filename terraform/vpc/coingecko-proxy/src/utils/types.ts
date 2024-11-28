@@ -1,7 +1,7 @@
 export type ValidationSchemaType = {
-    rootType: string;
-    requiredFields?: string[];
-    types?: {
-      [key: string]: string;
-    };
+  rootType: string;
+  requiredFields?: string[];
+  types?: {
+    [key: string]: string;
   };
+};

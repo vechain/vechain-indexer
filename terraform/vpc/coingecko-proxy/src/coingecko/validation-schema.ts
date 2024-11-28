@@ -2,7 +2,7 @@ import { ValidationSchemaType } from "../utils/types";
 
 export const validationSchema: { [key: string]: ValidationSchemaType } = {
   supportedVsCurrencies: {
-    rootType: "array:string"
+    rootType: "array:string",
   },
   marketChart: {
     rootType: "object",
@@ -22,6 +22,6 @@ export const validationSchema: { [key: string]: ValidationSchemaType } = {
     },
   },
   markets: {
-    rootType: "array:object"
+    rootType: "array:object",
   },
 };

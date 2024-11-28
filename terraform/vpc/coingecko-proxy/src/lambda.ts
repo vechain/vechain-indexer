@@ -23,14 +23,13 @@ export const handler = async (
     };
   }
 
-
   if (path === "/price-list") {
     console.log("price-list");
     return getVechainStatsResponseData(
       `/token/price-list`,
       queryStringParameters,
       "price-list"
-    )
+    );
   } else if (path === "/simple/supported_vs_currencies") {
     return getCoingeckoResponseData(
       `/simple/supported_vs_currencies`,

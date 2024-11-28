@@ -8,7 +8,9 @@ export const getResponseData = async (
   queryStringParameters: APIGatewayProxyEventQueryStringParameters | null,
   validatorId: keyof typeof validationSchema
 ) => {
-  let queryParams = new URLSearchParams(queryStringParameters as unknown as URLSearchParams).toString();
+  let queryParams = new URLSearchParams(
+    queryStringParameters as unknown as URLSearchParams
+  ).toString();
 
   if (queryParams) {
     queryParams = `?${queryParams}`;

@@ -1,5 +1,5 @@
-import * as AWS from "aws-sdk"
-import {lambdaTestData} from "./lambda-test-data";
+import * as AWS from "aws-sdk";
+import { lambdaTestData } from "./lambda-test-data";
 
 const lambda = new AWS.Lambda({
   region: process.env.AWS_REGION,
@@ -12,7 +12,9 @@ const invokeLambda = async (event: any) => {
   };
 
   try {
-    const response = await lambda.invoke(params as AWS.Lambda.InvocationRequest).promise();
+    const response = await lambda
+      .invoke(params as AWS.Lambda.InvocationRequest)
+      .promise();
     return JSON.parse(response.Payload!.toString());
   } catch (error) {
     console.error("Error invoking Lambda:", error);
@@ -40,9 +42,7 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("GET /simple/supported_vs_currencies", async () => {
-    const response = await invokeLambda(
-      lambdaTestData.supportedVsCurrencies
-    );
+    const response = await invokeLambda(lambdaTestData.supportedVsCurrencies);
     expect(response.statusCode).toBe(200);
     expect(response.body).toBeTruthy();
     const data = JSON.parse(response.body);
@@ -72,9 +72,7 @@ describe("Lambda Integration Tests", () => {
   });
 
   test("Unsupported HTTP method returns 405", async () => {
-    const response = await invokeLambda(
-      lambdaTestData.unsupportedHttpMethod
-    );
+    const response = await invokeLambda(lambdaTestData.unsupportedHttpMethod);
     expect(response.statusCode).toBe(405);
     expect(JSON.parse(response.body)).toEqual({
       message: "Method Not Allowed",

@@ -14,17 +14,19 @@ export const getResponseData = async (
 
   if (queryParams) {
     queryParams = `?${queryParams}&VCS_API_KEY=${process.env.VECHAIN_STATS_API_KEY}`;
-  }
-  else {
+  } else {
     queryParams = `?VCS_API_KEY=${process.env.VECHAIN_STATS_API_KEY}`;
   }
 
   try {
-    const response = await fetch(process.env.VECHAIN_STATS_BASE_URL + route + queryParams, {
-      headers: {
-        accept: "application/json",
-      },
-    });
+    const response = await fetch(
+      process.env.VECHAIN_STATS_BASE_URL + route + queryParams,
+      {
+        headers: {
+          accept: "application/json",
+        },
+      }
+    );
 
     const data = await response.json();
 
