@@ -2,6 +2,10 @@ image_tag:                       dev-latest
 region:                          eu-west-1
 project:                         veworld
 environment:                     dev
+root_domain:                     vechain.org
+application:                     veworld-dev
+slack_channel_id:                A0
+slack_workspace_id:              A0
 certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060
 azs:
   -                              eu-west-1a

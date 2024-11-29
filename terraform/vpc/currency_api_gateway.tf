@@ -86,6 +86,34 @@ locals {
     },
     "paths" : {
       //add cors to all paths
+      "/price-list" : {
+        "options" : local.cors,
+        "get" : {
+          "responses" : {
+            "200" : {
+              "description" : "200 response",
+              "content" : {
+                "application/json" : {
+                  "schema" : {
+                    "$ref" : "#/components/schemas/Empty"
+                  }
+                }
+              }
+            }
+          },
+          "x-amazon-apigateway-integration" : {
+            "responses" : {
+              "default" : {
+                "statusCode" : "200"
+              }
+            },
+            "passthroughBehavior" : "when_no_match",
+            "type" : "AWS_PROXY",
+            "httpMethod" : "POST",
+            "uri" : "${local.lambda_invoke_arn}"
+          }
+        }
+      }
       "/simple" : {
         "options" : local.cors
       },
@@ -638,7 +666,7 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_policy_logging" {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "./coingecko-proxy/lambda.js"
+  source_file = "./coingecko-proxy/dist/package.zip"
   output_path = "./coingecko-proxy/lambda.zip"
 }
 
@@ -652,14 +680,6 @@ resource "terraform_data" "lambda_archive" {
   }
 
   input = local.dist_file
-}
-
-data "aws_secretsmanager_secret" "coingecko_api_key" {
-  name = "coingecko_api_key"
-}
-
-data "aws_secretsmanager_secret_version" "coingecko_api_key" {
-  secret_id = data.aws_secretsmanager_secret.coingecko_api_key.id
 }
 
 resource "aws_lambda_code_signing_config" "coin_lambda_code_signing" {
@@ -683,8 +703,8 @@ resource "aws_lambda_function" "coingecko_proxy" {
   source_code_hash = filebase64sha256(terraform_data.lambda_archive.output)
   environment {
     variables = {
-      BASE_URL          = "https://api.coingecko.com/api/v3"
-      COINGECKO_API_KEY = jsondecode(data.aws_secretsmanager_secret_version.coingecko_api_key.secret_string).COINGECKO_API_KEY
+      COINGECKO_BASE_URL     = "https://api.coingecko.com/api/v3"
+      VECHAIN_STATS_BASE_URL = "https://api.vechainstats.com/v2/"
     }
   }
   kms_key_arn                    = aws_kms_key.lambda_env_var_encryption.arn
