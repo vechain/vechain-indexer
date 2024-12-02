@@ -1,3 +1,4 @@
+![Scorecard badge](https://github.com/vechain/veworld-indexer/blob/feature/scorecard-action/.assets/scorecard-badge.svg)
 # VeWorld Indexer
 
 [![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main.yml)
