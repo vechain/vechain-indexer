@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
 
   vechain-indexer:
@@ -7,6 +5,7 @@ services:
       context: .
       args:
         PACKAGE_NAME: indexer
+    container_name: vechain-indexer
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     healthcheck:
@@ -28,6 +27,7 @@ services:
       context: .
       args:
         PACKAGE_NAME: api
+    container_name: vechain-indexer-api
     restart: "no"
     hostname: vechain-indexer-api
     env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
