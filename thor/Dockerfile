@@ -1,4 +1,4 @@
-FROM vechain/thor:v2.1.1
+FROM vechain/thor:v2.1.4
 
 USER root
 
@@ -11,5 +11,4 @@ ENTRYPOINT thor solo --on-demand \
     --data-dir /data/thor \
     --api-addr 0.0.0.0:8669 \
     --api-cors '*' \
-    --api-backtrace-limit -1 \
     --verbosity 3
