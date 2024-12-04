@@ -6,7 +6,7 @@ services:
     build:
       context: .
       args:
-        VEWORLD_PACKAGE: indexer
+        PACKAGE_NAME: indexer
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     healthcheck:
@@ -21,13 +21,13 @@ services:
     networks:
       - vechain
       - vechain-database
-      - vechain-thor
+#      - vechain-thor
 
   vechain-indexer-api:
     build:
       context: .
       args:
-        VEWORLD_PACKAGE: api
+        PACKAGE_NAME: api
     restart: "no"
     hostname: vechain-indexer-api
     env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
@@ -43,7 +43,7 @@ services:
     networks:
       - vechain
       - vechain-database
-      - vechain-thor
+#      - vechain-thor
 
 networks:
   vechain:
@@ -52,6 +52,6 @@ networks:
   vechain-database:
     external: true
     name: vechain-database
-  vechain-thor:
-    external: true
-    name: vechain-thor
+#  vechain-thor:
+#    external: true
+#    name: vechain-thor
