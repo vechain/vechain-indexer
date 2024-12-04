@@ -38,6 +38,7 @@ open class NFTEventIndexer(
     ) {
 
     override fun processBlock(block: Block) {
+        runPruner(block.number)
 
         // Get the NFT transfer events from the block
         val nftTransfers = BlockUtils.getNftTransferEventsFromTopics(block)

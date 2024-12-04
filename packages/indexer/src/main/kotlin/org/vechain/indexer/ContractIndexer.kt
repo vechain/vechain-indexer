@@ -35,6 +35,7 @@ open class ContractIndexer(
     ) {
 
     override fun processBlock(block: Block) {
+        runPruner(block.number)
 
         // Get the master change events from the block
         val masterChangeEvents = extractMasterChangeEvents(block)
