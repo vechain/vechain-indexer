@@ -20,7 +20,6 @@ import org.vechain.indexer.model.rest.ContractType
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.ContractService
-import org.vechain.indexer.utils.*
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidContractType

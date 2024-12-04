@@ -3,6 +3,7 @@ package org.vechain.indexer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
@@ -16,16 +17,21 @@ import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
 open class ContractIndexer(
     private val contractService: ContractService,
     private val contractRepository: ContractRepository,
-    private val archiveService: ArchiveService,
+    contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.contracts}") private val syncLoggerInterval: Long,
+    @Value("\${indexer.syncLogInterval.contracts}") private val syncLogInterval: Long,
+    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
+    @Value("\${indexer.pruner.interval}") private val prunerInterval: Long,
     thorClient: ThorClient,
 ) :
-    VeWorldIndexer(
+    StatefulIndexer<IndexedContract, ContractArchive>(
         repository = contractRepository,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval,
+        prunerEnabled = prunerEnabled,
+        prunerInterval = prunerInterval,
+        archiveService = contractArchiveService
     ) {
 
     override fun processBlock(block: Block) {
@@ -44,9 +50,5 @@ open class ContractIndexer(
         val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
 
         contractService.saveContracts(current = contracts, archived = existingContracts)
-    }
-
-    override fun rollback(blockNumber: Long) {
-        archiveService.rollback(blockNumber, IndexedContract::class.java)
     }
 }

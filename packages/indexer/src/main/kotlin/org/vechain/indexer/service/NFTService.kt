@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.utils.IdUtils
 
@@ -12,12 +13,12 @@ import org.vechain.indexer.utils.IdUtils
 @Service
 open class NFTService(
     private val nftRepository: NFTRepository,
-    private val archiveService: ArchiveService,
+    private val nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
 ) {
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(current: List<IndexedNFT>, archived: List<IndexedNFT>) {
-        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+        if (archived.isNotEmpty()) nftArchiveService.saveAll(archived)
         if (current.isNotEmpty()) nftRepository.saveAll(current)
     }
 

@@ -30,3 +30,9 @@ constructor(
         return address
     }
 }
+
+@Document(collection = "contract_archives")
+data class ContractArchive(
+    @Id override val id: String,
+    override val data: IndexedContract,
+) : Archive<IndexedContract>

@@ -16,13 +16,13 @@ open class TransactionIndexer(
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.transactions}") private val syncLoggerInterval: Long,
+    @Value("\${indexer.syncLogInterval.transactions}") private val syncLogInterval: Long,
 ) :
-    VeWorldIndexer(
+    BaseIndexer(
         repository = txRepo,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval
     ) {
 
     override fun rollback(blockNumber: Long) {

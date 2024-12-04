@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.thor.model.Block
@@ -22,7 +23,7 @@ import org.web3j.utils.Numeric
 @Service
 open class ContractService(
     private val contractRepository: ContractRepository,
-    private val archiveService: ArchiveService,
+    private val contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
     private val thorService: ThorService
 ) {
 
@@ -280,7 +281,7 @@ open class ContractService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun saveContracts(current: List<IndexedContract>, archived: List<IndexedContract>) {
-        if (archived.isNotEmpty()) archiveService.saveAll(archived)
+        if (archived.isNotEmpty()) contractArchiveService.saveAll(archived)
 
         if (current.isNotEmpty()) contractRepository.saveAll(current)
     }

@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ExitCodeGenerator
 import org.springframework.boot.SpringApplication
@@ -11,14 +10,15 @@ import org.springframework.stereotype.Component
 
 @Component
 class IndexManager(
-    private val indexers: List<Indexer>,
-    private val applicationContext: ApplicationContext
+    private val indexers: List<BaseIndexer>,
+    private val applicationContext: ApplicationContext,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
+
         logger.info("Starting ${indexers.size} indexers")
 
         indexers.forEach { indexer ->

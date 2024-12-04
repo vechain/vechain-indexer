@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 
 @Profile("contracts")
@@ -14,7 +15,7 @@ class ContractsInitializerChangeUnit {
 
     companion object {
         val CONTRACTS = IndexedContract::class.java
-        const val CLAUSE_BLOCKNUMBER_IDX = "contract_blockNumber_-1"
+        const val CONTRACT_BLOCKNUMBER_IDX = "contract_blockNumber_-1"
 
         const val CREATOR_ISVIP180_IDX =
             "contract_creator_1_isVip180_1_blockNumber_-1_txId_-1__id_-1"
@@ -34,18 +35,23 @@ class ContractsInitializerChangeUnit {
         const val ISERC20_IDX = "isErc20_1_blockNumber_-1_txId_-1__id_-1"
         const val ISERC721_IDX = "isErc721_1_blockNumber_-1_txId_-1__id_-1"
         const val ISERC1155_IDX = "isErc1155_1_blockNumber_-1_txId_-1__id_-1"
+
+        val ARCHIVE_OBJ = ContractArchive::class.java
+        const val ARCHIVE_BLOCKNUMBER_IDX = "data.blockNumber_-1"
     }
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
         if (!mongoTemplate.collectionExists(CONTRACTS)) mongoTemplate.createCollection(CONTRACTS)
+        if (!mongoTemplate.collectionExists(ARCHIVE_OBJ))
+            mongoTemplate.createCollection(ARCHIVE_OBJ)
     }
 
     @Execution
     fun execution(mongoTemplate: MongoTemplate) {
         val blockNumberIdx: IndexDefinition =
             Index()
-                .named(CLAUSE_BLOCKNUMBER_IDX)
+                .named(CONTRACT_BLOCKNUMBER_IDX)
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .background()
 
@@ -168,11 +174,19 @@ class ContractsInitializerChangeUnit {
         mongoTemplate.indexOps(CONTRACTS).ensureIndex(isErc20Idx)
         mongoTemplate.indexOps(CONTRACTS).ensureIndex(isErc721Idx)
         mongoTemplate.indexOps(CONTRACTS).ensureIndex(isErc1155Idx)
+
+        val archiveBlockIdx: IndexDefinition =
+            Index()
+                .named(ARCHIVE_BLOCKNUMBER_IDX)
+                .on("data.blockNumber", Sort.Direction.DESC)
+                .background()
+
+        mongoTemplate.indexOps(ARCHIVE_OBJ).ensureIndex(archiveBlockIdx)
     }
 
     @RollbackExecution
     fun rollbackExecution(mongoTemplate: MongoTemplate) {
-        mongoTemplate.indexOps(CONTRACTS).dropIndex(CLAUSE_BLOCKNUMBER_IDX)
+        mongoTemplate.indexOps(CONTRACTS).dropIndex(CONTRACT_BLOCKNUMBER_IDX)
 
         mongoTemplate.indexOps(CONTRACTS).dropIndex(CREATOR_ISVIP180_IDX)
         mongoTemplate.indexOps(CONTRACTS).dropIndex(CREATOR_ISVIP181_IDX)
@@ -187,10 +201,13 @@ class ContractsInitializerChangeUnit {
         mongoTemplate.indexOps(CONTRACTS).dropIndex(ISERC20_IDX)
         mongoTemplate.indexOps(CONTRACTS).dropIndex(ISERC721_IDX)
         mongoTemplate.indexOps(CONTRACTS).dropIndex(ISERC1155_IDX)
+
+        mongoTemplate.indexOps(ARCHIVE_OBJ).dropIndex(ARCHIVE_BLOCKNUMBER_IDX)
     }
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
         if (mongoTemplate.collectionExists(CONTRACTS)) mongoTemplate.dropCollection(CONTRACTS)
+        if (mongoTemplate.collectionExists(ARCHIVE_OBJ)) mongoTemplate.dropCollection(ARCHIVE_OBJ)
     }
 }

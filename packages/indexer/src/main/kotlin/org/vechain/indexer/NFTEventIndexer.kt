@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
@@ -18,17 +19,22 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftService: NFTService,
-    private val archiveService: ArchiveService,
+    nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.nfts}") private val syncLoggerInterval: Long,
+    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
+    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
+    @Value("\${indexer.pruner.interval}") private val prunerInterval: Long
 ) :
-    VeWorldIndexer(
+    StatefulIndexer<IndexedNFT, NFTArchive>(
         repository = nftRepository,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval,
+        prunerEnabled = prunerEnabled,
+        prunerInterval = prunerInterval,
+        archiveService = nftArchiveService
     ) {
 
     override fun processBlock(block: Block) {
@@ -68,9 +74,5 @@ open class NFTEventIndexer(
                 blockTimestamp = block.timestamp,
             )
         }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        archiveService.rollback(blockNumber, IndexedNFT::class.java)
     }
 }

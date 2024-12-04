@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.exception.ArchiveException
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
@@ -17,9 +16,8 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION1
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_ROLLBACK_TEST_VERSION2
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
-import org.vechain.indexer.model.Archive
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
-import org.vechain.indexer.repository.ArchiveRepository
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
@@ -29,7 +27,6 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.api.expectThat
-import strikt.api.expectThrows
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
@@ -37,13 +34,11 @@ internal class ContractIndexerTest {
 
     @MockK lateinit var thorService: ThorService
 
-    @MockK lateinit var archiveRepository: ArchiveRepository
-
     @MockK lateinit var contractRepository: ContractRepository
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var archiveService: ArchiveService
+    private lateinit var archiveService: ArchiveService<IndexedContract, ContractArchive>
 
     private lateinit var contractService: ContractService
 
@@ -53,12 +48,18 @@ internal class ContractIndexerTest {
     fun setUp() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         MockKAnnotations.init(this)
-        archiveService = ArchiveService(archiveRepository, mongoTemplate)
+        archiveService =
+            ArchiveService(
+                mongoTemplate,
+                IndexedContract::class.java,
+                ContractArchive::class.java,
+                1000
+            )
         contractService =
             ContractService(
                 thorService = thorService,
                 contractRepository = contractRepository,
-                archiveService = archiveService
+                contractArchiveService = archiveService
             )
         contractIndexer =
             ContractIndexer(
@@ -66,6 +67,8 @@ internal class ContractIndexerTest {
                 contractRepository,
                 archiveService,
                 1L,
+                1000L,
+                true,
                 1000L,
                 DefaultThorClient("http://localhost:8669"),
             )
@@ -101,7 +104,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
+        verify { archiveService.saveAll(any()) wasNot Called }
     }
 
     // Block #42 -> block_erc1155_vip210_contracts.json
@@ -141,7 +144,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
+        verify { archiveService.saveAll(any()) wasNot Called }
     }
 
     // Block #6 -> block_vip181_contracts.json
@@ -175,7 +178,7 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
+        verify { archiveService.saveAll(any()) wasNot Called }
     }
 
     @Test
@@ -218,14 +221,13 @@ internal class ContractIndexerTest {
         }
 
         // Verify that archive isn't called
-        verify { archiveRepository.saveAll<Archive<*>>(any()) wasNot Called }
+        verify { archiveService.saveAll(any()) wasNot Called }
     }
 
     @Test
     fun `Update contract master when contract already indexed`() {
 
         // Mock data returned for block#16: block, any account code & existing mongo document
-        every { archiveRepository.saveAll<Archive<*>>(any()) } returns listOf()
         every { thorService.getAccountCode(any()) } returns "any account code"
         every { contractRepository.findAllById(any()) } returns
             listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
@@ -264,7 +266,7 @@ internal class ContractIndexerTest {
 
         // Check that updated contract is saved and the old contract is archived
         verify(exactly = 1) { contractRepository.saveAll(updatedContract) }
-        verify(exactly = 1) { archiveRepository.saveAll<Archive<*>>(any()) }
+        verify(exactly = 1) { archiveService.saveAll(any()) }
     }
 
     // Rollback tests
@@ -283,9 +285,8 @@ internal class ContractIndexerTest {
         every { mongoTemplate.bulkOps(any(), IndexedContract::class.java) } returns bulkOps
         every { bulkOps.replaceOne(any(), capture(saveAllContractsSlot)) } returns bulkOps
         every { bulkOps.remove(capture(deleteAllContractsSlot)) } returns bulkOps
-        every { archiveRepository.findAllById(arrayListOf(version1ArchiveId)) } returns
-            listOf(Archive(version1ArchiveId, CONTRACT_ROLLBACK_TEST_VERSION1))
-        every { archiveRepository.deleteAllById(any()) } returns Unit
+
+        verify(exactly = 1) { archiveService.rollback(blockNumber) }
 
         contractIndexer.rollback(blockNumber)
 
@@ -298,18 +299,6 @@ internal class ContractIndexerTest {
         expectThat(saveAllContractsSlot.size).isEqualTo(1)
         val saveContract = saveAllContractsSlot.first()
         compareContracts(saveContract, CONTRACT_ROLLBACK_TEST_VERSION1)
-    }
-
-    @Test
-    fun `rollback - no archive record - throws archive exception`() {
-        val blockNumber = 16L
-
-        every { mongoTemplate.find<IndexedContract>(any(), any()) } returns
-            mutableListOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER, CONTRACT_ROLLBACK_TEST_VERSION2)
-        every { mongoTemplate.bulkOps(any(), any<Class<*>>()) } returns mockk(relaxed = true)
-        every { archiveRepository.findAllById(any()) } returns emptyList()
-
-        expectThrows<ArchiveException> { contractIndexer.rollback(blockNumber) }
     }
 
     private fun compareContracts(expected: IndexedContract, actual: IndexedContract) {

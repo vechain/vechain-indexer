@@ -1,7 +1,6 @@
 package org.vechain.indexer
 
 import com.fasterxml.jackson.core.type.TypeReference
-import java.util.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.junit.runner.RunWith

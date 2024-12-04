@@ -80,7 +80,7 @@ internal class ContractServiceTest {
         contractService =
             ContractService(
                 thorService = thorService,
-                archiveService = mockk(relaxed = true),
+                contractArchiveService = mockk(relaxed = true),
                 contractRepository = mockk(relaxed = true),
             )
     }

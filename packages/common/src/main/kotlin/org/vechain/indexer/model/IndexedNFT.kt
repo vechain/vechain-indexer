@@ -29,3 +29,9 @@ constructor(
         return id
     }
 }
+
+@Document("nft_archives")
+data class NFTArchive(
+    @Id override val id: String,
+    override val data: IndexedNFT,
+) : Archive<IndexedNFT>
