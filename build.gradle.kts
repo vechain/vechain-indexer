@@ -198,9 +198,9 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.3.6")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.3.6")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter:3.4.0")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.0")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
         implementation("org.springframework:spring-webflux") {
             version {
                 strictly("6.1.13")
@@ -226,7 +226,7 @@ allprojects {
                 strictly("4.1.115.Final")
             }
         }
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.3.6")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.0")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -240,7 +240,7 @@ allprojects {
         implementation("org.vechain:indexer-core:2.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.3.6")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.0")
         testImplementation("org.testcontainers:testcontainers:1.17.6")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
