@@ -43,10 +43,10 @@ abstract class AbstractIntegrationTest {
         val thorNetwork = Network.newNetwork()
 
         val mongoContainer: GenericContainer<*> =
-            MongoDBContainer("mongo:6").withExposedPorts(27017).withReuse(true)
+            MongoDBContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
         val thorContainer: GenericContainer<*> =
-            GenericContainer("vechain/thor:v2.1.0")
+            GenericContainer("vechain/thor:v2.1.4")
                 .withCommand(
                     "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
                 )

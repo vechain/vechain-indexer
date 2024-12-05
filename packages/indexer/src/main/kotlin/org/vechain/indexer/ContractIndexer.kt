@@ -9,14 +9,14 @@ import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.*
 import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
 
 @Profile("contracts")
 @Component
 open class ContractIndexer(
     private val contractService: ContractService,
-    private val contractRepository: ContractRepository,
+    contractRepository: ContractRepository,
     contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
     @Value("\${indexer.syncLogInterval.contracts}") private val syncLogInterval: Long,
@@ -24,7 +24,7 @@ open class ContractIndexer(
     @Value("\${indexer.pruner.interval}") private val prunerInterval: Long,
     thorClient: ThorClient,
 ) :
-    StatefulIndexer<IndexedContract, ContractArchive>(
+    StatefulIndexer<IndexedContract, ContractArchive, Triple<TxEvent, Transaction, Clause>>(
         repository = contractRepository,
         startBlock = startBlock,
         thorClient = thorClient,
@@ -34,22 +34,21 @@ open class ContractIndexer(
         archiveService = contractArchiveService
     ) {
 
-    override fun processBlock(block: Block) {
-        runPruner(block.number)
+    override fun extractData(block: Block): List<Triple<TxEvent, Transaction, Clause>> {
+        return extractMasterChangeEvents(block)
+    }
 
-        // Get the master change events from the block
-        val masterChangeEvents = extractMasterChangeEvents(block)
-        if (masterChangeEvents.isEmpty()) return
+    override fun findExisting(
+        data: List<Triple<TxEvent, Transaction, Clause>>
+    ): List<IndexedContract> {
+        return contractService.getExisting(data.map { (event) -> event.address })
+    }
 
-        // Check for existing documents
-        val existingContracts =
-            contractRepository
-                .findAllById(masterChangeEvents.map { (event) -> event.address })
-                .toList()
-
-        // Parse the contracts
-        val contracts = contractService.parseContracts(block, masterChangeEvents, existingContracts)
-
-        contractService.saveContracts(current = contracts, archived = existingContracts)
+    override fun parseRecords(
+        block: Block,
+        data: List<Triple<TxEvent, Transaction, Clause>>,
+        existing: List<IndexedContract>
+    ): List<IndexedContract> {
+        return contractService.parseContracts(block, data, existing)
     }
 }

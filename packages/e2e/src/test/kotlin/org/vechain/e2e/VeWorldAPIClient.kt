@@ -33,8 +33,7 @@ object VeWorldAPIClient {
         object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
-    private val NFT_ARCHIVES_TYPE =
-        object : ParameterizedTypeReference<List<Archive<IndexedNFT>>>() {}
+    private val NFT_ARCHIVES_TYPE = object : ParameterizedTypeReference<List<NFTArchive>>() {}
     private val NFTS_TYPE = object : ParameterizedTypeReference<List<IndexedNFT>>() {}
     private val TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
@@ -216,8 +215,8 @@ object VeWorldAPIClient {
         else throw Exception("No address or tokenAddress provided")
     }
 
-    fun getNftArchives(): List<Archive<IndexedNFT>> {
-        return getRequest("$API_URL/e2e/nfts-archives", NFT_ARCHIVES_TYPE)
+    fun getNftArchives(): List<NFTArchive> {
+        return getRequest("$API_URL/e2e/nft-archives", NFT_ARCHIVES_TYPE)
     }
 
     fun getNftTransfers(): List<IndexedTransferEvent> {

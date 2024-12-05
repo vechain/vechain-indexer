@@ -145,7 +145,7 @@ version: '3.5'
 
 services:
   mongo:
-    image: mongo:6
+    image: mongo:8
     container_name: mongodb
     hostname: mongo-node1
     command: [ "--replSet", "rs0", "--keyFile", "/data/keys/keyfile" ]

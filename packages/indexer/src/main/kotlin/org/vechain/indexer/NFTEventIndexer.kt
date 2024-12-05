@@ -27,7 +27,7 @@ open class NFTEventIndexer(
     @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
     @Value("\${indexer.pruner.interval}") private val prunerInterval: Long
 ) :
-    StatefulIndexer<IndexedNFT, NFTArchive>(
+    StatefulIndexer<IndexedNFT, NFTArchive, IndexedTransferEvent>(
         repository = nftRepository,
         startBlock = startBlock,
         thorClient = thorClient,
@@ -37,31 +37,23 @@ open class NFTEventIndexer(
         archiveService = nftArchiveService
     ) {
 
-    override fun processBlock(block: Block) {
-        runPruner(block.number)
-
-        // Get the NFT transfer events from the block
-        val nftTransfers = BlockUtils.getNftTransferEventsFromTopics(block)
-        if (nftTransfers.isEmpty()) return
-
-        // Check for existing documents
-        val existingNfts = nftService.getExisting(nftTransfers)
-
-        // Parse the NFTs
-        val nfts = parseNfts(block, nftTransfers, existingNfts)
-
-        nftService.save(current = nfts, archived = existingNfts)
+    override fun extractData(block: Block): List<IndexedTransferEvent> {
+        return BlockUtils.getNftTransferEventsFromTopics(block)
     }
 
-    private fun parseNfts(
+    override fun findExisting(data: List<IndexedTransferEvent>): List<IndexedNFT> {
+        return nftService.getExisting(data)
+    }
+
+    override fun parseRecords(
         block: Block,
-        nftTransfers: List<IndexedTransferEvent>,
-        existingNfts: List<IndexedNFT>
+        data: List<IndexedTransferEvent>,
+        existing: List<IndexedNFT>
     ): List<IndexedNFT> {
-        return nftTransfers.map {
+        return data.map {
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
             val nftId = IdUtils.buildNftId(it)
-            val version = existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
+            val version = existing.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
 
             IndexedNFT(
                 id = nftId,

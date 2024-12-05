@@ -12,10 +12,12 @@ import org.vechain.indexer.exception.ArchiveException
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
 open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
+    private val repository: BaseIndexedRepository<T>,
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
@@ -27,17 +29,23 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
 
-    open fun saveAll(documents: List<T>) {
+    @Transactional(rollbackFor = [Exception::class])
+    open fun update(updated: List<T>, toArchive: List<T>) {
 
-        if (documents.isEmpty()) return
+        if (updated.isNotEmpty()) {
+            // Save the documents with the updated version
+            repository.saveAll(updated)
+        }
 
-        val archives =
-            documents.map {
-                archiveClazz
-                    .getConstructor(String::class.java, it::class.java)
-                    .newInstance(IdUtils.buildArchiveId(it, it.version), it)
-            }
-        mongoTemplate.insert(archives, archiveClazz)
+        if (toArchive.isNotEmpty()) {
+            val archives =
+                toArchive.map {
+                    archiveClazz
+                        .getConstructor(String::class.java, it::class.java)
+                        .newInstance(IdUtils.buildArchiveId(it, it.version), it)
+                }
+            mongoTemplate.insert(archives, archiveClazz)
+        }
     }
 
     @Transactional(rollbackFor = [Exception::class])

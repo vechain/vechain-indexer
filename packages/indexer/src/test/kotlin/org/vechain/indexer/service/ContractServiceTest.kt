@@ -7,8 +7,17 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_ERC1155_VIP210_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MASTER_EVENT_UPDATE
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
+import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP181_CONTRACTS
+import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
+import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.Transaction
+import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
+import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
 
@@ -80,7 +89,6 @@ internal class ContractServiceTest {
         contractService =
             ContractService(
                 thorService = thorService,
-                contractArchiveService = mockk(relaxed = true),
                 contractRepository = mockk(relaxed = true),
             )
     }
@@ -480,5 +488,189 @@ internal class ContractServiceTest {
             contractService.parseContracts(BLOCK_ERC1155_VIP210_CONTRACTS, emptyList(), emptyList())
 
         expectThat(contracts).isEmpty()
+    }
+
+    // Block #5 -> block_vip180_contracts.json
+    // This block contains 2 ERC20/VIP180 contract deployment transactions
+    @Test
+    fun `Extract erc20 vip180 contract types`() {
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+
+        // Mock data returned for block#16: block, any account code & existing mongo document
+        every { thorService.getAccountCode(any()) } returns "any account code"
+
+        val contracts =
+            contractService.parseContracts(
+                BLOCK_VIP180_CONTRACTS,
+                extractMasterChangeEvents(BLOCK_VIP180_CONTRACTS),
+                emptyList()
+            )
+
+        expect {
+            that(contracts).hasSize(2)
+            that(contracts).map(IndexedContract::isErc20).all { isTrue() }
+            that(contracts).map(IndexedContract::isVip180).all { isTrue() }
+            that(contracts).map(IndexedContract::isErc721).all { isFalse() }
+            that(contracts).map(IndexedContract::isVip181).all { isFalse() }
+        }
+    }
+
+    @Test
+    fun `should capture erc1155 and vip210 contract deployments`() {
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+
+        // Mock contract responses
+        every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns
+            getTransaction(
+                    BLOCK_ERC1155_VIP210_CONTRACTS,
+                    "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
+                )
+                .clauses
+                .first()
+                .data
+        every { thorService.getAccountCode("0x5024d193c8ec0ee084995de603365c3560d7ba6e") } returns
+            getTransaction(
+                    BLOCK_ERC1155_VIP210_CONTRACTS,
+                    "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
+                )
+                .clauses
+                .first()
+                .data
+
+        val contracts =
+            contractService.parseContracts(
+                BLOCK_ERC1155_VIP210_CONTRACTS,
+                extractMasterChangeEvents(BLOCK_ERC1155_VIP210_CONTRACTS),
+                emptyList()
+            )
+
+        val vip210: IndexedContract? = contracts.find { it.isVip210 && !it.isErc1155 }
+        val erc1155: IndexedContract? = contracts.find { it.isErc1155 && !it.isVip210 }
+
+        expect {
+            that(vip210).isNotNull()
+            that(erc1155).isNotNull()
+        }
+    }
+
+    // Block #6 -> block_vip181_contracts.json
+    // This block contains 1 ERC20/VIP180 contract deployment transaction
+    @Test
+    fun `Extract erc721 vip181 contract types`() {
+
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+
+        // Mock data returned for block#6: block & account code
+        every { thorService.getAccountCode(any()) } returns
+            getTransaction(
+                    BLOCK_VIP181_CONTRACTS,
+                    "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
+                )
+                .clauses
+                .first()
+                .data
+
+        val contracts =
+            contractService.parseContracts(
+                BLOCK_VIP181_CONTRACTS,
+                extractMasterChangeEvents(BLOCK_VIP181_CONTRACTS),
+                emptyList()
+            )
+
+        expect { that(contracts).hasSize(1) }
+        val contract = contracts.first()
+        expect {
+            that(contract).get(IndexedContract::isErc721).isTrue()
+            that(contract).get(IndexedContract::isVip181).isTrue()
+            that(contract).get(IndexedContract::isErc20).isFalse()
+            that(contract).get(IndexedContract::isVip180).isFalse()
+        }
+    }
+
+    @Test
+    fun `Save contract document with correct data`() {
+
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+
+        // Known fixture
+        val blockNumber = 6L
+        val txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
+        val contractData = getTransaction(BLOCK_VIP181_CONTRACTS, txId).clauses.first().data
+
+        // Mock data returned for block#6: block & account code
+        every { thorService.getAccountCode(any()) } returns contractData
+
+        val contracts =
+            contractService.parseContracts(
+                BLOCK_VIP181_CONTRACTS,
+                extractMasterChangeEvents(BLOCK_VIP181_CONTRACTS),
+                emptyList()
+            )
+
+        expect { that(contracts).all { isA<IndexedContract>() }.hasSize(1) }
+        val contract = contracts.first()
+        expect {
+            that(contract)
+                .get(IndexedContract::address)
+                .isEqualTo("0x1f734d58eb6a349f038c28f112478bf90981c87e")
+            that(contract)
+                .get(IndexedContract::blockId)
+                .isEqualTo("0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e")
+            that(contract).get(IndexedContract::blockNumber).isEqualTo(blockNumber)
+            that(contract).get(IndexedContract::blockTimestamp).isEqualTo(1680177334)
+            that(contract).get(IndexedContract::txId).isEqualTo(txId)
+            that(contract)
+                .get(IndexedContract::creator)
+                .isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(contract)
+                .get(IndexedContract::master)
+                .isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(contract).get(IndexedContract::rawData).isEqualTo(contractData)
+        }
+    }
+
+    @Test
+    fun `Update contract master when contract already indexed`() {
+
+        every { thorService.executeReadOnlyCode(any()) } returns emptyList()
+
+        // Mock data returned for block#16: block, any account code & existing mongo document
+        every { thorService.getAccountCode(any()) } returns "any account code"
+
+        val contracts =
+            contractService.parseContracts(
+                BLOCK_MASTER_EVENT_UPDATE,
+                extractMasterChangeEvents(BLOCK_MASTER_EVENT_UPDATE),
+                listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+            )
+
+        val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+        expectThat(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.master).isEqualTo(oldMaster)
+
+        val newMaster = "0xa077d962dfa446661d63c97f68d9628f908a5f43"
+
+        val contract = contracts.first()
+        expect {
+            that(contracts.size).isEqualTo(1)
+            that(contract)
+                .get(IndexedContract::version)
+                .isEqualTo(CONTRACT_WITH_CREATOR_SAME_AS_MASTER.version + 1)
+            that(contract).get(IndexedContract::master).isEqualTo(newMaster)
+            that(contract).get(IndexedContract::creator).isEqualTo(oldMaster)
+            that(contract).get(IndexedContract::blockId).isEqualTo(BLOCK_MASTER_EVENT_UPDATE.id)
+            that(contract)
+                .get(IndexedContract::txId)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.transactions.first().id)
+            that(contract)
+                .get(IndexedContract::blockNumber)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.number)
+            that(contract)
+                .get(IndexedContract::blockTimestamp)
+                .isEqualTo(BLOCK_MASTER_EVENT_UPDATE.timestamp)
+        }
+    }
+
+    private fun getTransaction(block: Block, txId: String): Transaction {
+        return block.transactions.first { it.id == txId }
     }
 }

@@ -9,10 +9,14 @@ import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
+import org.vechain.indexer.repository.ContractRepository
+import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 
 @Configuration
 open class ArchiveServiceConfig(
+    private val contractRepository: ContractRepository,
+    private val nftRepository: NFTRepository,
     @Value("\${indexer.pruner.limit}") private val prunerLimit: Int,
 ) {
     @Bean
@@ -21,6 +25,7 @@ open class ArchiveServiceConfig(
         mongoTemplate: MongoTemplate
     ): ArchiveService<IndexedContract, ContractArchive> =
         ArchiveService(
+            contractRepository,
             mongoTemplate,
             IndexedContract::class.java,
             ContractArchive::class.java,
@@ -33,6 +38,7 @@ open class ArchiveServiceConfig(
         mongoTemplate: MongoTemplate
     ): ArchiveService<IndexedNFT, NFTArchive> =
         ArchiveService(
+            nftRepository,
             mongoTemplate,
             IndexedNFT::class.java,
             NFTArchive::class.java,

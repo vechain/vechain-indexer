@@ -3,11 +3,9 @@ package org.vechain.indexer.service
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
-import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.thor.model.Block
@@ -23,13 +21,16 @@ import org.web3j.utils.Numeric
 @Service
 open class ContractService(
     private val contractRepository: ContractRepository,
-    private val contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
     private val thorService: ThorService
 ) {
 
     companion object {
         val SAMPLE_ADDRESS_1 = AddressUtils.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
         val SAMPLE_ADDRESS_2 = AddressUtils.toBigInt("0x435933c8064b4Ae76bE665428e0307eF2cCFBD68")
+    }
+
+    open fun getExisting(contractAddresses: List<String>): List<IndexedContract> {
+        return contractRepository.findAllById(contractAddresses).toList()
     }
 
     /** Calls to the supportsInterface function of the ERC721 interface. */
@@ -277,12 +278,5 @@ open class ContractService(
             }
         }
         return contracts
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun saveContracts(current: List<IndexedContract>, archived: List<IndexedContract>) {
-        if (archived.isNotEmpty()) contractArchiveService.saveAll(archived)
-
-        if (current.isNotEmpty()) contractRepository.saveAll(current)
     }
 }

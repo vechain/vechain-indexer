@@ -24,13 +24,13 @@ class IntegrationTests : AbstractIntegrationTest() {
         // Sleep while indexer catches chain
         waitForFullySynced()
 
-        // Do not take into account mongock collections, archives collection
-        val changeLogCollections = listOf("mongockChangeLog", "mongockLock", "archives")
+        // Do not take into account mongock collections, archive collections
+        val changeLogCollections = listOf("mongockChangeLog", "mongockLock")
 
         val collections = mongoOps.collectionNames
 
         collections
-            .filter { !changeLogCollections.contains(it) }
+            .filter { !changeLogCollections.contains(it) && !it.endsWith("archives") }
             .forEach { collection ->
                 mongoOps.count(Query(), collection).let { count ->
                     expect {

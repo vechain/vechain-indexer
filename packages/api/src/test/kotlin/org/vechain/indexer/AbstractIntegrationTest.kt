@@ -113,7 +113,7 @@ abstract class AbstractIntegrationTest {
     internal class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
         override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
             val mongoContainer: GenericContainer<*> =
-                GenericContainer("mongo:6").withExposedPorts(27017).withReuse(true)
+                GenericContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
             mongoContainer.start()
 
