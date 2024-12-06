@@ -175,13 +175,13 @@ class StatefulIndexerTest {
         val parseRecordsResponse: List<TestDoc>
     ) :
         StatefulIndexer<TestDoc, Archive<TestDoc>, String>(
-            repository,
-            startBlock,
-            thorClient,
-            syncLogInterval,
-            prunerEnabled,
-            prunerInterval,
-            archiveService
+            repository = repository,
+            archiveService = archiveService,
+            thorClient = thorClient,
+            startBlock = startBlock,
+            syncLogInterval = syncLogInterval,
+            prunerEnabled = prunerEnabled,
+            prunerInterval = prunerInterval,
         ) {
 
         override fun extractData(block: Block): List<String> {

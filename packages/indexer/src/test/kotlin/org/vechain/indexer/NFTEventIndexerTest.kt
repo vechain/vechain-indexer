@@ -9,9 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NFT_MINT_2
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.BlockUtils.getNftTransferEventsFromTopics
@@ -25,8 +23,6 @@ internal class NFTEventIndexerTest {
 
     @MockK lateinit var nftRepository: NFTRepository
 
-    @MockK lateinit var archiveService: ArchiveService<IndexedNFT, NFTArchive>
-
     @MockK lateinit var nftService: NFTService
 
     private lateinit var indexer: NFTEventIndexer
@@ -36,14 +32,13 @@ internal class NFTEventIndexerTest {
         MockKAnnotations.init(this)
         indexer =
             NFTEventIndexer(
-                nftService,
-                archiveService,
-                DefaultThorClient("http://localhost:8669"),
-                nftRepository,
-                0L,
-                1000L,
-                true,
-                1000L
+                nftService = nftService,
+                thorClient = DefaultThorClient("http://localhost:8669"),
+                nftRepository = nftRepository,
+                startBlock = 0L,
+                syncLogInterval = 1000L,
+                prunerEnabled = true,
+                prunerInterval = 1000L
             )
     }
 

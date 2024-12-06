@@ -7,10 +7,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
-import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
-import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.model.Clause
@@ -25,8 +23,6 @@ internal class ContractIndexerTest {
 
     @MockK lateinit var contractRepository: ContractRepository
 
-    @MockK lateinit var archiveService: ArchiveService<IndexedContract, ContractArchive>
-
     @MockK lateinit var contractService: ContractService
 
     private lateinit var indexer: ContractIndexer
@@ -38,12 +34,11 @@ internal class ContractIndexerTest {
             ContractIndexer(
                 contractService,
                 contractRepository,
-                archiveService,
+                DefaultThorClient("http://localhost:8669"),
                 1L,
                 1000L,
                 true,
                 1000L,
-                DefaultThorClient("http://localhost:8669"),
             )
     }
 

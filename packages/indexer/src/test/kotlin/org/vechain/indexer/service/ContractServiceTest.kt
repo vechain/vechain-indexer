@@ -88,8 +88,10 @@ internal class ContractServiceTest {
         MockKAnnotations.init(this)
         contractService =
             ContractService(
-                thorService = thorService,
                 contractRepository = mockk(relaxed = true),
+                thorService = thorService,
+                mongoTemplate = mockk(relaxed = true),
+                prunerLimit = 1000
             )
     }
 

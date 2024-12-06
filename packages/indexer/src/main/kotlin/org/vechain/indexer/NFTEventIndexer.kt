@@ -7,7 +7,6 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -19,7 +18,6 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftService: NFTService,
-    nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
@@ -34,7 +32,7 @@ open class NFTEventIndexer(
         syncLogInterval = syncLogInterval,
         prunerEnabled = prunerEnabled,
         prunerInterval = prunerInterval,
-        archiveService = nftArchiveService
+        archiveService = nftService
     ) {
 
     override fun extractData(block: Block): List<IndexedTransferEvent> {

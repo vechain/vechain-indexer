@@ -8,13 +8,13 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 
 abstract class StatefulIndexer<T : VersionedDocument, S : Archive<T>, U : Any>(
-    private val repository: BaseIndexedRepository<T>,
-    startBlock: Long,
+    repository: BaseIndexedRepository<T>,
+    private val archiveService: ArchiveService<T, S>,
     thorClient: ThorClient,
+    startBlock: Long,
     syncLogInterval: Long,
     private val prunerEnabled: Boolean,
     private val prunerInterval: Long,
-    private val archiveService: ArchiveService<T, S>
 ) :
     BaseIndexer(
         repository = repository,

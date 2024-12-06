@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
-import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.*
@@ -17,12 +16,11 @@ import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
 open class ContractIndexer(
     private val contractService: ContractService,
     contractRepository: ContractRepository,
-    contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
+    thorClient: ThorClient,
     @Value("\${indexer.startBlock.contracts}") private val startBlock: Long,
     @Value("\${indexer.syncLogInterval.contracts}") private val syncLogInterval: Long,
     @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
     @Value("\${indexer.pruner.interval}") private val prunerInterval: Long,
-    thorClient: ThorClient,
 ) :
     StatefulIndexer<IndexedContract, ContractArchive, Triple<TxEvent, Transaction, Clause>>(
         repository = contractRepository,
@@ -31,7 +29,7 @@ open class ContractIndexer(
         syncLogInterval = syncLogInterval,
         prunerEnabled = prunerEnabled,
         prunerInterval = prunerInterval,
-        archiveService = contractArchiveService
+        archiveService = contractService
     ) {
 
     override fun extractData(block: Block): List<Triple<TxEvent, Transaction, Clause>> {

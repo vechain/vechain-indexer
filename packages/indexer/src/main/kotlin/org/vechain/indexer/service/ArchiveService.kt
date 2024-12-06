@@ -12,12 +12,10 @@ import org.vechain.indexer.exception.ArchiveException
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.model.VersionedDocument
-import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
-open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
-    private val repository: BaseIndexedRepository<T>,
+abstract class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
@@ -29,14 +27,9 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
 
-    @Transactional(rollbackFor = [Exception::class])
-    open fun update(updated: List<T>, toArchive: List<T>) {
+    abstract fun update(updated: List<T>, existing: List<T>)
 
-        if (updated.isNotEmpty()) {
-            // Save the documents with the updated version
-            repository.saveAll(updated)
-        }
-
+    open fun archive(toArchive: List<T>) {
         if (toArchive.isNotEmpty()) {
             val archives =
                 toArchive.map {
