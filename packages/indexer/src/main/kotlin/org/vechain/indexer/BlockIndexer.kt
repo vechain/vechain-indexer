@@ -21,13 +21,13 @@ open class BlockIndexer(
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     @Value("\${indexer.startBlock.blocks}") startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.blocks}") private val syncLoggerInterval: Long,
+    @Value("\${indexer.syncLogInterval.blocks}") private val syncLogInterval: Long,
 ) :
-    VeWorldIndexer(
+    BaseIndexer(
         thorClient = thorClient,
         startBlock = startBlock,
         repository = blockRepository,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval
     ) {
 
     override fun rollback(blockNumber: Long) {

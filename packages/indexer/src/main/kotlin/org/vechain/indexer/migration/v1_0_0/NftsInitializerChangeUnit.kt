@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.NFTArchive
 
 @Profile("nft-events")
 @ChangeUnit(id = "nfts-initializer", order = "8", author = "nawfal-labrahmi")
@@ -22,11 +23,17 @@ class NftsInitializerChangeUnit {
             "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1"
         const val NFT_OWNER_CONTRACTADDRESS_TOKENADDRESS_IDX =
             "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1"
+
+        val ARCHIVE_OBJ = NFTArchive::class.java
+        const val ARCHIVE_BLOCKNUMBER_IDX = "data.blockNumber_-1"
     }
 
     @BeforeExecution
     fun beforeExecution(mongoTemplate: MongoTemplate) {
         if (!mongoTemplate.collectionExists(NFTS)) mongoTemplate.createCollection(NFTS)
+
+        if (!mongoTemplate.collectionExists(ARCHIVE_OBJ))
+            mongoTemplate.createCollection(ARCHIVE_OBJ)
     }
 
     @Execution
@@ -85,6 +92,14 @@ class NftsInitializerChangeUnit {
         mongoTemplate.indexOps(NFTS).ensureIndex(contractAddressIdx)
         mongoTemplate.indexOps(NFTS).ensureIndex(ownerContractAddressIdx)
         mongoTemplate.indexOps(NFTS).ensureIndex(ownerContractAddressTokenIdIdx)
+
+        val archiveBlockIdx: IndexDefinition =
+            Index()
+                .named(ARCHIVE_BLOCKNUMBER_IDX)
+                .on("data.blockNumber", Sort.Direction.DESC)
+                .background()
+
+        mongoTemplate.indexOps(ARCHIVE_OBJ).ensureIndex(archiveBlockIdx)
     }
 
     @RollbackExecution
@@ -95,10 +110,13 @@ class NftsInitializerChangeUnit {
         mongoTemplate.indexOps(NFTS).dropIndex(NFT_CONTRACTADDRESS_IDX)
         mongoTemplate.indexOps(NFTS).dropIndex(NFT_OWNER_CONTRACTADDRESS_IDX)
         mongoTemplate.indexOps(NFTS).dropIndex(NFT_OWNER_CONTRACTADDRESS_TOKENADDRESS_IDX)
+
+        mongoTemplate.indexOps(ARCHIVE_OBJ).dropIndex(ARCHIVE_BLOCKNUMBER_IDX)
     }
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
         if (mongoTemplate.collectionExists(NFTS)) mongoTemplate.dropCollection(NFTS)
+        if (mongoTemplate.collectionExists(ARCHIVE_OBJ)) mongoTemplate.dropCollection(ARCHIVE_OBJ)
     }
 }

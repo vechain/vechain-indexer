@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -18,43 +18,40 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftService: NFTService,
-    private val archiveService: ArchiveService,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.nfts}") private val syncLoggerInterval: Long,
+    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
+    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
+    @Value("\${indexer.pruner.interval}") private val prunerInterval: Long
 ) :
-    VeWorldIndexer(
+    StatefulIndexer<IndexedNFT, NFTArchive, IndexedTransferEvent>(
         repository = nftRepository,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval,
+        prunerEnabled = prunerEnabled,
+        prunerInterval = prunerInterval,
+        archiveService = nftService
     ) {
 
-    override fun processBlock(block: Block) {
-
-        // Get the NFT transfer events from the block
-        val nftTransfers = BlockUtils.getNftTransferEventsFromTopics(block)
-        if (nftTransfers.isEmpty()) return
-
-        // Check for existing documents
-        val existingNfts = nftService.getExisting(nftTransfers)
-
-        // Parse the NFTs
-        val nfts = parseNfts(block, nftTransfers, existingNfts)
-
-        nftService.save(current = nfts, archived = existingNfts)
+    override fun extractData(block: Block): List<IndexedTransferEvent> {
+        return BlockUtils.getNftTransferEventsFromTopics(block)
     }
 
-    private fun parseNfts(
+    override fun findExisting(data: List<IndexedTransferEvent>): List<IndexedNFT> {
+        return nftService.getExisting(data)
+    }
+
+    override fun parseRecords(
         block: Block,
-        nftTransfers: List<IndexedTransferEvent>,
-        existingNfts: List<IndexedNFT>
+        data: List<IndexedTransferEvent>,
+        existing: List<IndexedNFT>
     ): List<IndexedNFT> {
-        return nftTransfers.map {
+        return data.map {
             val tokenId = Numeric.parsePaddedNumberHex(it.topics[3])
             val nftId = IdUtils.buildNftId(it)
-            val version = existingNfts.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
+            val version = existing.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
 
             IndexedNFT(
                 id = nftId,
@@ -68,9 +65,5 @@ open class NFTEventIndexer(
                 blockTimestamp = block.timestamp,
             )
         }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        archiveService.rollback(blockNumber, IndexedNFT::class.java)
     }
 }

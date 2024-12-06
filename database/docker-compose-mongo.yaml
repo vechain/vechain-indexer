@@ -3,7 +3,7 @@ version: "3.7"
 services:
   mongo-node1:
     hostname: mongo-node1
-    image: mongo:6
+    image: mongo:8
     command: [ "mongod", "--replSet", "rs0", "--keyFile", "/data/keys/keyfile" ]
     entrypoint:
       - bash

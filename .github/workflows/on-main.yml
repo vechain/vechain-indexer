@@ -37,7 +37,7 @@ jobs:
       latestTag: ${{ matrix.env }}-latest
       imageTag: ${{ github.sha }}
       buildArgs: |
-        VEWORLD_PACKAGE=${{ matrix.application }}
+        PACKAGE_NAME=${{ matrix.application }}
       workingDirectory: ./
       packageName: ${{ matrix.application }}
       imagePlatform: linux/arm64

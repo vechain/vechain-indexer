@@ -44,9 +44,9 @@ run-api: build-api-local #@ Run the api locally.
 
 # Application Build (Docker)
 build-indexer: #@ Build the application with Docker.
-	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
+	docker build --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
-	docker build --build-arg VEWORLD_PACKAGE=api -t veworld-api .
+	docker build --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
 	docker build -t veworld-k6 load-testing
 

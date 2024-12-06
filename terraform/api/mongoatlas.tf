@@ -49,7 +49,7 @@ module "mongoatlas-main-net" {
     provider_disk_iops           = try(local.env.enabled_nets.main.mongodb.iops, null)
     provider_volume_type         = "STANDARD"
     provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
-    mongo_db_major_version       = "6"
+    mongo_db_major_version       = "8"
     replication_specs = [
       {
         num_shards = 1
@@ -145,7 +145,7 @@ module "mongoatlas-test-net" {
     provider_disk_iops           = try(local.env.enabled_nets.test.mongodb.iops, null)
     provider_volume_type         = "STANDARD"
     provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
-    mongo_db_major_version       = "6"
+    mongo_db_major_version       = "8"
     replication_specs = [
       {
         num_shards = 1

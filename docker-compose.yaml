@@ -1,12 +1,11 @@
-version: "3.7"
-
 services:
 
   vechain-indexer:
     build:
       context: .
       args:
-        VEWORLD_PACKAGE: indexer
+        PACKAGE_NAME: indexer
+    container_name: vechain-indexer
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
     healthcheck:
@@ -17,7 +16,7 @@ services:
       start_period: 40s
     tty: true
     ports:
-      - 8081:8080
+      - "8081:8080"
     networks:
       - vechain
       - vechain-database
@@ -27,7 +26,8 @@ services:
     build:
       context: .
       args:
-        VEWORLD_PACKAGE: api
+        PACKAGE_NAME: api
+    container_name: vechain-indexer-api
     restart: "no"
     hostname: vechain-indexer-api
     env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
@@ -38,7 +38,7 @@ services:
       retries: 5
       start_period: 40s
     ports:
-      - 8080:8080
+      - "8080:8080"
     tty: true
     networks:
       - vechain

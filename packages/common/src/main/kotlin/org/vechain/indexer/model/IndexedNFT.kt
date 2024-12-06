@@ -29,3 +29,12 @@ constructor(
         return id
     }
 }
+
+@Document("nft_archives")
+@JsonView(Views.Public::class)
+data class NFTArchive
+@ConstructorBinding
+constructor(
+    @Id override val id: String,
+    override val data: IndexedNFT,
+) : Archive<IndexedNFT>
