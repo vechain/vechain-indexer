@@ -45,7 +45,7 @@ on:
         description: "The hosted zone ID of the DNS record"
         required: true
         type: string
-        default: "Z074702037Q8JBHKIAYSD"
+        default: "Z08093993BM56HB3DD4U4"
 
 # Required for authentication through GitHub OIDC
 permissions:
