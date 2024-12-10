@@ -49,7 +49,7 @@ jobs:
     with:
       dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
       dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
-      hosted_zone_id: Z074702037Q8JBHKIAYSD
+      hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
       id-token: write
