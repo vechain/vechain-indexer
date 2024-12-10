@@ -23,11 +23,6 @@ output "database_subnets" {
   value       = local.env.environment == "prod" ? null : data.aws_subnets.database_subnets.ids
 }
 
-output "currency_cache_name" {
-  description = "The name of the api gateway rest api currency cache"
-  value       = local.env.environment == "prod" ? aws_api_gateway_rest_api.currency_cache[0].name : null
-}
-
 output "chatbot_sns_topic_name" {
   description = "The name of the chatbot/slack SNS topic"
   value       = aws_sns_topic.chatbot_sns_topic.name
