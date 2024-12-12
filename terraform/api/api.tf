@@ -182,28 +182,29 @@ module "ecs-lb-service-api" {
 ################################################################################
 
 module "ecs-backend-service" {
-  depends_on       = [module.ecs-cluster]
-  for_each         = local.env.enabled_nets
-  source           = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.49"
-  vpc_id           = data.terraform_remote_state.vpc.outputs.vpc_id
-  region           = local.env.region
-  cluster          = module.ecs-cluster.name
-  subnets          = concat(data.terraform_remote_state.vpc.outputs.private_subnets)
-  env              = local.env.environment
-  is_create_repo   = false
-  secrets_enable   = false
-  ecr_repo_uri     = each.value.indexer.ecr_common_repo
-  ecr_image_tag    = local.env.image_tag
-  app_name         = "${each.key}-indexer"
-  project          = var.project
-  cpu              = each.value.indexer.cpu
-  memory           = each.value.indexer.memory
-  cidr             = local.env.cidr
-  security_groups  = [aws_security_group.ecs_service_sg.id]
-  desired_capacity = "1"
-  containerPort    = 8080
-  hostPort         = 8080
-  namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
+  depends_on                 = [module.ecs-cluster]
+  for_each                   = local.env.enabled_nets
+  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.49"
+  vpc_id                     = data.terraform_remote_state.vpc.outputs.vpc_id
+  region                     = local.env.region
+  cluster                    = module.ecs-cluster.name
+  subnets                    = concat(data.terraform_remote_state.vpc.outputs.private_subnets)
+  env                        = local.env.environment
+  is_create_repo             = false
+  secrets_enable             = false
+  ecr_repo_uri               = each.value.indexer.ecr_common_repo
+  ecr_image_tag              = local.env.image_tag
+  app_name                   = "${each.key}-indexer"
+  project                    = var.project
+  cpu                        = each.value.indexer.cpu
+  memory                     = each.value.indexer.memory
+  cidr                       = local.env.cidr
+  security_groups            = [aws_security_group.ecs_service_sg.id]
+  desired_capacity           = "1"
+  containerPort              = 8080
+  hostPort                   = 8080
+  deployment_maximum_percent = 100
+  namespace_id               = aws_service_discovery_private_dns_namespace.ns.id
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
