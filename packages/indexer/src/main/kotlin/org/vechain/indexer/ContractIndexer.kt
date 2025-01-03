@@ -44,6 +44,8 @@ open class ContractIndexer(
         val updated = contractService.parseContracts(block, data, existing)
 
         // Finally save the updated records and archive the existing ones
-        contractService.update(updated, existing)
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            contractService.update(updated, existing)
+        }
     }
 }
