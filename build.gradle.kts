@@ -216,11 +216,6 @@ allprojects {
                 strictly("4.1.115.Final")
             }
         }
-        implementation("ch.qos.logback:logback-core") {
-            version {
-                strictly("1.5.13")
-            }
-        }
 
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
 
