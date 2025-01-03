@@ -56,6 +56,11 @@ enabled_nets:
         nfts:                       '1304112'
         transactions:               '751'
         transfers:                  '37840'
+      pruner:
+        enabled: true
+        interval: 43200000
+        initial_delay: 300000
+        removal_chunk_size: 2000
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
@@ -95,6 +100,11 @@ enabled_nets:
         nfts:                       '1042259'
         transactions:               '15034'
         transfers:                  '15034'
+      pruner:
+        enabled: true
+        interval: 43200000
+        initial_delay: 300000
+        removal_chunk_size: 2000
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'

@@ -1,6 +1,5 @@
 package org.vechain.indexer.service
 
-import kotlin.math.min
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.BulkOperations
@@ -15,11 +14,10 @@ import org.vechain.indexer.model.VersionedDocument
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
-abstract class ArchiveService<T : VersionedDocument, S : Archive<T>>(
+open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
-    private val prunerLimit: Int,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -27,18 +25,17 @@ abstract class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
 
-    abstract fun update(updated: List<T>, existing: List<T>)
+    open fun saveAll(documents: List<T>) {
 
-    open fun archive(toArchive: List<T>) {
-        if (toArchive.isNotEmpty()) {
-            val archives =
-                toArchive.map {
-                    archiveClazz
-                        .getConstructor(String::class.java, it::class.java)
-                        .newInstance(IdUtils.buildArchiveId(it, it.version), it)
-                }
-            mongoTemplate.insert(archives, archiveClazz)
-        }
+        if (documents.isEmpty()) return
+
+        val archives =
+            documents.map {
+                archiveClazz
+                    .getConstructor(String::class.java, it::class.java)
+                    .newInstance(IdUtils.buildArchiveId(it, it.version), it)
+            }
+        mongoTemplate.insert(archives, archiveClazz)
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -116,31 +113,24 @@ abstract class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
-    /**
-     * Prune archives that are no longer needed. The finalised block number is used to determine
-     * which archives can be pruned. All records that are older than the finalised block number and
-     * are not the last version of a document are pruned.
-     */
-    open fun prune(currentBlock: Long) {
-        // Assume the block 1,000 blocks ago is finalised
-        val finalisedBlockNumber = currentBlock - 1_000
-
+    open fun findRecordsToPrune(endBlock: Long): List<String> {
         // Construct the aggregation pipeline stages
         val matchStage =
+            Document("\$match", Document("data.blockNumber", Document("\$lt", endBlock)))
+
+        val removeRedundantFieldsStage =
             Document(
-                "\$match",
-                Document("data.blockNumber", Document("\$lt", finalisedBlockNumber))
+                "\$project",
+                Document().append("recordId", "\$data._id").append("version", "\$data.version")
             )
 
         val groupStage =
             Document(
                 "\$group",
-                Document("_id", "\$data._id")
-                    .append("maxVersion", Document("\$max", "\$data.version"))
+                Document("_id", "\$recordId")
+                    .append("maxVersion", Document("\$max", "\$version"))
                     .append("allDocs", Document("\$push", "\$\$ROOT"))
             )
-
-        val matchMaxVersionStage = Document("\$match", Document("maxVersion", Document("\$gt", 1)))
 
         val unwindStage = Document("\$unwind", "\$allDocs")
 
@@ -152,61 +142,38 @@ abstract class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                     Document(
                         "\$lt",
                         listOf(
-                            "\$allDocs.data.version",
+                            "\$allDocs.version",
                             Document("\$subtract", listOf("\$maxVersion", 4))
                         )
                     )
                 )
             )
 
-        val projectStage =
-            Document(
-                "\$project",
-                Document("_id", "\$allDocs._id") // Projecting the top-level _id of the document
-            )
+        val projectStage = Document("\$project", Document("_id", "\$allDocs._id"))
 
         // Combine all stages into a pipeline
         val pipeline =
             listOf(
                 matchStage,
+                removeRedundantFieldsStage,
                 groupStage,
-                matchMaxVersionStage,
                 unwindStage,
                 matchExprStage,
                 projectStage
             )
 
         // Execute the aggregation
-        val records =
-            mongoTemplate
-                .getCollection(mongoTemplate.getCollectionName(archiveClazz))
-                .aggregate(pipeline)
-                .map {
-                    it.getString("_id")
-                } // Assuming `_id` is a String; adjust if it's an ObjectId
-                .toList()
+        return mongoTemplate
+            .getCollection(mongoTemplate.getCollectionName(archiveClazz))
+            .aggregate(pipeline)
+            .allowDiskUse(true)
+            .map { it.getString("_id") }
+            .toList()
+    }
 
-        if (records.isEmpty()) {
-            logger.info("No documents to prune for {}", clazz.simpleName)
-            return
-        }
-
-        // Loop through the records and remove them in batches
-        logger.info("Pruning {} archive documents for {}", records.size, clazz.simpleName)
-
-        var currentIndex = 0
-        while (currentIndex < records.size) {
-            // Calculate the end index for the current batch
-            val endIndex = min(currentIndex + prunerLimit, records.size)
-
-            // Delete the current batch of records
-            mongoTemplate.remove(
-                Query.query(Criteria.where("_id").`in`(records.subList(currentIndex, endIndex))),
-                archiveClazz
-            )
-
-            // Move the index forward
-            currentIndex = endIndex
-        }
+    @Transactional(rollbackFor = [Exception::class])
+    open fun removeAll(records: List<String>) {
+        logger.info("Removing {} archives for {}", records.size, clazz.simpleName)
+        mongoTemplate.remove(Query.query(Criteria.where("_id").`in`(records)), archiveClazz)
     }
 }

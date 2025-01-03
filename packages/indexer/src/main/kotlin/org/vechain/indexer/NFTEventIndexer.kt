@@ -7,6 +7,7 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -18,32 +19,38 @@ import org.web3j.utils.Numeric
 @Component
 open class NFTEventIndexer(
     private val nftService: NFTService,
+    nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
-    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
-    @Value("\${indexer.pruner.interval}") private val prunerInterval: Long
+    @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
+    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long
 ) :
-    StatefulIndexer<IndexedNFT, NFTArchive, IndexedTransferEvent>(
+    StatefulIndexer<IndexedNFT, NFTArchive>(
         repository = nftRepository,
         startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
-        prunerEnabled = prunerEnabled,
-        prunerInterval = prunerInterval,
-        archiveService = nftService
+        archiveService = nftArchiveService,
+        prunerRemovalChunkSize = prunerRemovalChunkSize
     ) {
 
-    override fun extractData(block: Block): List<IndexedTransferEvent> {
-        return BlockUtils.getNftTransferEventsFromTopics(block)
+    override fun processBlock(block: Block) {
+        // Extract any relevant data from the block
+        val data = BlockUtils.getNftTransferEventsFromTopics(block)
+        if (data.isEmpty()) return
+
+        // Find any existing records
+        val existing = nftService.getExisting(data)
+
+        // Process the updated records
+        val updated = parseRecords(block, data, existing)
+
+        // Finally save the updated records and archive the existing ones
+        nftService.update(updated, existing)
     }
 
-    override fun findExisting(data: List<IndexedTransferEvent>): List<IndexedNFT> {
-        return nftService.getExisting(data)
-    }
-
-    override fun parseRecords(
+    private fun parseRecords(
         block: Block,
         data: List<IndexedTransferEvent>,
         existing: List<IndexedNFT>
