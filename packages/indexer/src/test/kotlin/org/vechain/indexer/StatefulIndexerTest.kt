@@ -35,6 +35,7 @@ internal class StatefulIndexerTest {
                         0L,
                         thorClient,
                         1000L,
+                        10000,
                         archiveService
                     ) {
                     override fun processBlock(block: Block) {
