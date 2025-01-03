@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.springframework.boot") version "3.4.1"
-    id("io.spring.dependency-management") version "1.1.4"
+    id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -37,9 +37,7 @@ allprojects {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.5",
-                "org.java-websocket:Java-WebSocket:1.5.0",
-                "org.springframework:spring-web:6.1.13",
-                "ch.qos.logback:logback-core:1.5.13"
+                "org.java-websocket:Java-WebSocket:1.5.3"
             )
         }
     }
