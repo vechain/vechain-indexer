@@ -1,11 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.3.6"
+    id("org.springframework.boot") version "3.4.1"
     id("io.spring.dependency-management") version "1.1.4"
     id("maven-publish")
-    kotlin("jvm") version "1.9.0"
-    kotlin("plugin.spring") version "1.9.0"
+    kotlin("jvm") version "1.9.25"
+    kotlin("plugin.spring") version "1.9.25"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "6.25.0"
     id("org.sonarqube") version "4.4.1.3373"
@@ -13,15 +13,14 @@ plugins {
 }
 
 sonar {
-  properties {
-    property("sonar.projectKey", "vechain_veworld-indexer")
-    property("sonar.organization", "vechain")
-    property("sonar.host.url", "https://sonarcloud.io")
-  }
+    properties {
+        property("sonar.projectKey", "vechain_veworld-indexer")
+        property("sonar.organization", "vechain")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 allprojects {
     apply {
@@ -70,10 +69,6 @@ allprojects {
         }
     }
 
-    /**
-     * Create a task to register the pre-commit scripts in './git-hooks` to the '.git/hooks'
-     * directory.
-     */
     tasks.register("installGitHooks") {
         doLast {
             val hooksDir = File("${rootDir.path}/.git/hooks")
@@ -94,7 +89,7 @@ allprojects {
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjsr305=strict")
-            jvmTarget = "17"
+            jvmTarget = "21"
         }
         dependsOn("installGitHooks")
     }
@@ -102,25 +97,20 @@ allprojects {
     tasks.jacocoTestReport { dependsOn(tasks.test) }
 
     tasks.clean {
-        val dirs = mutableListOf(buildDir.path, "${rootDir.path}/bin")
+        val dirs = mutableListOf(layout.buildDirectory.get().asFile.path, "${rootDir.path}/bin")
         dirs.addAll(
             subprojects.flatMap {
                 listOf(
-                    it.buildDir.path,
+                    it.layout.buildDirectory.get().asFile.path,
                     "${it.projectDir.path}/bin",
                 )
-            },
+            }
         )
 
         doFirst { delete(dirs) }
     }
 
-    /**
-     * This does NOT run the tests prior to generating the report. It only uses the existing test
-     * results.
-     */
     tasks.register<JacocoReport>("codeCoverageReport") {
-        // If a subproject applies the 'jacoco' plugin, add the result it to the report
         subprojects {
             val subproject = this
             subproject.plugins.withType<JacocoPlugin>().configureEach {
@@ -168,9 +158,9 @@ allprojects {
                     logger.lifecycle("Test result: ${result.resultType}")
                     logger.lifecycle(
                         "Test summary: ${result.testCount} tests, " +
-                            "${result.successfulTestCount} succeeded, " +
-                            "${result.failedTestCount} failed, " +
-                            "${result.skippedTestCount} skipped",
+                                "${result.successfulTestCount} succeeded, " +
+                                "${result.failedTestCount} failed, " +
+                                "${result.skippedTestCount} skipped",
                     )
                     if (failedTests.isNotEmpty()) {
                         logger.lifecycle("\tFailed Tests:")
@@ -230,8 +220,8 @@ allprojects {
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
-        implementation("org.web3j:abi:4.9.7")
-        implementation("org.web3j:contracts:4.9.7")
+        implementation("org.web3j:abi:4.9.8")
+        implementation("org.web3j:contracts:4.9.8")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
         implementation("commons-codec:commons-codec:1.15")
@@ -241,7 +231,7 @@ allprojects {
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
-        testImplementation("org.testcontainers:testcontainers:1.17.6")
+        testImplementation("org.testcontainers:testcontainers:1.20.4")
         testImplementation("org.testcontainers:junit-jupiter:1.17.6")
         testImplementation("org.testcontainers:mongodb:1.17.6")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
