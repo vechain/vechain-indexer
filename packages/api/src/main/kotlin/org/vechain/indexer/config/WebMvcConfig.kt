@@ -11,9 +11,12 @@ import org.vechain.indexer.StringToAddressConverter
 open class WebMvcConfig : WebMvcConfigurer {
 
     /** Enable parameter validation. */
-    @Bean
-    open fun methodValidationPostProcessor(): MethodValidationPostProcessor {
-        return MethodValidationPostProcessor()
+    companion object {
+        @Bean
+        @JvmStatic
+        fun methodValidationPostProcessor(): MethodValidationPostProcessor {
+            return MethodValidationPostProcessor()
+        }
     }
 
     /** Register custom data binders for query params */
