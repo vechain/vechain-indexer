@@ -203,17 +203,17 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
         implementation("org.springframework:spring-webflux") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("org.springframework:spring-core") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("org.springframework:spring-web") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("io.netty:netty-codec-http") {
@@ -226,7 +226,7 @@ allprojects {
                 strictly("4.1.115.Final")
             }
         }
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.0")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
