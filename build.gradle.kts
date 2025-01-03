@@ -39,6 +39,7 @@ allprojects {
                 "com.google.protobuf:protobuf-java:3.25.5",
                 "org.java-websocket:Java-WebSocket:1.5.0",
                 "org.springframework:spring-web:6.1.13",
+                "ch.qos.logback:logback-core:1.5.13"
             )
         }
     }
