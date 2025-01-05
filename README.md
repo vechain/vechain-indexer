@@ -31,7 +31,7 @@
 ## Prerequisites
 
 - Docker
-- Java (v17)
+- Java (v21)
 
 ## Getting Started
 
