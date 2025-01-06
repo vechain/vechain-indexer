@@ -59,9 +59,10 @@ indexer:
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
     transfers: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS:1000}
   pruner:
-    limit: ${PRUNER_LIMIT:1000}
     enabled: ${PRUNER_ENABLED:true}
-    interval: ${PRUNER_INTERVAL:10000}
+    interval: ${PRUNER_INTERVAL:300000}
+    initialDelay: ${PRUNER_INITIAL_DELAY:300000}
+    removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
 
 mongock:
   migration-scan-package:

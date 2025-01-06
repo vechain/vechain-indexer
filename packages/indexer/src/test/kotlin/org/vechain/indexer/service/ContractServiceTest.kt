@@ -11,6 +11,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MASTER_EVENT_UPDATE
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
@@ -81,6 +82,8 @@ internal class ContractServiceTest {
 
     @MockK lateinit var thorService: ThorService
 
+    @MockK lateinit var archiveService: ArchiveService<IndexedContract, ContractArchive>
+
     private lateinit var contractService: ContractService
 
     @BeforeEach
@@ -89,9 +92,8 @@ internal class ContractServiceTest {
         contractService =
             ContractService(
                 contractRepository = mockk(relaxed = true),
-                thorService = thorService,
-                mongoTemplate = mockk(relaxed = true),
-                prunerLimit = 1000
+                contractArchiveService = archiveService,
+                thorService = thorService
             )
     }
 

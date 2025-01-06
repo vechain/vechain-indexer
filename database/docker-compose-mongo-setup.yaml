@@ -18,4 +18,5 @@ services:
 
 networks:
   vechain-database:
+    external: true
     name: vechain-database

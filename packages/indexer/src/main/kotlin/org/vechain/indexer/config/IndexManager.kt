@@ -1,4 +1,4 @@
-package org.vechain.indexer
+package org.vechain.indexer.config
 
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ExitCodeGenerator
@@ -7,11 +7,12 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BaseIndexer
 
 @Component
 class IndexManager(
-    private val indexers: List<BaseIndexer>,
-    private val applicationContext: ApplicationContext,
+    private val allIndexers: List<BaseIndexer>,
+    private val applicationContext: ApplicationContext
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -19,9 +20,9 @@ class IndexManager(
     @EventListener(ApplicationReadyEvent::class)
     fun start() {
 
-        logger.info("Starting ${indexers.size} indexers")
+        logger.info("Starting ${allIndexers.size} indexers")
 
-        indexers.forEach { indexer ->
+        allIndexers.forEach { indexer ->
             try {
                 indexer.startInCoroutine()
             } catch (e: Exception) {

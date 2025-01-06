@@ -1,11 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.3.6"
-    id("io.spring.dependency-management") version "1.1.4"
+    id("org.springframework.boot") version "3.4.1"
+    id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
-    kotlin("jvm") version "1.9.0"
-    kotlin("plugin.spring") version "1.9.0"
+    kotlin("jvm") version "1.9.25"
+    kotlin("plugin.spring") version "1.9.25"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "6.25.0"
     id("org.sonarqube") version "4.4.1.3373"
@@ -13,15 +13,14 @@ plugins {
 }
 
 sonar {
-  properties {
-    property("sonar.projectKey", "vechain_veworld-indexer")
-    property("sonar.organization", "vechain")
-    property("sonar.host.url", "https://sonarcloud.io")
-  }
+    properties {
+        property("sonar.projectKey", "vechain_veworld-indexer")
+        property("sonar.organization", "vechain")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 allprojects {
     apply {
@@ -38,8 +37,7 @@ allprojects {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.5",
-                "org.java-websocket:Java-WebSocket:1.5.0",
-                "org.springframework:spring-web:6.1.13",
+                "org.java-websocket:Java-WebSocket:1.5.3"
             )
         }
     }
@@ -70,10 +68,6 @@ allprojects {
         }
     }
 
-    /**
-     * Create a task to register the pre-commit scripts in './git-hooks` to the '.git/hooks'
-     * directory.
-     */
     tasks.register("installGitHooks") {
         doLast {
             val hooksDir = File("${rootDir.path}/.git/hooks")
@@ -94,7 +88,7 @@ allprojects {
     tasks.withType<KotlinCompile> {
         kotlinOptions {
             freeCompilerArgs = listOf("-Xjsr305=strict")
-            jvmTarget = "17"
+            jvmTarget = "21"
         }
         dependsOn("installGitHooks")
     }
@@ -102,25 +96,20 @@ allprojects {
     tasks.jacocoTestReport { dependsOn(tasks.test) }
 
     tasks.clean {
-        val dirs = mutableListOf(buildDir.path, "${rootDir.path}/bin")
+        val dirs = mutableListOf(layout.buildDirectory.get().asFile.path, "${rootDir.path}/bin")
         dirs.addAll(
             subprojects.flatMap {
                 listOf(
-                    it.buildDir.path,
+                    it.layout.buildDirectory.get().asFile.path,
                     "${it.projectDir.path}/bin",
                 )
-            },
+            }
         )
 
         doFirst { delete(dirs) }
     }
 
-    /**
-     * This does NOT run the tests prior to generating the report. It only uses the existing test
-     * results.
-     */
     tasks.register<JacocoReport>("codeCoverageReport") {
-        // If a subproject applies the 'jacoco' plugin, add the result it to the report
         subprojects {
             val subproject = this
             subproject.plugins.withType<JacocoPlugin>().configureEach {
@@ -168,9 +157,9 @@ allprojects {
                     logger.lifecycle("Test result: ${result.resultType}")
                     logger.lifecycle(
                         "Test summary: ${result.testCount} tests, " +
-                            "${result.successfulTestCount} succeeded, " +
-                            "${result.failedTestCount} failed, " +
-                            "${result.skippedTestCount} skipped",
+                                "${result.successfulTestCount} succeeded, " +
+                                "${result.failedTestCount} failed, " +
+                                "${result.skippedTestCount} skipped",
                     )
                     if (failedTests.isNotEmpty()) {
                         logger.lifecycle("\tFailed Tests:")
@@ -198,22 +187,22 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.4.0")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.0")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.0")
+        implementation("org.springframework.boot:spring-boot-starter:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
         implementation("org.springframework:spring-webflux") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("org.springframework:spring-core") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("org.springframework:spring-web") {
             version {
-                strictly("6.1.14")
+                strictly("6.2.1")
             }
         }
         implementation("io.netty:netty-codec-http") {
@@ -226,12 +215,13 @@ allprojects {
                 strictly("4.1.115.Final")
             }
         }
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.0")
+
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
-        implementation("org.web3j:abi:4.9.7")
-        implementation("org.web3j:contracts:4.9.7")
+        implementation("org.web3j:abi:4.9.8")
+        implementation("org.web3j:contracts:4.9.8")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
         implementation("commons-codec:commons-codec:1.15")
@@ -240,14 +230,14 @@ allprojects {
         implementation("org.vechain:indexer-core:2.0.0")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.0")
-        testImplementation("org.testcontainers:testcontainers:1.17.6")
-        testImplementation("org.testcontainers:junit-jupiter:1.17.6")
-        testImplementation("org.testcontainers:mongodb:1.17.6")
-        testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
-        testImplementation("io.mockk:mockk:1.13.5")
-        testImplementation("io.strikt:strikt-core:0.34.1")
-        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.3")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
+        testImplementation("org.testcontainers:testcontainers:1.20.4")
+        testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+        testImplementation("org.testcontainers:mongodb:1.20.4")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+        testImplementation("io.mockk:mockk:1.13.14")
+        testImplementation("io.strikt:strikt-core:0.35.1")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
     }
 }
 
