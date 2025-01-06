@@ -29,13 +29,7 @@ open class WebMvcConfig : WebMvcConfigurer {
         registry
             .addMapping("/**")
             .allowedOrigins("*") // Allow any origin
-            .allowedMethods(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "OPTIONS"
-            ) // Allow specified HTTP methods
+            .allowedMethods("GET", "OPTIONS") // Allow specified HTTP methods
             .allowedHeaders("*") // Allow any header
     }
 }
