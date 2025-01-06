@@ -44,8 +44,8 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 1024
-      memory: 2048
+      cpu: 2048
+      memory: 4096
       spring_profile: indexer,nft-events,transactions,transfer-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
