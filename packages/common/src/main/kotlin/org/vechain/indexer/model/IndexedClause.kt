@@ -1,5 +1,6 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -12,6 +13,7 @@ import org.vechain.indexer.thor.model.TxOutputs
 @Document(collection = "clauses")
 data class IndexedClause
 @ConstructorBinding
+@JsonCreator
 constructor(
     @Id val id: String,
     override val blockId: String,

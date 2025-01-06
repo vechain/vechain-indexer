@@ -67,6 +67,11 @@ enabled_nets:
         nfts:                       5000
         transactions:               5000
         transfers:                  5000
+      pruner:
+        enabled: true
+        interval: 300000
+        initial_delay: 300000
+        removal_chunk_size: 2000
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -123,6 +128,11 @@ enabled_nets:
         nfts:                       5000
         transactions:               5000
         transfers:                  5000
+      pruner:
+        enabled: true
+        interval: 300000
+        initial_delay: 300000
+        removal_chunk_size: 2000
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

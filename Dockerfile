@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
 ARG PACKAGE_NAME
 
@@ -16,14 +16,14 @@ COPY packages ./packages
 
 # Placing this after the COPY commands so we can cache builds
 RUN test -n "PACKAGE_NAME"
-ENV PACKAGE_NAME $PACKAGE_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
 
 RUN ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM eclipse-temurin:17-jre-jammy AS prod
+FROM eclipse-temurin:21-jre-jammy AS prod
 
 ARG PACKAGE_NAME
-ENV PACKAGE_NAME $PACKAGE_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
 
 WORKDIR /usr/app
 

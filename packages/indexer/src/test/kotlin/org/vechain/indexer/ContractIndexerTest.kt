@@ -7,21 +7,19 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
+import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.thor.model.Clause
-import org.vechain.indexer.thor.model.Transaction
-import org.vechain.indexer.thor.model.TxEvent
-import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
-import strikt.api.expect
-import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 internal class ContractIndexerTest {
 
     @MockK lateinit var contractRepository: ContractRepository
+
+    @MockK lateinit var archiveService: ArchiveService<IndexedContract, ContractArchive>
 
     @MockK lateinit var contractService: ContractService
 
@@ -33,80 +31,30 @@ internal class ContractIndexerTest {
         indexer =
             ContractIndexer(
                 contractService,
+                archiveService,
                 contractRepository,
                 DefaultThorClient("http://localhost:8669"),
                 1L,
-                1000L,
-                true,
+                1000,
                 1000L,
             )
     }
 
     @Test
-    fun `findExisting - empty list`() {
-        val data = emptyList<Triple<TxEvent, Transaction, Clause>>()
+    fun `processBlock - empty data`() {
+        val block = BLOCK_VIP180_CONTRACTS
+
         every { contractService.getExisting(any()) } returns emptyList()
+        every { contractService.parseContracts(any(), any(), emptyList()) } returns emptyList()
 
-        val result = indexer.findExisting(data)
+        indexer.processBlock(block)
 
-        expect { that(result).isEmpty() }
-
-        verify(exactly = 1) { contractService.getExisting(emptyList()) }
+        verify(exactly = 0) { contractService.update(any(), any()) }
     }
 
     @Test
-    fun `findExisting - non-empty list`() {
-        val data = extractMasterChangeEvents(BLOCK_VIP180_CONTRACTS)
-
-        val response =
-            listOf(
-                IndexedContract(
-                    address = "0x000000",
-                    version = 1,
-                    blockId = "0x000001",
-                    blockNumber = 2L,
-                    blockTimestamp = 232,
-                    txId = "0x000002",
-                    creator = "0x000003",
-                    master = "0x000004",
-                    rawData = "raw data",
-                    isVip180 = true,
-                    isVip181 = false,
-                    isVip210 = false,
-                    isErc20 = false,
-                    isErc721 = false,
-                    isErc1155 = false,
-                    previousMasters = mutableSetOf(),
-                )
-            )
-
-        every { contractService.getExisting(any()) } returns response
-
-        val result = indexer.findExisting(data)
-
-        expect {
-            that(result).hasSize(1)
-            that(result.first().address).isEqualTo("0x000000")
-        }
-
-        verify(exactly = 1) { contractService.getExisting(data.map { (event) -> event.address }) }
-    }
-
-    @Test
-    fun `parseRecords - empty list`() {
-        val data = emptyList<Triple<TxEvent, Transaction, Clause>>()
-        val existing = emptyList<IndexedContract>()
-
-        every { contractService.parseContracts(any(), any(), any()) } returns existing
-
-        val result = indexer.parseRecords(BLOCK_VIP180_CONTRACTS, data, existing)
-
-        expect { that(result).isEmpty() }
-    }
-
-    @Test
-    fun `parseRecords - non-empty list`() {
-        val data = extractMasterChangeEvents(BLOCK_VIP180_CONTRACTS)
+    fun `processBlock - update called if existing and updated records`() {
+        val block = BLOCK_VIP180_CONTRACTS
 
         val existing =
             listOf(
@@ -130,17 +78,82 @@ internal class ContractIndexerTest {
                 )
             )
 
-        every { contractService.parseContracts(any(), any(), any()) } returns existing
+        every { contractService.getExisting(any()) } returns existing
+        every { contractService.parseContracts(any(), any(), existing) } returns existing
+        every { contractService.update(any(), any()) } just Runs
 
-        val result = indexer.parseRecords(BLOCK_VIP180_CONTRACTS, data, existing)
+        indexer.processBlock(block)
 
-        expect {
-            that(result).hasSize(1)
-            that(result.first().address).isEqualTo("0x000000")
-        }
+        verify(exactly = 1) { contractService.update(existing, existing) }
+    }
 
-        verify(exactly = 1) {
-            contractService.parseContracts(BLOCK_VIP180_CONTRACTS, data, existing)
-        }
+    @Test
+    fun `processBlock - update called if no existing records`() {
+        val block = BLOCK_VIP180_CONTRACTS
+
+        val updated =
+            listOf(
+                IndexedContract(
+                    address = "0x000000",
+                    version = 1,
+                    blockId = "0x000001",
+                    blockNumber = 2L,
+                    blockTimestamp = 232,
+                    txId = "0x000002",
+                    creator = "0x000003",
+                    master = "0x000004",
+                    rawData = "raw data",
+                    isVip180 = true,
+                    isVip181 = false,
+                    isVip210 = false,
+                    isErc20 = false,
+                    isErc721 = false,
+                    isErc1155 = false,
+                    previousMasters = mutableSetOf(),
+                )
+            )
+
+        every { contractService.getExisting(any()) } returns emptyList()
+        every { contractService.parseContracts(any(), any(), emptyList()) } returns updated
+        every { contractService.update(any(), any()) } just Runs
+
+        indexer.processBlock(block)
+
+        verify(exactly = 1) { contractService.update(updated, emptyList()) }
+    }
+
+    @Test
+    fun `processBlock - update called is only existing records and not updated`() {
+        val block = BLOCK_VIP180_CONTRACTS
+
+        val existing =
+            listOf(
+                IndexedContract(
+                    address = "0x000000",
+                    version = 1,
+                    blockId = "0x000001",
+                    blockNumber = 2L,
+                    blockTimestamp = 232,
+                    txId = "0x000002",
+                    creator = "0x000003",
+                    master = "0x000004",
+                    rawData = "raw data",
+                    isVip180 = true,
+                    isVip181 = false,
+                    isVip210 = false,
+                    isErc20 = false,
+                    isErc721 = false,
+                    isErc1155 = false,
+                    previousMasters = mutableSetOf(),
+                )
+            )
+
+        every { contractService.getExisting(any()) } returns existing
+        every { contractService.parseContracts(any(), any(), existing) } returns emptyList()
+        every { contractService.update(any(), any()) } just Runs
+
+        indexer.processBlock(block)
+
+        verify(exactly = 1) { contractService.update(emptyList(), existing) }
     }
 }
