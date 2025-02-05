@@ -64,7 +64,7 @@
     {
       "name": "cycle",
       "eventName": "claimReward",
-      "businessEventName": "cycle"
+      "businessEventName": "roundId"
     }
   ]
 }
