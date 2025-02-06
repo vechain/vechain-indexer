@@ -1,5 +1,7 @@
 package org.vechain.indexer
 
+import org.vechain.indexer.event.AbiManager
+import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockIdentifier
@@ -9,7 +11,16 @@ abstract class BaseIndexer(
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,
-) : Indexer(thorClient = thorClient, startBlock = startBlock, syncLogInterval) {
+    abiManager: AbiManager? = null,
+    businessEventManager: BusinessEventManager? = null,
+) :
+    Indexer(
+        thorClient = thorClient,
+        startBlock = startBlock,
+        syncLogInterval,
+        abiManager,
+        businessEventManager
+    ) {
 
     override fun getLastSyncedBlock(): BlockIdentifier? {
         repository.getLatestRecord()?.let {
