@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedHistoryEvent
 
 @Profile("history_events")
@@ -19,6 +20,7 @@ open class HistoryService(
         user: String,
         eventTypes: List<String>?,
         searchFields: List<String>?,
+        contractAddress: Address?,
         before: Long?,
         after: Long?,
         pageable: Pageable,
@@ -44,6 +46,10 @@ open class HistoryService(
                     ),
             )
         }
+        // Add contractAddress filter
+        if (contractAddress != null) {
+            query.addCriteria(Criteria.where("contractAddress").`is`(contractAddress.value))
+        }
 
         // Add eventTypes filter
         if (!eventTypes.isNullOrEmpty()) {
@@ -63,7 +69,6 @@ open class HistoryService(
         query.with(pageable)
         // Fetch results
         val results = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
-        println("Results: $results")
 
         val pageSize = pageable.pageSize - 1
 

@@ -82,6 +82,13 @@ open class HistoryController(
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
+        name = "contractAddress",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "The contract address",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
         name = "before",
         schema = Schema(type = "long"),
         description =
@@ -101,6 +108,7 @@ open class HistoryController(
         @ValidAddress @PathVariable user: Address,
         @RequestParam(required = false) eventType: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
+        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) after: Long?,
         @RequestParam(required = false) page: Int?,
@@ -124,13 +132,15 @@ open class HistoryController(
 
         TimeValidationUtils.validateTimestamps(after, before)
 
-        val pageable = toPageable(page, size?.plus(1), direction)
+        val pageable =
+            toPageable(page, size?.plus(1), direction, IndexedHistoryEvent::blockTimestamp.name)
 
         return paginatedResponse(
             historyService.findUserHistoryByFilters(
                 user = user.value,
                 eventTypes = validatedEventTypes,
                 searchFields = validatedSearchFields,
+                contractAddress = contractAddress,
                 before = before,
                 after = after,
                 pageable = pageable,
