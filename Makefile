@@ -83,9 +83,7 @@ DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile;
 DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
-MONGO_DB_NAME=mydatabase
-MONGO_HOST=localhost
-MONGO_URL=mongodb://$(MONGO_HOST)
+MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
 BACKUP_DIR=database/backups
 
 db-all: #@ Remove, clean and start all the database.
@@ -102,12 +100,21 @@ db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
-db-backup: #@ Backup the MongoDB database.
-	mkdir -p $(BACKUP_DIR)
-	mongodump --uri="$(MONGO_URL)/$(MONGO_DB_NAME)" --out="$(BACKUP_DIR)/$(MONGO_DB_NAME)-$$(date +%Y%m%d%H%M%S)"
-db-restore: #@ Restore the MongoDB database from a backup.
-	@if [ -z "$$DIR" ]; then echo "Usage: make restore DIR=<backup-folder>"; exit 1; fi
-	mongorestore --uri="$(MONGO_URL)/$(MONGO_DB_NAME)" --drop "$$DIR"~
+db-backup: #@ Backup the MongoDB database using Docker.
+	# Ensure backup directory exists and is writable
+	mkdir -p $(PWD)/$(BACKUP_DIR)
+	docker run --rm --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --out="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S)"
+db-restore: #@ Restore the MongoDB database from the latest backup or a specified directory using Docker.
+	@if [ -z "$$DIR" ]; then \
+		DIR=$$(ls -td $(BACKUP_DIR)/veworld-bd-* | head -1); \
+		if [ -z "$$DIR" ]; then \
+			echo "No backup found in $(BACKUP_DIR). Please specify DIR=<backup-folder>"; \
+			exit 1; \
+		fi; \
+	fi; \
+	echo "Restoring from $$DIR"; \
+	docker run --rm --network=host -v $(PWD)/$$DIR/vechain:/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop "/backup"
+
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml

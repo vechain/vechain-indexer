@@ -103,6 +103,42 @@ make db-all
 make thor-all
 ```
 
+## Backup MongoDB
+You can backup the database by running the following command:
+
+```bash
+make db-backup
+```
+- Will backup the vechain database from localhost:27017
+- The backup will be stored in the database/backups/ directory.
+- The filename follows this format: database/backups/vechain-YYYYMMDDHHMMSS
+
+You can also specify the host and port of the MongoDB instance you want to backup:
+
+```bash
+make db-backup MONGO_HOST=my-mongo-host:32423
+```
+
+## Restore MongoDB from backup
+
+You can restore the database by running the following command:
+
+```bash
+make db-restore
+```
+- If no backup exists, you will be prompted to specify a backup directory.
+- By default, it restores from the latest backup found in the database/backups/ directory.
+
+To restore from a specific backup folder, specify DIR:
+```bash
+make db-restore DIR=backup/mydatabase-20250210
+```
+
+To restore to a different DB:
+```bash
+make db-restore MONGO_HOST=myserver.com
+```
+
 ## Features
 
 There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolation or all together. There is no
