@@ -86,7 +86,7 @@ DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 MONGO_DB_NAME=mydatabase
 MONGO_HOST=localhost
 MONGO_URL=mongodb://$(MONGO_HOST)
-BACKUP_DIR=backup
+BACKUP_DIR=database/backups
 
 db-all: #@ Remove, clean and start all the database.
 	make db-down db-clean db-up db-setup

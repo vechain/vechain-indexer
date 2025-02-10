@@ -60,4 +60,4 @@ lambda.zip
 apply.plan
 dist/
 
-backup/
+database/backups/
