@@ -83,6 +83,10 @@ DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile;
 DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
+MONGO_DB_NAME=mydatabase
+MONGO_HOST=localhost
+MONGO_URL=mongodb://$(MONGO_HOST)
+BACKUP_DIR=backup
 
 db-all: #@ Remove, clean and start all the database.
 	make db-down db-clean db-up db-setup
@@ -98,6 +102,12 @@ db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
+db-backup: #@ Backup the MongoDB database.
+	mkdir -p $(BACKUP_DIR)
+	mongodump --uri="$(MONGO_URL)/$(MONGO_DB_NAME)" --out="$(BACKUP_DIR)/$(MONGO_DB_NAME)-$$(date +%Y%m%d%H%M%S)"
+db-restore: #@ Restore the MongoDB database from a backup.
+	@if [ -z "$$DIR" ]; then echo "Usage: make restore DIR=<backup-folder>"; exit 1; fi
+	mongorestore --uri="$(MONGO_URL)/$(MONGO_DB_NAME)" --drop "$$DIR"~
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml

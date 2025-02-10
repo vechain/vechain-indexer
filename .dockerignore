@@ -37,6 +37,7 @@ build.sh
 build.bat
 
 database/
+backup/
 
 packages/e2e
 
