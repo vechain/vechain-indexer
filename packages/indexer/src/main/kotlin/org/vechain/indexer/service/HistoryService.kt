@@ -4,20 +4,20 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.HistoryEventName
-import org.vechain.indexer.model.HistoryEventType
 import org.vechain.indexer.model.IndexedHistoryEvent
-import org.vechain.indexer.model.ProposalSupport
+import org.vechain.indexer.model.b3tr.ProposalSupport
+import org.vechain.indexer.model.history.HistoryEventName
+import org.vechain.indexer.model.history.HistoryEventType
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
-class HistoryService() {
+class HistoryService {
     fun processBlockEvents(
         events: List<Pair<IndexedEvent, GenericEventParameters>>,
-        block: Block
+        block: Block,
     ): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
@@ -55,8 +55,6 @@ class HistoryService() {
                     txId = event.first.txId,
                     contractAddress = event.first.address,
                     origin = event.first.origin,
-                    topics = event.first.raw?.topics,
-                    data = event.first.raw?.data,
                     eventName = HistoryEventName.TRANSFER_SF,
                     eventType = HistoryEventType.TRANSFER,
                     gasPayer = event.first.gasPayer,
@@ -64,7 +62,7 @@ class HistoryService() {
                     to = event.second.params.getAsString("to"),
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
-                )
+                ),
             )
         }
         return historyEvents
@@ -72,9 +70,9 @@ class HistoryService() {
 
     private fun createIndexedHistoryEvent(
         event: Pair<IndexedEvent, GenericEventParameters>,
-        eventInfo: Pair<HistoryEventName, HistoryEventType>
-    ): IndexedHistoryEvent {
-        return IndexedHistoryEvent(
+        eventInfo: Pair<HistoryEventName, HistoryEventType>,
+    ): IndexedHistoryEvent =
+        IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.first.id),
             blockId = event.first.blockId,
             blockNumber = event.first.blockNumber,
@@ -82,8 +80,6 @@ class HistoryService() {
             txId = event.first.txId,
             contractAddress = event.first.address,
             origin = event.first.origin,
-            topics = event.first.raw?.topics,
-            data = event.first.raw?.data,
             eventName = eventInfo.first,
             eventType = eventInfo.second,
             gasPayer = event.first.gasPayer,
@@ -98,7 +94,7 @@ class HistoryService() {
             appVotes =
                 IndexedHistoryEvent.getAppVotes(
                     event.second.params["appsIds"],
-                    event.second.params["voteWeights"]
+                    event.second.params["voteWeights"],
                 ),
             support =
                 event.second.params.getAsInt("support")?.let { ProposalSupport.fromValue(it) },
@@ -112,13 +108,12 @@ class HistoryService() {
             inputValue = event.second.params.getAsString("inputValue"),
             outputValue = event.second.params.getAsString("outputValue"),
         )
-    }
 
     private fun getMissingTransactions(
         block: Block,
-        processedTxs: Set<String>
-    ): List<IndexedHistoryEvent> {
-        return block.transactions
+        processedTxs: Set<String>,
+    ): List<IndexedHistoryEvent> =
+        block.transactions
             .filter { it.id !in processedTxs }
             .map { tx ->
                 IndexedHistoryEvent(
@@ -132,5 +127,4 @@ class HistoryService() {
                     gasPayer = tx.gasPayer,
                 )
             }
-    }
 }
