@@ -145,7 +145,7 @@ internal class HistoryIndexerTest {
         expect { that(txs).hasSize(1) }
         val tx = txs.first()
         expect {
-            that(tx.eventName).isEqualTo(HistoryEventName.GENERIC_TX)
+            that(tx.eventName).isEqualTo(HistoryEventName.UNKNOWN_TX)
             that(tx.tokenId).isEqualTo(null)
             that(tx.value).isEqualTo(null)
             that(tx.from).isEqualTo(null)

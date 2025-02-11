@@ -90,7 +90,7 @@ open class HistoryController(
                                 "SWAP_VET_TO_FT",
                                 "SWAP_FT_TO_VET",
                                 "SWAP_FT_TO_FT",
-                                "GENERIC_TX",
+                                "UNKNOWN_TX",
                             ],
                         description = "Array of transaction names to filter by.",
                     ),
@@ -154,7 +154,7 @@ open class HistoryController(
                         "SWAP_VET_TO_FT",
                         "SWAP_FT_TO_VET",
                         "SWAP_FT_TO_FT",
-                        "GENERIC_TX",
+                        "UNKNOWN_TX",
                     ),
                 fieldName = "eventName",
             )

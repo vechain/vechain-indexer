@@ -41,8 +41,8 @@ class HistoryService {
     ): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
 
-        val tokenIds = event.second.params["tokenId"] as? List<*> ?: emptyList<Any>()
-        val values = event.second.params["value"] as? List<*> ?: emptyList<Any>()
+        val tokenIds = event.second.params["ids"] as? List<*> ?: emptyList<Any>()
+        val values = event.second.params["values"] as? List<*> ?: emptyList<Any>()
 
         for (i in tokenIds.indices) {
             historyEvents.add(
@@ -69,8 +69,15 @@ class HistoryService {
     private fun createIndexedHistoryEvent(
         event: Pair<IndexedEvent, GenericEventParameters>,
         eventName: HistoryEventName,
-    ): IndexedHistoryEvent =
-        IndexedHistoryEvent(
+    ): IndexedHistoryEvent {
+        val tokenId: String? =
+            if (eventName == HistoryEventName.TRANSFER_SF) {
+                event.second.params.getAsString("id")
+            } else {
+                event.second.params.getAsString("tokenId")
+            }
+
+        return IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.first.id),
             blockId = event.first.blockId,
             blockNumber = event.first.blockNumber,
@@ -83,7 +90,7 @@ class HistoryService {
             from = event.second.params.getAsString("from"),
             to = event.second.params.getAsString("to"),
             value = event.second.params.getAsString("value"),
-            tokenId = event.second.params.getAsString("tokenId"),
+            tokenId = tokenId,
             appId = event.second.params.getAsString("appId"),
             proof = event.second.params.getAsString("proof"),
             roundId = event.second.params.getAsString("roundId"),
@@ -105,13 +112,14 @@ class HistoryService {
             inputValue = event.second.params.getAsString("inputValue"),
             outputValue = event.second.params.getAsString("outputValue"),
         )
+    }
 
     private fun getMissingTransactions(
         block: Block,
         processedTxs: Set<String>,
     ): List<IndexedHistoryEvent> =
         block.transactions
-            .filter { it.id !in processedTxs }
+            .filter { it.id !in processedTxs && !it.reverted }
             .map { tx ->
                 IndexedHistoryEvent(
                     id = DigestUtils.sha1Hex(tx.id),
@@ -120,7 +128,7 @@ class HistoryService {
                     blockTimestamp = block.timestamp,
                     txId = tx.id,
                     origin = tx.origin,
-                    eventName = HistoryEventName.GENERIC_TX,
+                    eventName = HistoryEventName.UNKNOWN_TX,
                     gasPayer = tx.gasPayer,
                 )
             }
