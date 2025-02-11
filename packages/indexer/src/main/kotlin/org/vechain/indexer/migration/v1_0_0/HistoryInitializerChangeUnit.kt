@@ -22,10 +22,8 @@ class HistoryInitializerChangeUnit {
             "eventName_1_to_1_from_1_origin_1_blockTimestamp_-1"
         const val EVENT_NAME_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX =
             "eventName_1_to_1_from_1_contractAddress_1_blockTimestamp_-1"
-        const val EVENT_NAME_TO_TIMESTAMP_IDX =
-            "eventName_1_to_blockTimestamp_-1"
-        const val EVENT_NAME_FROM_TIMESTAMP_IDX =
-            "eventName_1_from_blockTimestamp_-1"
+        const val EVENT_NAME_TO_TIMESTAMP_IDX = "eventName_1_to_blockTimestamp_-1"
+        const val EVENT_NAME_FROM_TIMESTAMP_IDX = "eventName_1_from_blockTimestamp_-1"
         const val EVENT_NAME_ORIGIN_TIMESTAMP_IDX = "eventName_1_origin_1_blockTimestamp_-1"
         const val EVENT_NAME_GAS_PAYER_TIMESTAMP_IDX = "eventName_1_gasPayer_1_blockTimestamp_-1"
         const val BLOCK_NUMBER_IDX = "blockNumber_1"
