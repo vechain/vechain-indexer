@@ -23,7 +23,7 @@ open class HistoryIndexer(
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
     @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long
+    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
 ) :
     BaseIndexer(
         repository = historyRepository,
@@ -31,34 +31,35 @@ open class HistoryIndexer(
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
         abiManager = abiManager,
-        businessEventManager = businessEventManager
+        businessEventManager = businessEventManager,
     ) {
-
     override fun processBlock(block: Block) {
-        val events =
-            processAllEvents(
-                block,
-                FilterCriteria(
-                    vetTransfers = true,
-                    eventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
-                    businessEventNames =
-                        listOf(
-                            "action-reward",
-                            "b3tr-proposal-vote",
-                            "b3tr-to-vot3-swap",
-                            "b3tr-x-allocation-vote",
-                            "claim-reward",
-                            "gm-upgrade",
-                            "proposal-deposit",
-                            "token-ft-swap",
-                            "token-vet-swap",
-                            "vet-token-swap",
-                            "vot3-to-b3tr-swap"
-                        )
+        if (block.transactions.isNotEmpty()) {
+            val events =
+                processAllEvents(
+                    block,
+                    FilterCriteria(
+                        vetTransfers = true,
+                        eventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
+                        businessEventNames =
+                            listOf(
+                                "action-reward",
+                                "b3tr-proposal-vote",
+                                "b3tr-to-vot3-swap",
+                                "b3tr-x-allocation-vote",
+                                "claim-reward",
+                                "gm-upgrade",
+                                "proposal-deposit",
+                                "token-ft-swap",
+                                "token-vet-swap",
+                                "vet-token-swap",
+                                "vot3-to-b3tr-swap",
+                            ),
+                    ),
                 )
-            )
-        val historyEvents = historyService.processBlockEvents(events, block)
-        mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
+            val historyEvents = historyService.processBlockEvents(events, block)
+            mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
+        }
     }
 
     override fun rollback(blockNumber: Long) {
