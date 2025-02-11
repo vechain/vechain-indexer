@@ -18,7 +18,7 @@ open class HistoryService(
 ) {
     open fun findUserHistoryByFilters(
         user: String,
-        eventTypes: List<String>?,
+        eventNames: List<String>?,
         searchFields: List<String>?,
         contractAddress: Address?,
         before: Long?,
@@ -51,9 +51,9 @@ open class HistoryService(
             query.addCriteria(Criteria.where("contractAddress").`is`(contractAddress.value))
         }
 
-        // Add eventTypes filter
-        if (!eventTypes.isNullOrEmpty()) {
-            query.addCriteria(Criteria.where("eventType").`in`(eventTypes))
+        // Add eventNames filter
+        if (!eventNames.isNullOrEmpty()) {
+            query.addCriteria(Criteria.where("eventName").`in`(eventNames))
         }
 
         // Add timestamp filters

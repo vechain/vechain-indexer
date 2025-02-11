@@ -18,12 +18,16 @@ class HistoryInitializerChangeUnit {
             "to_1_from_1_origin_1_contractAddress_1_blockTimestamp_-1"
         const val GAS_PAYER_TIMESTAMP_IDX = "gasPayer_1_blockTimestamp_-1"
         const val ORIGIN_GAS_PAYER_TIMESTAMP_IDX = "origin_1_gasPayer_1_blockTimestamp_-1"
-        const val EVENT_TYPE_TO_FROM_ORIGIN_TIMESTAMP_IDX =
-            "eventType_1_to_1_from_1_origin_1_blockTimestamp_-1"
-        const val EVENT_TYPE_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX =
-            "eventType_1_to_1_from_1_contractAddress_1_blockTimestamp_-1"
-        const val EVENT_TYPE_ORIGIN_TIMESTAMP_IDX = "eventType_1_origin_1_blockTimestamp_-1"
-        const val EVENT_TYPE_GAS_PAYER_TIMESTAMP_IDX = "eventType_1_gasPayer_1_blockTimestamp_-1"
+        const val EVENT_NAME_TO_FROM_ORIGIN_TIMESTAMP_IDX =
+            "eventName_1_to_1_from_1_origin_1_blockTimestamp_-1"
+        const val EVENT_NAME_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX =
+            "eventName_1_to_1_from_1_contractAddress_1_blockTimestamp_-1"
+        const val EVENT_NAME_TO_TIMESTAMP_IDX =
+            "eventName_1_to_blockTimestamp_-1"
+        const val EVENT_NAME_FROM_TIMESTAMP_IDX =
+            "eventName_1_from_blockTimestamp_-1"
+        const val EVENT_NAME_ORIGIN_TIMESTAMP_IDX = "eventName_1_origin_1_blockTimestamp_-1"
+        const val EVENT_NAME_GAS_PAYER_TIMESTAMP_IDX = "eventName_1_gasPayer_1_blockTimestamp_-1"
         const val BLOCK_NUMBER_IDX = "blockNumber_1"
     }
 
@@ -70,39 +74,55 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .background()
 
-        val eventTypeToFromOriginTimestampIdx: IndexDefinition =
+        val eventNameToFromOriginTimestampIdx: IndexDefinition =
             Index()
-                .named(EVENT_TYPE_TO_FROM_ORIGIN_TIMESTAMP_IDX)
-                .on(IndexedHistoryEvent::eventType.name, Sort.Direction.ASC)
+                .named(EVENT_NAME_TO_FROM_ORIGIN_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .background()
 
-        val eventTypeToFromContractAddressTimestampIdx: IndexDefinition =
+        val eventNameToFromContractAddressTimestampIdx: IndexDefinition =
             Index()
-                .named(EVENT_TYPE_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX)
-                .on(IndexedHistoryEvent::eventType.name, Sort.Direction.ASC)
+                .named(EVENT_NAME_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .background()
 
-        val eventTypeOriginTimestampIdx: IndexDefinition =
+        val eventNameOriginTimestampIdx: IndexDefinition =
             Index()
-                .named(EVENT_TYPE_ORIGIN_TIMESTAMP_IDX)
-                .on(IndexedHistoryEvent::eventType.name, Sort.Direction.ASC)
+                .named(EVENT_NAME_ORIGIN_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .background()
 
-        val eventTypeGasPayerTimestampIdx: IndexDefinition =
+        val eventNameGasPayerTimestampIdx: IndexDefinition =
             Index()
-                .named(EVENT_TYPE_GAS_PAYER_TIMESTAMP_IDX)
-                .on(IndexedHistoryEvent::eventType.name, Sort.Direction.ASC)
+                .named(EVENT_NAME_GAS_PAYER_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
+                .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                .background()
+
+        val eventNameToTimestampIdx: IndexDefinition =
+            Index()
+                .named(EVENT_NAME_TO_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                .background()
+
+        val eventNameFromTimestampIdx: IndexDefinition =
+            Index()
+                .named(EVENT_NAME_FROM_TIMESTAMP_IDX)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .background()
 
@@ -116,12 +136,14 @@ class HistoryInitializerChangeUnit {
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(toFromOriginContractAddressTimestampIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(gasPayerTimestampIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(originGasPayerTimestampIdx)
-        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventTypeToFromOriginTimestampIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventNameToFromOriginTimestampIdx)
         mongoTemplate
             .indexOps(HISTORY_EVENTS)
-            .ensureIndex(eventTypeToFromContractAddressTimestampIdx)
-        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventTypeGasPayerTimestampIdx)
-        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventTypeOriginTimestampIdx)
+            .ensureIndex(eventNameToFromContractAddressTimestampIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventNameGasPayerTimestampIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventNameOriginTimestampIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventNameToTimestampIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(eventNameFromTimestampIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(blockNumberIdx)
     }
 
@@ -133,18 +155,22 @@ class HistoryInitializerChangeUnit {
             .dropIndex(TO_FROM_ORIGIN_CONTRACT_ADDRESS_TIMESTAMP_IDX)
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(GAS_PAYER_TIMESTAMP_IDX)
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(ORIGIN_GAS_PAYER_TIMESTAMP_IDX)
-        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_TYPE_TO_FROM_ORIGIN_TIMESTAMP_IDX)
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_NAME_TO_FROM_ORIGIN_TIMESTAMP_IDX)
         mongoTemplate
             .indexOps(HISTORY_EVENTS)
-            .dropIndex(EVENT_TYPE_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX)
-        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_TYPE_GAS_PAYER_TIMESTAMP_IDX)
-        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_TYPE_ORIGIN_TIMESTAMP_IDX)
+            .dropIndex(EVENT_NAME_TO_FROM_CONTRACT_ADDRESS_TIMESTAMP_IDX)
+
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_NAME_GAS_PAYER_TIMESTAMP_IDX)
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_NAME_ORIGIN_TIMESTAMP_IDX)
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_NAME_TO_TIMESTAMP_IDX)
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(EVENT_NAME_FROM_TIMESTAMP_IDX)
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(BLOCK_NUMBER_IDX)
     }
 
     @RollbackBeforeExecution
     fun rollbackBeforeExecution(mongoTemplate: MongoTemplate) {
-        if (mongoTemplate.collectionExists(HISTORY_EVENTS))
+        if (mongoTemplate.collectionExists(HISTORY_EVENTS)) {
             mongoTemplate.dropCollection(HISTORY_EVENTS)
+        }
     }
 }
