@@ -9,7 +9,6 @@ plugins {
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "6.25.0"
     id("org.sonarqube") version "4.4.1.3373"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
     jacoco
 }
 
@@ -32,7 +31,6 @@ allprojects {
         plugin("jacoco")
         plugin("jacoco-report-aggregation")
         plugin("com.diffplug.spotless")
-        plugin("org.jlleitschuh.gradle.ktlint")
     }
 
     configurations.all {
