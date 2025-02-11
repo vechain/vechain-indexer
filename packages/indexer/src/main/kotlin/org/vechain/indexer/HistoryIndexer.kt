@@ -22,8 +22,8 @@ open class HistoryIndexer(
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
-    @Value("\${indexer.startBlock.nfts}") private val startBlock: Long,
-    @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
+    @Value("\${indexer.startBlock.history}") private val startBlock: Long,
+    @Value("\${indexer.syncLogInterval.history}") private val syncLogInterval: Long,
 ) :
     BaseIndexer(
         repository = historyRepository,
