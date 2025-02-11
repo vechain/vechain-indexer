@@ -16,4 +16,5 @@ enum class HistoryEventName {
     SWAP_VET_TO_FT,
     SWAP_FT_TO_VET,
     SWAP_FT_TO_FT,
+    GENERIC_TX,
 }

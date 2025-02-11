@@ -67,17 +67,35 @@ open class HistoryController(
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "eventType",
+        name = "eventName",
         array =
             ArraySchema(
                 schema =
                     Schema(
                         type = "string",
-                        allowableValues = ["B3TR", "TRANSFER", "SWAP", "GENERIC_TX"],
-                        description = "Array of transaction types to filter by.",
+                        allowableValues =
+                            [
+                                "B3TR_SWAP_VOT3_TO_B3TR",
+                                "B3TR_SWAP_B3TR_TO_VOT3",
+                                "B3TR_PROPOSAL_SUPPORT",
+                                "B3TR_CLAIM_REWARD",
+                                "B3TR_UPGRADE_GM",
+                                "B3TR_ACTION",
+                                "B3TR_PROPOSAL_VOTE",
+                                "B3TR_XALLOCATION_VOTE",
+                                "TRANSFER_VET",
+                                "TRANSFER_FT",
+                                "TRANSFER_NFT",
+                                "TRANSFER_SF",
+                                "SWAP_VET_TO_FT",
+                                "SWAP_FT_TO_VET",
+                                "SWAP_FT_TO_FT",
+                                "GENERIC_TX",
+                            ],
+                        description = "Array of transaction names to filter by.",
                     ),
             ),
-        description = "Filter by specific transaction types.",
+        description = "Filter by specific transaction names.",
         required = false,
     )
     @Parameter(
@@ -106,7 +124,7 @@ open class HistoryController(
     @PaginationParameters
     open fun getUsersHistory(
         @ValidAddress @PathVariable user: Address,
-        @RequestParam(required = false) eventType: List<String>?,
+        @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @RequestParam(required = false) before: Long?,
@@ -116,11 +134,29 @@ open class HistoryController(
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedHistoryEvent> {
         // Validate query parameters
-        val validatedEventTypes =
+        val validatedEventNames =
             ArrayValidationUtils.validateArray(
-                input = eventType,
-                allowedValues = setOf("B3TR", "TRANSFER", "SWAP", "GENERIC_TX"),
-                fieldName = "eventType",
+                input = eventName,
+                allowedValues =
+                    setOf(
+                        "B3TR_SWAP_VOT3_TO_B3TR",
+                        "B3TR_SWAP_B3TR_TO_VOT3",
+                        "B3TR_PROPOSAL_SUPPORT",
+                        "B3TR_CLAIM_REWARD",
+                        "B3TR_UPGRADE_GM",
+                        "B3TR_ACTION",
+                        "B3TR_PROPOSAL_VOTE",
+                        "B3TR_XALLOCATION_VOTE",
+                        "TRANSFER_VET",
+                        "TRANSFER_FT",
+                        "TRANSFER_NFT",
+                        "TRANSFER_SF",
+                        "SWAP_VET_TO_FT",
+                        "SWAP_FT_TO_VET",
+                        "SWAP_FT_TO_FT",
+                        "GENERIC_TX",
+                    ),
+                fieldName = "eventName",
             )
 
         val validatedSearchFields =
@@ -138,7 +174,7 @@ open class HistoryController(
         return paginatedResponse(
             historyService.findUserHistoryByFilters(
                 user = user.value,
-                eventTypes = validatedEventTypes,
+                eventNames = validatedEventNames,
                 searchFields = validatedSearchFields,
                 contractAddress = contractAddress,
                 before = before,

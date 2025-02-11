@@ -8,7 +8,6 @@ import org.vechain.indexer.contracts.specifications.VIP210Contract
 import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.model.history.HistoryEventType
 import org.vechain.indexer.thor.model.TxEvent
 import org.web3j.abi.TypeReference
 import org.web3j.abi.datatypes.Address
@@ -160,37 +159,29 @@ object EventUtils {
         }
     }
 
-    fun determineEventType(
-        genericParams: GenericEventParameters
-    ): Pair<HistoryEventName, HistoryEventType>? =
+    fun determineEventType(genericParams: GenericEventParameters): HistoryEventName? =
         when (genericParams.getEventType()) {
-            "B3TR_Vot3ToB3trSwap" ->
-                Pair(HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR, HistoryEventType.B3TR)
-            "B3TR_B3trToVot3Swap" ->
-                Pair(HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3, HistoryEventType.B3TR)
-            "B3TR_ProposalDeposit" ->
-                Pair(HistoryEventName.B3TR_PROPOSAL_SUPPORT, HistoryEventType.B3TR)
-            "B3TR_ClaimReward" -> Pair(HistoryEventName.B3TR_CLAIM_REWARD, HistoryEventType.B3TR)
-            "B3TR_GMUpgrade" -> Pair(HistoryEventName.B3TR_UPGRADE_GM, HistoryEventType.B3TR)
-            "B3TR_ActionReward" -> Pair(HistoryEventName.B3TR_ACTION, HistoryEventType.B3TR)
-            "B3TR_ProposalVote" -> Pair(HistoryEventName.B3TR_PROPOSAL_VOTE, HistoryEventType.B3TR)
-            "B3TR_XAllocationVote" ->
-                Pair(HistoryEventName.B3TR_XALLOCATION_VOTE, HistoryEventType.B3TR)
+            "B3TR_Vot3ToB3trSwap" -> HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR
+            "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
+            "B3TR_ProposalDeposit" -> HistoryEventName.B3TR_PROPOSAL_SUPPORT
+            "B3TR_ClaimReward" -> HistoryEventName.B3TR_CLAIM_REWARD
+            "B3TR_GMUpgrade" -> HistoryEventName.B3TR_UPGRADE_GM
+            "B3TR_ActionReward" -> HistoryEventName.B3TR_ACTION
+            "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
+            "B3TR_XAllocationVote" -> HistoryEventName.B3TR_XALLOCATION_VOTE
             "Transfer" -> {
                 when {
-                    genericParams.params["value"] != null ->
-                        Pair(HistoryEventName.TRANSFER_FT, HistoryEventType.TRANSFER)
-                    genericParams.params["tokenId"] != null ->
-                        Pair(HistoryEventName.TRANSFER_NFT, HistoryEventType.TRANSFER)
+                    genericParams.params["value"] != null -> HistoryEventName.TRANSFER_FT
+                    genericParams.params["tokenId"] != null -> HistoryEventName.TRANSFER_NFT
                     else -> null
                 }
             }
             "TransferSingle",
-            "TransferBatch", -> Pair(HistoryEventName.TRANSFER_SF, HistoryEventType.TRANSFER)
-            "VET_TRANSFER" -> Pair(HistoryEventName.TRANSFER_VET, HistoryEventType.TRANSFER)
-            "FT_VET_Swap" -> Pair(HistoryEventName.SWAP_FT_TO_VET, HistoryEventType.SWAP)
-            "VET_FT_Swap" -> Pair(HistoryEventName.SWAP_VET_TO_FT, HistoryEventType.SWAP)
-            "Token_FTSwap" -> Pair(HistoryEventName.SWAP_FT_TO_FT, HistoryEventType.SWAP)
+            "TransferBatch", -> HistoryEventName.TRANSFER_SF
+            "VET_TRANSFER" -> HistoryEventName.TRANSFER_VET
+            "FT_VET_Swap" -> HistoryEventName.SWAP_FT_TO_VET
+            "VET_FT_Swap" -> HistoryEventName.SWAP_VET_TO_FT
+            "Token_FTSwap" -> HistoryEventName.SWAP_FT_TO_FT
             else -> null // Other events will not be labeled
         }
 

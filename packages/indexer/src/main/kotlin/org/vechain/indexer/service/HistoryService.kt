@@ -7,7 +7,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.model.history.HistoryEventType
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -23,12 +22,12 @@ class HistoryService {
         val processedTxs = mutableSetOf<String>()
 
         events.forEach { event ->
-            val eventInfo = determineEventType(event.second) ?: return@forEach
+            val eventName = determineEventType(event.second) ?: return@forEach
 
             if (event.second.getEventType() == "TransferBatch") {
                 historyEvents.addAll(processBatchTransferEvents(event))
             } else {
-                historyEvents.add(createIndexedHistoryEvent(event, eventInfo))
+                historyEvents.add(createIndexedHistoryEvent(event, eventName))
             }
             processedTxs.add(event.first.txId)
         }
@@ -56,7 +55,6 @@ class HistoryService {
                     contractAddress = event.first.address,
                     origin = event.first.origin,
                     eventName = HistoryEventName.TRANSFER_SF,
-                    eventType = HistoryEventType.TRANSFER,
                     gasPayer = event.first.gasPayer,
                     from = event.second.params.getAsString("from"),
                     to = event.second.params.getAsString("to"),
@@ -70,7 +68,7 @@ class HistoryService {
 
     private fun createIndexedHistoryEvent(
         event: Pair<IndexedEvent, GenericEventParameters>,
-        eventInfo: Pair<HistoryEventName, HistoryEventType>,
+        eventName: HistoryEventName,
     ): IndexedHistoryEvent =
         IndexedHistoryEvent(
             id = DigestUtils.sha1Hex(event.first.id),
@@ -80,8 +78,7 @@ class HistoryService {
             txId = event.first.txId,
             contractAddress = event.first.address,
             origin = event.first.origin,
-            eventName = eventInfo.first,
-            eventType = eventInfo.second,
+            eventName = eventName,
             gasPayer = event.first.gasPayer,
             from = event.second.params.getAsString("from"),
             to = event.second.params.getAsString("to"),
@@ -123,7 +120,7 @@ class HistoryService {
                     blockTimestamp = block.timestamp,
                     txId = tx.id,
                     origin = tx.origin,
-                    eventType = HistoryEventType.GENERIC_TX,
+                    eventName = HistoryEventName.GENERIC_TX,
                     gasPayer = tx.gasPayer,
                 )
             }

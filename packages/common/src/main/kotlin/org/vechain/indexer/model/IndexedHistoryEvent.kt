@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.model.b3tr.AppVote
 import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.model.history.HistoryEventType
 
 @Document(collection = "history_events")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -23,8 +22,7 @@ constructor(
     val gasPayer: String? = null,
     val contractAddress: String? = null,
     val tokenId: String? = null,
-    val eventName: HistoryEventName? = null,
-    val eventType: HistoryEventType,
+    val eventName: HistoryEventName,
     val to: String? = null,
     val from: String? = null,
     val value: String? = null,
