@@ -1,0 +1,13 @@
+{
+  "name": "SampleEvent2",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Test",
+      "alias": "Test",
+      "conditions": []
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": []
+}

@@ -1,0 +1,93 @@
+{
+  "name": "Token_FTSwap",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "inputTransfer",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "outputTransfer",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Swap",
+      "alias": "swap",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "inputTransfer",
+      "firstEventProperty": "from",
+      "secondEventName": "outputTransfer",
+      "secondEventProperty": "to",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "inputTransfer",
+      "firstEventProperty": "address",
+      "secondEventName": "outputTransfer",
+      "secondEventProperty": "address",
+      "operator": "NE"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "from",
+      "eventName": "inputTransfer",
+      "businessEventName": "from"
+    },
+    {
+      "name": "to",
+      "eventName": "inputTransfer",
+      "businessEventName": "to"
+    },
+    {
+      "name": "address",
+      "eventName": "inputTransfer",
+      "businessEventName": "inputToken"
+    },
+    {
+      "name": "address",
+      "eventName": "outputTransfer",
+      "businessEventName": "outputToken"
+    },
+    {
+      "name": "value",
+      "eventName": "inputTransfer",
+      "businessEventName": "inputValue"
+    },
+    {
+      "name": "value",
+      "eventName": "outputTransfer",
+      "businessEventName": "outputValue"
+    }
+  ]
+}
