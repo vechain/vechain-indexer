@@ -16,6 +16,7 @@ import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepository
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.utils.FileUtils
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -33,8 +34,9 @@ internal class TransactionIndexerTest {
     fun setUp() {
         val transactionService = TransactionService()
 
+        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
         val abiManager = AbiManager()
-        abiManager.loadAbis("test-abis")
+        abiManager.loadAbis(abiFileStreams)
 
         MockKAnnotations.init(this)
         transactionIndexer =

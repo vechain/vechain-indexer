@@ -15,6 +15,7 @@ import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.service.HistoryService
 import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.utils.FileUtils
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -33,11 +34,13 @@ internal class HistoryIndexerTest {
 
         val historyService = HistoryService()
 
+        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
         val abiManager = AbiManager()
-        abiManager.loadAbis("test-abis")
+        abiManager.loadAbis(abiFileStreams)
 
+        val businessEventStreams = FileUtils.loadFileStreams("business-events")
         val businessEventManager = BusinessEventManager()
-        businessEventManager.loadBusinessEvents("business-events")
+        businessEventManager.loadBusinessEvents(businessEventStreams)
 
         indexer =
             HistoryIndexer(
