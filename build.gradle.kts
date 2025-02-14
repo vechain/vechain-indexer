@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.1"
+    id("org.springframework.boot") version "3.4.2"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "1.9.25"
@@ -203,9 +203,9 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.4.1")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.1")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.2")
         implementation("org.springframework:spring-webflux") {
             version {
                 strictly("6.2.1")
@@ -223,16 +223,16 @@ allprojects {
         }
         implementation("io.netty:netty-codec-http") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
         implementation("io.netty:netty-common") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.2")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -246,7 +246,7 @@ allprojects {
         implementation("org.vechain:indexer-core:2.1.1-SNAPSHOT")
 
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.2")
         testImplementation("org.testcontainers:testcontainers:1.20.4")
         testImplementation("org.testcontainers:junit-jupiter:1.20.4")
         testImplementation("org.testcontainers:mongodb:1.20.4")
