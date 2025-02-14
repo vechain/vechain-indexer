@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.1"
+    id("org.springframework.boot") version "3.4.2"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "1.9.25"
@@ -38,6 +38,26 @@ allprojects {
             force(
                 "com.google.protobuf:protobuf-java:3.25.5",
                 "org.java-websocket:Java-WebSocket:1.5.3",
+                "com.google.protobuf:protobuf-java:3.25.5",
+                "org.java-websocket:Java-WebSocket:1.5.3",
+                "io.netty:netty-handler:4.1.118.Final",
+                "io.netty:netty-codec-http:4.1.118.Final",
+                "io.netty:netty-common:4.1.118.Final",
+                "io.netty:netty-buffer:4.1.118.Final",
+                "io.netty:netty-transport:4.1.118.Final",
+                "io.netty:netty-resolver:4.1.118.Final",
+                "io.netty:netty-codec:4.1.118.Final",
+                "io.netty:netty-codec-http2:4.1.118.Final",
+                "io.netty:netty-resolver-dns:4.1.118.Final",
+                "io.netty:netty-resolver-dns-native-macos:4.1.118.Final",
+                "io.netty:netty-transport-native-epoll:4.1.118.Final",
+                "io.netty:netty-transport-native-epoll:4.1.118.Final",
+                "io.netty:netty-transport-native-unix-common:4.1.118.Final",
+                "io.netty:netty-codec-dns:4.1.118.Final",
+                "io.netty:netty-resolver-dns-classes-macos:4.1.118.Final",
+                "io.netty:netty-handler-proxy:4.1.118.Final",
+                "io.netty:netty-codec-socks:4.1.118.Final",
+                "io.netty:netty-transport-classes-epoll:4.1.118.Final",
             )
         }
     }
@@ -203,9 +223,10 @@ allprojects {
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.4.1")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.1")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-reactor-netty:3.4.2")
         implementation("org.springframework:spring-webflux") {
             version {
                 strictly("6.2.1")
@@ -223,16 +244,16 @@ allprojects {
         }
         implementation("io.netty:netty-codec-http") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
         implementation("io.netty:netty-common") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.2")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -245,8 +266,27 @@ allprojects {
         // Core indexer dependency
         implementation("org.vechain:indexer-core:2.1.1-SNAPSHOT")
 
+        // Explicit Netty Dependencies
+        implementation("io.netty:netty-handler:4.1.118.Final")
+        implementation("io.netty:netty-codec-http:4.1.118.Final")
+        implementation("io.netty:netty-common:4.1.118.Final")
+        implementation("io.netty:netty-buffer:4.1.118.Final")
+        implementation("io.netty:netty-transport:4.1.118.Final")
+        implementation("io.netty:netty-resolver:4.1.118.Final")
+        implementation("io.netty:netty-codec:4.1.118.Final")
+        implementation("io.netty:netty-codec-http2:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns-native-macos:4.1.118.Final")
+        implementation("io.netty:netty-transport-native-epoll:4.1.118.Final")
+        implementation("io.netty:netty-transport-native-unix-common:4.1.118.Final")
+        implementation("io.netty:netty-codec-dns:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns-classes-macos:4.1.118.Final")
+        implementation("io.netty:netty-handler-proxy:4.1.118.Final")
+        implementation("io.netty:netty-codec-socks:4.1.118.Final")
+        implementation("io.netty:netty-transport-classes-epoll:4.1.118.Final")
+
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.2")
         testImplementation("org.testcontainers:testcontainers:1.20.4")
         testImplementation("org.testcontainers:junit-jupiter:1.20.4")
         testImplementation("org.testcontainers:mongodb:1.20.4")
