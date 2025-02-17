@@ -32,7 +32,11 @@ internal class HistoryIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val historyService = HistoryService()
+        val historyService =
+            HistoryService(
+                historyRepository = historyEventRepository,
+                mongoTemplate = mongoTemplate,
+            )
 
         val abiFileStreams = FileUtils.loadFileStreams("test-abis")
         val abiManager = AbiManager()
@@ -47,7 +51,6 @@ internal class HistoryIndexerTest {
                 historyService = historyService,
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 historyRepository = historyEventRepository,
-                mongoTemplate = mongoTemplate,
                 startBlock = 0L,
                 syncLogInterval = 1000L,
                 abiManager = abiManager,

@@ -32,7 +32,11 @@ internal class TransactionIndexerTest {
 
     @BeforeEach
     fun setUp() {
-        val transactionService = TransactionService()
+        val transactionService =
+            TransactionService(
+                transactionRepository = transactionRepository,
+                mongoTemplate = mongoTemplate,
+            )
 
         val abiFileStreams = FileUtils.loadFileStreams("test-abis")
         val abiManager = AbiManager()
@@ -43,7 +47,6 @@ internal class TransactionIndexerTest {
             TransactionIndexer(
                 transactionRepository,
                 transactionService,
-                mongoTemplate,
                 DefaultThorClient("http://localhost:8669"),
                 abiManager,
                 0L,
