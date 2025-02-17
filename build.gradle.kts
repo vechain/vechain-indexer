@@ -215,6 +215,11 @@ allprojects {
                 strictly("4.1.118.Final")
             }
         }
+        implementation("io.netty:netty-handler") {
+            version {
+                strictly("4.1.118.Final")
+            }
+        }
 
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
 
