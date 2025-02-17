@@ -2,12 +2,10 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.service.HistoryService
 import org.vechain.indexer.thor.client.ThorClient
@@ -16,9 +14,8 @@ import org.vechain.indexer.thor.model.Block
 @Profile("history_events")
 @Component
 open class HistoryIndexer(
-    private val historyRepository: HistoryEventRepository,
+    historyRepository: HistoryEventRepository,
     private val historyService: HistoryService,
-    private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
@@ -57,12 +54,11 @@ open class HistoryIndexer(
                             ),
                     ),
                 )
-            val historyEvents = historyService.processBlockEvents(events, block)
-            mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
+            historyService.processBlockEvents(events, block)
         }
     }
 
     override fun rollback(blockNumber: Long) {
-        historyRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        historyService.rollback(blockNumber)
     }
 }

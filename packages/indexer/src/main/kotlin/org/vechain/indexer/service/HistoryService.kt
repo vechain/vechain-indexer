@@ -1,23 +1,28 @@
 package org.vechain.indexer.service
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
+import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Service
-class HistoryService {
+class HistoryService(
+    private val historyRepository: HistoryEventRepository,
+    private val mongoTemplate: MongoTemplate,
+) {
     fun processBlockEvents(
         events: List<Pair<IndexedEvent, GenericEventParameters>>,
         block: Block,
-    ): List<IndexedHistoryEvent> {
+    ) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
@@ -33,7 +38,8 @@ class HistoryService {
         }
 
         historyEvents.addAll(getMissingTransactions(block, processedTxs))
-        return historyEvents
+
+        mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
     }
 
     private fun processBatchTransferEvents(
@@ -132,4 +138,8 @@ class HistoryService {
                     gasPayer = tx.gasPayer,
                 )
             }
+
+    fun rollback(blockNumber: Long) {
+        historyRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+    }
 }
