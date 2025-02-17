@@ -207,12 +207,12 @@ allprojects {
         }
         implementation("io.netty:netty-codec-http") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
         implementation("io.netty:netty-common") {
             version {
-                strictly("4.1.115.Final")
+                strictly("4.1.118.Final")
             }
         }
 
