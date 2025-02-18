@@ -1,0 +1,65 @@
+{
+  "name": "B3TR_GMUpgrade",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Upgraded",
+      "alias": "upgradeGM",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "transferB3TR",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "0xd5903bcc66e439c753e525f8af2fec7be2429593",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "from",
+      "eventName": "transferB3TR",
+      "businessEventName": "from"
+    },
+    {
+      "name": "address",
+      "eventName": "transferB3TR",
+      "businessEventName": "to"
+    },
+    {
+      "name": "value",
+      "eventName": "transferB3TR",
+      "businessEventName": "value"
+    },
+    {
+      "name": "tokenId",
+      "eventName": "upgradeGM",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "newLevel",
+      "eventName": "upgradeGM",
+      "businessEventName": "newLevel"
+    },
+    {
+      "name": "oldLevel",
+      "eventName": "upgradeGM",
+      "businessEventName": "oldLevel"
+    }
+  ]
+}

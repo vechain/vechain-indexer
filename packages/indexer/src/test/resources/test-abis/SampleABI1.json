@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Event1",
+    "type": "event",
+    "anonymous": false,
+    "inputs": [
+      { "name": "param1", "type": "uint256", "indexed": true },
+      { "name": "param2", "type": "address", "indexed": false }
+    ]
+  },
+  {
+    "name": "Event2",
+    "type": "event",
+    "anonymous": false,
+    "inputs": [
+      { "name": "param1", "type": "string", "indexed": true },
+      { "name": "param2", "type": "bytes32", "indexed": false }
+    ]
+  }
+]

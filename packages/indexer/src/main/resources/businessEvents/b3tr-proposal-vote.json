@@ -1,0 +1,52 @@
+{
+  "name": "B3TR_ProposalVote",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "VoteCast",
+      "alias": "voteEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "voter",
+      "eventName": "voteEvent",
+      "businessEventName": "from"
+    },
+    {
+      "name": "proposalId",
+      "eventName": "voteEvent",
+      "businessEventName": "proposalId"
+    },
+    {
+      "name": "support",
+      "eventName": "voteEvent",
+      "businessEventName": "support"
+    },
+    {
+      "name": "reason",
+      "eventName": "voteEvent",
+      "businessEventName": "reason"
+    },
+    {
+        "name": "weight",
+        "eventName": "voteEvent",
+        "businessEventName": "voteWeight"
+    },
+    {
+      "name": "power",
+      "eventName": "voteEvent",
+      "businessEventName": "votePower"
+    }
+  ]
+}

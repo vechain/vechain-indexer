@@ -1,0 +1,88 @@
+{
+  "name": "Token_VETSwap2",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "inputTransfer",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "VET_TRANSFER",
+      "alias": "outputTransfer",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Swap",
+      "alias": "swap",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "address",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "inputTransfer",
+      "firstEventProperty": "from",
+      "secondEventName": "outputTransfer",
+      "secondEventProperty": "to",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "inputTransfer",
+      "firstEventProperty": "address",
+      "secondEventName": "outputTransfer",
+      "secondEventProperty": "address",
+      "operator": "NE"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "from",
+      "eventName": "inputTransfer",
+      "businessEventName": "from"
+    },
+    {
+      "name": "to",
+      "eventName": "inputTransfer",
+      "businessEventName": "to"
+    },
+    {
+      "name": "address",
+      "eventName": "inputTransfer",
+      "businessEventName": "inputToken"
+    },
+    {
+      "name": "value",
+      "eventName": "inputTransfer",
+      "businessEventName": "inputValue"
+    },
+    {
+      "name": "amount",
+      "eventName": "outputTransfer",
+      "businessEventName": "outputValue"
+    }
+  ]
+}
