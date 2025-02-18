@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("org.springframework.boot") version "3.4.2"
+    id("org.springframework.boot") version "3.4.1"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
     kotlin("jvm") version "1.9.25"
@@ -37,27 +37,7 @@ allprojects {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.5",
-                "org.java-websocket:Java-WebSocket:1.5.3",
-                "com.google.protobuf:protobuf-java:3.25.5",
-                "org.java-websocket:Java-WebSocket:1.5.3",
-                "io.netty:netty-handler:4.1.118.Final",
-                "io.netty:netty-codec-http:4.1.118.Final",
-                "io.netty:netty-common:4.1.118.Final",
-                "io.netty:netty-buffer:4.1.118.Final",
-                "io.netty:netty-transport:4.1.118.Final",
-                "io.netty:netty-resolver:4.1.118.Final",
-                "io.netty:netty-codec:4.1.118.Final",
-                "io.netty:netty-codec-http2:4.1.118.Final",
-                "io.netty:netty-resolver-dns:4.1.118.Final",
-                "io.netty:netty-resolver-dns-native-macos:4.1.118.Final",
-                "io.netty:netty-transport-native-epoll:4.1.118.Final",
-                "io.netty:netty-transport-native-epoll:4.1.118.Final",
-                "io.netty:netty-transport-native-unix-common:4.1.118.Final",
-                "io.netty:netty-codec-dns:4.1.118.Final",
-                "io.netty:netty-resolver-dns-classes-macos:4.1.118.Final",
-                "io.netty:netty-handler-proxy:4.1.118.Final",
-                "io.netty:netty-codec-socks:4.1.118.Final",
-                "io.netty:netty-transport-classes-epoll:4.1.118.Final",
+                "org.java-websocket:Java-WebSocket:1.5.3"
             )
         }
     }
@@ -113,33 +93,17 @@ allprojects {
         dependsOn("installGitHooks")
     }
 
-    tasks.jacocoTestReport {
-        dependsOn(tasks.test)
-
-        reports {
-            xml.required.set(true)
-            html.required.set(true)
-            csv.required.set(false)
-        }
-    }
+    tasks.jacocoTestReport { dependsOn(tasks.test) }
 
     tasks.clean {
-        val dirs =
-            mutableListOf(
-                layout.buildDirectory
-                    .get()
-                    .asFile.path,
-                "${rootDir.path}/bin",
-            )
+        val dirs = mutableListOf(layout.buildDirectory.get().asFile.path, "${rootDir.path}/bin")
         dirs.addAll(
             subprojects.flatMap {
                 listOf(
-                    it.layout.buildDirectory
-                        .get()
-                        .asFile.path,
+                    it.layout.buildDirectory.get().asFile.path,
                     "${it.projectDir.path}/bin",
                 )
-            },
+            }
         )
 
         doFirst { delete(dirs) }
@@ -177,13 +141,8 @@ allprojects {
         addTestListener(
             object : TestListener {
                 override fun beforeSuite(suite: TestDescriptor) {}
-
                 override fun beforeTest(testDescriptor: TestDescriptor) {}
-
-                override fun afterTest(
-                    testDescriptor: TestDescriptor,
-                    result: TestResult,
-                ) {
+                override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
                     when (result.resultType) {
                         TestResult.ResultType.FAILURE ->
                             failedTests.add(Pair(testDescriptor, result.exception))
@@ -193,24 +152,21 @@ allprojects {
                     }
                 }
 
-                override fun afterSuite(
-                    suite: TestDescriptor,
-                    result: TestResult,
-                ) {
+                override fun afterSuite(suite: TestDescriptor, result: TestResult) {
                     logger.lifecycle("----")
                     logger.lifecycle("Test result: ${result.resultType}")
                     logger.lifecycle(
                         "Test summary: ${result.testCount} tests, " +
-                            "${result.successfulTestCount} succeeded, " +
-                            "${result.failedTestCount} failed, " +
-                            "${result.skippedTestCount} skipped",
+                                "${result.successfulTestCount} succeeded, " +
+                                "${result.failedTestCount} failed, " +
+                                "${result.skippedTestCount} skipped",
                     )
                     if (failedTests.isNotEmpty()) {
                         logger.lifecycle("\tFailed Tests:")
                         failedTests.forEach {
                             logger.lifecycle(
                                 "\t\t${it.first.className} - ${it.first.name}",
-                                it.second,
+                                it.second
                             )
                         }
                         failedTests.clear()
@@ -224,17 +180,16 @@ allprojects {
                         skippedTests.clear()
                     }
                 }
-            },
+            }
         )
     }
 
     dependencies {
 
         // Common dependencies
-        implementation("org.springframework.boot:spring-boot-starter:3.4.2")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.2")
-        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.2")
-        implementation("org.springframework.boot:spring-boot-starter-reactor-netty:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.1")
+        implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.1")
         implementation("org.springframework:spring-webflux") {
             version {
                 strictly("6.2.1")
@@ -260,8 +215,13 @@ allprojects {
                 strictly("4.1.118.Final")
             }
         }
+        implementation("io.netty:netty-handler") {
+            version {
+                strictly("4.1.118.Final")
+            }
+        }
 
-        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.2")
+        implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.1")
 
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.21")
 
@@ -274,27 +234,8 @@ allprojects {
         // Core indexer dependency
         implementation("org.vechain:indexer-core:2.1.1-SNAPSHOT")
 
-        // Explicit Netty Dependencies
-        implementation("io.netty:netty-handler:4.1.118.Final")
-        implementation("io.netty:netty-codec-http:4.1.118.Final")
-        implementation("io.netty:netty-common:4.1.118.Final")
-        implementation("io.netty:netty-buffer:4.1.118.Final")
-        implementation("io.netty:netty-transport:4.1.118.Final")
-        implementation("io.netty:netty-resolver:4.1.118.Final")
-        implementation("io.netty:netty-codec:4.1.118.Final")
-        implementation("io.netty:netty-codec-http2:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns-native-macos:4.1.118.Final")
-        implementation("io.netty:netty-transport-native-epoll:4.1.118.Final")
-        implementation("io.netty:netty-transport-native-unix-common:4.1.118.Final")
-        implementation("io.netty:netty-codec-dns:4.1.118.Final")
-        implementation("io.netty:netty-resolver-dns-classes-macos:4.1.118.Final")
-        implementation("io.netty:netty-handler-proxy:4.1.118.Final")
-        implementation("io.netty:netty-codec-socks:4.1.118.Final")
-        implementation("io.netty:netty-transport-classes-epoll:4.1.118.Final")
-
         // Test dependencies
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.2")
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
         testImplementation("org.testcontainers:testcontainers:1.20.4")
         testImplementation("org.testcontainers:junit-jupiter:1.20.4")
         testImplementation("org.testcontainers:mongodb:1.20.4")
