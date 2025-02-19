@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedHistoryEvent
 
-@Profile("history_events")
+@Profile("history-events")
 @Service
 open class HistoryService(
     private val mongoTemplate: MongoTemplate,

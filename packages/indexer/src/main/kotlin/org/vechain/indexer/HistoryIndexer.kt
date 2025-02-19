@@ -11,7 +11,7 @@ import org.vechain.indexer.service.HistoryService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 
-@Profile("history_events")
+@Profile("history-events")
 @Component
 open class HistoryIndexer(
     historyRepository: HistoryEventRepository,
