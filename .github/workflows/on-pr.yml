@@ -1,4 +1,4 @@
-name: Pull Request - Test & Plan
+name: Pull Request - Test, Plan & Build Docker Image
 
 on:
   pull_request:
@@ -55,3 +55,30 @@ jobs:
       contents: read
       id-token: write
     secrets: inherit
+
+  build-docker-image:
+    name: Build Docker Image on PR
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        application: [ indexer, api ]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          platforms: linux/arm64
+          build-args: |
+            PACKAGE_NAME=${{ matrix.application }}
+          push: false
+          context: ./
+          tags: pr-test-image-${{ matrix.application }}:${{ github.sha }}
+
