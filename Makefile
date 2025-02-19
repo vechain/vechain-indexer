@@ -100,21 +100,20 @@ db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
-db-backup: #@ Backup the MongoDB database using Docker.
+db-backup: #@ Backup MongoDB database using Docker (Compressed)
 	# Ensure backup directory exists and is writable
 	mkdir -p $(PWD)/$(BACKUP_DIR)
-	docker run --rm --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --out="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S)"
-db-restore: #@ Restore the MongoDB database from the latest backup or a specified directory using Docker.
-	@if [ -z "$$DIR" ]; then \
-		DIR=$$(ls -td $(BACKUP_DIR)/veworld-bd-* | head -1); \
-		if [ -z "$$DIR" ]; then \
-			echo "No backup found in $(BACKUP_DIR). Please specify DIR=<backup-folder>"; \
+	docker run --rm --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S).gz"
+db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
+	@if [ -z "$$FILE" ]; then \
+		FILE=$$(ls -t $(BACKUP_DIR)/veworld-bd-*.gz | head -1); \
+		if [ -z "$$FILE" ]; then \
+			echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
 			exit 1; \
 		fi; \
 	fi; \
-	echo "Restoring from $$DIR"; \
-	docker run --rm --network=host -v $(PWD)/$$DIR/vechain:/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop "/backup"
-
+	echo "Restoring from $$FILE"; \
+	docker run --rm --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$$(basename $$FILE)" --numInsertionWorkersPerCollection 16 --noIndexRestore
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml
