@@ -1,4 +1,4 @@
-name: Pull Request - Test, Plan & Build Docker Image
+name: Pull Request - Test & Plan
 
 on:
   pull_request:
