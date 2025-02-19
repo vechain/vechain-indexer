@@ -74,7 +74,7 @@ module "mongoatlas-main-net" {
     policy_item_daily = {
       frequency_interval = 1
       retention_unit     = "days"
-      retention_value    = 1
+      retention_value    = 3
     }
     policy_item_weekly = {
       frequency_interval = 1
@@ -165,7 +165,7 @@ module "mongoatlas-test-net" {
     policy_item_daily = {
       frequency_interval = 1
       retention_unit     = "days"
-      retention_value    = 1
+      retention_value    = 3
     }
     policy_item_weekly = {
       frequency_interval = 1
