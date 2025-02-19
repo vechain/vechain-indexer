@@ -1,5 +1,8 @@
 FROM amazoncorretto:21-alpine3.20 AS builder
 
+RUN apk update && apk upgrade
+RUN apk add --no-cache curl
+
 ARG PACKAGE_NAME
 
 WORKDIR /usr/app
@@ -21,6 +24,9 @@ ENV PACKAGE_NAME=$PACKAGE_NAME
 RUN ./gradlew packages:$PACKAGE_NAME:build -x test
 
 FROM amazoncorretto:21-alpine3.20 AS prod
+
+RUN apk update && apk upgrade
+RUN apk add --no-cache curl
 
 ARG PACKAGE_NAME
 ENV PACKAGE_NAME=$PACKAGE_NAME
