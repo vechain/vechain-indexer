@@ -200,7 +200,7 @@ module "ecs-backend-service" {
   memory                             = each.value.indexer.memory
   cidr                               = local.env.cidr
   security_groups                    = [aws_security_group.ecs_service_sg.id]
-  desired_capacity                   = "1"
+  desired_capacity                   = "0"
   containerPort                      = 8080
   hostPort                           = 8080
   deployment_minimum_healthy_percent = 0
