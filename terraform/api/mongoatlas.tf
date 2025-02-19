@@ -71,11 +71,6 @@ module "mongoatlas-main-net" {
     reference_minute_of_hour = 00
     restore_window_days      = 1
 
-    policy_item_hourly = {
-      frequency_interval = 1
-      retention_unit     = "days"
-      retention_value    = 1
-    }
     policy_item_daily = {
       frequency_interval = 1
       retention_unit     = "days"
@@ -167,11 +162,6 @@ module "mongoatlas-test-net" {
     reference_minute_of_hour = 00
     restore_window_days      = 1
 
-    policy_item_hourly = {
-      frequency_interval = 1
-      retention_unit     = "days"
-      retention_value    = 1
-    }
     policy_item_daily = {
       frequency_interval = 1
       retention_unit     = "days"
