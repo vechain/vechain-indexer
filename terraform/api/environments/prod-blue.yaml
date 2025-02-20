@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nft-events,transactions,transfer-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -46,7 +46,7 @@ enabled_nets:
     indexer:
       cpu: 1024
       memory: 2048
-      spring_profile: indexer,nft-events,transactions,transfer-events,history_events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -57,7 +57,7 @@ enabled_nets:
         nfts:                       '1304112'
         transactions:               '751'
         transfers:                  '37840'
-        history_events:             '751'
+        history-events:             '751'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
@@ -94,7 +94,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 2
-      spring_profile:               nft-events,transactions,transfer-events,history_events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -103,7 +103,7 @@ enabled_nets:
     indexer:
       cpu: 1024
       memory: 2048
-      spring_profile: indexer,nft-events,transactions,transfer-events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -114,7 +114,7 @@ enabled_nets:
         nfts:                       '1042259'
         transactions:               '15034'
         transfers:                  '15034'
-        history_events:             '15034'
+        history-events:             '15034'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
