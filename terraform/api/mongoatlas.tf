@@ -1,3 +1,29 @@
+locals {
+  mongodbatlas_backup_schedule = {
+    reference_hour_of_day    = 7
+    reference_minute_of_hour = 00
+    restore_window_days      = 1
+
+    policy_item_daily = {
+      frequency_interval = 1
+      retention_unit     = "days"
+      retention_value    = 3
+    }
+
+    policy_item_weekly = {
+      frequency_interval = 1
+      retention_unit     = "weeks"
+      retention_value    = 1
+    }
+
+    policy_item_monthly = {
+      frequency_interval = 1
+      retention_unit     = "months"
+      retention_value    = 1
+    }
+  }
+}
+
 module "mongoatlas-main-net" {
   source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.1.0.13"
 
@@ -66,35 +92,7 @@ module "mongoatlas-main-net" {
   }
 
   enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod") ? true : false
-  mongodbatlas_backup_schedule_config = {
-    reference_hour_of_day    = 7
-    reference_minute_of_hour = 00
-    restore_window_days      = 1
-
-    policy_item_hourly = {
-      frequency_interval = 6  # Backup every 6 hours
-      retention_unit     = "days"
-      retention_value    = 0   # Retain 0 backups
-    }
-
-    policy_item_daily = {
-      frequency_interval = 1   # Backup daily
-      retention_unit     = "days"
-      retention_value    = 3   # Keep last 3 days
-    }
-
-    policy_item_weekly = {
-      frequency_interval = 1   # Backup weekly
-      retention_unit     = "weeks"
-      retention_value    = 1   # Keep last 1 week
-    }
-
-    policy_item_monthly = {
-      frequency_interval = 1   # Backup monthly
-      retention_unit     = "months"
-      retention_value    = 1   # Keep last 1 month
-    }
-  }
+  mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
 }
 
 module "mongoatlas-test-net" {
@@ -165,35 +163,7 @@ module "mongoatlas-test-net" {
   }
 
   enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod-") ? true : false
-  mongodbatlas_backup_schedule_config = {
-    reference_hour_of_day    = 7
-    reference_minute_of_hour = 00
-    restore_window_days      = 1
-
-    policy_item_hourly = {
-      frequency_interval = 6  # Backup every 6 hours
-      retention_unit     = "days"
-      retention_value    = 0   # Retain 0 backups
-    }
-
-    policy_item_daily = {
-      frequency_interval = 1   # Backup daily
-      retention_unit     = "days"
-      retention_value    = 3   # Keep last 3 days
-    }
-
-    policy_item_weekly = {
-      frequency_interval = 1   # Backup weekly
-      retention_unit     = "weeks"
-      retention_value    = 1   # Keep last 1 week
-    }
-
-    policy_item_monthly = {
-      frequency_interval = 1   # Backup monthly
-      retention_unit     = "months"
-      retention_value    = 1   # Keep last 1 month
-    }
-  }
+    mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
 }
 
 # Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
