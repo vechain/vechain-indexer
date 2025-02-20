@@ -30,7 +30,7 @@ module "mongoatlas-main-net" {
   secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
-  create_api_key = false
+  create_api_key  = false
   slack_api_token = local.env.slack_secret_arn
   alerts = {
     alert_type_1 = {
@@ -46,25 +46,25 @@ module "mongoatlas-main-net" {
           roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
         },
         {
-          type_name     = "SLACK"
-          interval_min  = 60
-          delay_min     = 0
-          slack_enabled = true
+          type_name          = "SLACK"
+          interval_min       = 60
+          delay_min          = 0
+          slack_enabled      = true
           slack_channel_name = "veworld-x-devops"
-          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+          roles              = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
         }
       ]
     }
   }
 
-  audit_enabled               = false
-  audit_config                = {
+  audit_enabled = false
+  audit_config = {
     audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster                 = startswith(local.env.environment, "prod") ? true : false
-  cluster_config                 = {
+  enable_cluster = startswith(local.env.environment, "prod") ? true : false
+  cluster_config = {
     cluster_name                 = "${local.env.environment}-Mainnet"
     disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
     num_shards                   = 1
@@ -72,10 +72,15 @@ module "mongoatlas-main-net" {
     cluster_type                 = "REPLICASET"
     auto_scaling_disk_gb_enabled = true
     provider_name                = "AWS"
-    provider_disk_iops           = try(local.env.enabled_nets.main.mongodb.iops, null)
     provider_volume_type         = "STANDARD"
     provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier
     mongo_db_major_version       = "8"
+
+    auto_scaling_compute_enabled                    = true
+    auto_scaling_compute_scale_down_enabled         = true
+    provider_auto_scaling_compute_max_instance_size = local.env.enabled_nets.main.mongodb.auto_scaling_compute_max_instance_size
+    provider_auto_scaling_compute_min_instance_size = local.env.enabled_nets.main.mongodb.auto_scaling_compute_min_instance_size
+
     replication_specs = [
       {
         num_shards = 1
@@ -101,7 +106,7 @@ module "mongoatlas-test-net" {
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
-  create_api_key = false
+  create_api_key  = false
   slack_api_token = local.env.slack_secret_arn
   alerts = {
     alert_type_1 = {
@@ -117,25 +122,25 @@ module "mongoatlas-test-net" {
           roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
         },
         {
-          type_name     = "SLACK"
-          interval_min  = 60
-          delay_min     = 0
-          slack_enabled = true
+          type_name          = "SLACK"
+          interval_min       = 60
+          delay_min          = 0
+          slack_enabled      = true
           slack_channel_name = "veworld-x-devops"
-          roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+          roles              = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
         }
       ]
     }
   }
 
-  audit_enabled               = false
-  audit_config                = {
+  audit_enabled = false
+  audit_config = {
     audit_filter                = "{ 'atype': 'authenticate', 'param': {   'user': 'auditAdmin',   'db': 'admin',   'mechanism': 'SCRAM-SHA-1' }}"
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster               = startswith(local.env.environment, "prod") ? true : false
-  cluster_config               = {
+  enable_cluster = startswith(local.env.environment, "prod") ? true : false
+  cluster_config = {
     cluster_name                 = "${local.env.environment}-Testnet"
     disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
     num_shards                   = 1
@@ -143,10 +148,13 @@ module "mongoatlas-test-net" {
     cluster_type                 = "REPLICASET"
     auto_scaling_disk_gb_enabled = true
     provider_name                = "AWS"
-    provider_disk_iops           = try(local.env.enabled_nets.test.mongodb.iops, null)
     provider_volume_type         = "STANDARD"
     provider_instance_size_name  = local.env.enabled_nets.test.mongodb.cluster_tier
     mongo_db_major_version       = "8"
+
+    auto_scaling_compute_enabled            = false
+    auto_scaling_compute_scale_down_enabled = false
+
     replication_specs = [
       {
         num_shards = 1
@@ -163,7 +171,7 @@ module "mongoatlas-test-net" {
   }
 
   enable_mongodbatlas_backup_schedule = startswith(local.env.environment, "prod-") ? true : false
-    mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
+  mongodbatlas_backup_schedule_config = local.mongodbatlas_backup_schedule
 }
 
 # Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
@@ -179,10 +187,10 @@ resource "random_password" "indexer_db_user_password" {
 }
 
 resource "aws_secretsmanager_secret" "api_db_user_secret" {
-  name       = "/${local.env.environment}/${local.env.project}/mongo_api_password"
+  name = "/${local.env.environment}/${local.env.project}/mongo_api_password"
 }
 resource "aws_secretsmanager_secret" "indexer_db_user_secret" {
-  name       = "/${local.env.environment}/${local.env.project}/mongo_indexer_password"
+  name = "/${local.env.environment}/${local.env.project}/mongo_indexer_password"
 }
 
 resource "aws_secretsmanager_secret_version" "api_db_user_secret_version" {
