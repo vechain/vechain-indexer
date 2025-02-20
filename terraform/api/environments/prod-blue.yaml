@@ -57,7 +57,7 @@ enabled_nets:
         nfts:                       '1304112'
         transactions:               '751'
         transfers:                  '37840'
-        history-events:             '751'
+        history:                    '751'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
@@ -88,6 +88,8 @@ enabled_nets:
       disk_size_gb:                 250
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+      auto_scaling_compute_max_instance_size: M40
+      auto_scaling_compute_min_instance_size: M20
   test:
     thor_url:                       https://testnet.vechain.org
     api:
@@ -114,7 +116,7 @@ enabled_nets:
         nfts:                       '1042259'
         transactions:               '15034'
         transfers:                  '15034'
-        history-events:             '15034'
+        history:                    '15034'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
