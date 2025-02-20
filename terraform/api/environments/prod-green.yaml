@@ -57,6 +57,7 @@ enabled_nets:
         nfts:                       '1304112'
         transactions:               '751'
         transfers:                  '37840'
+        history:                    '751'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'
@@ -113,6 +114,7 @@ enabled_nets:
         nfts:                       '1042259'
         transactions:               '15034'
         transfers:                  '15034'
+        history:                    '15034'
       sync_logger_interval:
         blocks:                     '5000'
         clauses:                    '5000'

@@ -275,6 +275,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.transfers
     },
     {
+      name  = "INDEXER_START_BLOCK_HISTORY"
+      value = each.value.indexer.start_block.history
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_BLOCKS"
       value = each.value.indexer.sync_logger_interval.blocks
     },
