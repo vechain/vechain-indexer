@@ -8,7 +8,7 @@ import org.vechain.indexer.model.b3tr.AppVote
 import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
 
-@Document(collection = "history_events")
+@Document(collection = "history-events")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IndexedHistoryEvent
 @ConstructorBinding

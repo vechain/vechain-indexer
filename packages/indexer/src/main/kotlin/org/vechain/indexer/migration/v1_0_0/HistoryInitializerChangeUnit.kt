@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.index.IndexDefinition
 import org.vechain.indexer.model.IndexedHistoryEvent
 
-@Profile("history_events")
+@Profile("history-events")
 @ChangeUnit(id = "history-initializer", order = "9", author = "roisin-dowling")
 class HistoryInitializerChangeUnit {
     companion object {
