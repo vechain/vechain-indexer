@@ -184,7 +184,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.49"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name
@@ -200,7 +200,7 @@ module "ecs-backend-service" {
   memory                             = each.value.indexer.memory
   cidr                               = local.env.cidr
   security_groups                    = [aws_security_group.ecs_service_sg.id]
-  desired_capacity                   = "0"
+  desired_capacity                   = 0
   containerPort                      = 8080
   hostPort                           = 8080
   deployment_minimum_healthy_percent = 0
