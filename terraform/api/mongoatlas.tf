@@ -70,21 +70,29 @@ module "mongoatlas-main-net" {
     reference_hour_of_day    = 7
     reference_minute_of_hour = 00
     restore_window_days      = 1
-    policy_item_hourly = null
-    policy_item_daily = {
-      frequency_interval = 1
+
+    policy_item_hourly = {
+      frequency_interval = 6  # Backup every 6 hours
       retention_unit     = "days"
-      retention_value    = 3
+      retention_value    = 0   # Retain 0 backups
     }
+
+    policy_item_daily = {
+      frequency_interval = 1   # Backup daily
+      retention_unit     = "days"
+      retention_value    = 3   # Keep last 3 days
+    }
+
     policy_item_weekly = {
-      frequency_interval = 1
+      frequency_interval = 1   # Backup weekly
       retention_unit     = "weeks"
-      retention_value    = 1
+      retention_value    = 1   # Keep last 1 week
     }
+
     policy_item_monthly = {
-      frequency_interval = 1
+      frequency_interval = 1   # Backup monthly
       retention_unit     = "months"
-      retention_value    = 1
+      retention_value    = 1   # Keep last 1 month
     }
   }
 }
@@ -161,21 +169,29 @@ module "mongoatlas-test-net" {
     reference_hour_of_day    = 7
     reference_minute_of_hour = 00
     restore_window_days      = 1
-    policy_item_hourly = null
-    policy_item_daily = {
-      frequency_interval = 1
+
+    policy_item_hourly = {
+      frequency_interval = 6  # Backup every 6 hours
       retention_unit     = "days"
-      retention_value    = 3
+      retention_value    = 0   # Retain 0 backups
     }
+
+    policy_item_daily = {
+      frequency_interval = 1   # Backup daily
+      retention_unit     = "days"
+      retention_value    = 3   # Keep last 3 days
+    }
+
     policy_item_weekly = {
-      frequency_interval = 1
+      frequency_interval = 1   # Backup weekly
       retention_unit     = "weeks"
-      retention_value    = 1
+      retention_value    = 1   # Keep last 1 week
     }
+
     policy_item_monthly = {
-      frequency_interval = 1
+      frequency_interval = 1   # Backup monthly
       retention_unit     = "months"
-      retention_value    = 1
+      retention_value    = 1   # Keep last 1 month
     }
   }
 }
