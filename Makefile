@@ -103,20 +103,18 @@ db-setup: #@ Setup all the database.
 db-backup: #@ Backup MongoDB database using Docker (Compressed)
 	# Ensure backup directory exists and is writable
 	mkdir -p $(PWD)/$(BACKUP_DIR)
-	echo "Backing up MongoDB database to $(PWD)/$(BACKUP_DIR). Will run in the background. Use the command 'docker log -f --tail 100 mongo-backup' to see the progress"
+	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
 	docker rm -f mongo-backup 2>/dev/null || true
 	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S).gz"
 db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
-	@if [ -z "$$FILE" ]; then \
-		FILE=$$(ls -t $(BACKUP_DIR)/veworld-bd-*.gz | head -1); \
-		if [ -z "$$FILE" ]; then \
-			echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
-			exit 1; \
-		fi; \
+	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-bd-*.gz 2>/dev/null | head -1))
+	@if [ -z "$(FILE)" ]; then \
+		echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
+		exit 1; \
 	fi; \
-	echo "Restoring from $$FILE. Will run in the background. Use the command 'docker log -f --tail 100 mongo-restore' to see the progress";
+	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
 	docker rm -f mongo-restore 2>/dev/null || true
-	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$$(basename $$FILE)" --numInsertionWorkersPerCollection 16 --noIndexRestore
+	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16 --noIndexRestore
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml
