@@ -37,7 +37,6 @@ class TransferEventsInitializerChangeUnit {
             Index()
                 .named(TRANSFER_BLOCKNUMBER_IDX)
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
-                .background()
 
         val toIdx: IndexDefinition =
             Index()
@@ -46,7 +45,6 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
-                .background()
 
         val fromIdx: IndexDefinition =
             Index()
@@ -55,7 +53,6 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
-                .background()
 
         val tokenAddressIdx: IndexDefinition =
             Index()
@@ -64,7 +61,6 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
-                .background()
 
         val agg1Idx: IndexDefinition =
             Index()
@@ -75,7 +71,6 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
-                .background()
 
         val agg2Idx: IndexDefinition =
             Index()
@@ -86,7 +81,6 @@ class TransferEventsInitializerChangeUnit {
                 .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                 .on(IndexedTransferEvent::id.name, Sort.Direction.DESC)
-                .background()
 
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(TRANSFER_EVENTS).ensureIndex(toIdx)
