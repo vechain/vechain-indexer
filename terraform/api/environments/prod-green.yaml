@@ -103,8 +103,8 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 1024
-      memory: 2048
+      cpu: 2048
+      memory: 4096
       spring_profile: indexer,nft-events,transactions,transfer-events,history-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
@@ -147,3 +147,5 @@ enabled_nets:
       disk_size_gb:                 119
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+      auto_scaling_compute_max_instance_size: M30
+      auto_scaling_compute_min_instance_size: M10
