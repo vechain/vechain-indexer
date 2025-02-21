@@ -115,7 +115,7 @@ db-restore: #@ Restore MongoDB database from the latest backup or a specified di
 		fi; \
 	fi; \
 	echo "Restoring from $$FILE. Will run in the background. Use the command 'docker log -f --tail 100 mongo-restore' to see the progress";
-	docker rm -f mongo-backup 2>/dev/null || true
+	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$$(basename $$FILE)" --numInsertionWorkersPerCollection 16 --noIndexRestore
 
 # Thor
