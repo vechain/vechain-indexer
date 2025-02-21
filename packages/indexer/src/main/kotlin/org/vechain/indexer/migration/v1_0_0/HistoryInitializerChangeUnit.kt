@@ -45,7 +45,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val toFromOriginContractAddressTimestampIdx: IndexDefinition =
             Index()
@@ -55,14 +54,12 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val gasPayerTimestampIdx: IndexDefinition =
             Index()
                 .named(GAS_PAYER_TIMESTAMP_IDX)
                 .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val originGasPayerTimestampIdx: IndexDefinition =
             Index()
@@ -70,7 +67,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameToFromOriginTimestampIdx: IndexDefinition =
             Index()
@@ -80,7 +76,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameToFromContractAddressTimestampIdx: IndexDefinition =
             Index()
@@ -90,7 +85,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameOriginTimestampIdx: IndexDefinition =
             Index()
@@ -98,7 +92,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameGasPayerTimestampIdx: IndexDefinition =
             Index()
@@ -106,7 +99,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameToTimestampIdx: IndexDefinition =
             Index()
@@ -114,7 +106,6 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val eventNameFromTimestampIdx: IndexDefinition =
             Index()
@@ -122,13 +113,11 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                .background()
 
         val blockNumberIdx: IndexDefinition =
             Index()
                 .named(BLOCK_NUMBER_IDX)
                 .on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.ASC)
-                .background()
 
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(toFromOriginTimestampIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(toFromOriginContractAddressTimestampIdx)

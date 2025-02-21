@@ -39,17 +39,15 @@ class NftsInitializerChangeUnit {
     @Execution
     fun execution(mongoTemplate: MongoTemplate) {
         val blockNumberIdx: IndexDefinition =
-            Index()
-                .named(NFT_BLOCKNUMBER_IDX)
-                .on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
-                .background()
+            Index().named(NFT_BLOCKNUMBER_IDX).on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
+
         val contractAddressTokenIdIdx: IndexDefinition =
             Index()
                 .named(NFT_CONTRACTADDRESS_TOKENID_IDX)
                 .on(IndexedNFT::contractAddress.name, Sort.Direction.ASC)
                 .on(IndexedNFT::tokenId.name, Sort.Direction.DESC)
                 .unique()
-                .background()
+
         val ownerIdx: IndexDefinition =
             Index()
                 .named(NFT_OWNER_IDX)
@@ -57,7 +55,7 @@ class NftsInitializerChangeUnit {
                 .on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedNFT::txId.name, Sort.Direction.DESC)
                 .on(IndexedNFT::id.name, Sort.Direction.DESC)
-                .background()
+
         val contractAddressIdx: IndexDefinition =
             Index()
                 .named(NFT_CONTRACTADDRESS_IDX)
@@ -65,7 +63,7 @@ class NftsInitializerChangeUnit {
                 .on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedNFT::txId.name, Sort.Direction.DESC)
                 .on(IndexedNFT::id.name, Sort.Direction.DESC)
-                .background()
+
         val ownerContractAddressIdx: IndexDefinition =
             Index()
                 .named(NFT_OWNER_CONTRACTADDRESS_IDX)
@@ -74,7 +72,7 @@ class NftsInitializerChangeUnit {
                 .on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedNFT::txId.name, Sort.Direction.DESC)
                 .on(IndexedNFT::id.name, Sort.Direction.DESC)
-                .background()
+
         val ownerContractAddressTokenIdIdx: IndexDefinition =
             Index()
                 .named(NFT_OWNER_CONTRACTADDRESS_TOKENADDRESS_IDX)
@@ -84,7 +82,6 @@ class NftsInitializerChangeUnit {
                 .on(IndexedNFT::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedNFT::txId.name, Sort.Direction.DESC)
                 .on(IndexedNFT::id.name, Sort.Direction.DESC)
-                .background()
 
         mongoTemplate.indexOps(NFTS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(NFTS).ensureIndex(contractAddressTokenIdIdx)
@@ -94,10 +91,7 @@ class NftsInitializerChangeUnit {
         mongoTemplate.indexOps(NFTS).ensureIndex(ownerContractAddressTokenIdIdx)
 
         val archiveBlockIdx: IndexDefinition =
-            Index()
-                .named(ARCHIVE_BLOCKNUMBER_IDX)
-                .on("data.blockNumber", Sort.Direction.DESC)
-                .background()
+            Index().named(ARCHIVE_BLOCKNUMBER_IDX).on("data.blockNumber", Sort.Direction.DESC)
 
         mongoTemplate.indexOps(ARCHIVE_OBJ).ensureIndex(archiveBlockIdx)
     }

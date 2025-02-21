@@ -32,7 +32,6 @@ class TransactionsInitializerChangeUnit {
             Index()
                 .named(TX_BLOCKNUMBER_IDX)
                 .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
-                .background()
 
         val originIdx: IndexDefinition =
             Index()
@@ -40,7 +39,6 @@ class TransactionsInitializerChangeUnit {
                 .on(IndexedTransaction::origin.name, Sort.Direction.ASC)
                 .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransaction::id.name, Sort.Direction.DESC)
-                .background()
 
         val gasPayerIdx: IndexDefinition =
             Index()
@@ -48,7 +46,6 @@ class TransactionsInitializerChangeUnit {
                 .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
                 .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransaction::id.name, Sort.Direction.DESC)
-                .background()
 
         val originGasPayerIdx: IndexDefinition =
             Index()
@@ -57,7 +54,6 @@ class TransactionsInitializerChangeUnit {
                 .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
                 .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedTransaction::id.name, Sort.Direction.DESC)
-                .background()
 
         mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(TRANSACTIONS).ensureIndex(originIdx)
