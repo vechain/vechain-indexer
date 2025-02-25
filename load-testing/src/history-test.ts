@@ -4,7 +4,10 @@ import accounts from "./data/nft-accounts.json";
 import {randomElement} from "./utils/array-utils";
 import env from "./env";
 
-export const options = env.OPTIONS
+// Select the option based on an environment variable
+
+
+export const options = env.OPTIONS;
 
 /**
  *  Make a GET request to the NFT endpoint using a random address
@@ -12,13 +15,13 @@ export const options = env.OPTIONS
 export default () => {
     const account = randomElement(accounts);
 
-    const nfts = http.get(`${env.BASE_URL}/api/v1/nfts?address=${account}`);
+    const response = http.get(`${env.BASE_URL}/api/v1/history/${account}`);
 
-    check(nfts, {
-        "status is 200": () => nfts.status === 200,
+    check(response, {
+        "status is 200": () => response.status === 200,
         "has results": () => {
-            if (typeof nfts.body === "string") {
-                const body = JSON.parse(nfts.body);
+            if (typeof response.body === "string") {
+                const body = JSON.parse(response.body);
                 return body.data.length > 0;
             } else {
                 return false;

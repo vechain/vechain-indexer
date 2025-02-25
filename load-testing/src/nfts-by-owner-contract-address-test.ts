@@ -4,9 +4,8 @@ import accounts from "./data/nft-accounts.json";
 import contracts from "./data/contract-addresses.json";
 import {randomElement} from "./utils/array-utils";
 import env from "./env";
-import {DEFAULT_OPTIONS} from "./constants";
 
-export const options = DEFAULT_OPTIONS
+export const options = env.OPTIONS
 
 /**
  *  Make a GET request to the NFT endpoint using a random address
