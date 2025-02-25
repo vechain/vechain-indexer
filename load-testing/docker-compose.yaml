@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-test.js
     environment:
-      - API_URL=http://192.168.1.84:8080
+      - API_URL=https://localhost:8080
     volumes:
       - ./.output:/app/.output
     networks:
