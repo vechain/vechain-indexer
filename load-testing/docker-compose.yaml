@@ -1,9 +1,7 @@
-version: "3"
-
 services:
 
   influxdb:
-    image: influxdb:1.8
+    image: influxdb:1.11.8
     hostname: influxdb
     networks:
       - vechain
@@ -18,7 +16,7 @@ services:
       retries: 30
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.5.2
     hostname: grafana
     networks:
       - vechain
@@ -42,7 +40,7 @@ services:
       dockerfile: Dockerfile
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-test.js
     environment:
-      - API_URL=https://veworld.mainnet.indexer.dev-vechain.org
+      - API_URL=http://192.168.1.84:8080
     volumes:
       - ./.output:/app/.output
     networks:
@@ -103,25 +101,26 @@ services:
       service: k6-app-nfts
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/fungible-tokens-contracts-by-account-test.js
 
-  k6-app-contracts-creator:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-creator-test.js
+## DISABLED INDEXERS ##
+#  k6-app-contracts-creator:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-creator-test.js
 
-  k6-app-contracts-type:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-type-test.js
+#  k6-app-contracts-type:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-type-test.js
 
-  k6-app-blocks:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/blocks-test.js
+#  k6-app-blocks:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/blocks-test.js
 
-  k6-app-clauses:
-    extends:
-      service: k6-app-nfts
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/clauses-test.js
+#  k6-app-clauses:
+#    extends:
+#      service: k6-app-nfts
+#    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/clauses-test.js
 
 networks:
   vechain:
