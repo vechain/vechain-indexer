@@ -33,14 +33,20 @@ services:
       interval: 3s
       timeout: 10s
       retries: 30
-
-  k6-app-nfts:
+      
+  ## Tests
+  # Abstract base service (not run directly)
+  x-k6-base:
+    image: grafana/k6
     build:
       context: .
       dockerfile: Dockerfile
-    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-test.js
     environment:
-      - API_URL=https://localhost:8080
+      - BASE_URL=http://localhost:8080
+      - RAMP_UP_DURATION=10s
+      - STAY_DURATION=30s
+      - WIND_DOWN_DURATION=10s
+      - TARGET_VUS=10
     volumes:
       - ./.output:/app/.output
     networks:
@@ -51,75 +57,85 @@ services:
       grafana:
         condition: service_healthy
 
+  k6-app-nfts:
+    extends:
+      service: x-k6-base
+    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-test.js
+
   k6-app-nfts-by-owner-contract:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-by-owner-contract-address-test.js
 
   k6-app-nft-contracts:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/nfts-contracts-test.js
 
   k6-app-transactions-origin:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-by-origin-test.js
 
   k6-app-transactions-delegator:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-by-delegator-test.js
 
   k6-app-transactions-origin-delegator:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transactions-by-origin-delegator-test.js
 
   k6-app-transfer-events-address:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-by-address-test.js
 
   k6-app-transfer-events-destination:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-by-destination-test.js
 
   k6-app-transfer-events-origin:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-by-origin-test.js
 
   k6-app-transfer-events-token-address:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/transfer-events-by-token-address-test.js
 
   k6-app-fungible-tokens-contracts-by-address:
     extends:
-      service: k6-app-nfts
+      service: x-k6-base
     command: run --out influxdb=http://influxdb:8086/k6 /app/dist/fungible-tokens-contracts-by-account-test.js
+
+  k6-app-history:
+    extends:
+      service: x-k6-base
+    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/history-test.js
 
 ## DISABLED INDEXERS ##
 #  k6-app-contracts-creator:
 #    extends:
-#      service: k6-app-nfts
+#      service: x-k6-base
 #    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-creator-test.js
 
 #  k6-app-contracts-type:
 #    extends:
-#      service: k6-app-nfts
+#      service: x-k6-base
 #    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/contracts-by-type-test.js
 
 #  k6-app-blocks:
 #    extends:
-#      service: k6-app-nfts
+#      service: x-k6-base
 #    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/blocks-test.js
 
 #  k6-app-clauses:
 #    extends:
-#      service: k6-app-nfts
+#      service: x-k6-base
 #    command: run --out influxdb=http://influxdb:8086/k6 /app/dist/clauses-test.js
 
 networks:

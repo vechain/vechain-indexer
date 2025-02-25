@@ -3,9 +3,8 @@ import http from "k6/http";
 import accounts from "./data/transfer-event-accounts.json";
 import {randomElement} from "./utils/array-utils";
 import env from "./env";
-import {DEFAULT_OPTIONS} from "./constants";
 
-export const options = DEFAULT_OPTIONS
+export const options = env.OPTIONS
 
 /**
  *  Make a GET request to the transfer events endpoint using a random address

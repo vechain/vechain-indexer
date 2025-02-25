@@ -16,8 +16,22 @@ test-common: #@ Run all the common tests.
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
-load-test: #@ Run the load tests.
-	$(LOAD_TEST_COMMAND) up --build -d --wait; open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+
+load-test: #@ Run the load tests (all tests).
+	$(LOAD_TEST_COMMAND) up --build -d --wait
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-nfts: #@ Run only the NFTs test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-nfts k6-app-nfts-by-owner-contract k6-app-nft-contracts
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transactions: #@ Run only the Transactions test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transactions-origin k6-app-transactions-delegator
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transfer-events: #@ Run only the Transfer Events test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transfer-events-address k6-app-transfer-events-destination k6-app-transfer-events-origin k6-app-transfer-events-token-address k6-app-fungible-tokens-contracts-by-address
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-history: #@ Run only the History test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-history
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
 load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
