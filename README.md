@@ -203,7 +203,6 @@ The containers will not be destroyed after the test completes. This is to allow 
 make load-test-clean
 ```
 
-
 ## Database migration
 
 The indexer package `org.vechain.indexer.migration` contains the change units responsible for creating and/or migrating the database schema and data.
