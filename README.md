@@ -191,12 +191,18 @@ make test-api
 
 ### Load Testing
 
-- For a successful run, ensure `./docker-compose.yml` is running
-- To run the load tests:
+Update the `API_URL` variable in `load-testing/docker-compose.yml` to point to your target environment. Run the load tests:
 
 ```bash
 make load-test
 ```
+
+The containers will not be destroyed after the test completes. This is to allow access to the grafana dashboard and container logs. To clean up the load testing environment:
+
+```bash
+make load-test-clean
+```
+
 
 ## Database migration
 
