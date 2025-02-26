@@ -37,7 +37,7 @@ allprojects {
         resolutionStrategy {
             force(
                 "com.google.protobuf:protobuf-java:3.25.5",
-                "org.java-websocket:Java-WebSocket:1.5.3"
+                "org.java-websocket:Java-WebSocket:1.5.3",
             )
         }
     }
@@ -96,14 +96,22 @@ allprojects {
     tasks.jacocoTestReport { dependsOn(tasks.test) }
 
     tasks.clean {
-        val dirs = mutableListOf(layout.buildDirectory.get().asFile.path, "${rootDir.path}/bin")
+        val dirs =
+            mutableListOf(
+                layout.buildDirectory
+                    .get()
+                    .asFile.path,
+                "${rootDir.path}/bin",
+            )
         dirs.addAll(
             subprojects.flatMap {
                 listOf(
-                    it.layout.buildDirectory.get().asFile.path,
+                    it.layout.buildDirectory
+                        .get()
+                        .asFile.path,
                     "${it.projectDir.path}/bin",
                 )
-            }
+            },
         )
 
         doFirst { delete(dirs) }
@@ -141,8 +149,13 @@ allprojects {
         addTestListener(
             object : TestListener {
                 override fun beforeSuite(suite: TestDescriptor) {}
+
                 override fun beforeTest(testDescriptor: TestDescriptor) {}
-                override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {
+
+                override fun afterTest(
+                    testDescriptor: TestDescriptor,
+                    result: TestResult,
+                ) {
                     when (result.resultType) {
                         TestResult.ResultType.FAILURE ->
                             failedTests.add(Pair(testDescriptor, result.exception))
@@ -152,21 +165,24 @@ allprojects {
                     }
                 }
 
-                override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+                override fun afterSuite(
+                    suite: TestDescriptor,
+                    result: TestResult,
+                ) {
                     logger.lifecycle("----")
                     logger.lifecycle("Test result: ${result.resultType}")
                     logger.lifecycle(
                         "Test summary: ${result.testCount} tests, " +
-                                "${result.successfulTestCount} succeeded, " +
-                                "${result.failedTestCount} failed, " +
-                                "${result.skippedTestCount} skipped",
+                            "${result.successfulTestCount} succeeded, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped",
                     )
                     if (failedTests.isNotEmpty()) {
                         logger.lifecycle("\tFailed Tests:")
                         failedTests.forEach {
                             logger.lifecycle(
                                 "\t\t${it.first.className} - ${it.first.name}",
-                                it.second
+                                it.second,
                             )
                         }
                         failedTests.clear()
@@ -180,7 +196,7 @@ allprojects {
                         skippedTests.clear()
                     }
                 }
-            }
+            },
         )
     }
 
@@ -232,7 +248,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:2.1.1-SNAPSHOT")
+        implementation("org.vechain:indexer-core:2.1.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
