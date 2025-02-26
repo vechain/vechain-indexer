@@ -42,4 +42,7 @@ packages/e2e
 
 packages/**/src/test/**
 
+load-testing/node_modules/
+node_modules/
+
 
