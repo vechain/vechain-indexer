@@ -34,8 +34,8 @@ import org.vechain.indexer.validation.ValidPageSize
 open class HistoryController(
     private val historyService: HistoryService,
 ) {
-    @GetMapping("{user}")
-    @Operation(summary = "Get user history")
+    @GetMapping("{account}")
+    @Operation(summary = "Get account history")
     @ApiResponses(
         value =
             [
@@ -44,9 +44,9 @@ open class HistoryController(
     )
     @Parameter(
         `in` = ParameterIn.PATH,
-        name = "user",
+        name = "account",
         schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "A valid user address",
+        description = "A valid account address",
         required = true,
         example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
     )
@@ -98,7 +98,7 @@ open class HistoryController(
     )
     @PaginationParameters
     open fun getUsersHistory(
-        @ValidAddress @PathVariable user: Address,
+        @ValidAddress @PathVariable account: Address,
         @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
@@ -130,7 +130,7 @@ open class HistoryController(
 
         return paginatedResponse(
             historyService.findUserHistoryByFilters(
-                user = user.value,
+                account = account.value,
                 eventNames = validatedEventNames,
                 searchFields = validatedSearchFields,
                 contractAddress = contractAddress,
