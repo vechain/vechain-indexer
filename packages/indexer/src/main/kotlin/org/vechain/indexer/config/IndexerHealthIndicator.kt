@@ -7,12 +7,13 @@ import java.util.Locale
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.stereotype.Component
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Status
 
 @Component
-class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndicator {
-
+class IndexerHealthIndicator(
+    private val indexers: List<BlockIndexer>,
+) : HealthIndicator {
     companion object {
         private const val STATUS_UP = "UP"
         private const val STATUS_DOWN = "DOWN"
@@ -23,7 +24,7 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
         val indexerName: String,
         val status: String,
         val syncStatus: Status,
-        val currentBlock: String
+        val currentBlock: String,
     )
 
     override fun health(): Health {
@@ -37,7 +38,7 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
                     syncStatus = indexer.status,
                     currentBlock =
                         NumberFormat.getNumberInstance(Locale.US)
-                            .format(indexer.currentBlockNumber ?: 0)
+                            .format(indexer.currentBlockNumber ?: 0),
                 )
             }
 
@@ -50,11 +51,14 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
         }
     }
 
-    private fun getIndexerHealth(indexer: Indexer): String {
+    private fun getIndexerHealth(indexer: BlockIndexer): String {
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeLastProcessed = indexer.timeLastProcessed
         return if (timeNow.minusSeconds(PROCESS_TIMEOUT) > timeLastProcessed) {
+            println(
+                "Indexer ${indexer.name} is down, time now: $timeNow.minusSeconds(PROCESS_TIMEOUT), last processed: $timeLastProcessed"
+            )
             STATUS_DOWN
         } else {
             STATUS_UP
