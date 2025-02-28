@@ -185,6 +185,21 @@ object EventUtils {
             else -> null // Other events will not be labeled
         }
 
+    fun determineTransferType(genericParams: GenericEventParameters): TransferEventType? =
+        when (genericParams.getEventType()) {
+            "Transfer" -> {
+                when {
+                    genericParams.params["value"] != null -> TransferEventType.FUNGIBLE_TOKEN
+                    genericParams.params["tokenId"] != null -> TransferEventType.NFT
+                    else -> null
+                }
+            }
+            "TransferSingle",
+            "TransferBatch", -> TransferEventType.SEMI_FUNGIBLE_TOKEN
+            "VET_TRANSFER" -> TransferEventType.VET
+            else -> null // Other events will not be labeled
+        }
+
     /** This can be used for decoding events with Web3J */
     private fun buildEventLog(txEvent: TxEvent): Log {
         val log = Log()
