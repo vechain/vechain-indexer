@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedHistoryEvent
 
-@Profile("history_events")
+@Profile("history-events")
 @Service
 open class HistoryService(
     private val mongoTemplate: MongoTemplate,
 ) {
     open fun findUserHistoryByFilters(
-        user: String,
+        account: String,
         eventNames: List<String>?,
         searchFields: List<String>?,
         contractAddress: Address?,
@@ -32,7 +32,7 @@ open class HistoryService(
             val fieldCriteria =
                 Criteria()
                     .orOperator(
-                        *searchFields.map { Criteria.where(it).`is`(user) }.toTypedArray(),
+                        *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray(),
                     )
             query.addCriteria(fieldCriteria)
         } else {
@@ -40,9 +40,9 @@ open class HistoryService(
             query.addCriteria(
                 Criteria()
                     .orOperator(
-                        Criteria.where("to").`is`(user),
-                        Criteria.where("from").`is`(user),
-                        Criteria.where("origin").`is`(user),
+                        Criteria.where("to").`is`(account),
+                        Criteria.where("from").`is`(account),
+                        Criteria.where("origin").`is`(account),
                     ),
             )
         }

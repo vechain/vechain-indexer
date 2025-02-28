@@ -184,7 +184,7 @@ module "ecs-lb-service-api" {
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
-  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.49"
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
   vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name
@@ -200,7 +200,7 @@ module "ecs-backend-service" {
   memory                             = each.value.indexer.memory
   cidr                               = local.env.cidr
   security_groups                    = [aws_security_group.ecs_service_sg.id]
-  desired_capacity                   = "1"
+  desired_capacity                   = 1
   containerPort                      = 8080
   hostPort                           = 8080
   deployment_minimum_healthy_percent = 0
@@ -275,6 +275,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.transfers
     },
     {
+      name  = "INDEXER_START_BLOCK_HISTORY"
+      value = each.value.indexer.start_block.history
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_BLOCKS"
       value = each.value.indexer.sync_logger_interval.blocks
     },
@@ -288,7 +292,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
-      value = each.value.indexer.sync_logger_interval.fungible_tokens
+      value = each.value.indexer.sync_logger_interval.fungibleTokens
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"

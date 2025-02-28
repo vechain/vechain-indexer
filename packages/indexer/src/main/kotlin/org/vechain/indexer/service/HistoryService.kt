@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("history_events")
+@Profile("history-events")
 @Service
 class HistoryService(
     private val historyRepository: HistoryEventRepository,

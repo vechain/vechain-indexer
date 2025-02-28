@@ -191,11 +191,29 @@ make test-api
 
 ### Load Testing
 
-- For a successful run, ensure `./docker-compose.yml` is running
-- To run the load tests:
+Update the `BASE_URL` variable in `load-testing/docker-compose.yml` to point to your target environment. Individual tests can
+be tailored by modifying the env variables for each service.
+ - `RAMP_UP_DURATION` - The time taken to ramp up to the maximum number of users
+ - `STAY_DURATION` - The time to stay at the maximum number of users
+ - `WIND_DOWN_DURATION` - The time taken to ramp down to 0 users
+ - `TARGET_VUS` - The target number of virtual users to simulate
+
+Run the load tests:
 
 ```bash
 make load-test
+```
+
+The containers will not be destroyed after the test completes. This is to allow access to the grafana dashboard and container logs. To clean up the load testing environment:
+
+```bash
+make load-test-clean
+```
+
+You can also choose to run specific tests only. We have included some commands in the Makefile to make this more convenient. For example, to run the history load tests:
+
+```bash
+make load-test-history
 ```
 
 ## Database migration

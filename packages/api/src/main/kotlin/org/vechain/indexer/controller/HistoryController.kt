@@ -16,6 +16,7 @@ import org.vechain.indexer.constants.HISTORY_PATH
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedHistoryEvent
+import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.HistoryService
@@ -25,7 +26,7 @@ import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("history_events")
+@Profile("history-events")
 @Tag(name = "History", description = "Query on-chain event history")
 @Validated
 @RestController
@@ -33,8 +34,8 @@ import org.vechain.indexer.validation.ValidPageSize
 open class HistoryController(
     private val historyService: HistoryService,
 ) {
-    @GetMapping("{user}")
-    @Operation(summary = "Get user history")
+    @GetMapping("{account}")
+    @Operation(summary = "Get account history")
     @ApiResponses(
         value =
             [
@@ -43,9 +44,9 @@ open class HistoryController(
     )
     @Parameter(
         `in` = ParameterIn.PATH,
-        name = "user",
+        name = "account",
         schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "A valid user address",
+        description = "A valid account address",
         required = true,
         example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
     )
@@ -68,33 +69,7 @@ open class HistoryController(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "eventName",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        allowableValues =
-                            [
-                                "B3TR_SWAP_VOT3_TO_B3TR",
-                                "B3TR_SWAP_B3TR_TO_VOT3",
-                                "B3TR_PROPOSAL_SUPPORT",
-                                "B3TR_CLAIM_REWARD",
-                                "B3TR_UPGRADE_GM",
-                                "B3TR_ACTION",
-                                "B3TR_PROPOSAL_VOTE",
-                                "B3TR_XALLOCATION_VOTE",
-                                "TRANSFER_VET",
-                                "TRANSFER_FT",
-                                "TRANSFER_NFT",
-                                "TRANSFER_SF",
-                                "SWAP_VET_TO_FT",
-                                "SWAP_FT_TO_VET",
-                                "SWAP_FT_TO_FT",
-                                "UNKNOWN_TX",
-                            ],
-                        description = "Array of transaction names to filter by.",
-                    ),
-            ),
+        array = ArraySchema(schema = Schema(implementation = HistoryEventName::class)),
         description = "Filter by specific transaction names.",
         required = false,
     )
@@ -123,7 +98,7 @@ open class HistoryController(
     )
     @PaginationParameters
     open fun getUsersHistory(
-        @ValidAddress @PathVariable user: Address,
+        @ValidAddress @PathVariable account: Address,
         @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
@@ -137,25 +112,7 @@ open class HistoryController(
         val validatedEventNames =
             ArrayValidationUtils.validateArray(
                 input = eventName,
-                allowedValues =
-                    setOf(
-                        "B3TR_SWAP_VOT3_TO_B3TR",
-                        "B3TR_SWAP_B3TR_TO_VOT3",
-                        "B3TR_PROPOSAL_SUPPORT",
-                        "B3TR_CLAIM_REWARD",
-                        "B3TR_UPGRADE_GM",
-                        "B3TR_ACTION",
-                        "B3TR_PROPOSAL_VOTE",
-                        "B3TR_XALLOCATION_VOTE",
-                        "TRANSFER_VET",
-                        "TRANSFER_FT",
-                        "TRANSFER_NFT",
-                        "TRANSFER_SF",
-                        "SWAP_VET_TO_FT",
-                        "SWAP_FT_TO_VET",
-                        "SWAP_FT_TO_FT",
-                        "UNKNOWN_TX",
-                    ),
+                allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
                 fieldName = "eventName",
             )
 
@@ -173,7 +130,7 @@ open class HistoryController(
 
         return paginatedResponse(
             historyService.findUserHistoryByFilters(
-                user = user.value,
+                account = account.value,
                 eventNames = validatedEventNames,
                 searchFields = validatedSearchFields,
                 contractAddress = contractAddress,

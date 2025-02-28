@@ -40,19 +40,19 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       min_capacity:                 4
-      spring_profile:               nft-events,transactions,transfer-events,history_events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu: 1024
       memory: 2048
-      spring_profile: indexer,nft-events,transactions,transfer-events,history_events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         blocks:                     '0'
         clauses:                    '751'
         contracts:                  '409987'
-        fungible_tokens:            '0'
+        fungibleTokens:            '0'
         nfts:                       '1304112'
         transactions:               '751'
         transfers:                  '37840'
@@ -66,7 +66,7 @@ enabled_nets:
         blocks:                     '5000'
         clauses:                    '5000'
         contracts:                  '5000'
-        fungible_tokens:            '5000'
+        fungibleTokens:            '5000'
         nfts:                       '5000'
         transactions:               '5000'
         transfers:                  '5000'
@@ -76,8 +76,8 @@ enabled_nets:
       fqdn:                         mainnet.rsmhw.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M20
-      disk_size_gb:                 250
+      cluster_tier:                 M30
+      disk_size_gb:                 350
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
   test:
@@ -86,19 +86,19 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       min_capacity:                 2
-      spring_profile:               nft-events,transactions,transfer-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu: 1024
       memory: 2048
-      spring_profile: indexer,nft-events,transactions,transfer-events,history_events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         blocks:                     '0'
         clauses:                    '15034'
         contracts:                  '15101'
-        fungible_tokens:            '0'
+        fungibleTokens:            '0'
         nfts:                       '1042259'
         transactions:               '15034'
         transfers:                  '15034'
@@ -112,7 +112,7 @@ enabled_nets:
         blocks:                     '5000'
         clauses:                    '5000'
         contracts:                  '5000'
-        fungible_tokens:            '5000'
+        fungibleTokens:            '5000'
         nfts:                       '5000'
         transactions:               '5000'
         transfers:                  '5000'
