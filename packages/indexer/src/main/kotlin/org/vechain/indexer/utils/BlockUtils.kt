@@ -1,175 +1,119 @@
 package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.vechain.indexer.event.model.generic.GenericEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.thor.model.*
-import org.web3j.utils.Numeric
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object BlockUtils {
-
     /** Get all confirmed transactions from a block */
-    private fun confirmedTransactions(block: Block): List<Transaction> {
-        return block.transactions.filter { !it.reverted }
-    }
+    private fun confirmedTransactions(block: Block): List<Transaction> =
+        block.transactions.filter { !it.reverted }
 
     /**
      * Get all clauses from a block, paired with the transaction that created it.
      *
      * DOES NOT include reverted TXs
      */
-    fun getAllClauses(block: Block): List<IndexedClause> {
-        return confirmedTransactions(block).flatMap { tx ->
+    fun getAllClauses(block: Block): List<IndexedClause> =
+        confirmedTransactions(block).flatMap { tx ->
             tx.clauses.mapIndexed { idx, cl -> IndexedClause(block, tx, cl, idx) }
         }
-    }
 
     /**
      * Get all outputs from a block, paired with the transaction that created it.
      *
      * DOES NOT include reverted TXs
      */
-    fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> {
-        return confirmedTransactions(block).flatMap { tx ->
-            tx.outputs.map { output -> Pair(output, tx) }
-        }
-    }
+    fun getOutputs(block: Block): List<Pair<TxOutputs, Transaction>> =
+        confirmedTransactions(block).flatMap { tx -> tx.outputs.map { output -> Pair(output, tx) } }
 
-    /**
-     * Get all TRANSFERS from a block. Eg. "Sent 1 VET"
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getTransfers(block: Block): List<TxTransfer> {
-        return getOutputs(block).flatMap { (output) -> output.transfers }
-    }
-
-    /**
-     * Get all FUNGIBLE & NON-FUNGIBLE transfer events from a block.
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getTransferEventsFromTopics(block: Block): List<IndexedTransferEvent> {
-        return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
-            extractTopicTransfers(output.events, tx, block, outputIndex)
-        }
-    }
-
-    /**
-     * Get all NON-FUNGIBLE transfer events from a block. Optionally filter by token address.
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getNftTransferEventsFromTopics(
-        block: Block,
-        tokenAddress: String? = null
+    fun getAllTransferEvents(
+        events: List<Pair<IndexedEvent, GenericEventParameters>>
     ): List<IndexedTransferEvent> {
-        val transferEvents = getTransferEventsFromTopics(block)
+        val transferEvents = mutableListOf<IndexedTransferEvent>()
+        events.forEach { event ->
+            val eventName = EventUtils.determineTransferType(event.second) ?: return@forEach
 
-        return transferEvents.filter {
-            it.eventType == TransferEventType.NFT &&
-                it.tokenAddress != null &&
-                (tokenAddress == null || HexUtils.compare(it.tokenAddress!!, tokenAddress))
-        }
-    }
-
-    /** Gets all VET transfers AND transfers from topics */
-    fun getAllTransferEvents(block: Block): List<IndexedTransferEvent> {
-        return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
-            val vetTransfers = extractVetTransfers(output.transfers, tx, block, outputIndex)
-
-            val topicTransfers = extractTopicTransfers(output.events, tx, block, outputIndex)
-
-            vetTransfers + topicTransfers
-        }
-    }
-
-    fun extractTopicTransfers(
-        events: List<TxEvent>,
-        tx: Transaction,
-        block: Block,
-        outputIndex: Int
-    ): List<IndexedTransferEvent> {
-        return events
-            .filter { EventUtils.isTransferEvent(it) }
-            .flatMapIndexed { eventIndex, event ->
-                val transfers = EventUtils.getEventParams(event)
-
-                transfers.mapIndexed { transferIndex, transfer ->
-                    IndexedTransferEvent(
-                        id =
-                            DigestUtils.sha1Hex(
-                                "${tx.id}-TOPIC-${outputIndex}-${eventIndex}-${transferIndex}"
-                            ),
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        txId = tx.id,
-                        from = transfer.from,
-                        to = transfer.to,
-                        value = transfer.amount.toString(),
-                        topics = event.topics,
-                        tokenAddress = event.address,
-                        tokenId = transfer.tokenId?.toString(),
-                        eventType = transfer.eventType
-                    )
-                }
+            if (event.second.getEventType() == "TransferBatch") {
+                transferEvents.addAll(processBatchTransferEvents(event))
+            } else {
+                transferEvents.add(createIndexedTransferEvent(event, eventName))
             }
-    }
-
-    fun extractFungibleTransfers(block: Block): List<IndexedTransferEvent> {
-        return getOutputs(block).flatMapIndexed { outputIndex, (output, tx) ->
-            output.events
-                .filter { EventUtils.isFungibleTransferEvent(it) }
-                .mapIndexed { transferIndex, event ->
-                    val transfer = EventUtils.getFungibleParameters(event).first()
-
-                    IndexedTransferEvent(
-                        id = DigestUtils.sha1Hex("${tx.id}-TOPIC-${outputIndex}-${transferIndex}"),
-                        blockId = block.id,
-                        blockNumber = block.number,
-                        blockTimestamp = block.timestamp,
-                        txId = tx.id,
-                        from = transfer.from,
-                        to = transfer.to,
-                        value = transfer.amount.toString(),
-                        topics = listOf(),
-                        tokenAddress = event.address,
-                        tokenId = transfer.tokenId?.toString(),
-                        eventType = TransferEventType.FUNGIBLE_TOKEN
-                    )
-                }
         }
+        return transferEvents
     }
 
-    fun extractVetTransfers(
-        transfers: List<TxTransfer>,
-        tx: Transaction,
-        block: Block,
-        outputIndex: Int
+    private fun processBatchTransferEvents(
+        event: Pair<IndexedEvent, GenericEventParameters>
     ): List<IndexedTransferEvent> {
-        return transfers.mapIndexed { transferIndex, transfer ->
-            IndexedTransferEvent(
-                id = DigestUtils.sha1Hex("${tx.id}-VET-${outputIndex}-${transferIndex}"),
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                txId = tx.id,
-                from = transfer.sender,
-                to = transfer.recipient,
-                value = Numeric.decodeQuantity(transfer.amount).toString(),
-                topics = listOf(),
-                tokenAddress = null,
-                tokenId = null,
-                eventType = TransferEventType.VET
+        val transferEvents = mutableListOf<IndexedTransferEvent>()
+
+        val tokenIds = event.second.params["ids"] as? List<*> ?: emptyList<Any>()
+        val values = event.second.params["values"] as? List<*> ?: emptyList<Any>()
+
+        for (i in tokenIds.indices) {
+            transferEvents.add(
+                IndexedTransferEvent(
+                    id = DigestUtils.sha1Hex("${event.first.id}-$i"),
+                    blockId = event.first.blockId,
+                    blockNumber = event.first.blockNumber,
+                    blockTimestamp = event.first.blockTimestamp,
+                    txId = event.first.txId,
+                    from = event.second.params.getAsString("from")!!,
+                    to = event.second.params.getAsString("to")!!,
+                    value = values.getOrNull(i)?.toString()!!,
+                    topics = event.first.raw!!.topics,
+                    tokenAddress = event.first.address,
+                    tokenId = tokenIds.getOrNull(i)?.toString(),
+                    eventType = TransferEventType.SEMI_FUNGIBLE_TOKEN,
+                ),
             )
         }
+        return transferEvents
+    }
+
+    private fun createIndexedTransferEvent(
+        event: Pair<IndexedEvent, GenericEventParameters>,
+        transferEventType: TransferEventType,
+    ): IndexedTransferEvent {
+        val params = event.second.params
+
+        val tokenId =
+            when (transferEventType) {
+                TransferEventType.SEMI_FUNGIBLE_TOKEN -> params.getAsString("id")
+                else -> params.getAsString("tokenId")
+            }
+
+        val value =
+            when (transferEventType) {
+                TransferEventType.VET -> params.getAsString("amount")!!
+                else -> params.getAsString("value") ?: "1"
+            }
+
+        return IndexedTransferEvent(
+            id = DigestUtils.sha1Hex(event.first.id),
+            blockId = event.first.blockId,
+            blockNumber = event.first.blockNumber,
+            blockTimestamp = event.first.blockTimestamp,
+            txId = event.first.txId,
+            from = params.getAsString("from")!!,
+            to = params.getAsString("to")!!,
+            value = value,
+            topics = event.first.raw?.topics.orEmpty(),
+            tokenAddress = event.first.address,
+            tokenId = tokenId,
+            eventType = transferEventType,
+        )
     }
 
     /** Find all events that are contract deployments, paired with their transaction. */
-    fun extractMasterChangeEvents(block: Block): List<Triple<TxEvent, Transaction, Clause>> {
-        return block.transactions
+    fun extractMasterChangeEvents(block: Block): List<Triple<TxEvent, Transaction, Clause>> =
+        block.transactions
             .filter { tx -> !tx.reverted }
             .flatMap { tx ->
                 tx.outputs.flatMapIndexed { idx, output ->
@@ -178,5 +122,4 @@ object BlockUtils {
                         .map { event -> Triple(event, tx, tx.clauses[idx]) }
                 }
             }
-    }
 }
