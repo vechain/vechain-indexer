@@ -33,7 +33,7 @@ open class NFTEventIndexer(
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
         archiveService = nftArchiveService,
-        blockBatchSize = 1,
+        blockBatchSize = 1000,
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,
