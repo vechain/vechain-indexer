@@ -9,7 +9,9 @@ import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.service.HistoryService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.enums.LogType
+import org.vechain.indexer.thor.model.EventLog
+import org.vechain.indexer.thor.model.TransferLog
 
 @Profile("history_events")
 @Component
@@ -19,43 +21,47 @@ open class HistoryIndexer(
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
-    @Value("\${indexer.startBlock.history}") private val startBlock: Long,
+    @Value("\${indexer.startBlock.history}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.history}") private val syncLogInterval: Long,
 ) :
-    BaseIndexer(
+    BaseLogIndexer(
         repository = historyRepository,
         startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
+        logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
         businessEventManager = businessEventManager,
     ) {
-    override fun processBlock(block: Block) {
-        if (block.transactions.isNotEmpty()) {
-            val events =
-                processAllEvents(
-                    block,
-                    FilterCriteria(
-                        vetTransfers = true,
-                        eventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
-                        businessEventNames =
-                            listOf(
-                                "action-reward",
-                                "b3tr-proposal-vote",
-                                "b3tr-to-vot3-swap",
-                                "b3tr-x-allocation-vote",
-                                "claim-reward",
-                                "gm-upgrade",
-                                "proposal-deposit",
-                                "token-ft-swap",
-                                "token-vet-swap",
-                                "vet-token-swap",
-                                "vot3-to-b3tr-swap",
-                            ),
-                    ),
-                )
-            historyService.processBlockEvents(events, block)
-        }
+    override fun processLogs(
+        events: List<EventLog>,
+        transfers: List<TransferLog>,
+    ) {
+        val historyEvents =
+            processAllEvents(
+                events,
+                transfers,
+                FilterCriteria(
+                    vetTransfers = true,
+                    eventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
+                    businessEventNames =
+                        listOf(
+                            "action-reward",
+                            "b3tr-proposal-vote",
+                            "b3tr-to-vot3-swap",
+                            "b3tr-x-allocation-vote",
+                            "claim-reward",
+                            "gm-upgrade",
+                            "proposal-deposit",
+                            "token-ft-swap",
+                            "token-vet-swap",
+                            "vet-token-swap",
+                            "vot3-to-b3tr-swap",
+                        ),
+                ),
+            )
+
+        historyService.processBlockEvents(historyEvents, events)
     }
 
     override fun rollback(blockNumber: Long) {

@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.GenericEventParameters
@@ -9,11 +10,12 @@ import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryEventRepository
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
+@Profile("history_events")
 @Service
 class HistoryService(
     private val historyRepository: HistoryEventRepository,
@@ -21,7 +23,7 @@ class HistoryService(
 ) {
     fun processBlockEvents(
         events: List<Pair<IndexedEvent, GenericEventParameters>>,
-        block: Block,
+        allContractEvents: List<EventLog>,
     ) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
@@ -37,7 +39,7 @@ class HistoryService(
             processedTxs.add(event.first.txId)
         }
 
-        historyEvents.addAll(getMissingTransactions(block, processedTxs))
+        historyEvents.addAll(getMissingTransactions(allContractEvents, processedTxs))
 
         mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
     }
@@ -76,11 +78,16 @@ class HistoryService(
         event: Pair<IndexedEvent, GenericEventParameters>,
         eventName: HistoryEventName,
     ): IndexedHistoryEvent {
-        val tokenId: String? =
-            if (eventName == HistoryEventName.TRANSFER_SF) {
-                event.second.params.getAsString("id")
-            } else {
-                event.second.params.getAsString("tokenId")
+        val tokenId =
+            when (eventName) {
+                HistoryEventName.TRANSFER_SF -> event.second.params.getAsString("id")
+                else -> event.second.params.getAsString("tokenId")
+            }
+
+        val value =
+            when (eventName) {
+                HistoryEventName.TRANSFER_VET -> event.second.params.getAsString("amount")!!
+                else -> event.second.params.getAsString("value")
             }
 
         return IndexedHistoryEvent(
@@ -95,7 +102,7 @@ class HistoryService(
             gasPayer = event.first.gasPayer,
             from = event.second.params.getAsString("from"),
             to = event.second.params.getAsString("to"),
-            value = event.second.params.getAsString("value"),
+            value = value,
             tokenId = tokenId,
             appId = event.second.params.getAsString("appId"),
             proof = event.second.params.getAsString("proof"),
@@ -121,25 +128,27 @@ class HistoryService(
     }
 
     private fun getMissingTransactions(
-        block: Block,
+        allContractEvents: List<EventLog>,
         processedTxs: Set<String>,
     ): List<IndexedHistoryEvent> =
-        block.transactions
-            .filter { it.id !in processedTxs && !it.reverted }
+        allContractEvents
+            .filter { it.meta.txID !in processedTxs } // Exclude already processed TXs
+            .groupBy { it.meta.txID } // Group events by TX ID
+            .map { (_, events) -> events.first() } // Pick the first event for each TX
             .map { tx ->
                 IndexedHistoryEvent(
-                    id = DigestUtils.sha1Hex(tx.id),
-                    blockId = block.id,
-                    blockNumber = block.number,
-                    blockTimestamp = block.timestamp,
-                    txId = tx.id,
-                    origin = tx.origin,
+                    id = DigestUtils.sha1Hex(tx.meta.txID),
+                    blockId = tx.meta.blockID,
+                    blockNumber = tx.meta.blockNumber,
+                    blockTimestamp = tx.meta.blockTimestamp,
+                    txId = tx.meta.txID,
+                    origin = tx.meta.txOrigin,
                     eventName = HistoryEventName.UNKNOWN_TX,
-                    gasPayer = tx.gasPayer,
                 )
             }
 
     fun rollback(blockNumber: Long) {
-        historyRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        println("Rolling back block $blockNumber")
+        historyRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1000)
     }
 }
