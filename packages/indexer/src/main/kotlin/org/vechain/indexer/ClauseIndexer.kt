@@ -16,16 +16,15 @@ open class ClauseIndexer(
     private val clauseRepository: ClauseRepository,
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
-    @Value("\${indexer.startBlock.clauses}") private val startBlock: Long,
+    @Value("\${indexer.startBlock.clauses}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.clauses}") private val syncLogInterval: Long,
 ) :
     BaseIndexer(
         repository = clauseRepository,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLogInterval = syncLogInterval
+        syncLogInterval = syncLogInterval,
     ) {
-
     override fun rollback(blockNumber: Long) {
         clauseRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }

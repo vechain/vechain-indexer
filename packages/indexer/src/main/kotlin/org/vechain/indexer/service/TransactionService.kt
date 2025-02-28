@@ -1,5 +1,6 @@
 package org.vechain.indexer.service
 
+import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.GenericEventParameters
@@ -11,6 +12,7 @@ import org.vechain.indexer.repository.TransactionRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
 
+@Profile("transactions")
 @Service
 class TransactionService(
     private val transactionRepository: TransactionRepository,
