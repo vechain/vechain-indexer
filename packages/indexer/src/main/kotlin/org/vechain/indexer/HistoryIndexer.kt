@@ -13,7 +13,7 @@ import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.thor.model.TransferLog
 
-@Profile("history_events")
+@Profile("history-events")
 @Component
 open class HistoryIndexer(
     historyRepository: HistoryEventRepository,

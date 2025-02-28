@@ -288,7 +288,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
-      value = each.value.indexer.sync_logger_interval.fungible_tokens
+      value = each.value.indexer.sync_logger_interval.fungibleTokens
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"

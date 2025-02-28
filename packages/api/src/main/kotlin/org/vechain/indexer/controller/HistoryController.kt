@@ -25,7 +25,7 @@ import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("history_events")
+@Profile("history-events")
 @Tag(name = "History", description = "Query on-chain event history")
 @Validated
 @RestController
