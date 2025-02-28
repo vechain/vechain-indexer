@@ -16,8 +16,22 @@ test-common: #@ Run all the common tests.
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
-load-test: #@ Run the load tests.
-	$(LOAD_TEST_COMMAND) up --build -d --wait; open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+
+load-test: #@ Run the load tests (all tests).
+	$(LOAD_TEST_COMMAND) up --build -d --wait
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-nfts: #@ Run only the NFTs test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-nfts k6-app-nfts-by-owner-contract k6-app-nft-contracts
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transactions: #@ Run only the Transactions test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transactions-origin k6-app-transactions-delegator
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transfer-events: #@ Run only the Transfer Events test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transfer-events-address k6-app-transfer-events-destination k6-app-transfer-events-origin k6-app-transfer-events-token-address k6-app-fungible-tokens-contracts-by-address
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-history: #@ Run only the History test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-history
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
 load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
@@ -100,21 +114,21 @@ db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
-db-backup: #@ Backup the MongoDB database using Docker.
+db-backup: #@ Backup MongoDB database using Docker (Compressed)
 	# Ensure backup directory exists and is writable
 	mkdir -p $(PWD)/$(BACKUP_DIR)
-	docker run --rm --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --out="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S)"
-db-restore: #@ Restore the MongoDB database from the latest backup or a specified directory using Docker.
-	@if [ -z "$$DIR" ]; then \
-		DIR=$$(ls -td $(BACKUP_DIR)/veworld-bd-* | head -1); \
-		if [ -z "$$DIR" ]; then \
-			echo "No backup found in $(BACKUP_DIR). Please specify DIR=<backup-folder>"; \
-			exit 1; \
-		fi; \
+	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
+	docker rm -f mongo-backup 2>/dev/null || true
+	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S).gz"
+db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
+	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-bd-*.gz 2>/dev/null | head -1))
+	@if [ -z "$(FILE)" ]; then \
+		echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
+		exit 1; \
 	fi; \
-	echo "Restoring from $$DIR"; \
-	docker run --rm --network=host -v $(PWD)/$$DIR/vechain:/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop "/backup"
-
+	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
+	docker rm -f mongo-restore 2>/dev/null || true
+	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml

@@ -3,9 +3,8 @@ import http from "k6/http";
 import blockIds from "./data/block-ids.json";
 import { randomElement } from "./utils/array-utils";
 import env from "./env";
-import { DEFAULT_OPTIONS } from "./constants";
 
-export const options = DEFAULT_OPTIONS
+export const options = env.OPTIONS
 
 export default () => {
   const id = randomElement(blockIds);

@@ -53,7 +53,6 @@ class ContractsInitializerChangeUnit {
             Index()
                 .named(CONTRACT_BLOCKNUMBER_IDX)
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
-                .background()
 
         val creatorIsVip180Idx: IndexDefinition =
             Index()
@@ -63,7 +62,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val creatorIsVip181Idx: IndexDefinition =
             Index()
                 .named(CREATOR_ISVIP181_IDX)
@@ -72,7 +71,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val creatorIsVip210Idx: IndexDefinition =
             Index()
                 .named(CREATOR_ISVIP210_IDX)
@@ -81,7 +80,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val creatorIsErc20Idx: IndexDefinition =
             Index()
                 .named(CREATOR_ISERC20_IDX)
@@ -90,7 +89,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val creatorIsErc721Idx: IndexDefinition =
             Index()
                 .named(CREATOR_ISERC721_IDX)
@@ -99,7 +98,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val creatorIsErc1155Idx: IndexDefinition =
             Index()
                 .named(CREATOR_ISERC1155_IDX)
@@ -108,7 +107,6 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
 
         val isVip180Idx: IndexDefinition =
             Index()
@@ -117,7 +115,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val isVip181Idx: IndexDefinition =
             Index()
                 .named(ISVIP181_IDX)
@@ -125,7 +123,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val isVip210Idx: IndexDefinition =
             Index()
                 .named(ISVIP210_IDX)
@@ -133,7 +131,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val isErc20Idx: IndexDefinition =
             Index()
                 .named(ISERC20_IDX)
@@ -141,7 +139,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val isErc721Idx: IndexDefinition =
             Index()
                 .named(ISERC721_IDX)
@@ -149,7 +147,7 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
+
         val isErc1155Idx: IndexDefinition =
             Index()
                 .named(ISERC1155_IDX)
@@ -157,7 +155,6 @@ class ContractsInitializerChangeUnit {
                 .on(IndexedContract::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedContract::txId.name, Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
-                .background()
 
         mongoTemplate.indexOps(CONTRACTS).ensureIndex(blockNumberIdx)
 
@@ -176,10 +173,7 @@ class ContractsInitializerChangeUnit {
         mongoTemplate.indexOps(CONTRACTS).ensureIndex(isErc1155Idx)
 
         val archiveBlockIdx: IndexDefinition =
-            Index()
-                .named(ARCHIVE_BLOCKNUMBER_IDX)
-                .on("data.blockNumber", Sort.Direction.DESC)
-                .background()
+            Index().named(ARCHIVE_BLOCKNUMBER_IDX).on("data.blockNumber", Sort.Direction.DESC)
 
         mongoTemplate.indexOps(ARCHIVE_OBJ).ensureIndex(archiveBlockIdx)
     }
