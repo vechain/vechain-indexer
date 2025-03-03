@@ -68,6 +68,25 @@ jobs:
             aws-region: eu-west-1
             role-to-assume: ${{ steps.account.outputs.role_arn }}
 
+      - name: SlackTest
+        id: st
+        if: always()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ secrets.SLACK_VEWORLD_CHANNEL_ID }}
+          slack-message: |
+              Dev Build Test: *${{ github.ref_name }}*
+              Commit: *${{ github.actor }}* [${{ github.sha.short }}](${{ github.event.head_commit.url }})
+              Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_VEWORLD_BOT_TOKEN }}
+              text: "*Status*: *${{ job.status }}*"
+
+      - name: Halt test
+        id: hlt
+        run: false
+        continue-on-error: false
+
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
@@ -78,29 +97,6 @@ jobs:
         id: specify-backend
         run: |
           sed -i "s/{{{ENV}}}/${{ inputs.environment }}/g" provider.tf
-        continue-on-error: false
-
-      - name: SlackTest
-        id: st
-        if: always()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          channel-id: ${{ secrets.SLACK_VEWORLD_CHANNEL_ID }}
-          slack-message: |
-              Platform: *${{ inputs.platform }}*
-              Build Status: *${{ steps.combine_build_statuses.outputs.STATUS }}*
-              E2E Status: *${{ steps.combine_test_statuses.outputs.STATUS }}*
-              Branch: *${{ github.ref_name }}*
-              Commit: *${{ github.actor }}* [${{ github.sha.short }}](${{ github.event.head_commit.url }})
-              Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-              Cucumber Report: ${{ steps.parse_report_url.outputs.report_url || 'Not found.' }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_VEWORLD_BOT_TOKEN }}
-              text: "*Status*: *${{ job.status }}*"
-
-      - name: Halt test
-        id: hlt
-        run: false
         continue-on-error: false
 
       - name: Setup Terraform
