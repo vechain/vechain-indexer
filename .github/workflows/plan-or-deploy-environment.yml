@@ -37,8 +37,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
 
 jobs:
   deploy:
@@ -56,17 +56,17 @@ jobs:
       - name: Determine AWS account ID and role
         id: account
         run: |
-            if [ "${{ inputs.environment }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+          else
+            echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ steps.account.outputs.role_arn }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       - name: SlackTest
         id: st
@@ -153,10 +153,13 @@ jobs:
         run: terraform apply "apply.plan"
 
       - name: Slack Notification
+        id: slack-notify
         if: steps.apply.outcome == 'success'
-        uses: slackapi/slack-github-action@v1.24.0   #  prefer to rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
-          SLACK_TITLE: VeWorld Indexer Deployment
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "${{ inputs.environment }} Test Build - CICD Slack test message"
+            SLACK_TITLE: VeWorld Indexer Deployment
+            SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
