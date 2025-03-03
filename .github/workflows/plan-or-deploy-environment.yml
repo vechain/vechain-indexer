@@ -71,15 +71,12 @@ jobs:
       - name: SlackTest
         id: st
         if: always()
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
-          channel-id: ${{ secrets.SLACK_VEWORLD_CHANNEL_ID }}
-          slack-message: |
-              Dev Build Test: *${{ github.ref_name }}*
-              Commit: *${{ github.actor }}* [${{ github.sha.short }}](${{ github.event.head_commit.url }})
-              Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_VEWORLD_BOT_TOKEN }}
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+              text: "${{ inputs.environment }} Test Build - CICD Slack test message"
 
       - name: Halt test
         id: hlt
@@ -154,7 +151,7 @@ jobs:
 
       - name: Slack Notification
         if: steps.apply.outcome == 'success'
-        uses: rtCamp/action-slack-notify@v2
+        uses: slackapi/slack-github-action@v1.24.0   #  prefer to rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_COLOR: ${{ job.status }}
