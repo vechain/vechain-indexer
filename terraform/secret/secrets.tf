@@ -12,5 +12,5 @@ provider "github" {
 }
 
 variable "repo" {
-	default = "devops"
+  default = "devops"
 }

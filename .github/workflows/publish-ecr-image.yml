@@ -27,8 +27,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 jobs:
   build-and-publish:
@@ -58,8 +58,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ steps.account.outputs.role_arn }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       - name: Login To Amazon ECR
         id: login-ecr
@@ -76,8 +76,8 @@ jobs:
         env:
           REPOSITORY: veworld/${{ inputs.packageName }}
         run: |
-          if 
-            aws ecr describe-repositories --repository-names $REPOSITORY 
+          if
+            aws ecr describe-repositories --repository-names $REPOSITORY
           then
             echo "::set-output name=exists::true"
           else
