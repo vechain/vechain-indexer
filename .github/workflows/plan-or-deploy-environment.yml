@@ -50,6 +50,22 @@ jobs:
         working-directory: terraform/api
 
     steps:
+      - name: SlackTest
+        id: st
+        if: always()
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_VEWORLD_BOT_TOKEN }}
+          payload: |
+            channel: ${{ secrets.SLACK_VEWORLD_CHANNEL_ID }}
+            text: "${{ inputs.environment }} Test Build - CICD Slack test message"
+
+      - name: Halt test
+        id: hlt
+        run: false
+        continue-on-error: false
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -67,21 +83,6 @@ jobs:
         with:
             aws-region: eu-west-1
             role-to-assume: ${{ steps.account.outputs.role_arn }}
-
-      - name: SlackTest
-        id: st
-        if: always()
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-              text: "${{ inputs.environment }} Test Build - CICD Slack test message"
-
-      - name: Halt test
-        id: hlt
-        run: false
-        continue-on-error: false
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
