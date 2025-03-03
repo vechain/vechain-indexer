@@ -76,7 +76,10 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
           payload: |
-              message: "${{ inputs.environment }} Test Build - CICD Slack test message"
+            text: "${{ inputs.environment }} Test Build - CICD Slack test message"
+            SLACK_COLOR: ${{ job.status }}
+            SLACK_MESSAGE: Message
+            SLACK_TITLE: Title
 
       - name: Halt test
         id: hlt
