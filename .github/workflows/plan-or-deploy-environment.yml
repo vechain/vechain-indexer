@@ -160,6 +160,5 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK }}
           webhook-type: incoming-webhook
           payload: |
-            text: "${{ inputs.environment }} Test Build - CICD Slack test message"
             SLACK_TITLE: VeWorld Indexer Deployment
             SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
