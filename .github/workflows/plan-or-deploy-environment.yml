@@ -68,24 +68,6 @@ jobs:
           aws-region: eu-west-1
           role-to-assume: ${{ steps.account.outputs.role_arn }}
 
-      - name: SlackTest
-        id: st
-        if: always()
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-            text: "${{ inputs.environment }} Test Build - CICD Slack test message"
-            SLACK_COLOR: ${{ job.status }}
-            SLACK_MESSAGE: Message
-            SLACK_TITLE: Title
-
-      - name: Halt test
-        id: hlt
-        run: false
-        continue-on-error: false
-
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
