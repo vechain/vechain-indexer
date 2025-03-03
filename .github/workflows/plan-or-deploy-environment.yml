@@ -55,13 +55,21 @@ jobs:
         if: always()
         uses: slackapi/slack-github-action@v1.24.0
         with:
+          # Slack channel id, channel name, or user id to post message.
+          # See also: https://api.slack.com/methods/chat.postMessage#channels
+          # You can pass in multiple channels to post to by providing a comma-delimited list of channel IDs.
           channel-id: ${{ secrets.SLACK_VEWORLD_CHANNEL_ID }}
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-            text: "Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment"
+          slack-message: |
+              🖥️ Platform: *${{ inputs.platform }}*
+              🧱 Build Status: *${{ steps.combine_build_statuses.outputs.STATUS }}*
+              🚀 E2E Status: *${{ steps.combine_test_statuses.outputs.STATUS }}*
+              🌿 Branch: *${{ github.ref_name }}*
+              🔨 Commit: *${{ github.actor }}* [${{ github.sha.short }}](${{ github.event.head_commit.url }})
+              🔗 Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              📈 Cucumber Report: ${{ steps.parse_report_url.outputs.report_url || 'Not found.' }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_VEWORLD_BOT_TOKEN }}
+              text: "*Status*: *${{ job.status }}*"
 
       - name: Halt test
         id: hlt
