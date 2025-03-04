@@ -6,9 +6,11 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.event.model.generic.GenericEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.event.model.generic.RawEvent
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_ERC1155_VIP210_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_MASTER_EVENT_UPDATE
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP180_CONTRACTS
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_VIP181_CONTRACTS
 import org.vechain.indexer.fixtures.ContractFixtures.CONTRACT_WITH_CREATOR_SAME_AS_MASTER
 import org.vechain.indexer.model.ContractArchive
@@ -17,14 +19,12 @@ import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
-import org.vechain.indexer.utils.BlockUtils.extractMasterChangeEvents
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 internal class ContractServiceTest {
-
     companion object {
         const val ERC721_BYTECODE =
             "0x6080604052600436106101a1576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630178fe3f146101a657806301ffc9a71461024c57806306fdde03146102b0578063081812fc14610340578063095ea7b3146103ad57806318160ddd146103fa57806319fa8f501461042557806323b872dd1461048e5780632c3bc312146104fb5780632f745c591461055257806342842e0e146105b35780634f558e79146106205780634f6ccce714610665578063557938ae146106a65780636352211e1461071957806370a0823114610786578063715018a6146107dd5780637d036b27146107f45780638a270b7c146108255780638da5cb5b146108a257806395d89b41146108f9578063a22cb46514610989578063a3cb2a69146109d8578063a3f4df7e14610a08578063b510391f14610a98578063b88d4fde14610b35578063b9f4be1e14610be8578063c87b56dd14610c5b578063c8b9b59714610d01578063e4b0f16314610da7578063e985e9c514610dd4578063f2fde38b14610e4f578063f76f8d7814610e92575b600080fd5b3480156101b257600080fd5b506101d160048036038101908080359060200190929190505050610f22565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156102115780820151818401526020810190506101f6565b50505050905090810190601f16801561023e5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561025857600080fd5b5061029660048036038101908080357bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19169060200190929190505050610feb565b604051808215151515815260200191505060405180910390f35b3480156102bc57600080fd5b506102c5611052565b6040518080602001828103825283818151815260200191508051906020019080838360005b838110156103055780820151818401526020810190506102ea565b50505050905090810190601f1680156103325780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561034c57600080fd5b5061036b600480360381019080803590602001909291905050506110f4565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b3480156103b957600080fd5b506103f8600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050611131565b005b34801561040657600080fd5b5061040f611276565b6040518082815260200191505060405180910390f35b34801561043157600080fd5b5061043a611283565b60405180827bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19167bffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916815260200191505060405180910390f35b34801561049a57600080fd5b506104f9600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803590602001909291905050506112aa565b005b34801561050757600080fd5b5061053c600480360381019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506113b5565b6040518082815260200191505060405180910390f35b34801561055e57600080fd5b5061059d600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803590602001909291905050506113fe565b6040518082815260200191505060405180910390f35b3480156105bf57600080fd5b5061061e600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190505050611475565b005b34801561062c57600080fd5b5061064b60048036038101908080359060200190929190505050611496565b604051808215151515815260200191505060405180910390f35b34801561067157600080fd5b5061069060048036038101908080359060200190929190505050611508565b6040518082815260200191505060405180910390f35b3480156106b257600080fd5b5061071760048036038101908080359060200190929190803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611540565b005b34801561072557600080fd5b50610744600480360381019080803590602001909291905050506115dc565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561079257600080fd5b506107c7600480360381019080803573ffffffffffffffffffffffffffffffffffffffff16906020019092919050505061165a565b6040518082815260200191505060405180910390f35b3480156107e957600080fd5b506107f26116de565b005b34801561080057600080fd5b506108096117e3565b604051808260ff1660ff16815260200191505060405180910390f35b34801561083157600080fd5b5061088c600480360381019080803590602001908201803590602001908080601f01602080910402602001604051908101604052809392919081815260200183838082843782019150505050505091929192905050506117fa565b6040518082815260200191505060405180910390f35b3480156108ae57600080fd5b506108b761181b565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561090557600080fd5b5061090e611841565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561094e578082015181840152602081019050610933565b50505050905090810190601f16801561097b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b34801561099557600080fd5b506109d6600480360381019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035151590602001909291905050506118e3565b005b3480156109e457600080fd5b50610a06600480360381019080803560ff169060200190929190505050611a1f565b005b348015610a1457600080fd5b50610a1d611a99565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610a5d578082015181840152602081019050610a42565b50505050905090810190601f168015610a8a5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610aa457600080fd5b50610b1f600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611ad2565b6040518082815260200191505060405180910390f35b348015610b4157600080fd5b50610be6600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff16906020019092919080359060200190929190803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611b99565b005b348015610bf457600080fd5b50610c5960048036038101908080359060200190929190803590602001908201803590602001908080601f0160208091040260200160405190810160405280939291908181526020018383808284378201915050505050509192919290505050611bc1565b005b348015610c6757600080fd5b50610c8660048036038101908080359060200190929190505050611c24565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610cc6578082015181840152602081019050610cab565b50505050905090810190601f168015610cf35780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610d0d57600080fd5b50610d2c60048036038101908080359060200190929190505050611ced565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610d6c578082015181840152602081019050610d51565b50505050905090810190601f168015610d995780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b348015610db357600080fd5b50610dd260048036038101908080359060200190929190505050611db6565b005b348015610de057600080fd5b50610e35600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050611e12565b604051808215151515815260200191505060405180910390f35b348015610e5b57600080fd5b50610e90600480360381019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050611ea6565b005b348015610e9e57600080fd5b50610ea7611f0e565b6040518080602001828103825283818151815260200191508051906020019080838360005b83811015610ee7578082015181840152602081019050610ecc565b50505050905090810190601f168015610f145780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6060610f2d82611496565b1515610f3857600080fd5b600f60008381526020019081526020016000208054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015610fdf5780601f10610fb457610100808354040283529160200191610fdf565b820191906000526020600020905b815481529060010190602001808311610fc257829003601f168201915b50505050509050919050565b6000806000837bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19167bffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916815260200190815260200160002060009054906101000a900460ff169050919050565b606060058054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156110ea5780601f106110bf576101008083540402835291602001916110ea565b820191906000526020600020905b8154815290600101906020018083116110cd57829003601f168201915b5050505050905090565b60006002600083815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050919050565b600061113c826115dc565b90508073ffffffffffffffffffffffffffffffffffffffff168373ffffffffffffffffffffffffffffffffffffffff161415151561117957600080fd5b8073ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614806111b957506111b88133611e12565b5b15156111c457600080fd5b826002600084815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550818373ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff167f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92560405160405180910390a4505050565b6000600980549050905090565b6301ffc9a77c01000000000000000000000000000000000000000000000000000000000281565b6112b43382611f47565b15156112bf57600080fd5b600073ffffffffffffffffffffffffffffffffffffffff168373ffffffffffffffffffffffffffffffffffffffff16141515156112fb57600080fd5b600073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff161415151561133757600080fd5b6113418382611fdc565b61134b83826120df565b6113558282612143565b808273ffffffffffffffffffffffffffffffffffffffff168473ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef60405160405180910390a4505050565b6000601160008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b60006114098361165a565b8210151561141657600080fd5b600760008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000208281548110151561146257fe5b9060005260206000200154905092915050565b6114918383836020604051908101604052806000815250611b99565b505050565b6000806001600084815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff161415915050919050565b6000611512611276565b8210151561151f57600080fd5b60098281548110151561152e57fe5b90600052602060002001549050919050565b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561159c57600080fd5b6115a582611496565b15156115b057600080fd5b806010600084815260200190815260200160002090805190602001906115d7929190612ac2565b505050565b6000806001600084815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff161415151561165157600080fd5b80915050919050565b60008073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff161415151561169757600080fd5b600360008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561173a57600080fd5b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167ff8df31144d9c2f0f6b59d69b8b98abd5459d07f2742c4df920b25aae33c6482060405160405180910390a26000600c60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b6000600e60009054906101000a900460ff16905090565b6000806118073384611ad2565b905061181281611db6565b80915050919050565b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b606060068054600181600116156101000203166002900480601f0160208091040260200160405190810160405280929190818152602001828054600181600116156101000203166002900480156118d95780601f106118ae576101008083540402835291602001916118d9565b820191906000526020600020905b8154815290600101906020018083116118bc57829003601f168201915b5050505050905090565b3373ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff161415151561191e57600080fd5b80600460003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060006101000a81548160ff0219169083151502179055508173ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff167f17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c3183604051808215151515815260200191505060405180910390a35050565b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141515611a7b57600080fd5b80600e60006101000a81548160ff021916908360ff16021790555050565b6040805190810160405280600f81526020017f4d79204c6974746c6520436f6d6574000000000000000000000000000000000081525081565b6000600e60009054906101000a900460ff1660ff16825111151515611af657600080fd5b611b0c6001600d5461221a90919063ffffffff16565b600d81905550611b1e83600d54612236565b81600f6000600d5481526020019081526020016000209080519060200190611b47929190612ac2565b50600d548373ffffffffffffffffffffffffffffffffffffffff167f0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d412139688560405160405180910390a3600d54905092915050565b611ba48484846112aa565b611bb08484848461228d565b1515611bbb57600080fd5b50505050565b611bcb3383611f47565b1515611bd657600080fd5b600e60009054906101000a900460ff1660ff16815111151515611bf857600080fd5b80600f60008481526020019081526020016000209080519060200190611c1f929190612ac2565b505050565b6060611c2f82611496565b1515611c3a57600080fd5b600b60008381526020019081526020016000208054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015611ce15780601f10611cb657610100808354040283529160200191611ce1565b820191906000526020600020905b815481529060010190602001808311611cc457829003601f168201915b50505050509050919050565b6060611cf882611496565b1515611d0357600080fd5b601060008381526020019081526020016000208054600181600116156101000203166002900480601f016020809104026020016040519081016040528092919081815260200182805460018160011615610100020316600290048015611daa5780601f10611d7f57610100808354040283529160200191611daa565b820191906000526020600020905b815481529060010190602001808311611d8d57829003601f168201915b50505050509050919050565b611dc03382611f47565b1515611dcb57600080fd5b80601160003373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000208190555050565b6000600460008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060009054906101000a900460ff16905092915050565b600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16141515611f0257600080fd5b611f0b816124af565b50565b6040805190810160405280600381526020017f4d4c43000000000000000000000000000000000000000000000000000000000081525081565b600080611f53836115dc565b90508073ffffffffffffffffffffffffffffffffffffffff168473ffffffffffffffffffffffffffffffffffffffff161480611fc257508373ffffffffffffffffffffffffffffffffffffffff16611faa846110f4565b73ffffffffffffffffffffffffffffffffffffffff16145b80611fd35750611fd28185611e12565b5b91505092915050565b8173ffffffffffffffffffffffffffffffffffffffff16611ffc826115dc565b73ffffffffffffffffffffffffffffffffffffffff1614151561201e57600080fd5b600073ffffffffffffffffffffffffffffffffffffffff166002600083815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff161415156120db5760006002600083815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505b5050565b6120e982826125ab565b806120f3836113b5565b141561213f576000601160008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055505b5050565b600061214f8383612767565b600760008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020805490509050600760008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020829080600181540180825580915050906001820390600052602060002001600090919290919091505550806008600084815260200190815260200160002081905550505050565b6000818301905082811015151561222d57fe5b80905092915050565b61224082826128c1565b600980549050600a60008381526020019081526020016000208190555060098190806001815401808255809150509060018203906000526020600020016000909192909190915055505050565b6000806122af8573ffffffffffffffffffffffffffffffffffffffff16612967565b15156122be57600191506124a6565b8473ffffffffffffffffffffffffffffffffffffffff1663150b7a02338887876040518563ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401808573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200183815260200180602001828103825283818151815260200191508051906020019080838360005b838110156123b3578082015181840152602081019050612398565b50505050905090810190601f1680156123e05780820380516001836020036101000a031916815260200191505b5095505050505050602060405180830381600087803b15801561240257600080fd5b505af1158015612416573d6000803e3d6000fd5b505050506040513d602081101561242c57600080fd5b8101908080519060200190929190505050905063150b7a027c0100000000000000000000000000000000000000000000000000000000027bffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916817bffffffffffffffffffffffffffffffffffffffffffffffffffffffff19161491505b50949350505050565b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16141515156124eb57600080fd5b8073ffffffffffffffffffffffffffffffffffffffff16600c60009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a380600c60006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b60008060006125ba858561297a565b600860008581526020019081526020016000205492506126266001600760008873ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002080549050612aa990919063ffffffff16565b9150600760008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000208281548110151561267457fe5b9060005260206000200154905080600760008773ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020848154811015156126ce57fe5b9060005260206000200181905550600760008673ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002080548091906001900361272e9190612b42565b50600060086000868152602001908152602001600020819055508260086000838152602001908152602001600020819055505050505050565b600073ffffffffffffffffffffffffffffffffffffffff166001600083815260200190815260200160002060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff161415156127d557600080fd5b816001600083815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555061287a6001600360008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000205461221a90919063ffffffff16565b600360008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020819055505050565b600073ffffffffffffffffffffffffffffffffffffffff168273ffffffffffffffffffffffffffffffffffffffff16141515156128fd57600080fd5b6129078282612143565b808273ffffffffffffffffffffffffffffffffffffffff16600073ffffffffffffffffffffffffffffffffffffffff167fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef60405160405180910390a45050565b600080823b905060008111915050919050565b8173ffffffffffffffffffffffffffffffffffffffff1661299a826115dc565b73ffffffffffffffffffffffffffffffffffffffff161415156129bc57600080fd5b612a0f6001600360008573ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002054612aa990919063ffffffff16565b600360008473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000208190555060006001600083815260200190815260200160002060006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505050565b6000828211151515612ab757fe5b818303905092915050565b828054600181600116156101000203166002900490600052602060002090601f016020900481019282601f10612b0357805160ff1916838001178555612b31565b82800160010185558215612b31579182015b82811115612b30578251825591602001919060010190612b15565b5b509050612b3e9190612b6e565b5090565b815481835581811115612b6957818360005260206000209182019101612b689190612b6e565b5b505050565b612b9091905b80821115612b8c576000816000905550600101612b74565b5090565b905600a165627a7a72305820e8651086a402581c71f8c1c06dff92fb2eb63f38400333fcbab395f6cbadc8210029"
@@ -46,7 +46,7 @@ internal class ContractServiceTest {
                 transfers = emptyList(),
                 gasUsed = 638,
                 reverted = false,
-                vmError = ""
+                vmError = "",
             )
 
         val ANY_RESPONSE =
@@ -56,7 +56,7 @@ internal class ContractServiceTest {
                 transfers = emptyList(),
                 gasUsed = 638,
                 reverted = false,
-                vmError = ""
+                vmError = "",
             )
 
         val NEGATIVE_RESPONSE =
@@ -66,7 +66,7 @@ internal class ContractServiceTest {
                 transfers = emptyList(),
                 gasUsed = 638,
                 reverted = false,
-                vmError = ""
+                vmError = "",
             )
 
         val REVERTED_RESPONSE =
@@ -76,7 +76,7 @@ internal class ContractServiceTest {
                 transfers = emptyList(),
                 gasUsed = 638,
                 reverted = true,
-                vmError = "Reverted"
+                vmError = "Reverted",
             )
     }
 
@@ -93,7 +93,7 @@ internal class ContractServiceTest {
             ContractService(
                 contractRepository = mockk(relaxed = true),
                 contractArchiveService = archiveService,
-                thorService = thorService
+                thorService = thorService,
             )
     }
 
@@ -101,7 +101,7 @@ internal class ContractServiceTest {
     @Test
     fun `isErc721 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc721 = contractService.isErc721("invalid", ERC721_BYTECODE, clause)
+        val isErc721 = contractService.isErc721("invalid", ERC721_BYTECODE, clause.data)
 
         expectThat(isErc721).isTrue()
     }
@@ -110,7 +110,7 @@ internal class ContractServiceTest {
     fun `isErc721 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc721 = contractService.isErc721("invalid", "invalid", clause)
+        val isErc721 = contractService.isErc721("invalid", "invalid", clause.data)
 
         expectThat(isErc721).isFalse()
     }
@@ -119,7 +119,7 @@ internal class ContractServiceTest {
     fun `isErc721 - clause data - true`() {
         val clause = Clause(to = "0x", data = ERC721_BYTECODE, value = "0x0")
 
-        val isErc721 = contractService.isErc721("invalid", "0x", clause)
+        val isErc721 = contractService.isErc721("invalid", "0x", clause.data)
 
         expectThat(isErc721).isTrue()
     }
@@ -129,7 +129,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc721 = contractService.isErc721("invalid", "0x", clause)
+        val isErc721 = contractService.isErc721("invalid", "0x", clause.data)
 
         expectThat(isErc721).isFalse()
     }
@@ -139,7 +139,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns listOf(POSITIVE_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc721 = contractService.isErc721("invalid", "0x", clause)
+        val isErc721 = contractService.isErc721("invalid", "0x", clause.data)
 
         expectThat(isErc721).isTrue()
     }
@@ -150,7 +150,7 @@ internal class ContractServiceTest {
 
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc721 = contractService.isErc721("invalid", "0x", clause)
+        val isErc721 = contractService.isErc721("invalid", "0x", clause.data)
 
         expectThat(isErc721).isFalse()
     }
@@ -161,7 +161,7 @@ internal class ContractServiceTest {
 
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc721 = contractService.isErc721("invalid", "0x", clause)
+        val isErc721 = contractService.isErc721("invalid", "0x", clause.data)
 
         expectThat(isErc721).isFalse()
     }
@@ -170,7 +170,7 @@ internal class ContractServiceTest {
     @Test
     fun `isErc20 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc20 = contractService.isErc20("invalid", ERC20_BYTECODE, clause)
+        val isErc20 = contractService.isErc20("invalid", ERC20_BYTECODE, clause.data)
 
         expectThat(isErc20).isTrue()
     }
@@ -179,7 +179,7 @@ internal class ContractServiceTest {
     fun `isErc20 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc20 = contractService.isErc20("invalid", "invalid", clause)
+        val isErc20 = contractService.isErc20("invalid", "invalid", clause.data)
 
         expectThat(isErc20).isFalse()
     }
@@ -188,7 +188,7 @@ internal class ContractServiceTest {
     fun `isErc20 - clause data - true`() {
         val clause = Clause(to = "0x", data = ERC20_BYTECODE, value = "0x0")
 
-        val isErc20 = contractService.isErc20("invalid", "0x", clause)
+        val isErc20 = contractService.isErc20("invalid", "0x", clause.data)
 
         expectThat(isErc20).isTrue()
     }
@@ -198,7 +198,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc20 = contractService.isErc20("invalid", "0x", clause)
+        val isErc20 = contractService.isErc20("invalid", "0x", clause.data)
 
         expectThat(isErc20).isFalse()
     }
@@ -209,7 +209,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc20 = contractService.isErc20("invalid", "0x", clause)
+        val isErc20 = contractService.isErc20("invalid", "0x", clause.data)
 
         expectThat(isErc20).isTrue()
     }
@@ -220,7 +220,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, REVERTED_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc20 = contractService.isErc20("invalid", "0x", clause)
+        val isErc20 = contractService.isErc20("invalid", "0x", clause.data)
 
         expectThat(isErc20).isFalse()
     }
@@ -229,7 +229,7 @@ internal class ContractServiceTest {
     @Test
     fun `isErc1155 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc1155 = contractService.isErc1155("invalid", ERC1155_BYTECODE, clause)
+        val isErc1155 = contractService.isErc1155("invalid", ERC1155_BYTECODE, clause.data)
 
         expectThat(isErc1155).isTrue()
     }
@@ -238,7 +238,7 @@ internal class ContractServiceTest {
     fun `isErc1155 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc1155 = contractService.isErc1155("invalid", "invalid", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "invalid", clause.data)
 
         expectThat(isErc1155).isFalse()
     }
@@ -247,7 +247,7 @@ internal class ContractServiceTest {
     fun `isErc1155 - clause data - true`() {
         val clause = Clause(to = "0x", data = ERC1155_BYTECODE, value = "0x0")
 
-        val isErc1155 = contractService.isErc1155("invalid", "0x", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "0x", clause.data)
 
         expectThat(isErc1155).isTrue()
     }
@@ -257,7 +257,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc1155 = contractService.isErc1155("invalid", "0x", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "0x", clause.data)
 
         expectThat(isErc1155).isFalse()
     }
@@ -267,7 +267,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns listOf(POSITIVE_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc1155 = contractService.isErc1155("invalid", "0x", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "0x", clause.data)
 
         expectThat(isErc1155).isTrue()
     }
@@ -278,7 +278,7 @@ internal class ContractServiceTest {
 
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc1155 = contractService.isErc1155("invalid", "0x", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "0x", clause.data)
 
         expectThat(isErc1155).isFalse()
     }
@@ -289,7 +289,7 @@ internal class ContractServiceTest {
 
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isErc1155 = contractService.isErc1155("invalid", "0x", clause)
+        val isErc1155 = contractService.isErc1155("invalid", "0x", clause.data)
 
         expectThat(isErc1155).isFalse()
     }
@@ -298,7 +298,7 @@ internal class ContractServiceTest {
     @Test
     fun `isVip210 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc210 = contractService.isVip210("invalid", VIP210_BYTECODE, clause)
+        val isErc210 = contractService.isVip210("invalid", VIP210_BYTECODE, clause.data)
 
         expectThat(isErc210).isTrue()
     }
@@ -307,7 +307,7 @@ internal class ContractServiceTest {
     fun `isVip210 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc210 = contractService.isVip210("invalid", "invalid", clause)
+        val isErc210 = contractService.isVip210("invalid", "invalid", clause.data)
 
         expectThat(isErc210).isFalse()
     }
@@ -316,7 +316,7 @@ internal class ContractServiceTest {
     fun `isVip210 - clause data - true`() {
         val clause = Clause(to = "0x", data = VIP210_BYTECODE, value = "0x0")
 
-        val isErc210 = contractService.isVip210("invalid", "0x", clause)
+        val isErc210 = contractService.isVip210("invalid", "0x", clause.data)
 
         expectThat(isErc210).isTrue()
     }
@@ -326,7 +326,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc210 = contractService.isVip210("invalid", "0x", clause)
+        val isErc210 = contractService.isVip210("invalid", "0x", clause.data)
 
         expectThat(isErc210).isFalse()
     }
@@ -337,7 +337,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip210 = contractService.isVip210("invalid", "0x", clause)
+        val isVip210 = contractService.isVip210("invalid", "0x", clause.data)
 
         expectThat(isVip210).isTrue()
     }
@@ -348,7 +348,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, REVERTED_RESPONSE, ANY_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip210 = contractService.isVip210("invalid", "0x", clause)
+        val isVip210 = contractService.isVip210("invalid", "0x", clause.data)
 
         expectThat(isVip210).isFalse()
     }
@@ -357,7 +357,7 @@ internal class ContractServiceTest {
     @Test
     fun `isVip180 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc180 = contractService.isVip180("invalid", VIP180_BYTECODE, clause)
+        val isErc180 = contractService.isVip180("invalid", VIP180_BYTECODE, clause.data)
 
         expectThat(isErc180).isTrue()
     }
@@ -366,7 +366,7 @@ internal class ContractServiceTest {
     fun `isVip180 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc180 = contractService.isVip180("invalid", "invalid", clause)
+        val isErc180 = contractService.isVip180("invalid", "invalid", clause.data)
 
         expectThat(isErc180).isFalse()
     }
@@ -375,7 +375,7 @@ internal class ContractServiceTest {
     fun `isVip180 - clause data - true`() {
         val clause = Clause(to = "0x", data = VIP180_BYTECODE, value = "0x0")
 
-        val isErc180 = contractService.isVip180("invalid", "0x", clause)
+        val isErc180 = contractService.isVip180("invalid", "0x", clause.data)
 
         expectThat(isErc180).isTrue()
     }
@@ -385,7 +385,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc180 = contractService.isVip180("invalid", "0x", clause)
+        val isErc180 = contractService.isVip180("invalid", "0x", clause.data)
 
         expectThat(isErc180).isFalse()
     }
@@ -399,11 +399,11 @@ internal class ContractServiceTest {
                 ANY_RESPONSE,
                 ANY_RESPONSE,
                 ANY_RESPONSE,
-                ANY_RESPONSE
+                ANY_RESPONSE,
             )
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip180 = contractService.isVip180("invalid", "0x", clause)
+        val isVip180 = contractService.isVip180("invalid", "0x", clause.data)
 
         expectThat(isVip180).isTrue()
     }
@@ -417,11 +417,11 @@ internal class ContractServiceTest {
                 REVERTED_RESPONSE,
                 ANY_RESPONSE,
                 ANY_RESPONSE,
-                ANY_RESPONSE
+                ANY_RESPONSE,
             )
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip180 = contractService.isVip180("invalid", "0x", clause)
+        val isVip180 = contractService.isVip180("invalid", "0x", clause.data)
 
         expectThat(isVip180).isFalse()
     }
@@ -430,7 +430,7 @@ internal class ContractServiceTest {
     @Test
     fun `isVip181 - rawData - true`() {
         val clause = Clause("0x", "0x", "0x0")
-        val isErc181 = contractService.isVip181("invalid", VIP181_BYTECODE, clause)
+        val isErc181 = contractService.isVip181("invalid", VIP181_BYTECODE, clause.data)
 
         expectThat(isErc181).isTrue()
     }
@@ -439,7 +439,7 @@ internal class ContractServiceTest {
     fun `isVip181 - rawData - false`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause("0x", "0x", "0x0")
-        val isErc181 = contractService.isVip181("invalid", "invalid", clause)
+        val isErc181 = contractService.isVip181("invalid", "invalid", clause.data)
 
         expectThat(isErc181).isFalse()
     }
@@ -448,7 +448,7 @@ internal class ContractServiceTest {
     fun `isVip181 - clause data - true`() {
         val clause = Clause(to = "0x", data = VIP181_BYTECODE, value = "0x0")
 
-        val isErc181 = contractService.isVip181("invalid", "0x", clause)
+        val isErc181 = contractService.isVip181("invalid", "0x", clause.data)
 
         expectThat(isErc181).isTrue()
     }
@@ -458,7 +458,7 @@ internal class ContractServiceTest {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
         val clause = Clause(to = "0x", data = "invalid", value = "0x0")
 
-        val isErc181 = contractService.isVip181("invalid", "0x", clause)
+        val isErc181 = contractService.isVip181("invalid", "0x", clause.data)
 
         expectThat(isErc181).isFalse()
     }
@@ -469,7 +469,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE, ANY_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip181 = contractService.isVip181("invalid", "0x", clause)
+        val isVip181 = contractService.isVip181("invalid", "0x", clause.data)
 
         expectThat(isVip181).isTrue()
     }
@@ -480,7 +480,7 @@ internal class ContractServiceTest {
             listOf(ANY_RESPONSE, ANY_RESPONSE, REVERTED_RESPONSE, ANY_RESPONSE, ANY_RESPONSE)
         val clause = Clause(to = "0x", data = "0x80ac58cd", value = "0x0")
 
-        val isVip181 = contractService.isVip181("invalid", "0x", clause)
+        val isVip181 = contractService.isVip181("invalid", "0x", clause.data)
 
         expectThat(isVip181).isFalse()
     }
@@ -488,8 +488,7 @@ internal class ContractServiceTest {
     // parseContracts
     @Test
     fun `parseContracts - empty`() {
-        val contracts =
-            contractService.parseContracts(BLOCK_ERC1155_VIP210_CONTRACTS, emptyList(), emptyList())
+        val contracts = contractService.parseContracts(emptyList(), emptyList())
 
         expectThat(contracts).isEmpty()
     }
@@ -503,11 +502,60 @@ internal class ContractServiceTest {
         // Mock data returned for block#16: block, any account code & existing mongo document
         every { thorService.getAccountCode(any()) } returns "any account code"
 
+        val params =
+            GenericEventParameters(
+                returnValues =
+                    mapOf(
+                        "newMaster" to "0xa52b171d88be72f2550f2ffcd166b4825656a9d7",
+                    ),
+                eventType = "\$Master",
+            )
+        val masterEventUpdate =
+            listOf(
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0xaddress1",
+                    raw =
+                        RawEvent(
+                            data = ERC20_BYTECODE,
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0xaddress2",
+                    raw =
+                        RawEvent(
+                            data = VIP180_BYTECODE,
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+            )
+
         val contracts =
             contractService.parseContracts(
-                BLOCK_VIP180_CONTRACTS,
-                extractMasterChangeEvents(BLOCK_VIP180_CONTRACTS),
-                emptyList()
+                masterEventUpdate,
+                emptyList(),
             )
 
         expect {
@@ -523,29 +571,83 @@ internal class ContractServiceTest {
     fun `should capture erc1155 and vip210 contract deployments`() {
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
 
-        // Mock contract responses
-        every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns
+        val data1 =
             getTransaction(
                     BLOCK_ERC1155_VIP210_CONTRACTS,
-                    "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7"
+                    "0x3044907ea7443d2f795aca473eb641b8355ef554cffed760f4629ffdd7847fe7",
+                )
+                .clauses
+                .first()
+                .data
+        // Mock contract responses
+        every { thorService.getAccountCode("0xfab1f71b7e37157416935ad591eb34169a8e2db3") } returns
+            data1
+
+        val data2 =
+            getTransaction(
+                    BLOCK_ERC1155_VIP210_CONTRACTS,
+                    "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448",
                 )
                 .clauses
                 .first()
                 .data
         every { thorService.getAccountCode("0x5024d193c8ec0ee084995de603365c3560d7ba6e") } returns
-            getTransaction(
-                    BLOCK_ERC1155_VIP210_CONTRACTS,
-                    "0x1155ffe079b8060410cbdc66028664a592f5d3cfb6a20fcc4deb564ac42c8448"
-                )
-                .clauses
-                .first()
-                .data
+            data2
+
+        val params =
+            GenericEventParameters(
+                returnValues =
+                    mapOf(
+                        "newMaster" to "0xa52b171d88be72f2550f2ffcd166b4825656a9d7",
+                    ),
+                eventType = "\$Master",
+            )
+        val masterEventUpdate =
+            listOf(
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0xfab1f71b7e37157416935ad591eb34169a8e2db3",
+                    raw =
+                        RawEvent(
+                            data = data1,
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0x5024d193c8ec0ee084995de603365c3560d7ba6e",
+                    raw =
+                        RawEvent(
+                            data = data2,
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+            )
 
         val contracts =
             contractService.parseContracts(
-                BLOCK_ERC1155_VIP210_CONTRACTS,
-                extractMasterChangeEvents(BLOCK_ERC1155_VIP210_CONTRACTS),
-                emptyList()
+                masterEventUpdate,
+                emptyList(),
             )
 
         val vip210: IndexedContract? = contracts.find { it.isVip210 && !it.isErc1155 }
@@ -561,24 +663,53 @@ internal class ContractServiceTest {
     // This block contains 1 ERC20/VIP180 contract deployment transaction
     @Test
     fun `Extract erc721 vip181 contract types`() {
-
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns
             getTransaction(
                     BLOCK_VIP181_CONTRACTS,
-                    "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
+                    "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
                 )
                 .clauses
                 .first()
                 .data
 
+        val params =
+            GenericEventParameters(
+                returnValues =
+                    mapOf(
+                        "newMaster" to "0xa52b171d88be72f2550f2ffcd166b4825656a9d7",
+                    ),
+                eventType = "\$Master",
+            )
+        val masterEventUpdate =
+            listOf(
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0xaddress",
+                    raw =
+                        RawEvent(
+                            data = "0xdata",
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "Transfer",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+            )
+
         val contracts =
             contractService.parseContracts(
-                BLOCK_VIP181_CONTRACTS,
-                extractMasterChangeEvents(BLOCK_VIP181_CONTRACTS),
-                emptyList()
+                masterEventUpdate,
+                emptyList(),
             )
 
         expect { that(contracts).hasSize(1) }
@@ -593,22 +724,50 @@ internal class ContractServiceTest {
 
     @Test
     fun `Save contract document with correct data`() {
-
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
 
         // Known fixture
-        val blockNumber = 6L
         val txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
         val contractData = getTransaction(BLOCK_VIP181_CONTRACTS, txId).clauses.first().data
+
+        val params =
+            GenericEventParameters(
+                returnValues =
+                    mapOf(
+                        "newMaster" to "0xa52b171d88be72f2550f2ffcd166b4825656a9d7",
+                    ),
+                eventType = "\$Master",
+            )
+        val masterEventUpdate =
+            listOf(
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e",
+                    blockNumber = 6L,
+                    blockTimestamp = 1680177334,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+                    gasPayer = "0xgasPayer",
+                    address = "0x1f734d58eb6a349f038c28f112478bf90981c87e",
+                    raw =
+                        RawEvent(
+                            data = "0xdata",
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+            )
 
         // Mock data returned for block#6: block & account code
         every { thorService.getAccountCode(any()) } returns contractData
 
         val contracts =
             contractService.parseContracts(
-                BLOCK_VIP181_CONTRACTS,
-                extractMasterChangeEvents(BLOCK_VIP181_CONTRACTS),
-                emptyList()
+                masterEventUpdate,
+                emptyList(),
             )
 
         expect { that(contracts).all { isA<IndexedContract>() }.hasSize(1) }
@@ -620,7 +779,7 @@ internal class ContractServiceTest {
             that(contract)
                 .get(IndexedContract::blockId)
                 .isEqualTo("0x000000067d3b4b3bbefc6efdf463ee8932c52ba6358f675e43ab1e7036678f4e")
-            that(contract).get(IndexedContract::blockNumber).isEqualTo(blockNumber)
+            that(contract).get(IndexedContract::blockNumber).isEqualTo(6L)
             that(contract).get(IndexedContract::blockTimestamp).isEqualTo(1680177334)
             that(contract).get(IndexedContract::txId).isEqualTo(txId)
             that(contract)
@@ -628,14 +787,43 @@ internal class ContractServiceTest {
                 .isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(contract)
                 .get(IndexedContract::master)
-                .isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+                .isEqualTo("0xa52b171d88be72f2550f2ffcd166b4825656a9d7")
             that(contract).get(IndexedContract::rawData).isEqualTo(contractData)
         }
     }
 
     @Test
     fun `Update contract master when contract already indexed`() {
-
+        val params =
+            GenericEventParameters(
+                returnValues =
+                    mapOf(
+                        "newMaster" to "0xa077d962dfa446661d63c97f68d9628f908a5f43",
+                    ),
+                eventType = "\$Master",
+            )
+        val masterEventUpdate =
+            listOf(
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0x000000104d2ac4a9075c98f082edaa307aa089af124d9591c083878e5a060e46",
+                    blockNumber = 16,
+                    blockTimestamp = 1680177361,
+                    txId = "0x1a9b6ea51219d004ecb384616ca1937822d3fe8f00466a554b64a6e39ab9f7f4",
+                    origin = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+                    gasPayer = "0xgasPayer",
+                    address = "0xf248673ca9e4b76db70957e463afd521475277cf",
+                    raw =
+                        RawEvent(
+                            data = "0xdata",
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "\$Master",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+            )
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
 
         // Mock data returned for block#16: block, any account code & existing mongo document
@@ -643,9 +831,8 @@ internal class ContractServiceTest {
 
         val contracts =
             contractService.parseContracts(
-                BLOCK_MASTER_EVENT_UPDATE,
-                extractMasterChangeEvents(BLOCK_MASTER_EVENT_UPDATE),
-                listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER)
+                masterEventUpdate,
+                listOf(CONTRACT_WITH_CREATOR_SAME_AS_MASTER),
             )
 
         val oldMaster = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
@@ -674,7 +861,8 @@ internal class ContractServiceTest {
         }
     }
 
-    private fun getTransaction(block: Block, txId: String): Transaction {
-        return block.transactions.first { it.id == txId }
-    }
+    private fun getTransaction(
+        block: Block,
+        txId: String,
+    ): Transaction = block.transactions.first { it.id == txId }
 }
