@@ -1,9 +1,9 @@
 locals {
   dashboard_body = {
     "widgets" : [
-      for k, v in merge({for k, v in module.ecs-backend-service : v.service_name => v.cluster_name}, {
+      for k, v in merge({ for k, v in module.ecs-backend-service : v.service_name => v.cluster_name }, {
         for k, v in module.ecs-lb-service-api : v.service_name => v.cluster_name
-      }) : {
+        }) : {
         "type" : "metric",
         "x" : 0,
         "y" : 0,
@@ -88,43 +88,43 @@ locals {
         }
       },
       {
-        height: 6,
-        width: 12,
-        y: 0,
-        x: 12,
-        type: "metric",
-        properties: {
-          metrics: [
-            [ "AWS/ApiGateway", "5XXError", "ApiName", local.api_id, "Resource", "/coins/{coin_id}", "Stage", "default", "Method", "GET", { id: "m12", region: local.env.region, color: "#d62728" } ],
-            [ ".", "Count", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m13", region: local.env.region, yAxis: "right", color: "#2ca02c" } ],
-            [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m14", region: local.env.region, color: "#ff7f0e" } ],
-            [ ".", "CacheHitCount", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m15", region: local.env.region, yAxis: "right", color: "#9edae5" } ]
+        height : 6,
+        width : 12,
+        y : 0,
+        x : 12,
+        type : "metric",
+        properties : {
+          metrics : [
+            ["AWS/ApiGateway", "5XXError", "ApiName", local.api_id, "Resource", "/coins/{coin_id}", "Stage", "default", "Method", "GET", { id : "m12", region : local.env.region, color : "#d62728" }],
+            [".", "Count", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m13", region : local.env.region, yAxis : "right", color : "#2ca02c" }],
+            [".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m14", region : local.env.region, color : "#ff7f0e" }],
+            [".", "CacheHitCount", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m15", region : local.env.region, yAxis : "right", color : "#9edae5" }]
           ],
-          region: local.env.region,
-          stacked: true,
-          stat: "Sum",
-          title: "Coin Api <coin_id> GET",
-          view: "timeSeries"
+          region : local.env.region,
+          stacked : true,
+          stat : "Sum",
+          title : "Coin Api <coin_id> GET",
+          view : "timeSeries"
         }
       },
       {
-        height: 6,
-        width: 12,
-        y: 6,
-        x: 0,
-        type: "metric",
-        properties: {
-          metrics: [
-            [ "AWS/ApiGateway", "5XXError", "ApiName", local.api_id, "Resource", "/coins/{coin_id}/market_chart", "Stage", "default", "Method", "GET", { id: "m16", region: local.env.region, color: "#d62728" } ],
-            [ ".", "Count", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m17", region: local.env.region, color: "#2ca02c", yAxis: "right" } ],
-            [ ".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m18", region: local.env.region, color: "#ff7f0e" } ],
-            [ ".", "CacheHitCount", ".", ".", ".", ".", ".", ".", ".", ".", { id: "m20", region: local.env.region, color: "#9edae5", yAxis: "right" } ]
+        height : 6,
+        width : 12,
+        y : 6,
+        x : 0,
+        type : "metric",
+        properties : {
+          metrics : [
+            ["AWS/ApiGateway", "5XXError", "ApiName", local.api_id, "Resource", "/coins/{coin_id}/market_chart", "Stage", "default", "Method", "GET", { id : "m16", region : local.env.region, color : "#d62728" }],
+            [".", "Count", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m17", region : local.env.region, color : "#2ca02c", yAxis : "right" }],
+            [".", "4XXError", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m18", region : local.env.region, color : "#ff7f0e" }],
+            [".", "CacheHitCount", ".", ".", ".", ".", ".", ".", ".", ".", { id : "m20", region : local.env.region, color : "#9edae5", yAxis : "right" }]
           ],
-          region: local.env.region,
-          stacked: true,
-          stat: "Sum",
-          title: "Coin Api <coin_id>/market_chart GET",
-          view: "timeSeries"
+          region : local.env.region,
+          stacked : true,
+          stat : "Sum",
+          title : "Coin Api <coin_id>/market_chart GET",
+          view : "timeSeries"
         }
       }
     ]

@@ -18,8 +18,8 @@ concurrency: 1
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 jobs:
   identify-live-color:
@@ -50,7 +50,7 @@ jobs:
     name: Destroy Lingering Resources
     needs: [identify-live-color, check-selected-color]
     runs-on: ubuntu-latest
-    env: 
+    env:
       dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
       account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
     steps:
@@ -66,8 +66,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ steps.account.outputs.role_arn }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       - name: Destroy Lingering Secrets
         run: |
@@ -123,8 +123,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ steps.account.outputs.role_arn }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ steps.account.outputs.role_arn }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent

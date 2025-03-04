@@ -49,8 +49,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 jobs:
   identify-live:
@@ -106,11 +106,10 @@ jobs:
             echo "Error: DNS record value does not match expected patterns (prod-blue* or prod-green*)"
             exit 1
           fi
-      
+
       - name: Output live/dead color environments
         run: |
           echo "Live color for mainnent environment is ${{ steps.define_color_vars.outputs.mainnet_live_color }}"
           echo "Dead color for mainnet environment is ${{ steps.define_color_vars.outputs.mainnet_dead_color }}"
           echo "Live color for testnet environment is ${{ steps.define_color_vars.outputs.testnet_live_color }}"
           echo "Dead color for testnet environment is ${{ steps.define_color_vars.outputs.testnet_dead_color }}"
-    
