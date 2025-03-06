@@ -22,8 +22,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 jobs:
   retag:
@@ -34,36 +34,36 @@ jobs:
       contents: read
 
     steps:
-    - name: Determine AWS account ID and role
-      id: account
-      run: |
+      - name: Determine AWS account ID and role
+        id: account
+        run: |
           if [ "${{ inputs.environment }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           fi
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
           aws-region: eu-west-1
           role-to-assume: ${{ steps.account.outputs.role_arn }}
 
-    - name: Login To Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Login To Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Get the image manifest
-      id: get-manifest
-      run: |
-        aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest' >MANIFEST.json
-        {
-          echo 'MANIFEST<<EOF'
+      - name: Get the image manifest
+        id: get-manifest
+        run: |
+          aws ecr batch-get-image --repository-name "${{ inputs.repo_name }}" --image-ids imageTag=${{ inputs.existing_tag }} --output text --query 'images[].imageManifest' >MANIFEST.json
+          {
+            echo 'MANIFEST<<EOF'
+            cat "MANIFEST.json"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
           cat "MANIFEST.json"
-          echo EOF
-        } >> "$GITHUB_OUTPUT"
-        cat "MANIFEST.json"
 
-    - name: Create new tag
-      run: |
-        aws ecr put-image --repository-name ${{ inputs.repo_name }} --image-tag ${{ inputs.new_tag }} --image-manifest "$(cat MANIFEST.json)"
+      - name: Create new tag
+        run: |
+          aws ecr put-image --repository-name ${{ inputs.repo_name }} --image-tag ${{ inputs.new_tag }} --image-manifest "$(cat MANIFEST.json)"
