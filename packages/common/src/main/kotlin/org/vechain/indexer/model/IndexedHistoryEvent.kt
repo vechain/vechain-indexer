@@ -20,8 +20,6 @@ constructor(
     val txId: String,
     val origin: String? = null,
     val gasPayer: String? = null,
-    val paid: String? = null,
-    val gasUsed: Long? = null,
     val reverted: Boolean? = null,
     val contractAddress: String? = null,
     val tokenId: String? = null,
