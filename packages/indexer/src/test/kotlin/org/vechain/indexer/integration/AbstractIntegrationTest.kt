@@ -1,7 +1,6 @@
 package org.vechain.indexer.integration
 
 import java.time.Duration
-import java.util.*
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -17,6 +16,7 @@ import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
 import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.LogsIndexer
 import org.vechain.indexer.Status
 
 @RunWith(SpringRunner::class)
@@ -24,11 +24,16 @@ import org.vechain.indexer.Status
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {
-    @Autowired lateinit var allIndexers: List<BlockIndexer>
+    @Autowired lateinit var allBlockIndexer: List<BlockIndexer>
+
+    @Autowired lateinit var allLogIndexer: List<LogsIndexer>
 
     fun waitForFullySynced() {
         for (i in 0..120) {
-            if (allIndexers.all { it.status == Status.FULLY_SYNCED }) {
+            if (
+                allBlockIndexer.all { it.status == Status.FULLY_SYNCED } &&
+                    allLogIndexer.all { it.status == Status.FULLY_SYNCED }
+            ) {
                 return
             }
             Thread.sleep(500)
