@@ -10,8 +10,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 jobs:
 
@@ -43,15 +43,15 @@ jobs:
       - name: Get load balancer DNS names
         id: get-lb-dns-names
         run: |
-          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) || 
+          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch blue mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) || 
+          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch blue testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) || 
+          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch green mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) || 
+          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch green testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          
+
           echo "blue_main_dns=$blue_main_dns" >> $GITHUB_OUTPUT
           echo "blue_test_dns=$blue_test_dns" >> $GITHUB_OUTPUT
           echo "green_main_dns=$green_main_dns" >> $GITHUB_OUTPUT
@@ -103,9 +103,9 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
-      
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
@@ -170,4 +170,3 @@ jobs:
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         id: apply
         run: terraform apply "apply.plan"
-     
