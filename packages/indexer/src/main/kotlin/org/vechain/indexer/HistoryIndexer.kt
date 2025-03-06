@@ -51,6 +51,7 @@ open class HistoryIndexer(
                                 "token-vet-swap",
                                 "vet-token-swap",
                                 "vot3-to-b3tr-swap",
+                                "token-vet-swap-2",
                             ),
                     ),
                 )
