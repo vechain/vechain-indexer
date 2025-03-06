@@ -1,5 +1,5 @@
 {
-  "name": "Token_VETSwap2",
+  "name": "FT_VET_Swap",
   "sameClause": true,
   "events": [
     {
@@ -7,11 +7,11 @@
       "alias": "inputTransfer",
       "conditions": [
         {
-          "firstOperand": "from",
+          "firstOperand": "value",
           "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     },
@@ -20,11 +20,11 @@
       "alias": "outputTransfer",
       "conditions": [
         {
-          "firstOperand": "to",
+          "firstOperand": "amount",
           "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     },
@@ -33,40 +33,47 @@
       "alias": "swap",
       "conditions": [
         {
-          "firstOperand": "to",
+          "firstOperand": "amountIn",
           "isFirstStatic": false,
-          "secondOperand": "address",
-          "isSecondStatic": false,
-          "operator": "EQ"
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "amountOutReceived",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     }
   ],
   "rules": [
     {
-      "firstEventName": "inputTransfer",
-      "firstEventProperty": "from",
-      "secondEventName": "outputTransfer",
-      "secondEventProperty": "to",
+      "firstEventName": "swap",
+      "firstEventProperty": "withdrawAmount",
+      "secondEventName": "inputTransfer",
+      "secondEventProperty": "value",
       "operator": "EQ"
     },
     {
-      "firstEventName": "inputTransfer",
-      "firstEventProperty": "address",
+      "firstEventName": "swap",
+      "firstEventProperty": "amountOutReceived",
       "secondEventName": "outputTransfer",
-      "secondEventProperty": "address",
-      "operator": "NE"
+      "secondEventProperty": "amount",
+      "operator": "EQ"
     }
   ],
   "paramsDefinition": [
     {
-      "name": "from",
-      "eventName": "inputTransfer",
+      "name": "account",
+      "eventName": "swap",
       "businessEventName": "from"
     },
     {
-      "name": "to",
-      "eventName": "inputTransfer",
+      "name": "account",
+      "eventName": "swap",
       "businessEventName": "to"
     },
     {
@@ -77,7 +84,7 @@
     {
       "name": "value",
       "eventName": "inputTransfer",
-      "businessEventName": "inputValue"
+      "businessEventName": "withdrawAmount"
     },
     {
       "name": "amount",

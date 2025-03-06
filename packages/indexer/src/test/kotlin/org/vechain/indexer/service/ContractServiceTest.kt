@@ -696,7 +696,26 @@ internal class ContractServiceTest {
                     address = "0xaddress",
                     raw =
                         RawEvent(
-                            data = "0xdata",
+                            data = ERC721_BYTECODE,
+                            topics = listOf("0xtopic1", "0xtopic2"),
+                        ),
+                    clauseIndex = 0,
+                    eventType = "Transfer",
+                    params = params,
+                    signature = "0xsignature",
+                ) to params,
+                IndexedEvent(
+                    id = "0xid",
+                    blockId = "0xblockId",
+                    blockNumber = 6L,
+                    blockTimestamp = 1736071230,
+                    txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
+                    origin = "0xorigin",
+                    gasPayer = "0xgasPayer",
+                    address = "0xaddress",
+                    raw =
+                        RawEvent(
+                            data = VIP181_BYTECODE,
                             topics = listOf("0xtopic1", "0xtopic2"),
                         ),
                     clauseIndex = 0,
