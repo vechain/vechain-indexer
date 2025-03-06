@@ -10,6 +10,7 @@ import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.ContractService
+import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.*
@@ -36,7 +37,7 @@ open class ContractIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,
-        prunerRemovalChunkSize = prunerRemovalChunkSize,
+        prunerService = PrunerService(contractArchiveService, prunerRemovalChunkSize),
     ) {
     override fun processLogs(
         events: List<EventLog>,
@@ -51,6 +52,7 @@ open class ContractIndexer(
                     eventNames = listOf("\$Master"),
                 ),
             )
+
         if (masterChangeEvents.isEmpty()) return
 
         // Find any existing records

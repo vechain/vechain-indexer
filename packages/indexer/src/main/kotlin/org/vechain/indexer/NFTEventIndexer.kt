@@ -10,6 +10,7 @@ import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
+import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -37,7 +38,7 @@ open class NFTEventIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,
-        prunerRemovalChunkSize = prunerRemovalChunkSize,
+        prunerService = PrunerService(nftArchiveService, prunerRemovalChunkSize),
     ) {
     override fun processLogs(
         events: List<EventLog>,
