@@ -8,10 +8,9 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
 class BlockTest {
-
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("BlockIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("BlocksIndexer")
     }
 
     @Test
