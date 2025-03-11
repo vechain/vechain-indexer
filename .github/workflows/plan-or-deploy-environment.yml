@@ -43,8 +43,8 @@ jobs:
     name: Identify Live and Dead Colors
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_name: mainnet.live.b3tr.vechain.org.
-      hosted_zone_id: Z09212343EK9W0PKPWTXO
+      dns_record_name: mainnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
       id-token: write
@@ -53,7 +53,7 @@ jobs:
   deploy:
     needs: identify-live-color
     if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
-    name: "Plan/deploy B3TR-Indexer terraform - ${{ inputs.environment }}"
+    name: "Plan/deploy VeWorld-Indexer terraform - ${{ inputs.environment }}"
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.live_color }}
     env:
@@ -71,7 +71,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
@@ -119,7 +119,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ env.ENVIRONMENT }}-b3tr-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
+          cluster_services=$(aws ecs list-services --cluster ${{ env.ENVIRONMENT }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif (( $cluster_services > 0 )); then
@@ -141,5 +141,5 @@ jobs:
       #   env:
       #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       #     SLACK_COLOR: ${{ job.status }}
-      #     SLACK_MESSAGE: Deployed B3TR-Indexer to *${{ env.ENVIRONMENT }}* environment
-      #     SLACK_TITLE: B3TR-Indexer Infrastructure Deployment
+      #     SLACK_MESSAGE: Deployed VeWorld-Indexer to *${{ env.ENVIRONMENT }}* environment
+      #     SLACK_TITLE: VeWorld-Indexer Infrastructure Deployment

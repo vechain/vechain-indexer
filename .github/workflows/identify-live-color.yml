@@ -25,12 +25,12 @@ on:
         description: "The DNS record value to check"
         required: true
         type: string
-        default: "mainnet.live.b3tr.vechain.org."
+        default: "mainnet.live.prod.veworld.vechain.org."
       hosted_zone_id:
         description: "The hosted zone ID of the DNS record"
         required: true
         type: string
-        default: "Z09212343EK9W0PKPWTXO"
+        default: "Z08093993BM56HB3DD4U4"
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -48,7 +48,7 @@ jobs:
 
       - name: Set AWS IAM role variable
         id: account
-        run: echo "role_arn=${{ secrets.AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+        run: echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

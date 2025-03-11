@@ -20,7 +20,7 @@ on:
         description: Name of the project
         required: true
         type: string
-        default: b3tr
+        default: veworld
       imagePlatform:
         description: Platform for the Docker image
         required: false
@@ -37,7 +37,7 @@ env:
   versionTag: ${{ github.ref_name }}
   commitHash: ${{ github.sha }}
   workingDirectory: ${{ inputs.workingDirectory || './' }}
-  projectName: ${{ inputs.projectName || 'b3tr' }}
+  projectName: ${{ inputs.projectName || 'veworld' }}
   imagePlatform: ${{ inputs.imagePlatform || 'linux/arm64' }}
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       - name: Login To Amazon ECR
         id: login-ecr
