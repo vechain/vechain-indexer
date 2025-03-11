@@ -66,16 +66,16 @@ jobs:
         id: define_color_vars
         run: |
           if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-blue* ]]; then
-            echo "live_color=blue" >> $GITHUB_OUTPUT
-            echo "dead_color=green" >> $GITHUB_OUTPUT
+            echo "live_color=prod-blue" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-green" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-green* ]]; then
-            echo "live_color=green" >> $GITHUB_OUTPUT
-            echo "dead_color=blue" >> $GITHUB_OUTPUT
+            echo "live_color=prod-green" >> $GITHUB_OUTPUT
+            echo "dead_color=prod-blue" >> $GITHUB_OUTPUT
           else
-            echo "Error: DNS record value does not match expected patterns (blue* or green*)"
+            echo "Error: DNS record value does not match expected patterns (prod-blue* or prod-green*)"
             exit 1
           fi
-      
+
       - name: Output live/dead color environments
         run: |
           echo "Live color environment is ${{ steps.define_color_vars.outputs.live_color }}"
