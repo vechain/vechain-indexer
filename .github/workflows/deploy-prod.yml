@@ -3,90 +3,126 @@ name: Prod Deployment Workflow
 on:
   workflow_dispatch:
     inputs:
-      deployment-strategy:
-        description: 'Deployment strategy'
+      network:
+        description: Which network to deploy
         required: true
         type: choice
         options:
-          - live environment
-          - dead environment
-      version:
-        description: 'The version of this release'
+          - testnet
+          - mainnet
+          - both
+        default: testnet
+      environment:
+        description: Which color environment to deploy
         required: true
+        type: choice
+        options:
+          - live
+          - dead
+        default: live
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
 
 jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
-      hosted_zone_id: Z08093993BM56HB3DD4U4
+      dns_record_name: mainnet.live.b3tr.vechain.org.
+      hosted_zone_id: Z09212343EK9W0PKPWTXO
     permissions:
       contents: read
       id-token: write
     secrets: inherit
 
+  define-env-vars:
+    name: Set Up Environment Variables
+    needs: [identify-live-color]
+    runs-on: ubuntu-latest
+    outputs:
+      MAINNET_VERSION: ${{ steps.distinguish-versions.outputs.MAINNET_VERSION }}
+      TESTNET_VERSION: ${{ steps.distinguish-versions.outputs.TESTNET_VERSION }}
+      DEPLOYMENT_COLOR: ${{ steps.set-environment.outputs.DEPLOYMENT_COLOR }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+      - name: Get current version
+        id: get-current-version
+        run: |
+          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.live_color }}-b3tr-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          MAINNET_IMAGE_VERSION=$(echo $MAINNET_IMAGE_URI | cut -d: -f2)
+          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.live_color }}-b3tr-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          TESTNET_IMAGE_VERSION=$(echo $TESTNET_IMAGE_URI | cut -d: -f2)
+
+          echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
+          echo "CURRENT_TESTNET_VERSION=${TESTNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == "main" ]]; then
+            LATEST_TAG=$(git tag | sort -V | tail -n1)
+            echo "VERSION=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.ref_name }}" == v.* ]]; then
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "Unrecognised version. Please select an existing version tag to deploy."
+            exit 1
+          fi
+      - name: Distinguish versions
+        id: distinguish-versions
+        run: |
+          if [[ "${{ inputs.network }}" == "mainnet" || "${{ inputs.network }}" == "both" ]]; then
+            echo "MAINNET_VERSION=${{ steps.set-version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          else
+            echo "MAINNET_VERSION=${{ steps.get-current-version.outputs.CURRENT_MAINNET_VERSION }}" >> $GITHUB_OUTPUT
+          fi
+          if [[ "${{ inputs.network }}" == "testnet" || "${{ inputs.network }}" == "both" ]]; then
+            echo "TESTNET_VERSION=${{ steps.set-version.outputs.VERSION }}" >> $GITHUB_OUTPUT
+          else
+            echo "TESTNET_VERSION=${{ steps.get-current-version.outputs.CURRENT_TESTNET_VERSION }}" >> $GITHUB_OUTPUT
+          fi
+      - name: Set environment
+        id: set-environment
+        run: |
+          if [ '${{ inputs.environment }}' == 'live' ]; then
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.environment }}" == 'dead' ]; then
+            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
+          fi
+
   check-existing-release:
     name: Check Existing Releases
     runs-on: ubuntu-latest
+    needs: [define-env-vars]
+    if: ${{ inputs.network == 'mainnet' || inputs.network == 'both' }}
     outputs:
       NEW_RELEASE: ${{ steps.check-release.outputs.NEW_RELEASE }}
     steps:
       - name: Check if deployment version already exists
         id: check-release
+        env:
+          VERSION: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
         run: |
-          VERSION=${{ inputs.version }}
+          VERSION=${{ env.VERSION }}
           RELEASES=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/releases)
-          if echo "$RELEASES" | jq -e ".[] | select(.tag_name==\"$VERSION\")"; then
-            echo "NEW_RELEASE=false" >> $GITHUB_OUTPUT
-          else
-            echo "NEW_RELEASE=true" >> $GITHUB_OUTPUT
-          fi
+          NEW_RELEASE=$(echo "$RELEASES" | jq -e ".[] | select(.tag_name==\"$VERSION\")" > /dev/null && echo "false" || echo "true")
+          echo "NEW_RELEASE=${NEW_RELEASE}" >> $GITHUB_OUTPUT
 
-  retag-ecr-images:
-    name: Retag ECR Images
-    needs: [check-existing-release]
-    secrets: inherit
-    permissions:
-      id-token: write
-      contents: read
-    if: needs.check-existing-release.outputs.NEW_RELEASE == 'true'
-    strategy:
-      matrix:
-        ecr_repo: [veworld/indexer, veworld/api]
-    uses: ./.github/workflows/retag-ecr-image.yml
+  deploy-env:
+    needs: [define-env-vars]
+    name: Run Deployment - ${{ inputs.network}}
+    uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
-      environment: prod
-      repo_name: ${{ matrix.ecr_repo }}
-      existing_tag: prod-latest
-      new_tag: ${{ inputs.version }}
-
-  set-deployment-env:
-    needs: [identify-live-color]
-    name: Determine Deployment Color
-    runs-on: ubuntu-latest
-    outputs:
-      DEPLOYMENT_COLOR: ${{ steps.set-deployment-color.outputs.DEPLOYMENT_COLOR }}
-    steps:
-      - id: set-deployment-color
-        run: |
-          if [ "${{ inputs.deployment-strategy }}" == "live environment" ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.deployment-strategy }}" == "dead environment" ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
-          fi
-
-  deploy-prod-env:
-    needs: [retag-ecr-images, set-deployment-env]
-    name: Run Deployment - ${{ inputs.deployment-strategy}}
-    uses: ./.github/workflows/plan-or-deploy-environment.yml
-    if: always() && (needs.retag-ecr-images.result == 'success' || needs.retag-ecr-images.result == 'skipped')
-    with:
-      environment: prod
-      version: ${{ inputs.version }}
-      workspace: ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
+      environment: ${{ needs.define-env-vars.outputs.DEPLOYMENT_COLOR }}
+      mainnet_version: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+      testnet_version: ${{ needs.define-env-vars.outputs.TESTNET_VERSION }}
       # Force ensures environment is spun up if it does not already exist
       force: true
     permissions:
@@ -100,19 +136,30 @@ jobs:
     needs: [identify-live-color]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
+      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.live_color }}"
 
   create-release:
     runs-on: ubuntu-latest
-    needs: [set-deployment-env, deploy-prod-env]
-    if: ${{ success() }}
+    needs: [check-existing-release, define-env-vars, deploy-env]
+    if: ${{ needs.check-existing-release.outputs.NEW_RELEASE == 'true' }}
+    permissions:
+      contents: write
     steps:
       - name: Create release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ inputs.version }}
-          release_name: Release ${{ inputs.version }} - ${{ needs.set-deployment-env.outputs.DEPLOYMENT_COLOR }}
-          draft: true
-          prerelease: false
+          GH_TOKEN: ${{ github.token }}
+          tag: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
+        run: |
+          latest_release=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')
+          echo "Latest release: ${latest_release}"
+          prerelease_flag=""
+          if [ "${{ inputs.environment }}" == "dead" ]; then
+            prerelease_flag="--prerelease"
+          fi
+          gh release create "${tag}" \
+              --repo="${{ github.repository }}" \
+              --title="Release ${tag}" \
+              $prerelease_flag \
+              --generate-notes \
+              --notes-start-tag "${latest_release}"
