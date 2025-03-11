@@ -65,10 +65,10 @@ jobs:
       - name: Define output variables
         id: define_color_vars
         run: |
-          if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == blue* ]]; then
+          if [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-blue* ]]; then
             echo "live_color=blue" >> $GITHUB_OUTPUT
             echo "dead_color=green" >> $GITHUB_OUTPUT
-          elif [[ "${{ steps.get_dns_value.outputs.dns_value }}" == green* ]]; then
+          elif [[ "${{ steps.get_dns_value.outputs.dns_value }}" == prod-green* ]]; then
             echo "live_color=green" >> $GITHUB_OUTPUT
             echo "dead_color=blue" >> $GITHUB_OUTPUT
           else
