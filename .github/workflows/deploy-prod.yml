@@ -56,9 +56,9 @@ jobs:
       - name: Get current version
         id: get-current-version
         run: |
-          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.live_color }}-veworld-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-veworld-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           MAINNET_IMAGE_VERSION=$(echo $MAINNET_IMAGE_URI | cut -d: -f2)
-          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.live_color }}-veworld-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-veworld-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           TESTNET_IMAGE_VERSION=$(echo $TESTNET_IMAGE_URI | cut -d: -f2)
 
           echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
@@ -91,10 +91,18 @@ jobs:
       - name: Set environment
         id: set-environment
         run: |
-          if [ '${{ inputs.environment }}' == 'live' ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.live_color }}" >> $GITHUB_OUTPUT
-          elif [ "${{ inputs.environment }}" == 'dead' ]; then
-            echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.dead_color }}" >> $GITHUB_OUTPUT
+          if [[ '${{ inputs.network }}' == 'main' || '${{ inputs.network }}' == 'both' ]]; then
+            if [[ '${{ inputs.environment }}' == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
+            elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+            fi
+          elif [[ '${{ inputs.network }}' == 'test' ]]; then
+            if [[ '${{ inputs.environment }}' == 'live' ]]; then
+              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
+            elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
+              echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
+            fi
           fi
 
   check-existing-release:
@@ -137,7 +145,7 @@ jobs:
     needs: [identify-live-color]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Live environment is ${{ needs.identify-live-color.outputs.live_color }}"
+      - run: echo "Live mainnet environment is ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
 
   create-release:
     runs-on: ubuntu-latest
