@@ -3,7 +3,6 @@ package org.vechain.indexer.service
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
@@ -32,7 +31,7 @@ open class NFTService(
     }
 
     open fun parseRecords(
-        data: List<Pair<IndexedEvent, GenericEventParameters>>,
+        data: List<IndexedEvent>,
         existing: List<IndexedNFT>,
     ): List<IndexedNFT> =
         data.map {
@@ -42,19 +41,17 @@ open class NFTService(
             IndexedNFT(
                 id = nftId,
                 version = version,
-                owner = it.second.params.getAsString("to")!!,
-                contractAddress = it.first.address!!,
-                tokenId = it.second.params.getAsString("tokenId")!!,
-                txId = it.first.txId,
-                blockId = it.first.blockId,
-                blockNumber = it.first.blockNumber,
-                blockTimestamp = it.first.blockTimestamp,
+                owner = it.params.getAsString("to")!!,
+                contractAddress = it.address!!,
+                tokenId = it.params.getAsString("tokenId")!!,
+                txId = it.txId,
+                blockId = it.blockId,
+                blockNumber = it.blockNumber,
+                blockTimestamp = it.blockTimestamp,
             )
         }
 
-    open fun getExisting(
-        nftTransfers: List<Pair<IndexedEvent, GenericEventParameters>>
-    ): List<IndexedNFT> =
+    open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNFT> =
         nftRepository
             .findAllById(
                 nftTransfers.map { IdUtils.buildNftId(it) },

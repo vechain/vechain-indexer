@@ -3,7 +3,6 @@ package org.vechain.indexer.service
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.DecodedEvent
 import org.vechain.indexer.model.DecodedOutputs
@@ -20,13 +19,13 @@ class TransactionService(
 ) {
     fun processBlockTransactions(
         transactions: List<Transaction>,
-        eventsByTx: Map<String, List<Pair<IndexedEvent, GenericEventParameters>>>,
+        eventsByTx: Map<String, List<IndexedEvent>>,
         block: Block,
     ) {
         val txs =
             transactions.map { tx ->
-                val eventsByClause: Map<Int, List<Pair<IndexedEvent, GenericEventParameters>>> =
-                    eventsByTx[tx.id]?.groupBy { it.first.clauseIndex.toInt() } ?: emptyMap()
+                val eventsByClause: Map<Int, List<IndexedEvent>> =
+                    eventsByTx[tx.id]?.groupBy { it.clauseIndex.toInt() } ?: emptyMap()
 
                 val decodedOutputs =
                     tx.outputs.mapIndexed { index, output ->
@@ -34,15 +33,14 @@ class TransactionService(
                         val eventMap = mutableMapOf<String, DecodedEvent>()
                         // Get all decoded events from the clause
                         clauseEvents.forEach { event ->
-                            val key =
-                                "${event.first.address}-${event.first.raw?.topics}-${event.first.raw?.data}"
+                            val key = "${event.address}-${event.raw?.topics}-${event.raw?.data}"
                             eventMap[key] =
                                 DecodedEvent(
-                                    address = event.first.address as String,
-                                    topics = event.first.raw!!.topics,
-                                    data = event.first.raw!!.data,
-                                    name = event.second.getEventType(),
-                                    params = event.second.getReturnValues(),
+                                    address = event.address as String,
+                                    topics = event.raw!!.topics,
+                                    data = event.raw!!.data,
+                                    name = event.params.getEventType(),
+                                    params = event.params.getReturnValues(),
                                 )
                         }
                         // Get all non-decoded events from the clause

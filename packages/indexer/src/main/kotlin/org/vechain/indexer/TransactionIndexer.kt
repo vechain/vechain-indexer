@@ -32,7 +32,7 @@ open class TransactionIndexer(
 
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {
-            val eventsByTx = processBlockGenericEvents(block).groupBy { it.first.txId }
+            val eventsByTx = processBlockGenericEvents(block).groupBy { it.txId }
 
             transactionService.processBlockTransactions(
                 block.transactions,

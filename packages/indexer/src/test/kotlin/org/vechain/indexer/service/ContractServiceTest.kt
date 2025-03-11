@@ -530,7 +530,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
                 IndexedEvent(
                     id = "0xid",
                     blockId = "0xblockId",
@@ -549,7 +549,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
             )
 
         val contracts =
@@ -622,7 +622,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
                 IndexedEvent(
                     id = "0xid",
                     blockId = "0xblockId",
@@ -641,7 +641,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
             )
 
         val contracts =
@@ -703,7 +703,7 @@ internal class ContractServiceTest {
                     eventType = "Transfer",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
                 IndexedEvent(
                     id = "0xid",
                     blockId = "0xblockId",
@@ -722,7 +722,7 @@ internal class ContractServiceTest {
                     eventType = "Transfer",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
             )
 
         val contracts =
@@ -777,7 +777,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
             )
 
         // Mock data returned for block#6: block & account code
@@ -841,7 +841,7 @@ internal class ContractServiceTest {
                     eventType = "\$Master",
                     params = params,
                     signature = "0xsignature",
-                ) to params,
+                ),
             )
         every { thorService.executeReadOnlyCode(any()) } returns emptyList()
 

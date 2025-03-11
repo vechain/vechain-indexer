@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
-import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
@@ -241,14 +240,14 @@ open class ContractService(
     }
 
     open fun parseContracts(
-        masterChangeEvents: List<Pair<IndexedEvent, GenericEventParameters>>,
+        masterChangeEvents: List<IndexedEvent>,
         existingContracts: List<IndexedContract>,
     ): List<IndexedContract> {
         val contracts: MutableList<IndexedContract> = mutableListOf()
 
         masterChangeEvents.forEach { event ->
-            val contractAddress = event.first.address ?: return@forEach
-            val master = event.second.params.getAsString("newMaster") ?: return@forEach
+            val contractAddress = event.address ?: return@forEach
+            val master = event.params.getAsString("newMaster") ?: return@forEach
 
             // Handle case of two master change events for the same contract
             val multipleMasterChangeContract = contracts.find { it.address == contractAddress }
@@ -265,10 +264,10 @@ open class ContractService(
                         IndexedContract(
                             address = contractAddress,
                             version = contract.version + 1,
-                            blockId = event.first.blockId,
-                            blockNumber = event.first.blockNumber,
-                            blockTimestamp = event.first.blockTimestamp,
-                            txId = event.first.txId,
+                            blockId = event.blockId,
+                            blockNumber = event.blockNumber,
+                            blockTimestamp = event.blockTimestamp,
+                            txId = event.txId,
                             creator = contract.creator,
                             master = master,
                             rawData = contract.rawData,
@@ -289,19 +288,19 @@ open class ContractService(
                         IndexedContract(
                             address = contractAddress,
                             version = 1,
-                            blockId = event.first.blockId,
-                            blockNumber = event.first.blockNumber,
-                            blockTimestamp = event.first.blockTimestamp,
-                            txId = event.first.txId,
-                            creator = event.first.origin as String,
+                            blockId = event.blockId,
+                            blockNumber = event.blockNumber,
+                            blockTimestamp = event.blockTimestamp,
+                            txId = event.txId,
+                            creator = event.origin as String,
                             master = master,
                             rawData = rawData,
-                            isVip180 = isVip180(contractAddress, rawData, event.first.raw!!.data),
-                            isVip181 = isVip181(contractAddress, rawData, event.first.raw!!.data),
-                            isVip210 = isVip210(contractAddress, rawData, event.first.raw!!.data),
-                            isErc20 = isErc20(contractAddress, rawData, event.first.raw!!.data),
-                            isErc721 = isErc721(contractAddress, rawData, event.first.raw!!.data),
-                            isErc1155 = isErc1155(contractAddress, rawData, event.first.raw!!.data),
+                            isVip180 = isVip180(contractAddress, rawData, event.raw!!.data),
+                            isVip181 = isVip181(contractAddress, rawData, event.raw!!.data),
+                            isVip210 = isVip210(contractAddress, rawData, event.raw!!.data),
+                            isErc20 = isErc20(contractAddress, rawData, event.raw!!.data),
+                            isErc721 = isErc721(contractAddress, rawData, event.raw!!.data),
+                            isErc1155 = isErc1155(contractAddress, rawData, event.raw!!.data),
                             previousMasters = mutableSetOf(),
                         ),
                     )

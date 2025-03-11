@@ -56,8 +56,7 @@ open class ContractIndexer(
         if (masterChangeEvents.isEmpty()) return
 
         // Find any existing records
-        val existing =
-            contractService.getExisting(masterChangeEvents.mapNotNull { it.first.address })
+        val existing = contractService.getExisting(masterChangeEvents.mapNotNull { it.address })
 
         // Process the updated records
         val updated = contractService.parseContracts(masterChangeEvents, existing)

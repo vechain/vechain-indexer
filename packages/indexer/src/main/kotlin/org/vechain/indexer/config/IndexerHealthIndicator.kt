@@ -56,9 +56,6 @@ class IndexerHealthIndicator(
 
         val timeLastProcessed = indexer.timeLastProcessed
         return if (timeNow.minusSeconds(PROCESS_TIMEOUT) > timeLastProcessed) {
-            println(
-                "Indexer ${indexer.name} is down, time now: $timeNow.minusSeconds(PROCESS_TIMEOUT), last processed: $timeLastProcessed"
-            )
             STATUS_DOWN
         } else {
             STATUS_UP
