@@ -119,9 +119,9 @@ db-backup: #@ Backup MongoDB database using Docker (Compressed)
 	mkdir -p $(PWD)/$(BACKUP_DIR)
 	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
 	docker rm -f mongo-backup 2>/dev/null || true
-	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-bd-$$(date +%Y%m%d%H%M%S).gz"
+	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
 db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
-	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-bd-*.gz 2>/dev/null | head -1))
+	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-db-*.gz 2>/dev/null | head -1))
 	@if [ -z "$(FILE)" ]; then \
 		echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
 		exit 1; \
