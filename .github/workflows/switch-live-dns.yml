@@ -137,12 +137,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
 
-      - name: Point backend to correct environment
-        id: specify-backend
-        run: |
-          sed -i "s/{{{ENV}}}/${{ env.environment }}/g" provider.tf
-        continue-on-error: false
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -151,7 +145,7 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init
+        run: terraform init -backend-config="environments/${{ env.environment }}.config"
 
       - name: Terraform Workspace
         id: workspace
