@@ -87,7 +87,6 @@ allprojects {
 
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            freeCompilerArgs = listOf("-Xjsr305=strict")
             jvmTarget = "21"
         }
         dependsOn("installGitHooks")
@@ -248,7 +247,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:2.1.0")
+        implementation("org.vechain:indexer-core:3.1.0-SNAPSHOT")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")

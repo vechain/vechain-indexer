@@ -1,7 +1,6 @@
 package org.vechain.indexer.integration
 
 import java.time.Duration
-import java.util.*
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -16,7 +15,8 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.LogsIndexer
 import org.vechain.indexer.Status
 
 @RunWith(SpringRunner::class)
@@ -24,12 +24,16 @@ import org.vechain.indexer.Status
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {
+    @Autowired lateinit var allBlockIndexer: List<BlockIndexer>
 
-    @Autowired lateinit var allIndexers: List<Indexer>
+    @Autowired lateinit var allLogIndexer: List<LogsIndexer>
 
     fun waitForFullySynced() {
         for (i in 0..120) {
-            if (allIndexers.all { it.status == Status.FULLY_SYNCED }) {
+            if (
+                allBlockIndexer.all { it.status == Status.FULLY_SYNCED } &&
+                    allLogIndexer.all { it.status == Status.FULLY_SYNCED }
+            ) {
                 return
             }
             Thread.sleep(500)
@@ -39,7 +43,6 @@ abstract class AbstractIntegrationTest {
     }
 
     companion object {
-
         val thorNetwork = Network.newNetwork()
 
         val mongoContainer: GenericContainer<*> =
@@ -48,7 +51,7 @@ abstract class AbstractIntegrationTest {
         val thorContainer: GenericContainer<*> =
             GenericContainer("vechain/thor:v2.1.4")
                 .withCommand(
-                    "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
+                    "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'",
                 )
                 .withExposedPorts(8669)
                 .withReuse(true)
@@ -58,14 +61,14 @@ abstract class AbstractIntegrationTest {
                     (LogMessageWaitStrategy())
                         .withRegEx(".*(new block packed).*")
                         .withTimes(1)
-                        .withStartupTimeout(Duration.ofSeconds(180L))
+                        .withStartupTimeout(Duration.ofSeconds(180L)),
                 )
 
         val transactionScript: GenericContainer<*> =
             GenericContainer(
                     DockerImageName.parse(
-                        "ghcr.io/vechainfoundation/thor-transactions-script:a6975cfcd38d65b4b30a0e0a54dfb26468e64b78"
-                    )
+                        "ghcr.io/vechainfoundation/thor-transactions-script:a6975cfcd38d65b4b30a0e0a54dfb26468e64b78",
+                    ),
                 )
                 .withNetwork(thorNetwork)
                 .withEnv("NODE_URL", "http://thor-node:8669")
@@ -73,7 +76,7 @@ abstract class AbstractIntegrationTest {
                     LogMessageWaitStrategy()
                         .withRegEx(".*(Thor TX Script successfully executed).*")
                         .withTimes(1)
-                        .withStartupTimeout(Duration.ofSeconds(180L))
+                        .withStartupTimeout(Duration.ofSeconds(180L)),
                 )
                 .withReuse(true)
     }
@@ -88,7 +91,7 @@ abstract class AbstractIntegrationTest {
                 "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain"
             val thorUrl = "http://localhost:${thorContainer.getMappedPort(8669)}"
 
-            TestPropertyValues.of("spring.data.mongodb.uri=${mongoUri}", "thor.url=${thorUrl}")
+            TestPropertyValues.of("spring.data.mongodb.uri=$mongoUri", "thor.url=$thorUrl")
                 .applyTo(configurableApplicationContext.environment)
         }
     }

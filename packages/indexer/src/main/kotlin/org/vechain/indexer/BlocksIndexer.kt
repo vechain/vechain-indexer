@@ -15,7 +15,7 @@ import org.vechain.indexer.thor.model.Block
 
 @Profile("blocks")
 @Component
-open class BlockIndexer(
+open class BlocksIndexer(
     private val thorService: ThorService,
     private val blockRepository: BlockRepository,
     private val mongoTemplate: MongoTemplate,
@@ -27,15 +27,13 @@ open class BlockIndexer(
         thorClient = thorClient,
         startBlock = startBlock,
         repository = blockRepository,
-        syncLogInterval = syncLogInterval
+        syncLogInterval = syncLogInterval,
     ) {
-
     override fun rollback(blockNumber: Long) {
         blockRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 
     override fun processBlock(block: Block) {
-
         // Every 180 blocks do a finality check
         if (block.number % 180 == 0L) {
             finalityCheck()
@@ -49,13 +47,13 @@ open class BlockIndexer(
             val finalityBlock = thorService.getFinalisedBlock()
             if (finalityBlock.number > it.blockNumber) {
                 logger.info(
-                    "Finalising blocks in range ${it.blockNumber} - ${finalityBlock.number}"
+                    "Finalising blocks in range ${it.blockNumber} - ${finalityBlock.number}",
                 )
 
                 mongoTemplate.updateMulti(
                     query(where("blockNumber").gte(it.blockNumber).lte(finalityBlock.number)),
                     update("isFinalized", true),
-                    IndexedBlock::class.java
+                    IndexedBlock::class.java,
                 )
 
                 return

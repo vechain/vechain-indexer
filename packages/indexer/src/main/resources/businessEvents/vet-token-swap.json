@@ -49,13 +49,6 @@
       "secondEventName": "outputTransfer",
       "secondEventProperty": "to",
       "operator": "EQ"
-    },
-    {
-      "firstEventName": "inputTransfer",
-      "firstEventProperty": "address",
-      "secondEventName": "outputTransfer",
-      "secondEventProperty": "address",
-      "operator": "NE"
     }
   ],
   "paramsDefinition": [

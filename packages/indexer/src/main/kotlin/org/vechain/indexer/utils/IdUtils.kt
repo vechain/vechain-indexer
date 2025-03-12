@@ -1,18 +1,19 @@
 package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
-import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.VersionedDocument
-import org.web3j.utils.Numeric
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object IdUtils {
+    fun buildArchiveId(
+        document: VersionedDocument,
+        version: Int = document.version,
+    ): String = buildHashedId("${document::class.simpleName}-${document.getDocumentId()}-$version")
 
-    fun buildArchiveId(document: VersionedDocument, version: Int = document.version): String =
-        buildHashedId("${document::class.simpleName}-${document.getDocumentId()}-${version}")
-
-    fun buildNftId(transferEvent: IndexedTransferEvent): String =
+    fun buildNftId(transferEvent: IndexedEvent): String =
         buildHashedId(
-            "${transferEvent.tokenAddress}-${Numeric.parsePaddedNumberHex(transferEvent.topics[3])}"
+            "${transferEvent.address}-${transferEvent.params.getAsString("tokenId")}",
         )
 }
 

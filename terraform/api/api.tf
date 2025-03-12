@@ -180,7 +180,6 @@ module "ecs-lb-service-api" {
 ################################################################################
 # Module For ECS Non-Load Balanced Service API
 ################################################################################
-
 module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
@@ -200,7 +199,7 @@ module "ecs-backend-service" {
   memory                             = each.value.indexer.memory
   cidr                               = local.env.cidr
   security_groups                    = [aws_security_group.ecs_service_sg.id]
-  desired_capacity                   = 1
+  desired_capacity                   = each.value.indexer.enabled ? 1 : 0
   containerPort                      = 8080
   hostPort                           = 8080
   deployment_minimum_healthy_percent = 0
@@ -292,7 +291,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
-      value = each.value.indexer.sync_logger_interval.fungible_tokens
+      value = each.value.indexer.sync_logger_interval.fungibleTokens
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"

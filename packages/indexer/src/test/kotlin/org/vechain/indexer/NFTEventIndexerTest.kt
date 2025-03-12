@@ -6,17 +6,18 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NFT_MINT_2
+import org.vechain.indexer.event.AbiManager
+import org.vechain.indexer.fixtures.LogsFixtures.LOGS_NFT_MINT_2
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.DefaultThorClient
+import org.vechain.indexer.utils.FileUtils
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
-
     @MockK lateinit var nftRepository: NFTRepository
 
     @MockK lateinit var archiveService: ArchiveService<IndexedNFT, NFTArchive>
@@ -28,34 +29,40 @@ internal class NFTEventIndexerTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+
+        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
+        val abiManager = AbiManager()
+        abiManager.loadAbis(abiFileStreams)
+
         indexer =
             NFTEventIndexer(
                 nftService = nftService,
                 nftArchiveService = archiveService,
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 nftRepository = nftRepository,
+                abiManager = abiManager,
                 startBlock = 0L,
                 prunerRemovalChunkSize = 10000,
-                syncLogInterval = 1000L
+                syncLogInterval = 1000L,
             )
     }
 
     @Test
-    fun `processBlock - empty data`() {
-        val block = BLOCK_NFT_MINT_2
+    fun `processLogs - empty data`() {
+        val logs = LOGS_NFT_MINT_2
 
         every { nftService.getExisting(any()) } returns emptyList()
-        every { nftService.parseRecords(any(), any(), emptyList()) } returns emptyList()
+        every { nftService.parseRecords(any(), emptyList()) } returns emptyList()
         every { nftService.update(any(), any()) } just Runs
 
-        indexer.processBlock(block)
+        indexer.processLogs(logs, emptyList())
 
         verify(exactly = 0) { nftService.update(any(), any()) }
     }
 
     @Test
-    fun `processBlock - update called if existing and updated records`() {
-        val block = BLOCK_NFT_MINT_2
+    fun `processLogs - update called if existing and updated records`() {
+        val logs = LOGS_NFT_MINT_2
 
         val existing =
             listOf(
@@ -69,7 +76,7 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0004",
                     blockNumber = 1L,
                     blockTimestamp = 3,
-                )
+                ),
             )
 
         val updated =
@@ -84,21 +91,21 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0008",
                     blockNumber = 2L,
                     blockTimestamp = 4,
-                )
+                ),
             )
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), any(), existing) } returns updated
+        every { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.update(updated, existing) } just Runs
 
-        indexer.processBlock(block)
+        indexer.processLogs(logs, emptyList())
 
         verify(exactly = 1) { nftService.update(updated, existing) }
     }
 
     @Test
-    fun `processBlock - update called if no existing records`() {
-        val block = BLOCK_NFT_MINT_2
+    fun `processLogs - update called if no existing records`() {
+        val logs = LOGS_NFT_MINT_2
 
         val existing = emptyList<IndexedNFT>()
 
@@ -114,21 +121,21 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0008",
                     blockNumber = 2L,
                     blockTimestamp = 4,
-                )
+                ),
             )
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), any(), existing) } returns updated
+        every { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.update(updated, existing) } just Runs
 
-        indexer.processBlock(block)
+        indexer.processLogs(logs, emptyList())
 
         verify(exactly = 1) { nftService.update(updated, existing) }
     }
 
     @Test
-    fun `processBlock - update called is only existing records and not updated`() {
-        val block = BLOCK_NFT_MINT_2
+    fun `processLogs - update called is only existing records and not updated`() {
+        val logs = LOGS_NFT_MINT_2
 
         val existing =
             listOf(
@@ -142,16 +149,16 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0004",
                     blockNumber = 1L,
                     blockTimestamp = 3,
-                )
+                ),
             )
 
         val updated = emptyList<IndexedNFT>()
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), any(), existing) } returns updated
+        every { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.update(updated, existing) } just Runs
 
-        indexer.processBlock(block)
+        indexer.processLogs(logs, emptyList())
 
         verify(exactly = 1) { nftService.update(updated, existing) }
     }
