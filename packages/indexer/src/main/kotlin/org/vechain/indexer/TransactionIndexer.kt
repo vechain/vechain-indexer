@@ -16,7 +16,7 @@ open class TransactionIndexer(
     private val transactionService: TransactionService,
     thorClient: ThorClient,
     abiManager: AbiManager,
-    @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
+    @Value("\${indexer.startBlock.transactions}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.transactions}") private val syncLogInterval: Long,
 ) :
     BaseIndexer(
@@ -32,7 +32,7 @@ open class TransactionIndexer(
 
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {
-            val eventsByTx = processBlockGenericEvents(block).groupBy { it.first.txId }
+            val eventsByTx = processBlockGenericEvents(block).groupBy { it.txId }
 
             transactionService.processBlockTransactions(
                 block.transactions,

@@ -19,7 +19,7 @@ open class HistoryIndexer(
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
-    @Value("\${indexer.startBlock.history}") private val startBlock: Long,
+    @Value("\${indexer.startBlock.history}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.history}") private val syncLogInterval: Long,
 ) :
     BaseIndexer(
@@ -51,6 +51,7 @@ open class HistoryIndexer(
                                 "token-vet-swap",
                                 "vet-token-swap",
                                 "vot3-to-b3tr-swap",
+                                "token-vet-swap-2",
                             ),
                     ),
                 )

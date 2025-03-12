@@ -92,6 +92,32 @@ internal class HistoryIndexerTest {
     }
 
     @Test
+    fun `Process block - With dex transactions (Labelled TXs)`() {
+        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
+        every {
+            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
+        } returns mutableListOf()
+
+        indexer.processBlock(BlockFixtures.BLOCK_DEX)
+
+        val txs = historyEventSlot.captured
+        expect { that(txs).hasSize(3) }
+        val eventNames = txs.map { it.eventName }
+
+        println(txs)
+        expect {
+            that(eventNames)
+                .isEqualTo(
+                    listOf(
+                        HistoryEventName.B3TR_ACTION,
+                        HistoryEventName.SWAP_FT_TO_VET,
+                        HistoryEventName.B3TR_ACTION,
+                    ),
+                )
+        }
+    }
+
+    @Test
     fun `Process block - With BatchTransfer TXs (SF TXs)`() {
         val historyEventSlot = slot<List<IndexedHistoryEvent>>()
         every {

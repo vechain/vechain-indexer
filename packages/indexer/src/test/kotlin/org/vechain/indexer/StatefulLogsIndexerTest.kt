@@ -12,10 +12,12 @@ import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.enums.LogType
+import org.vechain.indexer.thor.model.EventLog
+import org.vechain.indexer.thor.model.TransferLog
 
 @ExtendWith(MockKExtension::class)
-internal class StatefulIndexerTest {
+internal class StatefulLogsIndexerTest {
     @MockK lateinit var repository: BaseIndexedRepository<*>
 
     @MockK lateinit var thorClient: ThorClient
@@ -25,25 +27,31 @@ internal class StatefulIndexerTest {
 
     @MockK lateinit var prunerService: PrunerService<VersionedDocument, Archive<VersionedDocument>>
 
-    private lateinit var statefulIndexer:
-        StatefulIndexer<VersionedDocument, Archive<VersionedDocument>>
+    private lateinit var statefulLogsIndexer:
+        StatefulLogsIndexer<VersionedDocument, Archive<VersionedDocument>>
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        statefulIndexer =
+        statefulLogsIndexer =
             spyk(
                 object :
-                    StatefulIndexer<VersionedDocument, Archive<VersionedDocument>>(
+                    StatefulLogsIndexer<VersionedDocument, Archive<VersionedDocument>>(
                         repository,
                         0L,
                         thorClient,
                         1000L,
                         10000,
+                        logsType = setOf(LogType.EVENT),
+                        null,
+                        null,
                         archiveService,
                         prunerService,
                     ) {
-                    override fun processBlock(block: Block) {
+                    override fun processLogs(
+                        events: List<EventLog>,
+                        transfers: List<TransferLog>,
+                    ) {
                         // do nothing
                     }
                 },
@@ -56,35 +64,35 @@ internal class StatefulIndexerTest {
 
         every { archiveService.rollback(blockNumber) } just Runs
 
-        statefulIndexer.rollback(blockNumber)
+        statefulLogsIndexer.rollback(blockNumber)
 
         verify(exactly = 1) { archiveService.rollback(blockNumber) }
     }
 
     @Test
     fun `runPruner should skip if not fully synced`() {
-        every { statefulIndexer.status } returns Status.SYNCING
+        every { statefulLogsIndexer.status } returns Status.SYNCING
 
         every { prunerService.runPruner(any(), any(), any()) } just Runs
-        statefulIndexer.runPruner()
+        statefulLogsIndexer.runPruner()
 
         verify(exactly = 0) { archiveService.findRecordsToPrune(any()) }
     }
 
     @Test
     fun `runPruner should skip if not enough blocks to prune`() {
-        every { statefulIndexer.status } returns Status.FULLY_SYNCED
-        every { statefulIndexer.currentBlockNumber } returns 5000L
+        every { statefulLogsIndexer.status } returns Status.FULLY_SYNCED
+        every { statefulLogsIndexer.currentBlockNumber } returns 5000L
         every { prunerService.runPruner(any(), any(), any()) } just Runs
-        statefulIndexer.runPruner()
+        statefulLogsIndexer.runPruner()
 
         verify(exactly = 0) { archiveService.findRecordsToPrune(any()) }
     }
 
     @Test
     fun `runPruner should prune records in chunks`() {
-        every { statefulIndexer.status } returns Status.FULLY_SYNCED
-        every { statefulIndexer.currentBlockNumber } returns 20000L
+        every { statefulLogsIndexer.status } returns Status.FULLY_SYNCED
+        every { statefulLogsIndexer.currentBlockNumber } returns 20000L
 
         val records = List(25000) { mockk<VersionedDocument>(relaxed = true) }
         val recordIds = records.map { it.getDocumentId() }
@@ -102,7 +110,7 @@ internal class StatefulIndexerTest {
                 }
             }
 
-        statefulIndexer.runPruner()
+        statefulLogsIndexer.runPruner()
 
         verify(exactly = 1) { archiveService.findRecordsToPrune(10000L) }
 

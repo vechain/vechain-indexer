@@ -3,7 +3,6 @@ package org.vechain.indexer.service
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.b3tr.ProposalSupport
@@ -20,21 +19,21 @@ class HistoryService(
     private val mongoTemplate: MongoTemplate,
 ) {
     fun processBlockEvents(
-        events: List<Pair<IndexedEvent, GenericEventParameters>>,
+        events: List<IndexedEvent>,
         block: Block,
     ) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
         events.forEach { event ->
-            val eventName = determineEventType(event.second) ?: return@forEach
+            val eventName = determineEventType(event.params) ?: return@forEach
 
-            if (event.second.getEventType() == "TransferBatch") {
+            if (event.params.getEventType() == "TransferBatch") {
                 historyEvents.addAll(processBatchTransferEvents(event))
             } else {
                 historyEvents.add(createIndexedHistoryEvent(event, eventName))
             }
-            processedTxs.add(event.first.txId)
+            processedTxs.add(event.txId)
         }
 
         historyEvents.addAll(getMissingTransactions(block, processedTxs))
@@ -42,28 +41,26 @@ class HistoryService(
         mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
     }
 
-    private fun processBatchTransferEvents(
-        event: Pair<IndexedEvent, GenericEventParameters>
-    ): List<IndexedHistoryEvent> {
+    private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
 
-        val tokenIds = event.second.params["ids"] as? List<*> ?: emptyList<Any>()
-        val values = event.second.params["values"] as? List<*> ?: emptyList<Any>()
+        val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
+        val values = event.params.getReturnValues()["values"] as? List<*> ?: emptyList<Any>()
 
         for (i in tokenIds.indices) {
             historyEvents.add(
                 IndexedHistoryEvent(
-                    id = DigestUtils.sha1Hex("${event.first.id}-$i"),
-                    blockId = event.first.blockId,
-                    blockNumber = event.first.blockNumber,
-                    blockTimestamp = event.first.blockTimestamp,
-                    txId = event.first.txId,
-                    contractAddress = event.first.address,
-                    origin = event.first.origin,
+                    id = DigestUtils.sha1Hex("${event.id}-$i"),
+                    blockId = event.blockId,
+                    blockNumber = event.blockNumber,
+                    blockTimestamp = event.blockTimestamp,
+                    txId = event.txId,
+                    contractAddress = event.address,
+                    origin = event.origin,
                     eventName = HistoryEventName.TRANSFER_SF,
-                    gasPayer = event.first.gasPayer,
-                    from = event.second.params.getAsString("from"),
-                    to = event.second.params.getAsString("to"),
+                    gasPayer = event.gasPayer,
+                    from = event.params.getAsString("from"),
+                    to = event.params.getAsString("to"),
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
                 ),
@@ -73,50 +70,54 @@ class HistoryService(
     }
 
     private fun createIndexedHistoryEvent(
-        event: Pair<IndexedEvent, GenericEventParameters>,
+        event: IndexedEvent,
         eventName: HistoryEventName,
     ): IndexedHistoryEvent {
-        val tokenId: String? =
-            if (eventName == HistoryEventName.TRANSFER_SF) {
-                event.second.params.getAsString("id")
-            } else {
-                event.second.params.getAsString("tokenId")
+        val tokenId =
+            when (eventName) {
+                HistoryEventName.TRANSFER_SF -> event.params.getAsString("id")
+                else -> event.params.getAsString("tokenId")
+            }
+
+        val value =
+            when (eventName) {
+                HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
+                else -> event.params.getAsString("value")
             }
 
         return IndexedHistoryEvent(
-            id = DigestUtils.sha1Hex(event.first.id),
-            blockId = event.first.blockId,
-            blockNumber = event.first.blockNumber,
-            blockTimestamp = event.first.blockTimestamp,
-            txId = event.first.txId,
-            contractAddress = event.first.address,
-            origin = event.first.origin,
+            id = DigestUtils.sha1Hex(event.id),
+            blockId = event.blockId,
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
+            txId = event.txId,
+            contractAddress = event.address,
+            origin = event.origin,
             eventName = eventName,
-            gasPayer = event.first.gasPayer,
-            from = event.second.params.getAsString("from"),
-            to = event.second.params.getAsString("to"),
-            value = event.second.params.getAsString("value"),
+            gasPayer = event.gasPayer,
+            from = event.params.getAsString("from"),
+            to = event.params.getAsString("to"),
+            value = value,
             tokenId = tokenId,
-            appId = event.second.params.getAsString("appId"),
-            proof = event.second.params.getAsString("proof"),
-            roundId = event.second.params.getAsString("roundId"),
-            proposalId = event.second.params.getAsString("proposalId"),
+            appId = event.params.getAsString("appId"),
+            proof = event.params.getAsString("proof"),
+            roundId = event.params.getAsString("roundId"),
+            proposalId = event.params.getAsString("proposalId"),
             appVotes =
                 IndexedHistoryEvent.getAppVotes(
-                    event.second.params["appsIds"],
-                    event.second.params["voteWeights"],
+                    event.params.getReturnValues()["appIds"],
+                    event.params.getReturnValues()["voteWeights"],
                 ),
-            support =
-                event.second.params.getAsInt("support")?.let { ProposalSupport.fromValue(it) },
-            voteWeight = event.second.params.getAsString("voteWeight"),
-            votePower = event.second.params.getAsString("votePower"),
-            reason = event.second.params.getAsString("reason"),
-            oldLevel = event.second.params.getAsString("oldLevel"),
-            newLevel = event.second.params.getAsString("newLevel"),
-            inputToken = event.second.params.getAsString("inputToken"),
-            outputToken = event.second.params.getAsString("outputToken"),
-            inputValue = event.second.params.getAsString("inputValue"),
-            outputValue = event.second.params.getAsString("outputValue"),
+            support = event.params.getAsInt("support")?.let { ProposalSupport.fromValue(it) },
+            voteWeight = event.params.getAsString("voteWeight"),
+            votePower = event.params.getAsString("votePower"),
+            reason = event.params.getAsString("reason"),
+            oldLevel = event.params.getAsString("oldLevel"),
+            newLevel = event.params.getAsString("newLevel"),
+            inputToken = event.params.getAsString("inputToken"),
+            outputToken = event.params.getAsString("outputToken"),
+            inputValue = event.params.getAsString("inputValue"),
+            outputValue = event.params.getAsString("outputValue"),
         )
     }
 
@@ -125,13 +126,14 @@ class HistoryService(
         processedTxs: Set<String>,
     ): List<IndexedHistoryEvent> =
         block.transactions
-            .filter { it.id !in processedTxs && !it.reverted }
+            .filter { it.id !in processedTxs }
             .map { tx ->
                 IndexedHistoryEvent(
                     id = DigestUtils.sha1Hex(tx.id),
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
+                    reverted = if (tx.reverted) true else null,
                     txId = tx.id,
                     origin = tx.origin,
                     eventName = HistoryEventName.UNKNOWN_TX,

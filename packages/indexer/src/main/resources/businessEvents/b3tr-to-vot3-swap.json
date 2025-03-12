@@ -64,9 +64,24 @@
       "businessEventName": "from"
     },
     {
+      "name": "address",
+      "eventName": "transferB3TR",
+      "businessEventName": "inputToken"
+    },
+    {
+      "name": "address",
+      "eventName": "transferVOT3",
+      "businessEventName": "outputToken"
+    },
+    {
       "name": "value",
       "eventName": "transferB3TR",
-      "businessEventName": "value"
+      "businessEventName": "inputValue"
+    },
+    {
+      "name": "value",
+      "eventName": "transferVOT3",
+      "businessEventName": "outputValue"
     }
   ]
 }

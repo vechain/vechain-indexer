@@ -82,13 +82,13 @@
       "businessEventName": "inputToken"
     },
     {
-      "name": "value",
-      "eventName": "inputTransfer",
-      "businessEventName": "withdrawAmount"
+      "name": "withdrawAmount",
+      "eventName": "swap",
+      "businessEventName": "inputValue"
     },
     {
-      "name": "amount",
-      "eventName": "outputTransfer",
+      "name": "amountOutReceived",
+      "eventName": "swap",
       "businessEventName": "outputValue"
     }
   ]
