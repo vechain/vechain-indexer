@@ -72,10 +72,10 @@ enabled_nets:
         transfers:                  '5000'
         history:                    '5000'
       sync_block_batch_size:
-        contracts:                  '1000'
-        fungibleTokens:             '1000'
-        nfts:                       '1000'
-        transfers:                  '1000'
+        contracts:                  '100'
+        fungibleTokens:             '100'
+        nfts:                       '100'
+        transfers:                  '100'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
