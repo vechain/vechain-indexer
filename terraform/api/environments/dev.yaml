@@ -70,6 +70,11 @@ enabled_nets:
         transactions:               5000
         transfers:                  5000
         history:                    5000
+      sync_block_batch_size:
+        contracts:                  1000
+        fungibleTokens:             1000
+        nfts:                       1000
+        transfers:                  1000
       pruner:
         enabled: true
         interval: 300000
@@ -136,6 +141,11 @@ enabled_nets:
         transactions:               5000
         transfers:                  5000
         history:                    5000
+      sync_block_batch_size:
+        contracts:                  100
+        fungibleTokens:             100
+        nfts:                       100
+        transfers:                  100
       pruner:
         enabled: true
         interval: 300000

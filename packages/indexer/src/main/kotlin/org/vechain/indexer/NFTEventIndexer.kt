@@ -27,6 +27,7 @@ open class NFTEventIndexer(
     @Value("\${indexer.startBlock.nfts}") startBlock: Long,
     @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
     @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
+    @Value("\${indexer.syncBlockBatchSize.nfts}") private val syncBlockBatchSize: Long,
 ) :
     StatefulLogsIndexer<IndexedNFT, NFTArchive>(
         repository = nftRepository,
@@ -34,7 +35,7 @@ open class NFTEventIndexer(
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
         archiveService = nftArchiveService,
-        blockBatchSize = 1000,
+        blockBatchSize = syncBlockBatchSize,
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,
