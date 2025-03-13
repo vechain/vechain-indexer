@@ -44,6 +44,7 @@ internal class NFTEventIndexerTest {
                 startBlock = 0L,
                 prunerRemovalChunkSize = 10000,
                 syncLogInterval = 1000L,
+                syncBlockBatchSize = 1000L,
             )
     }
 

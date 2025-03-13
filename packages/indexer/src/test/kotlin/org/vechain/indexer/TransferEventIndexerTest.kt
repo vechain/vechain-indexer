@@ -51,6 +51,7 @@ class TransferEventIndexerTest {
                 abiManager,
                 0L,
                 1000L,
+                1000L,
             )
     }
 
