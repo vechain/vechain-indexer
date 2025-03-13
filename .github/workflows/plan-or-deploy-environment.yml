@@ -1,33 +1,30 @@
-name: Plan and/or Deploy VeWorld Indexer stack
+name: Plan or Apply Terraform
 
 on:
-  # trigger deployment manually
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
   workflow_dispatch:
     inputs:
       environment:
-        description: "The environment to deploy"
+        description: Which environment to plan/deploy to
         required: true
-        default: dev
         type: environment
-      workspace:
-        description: Terraform workspace to use
-        required: true
-        type: string
   workflow_call:
     inputs:
       environment:
         description: Which environment to plan/deploy to
         required: true
-        default: dev
         type: string
-      version:
+      mainnet_version:
         description: The version of this release
         required: false
         type: string
-      workspace:
-        description: Terraform workspace to use
-        required: true
-        default: dev
+      testnet_version:
+        description: The version of this release
+        required: false
         type: string
       force:
         description: Whether to force apply
@@ -37,13 +34,31 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write   # This is required for requesting the JWT
-  contents: read    # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
 
 jobs:
+  identify-live-color:
+    if: ${{ github.event_name == 'pull_request' }}
+    name: Identify Live and Dead Colors
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
   deploy:
-    name: "Plan/deploy VeWorld Indexer to ${{ inputs.workspace }}"
+    needs: identify-live-color
+    if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
+    name: "Plan/deploy VeWorld-Indexer terraform - ${{ inputs.environment }}"
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
 
     defaults:
       run:
@@ -51,34 +66,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Determine AWS account ID and role
-        id: account
-        run: |
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-          else
-            echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ steps.account.outputs.role_arn }}
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
-
-      - name: Point backend to correct environment
-        id: specify-backend
-        run: |
-          sed -i "s/{{{ENV}}}/${{ inputs.environment }}/g" provider.tf
-        continue-on-error: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -93,11 +93,11 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}.config"
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select ${{ inputs.workspace }}
+        run: terraform workspace select ${{ env.ENVIRONMENT }}
 
       - name: Terraform Validate
         id: validate
@@ -105,9 +105,11 @@ jobs:
 
       - name: Update image_tag
         id: update-image-tag
-        if: inputs.version
+        if: inputs.mainnet_version && inputs.testnet_version
         run: |
-          sed -i "s/${{ inputs.environment }}-latest/${{ inputs.version }}/g" environments/${{ inputs.workspace }}.yaml
+          sed -i '/main:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.mainnet_version }}/' environments/${{ env.ENVIRONMENT }}.yaml
+          sed -i '/test:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.testnet_version }}/' environments/${{ env.ENVIRONMENT }}.yaml
+          cat environments/${{ env.ENVIRONMENT }}.yaml
         continue-on-error: false
 
       - name: Terraform Plan
@@ -118,15 +120,15 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ inputs.workspace }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
+          cluster_services=$(aws ecs list-services --cluster ${{ env.ENVIRONMENT }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif (( $cluster_services > 0 )); then
             echo "env_exists=true" >> $GITHUB_OUTPUT
-            echo "The ${{ inputs.workspace }} environment exists, proceeding with deployment"
+            echo "The ${{ env.ENVIRONMENT }} environment exists, proceeding with deployment"
           else
             echo "env_exists=false" >> $GITHUB_OUTPUT
-            echo "The ${{ inputs.workspace }} environment doesn't exist. Please create it manually first, or enable force apply"
+            echo "The ${{ env.ENVIRONMENT }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
       - name: Terraform Apply
@@ -134,13 +136,11 @@ jobs:
         id: apply
         run: terraform apply "apply.plan"
 
-      - name: Slack Notification
-        id: slack-notify
-        if: steps.apply.outcome == 'success'
-        uses: slackapi/slack-github-action@v2.0.0
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK }}
-          webhook-type: incoming-webhook
-          payload: |
-            SLACK_TITLE: VeWorld Indexer Deployment
-            SLACK_MESSAGE: Deployed Veworld Indexer to *${{ inputs.workspace || 'dev' }}* environment
+      # - name: Slack Notification
+      #   if: steps.apply.outcome == 'success'
+      #   uses: rtCamp/action-slack-notify@v2
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_COLOR: ${{ job.status }}
+      #     SLACK_MESSAGE: Deployed VeWorld-Indexer to *${{ env.ENVIRONMENT }}* environment
+      #     SLACK_TITLE: VeWorld-Indexer Infrastructure Deployment
