@@ -247,7 +247,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:3.1.0-SNAPSHOT")
+        implementation("org.vechain:indexer-core:3.0.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
