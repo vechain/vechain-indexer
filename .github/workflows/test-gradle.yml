@@ -12,6 +12,10 @@ permissions:
   packages: write
   checks: write
 
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-build-test
+  cancel-in-progress: true
+
 jobs:
   check-formatting:
     name: Check Formatting
