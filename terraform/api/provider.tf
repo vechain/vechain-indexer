@@ -11,9 +11,6 @@ terraform {
   }
 
   backend "s3" {
-    # The states of DEV and PROD environments are stored in separate S3 buckets in their
-    # respective AWS accounts. The {{{ENV}}} placeholder is replaced manually (dev/prod)
-    bucket               = "veworld-indexer-terraform-state-{{{ENV}}}"
     key                  = "veworld-indexer-api.tfstate"
     region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
@@ -72,8 +69,19 @@ data "external" "git" {
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
-    bucket = "veworld-indexer-terraform-state-{{{ENV}}}"
+    bucket = "veworld-indexer-terraform-state-prod"
     key    = "workspaces/${startswith(local.env.environment, "prod-") ? "prod" : local.env.environment}/veworld-indexer-vpc.tfstate"
     region = "eu-west-1"
   }
+}
+
+variable "network" {
+  type        = string
+  description = "The network to deploy to (optional). Allowed values are 'mainnet' or 'testnet' or 'both'. This variable is required."
+
+  validation {
+    condition     = var.network == "mainnet" || var.network == "testnet" || var.network == "both"
+    error_message = "Invalid value for network. Allowed values are 'mainnet' or 'testnet' or 'both', e.g. `terraform apply --var=network=mainnet`"
+  }
+  default = "both"
 }

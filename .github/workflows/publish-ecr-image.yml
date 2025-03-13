@@ -1,65 +1,66 @@
 name: Build & Publish Docker Image
 
 on:
-  workflow_call:
+  push:
+    tags:
+      - v.*
+  workflow_dispatch:
     inputs:
-      imageTag:
-        required: true
-        type: string
       latestTag:
+        description: Tag to identify most recently built image
         required: true
         type: string
+        default: latest
       workingDirectory:
+        description: Working directory for the build context
         required: true
         type: string
-      buildArgs:
-        required: false
-        type: string
-      packageName:
+        default: ./
+      projectName:
+        description: Name of the project
         required: true
         type: string
+        default: veworld
       imagePlatform:
+        description: Platform for the Docker image
         required: false
         type: string
-      env:
-        required: true
-        type: string
+        default: linux/arm64
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write  # This is required for requesting the JWT
-  contents: read   # This is required for actions/checkout
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+env:
+  latestTag: ${{ inputs.latestTag || 'latest' }}
+  versionTag: ${{ github.ref_name }}
+  commitHash: ${{ github.sha }}
+  workingDirectory: ${{ inputs.workingDirectory || './' }}
+  projectName: ${{ inputs.projectName || 'veworld' }}
+  imagePlatform: ${{ inputs.imagePlatform || 'linux/arm64' }}
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        packageName: ["api", "indexer"]
     defaults:
       run:
-        working-directory: ${{ inputs.workingDirectory }}
-
-    environment: ${{ inputs.env }}
+        working-directory: ${{ env.workingDirectory }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Determine AWS account ID and role
-        id: account
-        run: |
-            if [ "${{ inputs.env }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
+          fetch-depth: 1
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ steps.account.outputs.role_arn }}
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
 
       - name: Login To Amazon ECR
         id: login-ecr
@@ -71,50 +72,31 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Check ECR Repository
-        id: check-ecr-repo
-        env:
-          REPOSITORY: veworld/${{ inputs.packageName }}
-        run: |
-          if
-            aws ecr describe-repositories --repository-names $REPOSITORY
-          then
-            echo "::set-output name=exists::true"
-          else
-            echo "::set-output name=exists::false"
-          fi
-
-      - name: Create ECR Repository
-        env:
-          REPOSITORY: veworld/${{ inputs.packageName }}
-        if: steps.check-ecr-repo.outputs.exists == 'false'
-        run: |
-          aws ecr create-repository --repository-name $REPOSITORY
-
-      - name: Build and push
+      - name: Build images and push
         uses: docker/build-push-action@v4
         with:
-          platforms: ${{ inputs.imagePlatform }}
-          build-args: |
-            ${{ inputs.buildArgs }}
+          file: Dockerfile
+          platforms: ${{ env.imagePlatform }}
+          build-args: "PACKAGE_NAME=${{ matrix.packageName }}"
           push: true
-          context: ${{ inputs.workingDirectory }}
+          context: ${{ env.workingDirectory }}
           provenance: false
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName }}:${{ inputs.imageTag }}
-            ${{ steps.login-ecr.outputs.registry }}/veworld/${{ inputs.packageName }}:${{ inputs.latestTag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.versionTag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.latestTag }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.commitHash }}
 
       - name: Scan Docker image
         id: docker-scan
         uses: alexjurkiewicz/ecr-scan-image@v1.7.1
         with:
-          repository: veworld/${{ inputs.packageName }}
-          tag: ${{ inputs.imageTag }}
-          fail_threshold: high
+          repository: ${{env.projectName}}/${{ matrix.packageName }}
+          tag: ${{ env.versionTag }}
+          fail_threshold: medium
 
       - name: On Scan Failure
         if: failure() && steps.docker-scan.outcome == 'failure'
         run: |
           aws ecr batch-delete-image \
-            --repository-name veworld/${{ inputs.packageName }} \
-            --image-ids imageTag=${{ inputs.imageTag }} imageTag=${{ inputs.latestTag }}
+            --repository-name ${{env.projectName}}/${{ matrix.packageName }} \
+            --image-ids versionTag=${{ env.versionTag }} versionTag=${{ env.latestTag }}
