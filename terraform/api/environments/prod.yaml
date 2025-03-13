@@ -66,11 +66,16 @@ enabled_nets:
         blocks:                     '5000'
         clauses:                    '5000'
         contracts:                  '5000'
-        fungibleTokens:            '5000'
+        fungibleTokens:             '5000'
         nfts:                       '5000'
         transactions:               '5000'
         transfers:                  '5000'
         history:                    '5000'
+      sync_block_batch_size:
+        contracts:                  '100'
+        fungibleTokens:             '100'
+        nfts:                       '100'
+        transfers:                  '100'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
@@ -117,6 +122,11 @@ enabled_nets:
         transactions:               '5000'
         transfers:                  '5000'
         history:                    '5000'
+      sync_block_batch_size:
+        contracts:                  '100'
+        fungibleTokens:             '100'
+        nfts:                       '100'
+        transfers:                  '100'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.rsmhw.mongodb.net

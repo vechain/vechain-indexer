@@ -26,6 +26,7 @@ open class ContractIndexer(
     @Value("\${indexer.startBlock.contracts}") startBlock: Long,
     @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
     @Value("\${indexer.syncLogInterval.contracts}") private val syncLogInterval: Long,
+    @Value("\${indexer.syncBlockBatchSize.contracts}") private val syncBlockBatchSize: Long,
 ) :
     StatefulLogsIndexer<IndexedContract, ContractArchive>(
         repository = contractRepository,
@@ -33,7 +34,7 @@ open class ContractIndexer(
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
         archiveService = contractArchiveService,
-        blockBatchSize = 1,
+        blockBatchSize = syncBlockBatchSize,
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,

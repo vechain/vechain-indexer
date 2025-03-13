@@ -43,6 +43,7 @@ internal class ContractIndexerTest {
                 1L,
                 1000,
                 1000L,
+                1000L,
             )
     }
 

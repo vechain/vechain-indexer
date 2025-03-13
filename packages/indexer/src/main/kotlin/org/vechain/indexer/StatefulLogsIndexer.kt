@@ -15,7 +15,7 @@ abstract class StatefulLogsIndexer<T : VersionedDocument, S : Archive<T>>(
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,
-    blockBatchSize: Long = 1000,
+    blockBatchSize: Long = 100L,
     logsType: Set<LogType>,
     abiManager: AbiManager?,
     businessEventManager: BusinessEventManager?,

@@ -23,12 +23,14 @@ open class TransferEventIndexer(
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.transfers}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.transfers}") private val syncLogInterval: Long,
+    @Value("\${indexer.syncBlockBatchSize.transfers}") private val syncBlockBatchSize: Long,
 ) :
     BaseLogIndexer(
         repository = transferEventRepository,
         startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
+        blockBatchSize = syncBlockBatchSize,
         logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
     ) {
