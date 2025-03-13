@@ -92,7 +92,7 @@ jobs:
         with:
           repository: ${{env.projectName}}/${{ matrix.packageName }}
           tag: ${{ env.versionTag }}
-          fail_threshold: critical
+          fail_threshold: medium
 
       - name: On Scan Failure
         if: failure() && steps.docker-scan.outcome == 'failure'
