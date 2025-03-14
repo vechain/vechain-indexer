@@ -114,7 +114,7 @@ module "ecs-lb-service-api" {
   assign_public_ip          = false
   ecr_repo_uri              = each.value.api.ecr_common_repo
   app_name                  = "${each.key}-api"
-  ecr_image_tag             = local.env.image_tag
+  ecr_image_tag             = each.value.api.image_version
   project                   = var.project
   cpu                       = each.value.api.cpu
   memory                    = each.value.api.memory
@@ -192,7 +192,7 @@ module "ecs-backend-service" {
   is_create_repo                     = false
   secrets_enable                     = false
   ecr_repo_uri                       = each.value.indexer.ecr_common_repo
-  ecr_image_tag                      = local.env.image_tag
+  ecr_image_tag                      = each.value.indexer.image_version
   app_name                           = "${each.key}-indexer"
   project                            = var.project
   cpu                                = each.value.indexer.cpu

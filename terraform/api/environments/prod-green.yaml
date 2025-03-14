@@ -1,4 +1,3 @@
-image_tag:                       prod-latest
 region:                          eu-west-1
 project:                         veworld
 environment:                     prod-green
@@ -32,6 +31,7 @@ datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
 enabled_nets:
   main:
+    image_version:                  latest
     thor_url:                       https://mainnet.vechain.org
     api:
       cpu:                          512
@@ -97,6 +97,7 @@ enabled_nets:
       auto_scaling_compute_max_instance_size: M40
       auto_scaling_compute_min_instance_size: M20
   test:
+    image_version:                  latest
     thor_url:                       https://testnet.vechain.org
     api:
       cpu:                          512
