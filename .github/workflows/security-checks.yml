@@ -1,0 +1,32 @@
+name: 'Security Checks'
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  scorecard:
+    uses: vechain/github-actions/.github/workflows/scorecard.yaml@v.1.7.1
+    secrets:
+      app-id: ${{ secrets.SCORECARD_APPID }}
+      private-key: ${{ secrets.SCORECARD_PRIVATEKEY }}
+
+  checkov:
+    uses: vechain/github-actions/.github/workflows/checkov.yaml@v.1.7.1
+
+  infracost:
+    uses: vechain/github-actions/.github/workflows/infracost.yaml@v.1.7.1
+    secrets:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+      GIT_VECHAINCI_SSH_KEY: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+  sonar-scan:
+    uses: vechain/github-actions/.github/workflows/sonar-scan.yaml@v.1.7.1
+    with:
+      gradle: true
+      packages: '["api", "indexer"]'
+      download-coverage-report: false
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

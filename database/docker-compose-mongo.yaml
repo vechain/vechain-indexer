@@ -1,9 +1,7 @@
-version: "3.7"
-
 services:
   mongo-node1:
     hostname: mongo-node1
-    image: mongo:6
+    image: mongo:8
     command: [ "mongod", "--replSet", "rs0", "--keyFile", "/data/keys/keyfile" ]
     entrypoint:
       - bash
@@ -29,12 +27,12 @@ services:
       interval: 3s
       timeout: 5s
       retries: 20
-    deploy:
-      resources:
-        limits:
-          memory: 4096m
-        reservations:
-          memory: 1024m
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 4096m
+#        reservations:
+#          memory: 1024m
     networks:
       - vechain-database
 

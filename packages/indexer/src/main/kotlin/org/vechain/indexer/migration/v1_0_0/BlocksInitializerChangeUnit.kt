@@ -30,13 +30,11 @@ class BlocksInitializerChangeUnit {
                 .named(BLOCK_BLOCKNUMBER_IDX)
                 .on(IndexedBlock::blockNumber.name, Sort.Direction.DESC)
                 .unique()
-                .background()
 
         val isFinalizedIdx: IndexDefinition =
             Index()
                 .named(BLOCK_IS_FINALIZED_IDX)
                 .on(IndexedBlock::isFinalized.name, Sort.Direction.ASC)
-                .background()
 
         mongoTemplate.indexOps(BLOCKS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(BLOCKS).ensureIndex(isFinalizedIdx)

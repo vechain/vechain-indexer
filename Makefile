@@ -16,8 +16,22 @@ test-common: #@ Run all the common tests.
 
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
-load-test: #@ Run the load tests.
-	$(LOAD_TEST_COMMAND) up --build -d --wait; open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+
+load-test: #@ Run the load tests (all tests).
+	$(LOAD_TEST_COMMAND) up --build -d --wait
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-nfts: #@ Run only the NFTs test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-nfts k6-app-nfts-by-owner-contract k6-app-nft-contracts
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transactions: #@ Run only the Transactions test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transactions-origin k6-app-transactions-delegator
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-transfer-events: #@ Run only the Transfer Events test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-transfer-events-address k6-app-transfer-events-destination k6-app-transfer-events-origin k6-app-transfer-events-token-address k6-app-fungible-tokens-contracts-by-address
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
+load-test-history: #@ Run only the History test.
+	$(LOAD_TEST_COMMAND) up --build -d --wait influxdb grafana k6-app-history
+	open http://localhost:3000/d/GlqvWKLVk/k6-load-testing-results\?orgId\=1\&refresh\=5s\&from\=now-5m\&to\=now
 load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
@@ -44,9 +58,9 @@ run-api: build-api-local #@ Run the api locally.
 
 # Application Build (Docker)
 build-indexer: #@ Build the application with Docker.
-	docker build --build-arg VEWORLD_PACKAGE=indexer -t veworld-indexer .
+	docker build --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
-	docker build --build-arg VEWORLD_PACKAGE=api -t veworld-api .
+	docker build --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
 	docker build -t veworld-k6 load-testing
 
@@ -83,6 +97,8 @@ DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile;
 DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
+MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
+BACKUP_DIR=database/backups
 
 db-all: #@ Remove, clean and start all the database.
 	make db-down db-clean db-up db-setup
@@ -98,6 +114,21 @@ db-up: #@ Start all the database.
 	$(DB_COMMAND) up -d --wait
 db-setup: #@ Setup all the database.
 	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
+db-backup: #@ Backup MongoDB database using Docker (Compressed)
+	# Ensure backup directory exists and is writable
+	mkdir -p $(PWD)/$(BACKUP_DIR)
+	echo "Use the command 'docker log --tail 100 -f mongo-backup' to see the progress"
+	docker rm -f mongo-backup 2>/dev/null || true
+	docker run --name mongo-backup -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongodump --uri="$(MONGO_URL)" --gzip --archive="/backup/veworld-db-$$(date +%Y%m%d%H%M%S).gz"
+db-restore: #@ Restore MongoDB database from the latest backup or a specified directory using Docker.
+	$(eval FILE := $(shell ls -t $(BACKUP_DIR)/veworld-db-*.gz 2>/dev/null | head -1))
+	@if [ -z "$(FILE)" ]; then \
+		echo "No backup found in $(BACKUP_DIR). Please specify FILE=<backup-file>"; \
+		exit 1; \
+	fi; \
+	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
+	docker rm -f mongo-restore 2>/dev/null || true
+	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16
 
 # Thor
 THOR_COMMAND=docker compose -f thor/docker-compose.yaml

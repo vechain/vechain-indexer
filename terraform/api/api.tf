@@ -100,7 +100,8 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.19"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.66"
+  ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name              = module.ecs-cluster.name
@@ -147,7 +148,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "MONGO_URI"
-      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
+      value = format("%s://api-${local.env.environment}:%s@%s/vechain?%s&readPreference=secondary", each.value.mongodb.proto, urlencode(aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string), "${local.env.environment}-${each.value.mongodb.fqdn}", each.value.mongodb.opts)
     },
     {
       name  = "MONGO_AUTHENTICATION_DATABASE",
@@ -179,30 +180,31 @@ module "ecs-lb-service-api" {
 ################################################################################
 # Module For ECS Non-Load Balanced Service API
 ################################################################################
-
 module "ecs-backend-service" {
-  depends_on       = [module.ecs-cluster]
-  for_each         = local.env.enabled_nets
-  source           = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.1.0.19"
-  vpc_id           = data.terraform_remote_state.vpc.outputs.vpc_id
-  region           = local.env.region
-  cluster          = module.ecs-cluster.name
-  subnets          = concat(data.terraform_remote_state.vpc.outputs.public_subnets, data.terraform_remote_state.vpc.outputs.private_subnets)
-  env              = local.env.environment
-  is_create_repo   = false
-  secrets_enable   = false
-  ecr_repo_uri     = each.value.indexer.ecr_common_repo
-  ecr_image_tag    = local.env.image_tag
-  app_name         = "${each.key}-indexer"
-  project          = var.project
-  cpu              = each.value.indexer.cpu
-  memory           = each.value.indexer.memory
-  cidr             = local.env.cidr
-  security_groups  = [aws_security_group.ecs_service_sg.id]
-  desired_capacity = "1"
-  containerPort    = 8080
-  hostPort         = 8080
-  namespace_id     = aws_service_discovery_private_dns_namespace.ns.id
+  depends_on                         = [module.ecs-cluster]
+  for_each                           = local.env.enabled_nets
+  source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
+  vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
+  region                             = local.env.region
+  cluster                            = module.ecs-cluster.name
+  subnets                            = concat(data.terraform_remote_state.vpc.outputs.private_subnets)
+  env                                = local.env.environment
+  is_create_repo                     = false
+  secrets_enable                     = false
+  ecr_repo_uri                       = each.value.indexer.ecr_common_repo
+  ecr_image_tag                      = local.env.image_tag
+  app_name                           = "${each.key}-indexer"
+  project                            = var.project
+  cpu                                = each.value.indexer.cpu
+  memory                             = each.value.indexer.memory
+  cidr                               = local.env.cidr
+  security_groups                    = [aws_security_group.ecs_service_sg.id]
+  desired_capacity                   = each.value.indexer.enabled ? 1 : 0
+  containerPort                      = 8080
+  hostPort                           = 8080
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
+  namespace_id                       = aws_service_discovery_private_dns_namespace.ns.id
   log_metric_filters = [for filter in each.value.indexer.log_metric_filters : {
     name    = filter.name
     pattern = filter.pattern
@@ -272,6 +274,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.transfers
     },
     {
+      name  = "INDEXER_START_BLOCK_HISTORY"
+      value = each.value.indexer.start_block.history
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_BLOCKS"
       value = each.value.indexer.sync_logger_interval.blocks
     },
@@ -285,7 +291,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
-      value = each.value.indexer.sync_logger_interval.fungible_tokens
+      value = each.value.indexer.sync_logger_interval.fungibleTokens
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
@@ -299,6 +305,22 @@ module "ecs-backend-service" {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
       value = each.value.indexer.sync_logger_interval.transfers
     },
+    {
+      name  = "PRUNER_ENABLED"
+      value = each.value.indexer.pruner.enabled
+    },
+    {
+      name  = "PRUNER_INTERVAL"
+      value = each.value.indexer.pruner.interval
+    },
+    {
+      name  = "PRUNER_INITIAL_DELAY"
+      value = each.value.indexer.pruner.initial_delay
+    },
+    {
+      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
+      value = each.value.indexer.pruner.removal_chunk_size
+    }
   ]
 }
 

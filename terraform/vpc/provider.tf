@@ -12,9 +12,9 @@ terraform {
   backend "s3" {
     # The states of DEV and PROD environments are stored in separate S3 buckets in their
     # respective AWS accounts. The {{{ENV}}} placeholder is replaced manually (dev/prod)
-    bucket = "veworld-indexer-terraform-state-{{{ENV}}}"
-    key    = "veworld-indexer-vpc.tfstate"
-    region = "eu-west-1"
+    bucket               = "veworld-indexer-terraform-state-{{{ENV}}}"
+    key                  = "veworld-indexer-vpc.tfstate"
+    region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
   }
 }
@@ -52,7 +52,7 @@ provider "aws" {
   default_tags {
     tags = {
       Terraform = "true"
-      Project = var.project
+      Project   = var.project
     }
   }
 }
@@ -64,7 +64,7 @@ provider "aws" {
   default_tags {
     tags = {
       Terraform = "true"
-      Project = var.project
+      Project   = var.project
     }
   }
 }

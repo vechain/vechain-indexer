@@ -2,7 +2,7 @@
 # NB each submap element must have a unique key or it may be overwritten in the merge
 locals {
 
-  waf_alarms = {for k, v in module.waf : "${k}_blk_rq" => {
+  waf_alarms = { for k, v in module.waf : "${k}_blk_rq" => {
     alarm_name          = "${local.env.environment}_WAF_blocked_requests_alarm"
     comparison_operator = "GreaterThanOrEqualToThreshold"
     evaluation_periods  = 1
@@ -139,39 +139,39 @@ locals {
 
   ecs_highcpu_alarms = merge(local.ecs_backend_highcpu_alarm, local.ecs_lb_highcpu_alarm)
 
-  ecs_backend_highmem_alarm = { 
+  ecs_backend_highmem_alarm = {
     for k, v in module.ecs-backend-service : "${v.service_name}_himem" => {
-    alarm_name          = "${v.service_name}_highmem_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 3
-    threshold           = 75
-    namespace           = "AWS/ECS"
-    period              = 300
-    statistic           = "Average"
-    metric_name         = "MemoryUtilization"
-    alarm_description   = "${v.service_name} high memory consumption"
-    dimensions = {
-      ServiceName = v.service_name
-      ClusterName = module.ecs-cluster.name
+      alarm_name          = "${v.service_name}_highmem_alarm"
+      comparison_operator = "GreaterThanOrEqualToThreshold"
+      evaluation_periods  = 3
+      threshold           = 75
+      namespace           = "AWS/ECS"
+      period              = 300
+      statistic           = "Average"
+      metric_name         = "MemoryUtilization"
+      alarm_description   = "${v.service_name} high memory consumption"
+      dimensions = {
+        ServiceName = v.service_name
+        ClusterName = module.ecs-cluster.name
+      }
     }
-   }
   }
-  ecs_lb_highmem_alarm = { 
+  ecs_lb_highmem_alarm = {
     for k, v in module.ecs-lb-service-api : "${v.service_name}_himem" => {
-    alarm_name          = "${v.service_name}_highmem_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 3
-    threshold           = 75
-    namespace           = "AWS/ECS"
-    period              = 300
-    statistic           = "Average"
-    metric_name         = "MemoryUtilization"
-    alarm_description   = "${v.service_name} high memory consumption"
-    dimensions = {
-      ServiceName = v.service_name
-      ClusterName = module.ecs-cluster.name
+      alarm_name          = "${v.service_name}_highmem_alarm"
+      comparison_operator = "GreaterThanOrEqualToThreshold"
+      evaluation_periods  = 3
+      threshold           = 75
+      namespace           = "AWS/ECS"
+      period              = 300
+      statistic           = "Average"
+      metric_name         = "MemoryUtilization"
+      alarm_description   = "${v.service_name} high memory consumption"
+      dimensions = {
+        ServiceName = v.service_name
+        ClusterName = module.ecs-cluster.name
+      }
     }
-   }
   }
 
   ecs_highmem_alarms = merge(local.ecs_backend_highmem_alarm, local.ecs_lb_highmem_alarm)
@@ -267,9 +267,10 @@ locals {
 }
 
 module "cloud_watch_alarms" {
+  count                    = local.env.environment == "dev" ? 0 : 1
   source                   = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudwatchalarm?ref=v.1.0.2"
   sns_topic_enabled        = false
-  topic_name               = "${local.env.environment}-CloudWatchAlarms"
+  topic_name               = data.terraform_remote_state.vpc.outputs.chatbot_sns_topic_name
   email_subscriptions      = []
   create_slack_integration = false
 

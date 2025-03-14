@@ -1,7 +1,10 @@
 name: Test (Gradle)
 
 on:
-  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - 'main'
 
 permissions:
   contents: read
@@ -9,20 +12,38 @@ permissions:
   packages: write
   checks: write
 
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}-build-test
+  cancel-in-progress: true
+
 jobs:
+  check-formatting:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "oracle"
+          java-version: "21"
+
+      - name: Gradle Spotless
+        run: ./gradlew spotlessCheck
+
   test-gradle:
     name: Gradle Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [ api, common, e2e, indexer ]
+        package: [api, common, e2e, indexer]
     steps:
       - uses: actions/checkout@v3
 
       - uses: actions/setup-java@v3
         with:
           distribution: 'oracle'
-          java-version: '17'
+          java-version: '21'
 
       - name: Gradle Test
         run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
@@ -59,7 +80,7 @@ jobs:
           fi
 
       - name: Upload Test Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: github.ref == 'refs/heads/main'
         with:
           name: test-results-${{ github.head_ref || github.ref_name }}

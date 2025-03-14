@@ -1,0 +1,20 @@
+package org.vechain.indexer.model.history
+
+enum class HistoryEventName {
+    B3TR_SWAP_VOT3_TO_B3TR,
+    B3TR_SWAP_B3TR_TO_VOT3,
+    B3TR_PROPOSAL_SUPPORT,
+    B3TR_CLAIM_REWARD,
+    B3TR_UPGRADE_GM,
+    B3TR_ACTION,
+    B3TR_PROPOSAL_VOTE,
+    B3TR_XALLOCATION_VOTE,
+    TRANSFER_VET,
+    TRANSFER_FT,
+    TRANSFER_NFT,
+    TRANSFER_SF,
+    SWAP_VET_TO_FT,
+    SWAP_FT_TO_VET,
+    SWAP_FT_TO_FT,
+    UNKNOWN_TX,
+}

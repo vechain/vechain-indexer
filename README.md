@@ -1,5 +1,8 @@
 # VeWorld Indexer
 
+![Scorecard badge](https://github.com/vechain/veworld-indexer/blob/feature/scorecard-action/.assets/scorecard-badge.svg)
+![Security Checks Badge](https://github.com/vechain/veworld-indexer/actions/workflows/security-checks.yml/badge.svg)
+
 [![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main.yml)
 
 [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechain_veworld-indexer&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
@@ -28,7 +31,7 @@
 ## Prerequisites
 
 - Docker
-- Java (v17)
+- Java (v21)
 
 ## Getting Started
 
@@ -100,6 +103,42 @@ make db-all
 make thor-all
 ```
 
+## Backup MongoDB
+You can backup the database by running the following command:
+
+```bash
+make db-backup
+```
+- Will backup the vechain database from localhost:27017
+- The backup will be stored in the database/backups/ directory.
+- The filename follows this format: database/backups/vechain-YYYYMMDDHHMMSS
+
+You can also specify the host and port of the MongoDB instance you want to backup:
+
+```bash
+make db-backup MONGO_HOST=my-mongo-host:32423
+```
+
+## Restore MongoDB from backup
+
+You can restore the database by running the following command:
+
+```bash
+make db-restore
+```
+- If no backup exists, you will be prompted to specify a backup directory.
+- By default, it restores from the latest backup found in the database/backups/ directory.
+
+To restore from a specific backup folder, specify DIR:
+```bash
+make db-restore DIR=backup/mydatabase-20250210
+```
+
+To restore to a different DB:
+```bash
+make db-restore MONGO_HOST=myserver.com
+```
+
 ## Features
 
 There are 6 indexers and 6 corresponding APIs. Each indexer can be run in isolation or all together. There is no
@@ -115,6 +154,14 @@ profile.
 
 As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
 want the convenience of the Block endpoints without the overhead of indexing the data.
+
+## Pruner
+Some of the indexers are stateful indexers. This means that records are updated with each block. In order to facilitate rollbacks we must store all previous version of each record. These records are stored in collections with a `-archives` postfix. As you might imagine these archive collections can get rather large over time. To prevent the collection from blowing up we have implemented an optional pruner service that can be enabled and configured with the following env variablers.
+
+- `PRUNER_ENABLED` - A boolean to enable or disable the pruner
+- `PRUNER_INTERVAL` - How frequently to run the pruner (in milliseconds)
+- `PRUNER_INITIAL_DELAY` - An initial delay after startup before running for the first time (in milliseconds)
+- `PRUNER_REMOVAL_CHUNK_SIZE` - Sometimes the number of records to prune can be very large. To prevent mongoDB from blowing up we can set a chunk size for the delete operation
 
 ## Testing
 
@@ -144,11 +191,29 @@ make test-api
 
 ### Load Testing
 
-- For a successful run, ensure `./docker-compose.yml` is running
-- To run the load tests:
+Update the `BASE_URL` variable in `load-testing/docker-compose.yml` to point to your target environment. Individual tests can
+be tailored by modifying the env variables for each service.
+ - `RAMP_UP_DURATION` - The time taken to ramp up to the maximum number of users
+ - `STAY_DURATION` - The time to stay at the maximum number of users
+ - `WIND_DOWN_DURATION` - The time taken to ramp down to 0 users
+ - `TARGET_VUS` - The target number of virtual users to simulate
+
+Run the load tests:
 
 ```bash
 make load-test
+```
+
+The containers will not be destroyed after the test completes. This is to allow access to the grafana dashboard and container logs. To clean up the load testing environment:
+
+```bash
+make load-test-clean
+```
+
+You can also choose to run specific tests only. We have included some commands in the Makefile to make this more convenient. For example, to run the history load tests:
+
+```bash
+make load-test-history
 ```
 
 ## Database migration

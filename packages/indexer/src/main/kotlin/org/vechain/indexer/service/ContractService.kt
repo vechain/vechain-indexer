@@ -7,14 +7,13 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.devkit.cry.Utils
 import org.vechain.indexer.contracts.abi.*
 import org.vechain.indexer.contracts.specifications.Contracts
+import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.model.ContractArchive
 import org.vechain.indexer.model.IndexedContract
 import org.vechain.indexer.repository.ContractRepository
-import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.Clause
-import org.vechain.indexer.thor.model.Transaction
-import org.vechain.indexer.thor.model.TxEvent
 import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.TransactionUtils
 import org.web3j.utils.Numeric
 
@@ -22,21 +21,40 @@ import org.web3j.utils.Numeric
 @Service
 open class ContractService(
     private val contractRepository: ContractRepository,
-    private val archiveService: ArchiveService,
-    private val thorService: ThorService
+    private val contractArchiveService: ArchiveService<IndexedContract, ContractArchive>,
+    private val thorService: ThorService,
 ) {
-
     companion object {
         val SAMPLE_ADDRESS_1 = AddressUtils.toBigInt("0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa")
         val SAMPLE_ADDRESS_2 = AddressUtils.toBigInt("0x435933c8064b4Ae76bE665428e0307eF2cCFBD68")
     }
 
-    /** Calls to the supportsInterface function of the ERC721 interface. */
-    open fun isErc721(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        return ContractUtils.isContractType(Contracts.ERC721, rawData) ||
-            ContractUtils.isContractType(Contracts.ERC721, clause.data) ||
-            supportsInterface(ERC721ABI.interfaceId, contractAddress)
+    @Transactional(rollbackFor = [Exception::class])
+    open fun update(
+        updated: List<IndexedContract>,
+        existing: List<IndexedContract>,
+    ) {
+        if (updated.isNotEmpty()) {
+            contractRepository.saveAll(updated)
+        }
+
+        if (existing.isNotEmpty()) {
+            contractArchiveService.saveAll(existing)
+        }
     }
+
+    open fun getExisting(contractAddresses: List<String>): List<IndexedContract> =
+        contractRepository.findAllById(contractAddresses).toList()
+
+    /** Calls to the supportsInterface function of the ERC721 interface. */
+    open fun isErc721(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean =
+        ContractUtils.isContractType(Contracts.ERC721, rawData) ||
+            ContractUtils.isContractType(Contracts.ERC721, clauseData) ||
+            supportsInterface(ERC721ABI.interfaceId, contractAddress)
 
     /**
      * Calls to ALL the read only functions of VIP 181
@@ -46,11 +64,14 @@ open class ContractService(
      *
      * If it walks like a duck, and talks like a duck, then it must be a duck.
      */
-    open fun isVip181(contractAddress: String, rawData: String, clause: Clause): Boolean {
-
+    open fun isVip181(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean {
         val isVip181 =
             ContractUtils.isContractType(Contracts.VIP181, rawData) ||
-                ContractUtils.isContractType(Contracts.VIP181, clause.data)
+                ContractUtils.isContractType(Contracts.VIP181, clauseData)
         if (isVip181) return true
 
         val name = ContractUtils.createClause(contractAddress, VIP181ABI.name)
@@ -65,7 +86,7 @@ open class ContractService(
                 contractAddress,
                 VIP181ABI.isApprovedForAll,
                 SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
+                SAMPLE_ADDRESS_2,
             )
 
         val contractCalls = listOf(name, symbol, totalSupply, balanceOf, isApprovedForAll)
@@ -81,11 +102,14 @@ open class ContractService(
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    open fun isErc20(contractAddress: String, rawData: String, clause: Clause): Boolean {
-
+    open fun isErc20(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean {
         val isErc20 =
             ContractUtils.isContractType(Contracts.ERC20, rawData) ||
-                ContractUtils.isContractType(Contracts.ERC20, clause.data)
+                ContractUtils.isContractType(Contracts.ERC20, clauseData)
         if (isErc20) return true
 
         val totalSupply = ContractUtils.createClause(contractAddress, ERC20ABI.totalSupply)
@@ -96,7 +120,7 @@ open class ContractService(
                 contractAddress,
                 ERC20ABI.allowance,
                 SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
+                SAMPLE_ADDRESS_2,
             )
 
         val contractCalls = listOf(totalSupply, balanceOf, allowance)
@@ -112,11 +136,14 @@ open class ContractService(
      *
      * ERC 20 does not support the supportsInterface function of the ERC165 interface.
      */
-    open fun isVip180(contractAddress: String, rawData: String, clause: Clause): Boolean {
-
+    open fun isVip180(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean {
         val isVip180 =
             ContractUtils.isContractType(Contracts.VIP180, rawData) ||
-                ContractUtils.isContractType(Contracts.VIP180, clause.data)
+                ContractUtils.isContractType(Contracts.VIP180, clauseData)
         if (isVip180) return true
 
         val name = ContractUtils.createClause(contractAddress, VIP180ABI.name)
@@ -130,7 +157,7 @@ open class ContractService(
                 contractAddress,
                 VIP180ABI.allowance,
                 SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
+                SAMPLE_ADDRESS_2,
             )
 
         val contractCalls = listOf(name, symbol, decimals, totalSupply, balanceOf, allowance)
@@ -141,17 +168,23 @@ open class ContractService(
             response.all { TransactionUtils.isSuccessWithData(it) }
     }
 
-    open fun isErc1155(contractAddress: String, rawData: String, clause: Clause): Boolean {
-        return ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
-            ContractUtils.isContractType(Contracts.ERC1155, clause.data) ||
+    open fun isErc1155(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean =
+        ContractUtils.isContractType(Contracts.ERC1155, rawData) ||
+            ContractUtils.isContractType(Contracts.ERC1155, clauseData) ||
             supportsInterface(ERC1155ABI.interfaceId, contractAddress)
-    }
 
-    open fun isVip210(contractAddress: String, rawData: String, clause: Clause): Boolean {
-
+    open fun isVip210(
+        contractAddress: String,
+        rawData: String,
+        clauseData: String,
+    ): Boolean {
         val isVip210 =
             ContractUtils.isContractType(Contracts.VIP210, rawData) ||
-                ContractUtils.isContractType(Contracts.VIP210, clause.data)
+                ContractUtils.isContractType(Contracts.VIP210, clauseData)
 
         if (isVip210) return true
 
@@ -160,21 +193,21 @@ open class ContractService(
                 contractAddress,
                 VIP210ABI.balanceOf,
                 SAMPLE_ADDRESS_1,
-                BigInteger.ONE
+                BigInteger.ONE,
             )
         val balanceOfBatch =
             ContractUtils.createClause(
                 contractAddress,
                 VIP210ABI.balanceOfBatch,
                 arrayOf(SAMPLE_ADDRESS_1, SAMPLE_ADDRESS_2),
-                arrayOf(BigInteger.ONE, BigInteger.TWO)
+                arrayOf(BigInteger.ONE, BigInteger.TWO),
             )
         val isApprovedForAll =
             ContractUtils.createClause(
                 contractAddress,
                 VIP210ABI.isApprovedForAll,
                 SAMPLE_ADDRESS_1,
-                SAMPLE_ADDRESS_2
+                SAMPLE_ADDRESS_2,
             )
         val uri = ContractUtils.createClause(contractAddress, VIP210ABI.uri, BigInteger.ONE)
 
@@ -186,13 +219,15 @@ open class ContractService(
             response.all { TransactionUtils.isSuccessWithData(it) }
     }
 
-    open fun supportsInterface(interfaceId: String, contractAddress: String): Boolean {
-
+    open fun supportsInterface(
+        interfaceId: String,
+        contractAddress: String,
+    ): Boolean {
         val supportsInterface =
             ContractUtils.createClause(
                 contractAddress,
                 ERC165.supportsInterface,
-                Utils.hexToBytes(interfaceId)
+                Utils.hexToBytes(interfaceId),
             )
 
         val response = thorService.executeReadOnlyCode(listOf(supportsInterface))
@@ -205,21 +240,20 @@ open class ContractService(
     }
 
     open fun parseContracts(
-        block: Block,
-        masterChangeEvents: List<Triple<TxEvent, Transaction, Clause>>,
-        existingContracts: List<IndexedContract>
+        masterChangeEvents: List<IndexedEvent>,
+        existingContracts: List<IndexedContract>,
     ): List<IndexedContract> {
         val contracts: MutableList<IndexedContract> = mutableListOf()
 
-        masterChangeEvents.forEach { (event, tx, clause) ->
-            val contractAddress = event.address
-            val master = AddressUtils.decode(event.data)
+        masterChangeEvents.forEach { event ->
+            val contractAddress = event.address ?: return@forEach
+            val master = event.params.getAsString("newMaster") ?: return@forEach
 
             // Handle case of two master change events for the same contract
             val multipleMasterChangeContract = contracts.find { it.address == contractAddress }
             if (multipleMasterChangeContract != null) {
                 multipleMasterChangeContract.previousMasters.add(
-                    multipleMasterChangeContract.master
+                    multipleMasterChangeContract.master,
                 )
                 multipleMasterChangeContract.master = master
             } else {
@@ -230,10 +264,10 @@ open class ContractService(
                         IndexedContract(
                             address = contractAddress,
                             version = contract.version + 1,
-                            blockId = block.id,
-                            blockNumber = block.number,
-                            blockTimestamp = block.timestamp,
-                            txId = tx.id,
+                            blockId = event.blockId,
+                            blockNumber = event.blockNumber,
+                            blockTimestamp = event.blockTimestamp,
+                            txId = event.txId,
                             creator = contract.creator,
                             master = master,
                             rawData = contract.rawData,
@@ -245,43 +279,34 @@ open class ContractService(
                             isErc1155 = contract.isErc1155,
                             previousMasters =
                                 contract.previousMasters.plus(contract.master).toMutableSet(),
-                        )
+                        ),
                     )
                 } else {
-
                     val rawData = thorService.getAccountCode(contractAddress)
-
                     // If the contract is not indexed yet, index it
                     contracts.add(
                         IndexedContract(
                             address = contractAddress,
                             version = 1,
-                            blockId = block.id,
-                            blockNumber = block.number,
-                            blockTimestamp = block.timestamp,
-                            txId = tx.id,
-                            creator = tx.origin,
+                            blockId = event.blockId,
+                            blockNumber = event.blockNumber,
+                            blockTimestamp = event.blockTimestamp,
+                            txId = event.txId,
+                            creator = event.origin as String,
                             master = master,
                             rawData = rawData,
-                            isVip180 = isVip180(contractAddress, rawData, clause),
-                            isVip181 = isVip181(contractAddress, rawData, clause),
-                            isVip210 = isVip210(contractAddress, rawData, clause),
-                            isErc20 = isErc20(contractAddress, rawData, clause),
-                            isErc721 = isErc721(contractAddress, rawData, clause),
-                            isErc1155 = isErc1155(contractAddress, rawData, clause),
+                            isVip180 = isVip180(contractAddress, rawData, event.raw!!.data),
+                            isVip181 = isVip181(contractAddress, rawData, event.raw!!.data),
+                            isVip210 = isVip210(contractAddress, rawData, event.raw!!.data),
+                            isErc20 = isErc20(contractAddress, rawData, event.raw!!.data),
+                            isErc721 = isErc721(contractAddress, rawData, event.raw!!.data),
+                            isErc1155 = isErc1155(contractAddress, rawData, event.raw!!.data),
                             previousMasters = mutableSetOf(),
-                        )
+                        ),
                     )
                 }
             }
         }
         return contracts
-    }
-
-    @Transactional(rollbackFor = [Exception::class])
-    open fun saveContracts(current: List<IndexedContract>, archived: List<IndexedContract>) {
-        if (archived.isNotEmpty()) archiveService.saveAll(archived)
-
-        if (current.isNotEmpty()) contractRepository.saveAll(current)
     }
 }

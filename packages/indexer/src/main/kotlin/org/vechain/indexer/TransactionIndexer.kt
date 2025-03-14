@@ -2,38 +2,42 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.IndexedTransaction
+import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.repository.TransactionRepository
+import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 
 @Profile("transactions")
 @Component
 open class TransactionIndexer(
-    private val txRepo: TransactionRepository,
-    private val mongoTemplate: MongoTemplate,
+    txRepo: TransactionRepository,
+    private val transactionService: TransactionService,
     thorClient: ThorClient,
-    @Value("\${indexer.startBlock.transactions}") private val startBlock: Long,
-    @Value("\${indexer.syncLoggerInterval.transactions}") private val syncLoggerInterval: Long,
+    abiManager: AbiManager,
+    @Value("\${indexer.startBlock.transactions}") startBlock: Long,
+    @Value("\${indexer.syncLogInterval.transactions}") private val syncLogInterval: Long,
 ) :
-    VeWorldIndexer(
+    BaseIndexer(
         repository = txRepo,
         startBlock = startBlock,
         thorClient = thorClient,
-        syncLoggerInterval = syncLoggerInterval
+        syncLogInterval = syncLogInterval,
+        abiManager = abiManager,
     ) {
-
     override fun rollback(blockNumber: Long) {
-        txRepo.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        transactionService.rollback(blockNumber)
     }
 
     override fun processBlock(block: Block) {
         if (block.transactions.isNotEmpty()) {
-            mongoTemplate.insert(
-                block.transactions.map { IndexedTransaction(block, it) },
-                IndexedTransaction::class.java
+            val eventsByTx = processBlockGenericEvents(block).groupBy { it.txId }
+
+            transactionService.processBlockTransactions(
+                block.transactions,
+                eventsByTx,
+                block,
             )
         }
     }

@@ -1,7 +1,6 @@
 package org.vechain.indexer
 
 import com.fasterxml.jackson.core.type.TypeReference
-import java.util.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 import org.junit.runner.RunWith
@@ -114,7 +113,7 @@ abstract class AbstractIntegrationTest {
     internal class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext> {
         override fun initialize(configurableApplicationContext: ConfigurableApplicationContext) {
             val mongoContainer: GenericContainer<*> =
-                GenericContainer("mongo:6").withExposedPorts(27017).withReuse(true)
+                GenericContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
             mongoContainer.start()
 

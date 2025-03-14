@@ -1,5 +1,6 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -10,6 +11,7 @@ import org.vechain.indexer.thor.model.*
 @JsonView(Views.Public::class)
 data class IndexedTransaction
 @ConstructorBinding
+@JsonCreator
 constructor(
     @Id val id: String,
     override val blockId: String,
@@ -30,12 +32,12 @@ constructor(
     val reward: String,
     val reverted: Boolean,
     val origin: String,
-    @JsonView(Views.Expanded::class) val outputs: List<TxOutputs>
+    @JsonView(Views.Expanded::class) val outputs: List<DecodedOutputs>,
 ) : IndexedDocument {
-
     constructor(
         block: Block,
-        tx: Transaction
+        tx: Transaction,
+        decodedOutputs: List<DecodedOutputs>,
     ) : this(
         id = tx.id,
         blockId = block.id,
@@ -56,6 +58,6 @@ constructor(
         reward = tx.reward,
         reverted = tx.reverted,
         origin = tx.origin,
-        outputs = tx.outputs
+        outputs = decodedOutputs,
     )
 }

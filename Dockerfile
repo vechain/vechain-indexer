@@ -1,6 +1,9 @@
-FROM eclipse-temurin:17-jdk-jammy AS builder
+FROM amazoncorretto:21-alpine3.20 AS builder
 
-ARG VEWORLD_PACKAGE
+RUN apk update && apk upgrade
+RUN apk add --no-cache curl
+
+ARG PACKAGE_NAME
 
 WORKDIR /usr/app
 
@@ -15,18 +18,21 @@ COPY system.properties ./
 COPY packages ./packages
 
 # Placing this after the COPY commands so we can cache builds
-RUN test -n "VEWORLD_PACKAGE"
-ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
+RUN test -n "PACKAGE_NAME"
+ENV PACKAGE_NAME=$PACKAGE_NAME
 
-RUN ./gradlew packages:$VEWORLD_PACKAGE:build -x test
+RUN ./gradlew packages:$PACKAGE_NAME:build -x test
 
-FROM eclipse-temurin:17-jre-jammy AS prod
+FROM amazoncorretto:21-alpine3.20 AS prod
 
-ARG VEWORLD_PACKAGE
-ENV VEWORLD_PACKAGE $VEWORLD_PACKAGE
+RUN apk update && apk upgrade
+RUN apk add --no-cache curl
+
+ARG PACKAGE_NAME
+ENV PACKAGE_NAME=$PACKAGE_NAME
 
 WORKDIR /usr/app
 
-COPY --from=builder /usr/app/packages/$VEWORLD_PACKAGE/build/libs/$VEWORLD_PACKAGE*.jar /usr/app/app.jar
+COPY --from=builder /usr/app/packages/$PACKAGE_NAME/build/libs/$PACKAGE_NAME*.jar /usr/app/app.jar
 
 CMD ["java", "-jar", "/usr/app/app.jar"]

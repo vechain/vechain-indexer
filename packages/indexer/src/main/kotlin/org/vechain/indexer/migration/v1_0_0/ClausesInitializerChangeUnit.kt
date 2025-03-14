@@ -30,7 +30,6 @@ class ClausesInitializerChangeUnit {
             Index()
                 .named(CLAUSE_BLOCKNUMBER_IDX)
                 .on(IndexedClause::blockNumber.name, Sort.Direction.DESC)
-                .background()
 
         val originIdx: IndexDefinition =
             Index()
@@ -39,7 +38,6 @@ class ClausesInitializerChangeUnit {
                 .on(IndexedClause::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedClause::txId.name, Sort.Direction.DESC)
                 .on(IndexedClause::id.name, Sort.Direction.DESC)
-                .background()
 
         val toIdx: IndexDefinition =
             Index()
@@ -48,7 +46,6 @@ class ClausesInitializerChangeUnit {
                 .on(IndexedClause::blockNumber.name, Sort.Direction.DESC)
                 .on(IndexedClause::txId.name, Sort.Direction.DESC)
                 .on(IndexedClause::id.name, Sort.Direction.DESC)
-                .background()
 
         mongoTemplate.indexOps(CLAUSES).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(CLAUSES).ensureIndex(originIdx)

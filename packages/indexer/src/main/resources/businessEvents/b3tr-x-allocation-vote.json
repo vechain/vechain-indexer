@@ -1,0 +1,42 @@
+{
+  "name": "B3TR_XAllocationVote",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "AllocationVoteCast",
+      "alias": "voteEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "voter",
+      "eventName": "voteEvent",
+      "businessEventName": "from"
+    },
+    {
+      "name": "roundId",
+      "eventName": "voteEvent",
+      "businessEventName": "roundId"
+    },
+    {
+      "name": "appsIds",
+      "eventName": "voteEvent",
+      "businessEventName": "appsIds"
+    },
+    {
+        "name": "voteWeights",
+        "eventName": "voteEvent",
+        "businessEventName": "voteWeights"
+    }
+  ]
+}

@@ -4,9 +4,9 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.model.NFTArchive
 import org.web3j.utils.Numeric
 import strikt.api.expect
 import strikt.assertions.*
@@ -29,7 +29,7 @@ class NFTArchivingTest {
         expect {
             that(nftTransfers).isA<List<IndexedTransferEvent>>()
             that(nfts).isA<List<IndexedNFT>>()
-            that(nftArchives).isA<List<Archive<IndexedNFT>>>()
+            that(nftArchives).isA<List<NFTArchive>>()
         }
 
         // verify that the updated NFTs have their corresponding archives

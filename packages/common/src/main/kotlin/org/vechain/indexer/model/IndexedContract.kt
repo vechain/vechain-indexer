@@ -1,9 +1,11 @@
 package org.vechain.indexer.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.thor.model.Views
 
 @Document(collection = "contracts")
 data class IndexedContract
@@ -30,3 +32,12 @@ constructor(
         return address
     }
 }
+
+@Document(collection = "contract_archives")
+@JsonView(Views.Public::class)
+data class ContractArchive
+@ConstructorBinding
+constructor(
+    @Id override val id: String,
+    override val data: IndexedContract,
+) : Archive<IndexedContract>

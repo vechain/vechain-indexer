@@ -171,6 +171,7 @@ resource "aws_ssm_parameter" "mongo_admin_password" {
 
 data "aws_ami" "AwsFilteredImage" {
   most_recent = true
+  owners      = ["self", "amazon"]
   filter {
     name   = "name"
     values = [var.ami_name_filter]
