@@ -18,6 +18,7 @@ class IndexerHealthIndicator(
         private const val STATUS_UP = "UP"
         private const val STATUS_DOWN = "DOWN"
         private const val PROCESS_TIMEOUT = 60L
+        private const val SYNC_TIMEOUT = 300L
     }
 
     data class IndexerHealth(
@@ -38,7 +39,7 @@ class IndexerHealthIndicator(
                     syncStatus = indexer.status,
                     currentBlock =
                         NumberFormat.getNumberInstance(Locale.US)
-                            .format(indexer.currentBlockNumber ?: 0),
+                            .format(indexer.currentBlockNumber),
                 )
             }
 
@@ -51,11 +52,23 @@ class IndexerHealthIndicator(
         }
     }
 
+    /**
+     * Get the health status of the indexer If the indexer is syncing we use the SYNC_TIMEOUT to
+     * determine if it is down If the indexer is not syncing we use the PROCESS_TIMEOUT to determine
+     * if it is down
+     */
     private fun getIndexerHealth(indexer: BlockIndexer): String {
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
+        val timeout =
+            if (indexer.status == Status.SYNCING) {
+                SYNC_TIMEOUT
+            } else {
+                PROCESS_TIMEOUT
+            }
+
         val timeLastProcessed = indexer.timeLastProcessed
-        return if (timeNow.minusSeconds(PROCESS_TIMEOUT) > timeLastProcessed) {
+        return if (timeNow.minusSeconds(timeout) > timeLastProcessed) {
             STATUS_DOWN
         } else {
             STATUS_UP
