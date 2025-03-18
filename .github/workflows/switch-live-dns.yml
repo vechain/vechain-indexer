@@ -145,7 +145,7 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init -backend-config="environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
+        run: terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
 
       - name: Terraform Workspace
         id: workspace
