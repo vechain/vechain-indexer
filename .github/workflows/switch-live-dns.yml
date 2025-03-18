@@ -149,7 +149,7 @@ jobs:
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select ${{ needs.identify-live-color.outputs.testnet_dead_color }}
+        run: terraform workspace select ${{ env.environment }}
 
       - name: Terraform Validate
         id: validate
