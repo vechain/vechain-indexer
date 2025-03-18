@@ -5,9 +5,11 @@ plugins {
 }
 
 dependencies {
-
     implementation(project(":packages:common"))
-    implementation("org.springframework.boot:spring-boot-starter-web:3.4.2")
+    implementation("org.springframework.boot:spring-boot-starter-web:3.4.2") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+    }
+    implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.2")
     implementation("org.springframework.boot:spring-boot-starter-validation:3.4.2")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
