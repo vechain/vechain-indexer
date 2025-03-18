@@ -149,7 +149,7 @@ jobs:
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select ${{ env.environment }}
+        run: terraform workspace select $(echo env.environment | awk -F- '{print $1}'
 
       - name: Terraform Validate
         id: validate
