@@ -42,6 +42,7 @@ constructor(
     val outputToken: String? = null,
     val inputValue: String? = null,
     val outputValue: String? = null,
+    val tokenAddress: String? = null,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(
