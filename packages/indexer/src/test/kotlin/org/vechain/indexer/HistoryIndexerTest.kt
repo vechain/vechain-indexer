@@ -104,7 +104,6 @@ internal class HistoryIndexerTest {
         expect { that(txs).hasSize(3) }
         val eventNames = txs.map { it.eventName }
 
-        println(txs)
         expect {
             that(eventNames)
                 .isEqualTo(
@@ -112,6 +111,34 @@ internal class HistoryIndexerTest {
                         HistoryEventName.B3TR_ACTION,
                         HistoryEventName.SWAP_FT_TO_VET,
                         HistoryEventName.B3TR_ACTION,
+                    ),
+                )
+        }
+    }
+
+    @Test
+    fun `Process block - With MaaS sale`() {
+        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
+        every {
+            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
+        } returns mutableListOf()
+
+        indexer.processBlock(BlockFixtures.BLOCK_MP_SALES)
+
+        val txs = historyEventSlot.captured
+        expect { that(txs).hasSize(6) }
+        val eventNames = txs.map { it.eventName }
+
+        expect {
+            that(eventNames)
+                .isEqualTo(
+                    listOf(
+                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE,
                     ),
                 )
         }
