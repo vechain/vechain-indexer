@@ -17,4 +17,5 @@ enum class HistoryEventName {
     SWAP_FT_TO_VET,
     SWAP_FT_TO_FT,
     UNKNOWN_TX,
+    NFT_SALE,
 }
