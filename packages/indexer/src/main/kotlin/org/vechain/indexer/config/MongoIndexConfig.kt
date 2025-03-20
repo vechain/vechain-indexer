@@ -91,7 +91,7 @@ open class MongoIndexConfig(private val mongoTemplate: MongoTemplate) {
     @PostConstruct
     fun initNftIndexes() {
         val nftCollection = "nfts"
-        val archiveCollection = "nft_archive"
+        val archiveCollection = "nft_archives"
 
         // Ensure NFT collection indexes
         mongoTemplate
