@@ -25,6 +25,7 @@ object BlockFixtures {
     val BLOCK_NFT_MINT_2 = buildBlockFixture("nft_mint_2")
     val BLOCK_NFT_MINT_REVERTED = buildBlockFixture("nft_mint_reverted")
     val BLOCK_DEX = buildBlockFixture("dex")
+    val BLOCK_MP_SALES = buildBlockFixture("marketplace_sales")
 
     private fun buildBlockFixture(name: String): Block =
         objectMapper.readValue(

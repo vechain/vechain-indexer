@@ -28,6 +28,7 @@ object EventUtils {
             "FT_VET_Swap" -> HistoryEventName.SWAP_FT_TO_VET
             "VET_FT_Swap" -> HistoryEventName.SWAP_VET_TO_FT
             "Token_FTSwap" -> HistoryEventName.SWAP_FT_TO_FT
+            "NFT_SALE" -> HistoryEventName.NFT_SALE
             else -> null // Other events will not be labeled
         }
 

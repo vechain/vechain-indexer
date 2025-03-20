@@ -52,6 +52,12 @@ open class HistoryIndexer(
                                 "vet-token-swap",
                                 "vot3-to-b3tr-swap",
                                 "token-vet-swap-2",
+                                "maas-sale",
+                                "wov-offer-accepted-sale",
+                                "wov-non-custodial-sale",
+                                "wov-action-executed-sale",
+                                "wov-custodial-wov-sale",
+                                "wov-custodial-vet-sale",
                             ),
                     ),
                 )
