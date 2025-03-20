@@ -32,22 +32,13 @@ abstract class AbstractIntegrationTest {
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
     protected val PAGINATED_TXS_TYPE =
         object : TypeReference<PaginatedResponse<IndexedTransaction>>() {}
-    protected val CONTRACT_TYPE = object : TypeReference<IndexedContract>() {}
-    protected val LIST_CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
-    protected val PAGINATED_CONTRACTS_TYPE =
-        object : TypeReference<PaginatedResponse<IndexedContract>>() {}
     protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
     protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNFT>>() {}
     protected val PAGINATED_NFT_CONTRACTS_TYPE =
         object : TypeReference<PaginatedResponse<String>>() {}
-    protected val BLOCK_TYPE = object : TypeReference<IndexedBlock>() {}
-    protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
     protected val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : TypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
-    protected val LIST_CLAUSE_TYPE = object : TypeReference<List<IndexedClause>>() {}
-    protected val PAGINATED_CLAUSES_TYPE =
-        object : TypeReference<PaginatedResponse<IndexedClause>>() {}
     protected val PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE =
         object : TypeReference<PaginatedResponse<String>>() {}
 
@@ -55,46 +46,30 @@ abstract class AbstractIntegrationTest {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var contractRepository: ContractRepository
-
     @Autowired lateinit var nftRepository: NFTRepository
 
-    @Autowired lateinit var blockRepository: BlockRepository
-
     @Autowired lateinit var transferEventRepository: TransferEventRepository
-
-    @Autowired lateinit var clauseRepository: ClauseRepository
 
     @BeforeAll
     fun setup() {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", LIST_TX_TYPE)
-        val contracts: List<IndexedContract> =
-            loadDataFromResources("/contracts.json", LIST_CONTRACT_TYPE)
         val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
-        val blocks: List<IndexedBlock> = loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
-        val clauses: List<IndexedClause> = loadDataFromResources("/clauses.json", LIST_CLAUSE_TYPE)
 
         val repos =
             listOf(
                 transactionRepository,
-                contractRepository,
                 nftRepository,
-                blockRepository,
                 transferEventRepository,
-                clauseRepository
             )
         repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
-        contractRepository.saveAll(contracts)
         nftRepository.saveAll(nfts)
-        blockRepository.saveAll(blocks)
         transferEventRepository.saveAll(transferEvents)
-        clauseRepository.saveAll(clauses)
     }
 
     /** Load json files from resources */
