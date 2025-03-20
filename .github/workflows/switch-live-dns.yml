@@ -145,11 +145,11 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init -backend-config="environments/${{ env.environment }}.config"
+        run: terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select ${{ env.environment }}
+        run: terraform workspace select $(echo ${{ env.environment }} | awk -F- '{print $1}')
 
       - name: Terraform Validate
         id: validate
