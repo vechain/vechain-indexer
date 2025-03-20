@@ -23,6 +23,7 @@ class HistoryInitializerChangeUnit {
         const val FROM_BLOCK_TIMESTAMP_EVENT_NAME_IDX = "from_1_blockTimestamp_-1_eventName_1"
         const val TO_BLOCK_TIMESTAMP_EVENT_NAME_IDX = "to_1_blockTimestamp_-1_eventName_1"
         const val ORIGIN_BLOCK_TIMESTAMP_EVENT_NAME_IDX = "origin_1_blockTimestamp_-1_eventName_1"
+        const val GAS_PAYER_TIMESTAMP_EVENT_NAME_IDX = "gasPayer_1_blockTimestamp_-1_eventName_1"
     }
 
     @BeforeExecution
@@ -81,6 +82,13 @@ class HistoryInitializerChangeUnit {
                 .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                 .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
 
+        val gasPayerTimestampEventNameIdx: IndexDefinition =
+            Index()
+                .named(GAS_PAYER_TIMESTAMP_EVENT_NAME_IDX)
+                .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
+                .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(blockNumberIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(toContractAddressBlockTimestampIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(fromContractAddressBlockTimestampIdx)
@@ -88,6 +96,7 @@ class HistoryInitializerChangeUnit {
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(fromBlockTimestampEventNameIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(toBlockTimestampEventNameIdx)
         mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(originBlockTimestampEventNameIdx)
+        mongoTemplate.indexOps(HISTORY_EVENTS).ensureIndex(gasPayerTimestampEventNameIdx)
     }
 
     @RollbackExecution
@@ -101,6 +110,7 @@ class HistoryInitializerChangeUnit {
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(FROM_BLOCK_TIMESTAMP_EVENT_NAME_IDX)
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(TO_BLOCK_TIMESTAMP_EVENT_NAME_IDX)
         mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(ORIGIN_BLOCK_TIMESTAMP_EVENT_NAME_IDX)
+        mongoTemplate.indexOps(HISTORY_EVENTS).dropIndex(GAS_PAYER_TIMESTAMP_EVENT_NAME_IDX)
     }
 
     @RollbackBeforeExecution
