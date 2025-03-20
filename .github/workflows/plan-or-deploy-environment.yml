@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
-      COLOUR: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
+      COLOR: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
 
     defaults:
       run:
@@ -67,7 +67,7 @@ jobs:
     steps:
       - name: Label
         id: label
-        run: echo "running ${{ env.COLOUR }} with M ${{ inputs.mainnet_version }} +T ${{ inputs.testnet_version }} F ${{ inputs.force }} for ${{ inputs.environment }}"
+        run: echo "running ${{ env.COLOR }} with M ${{ inputs.mainnet_version }} +T ${{ inputs.testnet_version }} F ${{ inputs.force }} for ${{ inputs.environment }}"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,11 +97,11 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init -backend-config="environments/${{ env.COLOUR }}.config"
+        run: terraform init -backend-config="environments/${{ env.COLOR }}.config"
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select ${{ env.COLOUR }}
+        run: terraform workspace select ${{ env.COLOR }}
 
       - name: Terraform Validate
         id: validate
@@ -111,9 +111,9 @@ jobs:
         id: update-image-tag
         if: inputs.mainnet_version && inputs.testnet_version
         run: |
-          sed -i '/main:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.mainnet_version }}/' environments/${{ env.COLOUR }}.yaml
-          sed -i '/test:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.testnet_version }}/' environments/${{ env.COLOUR }}.yaml
-          cat environments/${{ env.COLOUR }}.yaml
+          sed -i '/main:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.mainnet_version }}/' environments/${{ env.COLOR }}.yaml
+          sed -i '/test:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.testnet_version }}/' environments/${{ env.COLOR }}.yaml
+          cat environments/${{ env.COLOR }}.yaml
         continue-on-error: false
 
       - name: Terraform Plan
@@ -124,15 +124,15 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ env.COLOUR }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
+          cluster_services=$(aws ecs list-services --cluster ${{ env.COLOR }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif (( $cluster_services > 0 )); then
             echo "env_exists=true" >> $GITHUB_OUTPUT
-            echo "The ${{ env.COLOUR }} environment exists, proceeding with deployment"
+            echo "The ${{ env.COLOR }} environment exists, proceeding with deployment"
           else
             echo "env_exists=false" >> $GITHUB_OUTPUT
-            echo "The ${{ env.COLOUR }} environment doesn't exist. Please create it manually first, or enable force apply"
+            echo "The ${{ env.COLOR }} environment doesn't exist. Please create it manually first, or enable force apply"
           fi
 
       - name: Terraform Apply
@@ -146,5 +146,5 @@ jobs:
       #   env:
       #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       #     SLACK_COLOR: ${{ job.status }}
-      #     SLACK_MESSAGE: Deployed VeWorld-Indexer to *${{ env.COLOUR }}* environment
+      #     SLACK_MESSAGE: Deployed VeWorld-Indexer to *${{ env.COLOR }}* environment
       #     SLACK_TITLE: VeWorld-Indexer Infrastructure Deployment
