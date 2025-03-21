@@ -1,4 +1,4 @@
-package org.vechain.indexer.config
+package org.vechain.indexer.config.mongo
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
