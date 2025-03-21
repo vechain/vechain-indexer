@@ -85,7 +85,7 @@ open class HistoryController(
         name = "before",
         schema = Schema(type = "long"),
         description =
-            "Return transactions before and including this timestamp (Unix time in milliseconds).",
+            "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,
     )
     @Parameter(
@@ -93,7 +93,7 @@ open class HistoryController(
         name = "after",
         schema = Schema(type = "long"),
         description =
-            "Return transactions after and including this timestamp (Unix time in milliseconds).",
+            "Return transactions after and including this timestamp (Unix time in seconds).",
         required = false,
     )
     @PaginationParameters
