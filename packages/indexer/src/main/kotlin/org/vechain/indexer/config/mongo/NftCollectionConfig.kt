@@ -75,7 +75,11 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("_id", Sort.Direction.DESC)
         )
 
-        ensureIndex("data.blockNumber_-1", Index().on("data.blockNumber", Sort.Direction.DESC))
+        ensureIndex(
+            "data.blockNumber_-1",
+            Index().on("data.blockNumber", Sort.Direction.DESC),
+            true
+        )
 
         logger.info("Indexes for ${modelObj.simpleName} initialized successfully")
     }
