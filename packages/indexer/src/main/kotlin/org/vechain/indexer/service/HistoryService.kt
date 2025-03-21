@@ -107,7 +107,7 @@ class HistoryService(
             proposalId = event.params.getAsString("proposalId"),
             appVotes =
                 IndexedHistoryEvent.getAppVotes(
-                    event.params.getReturnValues()["appIds"],
+                    event.params.getReturnValues()["appsIds"],
                     event.params.getReturnValues()["voteWeights"],
                 ),
             support = event.params.getAsInt("support")?.let { ProposalSupport.fromValue(it) },
