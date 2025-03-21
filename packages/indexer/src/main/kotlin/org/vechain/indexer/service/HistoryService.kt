@@ -1,6 +1,7 @@
 package org.vechain.indexer.service
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -13,6 +14,7 @@ import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
+@Profile("history-events")
 @Service
 class HistoryService(
     private val historyRepository: HistoryEventRepository,
