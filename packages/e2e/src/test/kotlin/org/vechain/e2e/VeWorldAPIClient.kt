@@ -17,16 +17,9 @@ object VeWorldAPIClient {
     private val REST_TEMPLATE = RestTemplate()
 
     /** Response Types */
-    private val BLOCK_TYPE = object : ParameterizedTypeReference<IndexedBlock>() {}
-    private val FUNGIBLE_CONTRACTS_TYPE = object : ParameterizedTypeReference<List<String>>() {}
-    private val PAGINATED_CLAUSE_TYPE =
-        object : ParameterizedTypeReference<PaginatedResponse<IndexedClause>>() {}
     private val TX_TYPE = object : ParameterizedTypeReference<IndexedTransaction>() {}
     private val PAGINATED_TXS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransaction>>() {}
-    private val CONTRACT_TYPE = object : ParameterizedTypeReference<IndexedContract>() {}
-    private val PAGINATED_CONTRACTS_TYPE =
-        object : ParameterizedTypeReference<PaginatedResponse<IndexedContract>>() {}
     private val PAGINATED_NFTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
     private val PAGINATED_NFT_CONTRACTS_TYPE =
@@ -100,36 +93,6 @@ object VeWorldAPIClient {
         }
 
         throw Exception("Indexer health check failed")
-    }
-
-    fun getBlock(revision: String): IndexedBlock {
-        return getRequest("$API_URL/blocks/$revision", BLOCK_TYPE)
-    }
-
-    fun getClauses(
-        address: String,
-        page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
-    ): PaginatedResponse<IndexedClause> {
-        return getRequest(
-            "$API_URL/clauses?address=${address}&page=$page&size=$size",
-            PAGINATED_CLAUSE_TYPE
-        )
-    }
-
-    fun getContract(address: String): IndexedContract {
-        return getRequest("$API_URL/contracts/$address", CONTRACT_TYPE)
-    }
-
-    fun getContractForCreator(
-        address: String,
-        page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
-    ): PaginatedResponse<IndexedContract> {
-        return getRequest(
-            "$API_URL/contracts?address=$address&page=$page&size=$size",
-            PAGINATED_CONTRACTS_TYPE
-        )
     }
 
     fun getNfts(

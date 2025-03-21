@@ -118,6 +118,7 @@ class HistoryService(
             outputToken = event.params.getAsString("outputToken"),
             inputValue = event.params.getAsString("inputValue"),
             outputValue = event.params.getAsString("outputValue"),
+            tokenAddress = event.params.getAsString("tokenAddress"),
         )
     }
 
