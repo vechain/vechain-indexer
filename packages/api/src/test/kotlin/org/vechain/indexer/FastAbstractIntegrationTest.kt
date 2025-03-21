@@ -27,45 +27,29 @@ import org.vechain.indexer.utils.JsonUtils
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class FastAbstractIntegrationTest {
     protected val TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
-    protected val CONTRACT_TYPE = object : TypeReference<List<IndexedContract>>() {}
     protected val NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
-    protected val BLOCKS_TYPE = object : TypeReference<List<IndexedBlock>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
-    protected val CLAUSES_TYPE = object : TypeReference<List<IndexedClause>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var contractRepository: ContractRepository
-
     @Autowired lateinit var nftRepository: NFTRepository
 
-    @Autowired lateinit var blockRepository: BlockRepository
-
     @Autowired lateinit var transferEventRepository: TransferEventRepository
-
-    @Autowired lateinit var clauseRepository: ClauseRepository
 
     @BeforeAll
     fun setup() {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
-        val contracts: List<IndexedContract> =
-            loadDataFromResources("/contracts.json", CONTRACT_TYPE)
         val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", NFT_TYPE)
-        val blocks: List<IndexedBlock> = loadDataFromResources("/blocks.json", BLOCKS_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
-        val clauses: List<IndexedClause> = loadDataFromResources("/clauses.json", CLAUSES_TYPE)
 
         transactionRepository.saveAll(transactions)
-        contractRepository.saveAll(contracts)
         nftRepository.saveAll(nfts)
-        blockRepository.saveAll(blocks)
         transferEventRepository.saveAll(transferEvents)
-        clauseRepository.saveAll(clauses)
     }
 
     /** Load json files from resources */

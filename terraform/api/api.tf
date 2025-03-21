@@ -250,18 +250,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.slack_webhook_url
     },
     {
-      name  = "INDEXER_START_BLOCK_BLOCKS"
-      value = each.value.indexer.start_block.blocks
-    },
-    {
-      name  = "INDEXER_START_BLOCK_CLAUSES"
-      value = each.value.indexer.start_block.clauses
-    },
-    {
-      name  = "INDEXER_START_BLOCK_CONTRACTS"
-      value = each.value.indexer.start_block.contracts
-    },
-    {
       name  = "INDEXER_START_BLOCK_NFTS"
       value = each.value.indexer.start_block.nfts
     },
@@ -278,22 +266,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.history
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_BLOCKS"
-      value = each.value.indexer.sync_logger_interval.blocks
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_CLAUSES"
-      value = each.value.indexer.sync_logger_interval.clauses
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_CONTRACTS"
-      value = each.value.indexer.sync_logger_interval.contracts
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_FUNGIBLE_TOKENS"
-      value = each.value.indexer.sync_logger_interval.fungibleTokens
-    },
-    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
       value = each.value.indexer.sync_logger_interval.nfts
     },
@@ -304,6 +276,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
       value = each.value.indexer.sync_logger_interval.transfers
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
+      value = each.value.indexer.sync_logger_interval.history
     },
     {
       name  = "PRUNER_ENABLED"

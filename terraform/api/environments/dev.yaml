@@ -53,26 +53,16 @@ enabled_nets:
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        blocks:                     0
-        clauses:                    751
-        contracts:                  409987
-        fungibleTokens:             0
         nfts:                       1304112
         transactions:               751
         transfers:                  37840
         history:                    751
       sync_logger_interval:
-        blocks:                     5000
-        clauses:                    5000
-        contracts:                  5000
-        fungibleTokens:             5000
-        nfts:                       5000
-        transactions:               5000
-        transfers:                  5000
-        history:                    5000
+        nfts:                       1000
+        transactions:               1000
+        transfers:                  1000
+        history:                    1000
       sync_block_batch_size:
-        contracts:                  100
-        fungibleTokens:             100
         nfts:                       100
         transfers:                  100
       pruner:
@@ -124,26 +114,16 @@ enabled_nets:
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        blocks:                     0
-        clauses:                    15034
-        contracts:                  15101
-        fungibleTokens:             0
         nfts:                       1042259
         transactions:               15034
         transfers:                  15034
         history:                    15034
       sync_logger_interval:
-        blocks:                     5000
-        clauses:                    5000
-        contracts:                  5000
-        fungibleTokens:             5000
-        nfts:                       5000
-        transactions:               5000
-        transfers:                  5000
-        history:                    5000
+        nfts:                       1000
+        transactions:               1000
+        transfers:                  1000
+        history:                    1000
       sync_block_batch_size:
-        contracts:                  100
-        fungibleTokens:             100
         nfts:                       100
         transfers:                  100
       pruner:
