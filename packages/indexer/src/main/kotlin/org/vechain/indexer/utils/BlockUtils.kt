@@ -2,7 +2,6 @@ package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedClause
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.thor.model.*
@@ -12,16 +11,6 @@ object BlockUtils {
     /** Get all confirmed transactions from a block */
     private fun confirmedTransactions(block: Block): List<Transaction> =
         block.transactions.filter { !it.reverted }
-
-    /**
-     * Get all clauses from a block, paired with the transaction that created it.
-     *
-     * DOES NOT include reverted TXs
-     */
-    fun getAllClauses(block: Block): List<IndexedClause> =
-        confirmedTransactions(block).flatMap { tx ->
-            tx.clauses.mapIndexed { idx, cl -> IndexedClause(block, tx, cl, idx) }
-        }
 
     /**
      * Get all outputs from a block, paired with the transaction that created it.
