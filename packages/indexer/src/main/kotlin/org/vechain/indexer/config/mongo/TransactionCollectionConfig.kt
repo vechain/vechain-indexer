@@ -18,8 +18,6 @@ open class TransactionCollectionConfig(mongoTemplate: MongoTemplate) :
 
     @PostConstruct
     override fun initCollection() {
-        logger.info("Initializing collection ${modelObj.simpleName}")
-
         ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
@@ -50,7 +48,5 @@ open class TransactionCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
         )
-
-        logger.info("Indexes for ${modelObj.simpleName} initialized successfully")
     }
 }

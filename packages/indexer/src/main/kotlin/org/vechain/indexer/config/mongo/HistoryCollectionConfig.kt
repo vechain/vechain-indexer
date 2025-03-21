@@ -18,8 +18,6 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
 
     @PostConstruct
     override fun initCollection() {
-        logger.info("Initializing collection ${modelObj.simpleName}")
-
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
@@ -81,7 +79,5 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("blockTimestamp", Sort.Direction.DESC)
                 .on("eventName", Sort.Direction.ASC)
         )
-
-        logger.info("Indexes for ${modelObj.simpleName} initialized successfully")
     }
 }
