@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.model.IndexedTransferEvent
 
 @Profile("transfer-events")
 @Configuration
@@ -13,17 +14,17 @@ open class TransferIndexConfig(private val mongoTemplate: MongoTemplate) : Index
 
     @PostConstruct
     override fun initIndexes() {
-        val transferCollection = "transfer_events"
+        val modelObj = IndexedTransferEvent::class.java
 
         // Ensure Transfer Events indexes
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index().named("transfer_blockNumber_-1").on("blockNumber", Sort.Direction.DESC)
             )
 
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("transfer_to_1_blockNumber_-1_txId_-1__id_-1")
@@ -34,7 +35,7 @@ open class TransferIndexConfig(private val mongoTemplate: MongoTemplate) : Index
             )
 
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("transfer_from_1_blockNumber_-1_txId_-1__id_-1")
@@ -45,7 +46,7 @@ open class TransferIndexConfig(private val mongoTemplate: MongoTemplate) : Index
             )
 
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("transfer_tokenAddress_1_blockNumber_-1_txId_-1__id_-1")
@@ -56,7 +57,7 @@ open class TransferIndexConfig(private val mongoTemplate: MongoTemplate) : Index
             )
 
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named(
@@ -71,7 +72,7 @@ open class TransferIndexConfig(private val mongoTemplate: MongoTemplate) : Index
             )
 
         mongoTemplate
-            .indexOps(transferCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named(

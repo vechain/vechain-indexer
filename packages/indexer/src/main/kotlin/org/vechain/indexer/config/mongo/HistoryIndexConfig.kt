@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.model.IndexedHistoryEvent
 
 @Profile("history-events")
 @Configuration
@@ -13,14 +14,14 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
 
     @PostConstruct
     override fun initIndexes() {
-        val collection = "history_events"
+        val modelObj = IndexedHistoryEvent::class.java
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(Index().named("blockNumber_1").on("blockNumber", Sort.Direction.ASC))
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("to_1_contractAddress_1_blockTimestamp_-1")
@@ -30,7 +31,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("from_1_contractAddress_1_blockTimestamp_-1")
@@ -40,7 +41,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("origin_1_contractAddress_1_blockTimestamp_-1")
@@ -50,7 +51,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("from_1_blockTimestamp_-1_eventName_1")
@@ -60,7 +61,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("to_1_blockTimestamp_-1_eventName_1")
@@ -70,7 +71,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("origin_1_blockTimestamp_-1_eventName_1")
@@ -80,7 +81,7 @@ open class HistoryIndexConfig(private val mongoTemplate: MongoTemplate) : IndexC
             )
 
         mongoTemplate
-            .indexOps(collection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("gasPayer_1_blockTimestamp_-1_eventName_1")

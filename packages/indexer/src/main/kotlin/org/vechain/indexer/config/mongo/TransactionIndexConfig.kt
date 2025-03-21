@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.model.IndexedTransaction
 
 @Profile("transactions")
 @Configuration
@@ -13,15 +14,15 @@ open class TransactionIndexConfig(private val mongoTemplate: MongoTemplate) : In
 
     @PostConstruct
     override fun initIndexes() {
-        val transactionCollection = "transactions"
+        val modelObj = IndexedTransaction::class.java
 
         // Ensure Transaction indexes
         mongoTemplate
-            .indexOps(transactionCollection)
+            .indexOps(modelObj)
             .ensureIndex(Index().named("tx_blockNumber_-1").on("blockNumber", Sort.Direction.DESC))
 
         mongoTemplate
-            .indexOps(transactionCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("tx_origin_1_blockNumber_-1__id_-1")
@@ -31,7 +32,7 @@ open class TransactionIndexConfig(private val mongoTemplate: MongoTemplate) : In
             )
 
         mongoTemplate
-            .indexOps(transactionCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("tx_gasPayer_1_blockNumber_-1__id_-1")
@@ -41,7 +42,7 @@ open class TransactionIndexConfig(private val mongoTemplate: MongoTemplate) : In
             )
 
         mongoTemplate
-            .indexOps(transactionCollection)
+            .indexOps(modelObj)
             .ensureIndex(
                 Index()
                     .named("tx_origin_1_gasPayer_1_blockNumber_-1__id_-1")
