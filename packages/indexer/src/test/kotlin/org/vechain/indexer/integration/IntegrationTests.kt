@@ -30,7 +30,11 @@ class IntegrationTests : AbstractIntegrationTest() {
         val collections = mongoOps.collectionNames
 
         collections
-            .filter { !changeLogCollections.contains(it) && !it.endsWith("archives") }
+            .filter {
+                !changeLogCollections.contains(it) &&
+                    !it.endsWith("archives") &&
+                    !it.endsWith("blacklist")
+            }
             .forEach { collection ->
                 mongoOps.count(Query(), collection).let { count ->
                     expect {
