@@ -23,9 +23,9 @@ open class NFTRepositoryImpl(
 
         val lookupBlacklist =
             Aggregation.lookup(
-                "nft_blacklist", // collection to join
+                BLACKLIST_COLLECTION, // collection to join
                 CONTRACT_ADDRESS, // local field
-                CONTRACT_ADDRESS, // foreign field
+                "_id", // foreign field
                 "blacklistMatch" // output field
             )
 
@@ -106,7 +106,7 @@ open class NFTRepositoryImpl(
         val matchBase = Aggregation.match(baseCriteria)
 
         val lookupBlacklist =
-            Aggregation.lookup("blacklist", CONTRACT_ADDRESS, CONTRACT_ADDRESS, "blacklistMatch")
+            Aggregation.lookup(BLACKLIST_COLLECTION, CONTRACT_ADDRESS, "_id", "blacklistMatch")
 
         val excludeBlacklisted = Aggregation.match(Criteria.where("blacklistMatch").size(0))
 
@@ -132,6 +132,7 @@ open class NFTRepositoryImpl(
 
     companion object {
         val NFTS_COLLECTION = IndexedNFT::class.java
+        const val BLACKLIST_COLLECTION = "nft_blacklist"
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
         val BLOCK_NUMBER = IndexedNFT::blockNumber.name
