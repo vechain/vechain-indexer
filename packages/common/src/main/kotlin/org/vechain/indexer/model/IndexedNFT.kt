@@ -38,3 +38,14 @@ constructor(
     @Id override val id: String,
     override val data: IndexedNFT,
 ) : Archive<IndexedNFT>
+
+@Document("nft_blacklist")
+@JsonView(Views.Public::class)
+data class NFTBlacklist
+@ConstructorBinding
+constructor(
+    @Id val contractAddress: String,
+    override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
+) : IndexedDocument
