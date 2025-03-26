@@ -37,4 +37,18 @@ object ParamUtils {
                 else -> null
             }
         }
+
+    /**
+     * Retrieves a value as a Boolean from a parameter map.
+     * - Returns null if the key does not exist.
+     * - Converts String values to Boolean if possible.
+     */
+    fun GenericEventParameters.getAsBoolean(key: String): Boolean? =
+        this.params[key]?.let {
+            when (it) {
+                is Boolean -> it
+                is String -> it.toBoolean()
+                else -> null
+            }
+        }
 }

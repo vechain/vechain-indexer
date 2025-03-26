@@ -52,8 +52,11 @@ enabled_nets:
       spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events,history-events"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
+      contract:
+        nft_blacklist: 0x14091CC9Ae249f26EaF41a5A21207931162A2826
       start_block:
         nfts:                       1304112
+        nft_blacklist:              21245914
         transactions:               751
         transfers:                  37840
         history:                    751
@@ -113,8 +116,11 @@ enabled_nets:
       spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events,history-events"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
+      contract:
+        nft_blacklist:              0x07310cECa66aD36A0dc02A142dF28B81a653107E
       start_block:
         nfts:                       1042259
+        nft_blacklist:              21294907
         transactions:               15034
         transfers:                  15034
         history:                    15034
