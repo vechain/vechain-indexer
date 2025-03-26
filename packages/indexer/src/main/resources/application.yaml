@@ -48,8 +48,11 @@ businessEvents:
   path: ${BUSINESS_EVENTS_PATH:businessEvents}
 
 indexer:
+  contract:
+    nft_blacklist: ${CONTRACT_NFT_BLACKLIST:0}
   startBlock:
     nfts: ${INDEXER_START_BLOCK_NFTS:0}
+    nft_blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}

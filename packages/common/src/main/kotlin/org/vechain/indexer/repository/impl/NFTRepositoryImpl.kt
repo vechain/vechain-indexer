@@ -7,9 +7,11 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
 import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("nft-events")
@@ -21,13 +23,7 @@ open class NFTRepositoryImpl(
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String> {
         val matchOwner = Aggregation.match(Criteria.where(OWNER).`is`(owner))
 
-        val lookupBlacklist =
-            Aggregation.lookup(
-                BLACKLIST_COLLECTION, // collection to join
-                CONTRACT_ADDRESS, // local field
-                "_id", // foreign field
-                "blacklistMatch" // output field
-            )
+        val lookupBlacklist = blacklistLookupWithPipeline()
 
         val excludeBlacklisted = Aggregation.match(Criteria.where("blacklistMatch").size(0))
 
@@ -81,7 +77,6 @@ open class NFTRepositoryImpl(
         pageable: Pageable
     ): Slice<IndexedNFT> {
         val criteria = Criteria.where(OWNER).`is`(owner).and(CONTRACT_ADDRESS).`is`(contractAddress)
-
         return findFilteredNFTs(criteria, pageable)
     }
 
@@ -104,12 +99,8 @@ open class NFTRepositoryImpl(
 
     private fun findFilteredNFTs(baseCriteria: Criteria, pageable: Pageable): Slice<IndexedNFT> {
         val matchBase = Aggregation.match(baseCriteria)
-
-        val lookupBlacklist =
-            Aggregation.lookup(BLACKLIST_COLLECTION, CONTRACT_ADDRESS, "_id", "blacklistMatch")
-
+        val lookupBlacklist = blacklistLookupWithPipeline()
         val excludeBlacklisted = Aggregation.match(Criteria.where("blacklistMatch").size(0))
-
         val sort = Aggregation.sort(pageable.sort)
 
         val aggregation =
@@ -130,9 +121,40 @@ open class NFTRepositoryImpl(
         return buildResultsSlice(results, pageable)
     }
 
+    private fun blacklistLookupWithPipeline(): AggregationOperation {
+        return AggregationOperation {
+            Document(
+                "\$lookup",
+                Document()
+                    .append("from", BLACKLIST_COLLECTION)
+                    .append("let", Document().append("contract", "\$$CONTRACT_ADDRESS"))
+                    .append(
+                        "pipeline",
+                        listOf(
+                            Document(
+                                "\$match",
+                                Document(
+                                    "\$expr",
+                                    Document(
+                                        "\$and",
+                                        listOf(
+                                            Document("\$eq", listOf("\$_id", "\$\$contract")),
+                                            Document("\$eq", listOf("\$$IS_BLACKLISTED", true))
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                    .append("as", "blacklistMatch")
+            )
+        }
+    }
+
     companion object {
         val NFTS_COLLECTION = IndexedNFT::class.java
         const val BLACKLIST_COLLECTION = "nft_blacklist"
+        val IS_BLACKLISTED = NFTBlacklist::isBlacklisted.name
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
         val BLOCK_NUMBER = IndexedNFT::blockNumber.name

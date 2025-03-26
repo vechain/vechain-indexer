@@ -7,34 +7,30 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.thor.model.Views
 
-@Document("nfts")
+@Document("nft_blacklist")
 @JsonView(Views.Public::class)
-data class IndexedNFT
+data class NFTBlacklist
 @ConstructorBinding
 constructor(
-    /** sha1 hash of `${contractAddress}-${tokenId}` */
-    @Id val id: String,
+    @Id val contractAddress: String,
     @JsonView(Views.Internal::class) override val version: Int,
-    val tokenId: String,
-    val contractAddress: String,
-    val owner: String,
-    val txId: String,
-    override val blockNumber: Long,
+    val isBlacklisted: Boolean,
     override val blockId: String,
+    override val blockNumber: Long,
     override val blockTimestamp: Long,
 ) : VersionedDocument {
 
     @JsonIgnore
     override fun getDocumentId(): String {
-        return id
+        return contractAddress
     }
 }
 
-@Document("nft_archives")
+@Document("nft_blacklist_archives")
 @JsonView(Views.Public::class)
-data class NFTArchive
+data class NFTBlacklistArchive
 @ConstructorBinding
 constructor(
     @Id override val id: String,
-    override val data: IndexedNFT,
-) : Archive<IndexedNFT>
+    override val data: NFTBlacklist,
+) : Archive<NFTBlacklist>

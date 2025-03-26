@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
+import org.vechain.indexer.model.NFTBlacklist
+import org.vechain.indexer.model.NFTBlacklistArchive
 import org.vechain.indexer.service.ArchiveService
 
 @Configuration
@@ -17,4 +19,11 @@ open class ArchiveServiceConfig {
         mongoTemplate: MongoTemplate
     ): ArchiveService<IndexedNFT, NFTArchive> =
         ArchiveService(mongoTemplate, IndexedNFT::class.java, NFTArchive::class.java)
+
+    @Bean
+    @Qualifier("nftBlacklistArchiveService")
+    open fun nftBlacklistArchiveService(
+        mongoTemplate: MongoTemplate
+    ): ArchiveService<NFTBlacklist, NFTBlacklistArchive> =
+        ArchiveService(mongoTemplate, NFTBlacklist::class.java, NFTBlacklistArchive::class.java)
 }
