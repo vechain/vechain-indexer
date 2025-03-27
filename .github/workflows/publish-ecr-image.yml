@@ -77,9 +77,9 @@ jobs:
         with:
           file: Dockerfile
           platforms: ${{ env.imagePlatform }}
-          build-args:
-            - PACKAGE_NAME=${{ matrix.packageName }}
-            - APP_VERSION=${{ env.versionTag }}
+          build-args: |
+            PACKAGE_NAME=${{ matrix.packageName }}
+            APP_VERSION=${{ env.versionTag }}
           push: true
           context: ${{ env.workingDirectory }}
           provenance: false
