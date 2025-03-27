@@ -10,15 +10,16 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 open class SwaggerConfig {
 
-    @Value("\${app.version:UNKNOWN}") lateinit var appVersion: String
+    @Value("\${app.version:UNKNOWN}") lateinit var rawVersion: String
 
     @Bean
     open fun customOpenAPI(): OpenAPI {
+        val semver = rawVersion.removePrefix("v.")
         return OpenAPI()
             .info(
                 Info()
                     .title("VeWorld Indexer API")
-                    .version(appVersion)
+                    .version(semver)
                     .description("Blockchain data indexed for fast querying")
             )
             .servers(listOf(Server().url("/").description("VeWorld Indexer")))
