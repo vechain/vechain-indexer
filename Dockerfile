@@ -4,6 +4,7 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache curl
 
 ARG PACKAGE_NAME
+ARG APP_VERSION
 
 WORKDIR /usr/app
 
@@ -20,6 +21,10 @@ COPY packages ./packages
 # Placing this after the COPY commands so we can cache builds
 RUN test -n "PACKAGE_NAME"
 ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV APP_VERSION=$APP_VERSION
+
+# Ensure the version is in the form vX.Y.Z
+RUN echo "$APP_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' || (echo "APP_VERSION $APP_VERSION is not of the form vX.Y.Z" && exit 1)
 
 RUN ./gradlew packages:$PACKAGE_NAME:build -x test
 
@@ -29,10 +34,13 @@ RUN apk update && apk upgrade
 RUN apk add --no-cache curl
 
 ARG PACKAGE_NAME
+ARG APP_VERSION
+
 ENV PACKAGE_NAME=$PACKAGE_NAME
+ENV APP_VERSION=$APP_VERSION
 
 WORKDIR /usr/app
 
 COPY --from=builder /usr/app/packages/$PACKAGE_NAME/build/libs/$PACKAGE_NAME*.jar /usr/app/app.jar
 
-CMD ["java", "-jar", "/usr/app/app.jar"]
+CMD java -Dapp.version=$APP_VERSION -jar /usr/app/app.jar
