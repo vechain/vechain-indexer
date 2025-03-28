@@ -146,7 +146,7 @@ jobs:
 
       - name: Terraform initialize
         id: init
-        run: terraform init
+        run: terraform init -backend-config="environments/${{ inputs.environment }}.config" -reconfigure
 
       - name: Terraform workspace
         id: workspace
