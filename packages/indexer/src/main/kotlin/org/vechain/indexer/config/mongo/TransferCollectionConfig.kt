@@ -73,5 +73,15 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("txId", Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
         )
+
+        ensureIndex(
+            "transfer_to_1_tokenAddress_1_blockNumber_-1_txId_-1__id_-1",
+            Index()
+                .on("to", Sort.Direction.ASC)
+                .on("tokenAddress", Sort.Direction.ASC)
+                .on("blockNumber", Sort.Direction.DESC)
+                .on("txId", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC)
+        )
     }
 }
