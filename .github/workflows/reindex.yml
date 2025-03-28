@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - dev
           - prod-blue
           - prod-green
 
@@ -23,7 +24,7 @@ on:
       dry-run:
         description: "Dry-Run, explain plan without taking actions"
         required: true
-        type: boolean 
+        type: boolean
         default: true
 
       collections:
@@ -80,17 +81,21 @@ jobs:
     steps:
       - name: Check selected color is not live
         run: |
-           if [ ${{ needs.identify-live-color.outputs.testnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'testnet' ]; then            
-             echo "dbcluster=${{ inputs.color }}-Testnet" >> $GITHUB_OUTPUT
-             echo "dead color selected for testnet "
-           else
-             if [ ${{ needs.identify-live-color.outputs.mainnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'mainnet' ]; then            
-               echo "dbcluster=${{ inputs.color }}-Mainnet" >> $GITHUB_OUTPUT
-               echo "dead color selected for mainnet "
+           if [ ${{ inputs.color != 'dev'}}]; then
+             if [ ${{ needs.identify-live-color.outputs.testnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'testnet' ]; then
+               echo "dbcluster=${{ inputs.color }}-Testnet" >> $GITHUB_OUTPUT
+               echo "dead color selected for testnet "
              else
-               echo " ${{ inputs.color }} on ${{ inputs.network }} live in DNS, aborting"
-               exit 1
+               if [ ${{ needs.identify-live-color.outputs.mainnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'mainnet' ]; then
+                 echo "dbcluster=${{ inputs.color }}-Mainnet" >> $GITHUB_OUTPUT
+                 echo "dead color selected for mainnet "
+               else
+                 echo " ${{ inputs.color }} on ${{ inputs.network }} live in DNS, aborting"
+                 exit 1
+               fi
              fi
+           else
+             echo "dbcluster=${{ inputs.color }}-${{ inputs.network }}" >> $GITHUB_OUTPUT
            fi
            echo "dead_color=${{ inputs.color }}" >> $GITHUB_OUTPUT
            echo "ecscluster=${{ inputs.color }}-veworld-cluster" >> $GITHUB_OUTPUT
@@ -100,11 +105,11 @@ jobs:
     needs: [identify-live-color, check-selected-color]
     runs-on: ubuntu-latest
     env:
-      dead_color: ${{ needs.identify-live-color.outputs.dead_color }}
       network: ${{ inputs.network }}
       dry_run: ${{ inputs.dry-run }}
-      dbcluster: ${{ needs.identify-live-color.outputs.dbcluster }}
-      ecscluster: ${{ needs.identify-live-color.outputs.ecscluster }}
+      dead_color: ${{ needs.check-selected-color.outputs.dead_color }}
+      ecscluster: ${{ needs.check-selected-color.outputs.ecscluster }}
+      dbcluster: ${{ needs.check-selected-color.outputs.dbcluster }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -122,20 +127,20 @@ jobs:
                echo "The $dead_color cluster running services, stopping!"
                if [ $dry_run ]; then
                     echo "Dry run, would stop services with "
-                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0 
-                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0 
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0
                else
                     # todo switch to live commands when process proven
-                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0 
-                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0 
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0
                     echo "Waiting 1 minute to let changes apply"
                     sleep 60
                fi
              cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
              if (( $cluster_services > 0 )); then
-               echo "The $ecscluster cluster still running services - can not proceed!" 
+               echo "The $ecscluster cluster still running services - can not proceed!"
                exit 1
-             else 
+             else
                echo "env_ready=true" >> $GITHUB_OUTPUT
              fi
           else
@@ -144,20 +149,20 @@ jobs:
                echo "The $ecscluster services, stopping!"
                if [ $dry_run ]; then
                     echo "Dry run, would stop services with "
-                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0 
-                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0 
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0
                else
                     # todo switch to live commands when process proven
-                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0 
-                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0 
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0
                     echo "Waiting 1 minute to let changes apply"
                     sleep 60
                fi
              cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
              if (( $cluster_services > 0 )); then
-               echo "The $ecscluster still running services - can not proceed!" 
+               echo "The $ecscluster still running services - can not proceed!"
                exit 1
-             else 
+             else
                echo "env_ready=true" >> $GITHUB_OUTPUT
              fi
           fi
@@ -176,7 +181,7 @@ jobs:
         id: restore-dead-env-db
         run: |
           atlas --version
-          echo "on $dead_color, $network, $dry_run, $env_ready."
+          echo "restoring $dbcluster on $dead_color, $network, $dry_run, $env_ready."
           if [ ${{ inputs.restore-point }} != 'none' && $ENV_READY == true ]; then
             snapshot=$(atlas clusters snapshots list $dbcluster | head -${{ inputs.restore-point }} | tail -1 | awk '{ print $1}')
             echo "Snapshot id $snapshot"
@@ -210,10 +215,11 @@ jobs:
               echo "aws lambda invoke --invocation-type RequestResponse --function-name \
                 safeClearCollection --region eu-west-1 --log-type Tail --payload $payload
                 '{ "cluster":"$cs", "Drop":"${{ inputs.collections }}"}'
-               
             else
               # todo switch to live commands when process proven
-
+              echo "aws lambda invoke --invocation-type RequestResponse --function-name \
+                safeClearCollection --region eu-west-1 --log-type Tail --payload $payload
+                '{ "cluster":"$cs", "Drop":"${{ inputs.collections }}"}'
             fi
           else
             echo "reindexing from snapshot"
@@ -230,27 +236,27 @@ jobs:
           if [ $network == 'mainnet' ]; then
             if [ $dry_run ]; then
               echo "Dry run, would start index service with "
-              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1 
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1
             else
               # todo switch to live commands when process proven
-              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1 
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1
               echo "Waiting 1 minute to let changes apply"
               sleep 60
             fi
           else
             if [ $dry_run ]; then
               echo "Dry run, would start index service with "
-              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1 
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1
             else
               # todo switch to live commands when process proven
               echo "Dry run, would start index service with "
-              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1 
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1
               echo "Waiting 1 minute to let changes apply"
               sleep 60
             fi
           fi
           cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
           if (( $cluster_services < 1 )); then
-            echo "The $ecscluster not started running services - manually check!" 
+            echo "The $ecscluster not started running services - manually check!"
             exit 1
           fi
