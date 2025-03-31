@@ -47,8 +47,8 @@ open class NFTEventIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
-        // every 360 blocks sync the blacklist if the indexer is fully synced
-        if (this.status == Status.FULLY_SYNCED && this.currentBlockNumber % 360 == 0L) {
+        // every 100 blocks sync the blacklist if the indexer is fully synced
+        if (this.status == Status.FULLY_SYNCED && this.currentBlockNumber % 100 == 0L) {
             nftBlacklistService.syncBlacklistedNFTs()
         }
 

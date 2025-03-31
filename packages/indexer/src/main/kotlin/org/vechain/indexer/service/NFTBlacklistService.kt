@@ -76,8 +76,11 @@ open class NFTBlacklistService(
     open fun syncBlacklistedNFTs() {
         logger.info("Syncing NFTs with nft_blacklist via raw aggregation pipeline")
 
+        val contracts = findOfSyncContracts()
+
         val pipeline =
             listOf(
+                Document("\$match", Document("_id", Document("\$in", contracts))),
                 Document(
                     "\$lookup",
                     Document()
@@ -129,6 +132,59 @@ open class NFTBlacklistService(
         mongoTemplate.db.runCommand(command)
 
         logger.info("Successfully synced NFTs with nft_blacklist")
+    }
+
+    open fun findOfSyncContracts(): List<String> {
+        logger.info("Finding contracts with mismatched blacklist status")
+
+        val pipeline =
+            listOf(
+                Document(
+                    "\$lookup",
+                    Document()
+                        .append("from", NFTS_COLLECTION)
+                        .append("localField", "_id")
+                        .append("foreignField", CONTRACT_ADDRESS)
+                        .append("let", Document("expectedFlag", "\$isBlacklisted"))
+                        .append(
+                            "pipeline",
+                            listOf(
+                                Document(
+                                    "\$match",
+                                    Document(
+                                        "\$expr",
+                                        Document(
+                                            "\$ne",
+                                            listOf("\$isBlacklisted", "\$\$expectedFlag")
+                                        )
+                                    )
+                                ),
+                                Document("\$limit", 1)
+                            )
+                        )
+                        .append("as", "mismatches")
+                ),
+                Document("\$match", Document("mismatches.0", Document("\$exists", true))),
+                Document("\$project", Document("_id", 1))
+            )
+
+        val command =
+            Document()
+                .append("aggregate", BLACKLIST_COLLECTION)
+                .append("pipeline", pipeline)
+                .append("cursor", Document())
+
+        val result = mongoTemplate.db.runCommand(command)
+        val docs =
+            result.get("cursor", Document::class.java)?.get("firstBatch") as? List<*>
+                ?: emptyList<Any>()
+
+        val mismatchedContracts =
+            docs.filterIsInstance<Document>().mapNotNull { it.getString("_id") }
+
+        logger.info("Found ${mismatchedContracts.size} mismatched contract(s)")
+
+        return mismatchedContracts
     }
 
     companion object {
