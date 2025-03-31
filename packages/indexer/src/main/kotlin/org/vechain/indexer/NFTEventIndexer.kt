@@ -9,6 +9,7 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
@@ -21,6 +22,7 @@ import org.vechain.indexer.thor.model.TransferLog
 open class NFTEventIndexer(
     private val nftService: NFTService,
     nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
+    private val nftBlacklistService: NFTBlacklistService,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     abiManager: AbiManager,
@@ -45,6 +47,11 @@ open class NFTEventIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
+        // every 360 blocks sync the blacklist if the indexer is fully synced
+        if (this.status == Status.FULLY_SYNCED && this.currentBlockNumber % 360 == 0L) {
+            nftBlacklistService.syncBlacklistedNFTs()
+        }
+
         // Extract any relevant data from the block
         val nftEvents =
             processBlockGenericEvents(
