@@ -13,6 +13,7 @@ object LogsFixtures {
     val LOGS_SEMI_FUNGIBLE_TOKENS = buildLogsFixture("logs/logs_semi_fungible_tokens.json")
     val LOGS_VET_TRANSFER_EVENTS = buildLogsFixture("logs/logs_vet_events.json")
     val LOGS_BATCH_TRANSFERS = buildLogsFixture("logs/logs_batch_transfers.json")
+    val LOGS_BLACKLIST = buildLogsFixture("logs/logs_blacklist.json")
 
     private fun buildLogsFixture(name: String): List<EventLog> {
         val resource =

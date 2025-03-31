@@ -28,6 +28,7 @@ open class NFTEventIndexer(
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.nfts}") startBlock: Long,
     @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
+    @Value("\${indexer.blacklist.interval}") private val blacklistInterval: Int,
     @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.nfts}") private val syncBlockBatchSize: Long,
 ) :
@@ -47,8 +48,8 @@ open class NFTEventIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
-        // every 100 blocks sync the blacklist if the indexer is fully synced
-        if (this.status == Status.FULLY_SYNCED && this.currentBlockNumber % 100 == 0L) {
+        // Sync blacklisted NFTs at a regular interval
+        if (status == Status.FULLY_SYNCED && currentBlockNumber % blacklistInterval == 0L) {
             nftBlacklistService.syncBlacklistedNFTs()
         }
 

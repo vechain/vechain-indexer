@@ -46,6 +46,8 @@ open class NFTBlacklistIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
+        if (events.isEmpty()) return
+
         // Extract any relevant data from the block
         val nftEvents =
             processBlockGenericEvents(

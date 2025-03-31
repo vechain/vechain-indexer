@@ -65,18 +65,13 @@ open class NFTBlacklistService(
     }
 
     /**
-     * This function syncs the nfts collection with the nft_blacklist collection. Items that are
-     * blacklisted in the nft_blacklist collection will be marked as blacklisted in the nfts
-     * collection. The reverse operation is also permitted by setting the direction parameter to
-     * false. By default, it is set to true.
-     *
-     * @param direction true to sync blacklisted items to nfts collection, false to sync
-     *   non-blacklisted items
+     * Syncs the NFTs with the blacklist. Ensures that the `isBlacklisted` flag on the `nfts`
+     * collection is in sync with the nft_blacklist collection.
      */
     open fun syncBlacklistedNFTs() {
-        logger.info("Syncing NFTs with nft_blacklist via raw aggregation pipeline")
+        logger.info("Syncing NFTs with blacklist")
 
-        val contracts = findOfSyncContracts()
+        val contracts = findContractsToUpdate()
 
         val pipeline =
             listOf(
@@ -131,10 +126,15 @@ open class NFTBlacklistService(
 
         mongoTemplate.db.runCommand(command)
 
-        logger.info("Successfully synced NFTs with nft_blacklist")
+        logger.info("Successfully synced NFTs with blacklist")
     }
 
-    open fun findOfSyncContracts(): List<String> {
+    /**
+     * Looks for blacklisted contracts that have an NFT with a different blacklist status. This
+     * function is used to improve the performance of the syncBlacklistedNFTs function by reducing
+     * the size of the data that needs to be processed by the pipeline.
+     */
+    open fun findContractsToUpdate(): List<String> {
         logger.info("Finding contracts with mismatched blacklist status")
 
         val pipeline =
@@ -182,7 +182,7 @@ open class NFTBlacklistService(
         val mismatchedContracts =
             docs.filterIsInstance<Document>().mapNotNull { it.getString("_id") }
 
-        logger.info("Found ${mismatchedContracts.size} mismatched contract(s)")
+        logger.info("Found ${mismatchedContracts.size} blacklisted contracts to update")
 
         return mismatchedContracts
     }
