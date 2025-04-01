@@ -90,7 +90,7 @@ module "ecs-cluster" {
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
-  cidr    = data.terraform_remote_state.vpc.outputs.vpc_ipv4
+  cidr    = local.env.cidr
 }
 
 ################################################################################
