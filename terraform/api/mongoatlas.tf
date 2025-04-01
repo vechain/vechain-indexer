@@ -25,14 +25,13 @@ locals {
 }
 
 module "mongoatlas-main-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
-
+  source     = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
   secret_id  = local.env.enabled_nets.main.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key  = false
   slack_api_token = local.env.slack_secret_arn
-  alerts = {
+  alerts = startswith(local.env.environment, "dev") ? {} : {
     alert_type_1 = {
       event_type = "HOST_MONGOT_CRASHING_OOM"
       enabled    = true
@@ -63,7 +62,8 @@ module "mongoatlas-main-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster = startswith(local.env.environment, "prod") ? true : false
+  enable_cluster = try(local.env.enabled_nets.test.mongodb.type,false) == "atlas" ? true : false
+
   cluster_config = {
     cluster_name                 = "${local.env.environment}-Mainnet"
     disk_size_gb                 = local.env.enabled_nets.main.mongodb.disk_size_gb
@@ -101,14 +101,13 @@ module "mongoatlas-main-net" {
 }
 
 module "mongoatlas-test-net" {
-  source = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
-
+  source     = "git::git@github.com:vechainfoundation/terraform_infrastructure_modules.git//mongoatlas?ref=v.3.1.1"
   secret_id  = local.env.enabled_nets.test.mongodb.secret_arn
   project_id = local.env.mongoatlas_project_id # MongoDB Atlas project ID
 
   create_api_key  = false
   slack_api_token = local.env.slack_secret_arn
-  alerts = {
+  alerts = startswith(local.env.environment, "dev") ? {} : {
     alert_type_1 = {
       event_type = "HOST_MONGOT_CRASHING_OOM"
       enabled    = true
@@ -139,7 +138,7 @@ module "mongoatlas-test-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster = startswith(local.env.environment, "prod") ? true : false
+  enable_cluster = try(local.env.enabled_nets.test.mongodb.type,false) == "atlas" ? true : false
   cluster_config = {
     cluster_name                 = "${local.env.environment}-Testnet"
     disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb

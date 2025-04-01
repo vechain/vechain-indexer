@@ -30,60 +30,6 @@ variable "mongo_credential_trigger" {
 }
 
 ############################################################################################################
-# AWS SSM Config Manager
-############################################################################################################
-
-resource "aws_config_config_rule" "config_rule" {
-  count = startswith(local.env.environment, "prod") ? 0 : 1
-  name  = "${local.env.environment}-${var.project}-mongodb-config-rule"
-
-  source {
-    owner             = "AWS"
-    source_identifier = "S3_BUCKET_VERSIONING_ENABLED"
-  }
-
-  depends_on = [aws_config_configuration_recorder.config_recorder]
-}
-
-resource "aws_config_configuration_recorder" "config_recorder" {
-  count    = startswith(local.env.environment, "prod") ? 0 : 1
-  name     = "example"
-  role_arn = aws_iam_role.config_role.arn
-}
-
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["config.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role" "config_role" {
-  name               = "${local.env.environment}-${var.project}-mongodb-config-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
-}
-
-data "aws_iam_policy_document" "config_policy" {
-  statement {
-    effect    = "Allow"
-    actions   = ["config:Put*"]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "config_role_policy" {
-  name   = "${local.env.environment}-${var.project}-mongodb-config-role-policy"
-  role   = aws_iam_role.config_role.id
-  policy = data.aws_iam_policy_document.config_policy.json
-}
-
-############################################################################################################
 # MongoDB security group
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
@@ -410,7 +356,7 @@ resource "aws_iam_instance_profile" "ssm_instance_profile" {
 
 resource "aws_route53_record" "mongodb_node" {
   for_each = { for i, v in local.env.enabled_nets : i => v.mongodb if v.mongodb.type == "ec2" }
-  zone_id  = "Z05174081HJUXVROTDH6I"
+  zone_id  = each.value.zoneid
   name     = each.value.fqdn
   type     = "A"
   records  = [aws_instance.mongodb_cluster[each.key].private_ip]

@@ -1,4 +1,4 @@
-name: Reindex dead cluster
+name: Reindex non live cluster
 
 on:
   workflow_dispatch:
@@ -82,13 +82,13 @@ jobs:
       - name: Check selected color is not live
         run: |
            if [ ${{ inputs.color != 'dev'}}]; then
-             if [ ${{ needs.identify-live-color.outputs.testnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'testnet' ]; then
+             if [ ${{ needs.identify-live-color.outputs.testnet_live_color }} != ${{ inputs.color }} && ${{ inputs.network }} == 'testnet' ]; then
                echo "dbcluster=${{ inputs.color }}-Testnet" >> $GITHUB_OUTPUT
-               echo "dead color selected for testnet "
+               echo "non live color selected for testnet "
              else
-               if [ ${{ needs.identify-live-color.outputs.mainnet_dead_color }} == ${{ inputs.color }} && ${{ inputs.network }} == 'mainnet' ]; then
+               if [ ${{ needs.identify-live-color.outputs.mainnet_live_color }} != ${{ inputs.color }} && ${{ inputs.network }} == 'mainnet' ]; then
                  echo "dbcluster=${{ inputs.color }}-Mainnet" >> $GITHUB_OUTPUT
-                 echo "dead color selected for mainnet "
+                 echo "non live color selected for mainnet "
                else
                  echo " ${{ inputs.color }} on ${{ inputs.network }} live in DNS, aborting"
                  exit 1
@@ -101,6 +101,7 @@ jobs:
            echo "ecscluster=${{ inputs.color }}-veworld-cluster" >> $GITHUB_OUTPUT
 
   reindex:
+    environment: inputs.color 
     name: stop dead colour ecs services
     needs: [identify-live-color, check-selected-color]
     runs-on: ubuntu-latest
