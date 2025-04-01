@@ -5,8 +5,16 @@ help:
 
 test: #@ Run all the tests.
 	./gradlew cleanTest test
-test-e2e: #@ Run all the end-to-end tests.
+test-e2e: db-all #@ Run all the end-to-end tests.
+	@set -e; \
+    trap 'make test-e2e-clean' EXIT; \
+	rm -R packages/e2e/thor/data; \
+	tar -xzf packages/e2e/thor/data-for-e2e-tests.gz -C packages/e2e/thor; \
+	docker compose -f packages/e2e/docker-compose.yaml up --build -d --wait; \
 	./gradlew clean :package:e2e:test
+test-e2e-clean: #@ Cleanup e2e test
+	docker compose -f packages/e2e/docker-compose.yaml down
+	make db-clean
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
 test-indexer: #@ Run all the indexer tests.
@@ -66,11 +74,11 @@ build-k6: #@ Build the K6 docker image.
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
-	make infra-up infra-setup app-up
+	make db-up db-setup app-up
 clean: #@ Clean all the infrastructure and the application data.
-	make load-test-clean app-down infra-clean load-test-clean
+	make load-test-clean app-down db-clean load-test-clean
 down: #@ Stop all the infrastructure and the application.
-	make app-down infra-down
+	make app-down db-down
 
 # Application
 app-up: #@ Start the application.
@@ -80,40 +88,28 @@ app-down: #@ Stop the application.
 app-logs: #@ Attach to the application logs.
 	docker compose logs -f
 
-# Infra
-infra-all: #@ Remove, clean and start all the infrastructure.
-	make infra-down infra-clean infra-up infra-setup
-infra-clean: #@ Clean all the infrastructure data
-	make db-clean thor-clean
-infra-down: #@ Stop all the infrastructure.
-	make db-down thor-down
-infra-setup: #@ Setup all the infrastructure.
-	make db-setup
-infra-up: #@ Start all the infrastructure.
-	make db-up & make thor-up
-
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
-DB_MAKE_KEY=mkdir -p database/keys; openssl rand -base64 756 > database/keys/keyfile;
+DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile
 DB_REMOVE_KEY=rm -f -R database/keys
 DB_SETUP_COMMAND=docker compose -f database/docker-compose-mongo-setup.yaml
 MONGO_URL=mongodb://indexer:password@localhost:27017/vechain?authSource=admin
 BACKUP_DIR=database/backups
 
-db-all: #@ Remove, clean and start all the database.
-	make db-down db-clean db-up db-setup
-db-clean: #@ Clean all the database data
+db-all: #@ Remove, clean and start the database (Docker).
+	make db-clean db-up db-setup
+db-up: db-keyfile-create #@ Start all the database (Docker)
+	$(DB_COMMAND) up -d --wait
+db-setup: #@ Setup all the database (Docker)
+	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
+db-clean: #@ Clean all the database data (Docker)
 	$(DB_COMMAND) down -v --remove-orphans;
-db-down: #@ Stop all the database.
+db-down: #@ Stop all the database (Docker)
 	$(DB_COMMAND) down
 db-keyfile-create: #@ Generate the keyfile for the database.
 	$(DB_MAKE_KEY)
 db-keyfile-remove: #@ Remove the keyfile for the database.
 	$(DB_REMOVE_KEY)
-db-up: #@ Start all the database.
-	$(DB_COMMAND) up -d --wait
-db-setup: #@ Setup all the database.
-	$(DB_SETUP_COMMAND) up --build; $(DB_SETUP_COMMAND) rm --force
 db-backup: #@ Backup MongoDB database using Docker (Compressed)
 	# Ensure backup directory exists and is writable
 	mkdir -p $(PWD)/$(BACKUP_DIR)

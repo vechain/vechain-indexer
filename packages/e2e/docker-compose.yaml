@@ -2,13 +2,13 @@ services:
 
   vechain-indexer:
     build:
-      context: .
+      context: ../../
       args:
         PACKAGE_NAME: indexer
         APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
     container_name: vechain-indexer
     restart: "no"
-    env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
+    env_file: indexer.env
     healthcheck:
       test: "curl --fail localhost:8080/actuator/health"
       interval: 20s
@@ -24,14 +24,14 @@ services:
 
   vechain-indexer-api:
     build:
-      context: .
+      context: ../../
       args:
         PACKAGE_NAME: api
         APP_VERSION: "v.0.0.1" # This is hardcode for the local env but will pick up the build tag version when building in the pipeline
     container_name: vechain-indexer-api
     restart: "no"
     hostname: vechain-indexer-api
-    env_file: ${API_ENV_FILE_NAME:-packages/api/.env}
+    env_file: api.env
     healthcheck:
       test: "curl --fail localhost:8080/actuator/health"
       interval: 20s
@@ -44,6 +44,24 @@ services:
     networks:
       - vechain
       - vechain-database
+
+  thor-solo:
+    hostname: thor-solo
+    build:
+      dockerfile: thor/Dockerfile
+      context: ./
+    user: root
+    ports:
+      - "8669:8669"
+      - "11235:11235"
+    healthcheck:
+      test: curl --fail 0.0.0.0:8669/blocks/0 || exit 1
+      interval: 2s
+      retries: 30
+    volumes:
+      - ./thor/data:/data/thor
+    networks:
+      - vechain
 
 networks:
   vechain:

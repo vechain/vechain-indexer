@@ -9,7 +9,6 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
@@ -22,13 +21,11 @@ import org.vechain.indexer.thor.model.TransferLog
 open class NFTEventIndexer(
     private val nftService: NFTService,
     nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
-    private val nftBlacklistService: NFTBlacklistService,
     thorClient: ThorClient,
     nftRepository: NFTRepository,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.nfts}") startBlock: Long,
     @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
-    @Value("\${indexer.blacklist.interval}") private val blacklistInterval: Int,
     @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.nfts}") private val syncBlockBatchSize: Long,
 ) :
@@ -48,11 +45,6 @@ open class NFTEventIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
-        // Sync blacklisted NFTs at a regular interval
-        if (status == Status.FULLY_SYNCED && currentBlockNumber % blacklistInterval == 0L) {
-            nftBlacklistService.syncBlacklistedNFTs()
-        }
-
         // Extract any relevant data from the block
         val nftEvents =
             processBlockGenericEvents(

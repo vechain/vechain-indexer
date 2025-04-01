@@ -308,6 +308,10 @@ module "ecs-backend-service" {
     {
       name = "BLACKLIST_INTERVAL"
       value = each.value.indexer.blacklist.interval
+    },
+    {
+      name = "BLACKLIST_INITIAL_DELAY"
+      value = each.value.indexer.blacklist.initial_delay
     }
   ]
 }

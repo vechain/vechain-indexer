@@ -16,7 +16,6 @@ import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.utils.FileUtils
 
 @ExtendWith(MockKExtension::class)
@@ -41,23 +40,21 @@ internal class NFTEventIndexerTest {
 
     @MockK lateinit var nftBlacklistService: NFTBlacklistService
 
-    private lateinit var indexer: TestableNFTEventIndexer
+    private lateinit var indexer: NFTEventIndexer
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
 
         indexer =
-            TestableNFTEventIndexer(
+            NFTEventIndexer(
                 nftService = nftService,
                 nftArchiveService = archiveService,
-                nftBlacklistService = nftBlacklistService,
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 nftRepository = nftRepository,
                 abiManager = abiManager,
                 startBlock = 0L,
                 prunerRemovalChunkSize = 10000,
-                blacklistInterval = 10,
                 syncLogInterval = 1000L,
                 syncBlockBatchSize = 1000L,
             )
@@ -177,80 +174,5 @@ internal class NFTEventIndexerTest {
         indexer.processLogs(logs, emptyList())
 
         verify(exactly = 1) { nftService.update(updated, existing) }
-    }
-
-    // Ensure that the syncBlacklistedNFTs method is called at the correct interval
-    @Test
-    fun `processLogs - syncBlacklistedNFTs called at interval`() {
-        val logs = emptyList<EventLog>()
-
-        every { nftBlacklistService.syncBlacklistedNFTs() } just Runs
-
-        indexer.setStatusOverride(Status.FULLY_SYNCED)
-        indexer.setCurrentBlockNumberOverride(10L) // Multiple of the blacklist interval
-
-        indexer.processLogs(logs, emptyList())
-
-        verify(exactly = 1) { nftBlacklistService.syncBlacklistedNFTs() }
-    }
-
-    // Ensure that the syncBlacklistedNFTs method is not called if the interval is not met
-    @Test
-    fun `processLogs - syncBlacklistedNFTs not called if interval not met`() {
-        val logs = emptyList<EventLog>()
-
-        indexer.setStatusOverride(Status.FULLY_SYNCED)
-        indexer.setCurrentBlockNumberOverride(1L) // Not a multiple of the blacklist interval
-
-        indexer.processLogs(logs, emptyList())
-
-        verify(exactly = 0) { nftBlacklistService.syncBlacklistedNFTs() }
-    }
-
-    @Test
-    fun `processLogs - syncBlacklistedNFTs not called if status is not FULLY_SYNCED`() {
-        val logs = emptyList<EventLog>()
-
-        indexer.setStatusOverride(Status.SYNCING)
-        indexer.setCurrentBlockNumberOverride(10L) // Multiple of the blacklist interval
-
-        indexer.processLogs(logs, emptyList())
-
-        verify(exactly = 0) { nftBlacklistService.syncBlacklistedNFTs() }
-    }
-}
-
-class TestableNFTEventIndexer(
-    nftService: NFTService,
-    nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
-    nftBlacklistService: NFTBlacklistService,
-    thorClient: DefaultThorClient,
-    nftRepository: NFTRepository,
-    abiManager: AbiManager,
-    startBlock: Long,
-    prunerRemovalChunkSize: Int,
-    blacklistInterval: Int,
-    syncLogInterval: Long,
-    syncBlockBatchSize: Long,
-) :
-    NFTEventIndexer(
-        nftService,
-        nftArchiveService,
-        nftBlacklistService,
-        thorClient,
-        nftRepository,
-        abiManager,
-        startBlock,
-        prunerRemovalChunkSize,
-        blacklistInterval,
-        syncLogInterval,
-        syncBlockBatchSize,
-    ) {
-    fun setStatusOverride(s: Status) {
-        this.status = s
-    }
-
-    fun setCurrentBlockNumberOverride(n: Long) {
-        this.currentBlockNumber = n
     }
 }

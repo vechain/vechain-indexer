@@ -74,7 +74,8 @@ enabled_nets:
         initial_delay: 300000
         removal_chunk_size: 2000
       blacklist:
-        interval:                   '360'
+        interval:                   '180000'
+        initial_delay:              '60000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -139,6 +140,9 @@ enabled_nets:
         interval: 300000
         initial_delay: 300000
         removal_chunk_size: 2000
+      blacklist:
+        interval:                   '180000'
+        initial_delay:              '60000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

@@ -70,4 +70,5 @@ indexer:
     initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
-    interval: ${BLACKLIST_INTERVAL:360}
+    initialDelay: ${BLACKLIST_INITIAL_DELAY:1}
+    interval: ${BLACKLIST_INTERVAL:1800000}

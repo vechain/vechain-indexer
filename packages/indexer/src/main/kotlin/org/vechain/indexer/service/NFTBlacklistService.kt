@@ -104,7 +104,7 @@ open class NFTBlacklistService(
 
         val pipeline =
             listOf(
-                Document("\$match", Document("_id", Document("\$in", contracts))),
+                Document("\$match", Document(CONTRACT_ADDRESS, Document("\$in", contracts))),
                 Document(
                     "\$lookup",
                     Document()
