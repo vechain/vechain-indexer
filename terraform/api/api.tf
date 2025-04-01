@@ -304,6 +304,10 @@ module "ecs-backend-service" {
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
       value = each.value.indexer.pruner.removal_chunk_size
+    },
+    {
+      name = "BLACKLIST_INTERVAL"
+      value = each.value.indexer.blacklist.interval
     }
   ]
 }

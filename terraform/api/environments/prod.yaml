@@ -57,10 +57,12 @@ enabled_nets:
         transfers:                  '37840'
         history:                    '751'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        interval:                   '360'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -103,10 +105,12 @@ enabled_nets:
         transfers:                  '15034'
         history:                    '15034'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        interval:                   '360'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'

@@ -67,10 +67,12 @@ enabled_nets:
         nfts:                       '100'
         transfers:                  '100'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        interval:                   '360'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -126,10 +128,12 @@ enabled_nets:
         nfts:                       '100'
         transfers:                  '100'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        interval:                   '360'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
