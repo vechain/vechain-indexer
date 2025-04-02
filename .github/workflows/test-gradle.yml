@@ -91,8 +91,6 @@ jobs:
       - name: Debug E2E
         if: failure()
         run: |
-          export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
-          export API_ENV_FILE_NAME=packages/api/.env.example
           docker network ls
           docker ps
           docker ps -a

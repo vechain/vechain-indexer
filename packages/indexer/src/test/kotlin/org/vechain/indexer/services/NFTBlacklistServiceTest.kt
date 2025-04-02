@@ -88,7 +88,7 @@ internal class NFTBlacklistServiceTest {
     }
 
     @Test
-    fun `update - should call saveAll with empty lists`() {
+    fun `update - shouldn't call saveAll with empty lists`() {
         val updated = emptyList<NFTBlacklist>()
         val existing = emptyList<NFTBlacklist>()
 
