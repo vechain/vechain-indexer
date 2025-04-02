@@ -61,6 +61,8 @@ val startApp = tasks.register<Exec>("startApp") {
 
         println("ℹ️  Setting BLACKLIST_CONTRACT_ADDRESS=$address")
         environment("BLACKLIST_CONTRACT_ADDRESS", address)
+        environment("API_ENV_FILE_NAME", "packages/e2e/api.env")
+        environment("INDEXER_ENV_FILE_NAME", "packages/e2e/indexer.env")
     }
 
     commandLine(
