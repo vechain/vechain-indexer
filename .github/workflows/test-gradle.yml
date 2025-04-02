@@ -92,7 +92,7 @@ jobs:
         if: failure()
         run: |
           echo "\nℹ️ Docker and compose versions"
-          docker version
+          docker --version
           docker compose version
           echo "\nℹ️ Networks"
           docker network ls
