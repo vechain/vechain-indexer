@@ -95,5 +95,5 @@ task<Exec>("postE2e") {
 
 tasks.test {
     dependsOn("preE2e")
-    finalizedBy("postE2e")
+//    finalizedBy("postE2e")
 }
