@@ -5,16 +5,8 @@ help:
 
 test: #@ Run all the tests.
 	./gradlew cleanTest test
-test-e2e: db-all #@ Run all the end-to-end tests.
-	@set -e; \
-    trap 'make test-e2e-clean' EXIT; \
-	rm -rf packages/e2e/thor/data; \
-	tar -xzf packages/e2e/thor/data-for-e2e-tests.gz -C packages/e2e/thor; \
-	docker compose -f packages/e2e/docker-compose.yaml up --build -d --wait; \
-	./gradlew clean :package:e2e:test
-test-e2e-clean: #@ Cleanup e2e test
-	docker compose -f packages/e2e/docker-compose.yaml down
-	make db-clean
+test-e2e: #@ Run all the end-to-end tests.
+	./gradlew clean :package:e2e:test --stacktrace
 test-api: #@ Run all the API tests.
 	./gradlew clean :package:api:test
 test-indexer: #@ Run all the indexer tests.
