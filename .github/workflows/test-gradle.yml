@@ -96,7 +96,6 @@ jobs:
           docker ps -a
           docker network inspect vechain-database || true
           docker network inspect vechain-thor-e2e || true
-          docker network inspect vechain || true
           docker compose logs
 
       - name: Publish Test Report
