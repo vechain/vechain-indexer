@@ -3,7 +3,7 @@ services:
   vechain-indexer:
     env_file: packages/e2e/indexer.env
     environment:
-      - CONTRACT_NFT_BLACKLIST=${CONTRACT_NFT_BLACKLIST}
+      - BLACKLIST_CONTRACT_ADDRESS=${BLACKLIST_CONTRACT_ADDRESS}
     networks:
       - vechain-e2e
       - vechain-thor-e2e

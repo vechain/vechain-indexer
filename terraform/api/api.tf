@@ -302,7 +302,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.pruner.removal_chunk_size
     },
     {
-      name  = "CONTRACT_NFT_BLACKLIST"
+      name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contractAddress
     },
     {

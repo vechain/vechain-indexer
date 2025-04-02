@@ -12,8 +12,6 @@ services:
       test: curl --fail 0.0.0.0:8669/blocks/0 || exit 1
       interval: 2s
       retries: 30
-    volumes:
-      - thor-volume:/data/thor
     networks:
       - vechain-thor-e2e
 
@@ -35,9 +33,6 @@ services:
       - ./.output/:/app/.output
     networks:
       - vechain-thor-e2e
-
-volumes:
-  thor-volume:
 
 networks:
   vechain-thor-e2e:
