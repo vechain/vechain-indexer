@@ -8,7 +8,7 @@ test: #@ Run all the tests.
 test-e2e: db-all #@ Run all the end-to-end tests.
 	@set -e; \
     trap 'make test-e2e-clean' EXIT; \
-	rm -R packages/e2e/thor/data; \
+	rm -rf packages/e2e/thor/data; \
 	tar -xzf packages/e2e/thor/data-for-e2e-tests.gz -C packages/e2e/thor; \
 	docker compose -f packages/e2e/docker-compose.yaml up --build -d --wait; \
 	./gradlew clean :package:e2e:test
