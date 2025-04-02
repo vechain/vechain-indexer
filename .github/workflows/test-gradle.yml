@@ -1,4 +1,4 @@
-name: Test (Gradle)
+name: Tests
 
 on:
   pull_request:
@@ -49,7 +49,7 @@ jobs:
           java-version: '21'
 
       - name: Unit Test
-        run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
+        run: make test-${{ matrix.package }}
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3

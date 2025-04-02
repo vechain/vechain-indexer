@@ -286,10 +286,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync_logger_interval.history
     },
     {
-      name  = "CONTRACT_NFT_BLACKLIST"
-      value = each.value.indexer.contract.nft_blacklist
-    },
-    {
       name  = "PRUNER_ENABLED"
       value = each.value.indexer.pruner.enabled
     },
@@ -304,6 +300,10 @@ module "ecs-backend-service" {
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
       value = each.value.indexer.pruner.removal_chunk_size
+    },
+    {
+      name  = "CONTRACT_NFT_BLACKLIST"
+      value = each.value.indexer.blacklist.contractAddress
     },
     {
       name = "BLACKLIST_INTERVAL"

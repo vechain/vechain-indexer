@@ -48,8 +48,6 @@ businessEvents:
   path: ${BUSINESS_EVENTS_PATH:businessEvents}
 
 indexer:
-  contract:
-    nft_blacklist: ${CONTRACT_NFT_BLACKLIST:0}
   startBlock:
     nfts: ${INDEXER_START_BLOCK_NFTS:0}
     nft_blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
@@ -70,5 +68,6 @@ indexer:
     initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
+    contract_address: ${CONTRACT_NFT_BLACKLIST:0x14091CC9Ae249f26EaF41a5A21207931162A2826}
     initialDelay: ${BLACKLIST_INITIAL_DELAY:1}
     interval: ${BLACKLIST_INTERVAL:1800000}

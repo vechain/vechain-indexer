@@ -25,7 +25,7 @@ open class NFTBlacklistIndexer(
     repository: NFTBlacklistRepository,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.nft_blacklist}") startBlock: Long,
-    @Value("\${indexer.contract.nft_blacklist}") private val blacklistContract: String,
+    @Value("\${indexer.blacklist.contract_address}") private val blacklistContract: String,
     @Value("\${indexer.pruner.removalChunkSize}") private val prunerRemovalChunkSize: Int,
     @Value("\${indexer.syncLogInterval.nfts}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.nfts}") private val syncBlockBatchSize: Long,
