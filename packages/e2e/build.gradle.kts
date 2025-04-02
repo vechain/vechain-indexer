@@ -11,6 +11,11 @@ val dbSetup = tasks.register<Exec>("dbSetup") {
     commandLine("make", "db-all")
 }
 
+val dbDown = tasks.register<Exec>("dbDown") {
+    workingDir(rootDir)
+    commandLine("make", "db-clean")
+}
+
 val startThor = tasks.register<Exec>("startThor") {
     dependsOn("dbSetup")
     workingDir(rootDir)
@@ -78,9 +83,15 @@ tasks.register("preE2e") {
 }
 
 task<Exec>("postE2e") {
+    dependsOn(dbDown)
     workingDir(rootDir)
     // Not cleaning data in case we need to spin up the containers again and debug
-    commandLine("make", "down")
+    commandLine(
+        "docker", "compose",
+        "-f", "docker-compose.yaml",
+        "-f", "packages/e2e/docker-compose.yaml",
+        "up", "--build", "-d", "--wait"
+    )
 }
 
 tasks.test {
