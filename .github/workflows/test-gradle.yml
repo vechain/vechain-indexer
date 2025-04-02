@@ -37,7 +37,6 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: check-formatting
     strategy:
       matrix:
         package: [api, common, indexer]
@@ -91,7 +90,6 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: check-formatting
     steps:
       - uses: actions/checkout@v3
 
