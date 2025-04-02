@@ -91,16 +91,20 @@ jobs:
       - name: Debug E2E
         if: failure()
         run: |
+          echo "\nℹ️ Docker and compose versions"
+          docker version
+          docker compose version
+          echo "\nℹ️ Networks"
           docker network ls
-          docker ps
-          docker ps -a
           docker network inspect vechain-database || true
           docker network inspect vechain-thor-e2e || true
-          echo "ℹ️ Thor Script Logs"
+          echo "\nℹ️ Containers"
+          docker ps -a
+          echo "\nℹ️ Thor Script Logs"
           docker logs thor-thor-tx-script-1
-          echo "ℹ️ API Logs"
+          echo "\nℹ️ API Logs"
           docker logs vechain-indexer-api
-          echo "ℹ️ Indexer Logs"
+          echo "\nℹ️ Indexer Logs"
           docker logs vechain-indexer
 
       - name: Publish Test Report
