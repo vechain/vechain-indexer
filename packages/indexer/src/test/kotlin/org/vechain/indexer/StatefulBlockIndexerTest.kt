@@ -15,7 +15,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 
 @ExtendWith(MockKExtension::class)
-internal class StatefulIndexerTest {
+internal class StatefulBlockIndexerTest {
     @MockK lateinit var repository: BaseIndexedRepository<*>
 
     @MockK lateinit var thorClient: ThorClient
@@ -26,7 +26,7 @@ internal class StatefulIndexerTest {
     @MockK lateinit var prunerService: PrunerService<VersionedDocument, Archive<VersionedDocument>>
 
     private lateinit var statefulIndexer:
-        StatefulIndexer<VersionedDocument, Archive<VersionedDocument>>
+        StatefulBlockIndexer<VersionedDocument, Archive<VersionedDocument>>
 
     @BeforeEach
     fun setUp() {
@@ -34,7 +34,7 @@ internal class StatefulIndexerTest {
         statefulIndexer =
             spyk(
                 object :
-                    StatefulIndexer<VersionedDocument, Archive<VersionedDocument>>(
+                    StatefulBlockIndexer<VersionedDocument, Archive<VersionedDocument>>(
                         repository,
                         0L,
                         thorClient,

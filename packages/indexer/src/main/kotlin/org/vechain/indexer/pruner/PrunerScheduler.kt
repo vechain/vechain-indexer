@@ -1,16 +1,15 @@
-package org.vechain.indexer.config
+package org.vechain.indexer.pruner
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.vechain.indexer.StatefulIndexer
 
 @EnableScheduling
 @Component
 class PrunerScheduler(
-    private val statefulIndexers: List<StatefulIndexer<*, *>>,
+    private val prunableIndexers: List<Prunable>,
     @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean
 ) {
 
@@ -23,9 +22,9 @@ class PrunerScheduler(
     fun runPruners() {
         if (!prunerEnabled) return
 
-        logger.info("Running pruner on ${statefulIndexers.size} indexers")
+        logger.info("Running pruner on ${prunableIndexers.size} indexers")
 
-        statefulIndexers.forEach { indexer ->
+        prunableIndexers.forEach { indexer ->
             try {
                 indexer.runPruner()
             } catch (e: Exception) {
