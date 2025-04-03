@@ -1,4 +1,4 @@
-package org.vechain.indexer.services
+package org.vechain.indexer.service
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -17,8 +17,6 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_DEBLACK
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
 import org.vechain.indexer.repository.NFTBlacklistRepository
-import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.NFTBlacklistService
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 

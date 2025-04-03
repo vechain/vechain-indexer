@@ -1,4 +1,4 @@
-package org.vechain.indexer.services
+package org.vechain.indexer.service
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -14,8 +14,6 @@ import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
-import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.NFTService
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
