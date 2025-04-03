@@ -23,7 +23,7 @@ class PrunerScheduler(
     fun runPruners() {
         if (!prunerEnabled) return
 
-        logger.info("Running pruners")
+        logger.info("Running pruner on ${statefulIndexers.size} indexers")
 
         statefulIndexers.forEach { indexer ->
             try {
@@ -32,5 +32,7 @@ class PrunerScheduler(
                 logger.error("Error running pruner for ${indexer.javaClass.simpleName}: ", e)
             }
         }
+
+        logger.info("Finished running pruners")
     }
 }
