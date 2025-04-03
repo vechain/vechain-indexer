@@ -1,0 +1,263 @@
+name: Reindex non live cluster
+
+on:
+  workflow_dispatch:
+    inputs:
+      color:
+        description: "The environment to reindex - must match dead cluster"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod-blue
+          - prod-green
+
+      network:
+        description: "The network to reindex "
+        required: true
+        default: testnet
+        type: choice
+        options:
+          - testnet
+          - mainnet
+
+      dry-run:
+        description: "Dry-Run, explain plan without taking actions"
+        required: true
+        type: boolean
+        default: true
+
+      collections:
+        description: "Collections to clear after restore"
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - history_events
+          - nft_archives
+          - nfts
+          - transactions
+          - transfer_events
+          - all
+
+      restore-point:
+        description: "Restore point to restart mongodb from before reindex 1..5 (1 most recent, 5 least recent) or none to use collection as-is"
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+
+concurrency: 1
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
+
+jobs:
+  identify-live-color:
+    name: "Identify live and dead colors"
+    uses: ./.github/workflows/identify-live-color.yml
+    with:
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      hosted_zone_id: Z08093993BM56HB3DD4U4
+    permissions:
+      contents: read
+      id-token: write
+    secrets: inherit
+
+  check-selected-color:
+    name: "Check color selected for reindex is not live"
+    runs-on: ubuntu-latest
+    needs: [identify-live-color]
+    steps:
+      - name: Check selected color is not live
+        run: |
+           if [ ${{ inputs.color != 'dev'}}]; then
+             if [ ${{ needs.identify-live-color.outputs.testnet_live_color }} != ${{ inputs.color }} && ${{ inputs.network }} == 'testnet' ]; then
+               echo "dbcluster=${{ inputs.color }}-Testnet" >> $GITHUB_OUTPUT
+               echo "non live color selected for testnet "
+             else
+               if [ ${{ needs.identify-live-color.outputs.mainnet_live_color }} != ${{ inputs.color }} && ${{ inputs.network }} == 'mainnet' ]; then
+                 echo "dbcluster=${{ inputs.color }}-Mainnet" >> $GITHUB_OUTPUT
+                 echo "non live color selected for mainnet "
+               else
+                 echo " ${{ inputs.color }} on ${{ inputs.network }} live in DNS, aborting"
+                 exit 1
+               fi
+             fi
+           else
+             echo "dbcluster=${{ inputs.color }}-${{ inputs.network }}" >> $GITHUB_OUTPUT
+           fi
+           echo "dead_color=${{ inputs.color }}" >> $GITHUB_OUTPUT
+           echo "ecscluster=${{ inputs.color }}-veworld-cluster" >> $GITHUB_OUTPUT
+
+  reindex:
+    environment: inputs.color 
+    name: stop dead colour ecs services
+    needs: [identify-live-color, check-selected-color]
+    runs-on: ubuntu-latest
+    env:
+      network: ${{ inputs.network }}
+      dry_run: ${{ inputs.dry-run }}
+      dead_color: ${{ needs.check-selected-color.outputs.dead_color }}
+      ecscluster: ${{ needs.check-selected-color.outputs.ecscluster }}
+      dbcluster: ${{ needs.check-selected-color.outputs.dbcluster }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+
+      - name: Check Dead ENV is Ready
+        id: check-dead-env-is-down
+        run: |
+          echo "on $dead_color, $network, $dry_run, $dbcluster, $ecscluster"
+          if [ $network == 'mainnet' ]; then
+             cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+             if (( $cluster_services > 0 )); then
+               echo "The $dead_color cluster running services, stopping!"
+               if [ $dry_run ]; then
+                    echo "Dry run, would stop services with "
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0
+               else
+                    # todo switch to live commands when process proven
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 0
+                    echo "Waiting 1 minute to let changes apply"
+                    sleep 60
+               fi
+             cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+             if (( $cluster_services > 0 )); then
+               echo "The $ecscluster cluster still running services - can not proceed!"
+               exit 1
+             else
+               echo "env_ready=true" >> $GITHUB_OUTPUT
+             fi
+          else
+             cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+             if (( $cluster_services > 0 ))
+               echo "The $ecscluster services, stopping!"
+               if [ $dry_run ]; then
+                    echo "Dry run, would stop services with "
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0
+               else
+                    # todo switch to live commands when process proven
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-api-service --desired-count 0
+                    echo "aws ecs update-service --cluster $ecscluster --service ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-test-indexer-service --desired-count 0
+                    echo "Waiting 1 minute to let changes apply"
+                    sleep 60
+               fi
+             cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+             if (( $cluster_services > 0 )); then
+               echo "The $ecscluster still running services - can not proceed!"
+               exit 1
+             else
+               echo "env_ready=true" >> $GITHUB_OUTPUT
+             fi
+          fi
+
+      - name: Atlas setup
+        id: atlas-setup
+        uses: mongodb/atlas-github-action@v0.2.0
+        env:
+          ENV_READY: ${{ steps.check-dead-env-is-down.outputs.env_ready }}
+          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}  # default organisation ID
+          MONGO_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}  # default project ID
+
+      - name: Restore DeadEnv DB
+        id: restore-dead-env-db
+        run: |
+          atlas --version
+          echo "restoring $dbcluster on $dead_color, $network, $dry_run, $env_ready."
+          if [ ${{ inputs.restore-point }} != 'none' && $ENV_READY == true ]; then
+            snapshot=$(atlas clusters snapshots list $dbcluster | head -${{ inputs.restore-point }} | tail -1 | awk '{ print $1}')
+            echo "Snapshot id $snapshot"
+            if [ $dry_run ]; then
+              echo "Dry run, restore would be via"
+              echo "atlas clusters restores start automated --clusterName \
+                    $dbcluster --snapshotId $snapshot --targetClusterName \
+                    $dbcluster --targetProjectId $MONGO_PROJECT_ID"
+              echo "restore=$(atlas clusters restores list $dbcluster | tail -1 | awk '{ print $1 }')"
+              echo "atlas clusters restores watch --clusterName $dbcluster $restore"
+            else
+              # todo switch to live commands when process proven
+              echo "atlas clusters restores start automated --clusterName \
+                $dbcluster --snapshotId $snapshot --targetClusterName \
+                $dbcluster --targetProjectId $MONGO_PROJECT_ID"
+              restore=$(atlas clusters restores list $dbcluster | tail -1 | awk '{ print $1 }')
+              atlas clusters restores watch --clusterName $dbcluster $restore
+            fi
+          fi
+
+      - name: prune DeadEnv collections
+        id: prun-dead-env
+        env:
+          payload: '{ "cluster":"${{ env.ecscluster }}", "Drop":"${{ inputs.collections }}"}'
+        run: |
+          echo "on $dead_color, $network, $dry_run"
+          if [ ${{ inputs.collections }} != 'none' ]; then
+            echo "reindexing from snapshot without ${{ inputs.collections }}"
+            if [ $dry_run ]; then
+              echo "Dry run, prune would run via "
+              echo "aws lambda invoke --invocation-type RequestResponse --function-name \
+                safeClearCollection --region eu-west-1 --log-type Tail --payload $payload
+                '{ "cluster":"$cs", "Drop":"${{ inputs.collections }}"}'
+            else
+              # todo switch to live commands when process proven
+              echo "aws lambda invoke --invocation-type RequestResponse --function-name \
+                safeClearCollection --region eu-west-1 --log-type Tail --payload $payload
+                '{ "cluster":"$cs", "Drop":"${{ inputs.collections }}"}'
+            fi
+          else
+            echo "reindexing from snapshot"
+          fi
+
+      - name: start Indexing
+        id: start-dead-indexing
+        run: |
+          echo "on $dead_color, $network, $dry_run, $dbcluster, $ecscluster"
+          cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+          if (( $cluster_services > 0 )); then
+            echo "Warning ! Unexpected activity - $dead_color has $cluster_services running services"
+          fi
+          if [ $network == 'mainnet' ]; then
+            if [ $dry_run ]; then
+              echo "Dry run, would start index service with "
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1
+            else
+              # todo switch to live commands when process proven
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-main-indexer-service --desired-count 1
+              echo "Waiting 1 minute to let changes apply"
+              sleep 60
+            fi
+          else
+            if [ $dry_run ]; then
+              echo "Dry run, would start index service with "
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1
+            else
+              # todo switch to live commands when process proven
+              echo "Dry run, would start index service with "
+              echo "aws ecs update-service --cluster $ecscluster --service $dead_color-veworld-test-indexer-service --desired-count 1
+              echo "Waiting 1 minute to let changes apply"
+              sleep 60
+            fi
+          fi
+          cluster_services=$(aws ecs list-services --cluster $ecscluster --query 'length(serviceArns)' --output text)
+          if (( $cluster_services < 1 )); then
+            echo "The $ecscluster not started running services - manually check!"
+            exit 1
+          fi
