@@ -72,28 +72,34 @@ jobs:
       - name: Destroy Lingering Secrets
         run: |
           echo "Deleting lingering secrets..."
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
 
       - name: "Destroy LB Logs S3 Buckets"
         run: |
           echo "Deleting LB logs S3 buckets..."
-          aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force
-          aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force
+          aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force || true
+          aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force || true
 
       - name: "Destroy Load Balancers"
         run: |
           echo "Fetching load balancer ARNs..."
-          dead_main_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text)
-          dead_test_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text)
+          dead_main_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text) || true
+          dead_test_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text) || true
 
-          echo "Disabling deletion protection for load balancers..."
-          aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false
-          aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false
+          if [ ! -z "$dead_main_lb_arn" ]; then
+            echo "Disabling deletion protection for main load balancer..."
+            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
+            echo "Destroying main load balancer..."
+            aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_lb_arn || true
+          fi
 
-          echo "Destroying load balancers: ${{ env.dead_color }}-main-api-veworld-alb, ${{ env.dead_color }}-test-api-veworld-alb"
-          aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_lb_arn
-          aws elbv2 delete-load-balancer --load-balancer-arn $dead_test_lb_arn
+          if [ ! -z "$dead_test_lb_arn" ]; then
+            echo "Disabling deletion protection for test load balancer..."
+            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
+            echo "Destroying test load balancer..."
+            aws elbv2 delete-load-balancer --load-balancer-arn $dead_test_lb_arn || true
+          fi
 
   destroy-environment:
     name: "Destroy ${{ inputs.environment }} Infrastructure"
@@ -146,7 +152,7 @@ jobs:
 
       - name: Terraform initialize
         id: init
-        run: terraform init
+        run: terraform init -backend-config="environments/${{ inputs.environment }}.config" -reconfigure
 
       - name: Terraform workspace
         id: workspace
