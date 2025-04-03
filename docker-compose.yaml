@@ -21,7 +21,6 @@ services:
     networks:
       - vechain
       - vechain-database
-      - vechain-thor
 
   vechain-indexer-api:
     build:
@@ -45,7 +44,6 @@ services:
     networks:
       - vechain
       - vechain-database
-      - vechain-thor
 
 networks:
   vechain:
@@ -54,6 +52,3 @@ networks:
   vechain-database:
     external: true
     name: vechain-database
-  vechain-thor:
-    external: true
-    name: vechain-thor

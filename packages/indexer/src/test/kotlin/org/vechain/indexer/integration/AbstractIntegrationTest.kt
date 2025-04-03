@@ -49,7 +49,7 @@ abstract class AbstractIntegrationTest {
             MongoDBContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
         val thorContainer: GenericContainer<*> =
-            GenericContainer("vechain/thor:v2.1.4")
+            GenericContainer("vechain/thor:v2.2.1")
                 .withCommand(
                     "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'",
                 )
@@ -67,7 +67,7 @@ abstract class AbstractIntegrationTest {
         val transactionScript: GenericContainer<*> =
             GenericContainer(
                     DockerImageName.parse(
-                        "ghcr.io/vechainfoundation/thor-transactions-script:a6975cfcd38d65b4b30a0e0a54dfb26468e64b78",
+                        "ghcr.io/vechain/thor-transactions-script:88bffbb8a24c118a1faa1671dcbb92cd733e7ab4",
                     ),
                 )
                 .withNetwork(thorNetwork)
@@ -91,7 +91,22 @@ abstract class AbstractIntegrationTest {
                 "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}/vechain"
             val thorUrl = "http://localhost:${thorContainer.getMappedPort(8669)}"
 
-            TestPropertyValues.of("spring.data.mongodb.uri=$mongoUri", "thor.url=$thorUrl")
+            // Extract the NFT Blacklist address from logs
+            val logs = transactionScript.logs
+            val regex = Regex("Deployed NFTBlacklist @ (0x[a-fA-F0-9]{40})")
+            val match = regex.find(logs)
+
+            val nftBlacklistAddress =
+                match?.groupValues?.get(1)
+                    ?: throw IllegalStateException(
+                        "NFTBlacklist address not found in transactionScript logs"
+                    )
+
+            TestPropertyValues.of(
+                    "spring.data.mongodb.uri=$mongoUri",
+                    "thor.url=$thorUrl",
+                    "indexer.blacklist.contract_address=$nftBlacklistAddress"
+                )
                 .applyTo(configurableApplicationContext.environment)
         }
     }

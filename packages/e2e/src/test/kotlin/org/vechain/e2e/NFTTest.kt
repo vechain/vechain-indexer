@@ -20,10 +20,10 @@ class NFTTest {
         val nfts =
             VeWorldAPIClient.getNfts(
                 address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-                page = 0,
+                page = 1,
             )
 
-        expectThat(nfts.data).hasSize(102).isA<List<IndexedNFT>>()
+        expectThat(nfts.data).hasSize(3).isA<List<IndexedNFT>>()
         expectThat(nfts.pagination.hasNext).isFalse()
 
         nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
@@ -49,16 +49,14 @@ class NFTTest {
         val nfts =
             VeWorldAPIClient.getNfts(
                 address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-                page = 0,
+                size = 1,
             )
 
-        expectThat(nfts.data).hasSize(102)
-        expectThat(nfts.pagination.hasNext).isFalse()
+        expectThat(nfts.data).hasSize(1)
+        expectThat(nfts.pagination.hasNext).isTrue()
 
         val firstNft: IndexedNFT = nfts.data[0]
         val firstContractAddress = firstNft.contractAddress
-        val nftAmountForFirstContract =
-            nfts.data.count { nft: IndexedNFT -> nft.contractAddress == firstContractAddress }
 
         // Get filtered NFTs
         val nftsWithQuery =
@@ -68,7 +66,7 @@ class NFTTest {
                 page = 0,
             )
 
-        expectThat(nftsWithQuery.data).hasSize(nftAmountForFirstContract)
+        expectThat(nftsWithQuery.data).hasSize(51)
     }
 
     @Test
@@ -79,7 +77,7 @@ class NFTTest {
                 page = 0,
             )
 
-        expectThat(nfts.data).hasSize(2)
+        expectThat(nfts.data).hasSize(3)
         expectThat(nfts.pagination.hasNext).isFalse()
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
@@ -98,7 +96,7 @@ class NFTTest {
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
-    fun assertValidNft(nft: IndexedNFT) {
+    private fun assertValidNft(nft: IndexedNFT) {
         expect {
             that(nft.tokenId).isNotEmpty()
             that(nft.contractAddress).isNotEmpty()

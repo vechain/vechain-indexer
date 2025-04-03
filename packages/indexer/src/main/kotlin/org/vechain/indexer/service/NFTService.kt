@@ -33,23 +33,39 @@ open class NFTService(
     open fun parseRecords(
         data: List<IndexedEvent>,
         existing: List<IndexedNFT>,
-    ): List<IndexedNFT> =
-        data.map {
-            val nftId = IdUtils.buildNftId(it)
-            val version = existing.find { nft -> nft.id == nftId }?.version?.plus(1) ?: 1
+    ): List<IndexedNFT> {
+        // Pre-index existing records for faster lookup
+        val existingById = existing.associateBy { it.id }
+
+        // Group events by NFT ID, keeping only the latest event per NFT
+        val latestEventsById =
+            data
+                .map { event ->
+                    val nftId = IdUtils.buildNftId(event)
+                    nftId to event
+                }
+                .groupingBy { it.first }
+                .reduce { _, acc, e ->
+                    if (e.second.blockNumber > acc.second.blockNumber) e else acc
+                }
+                .mapValues { it.value.second }
+
+        return latestEventsById.map { (nftId, event) ->
+            val version = existingById[nftId]?.version?.plus(1) ?: 1
 
             IndexedNFT(
                 id = nftId,
                 version = version,
-                owner = it.params.getAsString("to")!!,
-                contractAddress = it.address!!,
-                tokenId = it.params.getAsString("tokenId")!!,
-                txId = it.txId,
-                blockId = it.blockId,
-                blockNumber = it.blockNumber,
-                blockTimestamp = it.blockTimestamp,
+                owner = event.params.getAsString("to")!!,
+                contractAddress = event.address!!,
+                tokenId = event.params.getAsString("tokenId")!!,
+                txId = event.txId,
+                blockId = event.blockId,
+                blockNumber = event.blockNumber,
+                blockTimestamp = event.blockTimestamp,
             )
         }
+    }
 
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNFT> =
         nftRepository

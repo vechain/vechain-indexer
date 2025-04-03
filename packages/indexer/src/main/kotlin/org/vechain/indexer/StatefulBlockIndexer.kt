@@ -2,12 +2,13 @@ package org.vechain.indexer
 
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.pruner.Prunable
 import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
-abstract class StatefulIndexer<T : VersionedDocument, S : Archive<T>>(
+abstract class StatefulBlockIndexer<T : VersionedDocument, S : Archive<T>>(
     repository: BaseIndexedRepository<*>,
     startBlock: Long = 0L,
     thorClient: ThorClient,
@@ -21,12 +22,13 @@ abstract class StatefulIndexer<T : VersionedDocument, S : Archive<T>>(
         startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
-    ) {
+    ),
+    Prunable {
     override fun rollback(blockNumber: Long) {
         archiveService.rollback(blockNumber)
     }
 
-    fun runPruner() {
+    override fun runPruner() {
         prunerService.runPruner(this.name, this.currentBlockNumber, this.status)
     }
 }

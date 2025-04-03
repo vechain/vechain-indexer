@@ -74,5 +74,12 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("txId", Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC)
         )
+
+        ensureIndex(
+            "nft_isBlacklisted_1_contractAddress_1",
+            Index()
+                .on("isBlacklisted", Sort.Direction.ASC)
+                .on("contractAddress", Sort.Direction.ASC)
+        )
     }
 }

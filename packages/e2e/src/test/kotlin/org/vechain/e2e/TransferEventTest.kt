@@ -21,7 +21,7 @@ class TransferEventTest {
                 address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
             )
 
-        expectThat(transferEvents.data).hasSize(19)
+        expectThat(transferEvents.data).hasSize(25)
         expectThat(transferEvents.pagination.hasNext).isFalse()
 
         transferEvents.data.forEach { transferEvent: IndexedTransferEvent ->

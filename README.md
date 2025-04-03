@@ -69,7 +69,7 @@ make start
 - Run:
 
 ```bash
-make infra-all
+make db-all
 ```
 
 ![img.png](images/intellij-start.png)
@@ -85,22 +85,10 @@ Connect for the various users with the following URIs:
 
 ### Restarting
 
-- Clean and restart all infrastructure:
-
-```bash
-make infra-all
-```
-
 - Clean and restart the DB:
 
 ```bash
 make db-all
-```
-
-- Clean and restart Thor:
-
-```bash
-make thor-all
 ```
 
 ## Backup MongoDB
