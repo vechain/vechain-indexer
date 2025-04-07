@@ -71,3 +71,9 @@ indexer:
     contract_address: ${BLACKLIST_CONTRACT_ADDRESS:0x14091CC9Ae249f26EaF41a5A21207931162A2826}
     initialDelay: ${BLACKLIST_INITIAL_DELAY:1}
     interval: ${BLACKLIST_INTERVAL:1800000}
+  version:
+    nfts: ${VERSION_NFTS:1}
+    transfers: ${VERSION_TRANSFERS:1}
+    transactions: ${VERSION_TRANSACTIONS:1}
+    history: ${VERSION_HISTORY:1}
+    nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
