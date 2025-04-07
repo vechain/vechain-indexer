@@ -23,37 +23,31 @@ open class IndexerVersionService(
         newVersion: Int,
     ): Boolean {
         try {
-            val storedVersion =
-                getStoredIndexerVersion(collectionName) // Fetch current version of the indexer
+            val storedVersion = getStoredIndexerVersion(collectionName)
 
             if (storedVersion == -1) {
-                // If no version document exists, do not drop or recreate the collection
                 logger.info("No version document found for $collectionName. No action taken.")
-                // You can still initialize the version to 1, but no need to drop the collection.
                 updateIndexerVersion(
                     collectionName,
-                    1
-                ) // Initialize with version 1 if it's a new collection
-                return false // Return false as no collection reset is needed.
+                    1,
+                )
+                return false
             }
 
             if (storedVersion < newVersion) {
-                // If the version is outdated, drop and recreate the collection
                 logger.info(
-                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
+                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName.",
                 )
-                mongoTemplate.dropCollection(collectionName) // Drop the collection
+                mongoTemplate.dropCollection(collectionName)
 
-                // Update the version after dropping the collection
                 updateIndexerVersion(collectionName, newVersion)
-                return true // Return true indicating the collection was reset
+                return true
             }
 
-            return false // Return false if no changes are needed (stored version is already equal
-            // to or greater than new version)
+            return false
         } catch (e: Exception) {
             logger.error("Error checking or resetting collection version for $collectionName", e)
-            return false // Return false on error
+            return false
         }
     }
 
@@ -83,8 +77,7 @@ open class IndexerVersionService(
      */
     private fun getStoredIndexerVersion(indexerName: String): Int {
         val indexer = mongoTemplate.findById(indexerName, IndexerVersion::class.java)
-        return indexer?.version
-            ?: -1 // Return -1 if no document is found, indicating no version is stored.
+        return indexer?.version ?: -1
     }
 
     /**
@@ -97,8 +90,7 @@ open class IndexerVersionService(
         indexerName: String,
         newVersion: Int,
     ) {
-        // Create or update the version document
         val metadata = IndexerVersion(id = indexerName, version = newVersion)
-        mongoTemplate.save(metadata) // Save the updated version document.
+        mongoTemplate.save(metadata)
     }
 }
