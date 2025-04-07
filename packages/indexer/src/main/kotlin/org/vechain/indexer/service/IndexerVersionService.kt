@@ -26,29 +26,34 @@ open class IndexerVersionService(
             val storedVersion =
                 getStoredIndexerVersion(collectionName) // Fetch current version of the indexer
 
-            if (storedVersion < newVersion) {
-                logger.info(
-                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName.",
-                )
-                mongoTemplate.dropCollection(collectionName) // Drop the collection
-
-                updateIndexerVersion(collectionName, newVersion) // Update the version
-                return true // Return true indicating the collection was reset
-            } else if (storedVersion == -1) {
-                // Handle case where there is no version document at all
-                logger.info(
-                    "No version document found for $collectionName, initializing it with version 1.",
-                )
+            if (storedVersion == -1) {
+                // If no version document exists, do not drop or recreate the collection
+                logger.info("No version document found for $collectionName. No action taken.")
+                // You can still initialize the version to 1, but no need to drop the collection.
                 updateIndexerVersion(
                     collectionName,
                     1
                 ) // Initialize with version 1 if it's a new collection
+                return false // Return false as no collection reset is needed.
             }
-            return false // Return false indicating no changes were made
+
+            if (storedVersion < newVersion) {
+                // If the version is outdated, drop and recreate the collection
+                logger.info(
+                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
+                )
+                mongoTemplate.dropCollection(collectionName) // Drop the collection
+
+                // Update the version after dropping the collection
+                updateIndexerVersion(collectionName, newVersion)
+                return true // Return true indicating the collection was reset
+            }
+
+            return false // Return false if no changes are needed (stored version is already equal
+            // to or greater than new version)
         } catch (e: Exception) {
             logger.error("Error checking or resetting collection version for $collectionName", e)
-            // Handle error (e.g., return false)
-            return false
+            return false // Return false on error
         }
     }
 
