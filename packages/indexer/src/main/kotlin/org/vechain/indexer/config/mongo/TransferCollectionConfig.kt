@@ -2,22 +2,35 @@ package org.vechain.indexer.config.mongo
 
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.service.IndexerVersionService
 
 @Profile("transfer-events")
 @Configuration
-open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
-    CollectionConfig(mongoTemplate, IndexedTransferEvent::class.java) {
-
+open class TransferCollectionConfig
+@Autowired
+constructor(
+    mongoTemplate: MongoTemplate,
+    private val indexerVersionService: IndexerVersionService,
+    @Value("\${indexer.version.transfers}") private val version: Int = 1,
+) : CollectionConfig(mongoTemplate, IndexedTransferEvent::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
+        logger.info("Check collection version for ${modelObj.simpleName}")
+
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            "transfer_events",
+            version,
+        )
 
         ensureCollection()
 
@@ -31,7 +44,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("to", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -40,7 +53,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("from", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -49,7 +62,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("tokenAddress", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -60,7 +73,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("to", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -71,7 +84,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("from", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -81,7 +94,7 @@ open class TransferCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("tokenAddress", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
     }
 }

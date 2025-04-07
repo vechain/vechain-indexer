@@ -2,22 +2,36 @@ package org.vechain.indexer.config.mongo
 
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.model.IndexedHistoryEvent
+import org.vechain.indexer.service.IndexerVersionService
 
 @Profile("history-events")
 @Configuration
-open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
-    CollectionConfig(mongoTemplate, IndexedHistoryEvent::class.java) {
-
+open class HistoryCollectionConfig
+@Autowired
+constructor(
+    mongoTemplate: MongoTemplate,
+    private val indexerVersionService: IndexerVersionService,
+    @Value("\${indexer.version.history}") private val version: Int = 1,
+) : CollectionConfig(mongoTemplate, IndexedHistoryEvent::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
+        logger.info("Check collection version for ${modelObj.simpleName}")
+
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            "history_events",
+            version,
+        )
+
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
@@ -29,7 +43,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("to", Sort.Direction.ASC)
                 .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
+                .on("blockTimestamp", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -37,7 +51,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("from", Sort.Direction.ASC)
                 .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
+                .on("blockTimestamp", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -45,7 +59,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("origin", Sort.Direction.ASC)
                 .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
+                .on("blockTimestamp", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -53,7 +67,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("from", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
@@ -61,7 +75,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("to", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
@@ -69,7 +83,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("origin", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
@@ -77,7 +91,7 @@ open class HistoryCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("gasPayer", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
+                .on("eventName", Sort.Direction.ASC),
         )
     }
 }

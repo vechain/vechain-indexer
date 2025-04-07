@@ -2,6 +2,8 @@ package org.vechain.indexer.config.mongo
 
 import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
@@ -9,16 +11,30 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
+import org.vechain.indexer.service.IndexerVersionService
 
 @Profile("nft-events")
 @Configuration
-open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
-    CollectionConfig(mongoTemplate, IndexedNFT::class.java, NFTArchive::class.java) {
-
+open class NftCollectionConfig
+@Autowired
+constructor(
+    mongoTemplate: MongoTemplate,
+    private val indexerVersionService: IndexerVersionService,
+    @Value("\${indexer.version.nfts}") private val version: Int = 1,
+) : CollectionConfig(mongoTemplate, IndexedNFT::class.java, NFTArchive::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
+        logger.info("Check collection version for ${modelObj.simpleName}")
+
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                "nfts",
+                version,
+            )
+
+        if (dropped) indexerVersionService.dropArchiveCollection("nft_archives")
 
         ensureCollection()
 
@@ -33,7 +49,7 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
             Index()
                 .on("contractAddress", Sort.Direction.ASC)
                 .on("tokenId", Sort.Direction.DESC)
-                .unique()
+                .unique(),
         )
 
         ensureIndex(
@@ -42,7 +58,7 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("owner", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -51,7 +67,7 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("contractAddress", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -61,7 +77,7 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("contractAddress", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
@@ -72,14 +88,14 @@ open class NftCollectionConfig(mongoTemplate: MongoTemplate) :
                 .on("tokenId", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
         )
 
         ensureIndex(
             "nft_isBlacklisted_1_contractAddress_1",
             Index()
                 .on("isBlacklisted", Sort.Direction.ASC)
-                .on("contractAddress", Sort.Direction.ASC)
+                .on("contractAddress", Sort.Direction.ASC),
         )
     }
 }
