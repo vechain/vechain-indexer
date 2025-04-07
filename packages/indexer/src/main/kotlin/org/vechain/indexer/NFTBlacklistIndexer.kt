@@ -7,10 +7,10 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
+import org.vechain.indexer.pruner.Pruner
 import org.vechain.indexer.repository.NFTBlacklistRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTBlacklistService
-import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -40,7 +40,8 @@ open class NFTBlacklistIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
         businessEventManager = null,
-        prunerService = PrunerService(nftBlacklistArchiveService, prunerRemovalChunkSize),
+        pruner =
+            Pruner(NFTBlacklistArchive::class, nftBlacklistArchiveService, prunerRemovalChunkSize),
     ) {
     override fun processLogs(
         events: List<EventLog>,
