@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.pruner.Pruner
 import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -25,7 +25,7 @@ internal class StatefulLogsIndexerTest {
     @MockK
     lateinit var archiveService: ArchiveService<VersionedDocument, Archive<VersionedDocument>>
 
-    @MockK lateinit var prunerService: PrunerService<VersionedDocument, Archive<VersionedDocument>>
+    @MockK lateinit var pruner: Pruner<VersionedDocument, Archive<VersionedDocument>>
 
     private lateinit var statefulLogsIndexer:
         StatefulLogsIndexer<VersionedDocument, Archive<VersionedDocument>>
@@ -46,7 +46,7 @@ internal class StatefulLogsIndexerTest {
                         null,
                         null,
                         archiveService,
-                        prunerService,
+                        pruner,
                     ) {
                     override fun processLogs(
                         events: List<EventLog>,
@@ -67,53 +67,5 @@ internal class StatefulLogsIndexerTest {
         statefulLogsIndexer.rollback(blockNumber)
 
         verify(exactly = 1) { archiveService.rollback(blockNumber) }
-    }
-
-    @Test
-    fun `runPruner should skip if not fully synced`() {
-        every { statefulLogsIndexer.status } returns Status.SYNCING
-
-        every { prunerService.runPruner(any(), any(), any()) } just Runs
-        statefulLogsIndexer.runPruner()
-
-        verify(exactly = 0) { archiveService.findRecordsToPrune(any()) }
-    }
-
-    @Test
-    fun `runPruner should skip if not enough blocks to prune`() {
-        every { statefulLogsIndexer.status } returns Status.FULLY_SYNCED
-        every { statefulLogsIndexer.currentBlockNumber } returns 5000L
-        every { prunerService.runPruner(any(), any(), any()) } just Runs
-        statefulLogsIndexer.runPruner()
-
-        verify(exactly = 0) { archiveService.findRecordsToPrune(any()) }
-    }
-
-    @Test
-    fun `runPruner should prune records in chunks`() {
-        every { statefulLogsIndexer.status } returns Status.FULLY_SYNCED
-        every { statefulLogsIndexer.currentBlockNumber } returns 20000L
-
-        val records = List(25000) { mockk<VersionedDocument>(relaxed = true) }
-        val recordIds = records.map { it.getDocumentId() }
-
-        every { archiveService.findRecordsToPrune(10000L) } returns recordIds
-
-        every { archiveService.removeAll(any()) } just Runs
-
-        every { prunerService.runPruner(any(), any(), any()) } answers
-            {
-                archiveService.findRecordsToPrune(10000L)
-
-                records.chunked(10000).forEach { chunk ->
-                    archiveService.removeAll(chunk.map { it.getDocumentId() })
-                }
-            }
-
-        statefulLogsIndexer.runPruner()
-
-        verify(exactly = 1) { archiveService.findRecordsToPrune(10000L) }
-
-        verify(exactly = 3) { archiveService.removeAll(any()) }
     }
 }
