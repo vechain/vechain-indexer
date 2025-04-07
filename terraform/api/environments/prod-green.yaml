@@ -137,7 +137,7 @@ enabled_nets:
         initial_delay:              '300000'
         removal_chunk_size:         '2000'
       blacklist:
-        contract_address:               '0x07310cECa66aD36A0dc02A142dF28B81a653107E'
+        contract_address:           '0x07310cECa66aD36A0dc02A142dF28B81a653107E'
         interval:                   '180000'
         initial_delay:              '60000'
       version:
