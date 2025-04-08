@@ -12,7 +12,7 @@ val dbSetup = tasks.register<Exec>("dbSetup") {
 }
 
 val startThor = tasks.register<Exec>("startThor") {
-    dependsOn("dbSetup")
+    dependsOn(dbSetup)
     workingDir(rootDir)
     commandLine("docker", "compose", "-f", "packages/e2e/thor/docker-compose.yaml", "up", "--build", "-d", "--wait")
 }

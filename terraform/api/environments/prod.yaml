@@ -64,7 +64,7 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
+        nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
         history:                    '1'
@@ -118,7 +118,7 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
+        nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
         history:                    '1'

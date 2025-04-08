@@ -29,8 +29,6 @@ services:
       - MNEMONIC_WORDS=denial kitchen pet squirrel other broom bar gas better priority spoil cross
       # How many times to iterate the mints and transfers. Defaults to 5
       - ITERATE_TX_AMOUNT=1
-    volumes:
-      - ./.output/:/app/.output
     networks:
       - vechain-thor-e2e
 

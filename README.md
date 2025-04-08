@@ -38,19 +38,6 @@
 - To see a list of all available commands, run `make help`
 - After starting the application, the swagger will be made available at `http://localhost:8080`
 
-MongoDB requires a keyfile in other to run. To create this keyfile, run the following command:
-
-```bash
-make db-keyfile-create
-```
-
-You will only ever need to run this command once, unless you delete it. To remove the keyfile you can run the following
-command:
-
-```bash
-make db-keyfile-remove
-```
-
 ### Option 1: Docker only
 
 - Copy env files for the two packages `./package/<package>/.env.example` to `./package/<package>/.env` and fill in the
@@ -92,12 +79,12 @@ make db-all
 ```
 
 ## Backup MongoDB
-You can backup the database by running the following command:
+You can back up the database by running the following command:
 
 ```bash
 make db-backup
 ```
-- Will backup the vechain database from localhost:27017
+- Will back up the vechain database from localhost:27017
 - The backup will be stored in the database/backups/ directory.
 - The filename follows this format: database/backups/vechain-YYYYMMDDHHMMSS
 
@@ -165,6 +152,9 @@ make test
 
 ```bash
 make test-api
+make test-common
+make test-indexer
+make test-e2e
 ```
 
 ### E2E
