@@ -1,9 +1,9 @@
 {
-  "name": "Token_FTSwap",
+  "name": "VET_FT_Swap",
   "sameClause": true,
   "events": [
     {
-      "name": "Transfer",
+      "name": "VET_TRANSFER",
       "alias": "inputTransfer",
       "conditions": [
         {
@@ -14,7 +14,7 @@
           "operator": "EQ"
         },
         {
-          "firstOperand": "value",
+          "firstOperand": "amount",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
@@ -55,13 +55,6 @@
       "secondEventName": "outputTransfer",
       "secondEventProperty": "to",
       "operator": "EQ"
-    },
-    {
-      "firstEventName": "inputTransfer",
-      "firstEventProperty": "address",
-      "secondEventName": "outputTransfer",
-      "secondEventProperty": "address",
-      "operator": "NE"
     }
   ],
   "paramsDefinition": [
@@ -77,16 +70,11 @@
     },
     {
       "name": "address",
-      "eventName": "inputTransfer",
-      "businessEventName": "inputToken"
-    },
-    {
-      "name": "address",
       "eventName": "outputTransfer",
       "businessEventName": "outputToken"
     },
     {
-      "name": "value",
+      "name": "amount",
       "eventName": "inputTransfer",
       "businessEventName": "inputValue"
     },
