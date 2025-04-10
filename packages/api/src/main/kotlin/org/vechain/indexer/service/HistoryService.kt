@@ -65,6 +65,9 @@ open class HistoryService(
             query.addCriteria(Criteria.where("blockTimestamp").gte(after))
         }
 
+        // Ignore blacklisted events
+        query.addCriteria(Criteria.where("isBlacklisted").ne(true))
+
         // Fetch one extra item beyond pageSize to check if another page exists
         query.with(pageable)
         // Fetch results
