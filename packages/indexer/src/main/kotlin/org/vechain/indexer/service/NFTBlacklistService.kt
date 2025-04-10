@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
@@ -21,7 +22,6 @@ open class NFTBlacklistService(
     private val repository: NFTBlacklistRepository,
     private val nftBlacklistArchiveService: ArchiveService<NFTBlacklist, NFTBlacklistArchive>,
 ) {
-
     private val logger = LoggerFactory.getLogger(NFTBlacklistService::class.java)
 
     @Transactional(rollbackFor = [Exception::class])
@@ -52,7 +52,7 @@ open class NFTBlacklistService(
                     val contractAddress =
                         event.params.getAsString("nft")
                             ?: throw IllegalArgumentException(
-                                "Missing 'nft' param in event: ${event.id}"
+                                "Missing 'nft' param in event: ${event.id}",
                             )
                     contractAddress to event
                 }
@@ -66,7 +66,7 @@ open class NFTBlacklistService(
             val isBlacklisted =
                 event.params.getAsBoolean("isBlacklisted")
                     ?: throw IllegalArgumentException(
-                        "Missing 'isBlacklisted' param in event: ${event.id}"
+                        "Missing 'isBlacklisted' param in event: ${event.id}",
                     )
 
             val version = existingByAddress[contractAddress]?.version?.plus(1) ?: 1
@@ -100,58 +100,31 @@ open class NFTBlacklistService(
     open fun syncBlacklistedNFTs() {
         logger.info("Syncing NFTs with blacklist")
 
-        val contracts = findContractsToUpdate()
-
-        val pipeline =
-            listOf(
-                Document("\$match", Document(CONTRACT_ADDRESS, Document("\$in", contracts))),
-                Document(
-                    "\$lookup",
-                    Document()
-                        .append("from", BLACKLIST_COLLECTION)
-                        .append("localField", CONTRACT_ADDRESS)
-                        .append("foreignField", "_id")
-                        .append("as", "blacklistInfo")
-                ),
-                Document(
-                    "\$match",
-                    Document(
-                            "\$expr",
-                            Document(
-                                "\$ne",
-                                listOf(
-                                    "\$isBlacklisted",
-                                    Document(
-                                        "\$arrayElemAt",
-                                        listOf("\$blacklistInfo.$IS_BLACKLISTED", 0)
-                                    )
-                                )
-                            )
-                        )
-                        .append("blacklistInfo.0.$IS_BLACKLISTED", Document("\$exists", true))
-                ),
-                Document(
-                    "\$set",
-                    Document(
-                        "isBlacklisted",
-                        Document("\$arrayElemAt", listOf("\$blacklistInfo.$IS_BLACKLISTED", 0))
-                    )
-                ),
-                Document("\$unset", "blacklistInfo"),
-                Document(
-                    "\$merge",
-                    Document()
-                        .append("into", NFTS_COLLECTION)
-                        .append("whenMatched", "merge")
-                        .append("whenNotMatched", "discard")
-                )
+        val command =
+            createCommand(
+                collection = NFTS_COLLECTION,
+                contractAddress = NFTS_CONTRACT_ADDRESS,
+                isBlacklisted = IS_BLACKLISTED_NFT,
             )
 
+        mongoTemplate.db.runCommand(command)
+
+        logger.info("Successfully synced NFTs with blacklist")
+    }
+
+    /**
+     * Syncs the History NFT Transfers with the blacklist. Ensures that the `isBlacklisted` flag on
+     * the `history` collection is in sync with the nft_blacklist collection.
+     */
+    open fun syncBlacklistedNFTsFromHistory() {
+        logger.info("Syncing History NFTs with blacklist")
+
         val command =
-            Document()
-                .append("aggregate", NFTS_COLLECTION)
-                .append("pipeline", pipeline)
-                .append("cursor", Document()) // Required for command to work
+            createCommand(
+                collection = HISTORY_COLLECTION,
+                contractAddress = HISTORY_CONTRACT_ADDRESS,
+                isBlacklisted = IS_BLACKLISTED_HISTORY,
+            )
 
         mongoTemplate.db.runCommand(command)
 
@@ -163,7 +136,10 @@ open class NFTBlacklistService(
      * function is used to improve the performance of the syncBlacklistedNFTs function by reducing
      * the size of the data that needs to be processed by the pipeline.
      */
-    open fun findContractsToUpdate(): List<String> {
+    open fun findContractsToUpdate(
+        collection: String,
+        contractAddress: String,
+    ): List<String> {
         logger.info("Finding contracts with mismatched blacklist status")
 
         val pipeline =
@@ -171,9 +147,9 @@ open class NFTBlacklistService(
                 Document(
                     "\$lookup",
                     Document()
-                        .append("from", NFTS_COLLECTION)
+                        .append("from", collection)
                         .append("localField", "_id")
-                        .append("foreignField", CONTRACT_ADDRESS)
+                        .append("foreignField", contractAddress)
                         .append("let", Document("expectedFlag", "\$isBlacklisted"))
                         .append(
                             "pipeline",
@@ -184,19 +160,20 @@ open class NFTBlacklistService(
                                         "\$expr",
                                         Document(
                                             "\$ne",
-                                            listOf("\$isBlacklisted", "\$\$expectedFlag")
-                                        )
-                                    )
+                                            listOf("\$isBlacklisted", "\$\$expectedFlag"),
+                                        ),
+                                    ),
                                 ),
-                                Document("\$limit", 1)
-                            )
+                                Document("\$limit", 1),
+                            ),
                         )
-                        .append("as", "mismatches")
+                        .append("as", "mismatches"),
                 ),
                 Document("\$match", Document("mismatches.0", Document("\$exists", true))),
-                Document("\$project", Document("_id", 1))
+                Document("\$project", Document("_id", 1)),
             )
 
+        println(pipeline)
         val command =
             Document()
                 .append("aggregate", BLACKLIST_COLLECTION)
@@ -216,10 +193,81 @@ open class NFTBlacklistService(
         return mismatchedContracts
     }
 
+    /**
+     * Creates a MongoDB aggregation command to sync the `isBlacklisted` flag in the given
+     * collection (e.g., "nfts" or "history_events") based on the current blacklist in the
+     * `nft_blacklist` collection.
+     *
+     * @param collection The name of the target collection to update (e.g., "nfts" or
+     *   "history_events")
+     * @param contractAddress The name of the contract address field in the target collection
+     * @param isBlacklisted The name of the isBlacklisted field in the target collection
+     */
+    private fun createCommand(
+        collection: String,
+        contractAddress: String,
+        isBlacklisted: String,
+    ): Document {
+        val contracts = findContractsToUpdate(collection, contractAddress)
+
+        val pipeline =
+            listOf(
+                Document("\$match", Document(contractAddress, Document("\$in", contracts))),
+                Document(
+                    "\$lookup",
+                    Document()
+                        .append("from", BLACKLIST_COLLECTION)
+                        .append("localField", contractAddress)
+                        .append("foreignField", "_id")
+                        .append("as", "blacklistInfo"),
+                ),
+                Document(
+                    "\$match",
+                    Document(
+                            "\$expr",
+                            Document(
+                                "\$ne",
+                                listOf(
+                                    "\$isBlacklisted",
+                                    Document(
+                                        "\$arrayElemAt",
+                                        listOf("\$blacklistInfo.$isBlacklisted", 0),
+                                    ),
+                                ),
+                            ),
+                        )
+                        .append("blacklistInfo.0.$isBlacklisted", Document("\$exists", true)),
+                ),
+                Document(
+                    "\$set",
+                    Document(
+                        "isBlacklisted",
+                        Document("\$arrayElemAt", listOf("\$blacklistInfo.$isBlacklisted", 0)),
+                    ),
+                ),
+                Document("\$unset", "blacklistInfo"),
+                Document(
+                    "\$merge",
+                    Document()
+                        .append("into", collection)
+                        .append("whenMatched", "merge")
+                        .append("whenNotMatched", "discard"),
+                ),
+            )
+
+        return Document()
+            .append("aggregate", collection)
+            .append("pipeline", pipeline)
+            .append("cursor", Document()) // Required for command to work
+    }
+
     companion object {
         const val NFTS_COLLECTION = "nfts"
+        const val HISTORY_COLLECTION = "history_events"
         const val BLACKLIST_COLLECTION = "nft_blacklist"
-        val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
-        val IS_BLACKLISTED = IndexedNFT::isBlacklisted.name
+        val NFTS_CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
+        val HISTORY_CONTRACT_ADDRESS = IndexedHistoryEvent::contractAddress.name
+        val IS_BLACKLISTED_NFT = IndexedNFT::isBlacklisted.name
+        val IS_BLACKLISTED_HISTORY = IndexedHistoryEvent::isBlacklisted.name
     }
 }

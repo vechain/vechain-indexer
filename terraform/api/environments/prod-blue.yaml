@@ -74,10 +74,10 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
+        nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -141,10 +141,10 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
+        nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"

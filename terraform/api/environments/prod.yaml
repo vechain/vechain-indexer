@@ -67,7 +67,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       sync_logger_interval:
         nfts:                       '1000'
@@ -121,7 +121,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       sync_logger_interval:
         nfts:                       '1000'
