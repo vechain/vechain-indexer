@@ -303,7 +303,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
-      value = each.value.indexer.blacklist.contractAddress
+      value = each.value.indexer.blacklist.contract_address
     },
     {
       name = "BLACKLIST_INTERVAL"
@@ -312,7 +312,27 @@ module "ecs-backend-service" {
     {
       name = "BLACKLIST_INITIAL_DELAY"
       value = each.value.indexer.blacklist.initial_delay
-    }
+    },
+    {
+      name = "VERSION_NFTS"
+      value = each.value.indexer.version.nfts
+    },
+    {
+      name = "VERSION_TRANSFERS"
+      value = each.value.indexer.version.transfers
+     },
+    {
+      name = "VERSION_TRANSACTIONS"
+      value = each.value.indexer.version.transactions
+    },
+    {
+      name = "VERSION_HISTORY"
+      value = each.value.indexer.version.history
+    },
+    {
+      name = "VERSION_NFT_BLACKLIST"
+      value = each.value.indexer.version.nft_blacklist
+    },
   ]
 }
 
