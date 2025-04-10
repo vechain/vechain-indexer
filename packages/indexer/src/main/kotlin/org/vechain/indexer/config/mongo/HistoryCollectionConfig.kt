@@ -36,6 +36,10 @@ open class HistoryCollectionConfig(
 
         ensureIndex("blockNumber_1", Index().on("blockNumber", Sort.Direction.ASC))
 
+        ensureIndex("contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
+
+        ensureIndex("isBlacklisted_1", Index().on("isBlacklisted", Sort.Direction.ASC))
+
         ensureIndex(
             "to_1_contractAddress_1_blockTimestamp_-1",
             Index()
