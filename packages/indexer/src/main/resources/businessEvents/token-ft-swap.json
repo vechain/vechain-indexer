@@ -12,6 +12,13 @@
           "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     },
@@ -25,21 +32,20 @@
           "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     },
     {
       "name": "Swap",
       "alias": "swap",
-      "conditions": [
-        {
-          "firstOperand": "to",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        }
-      ]
+      "conditions": []
     }
   ],
   "rules": [

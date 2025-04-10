@@ -101,7 +101,7 @@ internal class HistoryIndexerTest {
         indexer.processBlock(BlockFixtures.BLOCK_DEX)
 
         val txs = historyEventSlot.captured
-        expect { that(txs).hasSize(3) }
+        expect { that(txs).hasSize(7) }
         val eventNames = txs.map { it.eventName }
 
         expect {
@@ -111,6 +111,10 @@ internal class HistoryIndexerTest {
                         HistoryEventName.B3TR_ACTION,
                         HistoryEventName.SWAP_FT_TO_VET,
                         HistoryEventName.B3TR_ACTION,
+                        HistoryEventName.SWAP_FT_TO_FT,
+                        HistoryEventName.SWAP_VET_TO_FT,
+                        HistoryEventName.SWAP_VET_TO_FT,
+                        HistoryEventName.SWAP_FT_TO_VET,
                     ),
                 )
         }
