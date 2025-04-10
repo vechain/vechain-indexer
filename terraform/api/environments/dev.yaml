@@ -79,7 +79,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -148,7 +148,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '1'
-        history:                    '1'
+        history:                    '2'
         nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
