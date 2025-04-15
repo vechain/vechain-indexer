@@ -169,27 +169,39 @@ jobs:
           else
             targetproject="${{ secrets.MONGO_PROJECT_ID }}"
           fi
+          echo "TestDB"
           atlas backups snapshots list $sourceTestDB | true
-          snapshot=$(atlas backup snapshots list $sourceTestDB --projectId \
+          testSnapshot=$(atlas backup snapshots list $sourceTestDB --projectId \
             $project | grep "completed" | sort -r -k4 | head -1 | \
             awk '{print $1}')
+          echo "$sourceTestDB snapshot $testSnapshot being restored to $targetTestDB"
           # Note: cross project restores can be specified with target as
           # clustername, snapshotId is key, but watched from source
-          jobid=$(atlas backups restores start automated --clusterName \
-                $targetTestDB --snapshotId $snapshot --projectId $project \
+          testJobid=$(atlas backups restores start automated --clusterName \
+                $targetTestDB --snapshotId $testSnapshot --projectId $project \
                 --targetClusterName $targetTestDB --targetProjectId \
                 $targetproject )| awk '{print $3}'
-          restore=$(atlas backups restores list $sourceTestDB \
+          echo "Restore job id $testJobid"
+          testRestore=$(atlas backups restores list $sourceTestDB \
                 --projectId $project | tail -1 | awk '{ print $1 }')
+          echo "Restore $testRestore"
           atlas backups restores watch --clusterName $sourceTestDB \
                 $restore --projectId $project
-          jobid=$(atlas backups restores start automated --clusterName \
-                $targetMainDB --snapshotId $snapshot --projectId $project \
+
+          echo "MainDB"
+          mainSnapshot=$(atlas backup snapshots list $sourceMainDB --projectId \
+            $project | grep "completed" | sort -r -k4 | head -1 | \
+            awk '{print $1}')
+          echo "$sourceMainDB snapshot $mainSnapshot being restored to $targetMainDB"
+          mainJobid=$(atlas backups restores start automated --clusterName \
+                $targetMainDB --snapshotId $mainSnapshot --projectId $project \
                 --targetClusterName $targetMainDB --targetProjectId \
                 $targetproject )| awk '{print $3}'
-          restore=$(atlas backups restores list $sourceMainDB --projectId \
+          echo "Restore job id $mainJobid"
+          mainRestore=$(atlas backups restores list $sourceMainDB --projectId \
                  $project | tail -1 | awk '{ print $1 }')
-          atlas backups restores watch --clusterName $sourceMainDB $restore \
+          echo "Restore $mainRestore" 
+          atlas backups restores watch --clusterName $sourceMainDB $mainRestore \
                  --projectId $project
 
       - name: start Indexing
