@@ -18,7 +18,7 @@ constructor(
     override val blockTimestamp: Long,
     val voter: String,
     val proposalId: String,
-    val choice: Int,
+    val choice: Long,
     val weight: BigInteger,
     val reason: String,
 ) : IndexedDocument {
@@ -26,7 +26,7 @@ constructor(
         block: Block,
         voter: String,
         proposalId: String,
-        choice: Int,
+        choice: Long,
         weight: BigInteger,
         reason: String,
     ) : this(
