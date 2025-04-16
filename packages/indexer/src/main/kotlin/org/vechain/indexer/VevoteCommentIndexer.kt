@@ -23,10 +23,11 @@ open class VevoteCommentIndexer(
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.vevote}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.vevote}") private val syncBlockBatchSize: Long,
+    @Value("\${veworld.contract.vevote.address}") private val contractAddress: String,
 ) :
     BaseLogIndexer(
         repository = vevoteCommentRepository,
-        startBlock = 21432863,
+        startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = syncLogInterval,
         blockBatchSize = syncBlockBatchSize,
@@ -42,7 +43,7 @@ open class VevoteCommentIndexer(
                 events,
                 transfers,
                 FilterCriteria(
-                    contractAddresses = listOf("0xfcc8f0d6ef2eef8d6fcf376ecf42d7851171a5cc"),
+                    contractAddresses = listOf(contractAddress),
                     eventNames = listOf("VoteCast")
                 )
             )
@@ -54,7 +55,14 @@ open class VevoteCommentIndexer(
         val votesWithReason = potentialComments.filter { comment -> comment.reason.isNotEmpty() }
 
         if (votesWithReason.isNotEmpty()) {
-            vevoteCommentRepository.saveAll(votesWithReason)
+            votesWithReason.forEach { comment ->
+                val choicesList = EventUtils.getChoice(comment.choice)
+                logger.info(
+                    "ProposalID: ${comment.proposalId}, Voter: ${comment.voter}, Choices: $choicesList"
+                )
+            }
+
+            mongoTemplate.insert(votesWithReason, vevoteCommentRepository::class.java)
         }
     }
 

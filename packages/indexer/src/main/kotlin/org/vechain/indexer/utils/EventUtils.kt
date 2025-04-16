@@ -71,7 +71,7 @@ object EventUtils {
                 blockTimestamp = event.blockTimestamp,
                 voter = voter,
                 proposalId = proposalId,
-                choice = (params.getReturnValues()["choices"] as? Number)?.toInt() ?: 0,
+                choice = (params.getReturnValues()["choices"] as? Number)?.toLong() ?: 0L,
                 weight =
                     (params.getReturnValues()["weight"] as? Number)?.toLong()?.toBigInteger()
                         ?: BigInteger.ZERO,
@@ -79,6 +79,15 @@ object EventUtils {
             )
         } catch (e: Exception) {
             return null
+        }
+    }
+
+    fun getChoice(choiceValue: Long): List<Int> {
+        if (choiceValue < 0) {
+            return emptyList()
+        }
+        return choiceValue.toString(2).reversed().mapIndexedNotNull { index, bit ->
+            if (bit == '1') index + 1 else null
         }
     }
 }
