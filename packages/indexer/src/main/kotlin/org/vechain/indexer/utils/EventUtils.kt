@@ -63,6 +63,9 @@ object EventUtils {
             val proposalId = params.getReturnValues()["proposalId"]?.toString() ?: return null
             val reason = params.getReturnValues()["reason"] as? String
             val nonNullReasonForId = reason ?: ""
+            // Get the raw choice value
+            val choiceValue = (params.getReturnValues()["choices"] as? Number)?.toLong() ?: 0L
+            val choicesList = getChoice(choiceValue)
 
             return VevoteProposalComment(
                 id = generateId(proposalId, nonNullReasonForId),
@@ -71,7 +74,7 @@ object EventUtils {
                 blockTimestamp = event.blockTimestamp,
                 voter = voter,
                 proposalId = proposalId,
-                choice = (params.getReturnValues()["choices"] as? Number)?.toLong() ?: 0L,
+                choices = choicesList,
                 weight =
                     (params.getReturnValues()["weight"] as? Number)?.toLong()?.toBigInteger()
                         ?: BigInteger.ZERO,

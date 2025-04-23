@@ -56,13 +56,15 @@ open class VevoteCommentIndexer(
 
         if (votesWithReason.isNotEmpty()) {
             votesWithReason.forEach { comment ->
-                val choicesList = EventUtils.getChoice(comment.choice)
                 logger.info(
-                    "ProposalID: ${comment.proposalId}, Voter: ${comment.voter}, Choices: $choicesList"
+                    "ProposalID: ${comment.proposalId}, " +
+                        "Voter: ${comment.voter}, " +
+                        "Choices: ${comment.choices}"
                 )
             }
 
-            mongoTemplate.insert(votesWithReason, vevoteCommentRepository::class.java)
+            //            mongoTemplate.insert(votesWithReason, vevoteCommentRepository::class.java)
+            vevoteCommentRepository.saveAll(votesWithReason)
         }
     }
 
