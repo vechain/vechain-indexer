@@ -27,7 +27,6 @@ abstract class BaseLogIndexer(
         abiManager = abiManager,
         businessEventManager = businessEventManager,
     ) {
-
     override fun getLastSyncedBlock(): BlockIdentifier? {
         repository.getLatestRecord()?.let {
             return BlockIdentifier(number = it.blockNumber, id = it.blockId)
