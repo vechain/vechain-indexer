@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,vevote-events}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events,history-events,vevote-events}
   output:
     ansi:
       enabled: always
@@ -39,7 +39,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:https://testnet.vechain.org}
+  url: ${THOR_URL:http://localhost:8669}
 
 abis:
   path: ${ABI_PATH:abis}
