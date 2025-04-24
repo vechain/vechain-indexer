@@ -25,11 +25,10 @@ open class VevoteService(
         voter: String,
         pageable: Pageable,
     ): Slice<VevoteProposalComment> =
+        vevoteCommentRepository.findAllByVoter(HexUtils.normalise(voter), pageable)
 
-        /** Get comments for a specific proposal and voter. */
-        open
-
-    fun getCommentsByProposalAndVoter(
+    /** Get comments for a specific proposal and voter. */
+    open fun getCommentsByProposalAndVoter(
         proposalId: String,
         voter: String,
         pageable: Pageable,
