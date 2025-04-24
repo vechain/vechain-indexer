@@ -4,9 +4,10 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.pruner.Prunable
+import org.vechain.indexer.pruner.Pruner
 import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 
@@ -20,7 +21,7 @@ abstract class StatefulLogsIndexer<T : VersionedDocument, S : Archive<T>>(
     abiManager: AbiManager?,
     businessEventManager: BusinessEventManager?,
     private val archiveService: ArchiveService<T, S>,
-    private val prunerService: PrunerService<T, S>,
+    private val pruner: Pruner<T, S>,
 ) :
     BaseLogIndexer(
         repository = repository,
@@ -31,12 +32,13 @@ abstract class StatefulLogsIndexer<T : VersionedDocument, S : Archive<T>>(
         logsType = logsType,
         abiManager = abiManager,
         businessEventManager = businessEventManager,
-    ) {
+    ),
+    Prunable {
     override fun rollback(blockNumber: Long) {
         archiveService.rollback(blockNumber)
     }
 
-    fun runPruner() {
-        prunerService.runPruner(this.name, this.currentBlockNumber, this.status)
+    override fun runPruner() {
+        pruner.prune(this.currentBlockNumber, this.status)
     }
 }

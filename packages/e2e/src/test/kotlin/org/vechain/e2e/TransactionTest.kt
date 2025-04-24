@@ -20,7 +20,7 @@ class TransactionTest {
             VeWorldAPIClient.getTransactionsByOrigin("0x435933c8064b4ae76be665428e0307ef2ccfbd68")
         val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(txs).hasSize(12)
+        expectThat(txs).hasSize(16)
         expectThat(transactions.pagination.hasNext).isFalse()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }
@@ -67,7 +67,7 @@ class TransactionTest {
             )
         val txs: List<IndexedTransaction> = transactions.data
 
-        expectThat(txs).hasSize(13)
+        expectThat(txs).hasSize(17)
         expectThat(transactions.pagination.hasNext).isFalse()
 
         txs.forEach { transaction: IndexedTransaction -> assertValidTransaction(transaction) }

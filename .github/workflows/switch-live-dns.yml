@@ -111,7 +111,7 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.testnet_only }}" != "true" ]; then
               cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 0 )); then
+              if (( $cluster_services > 3 )); then
                 echo "env_ready=true" >> $GITHUB_OUTPUT
                 echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
               else
@@ -121,7 +121,7 @@ jobs:
               fi
           else
               cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 0 )); then
+              if (( $cluster_services > 3 )); then
                 echo "env_ready=true" >> $GITHUB_OUTPUT
                 echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
               else

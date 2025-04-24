@@ -12,14 +12,12 @@ services:
       test: curl --fail 0.0.0.0:8669/blocks/0 || exit 1
       interval: 2s
       retries: 30
-    volumes:
-      - thor-volume:/data/thor
     networks:
-      - vechain-thor
+      - vechain-thor-e2e
 
   thor-tx-script:
     hostname: thor-tx-script
-    image: ghcr.io/vechainfoundation/thor-transactions-script:a6975cfcd38d65b4b30a0e0a54dfb26468e64b78
+    image: ghcr.io/vechain/thor-transactions-script:88bffbb8a24c118a1faa1671dcbb92cd733e7ab4
     user: root
     depends_on:
       thor-solo:
@@ -31,15 +29,10 @@ services:
       - MNEMONIC_WORDS=denial kitchen pet squirrel other broom bar gas better priority spoil cross
       # How many times to iterate the mints and transfers. Defaults to 5
       - ITERATE_TX_AMOUNT=1
-    volumes:
-      - ./.output/:/app/.output
     networks:
-      - vechain-thor
-
-volumes:
-  thor-volume:
+      - vechain-thor-e2e
 
 networks:
-  vechain-thor:
+  vechain-thor-e2e:
     driver: bridge
-    name: vechain-thor
+    name: vechain-thor-e2e

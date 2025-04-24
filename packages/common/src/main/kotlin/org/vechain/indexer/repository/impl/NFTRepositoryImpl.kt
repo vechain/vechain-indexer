@@ -20,7 +20,8 @@ open class NFTRepositoryImpl(
 ) {
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String> {
-        val matchOperation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
+        val matchOperation =
+            Aggregation.match(Criteria.where(OWNER).`is`(owner).and(IS_BLACKLISTED).ne(true))
 
         val groupOperation: GroupOperation =
             Aggregation.group(CONTRACT_ADDRESS)
@@ -47,8 +48,6 @@ open class NFTRepositoryImpl(
                     )
                 ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                // We retrieve an additional element on purpose to detect remaining elements in the
-                // next page
                 Aggregation.limit(pageable.pageSize.toLong() + 1)
             )
         val distinctContracts =
@@ -65,6 +64,7 @@ open class NFTRepositoryImpl(
         val OWNER = IndexedNFT::owner.name
         val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
         val BLOCK_NUMBER = IndexedNFT::blockNumber.name
+        val IS_BLACKLISTED = IndexedNFT::isBlacklisted.name
         val TX_ID = IndexedNFT::txId.name
         val NFT_ID = IndexedNFT::id.name
         const val NFT_ID_ALIAS = "nftId"

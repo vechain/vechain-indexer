@@ -2,7 +2,8 @@ image_tag:                       dev-latest
 region:                          eu-west-1
 project:                         veworld
 environment:                     dev
-certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/6e567586-f3d9-4eaf-ac0d-8243b9de2060
+certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/67184736-cc67-4d9c-990e-905e018a2d4e
+
 azs:
   -                              eu-west-1a
   -                              eu-west-1b
@@ -26,20 +27,19 @@ rate_limit_exception_list:
   -                              81.39.47.171/32
   -                              90.26.60.41/32
 cloudwatch_alarms:               true
-slack_alert_channel:             C051L4Z7N9K
-slack_alert_workspace:           T03L3PQD8GK
-mongoatlas_project_id:           64d6337acba67e1132a3a4e1
+mongoatlas_project_id:           67ee682c537792244670fa74
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:937628727224:secret:veworld-mongodb-alerts/slack/api-token-1z19Ev
 datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/datadog_keys-oLrGKU
 enabled_nets:
   main:
+    image_version:                  dev-latest
     thor_url:                       https://mainnet.vechain.org
     api:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events,history-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -49,27 +49,38 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events,history-events"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        nfts:                       1304112
-        transactions:               751
-        transfers:                  37840
-        history:                    751
+        nfts:                       '21300000'
+        nft_blacklist:              '21300000'
+        transactions:               '21300000'
+        transfers:                  '21300000'
+        history:                    '21300000'
       sync_logger_interval:
-        nfts:                       1000
-        transactions:               1000
-        transfers:                  1000
-        history:                    1000
+        nfts:                       '1000'
+        transactions:               '1000'
+        transfers:                  '1000'
+        history:                    '1000'
       sync_block_batch_size:
-        nfts:                       100
-        transfers:                  100
+        nfts:                       '100'
+        transfers:                  '100'
       pruner:
         enabled: true
         interval: 300000
         initial_delay: 300000
         removal_chunk_size: 2000
+      blacklist:
+        contract_address:           '0x14091CC9Ae249f26EaF41a5A21207931162A2826'
+        interval:                   '180000'
+        initial_delay:              '60000'
+      version:
+        nfts:                       '2'
+        transfers:                  '1'
+        transactions:               '1'
+        history:                    '2'
+        nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -78,29 +89,26 @@ enabled_nets:
           pattern: "REORG Detected"
           threshold: 1
     mongodb:
-      type:                         ec2
-      fqdn:                         dev-mainnet-mongodb.main.local
-      proto:                        mongodb
-      opts:                         authSource=admin
-      instance_type:                r7g.medium
-      ami_image:                    ami-0a9d27a9f4f5c0efc
-      data_volume_size:             1024
-      data_volume_type:             io2
-      data_volume_iops:             2000
-      cluster_tier:                 ""
-      disk_size_gb:                 0
+      type:                         atlas
+      fqdn:                         mainnet.imcfs.mongodb.net
+      proto:                        mongodb+srv
+      opts:                         retryWrites=true&w=majority
+      cluster_tier:                 M30
+      disk_size_gb:                 450
+      iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
-      auto_scaling_compute_max_instance_size: ""
-      auto_scaling_compute_min_instance_size: ""
-#uncomment following top level label if testnet not required
-#disabled_nets:
+      auto_scaling_compute_max_instance_size: M40
+      auto_scaling_compute_min_instance_size: M20
+  # uncomment following top level label if testnet not required
+  # disabled_nets:
   test:
+    image_version:                  dev-latest
     thor_url:                       https://testnet.vechain.org
     api:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               blocks,clauses,contracts,fungible-token-contracts,nft-events,transactions,transfer-events,history-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -110,27 +118,38 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "blocks,clauses,contracts,fungible-token-contracts,indexer,nft-events,transactions,transfer-events,history-events"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
-        nfts:                       1042259
-        transactions:               15034
-        transfers:                  15034
-        history:                    15034
+        nfts:                       '21300000'
+        nft_blacklist:              '21300000'
+        transactions:               '21300000'
+        transfers:                  '21300000'
+        history:                    '21300000'
       sync_logger_interval:
-        nfts:                       1000
-        transactions:               1000
-        transfers:                  1000
-        history:                    1000
+        nfts:                       '1000'
+        transactions:               '1000'
+        transfers:                  '1000'
+        history:                    '1000'
       sync_block_batch_size:
-        nfts:                       100
-        transfers:                  100
+        nfts:                       '100'
+        transfers:                  '100'
       pruner:
         enabled: true
         interval: 300000
         initial_delay: 300000
         removal_chunk_size: 2000
+      blacklist:
+        contract_address:           '0x07310cECa66aD36A0dc02A142dF28B81a653107E'
+        interval:                   '180000'
+        initial_delay:              '60000'
+      version:
+        nfts:                       '2'
+        transfers:                  '1'
+        transactions:               '1'
+        history:                    '2'
+        nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -139,16 +158,13 @@ enabled_nets:
           pattern: "REORG Detected"
           threshold: 1
     mongodb:
-      type:                         ec2
-      fqdn:                         dev-testnet-mongodb.test.local
-      proto:                        mongodb
-      opts:                         authSource=admin
-      instance_type:                r7g.medium
-      ami_image:                    ami-0a9d27a9f4f5c0efc
-      data_volume_size:             500
-      data_volume_type:             gp2
-#iops must be empty for gp2 type
-      data_volume_iops:             0
-      cluster_tier:                 ""
-      disk_size_gb:                 0
+      type:                         atlas
+      fqdn:                         testnet.imcfs.mongodb.net
+      proto:                        mongodb+srv
+      opts:                         retryWrites=true&w=majority
+      cluster_tier:                 M20
+      disk_size_gb:                 125
+      iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
+      auto_scaling_compute_max_instance_size: M30
+      auto_scaling_compute_min_instance_size: M10

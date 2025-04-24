@@ -52,6 +52,7 @@ enabled_nets:
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         nfts:                       '1304112'
+        nft_blacklist:              '21245914'
         transactions:               '751'
         transfers:                  '37840'
         history:                    '751'
@@ -64,10 +65,20 @@ enabled_nets:
         nfts:                       '100'
         transfers:                  '100'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        contract_address:           '0x14091CC9Ae249f26EaF41a5A21207931162A2826'
+        interval:                   '180000'
+        initial_delay:              '60000'
+      version:
+        nfts:                       '2'
+        transfers:                  '1'
+        transactions:               '1'
+        history:                    '2'
+        nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -108,6 +119,7 @@ enabled_nets:
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         nfts:                       '1042259'
+        nft_blacklist:              '21294907'
         transactions:               '15034'
         transfers:                  '15034'
         history:                    '15034'
@@ -120,10 +132,20 @@ enabled_nets:
         nfts:                       '100'
         transfers:                  '100'
       pruner:
-        enabled: true
-        interval: 43200000
-        initial_delay: 300000
-        removal_chunk_size: 2000
+        enabled:                    true
+        interval:                   '43200000'
+        initial_delay:              '300000'
+        removal_chunk_size:         '2000'
+      blacklist:
+        contract_address:           '0x07310cECa66aD36A0dc02A142dF28B81a653107E'
+        interval:                   '180000'
+        initial_delay:              '60000'
+      version:
+        nfts:                       '2'
+        transfers:                  '1'
+        transactions:               '1'
+        history:                    '2'
+        nft_blacklist:              '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

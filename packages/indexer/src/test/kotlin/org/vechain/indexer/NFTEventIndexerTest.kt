@@ -3,6 +3,7 @@ package org.vechain.indexer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -12,27 +13,38 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.service.ArchiveService
+import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.FileUtils
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
+
+    companion object {
+        private lateinit var abiManager: AbiManager
+
+        @JvmStatic
+        @BeforeAll
+        fun setupAbiManager() {
+            abiManager = AbiManager()
+            abiManager.loadAbis(FileUtils.loadFileStreams("test-abis"))
+        }
+    }
+
     @MockK lateinit var nftRepository: NFTRepository
 
     @MockK lateinit var archiveService: ArchiveService<IndexedNFT, NFTArchive>
 
     @MockK lateinit var nftService: NFTService
 
+    @MockK lateinit var nftBlacklistService: NFTBlacklistService
+
     private lateinit var indexer: NFTEventIndexer
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-
-        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
-        val abiManager = AbiManager()
-        abiManager.loadAbis(abiFileStreams)
 
         indexer =
             NFTEventIndexer(

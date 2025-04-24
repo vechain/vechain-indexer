@@ -90,7 +90,7 @@ module "ecs-cluster" {
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
-  cidr    = data.terraform_remote_state.vpc.outputs.vpc_ipv4
+  cidr    = local.env.cidr
 }
 
 ################################################################################
@@ -254,6 +254,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.nfts
     },
     {
+      name = "INDEXER_START_BLOCK_NFT_BLACKLIST",
+      value = each.value.indexer.start_block.nft_blacklist
+    },
+    {
       name  = "INDEXER_START_BLOCK_TRANSACTIONS"
       value = each.value.indexer.start_block.transactions
     },
@@ -296,7 +300,39 @@ module "ecs-backend-service" {
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
       value = each.value.indexer.pruner.removal_chunk_size
-    }
+    },
+    {
+      name  = "BLACKLIST_CONTRACT_ADDRESS"
+      value = each.value.indexer.blacklist.contract_address
+    },
+    {
+      name = "BLACKLIST_INTERVAL"
+      value = each.value.indexer.blacklist.interval
+    },
+    {
+      name = "BLACKLIST_INITIAL_DELAY"
+      value = each.value.indexer.blacklist.initial_delay
+    },
+    {
+      name = "VERSION_NFTS"
+      value = each.value.indexer.version.nfts
+    },
+    {
+      name = "VERSION_TRANSFERS"
+      value = each.value.indexer.version.transfers
+     },
+    {
+      name = "VERSION_TRANSACTIONS"
+      value = each.value.indexer.version.transactions
+    },
+    {
+      name = "VERSION_HISTORY"
+      value = each.value.indexer.version.history
+    },
+    {
+      name = "VERSION_NFT_BLACKLIST"
+      value = each.value.indexer.version.nft_blacklist
+    },
   ]
 }
 

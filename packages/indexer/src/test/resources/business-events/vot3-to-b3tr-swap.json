@@ -1,0 +1,87 @@
+{
+  "name": "B3TR_Vot3ToB3trSwap",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "transferB3TR",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x5ef79995fe8a89e0812330e4378eb2660cede699",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "transferVOT3",
+      "conditions": [
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000000000000000",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "transferB3TR",
+      "firstEventProperty": "value",
+      "secondEventName": "transferVOT3",
+      "secondEventProperty": "value",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "to",
+      "eventName": "transferB3TR",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferB3TR",
+      "businessEventName": "from"
+    },
+    {
+      "name": "address",
+      "eventName": "transferVOT3",
+      "businessEventName": "inputToken"
+    },
+    {
+      "name": "address",
+      "eventName": "transferB3TR",
+      "businessEventName": "outputToken"
+    },
+    {
+      "name": "value",
+      "eventName": "transferVOT3",
+      "businessEventName": "inputValue"
+    },
+    {
+      "name": "value",
+      "eventName": "transferB3TR",
+      "businessEventName": "outputValue"
+    }
+  ]
+}

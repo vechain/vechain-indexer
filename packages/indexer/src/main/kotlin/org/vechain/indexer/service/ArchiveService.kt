@@ -114,6 +114,8 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     }
 
     open fun findRecordsToPrune(endBlock: Long): List<String> {
+        logger.info("Finding records to prune for {}", clazz.simpleName)
+
         // Construct the aggregation pipeline stages
         val matchStage =
             Document("\$match", Document("data.blockNumber", Document("\$lt", endBlock)))

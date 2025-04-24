@@ -1,4 +1,4 @@
-name: Test (Gradle)
+name: Tests
 
 on:
   pull_request:
@@ -28,15 +28,18 @@ jobs:
           distribution: "oracle"
           java-version: "21"
 
+      - name: Grant execute permissions to Gradle wrapper
+        run: chmod +x ./gradlew
+
       - name: Gradle Spotless
         run: ./gradlew spotlessCheck
 
-  test-gradle:
-    name: Gradle Tests
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [api, common, e2e, indexer]
+        package: [api, common, indexer]
     steps:
       - uses: actions/checkout@v3
 
@@ -45,24 +48,8 @@ jobs:
           distribution: 'oracle'
           java-version: '21'
 
-      - name: Gradle Test
-        run: ./gradlew :package:${{ matrix.package }}:cleanTest :package:${{ matrix.package }}:test
-
-      - name: Debug E2E
-        if: failure() && matrix.package == 'e2e'
-        run: |
-          export INDEXER_ENV_FILE_NAME=packages/indexer/.env.example
-          export API_ENV_FILE_NAME=packages/api/.env.example
-          docker network ls
-          docker ps
-          docker ps -a
-          docker network inspect vechain-database || true
-          docker network inspect vechain-thor || true
-          docker network inspect vechain || true
-          docker compose -f database/docker-compose-mongo.yaml logs
-          docker compose -f database/docker-compose-mongo-setup.yaml logs
-          docker compose -f thor/docker-compose.yaml logs
-          docker compose logs
+      - name: Unit Test
+        run: make test-${{ matrix.package }}
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
@@ -83,6 +70,62 @@ jobs:
         uses: actions/upload-artifact@v4
         if: github.ref == 'refs/heads/main'
         with:
-          name: test-results-${{ github.head_ref || github.ref_name }}
+          name: test-results-${{ matrix.package }}-${{ github.head_ref || github.ref_name }}
           retention-days: 1
-          path: static
+          path: static/${{ matrix.package }}
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'oracle'
+          java-version: '21'
+
+      - name: E2E Test
+        run: make test-e2e
+
+      - name: Debug E2E
+        if: failure()
+        run: |
+          echo "ℹ️ Docker and compose versions"
+          docker --version
+          docker compose version
+          echo "ℹ️ Networks"
+          docker network ls
+          docker network inspect vechain-database || true
+          docker network inspect vechain-thor-e2e || true
+          echo "ℹ️ Containers"
+          docker ps -a
+          echo "ℹ️ Thor Script Logs"
+          docker logs thor-thor-tx-script-1
+          echo "ℹ️ API Logs"
+          docker logs vechain-indexer-api
+          echo "ℹ️ Indexer Logs"
+          docker logs vechain-indexer
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: success() || failure()
+        with:
+          report_paths: packages/e2e/build/test-results/test/TEST-*.xml
+
+      - name: Copy HTML Test Report
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p static/e2e
+          if [ -d "packages/e2e/build/reports/jacoco/test/html" ]; then
+            cp -r packages/e2e/build/reports/jacoco/test/html static/e2e/coverage
+            cp -r packages/e2e/build/reports/tests/test static/e2e/tests
+          fi
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main'
+        with:
+          name: test-results-e2e-${{ github.head_ref || github.ref_name }}
+          retention-days: 1
+          path: static/e2e
