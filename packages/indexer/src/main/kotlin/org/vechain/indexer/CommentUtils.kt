@@ -1,4 +1,4 @@
-package org.vechain.indexer.service
+package org.vechain.indexer
 
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
@@ -12,13 +12,13 @@ import org.vechain.indexer.repository.VevoteCommentRepository
 
 @Profile("vevote-events")
 @Service
-open class CommentService(
+open class CommentUtils(
     private val repository: VevoteCommentRepository,
     private val detector: LanguageDetector = LanguageDetectorBuilder.fromAllLanguages().build(),
     @Value("\${comments.minLength}") private val minLength: Int,
     @Value("\${comments.language.confidence}") private val confidenceThreshold: Double
 ) {
-    private val logger = LoggerFactory.getLogger(CommentService::class.java)
+    private val logger = LoggerFactory.getLogger(CommentUtils::class.java)
 
     /** Used to filter out spam or unwanted comments. */
     fun allowComment(
@@ -63,7 +63,6 @@ open class CommentService(
             )
             return false
         }
-
         return true
     }
 }

@@ -4,27 +4,23 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
-import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.repository.VevoteCommentRepository
-import org.vechain.indexer.service.CommentService
+import org.vechain.indexer.service.commentService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.thor.model.TransferLog
-import org.vechain.indexer.utils.EventUtils
 
 @Profile("vevote-events")
 @Component
 open class VevoteCommentIndexer(
     private val vevoteCommentRepository: VevoteCommentRepository,
-    private val commentService: CommentService,
+    private val commentService: commentService,
     thorClient: ThorClient,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
-    @Value("\${indexer.events.vevote}") private val eventName: String,
     @Value("\${indexer.syncLogInterval.vevote}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.vevote}") private val syncBlockBatchSize: Long,
-    @Value("\${veworld.contract.vevote.address}") private val contractAddress: String,
 ) :
     BaseLogIndexer(
         repository = vevoteCommentRepository,
@@ -40,35 +36,17 @@ open class VevoteCommentIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
-        val processedEvents =
-            processAllEvents(
-                events,
-                transfers,
-                FilterCriteria(
-                    contractAddresses = listOf(contractAddress),
-                    eventNames = listOf(eventName)
-                )
-            )
+        // Get filter criteria from service
+        val filterCriteria = commentService.getFilterCriteria()
 
-        // Process events to extract Reason
-        val potentialReason =
-            processedEvents.mapNotNull { event -> EventUtils.extractVevoteCommentEvent(event) }
+        // Process events using the inherited method
+        val processedEvents = processAllEvents(events, transfers, filterCriteria)
 
-        val allowedReason =
-            potentialReason
-                .filter { vote -> vote.reason.isNotEmpty() }
-                .filter { vote -> commentService.allowComment(vote.proposalId, vote.reason) }
+        // Use service to get filtered comments
+        val allowedReason = commentService.processComments(processedEvents)
 
-        // only save the filtered valid reason
+        // Save the results
         if (allowedReason.isNotEmpty()) {
-            allowedReason.forEach { comment ->
-                logger.info(
-                    "ProposalID: ${comment.proposalId}, " +
-                        "Voter: ${comment.voter}, " +
-                        "Choices: ${comment.choices}"
-                )
-            }
-
             vevoteCommentRepository.saveAll(allowedReason)
         }
     }

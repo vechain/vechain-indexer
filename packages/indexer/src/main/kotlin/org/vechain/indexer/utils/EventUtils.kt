@@ -52,11 +52,6 @@ object EventUtils {
         }
 
     fun extractVevoteCommentEvent(event: IndexedEvent): VevoteProposalComment? {
-        // Check if event type is NOT VoteCast (skip if not the right event)
-        if (event.eventType != "VoteCast") {
-            return null
-        }
-
         try {
             val params = event.params
             val voter = params.getReturnValues()["voter"] as? String ?: return null

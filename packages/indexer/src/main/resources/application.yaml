@@ -74,8 +74,6 @@ indexer:
     interval: ${PRUNER_INTERVAL:300000}
     initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
-  events:
-    vevote: ${EVENT_NAME:VoteCast}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}

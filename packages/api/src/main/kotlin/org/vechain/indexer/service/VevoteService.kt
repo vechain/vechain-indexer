@@ -10,9 +10,7 @@ import org.vechain.indexer.utils.HexUtils
 
 @Profile("vevote-events")
 @Service
-open class VevoteService(
-    private val vevoteCommentRepository: VevoteCommentRepository,
-) : IndexerService {
+open class VevoteService(private val vevoteCommentRepository: VevoteCommentRepository) {
     /** Get comments for a specific proposal. */
     open fun getCommentsByProposalId(
         proposalId: String,
@@ -82,11 +80,5 @@ open class VevoteService(
             HexUtils.normalise(voter),
             choice,
             pageable,
-        )
-
-    override fun getLatestIndexedBlocks(): Map<String, Long> =
-        mapOf(
-            "VevoteProposalComment" to
-                (vevoteCommentRepository.getLatestRecord()?.blockNumber ?: 0),
         )
 }

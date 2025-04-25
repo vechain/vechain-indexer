@@ -7,11 +7,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Max
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.PaginationParameters
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.model.rest.PaginatedResponse
@@ -25,10 +26,10 @@ import org.vechain.indexer.validation.ValidPageSize
 @Tag(name = "Vevote", description = "Query Vevote proposal comments")
 @Validated
 @RestController
-@RequestMapping("/api/v1/vevote")
+@RequestMapping(VEVOTE_PATH)
 open class VevoteController(private val vevoteService: VevoteService) {
 
-    @GetMapping("getComments")
+    @GetMapping("proposals/comments")
     @Operation(
         summary = "Get comments for a proposal.",
     )
@@ -67,7 +68,7 @@ open class VevoteController(private val vevoteService: VevoteService) {
     open fun getComments(
         @RequestParam(required = false) proposalId: String?,
         @ValidAddress @RequestParam(required = false) voter: Address?,
-        @RequestParam(required = false) choice: Int?,
+        @RequestParam(required = false) @Max(32) choice: Int?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?
@@ -76,47 +77,25 @@ open class VevoteController(private val vevoteService: VevoteService) {
 
         // Either a proposalId or voter must be provided
         val result =
-            if (proposalId == null && voter == null && choice == null) {
-                throw BadRequestException(
-                    "Either a proposalId, voter address, or choice must be provided"
-                )
-            } else if (proposalId != null && voter != null) {
-                // Both proposalId and voter provided
-                if (choice != null) {
-                    // All three filters
+            when {
+                proposalId != null && voter != null && choice != null ->
                     vevoteService.getCommentsByProposalAndVoterAndChoice(
                         proposalId,
                         voter.value,
                         choice,
                         pageable
                     )
-                } else {
-                    // Just proposalId and voter
+                proposalId != null && voter != null ->
                     vevoteService.getCommentsByProposalAndVoter(proposalId, voter.value, pageable)
-                }
-            } else if (proposalId != null) {
-                // Only proposalId provided
-                if (choice != null) {
-                    // Filter by proposalId and choice
+                proposalId != null && choice != null ->
                     vevoteService.getCommentsByProposalAndChoice(proposalId, choice, pageable)
-                } else {
-                    // Just proposalId
-                    vevoteService.getCommentsByProposalId(proposalId, pageable)
-                }
-            } else if (voter != null) {
-                // Only voter provided
-                if (choice != null) {
-                    // Filter by voter and choice
+                proposalId != null -> vevoteService.getCommentsByProposalId(proposalId, pageable)
+                voter != null && choice != null ->
                     vevoteService.getCommentsByVoterAndChoice(voter.value, choice, pageable)
-                } else {
-                    // Just voter
-                    vevoteService.getCommentsByVoter(voter.value, pageable)
-                }
-            } else {
-                // Only choice provided
+                voter != null -> vevoteService.getCommentsByVoter(voter.value, pageable)
+                else -> // only choice is not null
                 vevoteService.getCommentsByChoice(choice!!, pageable)
             }
-
         return paginatedResponse(result)
     }
 }
