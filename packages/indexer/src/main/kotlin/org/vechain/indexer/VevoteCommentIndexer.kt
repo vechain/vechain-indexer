@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.repository.VevoteCommentRepository
-import org.vechain.indexer.service.commentService
+import org.vechain.indexer.service.CommentService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -15,7 +15,7 @@ import org.vechain.indexer.thor.model.TransferLog
 @Component
 open class VevoteCommentIndexer(
     private val vevoteCommentRepository: VevoteCommentRepository,
-    private val commentService: commentService,
+    private val commentService: CommentService,
     thorClient: ThorClient,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
@@ -38,13 +38,8 @@ open class VevoteCommentIndexer(
     ) {
         // Get filter criteria from service
         val filterCriteria = commentService.getFilterCriteria()
-
-        // Process events using the inherited method
         val processedEvents = processAllEvents(events, transfers, filterCriteria)
-
-        // Use service to get filtered comments
-        val allowedReason = commentService.processComments(processedEvents)
-
+        val allowedReason = commentService.processComment(processedEvents)
         // Save the results
         if (allowedReason.isNotEmpty()) {
             vevoteCommentRepository.saveAll(allowedReason)

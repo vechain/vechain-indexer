@@ -75,7 +75,7 @@ open class VevoteController(private val vevoteService: VevoteService) {
     ): PaginatedResponse<VevoteProposalComment> {
         val pageable = toPageable(page, size, direction, VevoteProposalComment::blockNumber.name)
 
-        // Either a proposalId or voter must be provided
+        // Either a proposalId or voter or choice must be provided
         val result =
             when {
                 proposalId != null && voter != null && choice != null ->
