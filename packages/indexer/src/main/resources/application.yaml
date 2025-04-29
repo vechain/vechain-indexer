@@ -77,5 +77,3 @@ indexer:
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}
-  language:
-    confidence: ${LANGUAGE_CONFIDENCE:0.9}
