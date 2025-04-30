@@ -11,7 +11,7 @@ import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.thor.model.TransferLog
 
-@Profile("vevote-events")
+@Profile("vevote-result")
 @Component
 open class VoteAggregateIndexer(
     thorClient: ThorClient,

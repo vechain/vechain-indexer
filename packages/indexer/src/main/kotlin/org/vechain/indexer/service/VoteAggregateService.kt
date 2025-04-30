@@ -11,7 +11,7 @@ import org.vechain.indexer.model.VoteAggregate
 import org.vechain.indexer.repository.VoteAggregateRepository
 import org.vechain.indexer.utils.EventUtils
 
-@Profile("vevote-events")
+@Profile("vevote-result")
 @Service
 class VoteAggregateService(
     @Value("\${veworld.contract.vevote.address}") private val contractAddress: String,
