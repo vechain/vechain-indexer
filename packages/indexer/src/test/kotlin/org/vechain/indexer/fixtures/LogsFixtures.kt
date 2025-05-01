@@ -10,6 +10,7 @@ object LogsFixtures {
     val LOGS_VIP180_CONTRACTS = buildLogsFixture("logs/logs_vip180_contracts.json")
     val LOGS_NFT_MINT_2 = buildLogsFixture("logs/logs_nft_mint_2.json")
     val LOGS_MULTIPLE_TXS = buildLogsFixture("logs/logs_multiple_txs.json")
+    val LOGS_VEVOTE_COMMENTS = buildLogsFixture("logs/logs_vevote_comments.json")
     val LOGS_SEMI_FUNGIBLE_TOKENS = buildLogsFixture("logs/logs_semi_fungible_tokens.json")
     val LOGS_VET_TRANSFER_EVENTS = buildLogsFixture("logs/logs_vet_events.json")
     val LOGS_BATCH_TRANSFERS = buildLogsFixture("logs/logs_batch_transfers.json")
