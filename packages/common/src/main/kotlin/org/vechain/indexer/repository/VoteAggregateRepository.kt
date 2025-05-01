@@ -10,7 +10,7 @@ import org.vechain.indexer.model.VoteAggregate
 @Repository
 interface VoteAggregateRepository : BaseIndexedRepository<VoteAggregate> {
 
-    fun findByProposalIdAndChoice(proposalId: String, choice: Int): VoteAggregate?
+    fun findByProposalIdAndChoice(proposalId: String, choice: Int): Slice<VoteAggregate>
 
     //  Get all aggregates for a proposal
     fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VoteAggregate>

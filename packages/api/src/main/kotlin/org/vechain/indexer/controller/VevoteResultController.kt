@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -74,23 +73,14 @@ open class VevoteResultController(private val resultsService: VevoteResultsServi
 
         val pageable = toPageable(page, size, direction, VoteAggregate::blockNumber.name)
 
-        val results: Slice<VoteAggregate> =
+        val result: Slice<VoteAggregate> =
             when {
-                proposalId != null && choice != null -> {
-                    // Handle case where both proposalId and choice are provided
-                    val singleResult =
-                        resultsService.getResultsByProposalIdAndChoice(proposalId, choice, pageable)
-
-                    if (singleResult != null) {
-                        SliceImpl(listOf(singleResult), pageable, false)
-                    } else {
-                        SliceImpl(emptyList(), pageable, false)
-                    }
-                }
+                proposalId != null && choice != null ->
+                    resultsService.getResultsByProposalIdAndChoice(proposalId, choice, pageable)
                 proposalId != null -> resultsService.getResultsByProposalId(proposalId, pageable)
                 else -> resultsService.getResultsByChoice(choice!!, pageable)
             }
 
-        return paginatedResponse(results)
+        return paginatedResponse(result)
     }
 }

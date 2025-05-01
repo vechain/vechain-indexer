@@ -15,7 +15,8 @@ open class VevoteResultsService(private val vevoteAggregateRepository: VoteAggre
         proposalId: String,
         choice: Int,
         pageable: Pageable
-    ): VoteAggregate? = vevoteAggregateRepository.findByProposalIdAndChoice(proposalId, choice)
+    ): Slice<VoteAggregate> =
+        vevoteAggregateRepository.findByProposalIdAndChoice(proposalId, choice)
 
     open fun getResultsByProposalId(
         proposalId: String,
