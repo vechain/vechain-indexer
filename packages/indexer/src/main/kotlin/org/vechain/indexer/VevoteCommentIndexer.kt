@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
+import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.CommentService
 import org.vechain.indexer.thor.client.ThorClient
@@ -21,6 +22,7 @@ open class VevoteCommentIndexer(
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.vevote}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.vevote}") private val syncBlockBatchSize: Long,
+    @Value("\${veworld.contract.vevote.address}") private val contractAddress: String,
 ) :
     BaseLogIndexer(
         repository = vevoteCommentRepository,
@@ -36,9 +38,15 @@ open class VevoteCommentIndexer(
         events: List<EventLog>,
         transfers: List<TransferLog>,
     ) {
-        // Get filter criteria from service
-        val filterCriteria = commentService.getFilterCriteria()
-        val processedEvents = processAllEvents(events, transfers, filterCriteria)
+        val processedEvents =
+            processAllEvents(
+                events,
+                transfers,
+                FilterCriteria(
+                    contractAddresses = listOf(contractAddress),
+                    eventNames = listOf("VoteCast")
+                )
+            )
         val allowedReason = commentService.processComment(processedEvents)
         // Save the results
         if (allowedReason.isNotEmpty()) {

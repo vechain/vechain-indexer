@@ -1,11 +1,7 @@
 package org.vechain.indexer.utils
 
-import java.math.BigInteger
 import org.vechain.indexer.event.model.generic.GenericEventParameters
-import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.model.VevoteProposalComment
-import org.vechain.indexer.model.generateId
 import org.vechain.indexer.model.history.HistoryEventName
 
 object EventUtils {
@@ -50,35 +46,6 @@ object EventUtils {
             "VET_TRANSFER" -> TransferEventType.VET
             else -> null // Other events will not be labeled
         }
-
-    fun extractVevoteCommentEvent(event: IndexedEvent): VevoteProposalComment? {
-        try {
-            val params = event.params
-            val voter = params.getReturnValues()["voter"] as? String ?: return null
-            val proposalId = params.getReturnValues()["proposalId"]?.toString() ?: return null
-            val reason = params.getReturnValues()["reason"] as? String
-            val nonNullReasonForId = reason ?: ""
-            // Get the raw choice value
-            val choiceValue = (params.getReturnValues()["choices"] as? Number)?.toLong() ?: 0L
-            val choicesList = getChoice(choiceValue)
-
-            return VevoteProposalComment(
-                id = generateId(proposalId, nonNullReasonForId),
-                blockId = event.blockId,
-                blockNumber = event.blockNumber,
-                blockTimestamp = event.blockTimestamp,
-                voter = voter,
-                proposalId = proposalId,
-                choices = choicesList,
-                weight =
-                    (params.getReturnValues()["weight"] as? Number)?.toLong()?.toBigInteger()
-                        ?: BigInteger.ZERO,
-                reason = reason ?: ""
-            )
-        } catch (e: Exception) {
-            return null
-        }
-    }
 
     fun getChoice(choiceValue: Long): List<Int> {
         if (choiceValue < 0) {
