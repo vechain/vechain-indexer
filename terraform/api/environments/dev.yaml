@@ -101,7 +101,7 @@ enabled_nets:
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
       auto_scaling_compute_max_instance_size: M40
-      auto_scaling_compute_min_instance_size: M20
+      auto_scaling_compute_min_instance_size: M30
   # uncomment following top level label if testnet not required
   # disabled_nets:
   test:
@@ -170,4 +170,4 @@ enabled_nets:
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
       auto_scaling_compute_max_instance_size: M30
-      auto_scaling_compute_min_instance_size: M10
+      auto_scaling_compute_min_instance_size: M20
