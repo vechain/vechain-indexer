@@ -2,8 +2,11 @@ image_tag:                       dev-latest
 region:                          eu-west-1
 project:                         veworld
 environment:                     dev
+application:                     veworld
+root_domain:                     vechain.org
+slack_channel_id:                C05NA25LG78
+slack_workspace_id:              T03L3PQD8GK
 certificate_arn:                 arn:aws:acm:eu-west-1:937628727224:certificate/67184736-cc67-4d9c-990e-905e018a2d4e
-
 azs:
   -                              eu-west-1a
   -                              eu-west-1b
@@ -98,7 +101,7 @@ enabled_nets:
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
       auto_scaling_compute_max_instance_size: M40
-      auto_scaling_compute_min_instance_size: M20
+      auto_scaling_compute_min_instance_size: M30
   # uncomment following top level label if testnet not required
   # disabled_nets:
   test:
@@ -162,9 +165,9 @@ enabled_nets:
       fqdn:                         testnet.imcfs.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M20
+      cluster_tier:                 M30
       disk_size_gb:                 125
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
       auto_scaling_compute_max_instance_size: M30
-      auto_scaling_compute_min_instance_size: M10
+      auto_scaling_compute_min_instance_size: M20
