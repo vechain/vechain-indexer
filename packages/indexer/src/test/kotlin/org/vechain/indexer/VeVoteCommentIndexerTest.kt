@@ -16,6 +16,10 @@ import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.CommentService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.FileUtils
+import strikt.api.expect
+import strikt.assertions.contains
+import strikt.assertions.hasSize
+import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
 class VeVoteCommentIndexerTest {
@@ -58,143 +62,139 @@ class VeVoteCommentIndexerTest {
 
     @Test
     fun `can handle different vote choices`() {
-        // Create mock comments for different vote choices
-        val singleChoiceVote =
-            mockk<VevoteProposalComment> {
-                every { voter } returns "0x96b1f3434b7bdec11955db84fe55e60f67b4651f"
-                every { proposalId } returns
-                    "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                every { choices } returns listOf(1)
-                every { weight } returns BigInteger.valueOf(100)
-                every { reason } returns ""
-                every { blockNumber } returns 21432834L
-            }
-
-        val multiChoiceVote =
-            mockk<VevoteProposalComment> {
-                every { voter } returns "0x08c7bfbacb25c6aabf86ddfa42dba9a570da0884"
-                every { proposalId } returns
-                    "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
-                every { choices } returns listOf(1, 3, 4)
-                every { weight } returns BigInteger.valueOf(2340)
-                every { reason } returns "I am voting for choice A, Choice C and Choice D"
-                every { blockNumber } returns 21432977L
-            }
-
-        // Make commentService.processComment return our mock comments
-        every { commentService.processComment(any()) } returns
-            listOf(singleChoiceVote, multiChoiceVote)
+        // Set up to capture what gets inserted into MongoDB
+        val commentsSlot = slot<Collection<VevoteProposalComment>>()
         every {
-            mongoTemplate.insert(
-                any<Collection<VevoteProposalComment>>(),
-                VevoteProposalComment::class.java
-            )
+            mongoTemplate.insert(capture(commentsSlot), VevoteProposalComment::class.java)
         } returns mutableListOf()
+
+        every { commentService.processComment(any()) } answers
+            {
+                listOf(
+                    VevoteProposalComment(
+                        id = "id1",
+                        blockId = LOGS_VEVOTE_COMMENTS[0].meta.blockID,
+                        blockNumber = LOGS_VEVOTE_COMMENTS[0].meta.blockNumber,
+                        blockTimestamp = LOGS_VEVOTE_COMMENTS[0].meta.blockTimestamp,
+                        voter = "0x96b1f3434b7bdec11955db84fe55e60f67b4651f",
+                        proposalId =
+                            "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
+                        choices = listOf(1),
+                        weight = BigInteger.valueOf(100),
+                        reason = ""
+                    ),
+                    VevoteProposalComment(
+                        id = "id2",
+                        blockId = LOGS_VEVOTE_COMMENTS[9].meta.blockID,
+                        blockNumber = LOGS_VEVOTE_COMMENTS[9].meta.blockTimestamp,
+                        blockTimestamp = LOGS_VEVOTE_COMMENTS[9].meta.blockTimestamp,
+                        voter = "0x08c7bfbacb25c6aabf86ddfa42dba9a570da0884",
+                        proposalId =
+                            "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
+                        choices = listOf(1, 3, 4),
+                        weight = BigInteger.valueOf(2340),
+                        reason = "I am voting for choice A, Choice C and Choice D"
+                    )
+                )
+            }
 
         // Process logs
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())
 
-        // Verify both types of votes were processed
-        verify {
-            mongoTemplate.insert(
-                match<Collection<VevoteProposalComment>> {
-                    it.any { vote -> vote.choices.size == 1 } &&
-                        it.any { vote -> vote.choices.containsAll(listOf(1, 3, 4)) }
-                },
-                VevoteProposalComment::class.java
-            )
+        // Verify the captured comments
+        val comments = commentsSlot.captured
+        expect {
+            that(comments).hasSize(2)
+            that(comments.any { it.choices.size == 1 }).isEqualTo(true)
+            that(comments.any { it.choices.size > 1 }).isEqualTo(true)
+            that(comments.any { it.choices.containsAll(listOf(1, 3, 4)) }).isEqualTo(true)
         }
     }
 
     @Test
     fun `can process votes from the same user on different proposals`() {
-        // Create mock comments for the same user voting on different proposals
-        val firstProposalVote =
-            mockk<VevoteProposalComment> {
-                every { voter } returns "0x96b1f3434b7bdec11955db84fe55e60f67b4651f"
-                every { proposalId } returns
-                    "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                every { choices } returns listOf(1)
-                every { weight } returns BigInteger.valueOf(100)
-                every { reason } returns ""
-                every { blockNumber } returns 21432834L
-            }
-
-        val secondProposalVote =
-            mockk<VevoteProposalComment> {
-                every { voter } returns "0x96b1f3434b7bdec11955db84fe55e60f67b4651f"
-                every { proposalId } returns
-                    "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
-                every { choices } returns listOf(1)
-                every { weight } returns BigInteger.valueOf(100)
-                every { reason } returns ""
-                every { blockNumber } returns 21432958L
-            }
-
-        // Make commentService.processComment return our mock comments
-        every { commentService.processComment(any()) } returns
-            listOf(firstProposalVote, secondProposalVote)
+        val commentsSlot = slot<Collection<VevoteProposalComment>>()
         every {
-            mongoTemplate.insert(
-                any<Collection<VevoteProposalComment>>(),
-                VevoteProposalComment::class.java
-            )
+            mongoTemplate.insert(capture(commentsSlot), VevoteProposalComment::class.java)
         } returns mutableListOf()
+
+        every { commentService.processComment(any()) } returns
+            listOf(
+                VevoteProposalComment(
+                    id = "id1",
+                    blockId = LOGS_VEVOTE_COMMENTS[0].meta.blockID,
+                    blockNumber = LOGS_VEVOTE_COMMENTS[0].meta.blockNumber,
+                    blockTimestamp = LOGS_VEVOTE_COMMENTS[0].meta.blockTimestamp,
+                    voter = "0x96b1f3434b7bdec11955db84fe55e60f67b4651f",
+                    proposalId =
+                        "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
+                    choices = listOf(1),
+                    weight = BigInteger.valueOf(100),
+                    reason = ""
+                ),
+                VevoteProposalComment(
+                    id = "id2",
+                    blockId = LOGS_VEVOTE_COMMENTS[9].meta.blockID,
+                    blockNumber = LOGS_VEVOTE_COMMENTS[9].meta.blockNumber,
+                    blockTimestamp = LOGS_VEVOTE_COMMENTS[9].meta.blockTimestamp,
+                    voter = "0x96b1f3434b7bdec11955db84fe55e60f67b4651f",
+                    proposalId =
+                        "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
+                    choices = listOf(1),
+                    weight = BigInteger.valueOf(100),
+                    reason = ""
+                )
+            )
 
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())
 
-        verify {
-            mongoTemplate.insert(
-                match<Collection<VevoteProposalComment>> {
-                    it.count { vote ->
-                        vote.voter == "0x96b1f3434b7bdec11955db84fe55e60f67b4651f"
-                    } == 2 &&
-                        it.any { vote ->
-                            vote.proposalId ==
-                                "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                        } &&
-                        it.any { vote ->
-                            vote.proposalId ==
-                                "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
-                        }
-                },
-                VevoteProposalComment::class.java
-            )
+        // Verify the captured comments
+        val comments = commentsSlot.captured
+        expect {
+            that(comments).hasSize(2)
+            that(comments.count { it.voter == "0x96b1f3434b7bdec11955db84fe55e60f67b4651f" })
+                .isEqualTo(2)
+            that(comments.map { it.proposalId })
+                .contains("0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7")
+            that(comments.map { it.proposalId })
+                .contains("0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a")
         }
     }
 
     @Test
     fun `can process votes with long comments`() {
-        // Create mock for a vote with a long comment
-        val longCommentVote =
-            mockk<VevoteProposalComment> {
-                every { voter } returns "0x08c7bfbacb25c6aabf86ddfa42dba9a570da0884"
-                every { proposalId } returns
-                    "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                every { choices } returns listOf(4)
-                every { weight } returns BigInteger.valueOf(2340)
-                every { reason } returns
-                    "While I see valid arguments presented by both sides of this proposal, I currently lack sufficient clarity on the long-term implications of the proposed changes. There are nuanced trade-offs that I feel require more discussion or deeper community engagement before I can confidently take a firm stance. Out of respect for the process and to avoid unintentionally skewing the outcome without being fully informed, I am choosing to abstain from this vote."
-                every { blockNumber } returns 21432877L
-            }
-
-        every { commentService.processComment(any()) } returns listOf(longCommentVote)
+        // Set up to capture what gets inserted into MongoDB
+        val commentsSlot = slot<Collection<VevoteProposalComment>>()
         every {
-            mongoTemplate.insert(
-                any<Collection<VevoteProposalComment>>(),
-                VevoteProposalComment::class.java
-            )
+            mongoTemplate.insert(capture(commentsSlot), VevoteProposalComment::class.java)
         } returns mutableListOf()
+
+        val longComment =
+            "While I see valid arguments presented by both sides of this proposal, I currently lack sufficient clarity on the long-term implications of the proposed changes. There are nuanced trade-offs that I feel require more discussion or deeper community engagement before I can confidently take a firm stance. Out of respect for the process and to avoid unintentionally skewing the outcome without being fully informed, I am choosing to abstain from this vote."
+
+        every { commentService.processComment(any()) } returns
+            listOf(
+                VevoteProposalComment(
+                    id = "id1",
+                    blockId = LOGS_VEVOTE_COMMENTS[7].meta.blockID,
+                    blockNumber = LOGS_VEVOTE_COMMENTS[7].meta.blockNumber,
+                    blockTimestamp = LOGS_VEVOTE_COMMENTS[7].meta.blockTimestamp,
+                    voter = "0x08c7bfbacb25c6aabf86ddfa42dba9a570da0884",
+                    proposalId =
+                        "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
+                    choices = listOf(4),
+                    weight = BigInteger.valueOf(2340),
+                    reason = longComment
+                )
+            )
 
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())
 
-        verify {
-            mongoTemplate.insert(
-                match<Collection<VevoteProposalComment>> {
-                    it.any { vote -> vote.reason.length > 100 }
-                },
-                VevoteProposalComment::class.java
-            )
+        val comments = commentsSlot.captured
+        expect {
+            that(comments).hasSize(1)
+            that(comments.first().reason).isEqualTo(longComment)
+            that(comments.first().reason.length > 100).isEqualTo(true)
         }
     }
 }
