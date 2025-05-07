@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,vevote-events,vevote-result}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,vevote-events,nft-events,history-events}
   output:
     ansi:
       enabled: always
@@ -29,7 +29,7 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: 'health'
+        include: "health"
   endpoint:
     health:
       show-details: always
@@ -54,11 +54,12 @@ veworld:
 
 indexer:
   startBlock:
-    nfts: ${INDEXER_START_BLOCK_NFTS:20136054}
-    transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:20136054}
-    transfers: ${INDEXER_START_BLOCK_TRANSFERS:20136054}
-    history: ${INDEXER_START_BLOCK_HISTORY:20136054}
-    vevote: ${INDEXER_START_BLOCK_VEVOTE:21432863}
+    nfts: ${INDEXER_START_BLOCK_NFTS:0}
+    nft_blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
+    transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
+    transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
+    history: ${INDEXER_START_BLOCK_HISTORY:0}
+    vevote: ${INDEXER_START_BLOCK_VEVOTE:21432703}
   syncLogInterval:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
@@ -68,12 +69,23 @@ indexer:
   syncBlockBatchSize:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:100}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:100}
-    vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:100}
+    vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:1000}
   pruner:
     enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:300000}
     initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
+  blacklist:
+    contract_address: ${BLACKLIST_CONTRACT_ADDRESS:0x14091CC9Ae249f26EaF41a5A21207931162A2826}
+    initialDelay: ${BLACKLIST_INITIAL_DELAY:1}
+    interval: ${BLACKLIST_INTERVAL:1800000}
+  version:
+    nfts: ${VERSION_NFTS:1}
+    transfers: ${VERSION_TRANSFERS:1}
+    transactions: ${VERSION_TRANSACTIONS:1}
+    history: ${VERSION_HISTORY:1}
+    nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
+    vevote_comments: ${VERSION_VEVOTE_COMMENTS:4}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}

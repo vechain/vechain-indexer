@@ -2,9 +2,12 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
+import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.CommentService
 import org.vechain.indexer.thor.client.ThorClient
@@ -17,6 +20,7 @@ import org.vechain.indexer.thor.model.TransferLog
 open class VevoteCommentIndexer(
     private val vevoteCommentRepository: VevoteCommentRepository,
     private val commentService: CommentService,
+    private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
@@ -33,7 +37,6 @@ open class VevoteCommentIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
     ) {
-
     override fun processLogs(
         events: List<EventLog>,
         transfers: List<TransferLog>,
@@ -44,13 +47,13 @@ open class VevoteCommentIndexer(
                 transfers,
                 FilterCriteria(
                     contractAddresses = listOf(contractAddress),
-                    eventNames = listOf("VoteCast")
-                )
+                    eventNames = listOf("VoteCast"),
+                ),
             )
         val allowedReason = commentService.processComment(processedEvents)
         // Save the results
         if (allowedReason.isNotEmpty()) {
-            vevoteCommentRepository.saveAll(allowedReason)
+            mongoTemplate.insert(allowedReason, VevoteProposalComment::class.java)
         }
     }
 
