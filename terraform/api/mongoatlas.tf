@@ -62,7 +62,7 @@ module "mongoatlas-main-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster = try(local.env.enabled_nets.test.mongodb.type,false) == "atlas" ? true : false
+  enable_cluster = try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? true : false
 
   cluster_config = {
     cluster_name                 = "${local.env.environment}-Mainnet"
@@ -138,7 +138,7 @@ module "mongoatlas-test-net" {
     audit_authorization_success = false // Enabling Audit authorization successes can severely impact cluster performance. Enable this option with caution.
   }
 
-  enable_cluster = try(local.env.enabled_nets.test.mongodb.type,false) == "atlas" ? true : false
+  enable_cluster = try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? true : false
   cluster_config = {
     cluster_name                 = "${local.env.environment}-Testnet"
     disk_size_gb                 = local.env.enabled_nets.test.mongodb.disk_size_gb
