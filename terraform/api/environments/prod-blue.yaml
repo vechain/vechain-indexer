@@ -91,7 +91,7 @@ enabled_nets:
       fqdn:                         mainnet.rsmhw.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M30
+      cluster_tier:                 M40
       disk_size_gb:                 350
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT

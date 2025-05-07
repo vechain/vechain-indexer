@@ -96,11 +96,11 @@ enabled_nets:
       fqdn:                         mainnet.imcfs.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M30
+      cluster_tier:                 M40
       disk_size_gb:                 450
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:937628727224:secret:dev/mongo-atlas-api-WxcxJo
-      auto_scaling_compute_max_instance_size: M40
+      auto_scaling_compute_max_instance_size: M50
       auto_scaling_compute_min_instance_size: M30
   # uncomment following top level label if testnet not required
   # disabled_nets:
