@@ -1,7 +1,6 @@
 package org.vechain.indexer.integration
 
 import jakarta.annotation.PostConstruct
-import javax.annotation.PostConstruct
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
