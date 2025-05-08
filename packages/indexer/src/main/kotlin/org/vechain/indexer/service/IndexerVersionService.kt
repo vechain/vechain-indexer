@@ -29,7 +29,7 @@ open class IndexerVersionService(
                 logger.info("No version document found for $collectionName. No action taken.")
                 updateIndexerVersion(
                     collectionName,
-                    newVersion,
+                    1,
                 )
                 return false
             }
