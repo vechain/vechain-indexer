@@ -91,12 +91,12 @@ enabled_nets:
       fqdn:                         mainnet.rsmhw.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M30
+      cluster_tier:                 M40
       disk_size_gb:                 350
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M40
-      auto_scaling_compute_min_instance_size: M20
+      auto_scaling_compute_max_instance_size: M50
+      auto_scaling_compute_min_instance_size: M30
   test:
     image_version:                  latest
     thor_url:                       https://testnet.vechain.org
@@ -158,7 +158,7 @@ enabled_nets:
       fqdn:                         testnet.rsmhw.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M10
+      cluster_tier:                 M20
       disk_size_gb:                 119
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
