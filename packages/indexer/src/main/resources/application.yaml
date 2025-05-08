@@ -85,7 +85,7 @@ indexer:
     transactions: ${VERSION_TRANSACTIONS:1}
     history: ${VERSION_HISTORY:1}
     nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
-    vevote_comments: ${VERSION_VEVOTE_COMMENTS:4}
+    vevote_comments: ${VERSION_VEVOTE_COMMENTS:1}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}
