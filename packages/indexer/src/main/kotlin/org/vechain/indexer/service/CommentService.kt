@@ -19,7 +19,7 @@ import org.vechain.indexer.utils.EventUtils.getChoice
 class CommentService(
     private val repository: VevoteCommentRepository,
     @Value("\${comments.minLength}") private val minLength: Int,
-    @Value("\${comments.language.confidence}") private val confidenceThreshold: Int,
+    @Value("\${comments.language.confidence}") private val confidenceThreshold: String,
 ) {
     private val logger = LoggerFactory.getLogger(CommentService::class.java)
     private val detector: LanguageDetector = LanguageDetectorBuilder.fromAllLanguages().build()
@@ -102,7 +102,7 @@ class CommentService(
 
         logger.debug("English confidence value $confidence for: $comment")
 
-        if (confidence < confidenceThreshold) {
+        if (confidence < confidenceThreshold.toDouble()) {
             logger.info(
                 "Failed to meet confidence threshold of $confidenceThreshold for English: $comment",
             )
