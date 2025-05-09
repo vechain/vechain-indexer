@@ -9,14 +9,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.Address
+import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
+import org.vechain.indexer.service.VevoteResultsService
 import org.vechain.indexer.service.VevoteService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
@@ -27,7 +34,10 @@ import org.vechain.indexer.validation.ValidPageSize
 @Validated
 @RestController
 @RequestMapping(VEVOTE_PATH)
-open class VevoteController(private val vevoteService: VevoteService) {
+open class VevoteController(
+    private val vevoteService: VevoteService,
+    private val resultService: VevoteResultsService,
+) {
 
     @GetMapping("proposals/comments")
     @Operation(
@@ -96,6 +106,59 @@ open class VevoteController(private val vevoteService: VevoteService) {
                 else -> // only choice is not null
                 vevoteService.getCommentsByChoice(choice!!, pageable)
             }
+        return paginatedResponse(result)
+    }
+
+    @GetMapping("proposal/results")
+    @Operation(
+        summary = "Returns a list of results on vote weight per choice",
+    )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "A valid proposalId or voter address must be provided"
+                )
+            ]
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "proposalId",
+        description = "Proposal ID to filter by.",
+        required = false,
+        schema = Schema(type = "string"),
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "choice",
+        schema = Schema(type = "integer"),
+        description = "Filter by specific choice number",
+        required = false,
+    )
+    @PaginationParameters
+    open fun getResults(
+        @RequestParam(required = false) proposalId: String?,
+        @RequestParam(required = false) choice: Int?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?
+    ): PaginatedResponse<VeVoteProposalResults> {
+        if (proposalId == null && choice == null) {
+            throw BadRequestException("Either a proposalId or choice must be provided")
+        }
+
+        val pageable = toPageable(page, size, direction, VeVoteProposalResults::blockNumber.name)
+
+        val result: Slice<VeVoteProposalResults> =
+            when {
+                proposalId != null && choice != null ->
+                    resultService.getResultsByProposalIdAndChoice(proposalId, choice, pageable)
+                proposalId != null -> resultService.getResultsByProposalId(proposalId, pageable)
+                else -> resultService.getResultsByChoice(choice!!, pageable)
+            }
+
         return paginatedResponse(result)
     }
 }

@@ -7,8 +7,8 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.thor.model.Block
 
-@Document(collection = "vevote_choice_aggregates")
-data class VoteAggregate
+@Document(collection = "vevote_proposal_results")
+data class VeVoteProposalResults
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String,

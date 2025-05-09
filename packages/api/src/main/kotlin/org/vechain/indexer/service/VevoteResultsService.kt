@@ -4,27 +4,31 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.VoteAggregate
-import org.vechain.indexer.repository.VoteAggregateRepository
+import org.vechain.indexer.model.VeVoteProposalResults
+import org.vechain.indexer.repository.VeVoteProposalResultRepository
 
 @Profile("vevote-result")
 @Service
-open class VevoteResultsService(private val vevoteAggregateRepository: VoteAggregateRepository) {
+open class VevoteResultsService(
+    private val vevoteProposalResultRepositoryVe: VeVoteProposalResultRepository
+) {
 
     open fun getResultsByProposalIdAndChoice(
         proposalId: String,
         choice: Int,
         pageable: Pageable
-    ): Slice<VoteAggregate> =
-        vevoteAggregateRepository.findByProposalIdAndChoice(proposalId, choice)
+    ): Slice<VeVoteProposalResults> =
+        vevoteProposalResultRepositoryVe.findByProposalIdAndChoice(proposalId, choice)
 
     open fun getResultsByProposalId(
         proposalId: String,
         pageable: Pageable,
-    ): Slice<VoteAggregate> = vevoteAggregateRepository.findAllByProposalId(proposalId, pageable)
+    ): Slice<VeVoteProposalResults> =
+        vevoteProposalResultRepositoryVe.findAllByProposalId(proposalId, pageable)
 
     open fun getResultsByChoice(
         choice: Int,
         pageable: Pageable,
-    ): Slice<VoteAggregate> = vevoteAggregateRepository.findAllByChoice(choice, pageable)
+    ): Slice<VeVoteProposalResults> =
+        vevoteProposalResultRepositoryVe.findAllByChoice(choice, pageable)
 }

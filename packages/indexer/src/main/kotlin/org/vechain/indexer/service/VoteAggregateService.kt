@@ -2,35 +2,25 @@ package org.vechain.indexer.service
 
 import java.math.BigDecimal
 import java.math.RoundingMode
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.VoteAggregate
-import org.vechain.indexer.repository.VoteAggregateRepository
-import org.vechain.indexer.utils.EventUtils
+import org.vechain.indexer.model.VeVoteProposalResults
+import org.vechain.indexer.repository.VeVoteProposalResultRepository
 
 @Profile("vevote-result")
 @Service
 class VoteAggregateService(
-    @Value("\${veworld.contract.vevote.address}") private val contractAddress: String,
-    private val repository: VoteAggregateRepository
+    private val repository: VeVoteProposalResultRepository,
+    private val commentService: CommentService
 ) {
 
-    fun getFileCriteria(): FilterCriteria {
-        return FilterCriteria(
-            contractAddresses = listOf(contractAddress),
-            eventNames = listOf("VoteCast"),
-        )
-    }
-
-    fun processVoteAggregates(processedEvents: List<IndexedEvent>): List<VoteAggregate> {
-        val results = mutableListOf<VoteAggregate>()
+    fun processVoteAggregates(processedEvents: List<IndexedEvent>): List<VeVoteProposalResults> {
+        val results = mutableListOf<VeVoteProposalResults>()
 
         // Use the existing event extraction, then transform for aggregation
         val voteEvents =
-            processedEvents.mapNotNull { event -> EventUtils.extractVevoteCommentEvent(event) }
+            processedEvents.mapNotNull { event -> commentService.extractVevoteCommentEvent(event) }
 
         voteEvents.forEach { vote ->
             if (vote.choices.isEmpty()) return@forEach
@@ -42,24 +32,25 @@ class VoteAggregateService(
 
             // Process each choice in the vote
             vote.choices.forEach { choice ->
-                // Look for existing aggregate
-                val existing = repository.findByProposalIdAndChoice(vote.proposalId, choice)
+                val aggregateId = "${vote.proposalId}-${choice}"
+                // Look for existing aggregate by ID
+                val existingResult = repository.findById(aggregateId).orElse(null)
 
-                // Create or update aggregate
+                // Create or update aggregate result
                 val updated =
-                    if (existing != null) {
-                        VoteAggregate(
+                    if (existingResult != null) {
+                        VeVoteProposalResults(
                             id = "${vote.proposalId}-${choice}",
                             blockId = vote.blockId,
                             blockNumber = vote.blockNumber,
                             blockTimestamp = vote.blockTimestamp,
                             proposalId = vote.proposalId, // You were missing this
                             choice = choice,
-                            totalWeight = existing.totalWeight.add(weightPerChoice),
-                            voteCount = existing.voteCount + 1
+                            totalWeight = existingResult.totalWeight.add(weightPerChoice),
+                            voteCount = existingResult.voteCount + 1
                         )
                     } else {
-                        VoteAggregate(
+                        VeVoteProposalResults(
                             id = "${vote.proposalId}-${choice}",
                             blockId = vote.blockId,
                             blockNumber = vote.blockNumber,
