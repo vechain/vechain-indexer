@@ -1,8 +1,10 @@
 package org.vechain.indexer.service
 
 import com.github.pemistahl.lingua.api.Language
+import com.github.pemistahl.lingua.api.LanguageDetector
+import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import java.math.BigInteger
-import okhttp3.internal.concurrent.TaskRunner.Companion.logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -17,8 +19,10 @@ import org.vechain.indexer.utils.EventUtils.getChoice
 class CommentService(
     private val repository: VevoteCommentRepository,
     @Value("\${comments.minLength}") private val minLength: Int,
-    @Value("\${comments.maxLength}") private val confidenceThreshold: Int,
+    @Value("\${comments.language.confidence}") private val confidenceThreshold: Int,
 ) {
+    private val logger = LoggerFactory.getLogger(CommentService::class.java)
+    private val detector: LanguageDetector = LanguageDetectorBuilder.fromAllLanguages().build()
 
     fun processComment(processedEvents: List<IndexedEvent>): List<VevoteProposalComment> {
         // Process events to extract Reason
