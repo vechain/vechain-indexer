@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -9,6 +10,7 @@ import org.vechain.indexer.NFTEventIndexer
 import org.vechain.indexer.Status
 import org.vechain.indexer.service.NFTBlacklistService
 
+@Profile("nft-events,history-events")
 @EnableScheduling
 @Component
 class NFTBlacklistScheduler(
