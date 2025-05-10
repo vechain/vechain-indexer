@@ -251,9 +251,9 @@ allprojects {
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.1")
-        testImplementation("org.testcontainers:testcontainers:1.20.4")
-        testImplementation("org.testcontainers:junit-jupiter:1.20.4")
-        testImplementation("org.testcontainers:mongodb:1.20.4")
+        testImplementation("org.testcontainers:testcontainers:1.21.0")
+        testImplementation("org.testcontainers:junit-jupiter:1.21.0")
+        testImplementation("org.testcontainers:mongodb:1.21.0")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
         testImplementation("io.mockk:mockk:1.13.14")
         testImplementation("io.strikt:strikt-core:0.35.1")
