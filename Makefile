@@ -36,9 +36,8 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Build (Gradle)
-build: build-indexer-local build-api-local #@ Build the application with Gradle.
+build-local: build-indexer-local build-api-local #@ Build the application with Gradle.
 	echo "Build completed."
-.PHONY:build
 build-indexer-local: #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test
 build-api-local: #@ Build the application with Gradle.
@@ -55,6 +54,15 @@ run-api: build-api-local #@ Run the api locally.
         source ./packages/api/.env; \
         set +a; \
 	java -jar packages/api/build/libs/api*.jar
+
+# Application Build (Docker)
+build: build-indexer build-api #@ Build the application with Docker.
+	echo "Build completed."
+.PHONY:build
+build-indexer: #@ Build the indexer with Docker.
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t b3tr-indexer .
+build-api: #@ Build the api with Docker.
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t b3tr-api .
 
 # Application Build (Docker)
 build-indexer: #@ Build the application with Docker.
