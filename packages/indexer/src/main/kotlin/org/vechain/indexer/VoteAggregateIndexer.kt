@@ -2,9 +2,11 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
+import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
 import org.vechain.indexer.service.VoteAggregateService
 import org.vechain.indexer.thor.client.ThorClient
@@ -18,6 +20,7 @@ open class VoteAggregateIndexer(
     thorClient: ThorClient,
     abiManager: AbiManager,
     private val service: VoteAggregateService,
+    private val mongoTemplate: MongoTemplate,
     private val veVoteProposalResultRepository: VeVoteProposalResultRepository,
     @Value("\${indexer.startBlock.vevote}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.vevote}") private val syncLogInterval: Long,
@@ -50,7 +53,7 @@ open class VoteAggregateIndexer(
 
         // Save the results
         if (aggregates.isNotEmpty()) {
-            veVoteProposalResultRepository.saveAll(aggregates)
+            mongoTemplate.insert(aggregates, VeVoteProposalResults::class.java)
         }
     }
 
