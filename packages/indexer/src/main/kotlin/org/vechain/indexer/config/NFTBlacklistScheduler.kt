@@ -10,7 +10,7 @@ import org.vechain.indexer.NFTEventIndexer
 import org.vechain.indexer.Status
 import org.vechain.indexer.service.NFTBlacklistService
 
-@Profile("nft-events,history-events")
+@Profile("nft-events", "history-events")
 @EnableScheduling
 @Component
 class NFTBlacklistScheduler(
