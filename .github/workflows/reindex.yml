@@ -68,7 +68,13 @@ jobs:
       mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
       mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
       project: ${{ secrets.MONGO_PROJECT_ID }}
+    defaults:
+      run:
+        working-directory: terraform/api
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Determine AWS account ID and role
         id: account
         run: |
@@ -84,6 +90,43 @@ jobs:
           aws-region: eu-west-1
           role-to-assume: ${{ steps.account.outputs.role_arn }}
 
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      # Targetted terraform run to make sure non-live mongo atlas dbs are up
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+          terraform_wrapper: true
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Initialize
+        id: init
+        run: terraform init -backend-config="environments/$targetcluster.config"
+
+      - name: Terraform Workspace
+        id: workspace
+        run: terraform workspace select $targetcluster
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan --target module.mongoatlas-test-net --target module.mongoatlas-main-net -out "apply.plan"
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply "apply.plan"
 
       - name: Check cluster is down, restore and restart services
         id: check-is-down
