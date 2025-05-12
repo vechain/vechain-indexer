@@ -59,18 +59,12 @@ run-api: build-api-local #@ Run the api locally.
 build: build-indexer build-api #@ Build the application with Docker.
 	echo "Build completed."
 .PHONY:build
-build-indexer: #@ Build the indexer with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t b3tr-indexer .
-build-api: #@ Build the api with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t b3tr-api .
-
-# Application Build (Docker)
 build-indexer: #@ Build the application with Docker.
-	docker build --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
-	docker build --build-arg PACKAGE_NAME=api -t veworld-api .
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
-	docker build -t veworld-k6 load-testing
+	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
