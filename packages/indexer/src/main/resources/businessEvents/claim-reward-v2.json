@@ -23,7 +23,7 @@
       ]
     },
     {
-      "name": "RewardClaimed",
+      "name": "RewardClaimedV2",
       "alias": "claimReward",
       "conditions": [
         {
@@ -36,15 +36,7 @@
       ]
     }
   ],
-  "rules": [
-    {
-      "firstEventName": "transferB3TR",
-      "firstEventProperty": "value",
-      "secondEventName": "claimReward",
-      "secondEventProperty": "reward",
-      "operator": "EQ"
-    }
-  ],
+  "rules": [],
   "paramsDefinition": [
     {
       "name": "to",
