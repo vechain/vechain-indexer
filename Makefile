@@ -36,9 +36,8 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Build (Gradle)
-build: build-indexer-local build-api-local #@ Build the application with Gradle.
+build-local: build-indexer-local build-api-local #@ Build the application with Gradle.
 	echo "Build completed."
-.PHONY:build
 build-indexer-local: #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test
 build-api-local: #@ Build the application with Gradle.
@@ -57,12 +56,15 @@ run-api: build-api-local #@ Run the api locally.
 	java -jar packages/api/build/libs/api*.jar
 
 # Application Build (Docker)
+build: build-indexer build-api #@ Build the application with Docker.
+	echo "Build completed."
+.PHONY:build
 build-indexer: #@ Build the application with Docker.
-	docker build --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
 build-api: #@ Build the application with Docker.
-	docker build --build-arg PACKAGE_NAME=api -t veworld-api .
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
 build-k6: #@ Build the K6 docker image.
-	docker build -t veworld-k6 load-testing
+	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
