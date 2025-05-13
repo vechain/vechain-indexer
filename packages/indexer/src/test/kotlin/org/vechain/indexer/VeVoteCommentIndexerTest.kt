@@ -49,7 +49,7 @@ class VeVoteCommentIndexerTest {
                 0L,
                 1000L,
                 1000L,
-                contractAddress = "0xfcc8f0d6ef2eef8d6fcf376ecf42d7851171a5cc",
+                contractAddress = "Ox428be069e21a584fbbab934fb4ad55af346a3513",
             )
     }
 
@@ -81,7 +81,7 @@ class VeVoteCommentIndexerTest {
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                         choices = listOf(1),
                         weight = BigInteger.valueOf(100),
-                        reason = ""
+                        reason = "",
                     ),
                     VevoteProposalComment(
                         id = "id2",
@@ -93,8 +93,8 @@ class VeVoteCommentIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choices = listOf(1, 3, 4),
                         weight = BigInteger.valueOf(2340),
-                        reason = "I am voting for choice A, Choice C and Choice D"
-                    )
+                        reason = "I am voting for choice A, Choice C and Choice D",
+                    ),
                 )
             }
 
@@ -130,7 +130,7 @@ class VeVoteCommentIndexerTest {
                         "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                     choices = listOf(1),
                     weight = BigInteger.valueOf(100),
-                    reason = ""
+                    reason = "",
                 ),
                 VevoteProposalComment(
                     id = "id2",
@@ -142,8 +142,8 @@ class VeVoteCommentIndexerTest {
                         "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                     choices = listOf(1),
                     weight = BigInteger.valueOf(100),
-                    reason = ""
-                )
+                    reason = "",
+                ),
             )
 
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())
@@ -184,8 +184,8 @@ class VeVoteCommentIndexerTest {
                         "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                     choices = listOf(4),
                     weight = BigInteger.valueOf(2340),
-                    reason = longComment
-                )
+                    reason = longComment,
+                ),
             )
 
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())
