@@ -13,9 +13,10 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_VEVOTE_COMMENTS
 import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
-import org.vechain.indexer.service.CommentService
+import org.vechain.indexer.service.VeVoteCommentService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.FileUtils
+import org.vechain.indexer.vevote.VeVoteCommentIndexer
 import strikt.api.expect
 import strikt.assertions.contains
 import strikt.assertions.hasSize
@@ -25,11 +26,11 @@ import strikt.assertions.isEqualTo
 class VeVoteCommentIndexerTest {
     @MockK lateinit var vevoteCommentRepository: VevoteCommentRepository
 
-    @MockK lateinit var commentService: CommentService
+    @MockK lateinit var veVoteCommentService: VeVoteCommentService
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var vevoteCommentIndexer: VevoteCommentIndexer
+    private lateinit var vevoteCommentIndexer: VeVoteCommentIndexer
 
     @BeforeEach
     fun setUp() {
@@ -40,9 +41,9 @@ class VeVoteCommentIndexerTest {
         abiManager.loadAbis(abiFileStreams)
 
         vevoteCommentIndexer =
-            VevoteCommentIndexer(
+            VeVoteCommentIndexer(
                 vevoteCommentRepository,
-                commentService,
+                veVoteCommentService,
                 mongoTemplate,
                 DefaultThorClient("http://localhost:8669"),
                 abiManager,
@@ -68,7 +69,7 @@ class VeVoteCommentIndexerTest {
             mongoTemplate.insert(capture(commentsSlot), VevoteProposalComment::class.java)
         } returns mutableListOf()
 
-        every { commentService.processComment(any()) } answers
+        every { veVoteCommentService.processComment(any()) } answers
             {
                 listOf(
                     VevoteProposalComment(
@@ -118,7 +119,7 @@ class VeVoteCommentIndexerTest {
             mongoTemplate.insert(capture(commentsSlot), VevoteProposalComment::class.java)
         } returns mutableListOf()
 
-        every { commentService.processComment(any()) } returns
+        every { veVoteCommentService.processComment(any()) } returns
             listOf(
                 VevoteProposalComment(
                     id = "id1",
@@ -172,7 +173,7 @@ class VeVoteCommentIndexerTest {
         val longComment =
             "While I see valid arguments presented by both sides of this proposal, I currently lack sufficient clarity on the long-term implications of the proposed changes. There are nuanced trade-offs that I feel require more discussion or deeper community engagement before I can confidently take a firm stance. Out of respect for the process and to avoid unintentionally skewing the outcome without being fully informed, I am choosing to abstain from this vote."
 
-        every { commentService.processComment(any()) } returns
+        every { veVoteCommentService.processComment(any()) } returns
             listOf(
                 VevoteProposalComment(
                     id = "id1",

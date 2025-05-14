@@ -13,21 +13,24 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_VEVOTE_RESULTS
 import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
-import org.vechain.indexer.service.VoteAggregateService
+import org.vechain.indexer.service.VeVoteResultService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.utils.FileUtils
+import org.vechain.indexer.vevote.VeVoteResultIndexer
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
-class VoteResultsIndexerTest {
+class VeVoteResultIndexerTest {
     @MockK lateinit var veVoteProposalResultRepository: VeVoteProposalResultRepository
-    @MockK lateinit var voteAggregateService: VoteAggregateService
+
+    @MockK lateinit var veVoteResultService: VeVoteResultService
+
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var voteResultsIndexer: VoteAggregateIndexer
+    private lateinit var voteResultsIndexer: VeVoteResultIndexer
 
     @BeforeEach
     fun setUp() {
@@ -38,16 +41,15 @@ class VoteResultsIndexerTest {
         abiManager.loadAbis(abiFileStreams)
 
         voteResultsIndexer =
-            VoteAggregateIndexer(
+            VeVoteResultIndexer(
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 abiManager = abiManager,
-                service = voteAggregateService,
+                service = veVoteResultService,
                 veVoteProposalResultRepository = veVoteProposalResultRepository,
                 startBlock = 0L,
                 syncLogInterval = 1000L,
                 contractAddress = "0xfcc8f0d6ef2eef8d6fcf376ecf42d7851171a5cc",
                 syncBlockBatchSize = 1000L,
-                mongoTemplate = mongoTemplate,
             )
     }
 
@@ -62,11 +64,9 @@ class VoteResultsIndexerTest {
     fun `can aggregate votes by choice`() {
         val resultSlot = slot<Collection<VeVoteProposalResults>>()
 
-        every {
-            mongoTemplate.insert(capture(resultSlot), VeVoteProposalResults::class.java)
-        } returns mutableListOf()
+        every { veVoteProposalResultRepository.saveAll(capture(resultSlot)) } returns emptyList()
 
-        every { voteAggregateService.processVoteAggregates(any()) } answers
+        every { veVoteResultService.processVeVoteResults(any()) } answers
             {
                 listOf(
                     VeVoteProposalResults(
@@ -78,7 +78,7 @@ class VoteResultsIndexerTest {
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                         choice = 1,
                         totalWeight = BigDecimal("500"),
-                        voteCount = 3
+                        totalVoters = 3,
                     ),
                     VeVoteProposalResults(
                         id = "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7-2",
@@ -89,7 +89,7 @@ class VoteResultsIndexerTest {
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                         choice = 2,
                         totalWeight = BigDecimal("1500"),
-                        voteCount = 2
+                        totalVoters = 2,
                     ),
                     VeVoteProposalResults(
                         id = "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7-4",
@@ -100,8 +100,8 @@ class VoteResultsIndexerTest {
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                         choice = 4,
                         totalWeight = BigDecimal("3000"),
-                        voteCount = 2
-                    )
+                        totalVoters = 2,
+                    ),
                 )
             }
 
@@ -110,15 +110,16 @@ class VoteResultsIndexerTest {
 
         // Verify results
         val capturedResults = resultSlot.captured
+
         expect {
             that(capturedResults).hasSize(3)
             // Check that we have the expected choices
             expectThat(capturedResults.map { it.choice }.sorted()).isEqualTo(listOf(1, 2, 4))
 
             // Check vote counts for each choice
-            expectThat(capturedResults.first { it.choice == 1 }.voteCount).isEqualTo(3)
-            expectThat(capturedResults.first { it.choice == 2 }.voteCount).isEqualTo(2)
-            expectThat(capturedResults.first { it.choice == 4 }.voteCount).isEqualTo(2)
+            expectThat(capturedResults.first { it.choice == 1 }.totalVoters).isEqualTo(3)
+            expectThat(capturedResults.first { it.choice == 2 }.totalVoters).isEqualTo(2)
+            expectThat(capturedResults.first { it.choice == 4 }.totalVoters).isEqualTo(2)
 
             // Check total weights for each choice
             expectThat(capturedResults.first { it.choice == 1 }.totalWeight)
@@ -134,11 +135,9 @@ class VoteResultsIndexerTest {
     fun `can handle votes across multiple proposals`() {
         val resultSlot = slot<Collection<VeVoteProposalResults>>()
 
-        every {
-            mongoTemplate.insert(capture(resultSlot), VeVoteProposalResults::class.java)
-        } returns mutableListOf()
+        every { veVoteProposalResultRepository.saveAll(capture(resultSlot)) } returns emptyList()
 
-        every { voteAggregateService.processVoteAggregates(any()) } answers
+        every { veVoteResultService.processVeVoteResults(any()) } answers
             {
                 listOf(
                     // First proposal
@@ -151,7 +150,7 @@ class VoteResultsIndexerTest {
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7",
                         choice = 1,
                         totalWeight = BigDecimal("100"),
-                        voteCount = 1
+                        totalVoters = 1,
                     ),
                     // Second proposal
                     VeVoteProposalResults(
@@ -163,7 +162,7 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 1,
                         totalWeight = BigDecimal("2440"),
-                        voteCount = 2
+                        totalVoters = 2,
                     ),
                     VeVoteProposalResults(
                         id = "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a-3",
@@ -174,7 +173,7 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 3,
                         totalWeight = BigDecimal("1170"),
-                        voteCount = 1
+                        totalVoters = 1,
                     ),
                     VeVoteProposalResults(
                         id = "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a-4",
@@ -185,8 +184,8 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 4,
                         totalWeight = BigDecimal("1170"),
-                        voteCount = 1
-                    )
+                        totalVoters = 1,
+                    ),
                 )
             }
 
@@ -203,14 +202,14 @@ class VoteResultsIndexerTest {
                     capturedResults.count {
                         it.proposalId ==
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                    }
+                    },
                 )
                 .isEqualTo(1)
             that(
                     capturedResults.count {
                         it.proposalId ==
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
-                    }
+                    },
                 )
                 .isEqualTo(3)
 
@@ -222,7 +221,7 @@ class VoteResultsIndexerTest {
                 }
             that(proposal1.choice).isEqualTo(1)
             that(proposal1.totalWeight).isEqualTo(BigDecimal("100"))
-            that(proposal1.voteCount).isEqualTo(1)
+            that(proposal1.totalVoters).isEqualTo(1)
 
             // Check total vote count for proposal 2
             val proposal2VoteCount =
@@ -231,7 +230,7 @@ class VoteResultsIndexerTest {
                         it.proposalId ==
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
                     }
-                    .sumOf { it.voteCount }
+                    .sumOf { it.totalVoters }
             that(proposal2VoteCount).isEqualTo(4)
 
             // Check total weight for proposal 2
@@ -250,11 +249,9 @@ class VoteResultsIndexerTest {
     fun `can handle split votes with weighted distribution`() {
         val resultSlot = slot<Collection<VeVoteProposalResults>>()
 
-        every {
-            mongoTemplate.insert(capture(resultSlot), VeVoteProposalResults::class.java)
-        } returns mutableListOf()
+        every { veVoteProposalResultRepository.saveAll(capture(resultSlot)) } returns emptyList()
 
-        every { voteAggregateService.processVoteAggregates(any()) } answers
+        every { veVoteResultService.processVeVoteResults(any()) } answers
             {
                 listOf(
                     // A voter with 2340 weight voting for 3 choices (weight divided equally)
@@ -267,7 +264,7 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 1,
                         totalWeight = BigDecimal("780.000000000000000000"),
-                        voteCount = 1
+                        totalVoters = 1,
                     ),
                     VeVoteProposalResults(
                         id = "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a-3",
@@ -278,7 +275,7 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 3,
                         totalWeight = BigDecimal("780.000000000000000000"),
-                        voteCount = 1
+                        totalVoters = 1,
                     ),
                     VeVoteProposalResults(
                         id = "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a-4",
@@ -289,8 +286,8 @@ class VoteResultsIndexerTest {
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a",
                         choice = 4,
                         totalWeight = BigDecimal("780.000000000000000000"),
-                        voteCount = 1
-                    )
+                        totalVoters = 1,
+                    ),
                 )
             }
 
@@ -307,7 +304,7 @@ class VoteResultsIndexerTest {
                 .isEqualTo(true)
 
             // Check all choices have the same vote count
-            that(capturedResults.all { it.voteCount == 1 }).isEqualTo(true)
+            that(capturedResults.all { it.totalVoters == 1 }).isEqualTo(true)
 
             // Check the sum of weights equals the original vote weight
             val totalWeight = capturedResults.sumOf { it.totalWeight }
