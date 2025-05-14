@@ -45,6 +45,7 @@ open class HistoryIndexer(
                                 "b3tr-to-vot3-swap",
                                 "b3tr-x-allocation-vote",
                                 "claim-reward",
+                                "claim-reward-v2",
                                 "gm-upgrade",
                                 "proposal-deposit",
                                 "token-ft-swap",
