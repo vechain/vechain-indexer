@@ -350,6 +350,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote_comments
     },
     {
+      name  = "VERSION_VEVOTE_RESULTS"
+      value = each.value.indexer.version.vevote_results
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.minLength
     },

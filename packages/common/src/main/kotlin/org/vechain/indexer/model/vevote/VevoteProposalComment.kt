@@ -1,4 +1,4 @@
-package org.vechain.indexer.model
+package org.vechain.indexer.model.vevote
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
@@ -6,6 +6,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.thor.model.Block
 
 @Document(collection = "vevote_proposal_comments")

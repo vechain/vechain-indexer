@@ -71,6 +71,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -137,6 +138,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'

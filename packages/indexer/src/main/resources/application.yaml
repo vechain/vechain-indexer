@@ -86,7 +86,7 @@ indexer:
     history: ${VERSION_HISTORY:1}
     nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote_comments: ${VERSION_VEVOTE_COMMENTS:1}
-
+    vevote_results: ${VERSION_VEVOTE_RESULTS:1}
 comments:
   minLength: ${MIN_COMMENT_LEN:10}
   language:
