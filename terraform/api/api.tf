@@ -270,6 +270,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.history
     },
     {
+      name  = "INDEXER_START_BLOCK_VEVOTE"
+      value = each.value.indexer.start_block.vevote
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
       value = each.value.indexer.sync_logger_interval.nfts
     },
@@ -284,6 +288,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
       value = each.value.indexer.sync_logger_interval.history
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
+      value = each.value.indexer.sync_logger_interval.vevote
     },
     {
       name  = "PRUNER_ENABLED"
@@ -304,6 +312,10 @@ module "ecs-backend-service" {
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract_address
+    },
+    {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.veworld.contract.vevote.address
     },
     {
       name  = "BLACKLIST_INTERVAL"
@@ -333,6 +345,18 @@ module "ecs-backend-service" {
       name  = "VERSION_NFT_BLACKLIST"
       value = each.value.indexer.version.nft_blacklist
     },
+    {
+      name  = "VERSION_VEVOTE_COMMENTS"
+      value = each.value.indexer.version.vevote_comments
+    },
+    {
+      name  = "MIN_COMMENT_LEN"
+      value = each.value.comments.minLength
+    },
+    {
+      name  = "LANGUAGE_CONFIDENCE"
+      value = each.value.comments.language.confidence
+    }
   ]
 }
 

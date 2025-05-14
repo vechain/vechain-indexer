@@ -47,6 +47,11 @@ abis:
 businessEvents:
   path: ${BUSINESS_EVENTS_PATH:businessEvents}
 
+veworld:
+  contract:
+    vevote:
+      address: ${VEVOTE_CONTRACT:0x428be069e21a584fbbab934fb4ad55af346a3513}
+
 indexer:
   startBlock:
     nfts: ${INDEXER_START_BLOCK_NFTS:0}
@@ -54,14 +59,17 @@ indexer:
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}
+    vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
   syncLogInterval:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
     transfers: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS:1000}
     history: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORY:1000}
+    vevote: ${INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE:1000}
   syncBlockBatchSize:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:100}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:100}
+    vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:1000}
   pruner:
     enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:300000}
@@ -77,3 +85,9 @@ indexer:
     transactions: ${VERSION_TRANSACTIONS:1}
     history: ${VERSION_HISTORY:1}
     nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
+    vevote_comments: ${VERSION_VEVOTE_COMMENTS:1}
+
+comments:
+  minLength: ${MIN_COMMENT_LEN:10}
+  language:
+    confidence: ${LANGUAGE_CONFIDENCE:0.9}

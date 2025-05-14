@@ -46,4 +46,13 @@ object EventUtils {
             "VET_TRANSFER" -> TransferEventType.VET
             else -> null // Other events will not be labeled
         }
+
+    fun getChoice(choiceValue: Long): List<Int> {
+        if (choiceValue < 0) {
+            return emptyList()
+        }
+        return choiceValue.toString(2).reversed().mapIndexedNotNull { index, bit ->
+            if (bit == '1') index + 1 else null
+        }
+    }
 }
