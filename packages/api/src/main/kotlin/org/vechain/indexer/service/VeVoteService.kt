@@ -4,13 +4,15 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.VevoteProposalComment
+import org.vechain.indexer.model.vevote.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.utils.HexUtils
 
-@Profile("vevote-events")
+@Profile("vevote-comments")
 @Service
-open class VevoteService(private val vevoteCommentRepository: VevoteCommentRepository) {
+open class VeVoteService(
+    private val vevoteCommentRepository: VevoteCommentRepository,
+) {
     /** Get comments for a specific proposal. */
     open fun getCommentsByProposalId(
         proposalId: String,

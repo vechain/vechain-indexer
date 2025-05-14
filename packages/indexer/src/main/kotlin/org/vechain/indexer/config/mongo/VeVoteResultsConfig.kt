@@ -8,25 +8,25 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
-import org.vechain.indexer.model.vevote.VevoteProposalComment
+import org.vechain.indexer.model.vevote.VeVoteProposalResults
 import org.vechain.indexer.service.IndexerVersionService
 
-@Profile("vevote-comments")
+@Profile("vevote-results")
 @Configuration
-open class VeVoteProposalCommentsConfig(
+open class VeVoteResultsConfig(
     mongoTemplate: MongoTemplate,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, VevoteProposalComment::class.java) {
+) : CollectionConfig(mongoTemplate, VeVoteProposalResults::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.vevote_comments}") private val version: Int = 1
+    @Value("\${indexer.version.vevote_results}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            "vevote_proposal_comments",
+            "vevote_proposal_results",
             version,
         )
 
@@ -34,8 +34,8 @@ open class VeVoteProposalCommentsConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("voter_-1", Index().on("voter", Sort.Direction.DESC))
+        ensureIndex("choice_1", Index().on("choice", Sort.Direction.ASC))
 
-        ensureIndex("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC))
+        ensureIndex("proposalId_1", Index().on("proposalId", Sort.Direction.ASC))
     }
 }
