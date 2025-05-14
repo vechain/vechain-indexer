@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events,history-events,vevote-results,vevote-comments}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events,history-events}
   output:
     ansi:
       enabled: always
@@ -39,7 +39,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:https://testnet.vechain.org}
+  url: ${THOR_URL:http://localhost:8669}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -59,7 +59,7 @@ indexer:
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}
-    vevote: ${INDEXER_START_BLOCK_VEVOTE:21712260}
+    vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
   syncLogInterval:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}

@@ -12,6 +12,7 @@ interface VeVoteProposalResultRepository : BaseIndexedRepository<VeVoteProposalR
     fun findByProposalIdAndChoice(
         proposalId: String,
         choice: Int,
+        pageable: Pageable,
     ): Slice<VeVoteProposalResults>
 
     //  Get all aggregates for a proposal
