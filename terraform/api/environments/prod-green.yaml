@@ -83,6 +83,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -162,6 +163,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

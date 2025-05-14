@@ -42,7 +42,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments
+      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -52,7 +52,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
@@ -88,6 +88,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -123,7 +124,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments
+      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -133,7 +134,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
@@ -169,6 +170,7 @@ enabled_nets:
         history:                    '2'
         nft_blacklist:              '1'
         vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
