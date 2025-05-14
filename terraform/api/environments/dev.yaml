@@ -42,7 +42,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nft-events,transactions,transfer-events,history-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -52,7 +52,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
@@ -61,14 +61,17 @@ enabled_nets:
         transactions:               '21300000'
         transfers:                  '21300000'
         history:                    '21300000'
+        vevote:                     '21432703'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
+        vevote:                     '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
+        vevote:                     '100'
       pruner:
         enabled: true
         interval: 300000
@@ -84,6 +87,8 @@ enabled_nets:
         transactions:               '1'
         history:                    '2'
         nft_blacklist:              '1'
+        vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -91,6 +96,14 @@ enabled_nets:
         - name: "REORG"
           pattern: "REORG Detected"
           threshold: 1
+    comments:
+      minLength: 10
+      language:
+        confidence: '0.9'
+    veworld:
+      contract:
+        vevote:
+          address:                 '0x428be069e21a584fbbab934fb4ad55af346a3513'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.imcfs.mongodb.net
@@ -111,7 +124,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nft-events,transactions,transfer-events,history-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -121,7 +134,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events"
+      spring_profile:               "indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
@@ -130,14 +143,17 @@ enabled_nets:
         transactions:               '21300000'
         transfers:                  '21300000'
         history:                    '21300000'
+        vevote:                     '21432703'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
+        vevote:                     '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
+        vevote:                     '100'
       pruner:
         enabled: true
         interval: 300000
@@ -153,6 +169,8 @@ enabled_nets:
         transactions:               '1'
         history:                    '2'
         nft_blacklist:              '1'
+        vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -160,6 +178,14 @@ enabled_nets:
         - name: "REORG"
           pattern: "REORG Detected"
           threshold: 1
+    comments:
+      minLength: 10
+      language:
+        confidence: "0.9"
+    veworld:
+      contract:
+        vevote:
+          address:                "0x428BE069E21a584fBbAb934Fb4ad55AF346A3513"
     mongodb:
       type:                         atlas
       fqdn:                         testnet.imcfs.mongodb.net

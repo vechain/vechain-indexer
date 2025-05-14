@@ -39,6 +39,22 @@ object ParamUtils {
         }
 
     /**
+     * Retrieves a value as a Long from a parameter map.
+     * - Returns null if the key does not exist.
+     * - Converts String values to Long if possible.
+     */
+    fun GenericEventParameters.getAsLong(key: String): Long? =
+        this.params[key]?.let {
+            when (it) {
+                is Long -> it
+                is Int -> it.toLong()
+                is String -> it.toLongOrNull()
+                is Number -> it.toLong()
+                else -> null
+            }
+        }
+
+    /**
      * Retrieves a value as a Boolean from a parameter map.
      * - Returns null if the key does not exist.
      * - Converts String values to Boolean if possible.
@@ -48,6 +64,32 @@ object ParamUtils {
             when (it) {
                 is Boolean -> it
                 is String -> it.toBoolean()
+                else -> null
+            }
+        }
+
+    /** Retrieves a value as a BigInterger from a parameter map. */
+    fun GenericEventParameters.getAsBigInteger(key: String): BigInteger? =
+        this.params[key]?.let {
+            when (it) {
+                is BigInteger -> it
+                is Long -> BigInteger.valueOf(it)
+                is Int -> BigInteger.valueOf(it.toLong())
+                is String -> it.toBigIntegerOrNull()
+                is Number -> BigInteger.valueOf(it.toLong())
+                else -> null
+            }
+        }
+
+    fun GenericEventParameters.getAsBigDecimal(key: String): BigDecimal? =
+        this.params[key]?.let {
+            when (it) {
+                is BigDecimal -> it
+                is BigInteger -> BigDecimal(it)
+                is Long -> BigDecimal.valueOf(it)
+                is Int -> BigDecimal.valueOf(it.toLong())
+                is String -> it.toBigDecimalOrNull()
+                is Number -> BigDecimal.valueOf(it.toLong())
                 else -> null
             }
         }
