@@ -56,14 +56,17 @@ enabled_nets:
         transactions:               '751'
         transfers:                  '37840'
         history:                    '751'
+        vevote:                     '21432703'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
+        vevote:                     '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
+        vevote:                     '100'
       pruner:
         enabled:                    true
         interval:                   '43200000'
@@ -79,6 +82,8 @@ enabled_nets:
         transactions:               '1'
         history:                    '2'
         nft_blacklist:              '1'
+        vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -86,6 +91,14 @@ enabled_nets:
         - name: "REORG"
           pattern: "REORG Detected"
           threshold: 1
+    comments:
+      minLength: 10
+      language:
+        confidence:                 '0.9'
+    veworld:
+      contract:
+        vevote:
+          address:                  '0x428BE069E21a584fBbAb934Fb4ad55AF346A3513'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
@@ -123,14 +136,17 @@ enabled_nets:
         transactions:               '15034'
         transfers:                  '15034'
         history:                    '15034'
+        vevote:                     '21432703'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
+        vevote:                     '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
+        vevote:                     '100'
       pruner:
         enabled:                    true
         interval:                   '43200000'
@@ -146,6 +162,8 @@ enabled_nets:
         transactions:               '1'
         history:                    '2'
         nft_blacklist:              '1'
+        vevote_comments:            '1'
+        vevote_results:             '1'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -153,6 +171,14 @@ enabled_nets:
         - name: "REORG"
           pattern: "REORG Detected"
           threshold: 1
+    comments:
+      minLength: 10
+      language:
+        confidence:                 '0.9'
+    veworld:
+      contract:
+        vevote:
+          address:                  '0x428BE069E21a584fBbAb934Fb4ad55AF346A3513'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.rsmhw.mongodb.net

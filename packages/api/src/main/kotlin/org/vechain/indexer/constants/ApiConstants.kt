@@ -11,6 +11,7 @@ const val TRANSACTIONS_PATH = "$API_PATH/transactions"
 const val HISTORY_PATH = "$API_PATH/history"
 const val TRANSFER_EVENTS_PATH = "$API_PATH/transfers"
 const val E2E_PATH = "$API_PATH/e2e"
+const val VEVOTE_PATH = "$API_PATH/vevote"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0

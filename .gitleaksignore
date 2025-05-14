@@ -13,3 +13,4 @@ cb6f8299482b3a3b5878ddfa55c8fe86721846af:packages/api/src/test/kotlin/org/vechai
 7e4d77e73315d829b2f227426b13ed8f17e81fbc:terraform/api/environments/prod-blue.yaml:slack-web-hook:83
 21deadd12ffd62bab785a62cd9b821b20a909e46:packages/api/src/test/kotlin/org/vechain/indexer/controller/TransferEventsControllerTest.kt:generic-api-key:203
 21deadd12ffd62bab785a62cd9b821b20a909e46:packages/api/src/test/kotlin/org/vechain/indexer/controller/TransferEventsControllerTest.kt:generic-api-key:229
+3d4a33aa9755c956a881f09b84efd11b22a5d318:packages/indexer/src/test/kotlin/org/vechain/indexer/VeVoteCommentIndexerTest.kt:generic-api-key:197
