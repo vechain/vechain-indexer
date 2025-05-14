@@ -49,7 +49,7 @@ class VeVoteCommentIndexerTest {
                 0L,
                 1000L,
                 1000L,
-                contractAddress = "Ox428be069e21a584fbbab934fb4ad55af346a3513",
+                contractAddress = "0x428be069e21a584fbbab934fb4ad55af346a3513",
             )
     }
 
