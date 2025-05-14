@@ -58,15 +58,6 @@ open class NftCollectionConfig(
         )
 
         ensureIndex(
-            "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1",
-            Index()
-                .on("contractAddress", Sort.Direction.ASC)
-                .on("blockNumber", Sort.Direction.DESC)
-                .on("txId", Sort.Direction.DESC)
-                .on("_id", Sort.Direction.DESC),
-        )
-
-        ensureIndex(
             "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1",
             Index()
                 .on("owner", Sort.Direction.ASC)
