@@ -18,14 +18,14 @@ constructor(
     val proposalId: String,
     val choice: Int,
     val totalWeight: BigDecimal,
-    val voteCount: Int
+    val totalVoters: Int,
 ) : IndexedDocument {
     constructor(
         block: Block,
         proposalId: String,
         choice: Int,
         totalWeight: BigDecimal,
-        voteCount: Int
+        totalVoters: Int,
     ) : this(
         id = generateVoteAggregateId(proposalId, choice),
         blockId = block.id,
@@ -34,8 +34,11 @@ constructor(
         proposalId = proposalId,
         choice = choice,
         totalWeight = totalWeight,
-        voteCount = voteCount
+        totalVoters = totalVoters,
     )
 }
 
-fun generateVoteAggregateId(proposalId: String, choice: Int): String = "$proposalId-$choice"
+fun generateVoteAggregateId(
+    proposalId: String,
+    choice: Int,
+): String = "$proposalId-$choice"

@@ -7,16 +7,15 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
 
-@Profile("vevote-result")
+@Profile("vevote-results")
 @Service
-open class VevoteResultsService(
-    private val vevoteProposalResultRepositoryVe: VeVoteProposalResultRepository
+open class VeVoteResultsService(
+    private val vevoteProposalResultRepositoryVe: VeVoteProposalResultRepository,
 ) {
-
     open fun getResultsByProposalIdAndChoice(
         proposalId: String,
         choice: Int,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<VeVoteProposalResults> =
         vevoteProposalResultRepositoryVe.findByProposalIdAndChoice(proposalId, choice)
 

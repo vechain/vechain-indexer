@@ -1,25 +1,25 @@
-package org.vechain.indexer
+package org.vechain.indexer.vevote
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BaseLogIndexer
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
-import org.vechain.indexer.service.CommentService
+import org.vechain.indexer.service.VeVoteCommentService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.thor.model.TransferLog
 
-@Profile("vevote-events")
+@Profile("vevote-comments")
 @Component
-open class VevoteCommentIndexer(
+open class VeVoteCommentIndexer(
     private val vevoteCommentRepository: VevoteCommentRepository,
-    private val commentService: CommentService,
+    private val veVoteCommentService: VeVoteCommentService,
     private val mongoTemplate: MongoTemplate,
     thorClient: ThorClient,
     abiManager: AbiManager,
@@ -50,7 +50,7 @@ open class VevoteCommentIndexer(
                     eventNames = listOf("VoteCast"),
                 ),
             )
-        val allowedReason = commentService.processComment(processedEvents)
+        val allowedReason = veVoteCommentService.processComment(processedEvents)
         // Save the results
         if (allowedReason.isNotEmpty()) {
             mongoTemplate.insert(allowedReason, VevoteProposalComment::class.java)

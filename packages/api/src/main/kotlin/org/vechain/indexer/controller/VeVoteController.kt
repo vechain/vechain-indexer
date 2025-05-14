@@ -23,22 +23,21 @@ import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
-import org.vechain.indexer.service.VevoteResultsService
-import org.vechain.indexer.service.VevoteService
+import org.vechain.indexer.service.VeVoteResultsService
+import org.vechain.indexer.service.VeVoteService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("vevote-events")
-@Tag(name = "Vevote", description = "Query Vevote proposal comments")
+@Profile("vevote-comments")
+@Tag(name = "VeVote", description = "Indexer API for querying VeVote proposal information.")
 @Validated
 @RestController
 @RequestMapping(VEVOTE_PATH)
-open class VevoteController(
-    private val vevoteService: VevoteService,
-    private val resultService: VevoteResultsService,
+open class VeVoteController(
+    private val vevoteService: VeVoteService,
+    private val resultService: VeVoteResultsService,
 ) {
-
     @GetMapping("proposals/comments")
     @Operation(
         summary = "Get comments for a proposal.",
@@ -49,9 +48,9 @@ open class VevoteController(
                 ApiResponse(responseCode = "200", description = "Success"),
                 ApiResponse(
                     responseCode = "400",
-                    description = "A valid proposalId or voter address must be provided"
-                )
-            ]
+                    description = "A valid proposalId or voter address must be provided",
+                ),
+            ],
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -81,7 +80,7 @@ open class VevoteController(
         @RequestParam(required = false) @Max(32) choice: Int?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?
+        @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<VevoteProposalComment> {
         val pageable = toPageable(page, size, direction, VevoteProposalComment::blockNumber.name)
 
@@ -93,7 +92,7 @@ open class VevoteController(
                         proposalId,
                         voter.value,
                         choice,
-                        pageable
+                        pageable,
                     )
                 proposalId != null && voter != null ->
                     vevoteService.getCommentsByProposalAndVoter(proposalId, voter.value, pageable)
@@ -119,9 +118,9 @@ open class VevoteController(
                 ApiResponse(responseCode = "200", description = "Success"),
                 ApiResponse(
                     responseCode = "400",
-                    description = "A valid proposalId or voter address must be provided"
-                )
-            ]
+                    description = "A valid proposalId or voter address must be provided",
+                ),
+            ],
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -143,7 +142,7 @@ open class VevoteController(
         @RequestParam(required = false) choice: Int?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
-        @RequestParam(required = false) direction: String?
+        @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<VeVoteProposalResults> {
         if (proposalId == null && choice == null) {
             throw BadRequestException("Either a proposalId or choice must be provided")

@@ -6,15 +6,23 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.VeVoteProposalResults
 
-@Profile("vevote-result")
+@Profile("vevote-results")
 @Repository
 interface VeVoteProposalResultRepository : BaseIndexedRepository<VeVoteProposalResults> {
-
-    fun findByProposalIdAndChoice(proposalId: String, choice: Int): Slice<VeVoteProposalResults>
+    fun findByProposalIdAndChoice(
+        proposalId: String,
+        choice: Int,
+    ): Slice<VeVoteProposalResults>
 
     //  Get all aggregates for a proposal
-    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VeVoteProposalResults>
+    fun findAllByProposalId(
+        proposalId: String,
+        pageable: Pageable,
+    ): Slice<VeVoteProposalResults>
 
     // Get all aggregates for a specific choice across proposals
-    fun findAllByChoice(choice: Int, pageable: Pageable): Slice<VeVoteProposalResults>
+    fun findAllByChoice(
+        choice: Int,
+        pageable: Pageable,
+    ): Slice<VeVoteProposalResults>
 }

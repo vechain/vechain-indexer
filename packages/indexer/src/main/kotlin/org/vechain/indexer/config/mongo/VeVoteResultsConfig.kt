@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.model.VeVoteProposalResults
 import org.vechain.indexer.service.IndexerVersionService
 
-@Profile("vevote-events")
+@Profile("vevote-results")
 @Configuration
 open class VeVoteResultsConfig(
     mongoTemplate: MongoTemplate,
@@ -26,7 +26,7 @@ open class VeVoteResultsConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            "vevote-result",
+            "vevote_proposal_results",
             version,
         )
 
@@ -34,8 +34,8 @@ open class VeVoteResultsConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("voter_-1", Index().on("voter", Sort.Direction.DESC))
+        ensureIndex("choice_1", Index().on("choice", Sort.Direction.ASC))
 
-        ensureIndex("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC))
+        ensureIndex("proposalId_1", Index().on("proposalId", Sort.Direction.ASC))
     }
 }
