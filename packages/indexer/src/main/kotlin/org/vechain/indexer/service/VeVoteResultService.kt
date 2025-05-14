@@ -5,7 +5,7 @@ import java.math.RoundingMode
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.VeVoteProposalResults
+import org.vechain.indexer.model.vevote.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal

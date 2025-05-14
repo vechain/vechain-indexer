@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseLogIndexer
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.VevoteProposalComment
+import org.vechain.indexer.model.vevote.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.VeVoteCommentService
 import org.vechain.indexer.thor.client.ThorClient

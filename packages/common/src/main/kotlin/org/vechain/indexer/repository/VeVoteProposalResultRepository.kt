@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.model.VeVoteProposalResults
+import org.vechain.indexer.model.vevote.VeVoteProposalResults
 
 @Profile("vevote-results")
 @Repository

@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.VevoteProposalComment
-import org.vechain.indexer.model.generateId
+import org.vechain.indexer.model.vevote.VevoteProposalComment
+import org.vechain.indexer.model.vevote.generateId
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.utils.EventUtils.getChoice
 

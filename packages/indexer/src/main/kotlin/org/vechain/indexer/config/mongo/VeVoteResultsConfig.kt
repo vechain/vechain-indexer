@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
-import org.vechain.indexer.model.VeVoteProposalResults
+import org.vechain.indexer.model.vevote.VeVoteProposalResults
 import org.vechain.indexer.service.IndexerVersionService
 
 @Profile("vevote-results")

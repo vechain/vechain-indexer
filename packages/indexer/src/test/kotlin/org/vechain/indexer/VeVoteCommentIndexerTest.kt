@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_VEVOTE_COMMENTS
-import org.vechain.indexer.model.VevoteProposalComment
+import org.vechain.indexer.model.vevote.VevoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.VeVoteCommentService
 import org.vechain.indexer.thor.client.DefaultThorClient

@@ -19,10 +19,10 @@ import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.VeVoteProposalResults
-import org.vechain.indexer.model.VevoteProposalComment
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
+import org.vechain.indexer.model.vevote.VeVoteProposalResults
+import org.vechain.indexer.model.vevote.VevoteProposalComment
 import org.vechain.indexer.service.VeVoteResultsService
 import org.vechain.indexer.service.VeVoteService
 import org.vechain.indexer.utils.PaginationUtils.toPageable
