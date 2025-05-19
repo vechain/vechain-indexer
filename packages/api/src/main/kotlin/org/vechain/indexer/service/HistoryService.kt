@@ -13,9 +13,7 @@ import org.vechain.indexer.model.IndexedHistoryEvent
 
 @Profile("history-events")
 @Service
-open class HistoryService(
-    private val mongoTemplate: MongoTemplate,
-) {
+open class HistoryService(private val mongoTemplate: MongoTemplate) {
     open fun findUserHistoryByFilters(
         account: String,
         eventNames: List<String>?,
@@ -32,7 +30,7 @@ open class HistoryService(
             val fieldCriteria =
                 Criteria()
                     .orOperator(
-                        *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray(),
+                        *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
                     )
             query.addCriteria(fieldCriteria)
         } else {
@@ -43,7 +41,7 @@ open class HistoryService(
                         Criteria.where("to").`is`(account),
                         Criteria.where("from").`is`(account),
                         Criteria.where("origin").`is`(account),
-                    ),
+                    )
             )
         }
         // Add contractAddress filter

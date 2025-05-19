@@ -17,10 +17,7 @@ open class NFTService(
     private val nftArchiveService: ArchiveService<IndexedNFT, NFTArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(
-        updated: List<IndexedNFT>,
-        existing: List<IndexedNFT>,
-    ) {
+    open fun update(updated: List<IndexedNFT>, existing: List<IndexedNFT>) {
         if (updated.isNotEmpty()) {
             nftRepository.saveAll(updated)
         }
@@ -30,10 +27,7 @@ open class NFTService(
         }
     }
 
-    open fun parseRecords(
-        data: List<IndexedEvent>,
-        existing: List<IndexedNFT>,
-    ): List<IndexedNFT> {
+    open fun parseRecords(data: List<IndexedEvent>, existing: List<IndexedNFT>): List<IndexedNFT> {
         // Pre-index existing records for faster lookup
         val existingById = existing.associateBy { it.id }
 
@@ -68,9 +62,5 @@ open class NFTService(
     }
 
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNFT> =
-        nftRepository
-            .findAllById(
-                nftTransfers.map { IdUtils.buildNftId(it) },
-            )
-            .toList()
+        nftRepository.findAllById(nftTransfers.map { IdUtils.buildNftId(it) }).toList()
 }

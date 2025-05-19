@@ -97,7 +97,7 @@ internal class NFTBlacklistIndexerTest {
                     blockId = "blockId",
                     blockNumber = 1L,
                     blockTimestamp = 1L,
-                ),
+                )
             )
 
         every { nftBlacklistService.getExisting(any()) } returns existing

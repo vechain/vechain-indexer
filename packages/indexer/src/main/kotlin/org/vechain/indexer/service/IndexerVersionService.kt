@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexerVersion
 
 @Service
-open class IndexerVersionService(
-    private val mongoTemplate: MongoTemplate,
-) {
+open class IndexerVersionService(private val mongoTemplate: MongoTemplate) {
     private val logger = LoggerFactory.getLogger(IndexerVersionService::class.java)
 
     /**
@@ -18,25 +16,19 @@ open class IndexerVersionService(
      * @param collectionName The name of the collection to drop and recreate.
      * @param newVersion The new version number of the indexer.
      */
-    fun checkAndResetCollectionIfVersionChanged(
-        collectionName: String,
-        newVersion: Int,
-    ): Boolean {
+    fun checkAndResetCollectionIfVersionChanged(collectionName: String, newVersion: Int): Boolean {
         try {
             val storedVersion = getStoredIndexerVersion(collectionName)
 
             if (storedVersion == -1) {
                 logger.info("No version document found for $collectionName. No action taken.")
-                updateIndexerVersion(
-                    collectionName,
-                    1,
-                )
+                updateIndexerVersion(collectionName, 1)
                 return false
             }
 
             if (storedVersion < newVersion) {
                 logger.info(
-                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName.",
+                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
                 )
                 mongoTemplate.dropCollection(collectionName)
 
@@ -63,7 +55,7 @@ open class IndexerVersionService(
             logger.info("Successfully dropped archive collection: $archiveCollectionName.")
         } catch (e: Exception) {
             logger.warn(
-                "Failed to drop archive collection: $archiveCollectionName. Exception: ${e.message}",
+                "Failed to drop archive collection: $archiveCollectionName. Exception: ${e.message}"
             )
         }
     }
@@ -86,10 +78,7 @@ open class IndexerVersionService(
      * @param indexerName The name of the indexer to update.
      * @param newVersion The new version number to set for the indexer.
      */
-    private fun updateIndexerVersion(
-        indexerName: String,
-        newVersion: Int,
-    ) {
+    private fun updateIndexerVersion(indexerName: String, newVersion: Int) {
         val metadata = IndexerVersion(id = indexerName, version = newVersion)
         mongoTemplate.save(metadata)
     }

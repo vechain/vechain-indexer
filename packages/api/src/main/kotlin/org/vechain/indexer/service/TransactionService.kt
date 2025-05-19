@@ -12,9 +12,7 @@ import org.vechain.indexer.utils.HexUtils
 
 @Profile("transactions")
 @Service
-open class TransactionService(
-    private val transactionRepository: TransactionRepository,
-) {
+open class TransactionService(private val transactionRepository: TransactionRepository) {
 
     open fun findById(id: String): IndexedTransaction? {
         return transactionRepository.findByIdOrNull(HexUtils.normalise(id))
@@ -23,7 +21,7 @@ open class TransactionService(
     open fun findByOriginOrDelegator(
         address: Address,
         includeDelegated: Boolean,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransaction> {
         return if (includeDelegated) {
             transactionRepository.findByOriginOrGasPayer(address.value, address.value, pageable)
@@ -36,7 +34,7 @@ open class TransactionService(
         return transactionRepository.findByGasPayerAndOriginNot(
             delegator.value,
             delegator.value,
-            pageable
+            pageable,
         )
     }
 }

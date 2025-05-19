@@ -12,14 +12,14 @@ object VIP210ABI {
                             name = "_owner",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
+                            internalType = "address",
                         ),
                         FunctionParameter(
                             name = "_id",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
-                        )
+                            internalType = "uint256",
+                        ),
                     ),
                 outputs =
                     listOf(
@@ -27,10 +27,10 @@ object VIP210ABI {
                             name = "",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
+                            internalType = "uint256",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -44,14 +44,14 @@ object VIP210ABI {
                             name = "_owners",
                             type = "address[]",
                             components = listOf(),
-                            internalType = "address[]"
+                            internalType = "address[]",
                         ),
                         FunctionParameter(
                             name = "_ids",
                             type = "uint256[]",
                             components = listOf(),
-                            internalType = "uint256[]"
-                        )
+                            internalType = "uint256[]",
+                        ),
                     ),
                 outputs =
                     listOf(
@@ -59,10 +59,10 @@ object VIP210ABI {
                             name = "",
                             type = "uint256[]",
                             components = listOf(),
-                            internalType = "uint256[]"
+                            internalType = "uint256[]",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -78,7 +78,7 @@ object VIP210ABI {
                             name = "_id",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
+                            internalType = "uint256",
                         )
                     ),
                 outputs =
@@ -87,10 +87,10 @@ object VIP210ABI {
                             name = "",
                             type = "string",
                             components = listOf(),
-                            internalType = "string"
+                            internalType = "string",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 }

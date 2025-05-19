@@ -46,7 +46,7 @@ internal class StatefulBlockIndexerTest {
                     override fun processBlock(block: Block) {
                         // do nothing
                     }
-                },
+                }
             )
     }
 

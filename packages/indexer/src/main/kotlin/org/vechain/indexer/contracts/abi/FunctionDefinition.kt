@@ -7,5 +7,5 @@ data class FunctionDefinition(
     val outputs: List<FunctionParameter> = emptyList(),
     val constant: Boolean? = null,
     val payable: Boolean? = null,
-    val stateMutability: String
+    val stateMutability: String,
 )

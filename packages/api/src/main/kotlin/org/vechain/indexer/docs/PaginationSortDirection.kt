@@ -10,12 +10,12 @@ import io.swagger.v3.oas.annotations.media.Schema
     schema = Schema(type = "String"),
     description = "The sort direction (DESC or ASC)",
     required = false,
-    example = "DESC"
+    example = "DESC",
 )
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.ANNOTATION_CLASS,
-    AnnotationTarget.VALUE_PARAMETER
+    AnnotationTarget.VALUE_PARAMETER,
 )
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PaginationSortDirection

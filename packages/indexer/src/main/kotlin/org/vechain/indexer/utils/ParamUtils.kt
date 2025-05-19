@@ -18,7 +18,7 @@ object ParamUtils {
                 is String -> it.takeIf { it.isNotBlank() }
                 is BigDecimal -> it.toPlainString()
                 is BigInteger,
-                is Number, -> it.toString()
+                is Number -> it.toString()
                 else -> null
             }
         }

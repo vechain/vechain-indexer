@@ -47,10 +47,7 @@ constructor(
     @JsonIgnore val isBlacklisted: Boolean = false,
 ) : IndexedDocument {
     companion object {
-        fun getAppVotes(
-            appIds: Any?,
-            voteWeights: Any?,
-        ): List<AppVote>? {
+        fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
             // Ensure both are non-null and cast to List<String>
             val appIdsList = appIds as? List<*> ?: return null
             val voteWeightsList = voteWeights as? List<*> ?: return null

@@ -47,7 +47,7 @@ internal class ArchiveServiceTest {
             ArchiveService(
                 mongoTemplate,
                 TestVersionedDocument::class.java,
-                TestArchive::class.java
+                TestArchive::class.java,
             )
     }
 

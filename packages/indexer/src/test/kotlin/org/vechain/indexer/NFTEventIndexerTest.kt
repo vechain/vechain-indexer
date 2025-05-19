@@ -89,7 +89,7 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0004",
                     blockNumber = 1L,
                     blockTimestamp = 3,
-                ),
+                )
             )
 
         val updated =
@@ -104,7 +104,7 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0008",
                     blockNumber = 2L,
                     blockTimestamp = 4,
-                ),
+                )
             )
 
         every { nftService.getExisting(any()) } returns existing
@@ -134,7 +134,7 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0008",
                     blockNumber = 2L,
                     blockTimestamp = 4,
-                ),
+                )
             )
 
         every { nftService.getExisting(any()) } returns existing
@@ -162,7 +162,7 @@ internal class NFTEventIndexerTest {
                     blockId = "0x0004",
                     blockNumber = 1L,
                     blockTimestamp = 3,
-                ),
+                )
             )
 
         val updated = emptyList<IndexedNFT>()

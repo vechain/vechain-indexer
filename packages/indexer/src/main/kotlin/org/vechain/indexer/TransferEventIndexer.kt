@@ -34,17 +34,12 @@ open class TransferEventIndexer(
         logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
     ) {
-    override fun processLogs(
-        events: List<EventLog>,
-        transfers: List<TransferLog>,
-    ) {
+    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         val processedEvents =
             processAllEvents(
                 events,
                 transfers,
-                FilterCriteria(
-                    eventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
-                ),
+                FilterCriteria(eventNames = listOf("Transfer", "TransferSingle", "TransferBatch")),
             )
 
         val transferEvents = BlockUtils.getAllTransferEvents(processedEvents)

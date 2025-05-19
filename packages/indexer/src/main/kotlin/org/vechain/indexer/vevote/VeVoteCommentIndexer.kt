@@ -37,10 +37,7 @@ open class VeVoteCommentIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
     ) {
-    override fun processLogs(
-        events: List<EventLog>,
-        transfers: List<TransferLog>,
-    ) {
+    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         val processedEvents =
             processAllEvents(
                 events,

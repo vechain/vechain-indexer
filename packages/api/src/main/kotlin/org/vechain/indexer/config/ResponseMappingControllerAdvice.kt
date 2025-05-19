@@ -19,7 +19,7 @@ open class ResponseMappingControllerAdvice : AbstractMappingJacksonResponseBodyA
         contentType: MediaType,
         returnType: MethodParameter,
         request: ServerHttpRequest,
-        response: ServerHttpResponse
+        response: ServerHttpResponse,
     ) {
         val req = request as ServletServerHttpRequest
 

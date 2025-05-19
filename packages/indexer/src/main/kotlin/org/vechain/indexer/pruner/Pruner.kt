@@ -10,15 +10,12 @@ import org.vechain.indexer.service.ArchiveService
 class Pruner<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
     private val archiveService: ArchiveService<T, S>,
-    private val prunerRemovalChunkSize: Int
+    private val prunerRemovalChunkSize: Int,
 ) {
     private val logger = LoggerFactory.getLogger(Pruner::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
-    fun prune(
-        currentBlockNumber: Long,
-        status: Status,
-    ) {
+    fun prune(currentBlockNumber: Long, status: Status) {
         if (status != Status.FULLY_SYNCED) {
             logger.info("Skipping pruner for $targetObjectName, as not fully synced")
             return

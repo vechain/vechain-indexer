@@ -23,20 +23,13 @@ internal class HexUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource(
-        "123, 0x123",
-        "0x123, 0x123",
-    )
+    @CsvSource("123, 0x123", "0x123, 0x123")
     fun `add prefix`(input: String, output: String) {
         expectThat(HexUtils.addPrefix(input)).isEqualTo(output)
     }
 
     @ParameterizedTest
-    @CsvSource(
-        "ABC, 0xabc",
-        "0xabc, 0xabc",
-        "0xAbC, 0xabc",
-    )
+    @CsvSource("ABC, 0xabc", "0xabc, 0xabc", "0xAbC, 0xabc")
     fun `normalise address`(input: String, output: String) {
         expectThat(HexUtils.normalise(input)).isEqualTo(output)
     }

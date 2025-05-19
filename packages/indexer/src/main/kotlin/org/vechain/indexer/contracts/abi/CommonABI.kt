@@ -12,10 +12,10 @@ object CommonABI {
                             name = "",
                             type = "string",
                             components = listOf(),
-                            internalType = "string"
+                            internalType = "string",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -30,10 +30,10 @@ object CommonABI {
                             name = "",
                             type = "string",
                             components = listOf(),
-                            internalType = "string"
+                            internalType = "string",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -48,10 +48,10 @@ object CommonABI {
                             name = "",
                             type = "uint8",
                             components = listOf(),
-                            internalType = "uint8"
+                            internalType = "uint8",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -66,10 +66,10 @@ object CommonABI {
                             name = "",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
+                            internalType = "uint256",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -83,7 +83,7 @@ object CommonABI {
                             name = "owner",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
+                            internalType = "address",
                         )
                     ),
                 outputs =
@@ -92,10 +92,10 @@ object CommonABI {
                             name = "",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
+                            internalType = "uint256",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -109,14 +109,14 @@ object CommonABI {
                             name = "owner",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
+                            internalType = "address",
                         ),
                         FunctionParameter(
                             name = "spender",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
-                        )
+                            internalType = "address",
+                        ),
                     ),
                 outputs =
                     listOf(
@@ -124,10 +124,10 @@ object CommonABI {
                             name = "",
                             type = "uint256",
                             components = listOf(),
-                            internalType = "uint256"
+                            internalType = "uint256",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 
@@ -141,14 +141,14 @@ object CommonABI {
                             name = "owner",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
+                            internalType = "address",
                         ),
                         FunctionParameter(
                             name = "operator",
                             type = "address",
                             components = listOf(),
-                            internalType = "address"
-                        )
+                            internalType = "address",
+                        ),
                     ),
                 outputs =
                     listOf(
@@ -156,10 +156,10 @@ object CommonABI {
                             name = "",
                             type = "bool",
                             components = listOf(),
-                            internalType = "bool"
+                            internalType = "bool",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 }

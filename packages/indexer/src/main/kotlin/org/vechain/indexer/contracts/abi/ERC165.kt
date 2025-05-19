@@ -11,7 +11,7 @@ object ERC165 {
                             name = "interfaceId",
                             type = "bytes4",
                             components = listOf(),
-                            internalType = "bytes4"
+                            internalType = "bytes4",
                         )
                     ),
                 outputs =
@@ -20,10 +20,10 @@ object ERC165 {
                             name = "",
                             type = "bool",
                             components = listOf(),
-                            internalType = "bool"
+                            internalType = "bool",
                         )
                     ),
-                stateMutability = "view"
+                stateMutability = "view",
             )
         }
 }

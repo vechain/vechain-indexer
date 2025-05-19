@@ -13,7 +13,7 @@ data class TokenRegistry(
     val totalSupply: String,
     val website: String? = null,
     val whitePaper: String? = null,
-    val links: List<SocialLink>? = null
+    val links: List<SocialLink>? = null,
 )
 
 @Serializable
@@ -22,5 +22,5 @@ data class SocialLink(
     val medium: String? = null,
     val github: String? = null,
     val telegram: String? = null,
-    val facebook: String? = null
+    val facebook: String? = null,
 )

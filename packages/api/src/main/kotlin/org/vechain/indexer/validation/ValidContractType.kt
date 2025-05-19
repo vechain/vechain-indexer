@@ -14,13 +14,13 @@ import org.vechain.indexer.model.rest.ContractType
 annotation class ValidContractType(
     val message: String = "Invalid contract type parameter",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )
 
 class ContractTypeValidator : ConstraintValidator<ValidContractType, String> {
     override fun isValid(
         type: String?,
-        constraintValidatorContext: ConstraintValidatorContext
+        constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
         return type == null || ContractType.byNameIgnoreCaseOrNull(type) != null
     }

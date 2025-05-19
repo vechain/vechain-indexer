@@ -10,9 +10,7 @@ import org.vechain.indexer.utils.HexUtils
 
 @Profile("vevote-comments")
 @Service
-open class VeVoteService(
-    private val vevoteCommentRepository: VevoteCommentRepository,
-) {
+open class VeVoteService(private val vevoteCommentRepository: VevoteCommentRepository) {
     /** Get comments for a specific proposal. */
     open fun getCommentsByProposalId(
         proposalId: String,
@@ -21,10 +19,7 @@ open class VeVoteService(
         vevoteCommentRepository.findAllByProposalId(proposalId, pageable)
 
     /** Get comments by a specific voter. */
-    open fun getCommentsByVoter(
-        voter: String,
-        pageable: Pageable,
-    ): Slice<VevoteProposalComment> =
+    open fun getCommentsByVoter(voter: String, pageable: Pageable): Slice<VevoteProposalComment> =
         vevoteCommentRepository.findAllByVoter(HexUtils.normalise(voter), pageable)
 
     /** Get comments for a specific proposal and voter. */
@@ -40,10 +35,7 @@ open class VeVoteService(
         )
 
     /** Get comments that contain a specific choice. */
-    open fun getCommentsByChoice(
-        choice: Int,
-        pageable: Pageable,
-    ): Slice<VevoteProposalComment> =
+    open fun getCommentsByChoice(choice: Int, pageable: Pageable): Slice<VevoteProposalComment> =
         vevoteCommentRepository.findAllByChoicesContaining(choice, pageable)
 
     /** Get comments for a specific proposal that contain a specific choice. */

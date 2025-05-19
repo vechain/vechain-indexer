@@ -9,10 +9,7 @@ import org.web3j.crypto.Hash
 import org.web3j.utils.Numeric
 
 object ContractUtils {
-    private fun rawDataContains(
-        value: String,
-        rawData: String,
-    ): Boolean {
+    private fun rawDataContains(value: String, rawData: String): Boolean {
         val cleansedValue =
             if (value.startsWith("00")) {
                 value.trimStart('0')
@@ -23,10 +20,7 @@ object ContractUtils {
         return rawData.lowercase().contains(cleansedValue.lowercase())
     }
 
-    fun isContractType(
-        specification: ContractSpecification,
-        rawData: String,
-    ): Boolean =
+    fun isContractType(specification: ContractSpecification, rawData: String): Boolean =
         specification.functions.all { rawDataContains(value = it, rawData = rawData) } &&
             specification.events.all { rawDataContains(value = it, rawData = rawData) }
 
@@ -41,11 +35,7 @@ object ContractUtils {
     fun getEventSignature(canonicalName: String): String =
         HexUtils.removePrefix(EventEncoder.buildEventSignature(canonicalName))
 
-    fun createClause(
-        address: String,
-        function: FunctionDefinition,
-        vararg args: Any,
-    ): Clause {
+    fun createClause(address: String, function: FunctionDefinition, vararg args: Any): Clause {
         val func = Function(JsonUtils.mapper.writeValueAsString(function))
         val encoded = func.encodeToHex(true, *args)
         return Clause(to = address, data = encoded, value = "0x0")

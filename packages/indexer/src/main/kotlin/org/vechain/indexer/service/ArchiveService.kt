@@ -61,7 +61,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         val rollback = rollbackOperations.execute()
         mongoTemplate.remove(
             Query.query(Criteria.where("_id").`in`(previousDocumentIds)),
-            archiveClazz
+            archiveClazz,
         )
 
         logger.info(
@@ -69,14 +69,12 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
             clazz.simpleName,
             blockNumber,
             rollback.modifiedCount,
-            rollback.deletedCount
+            rollback.deletedCount,
         )
     }
 
     /** Get all documents for a given block number from the collection of the given class */
-    open fun getCurrentDocuments(
-        blockNumber: Long,
-    ): List<T> {
+    open fun getCurrentDocuments(blockNumber: Long): List<T> {
         val query =
             Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).`is`(blockNumber))
 
@@ -85,7 +83,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
 
     open fun getRollbackOperation(
         currentDocuments: List<T>,
-        previousDocuments: Map<String, T>
+        previousDocuments: Map<String, T>,
     ): BulkOperations {
         val bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.ORDERED, clazz)
 
@@ -98,7 +96,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 if (previousDocument == null) {
                     logger.error(
                         "Could not find previous document for rollback (${clazz.simpleName}): {}",
-                        JsonUtils.mapper.writeValueAsString(document)
+                        JsonUtils.mapper.writeValueAsString(document),
                     )
                     throw ArchiveException("Could not find previous document for rollback")
                 }
@@ -123,7 +121,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         val removeRedundantFieldsStage =
             Document(
                 "\$project",
-                Document().append("recordId", "\$data._id").append("version", "\$data.version")
+                Document().append("recordId", "\$data._id").append("version", "\$data.version"),
             )
 
         val groupStage =
@@ -131,7 +129,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 "\$group",
                 Document("_id", "\$recordId")
                     .append("maxVersion", Document("\$max", "\$version"))
-                    .append("allDocs", Document("\$push", "\$\$ROOT"))
+                    .append("allDocs", Document("\$push", "\$\$ROOT")),
             )
 
         val unwindStage = Document("\$unwind", "\$allDocs")
@@ -145,10 +143,10 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                         "\$lt",
                         listOf(
                             "\$allDocs.version",
-                            Document("\$subtract", listOf("\$maxVersion", 4))
-                        )
-                    )
-                )
+                            Document("\$subtract", listOf("\$maxVersion", 4)),
+                        ),
+                    ),
+                ),
             )
 
         val projectStage = Document("\$project", Document("_id", "\$allDocs._id"))
@@ -161,7 +159,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 groupStage,
                 unwindStage,
                 matchExprStage,
-                projectStage
+                projectStage,
             )
 
         // Execute the aggregation

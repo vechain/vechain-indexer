@@ -186,7 +186,7 @@ class VeVoteCommentIndexerTest {
                     choices = listOf(4),
                     weight = BigInteger.valueOf(2340),
                     reason = longComment,
-                ),
+                )
             )
 
         vevoteCommentIndexer.processLogs(LOGS_VEVOTE_COMMENTS, emptyList())

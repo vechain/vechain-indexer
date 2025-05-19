@@ -10,12 +10,12 @@ import io.swagger.v3.oas.annotations.media.Schema
     schema = Schema(type = "Integer"),
     description = "The results page number",
     required = false,
-    example = "0"
+    example = "0",
 )
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.ANNOTATION_CLASS,
-    AnnotationTarget.VALUE_PARAMETER
+    AnnotationTarget.VALUE_PARAMETER,
 )
 @Retention(AnnotationRetention.RUNTIME)
 annotation class PaginationPage

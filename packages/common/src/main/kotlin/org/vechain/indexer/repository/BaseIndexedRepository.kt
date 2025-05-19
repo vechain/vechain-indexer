@@ -8,13 +8,7 @@ import org.vechain.indexer.model.IndexedDocument
 interface BaseIndexedRepository<T : IndexedDocument> :
     CrudRepository<T, String>, PagingAndSortingRepository<T, String> {
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
+    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
     fun getLatestRecord(): T?
 
     fun deleteAllByBlockNumberBetween(start: Long, end: Long)

@@ -18,7 +18,7 @@ internal class TransactionUtilsTest {
                 reverted = false,
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 0
+                gasUsed = 0,
             )
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
@@ -35,7 +35,7 @@ internal class TransactionUtilsTest {
                 reverted = true,
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 0
+                gasUsed = 0,
             )
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
@@ -52,7 +52,7 @@ internal class TransactionUtilsTest {
                 reverted = false,
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 0
+                gasUsed = 0,
             )
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)
@@ -69,7 +69,7 @@ internal class TransactionUtilsTest {
                 reverted = false,
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 0
+                gasUsed = 0,
             )
 
         val isSuccess = TransactionUtils.isSuccessWithData(data)

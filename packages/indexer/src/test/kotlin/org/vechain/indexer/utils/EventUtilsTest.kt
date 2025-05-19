@@ -63,7 +63,7 @@ class EventUtilsTest {
         assertEquals(TransferEventType.NFT, EventUtils.determineTransferType(nftParams))
         assertEquals(
             TransferEventType.SEMI_FUNGIBLE_TOKEN,
-            EventUtils.determineTransferType(sfParams)
+            EventUtils.determineTransferType(sfParams),
         )
         assertEquals(TransferEventType.VET, EventUtils.determineTransferType(vetParams))
         assertNull(EventUtils.determineTransferType(unknownParams))

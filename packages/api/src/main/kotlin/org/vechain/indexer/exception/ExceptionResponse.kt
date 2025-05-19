@@ -10,5 +10,5 @@ data class ExceptionResponse(
     val message: String?,
     val error: String,
     val path: String,
-    val timestamp: Number = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+    val timestamp: Number = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC),
 )

@@ -202,14 +202,14 @@ class VeVoteResultIndexerTest {
                     capturedResults.count {
                         it.proposalId ==
                             "0x88e775074909d05136236baa138887aa44ba5881d740650e6f45a50a0c0fe2d7"
-                    },
+                    }
                 )
                 .isEqualTo(1)
             that(
                     capturedResults.count {
                         it.proposalId ==
                             "0x18bbf9d6523cd56284611970cfc201a1e6a9628788f0f32a91da3202996be58a"
-                    },
+                    }
                 )
                 .isEqualTo(3)
 

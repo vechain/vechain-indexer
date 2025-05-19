@@ -12,5 +12,5 @@ constructor(
     val transfers: List<TxTransfer>,
     val gasUsed: Long,
     val reverted: Boolean,
-    val vmError: String?
+    val vmError: String?,
 )

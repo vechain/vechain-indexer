@@ -34,7 +34,7 @@ class IndexerVersionServiceTest {
         val result =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 collectionName,
-                newVersion
+                newVersion,
             )
 
         verify { mongoTemplate.dropCollection(collectionName) }
@@ -54,7 +54,7 @@ class IndexerVersionServiceTest {
         val result =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 collectionName,
-                newVersion
+                newVersion,
             )
 
         verify(exactly = 0) { mongoTemplate.dropCollection(collectionName) }
@@ -78,7 +78,7 @@ class IndexerVersionServiceTest {
         val result =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 collectionName,
-                newVersion
+                newVersion,
             )
 
         verify(exactly = 0) { mongoTemplate.dropCollection(collectionName) }
@@ -99,7 +99,7 @@ class IndexerVersionServiceTest {
         val result =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
                 collectionName,
-                newVersion
+                newVersion,
             )
 
         expect { that(result).isEqualTo(false) }

@@ -16,7 +16,7 @@ object ArrayValidationUtils {
         input: List<String>?,
         allowedValues: Set<String>,
         fieldName: String,
-        defaultValues: List<String>? = null
+        defaultValues: List<String>? = null,
     ): List<String> {
         // If the input is null or empty, return default values if provided
         if (input.isNullOrEmpty()) {

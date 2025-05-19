@@ -86,7 +86,7 @@ internal class HistoryIndexerTest {
                         HistoryEventName.TRANSFER_VET,
                         HistoryEventName.B3TR_ACTION,
                         HistoryEventName.B3TR_ACTION,
-                    ),
+                    )
                 )
         }
     }
@@ -115,7 +115,7 @@ internal class HistoryIndexerTest {
                         HistoryEventName.SWAP_VET_TO_FT,
                         HistoryEventName.SWAP_VET_TO_FT,
                         HistoryEventName.SWAP_FT_TO_VET,
-                    ),
+                    )
                 )
         }
     }
@@ -143,7 +143,7 @@ internal class HistoryIndexerTest {
                         HistoryEventName.NFT_SALE,
                         HistoryEventName.NFT_SALE,
                         HistoryEventName.NFT_SALE,
-                    ),
+                    )
                 )
         }
     }
@@ -181,7 +181,7 @@ internal class HistoryIndexerTest {
                         HistoryEventName.TRANSFER_SF,
                         HistoryEventName.TRANSFER_SF,
                         HistoryEventName.TRANSFER_SF,
-                    ),
+                    )
                 )
             that(txs2[0].tokenId).isEqualTo("0")
             that(txs2[1].tokenId).isEqualTo("1")

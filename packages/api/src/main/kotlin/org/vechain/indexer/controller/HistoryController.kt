@@ -31,17 +31,10 @@ import org.vechain.indexer.validation.ValidPageSize
 @Validated
 @RestController
 @RequestMapping(HISTORY_PATH)
-open class HistoryController(
-    private val historyService: HistoryService,
-) {
+open class HistoryController(private val historyService: HistoryService) {
     @GetMapping("{account}")
     @Operation(summary = "Get account history")
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid txId"),
-            ],
-    )
+    @ApiResponses(value = [ApiResponse(responseCode = "400", description = "Invalid txId")])
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "account",
@@ -61,7 +54,7 @@ open class HistoryController(
                         allowableValues = ["to", "from", "origin", "gasPayer"],
                         description =
                             "Fields to search by. Defaults to ['to', 'from', 'origin'] if not provided.",
-                    ),
+                    )
             ),
         description = "Array of fields to search by.",
         required = false,
@@ -137,7 +130,7 @@ open class HistoryController(
                 before = before,
                 after = after,
                 pageable = pageable,
-            ),
+            )
         )
     }
 }

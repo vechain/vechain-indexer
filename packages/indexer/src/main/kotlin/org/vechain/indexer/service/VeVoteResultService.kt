@@ -14,9 +14,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-results")
 @Service
-class VeVoteResultService(
-    private val repository: VeVoteProposalResultRepository,
-) {
+class VeVoteResultService(private val repository: VeVoteProposalResultRepository) {
     fun processVeVoteResults(processedEvents: List<IndexedEvent>): List<VeVoteProposalResults> {
         val inMemoryAggregates = aggregateFromEvents(processedEvents)
         return mergeWithExisting(inMemoryAggregates)

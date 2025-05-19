@@ -14,7 +14,7 @@ object NFTFixtures {
             blockId = "0x000000071fbd72d3ea2ab64456274984fc4533340931399d3844dfee8b3cb3ce",
             blockNumber = 7L,
             blockTimestamp = 1530316880,
-            txId = "0x1e52058b941f50120e4d5d463fc3676209d1b879cfe4067f63cc6ddaf3408f00"
+            txId = "0x1e52058b941f50120e4d5d463fc3676209d1b879cfe4067f63cc6ddaf3408f00",
         )
 
     val NFT_ROLLBACK_TEST_VERSION1 =
@@ -27,7 +27,7 @@ object NFTFixtures {
             blockId = "0x000000061980a0bdfdf2fdddcb91834adc92920ac45c05a4519b8c0bd2d5764a",
             blockNumber = 6L,
             blockTimestamp = 1530316870,
-            txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0"
+            txId = "0xfc1d2a1a32823418bf24f4b1da56fe5b0f6b60707863a443e9779f19e18894b0",
         )
 
     val NFT_ROLLBACK_TEST_VERSION2 =
@@ -40,6 +40,6 @@ object NFTFixtures {
             blockId = "0x000000071fbd72d3ea2ab64456274984fc4533340931399d3844dfee8b3cb3ce",
             blockNumber = 7L,
             blockTimestamp = 1530316880,
-            txId = "0xfc996d321a96702d0468a60e17b032fe5fa9e3f6edb6a55858eb2e2d5580af8d"
+            txId = "0xfc996d321a96702d0468a60e17b032fe5fa9e3f6edb6a55858eb2e2d5580af8d",
         )
 }

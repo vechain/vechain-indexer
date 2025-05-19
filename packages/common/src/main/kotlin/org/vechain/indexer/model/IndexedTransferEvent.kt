@@ -8,7 +8,7 @@ enum class TransferEventType {
     VET,
     FUNGIBLE_TOKEN,
     NFT,
-    SEMI_FUNGIBLE_TOKEN
+    SEMI_FUNGIBLE_TOKEN,
 }
 
 @Document(collection = "transfer_events")
@@ -26,5 +26,5 @@ constructor(
     val tokenAddress: String?,
     val tokenId: String?,
     val topics: List<String>,
-    val eventType: TransferEventType
+    val eventType: TransferEventType,
 ) : IndexedDocument

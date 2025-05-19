@@ -39,7 +39,4 @@ constructor(
     )
 }
 
-fun generateVoteAggregateId(
-    proposalId: String,
-    choice: Int,
-): String = "$proposalId-$choice"
+fun generateVoteAggregateId(proposalId: String, choice: Int): String = "$proposalId-$choice"

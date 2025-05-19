@@ -13,7 +13,7 @@ interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent> 
     fun findByToOrFromAndTokenAddress(
         address: String,
         contractAddress: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
     fun findByToOrFrom(to: String, from: String, pageable: Pageable): Slice<IndexedTransferEvent>
@@ -23,7 +23,7 @@ interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent> 
     fun findByToAndTokenAddress(
         to: String,
         contractAddress: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
     fun findByTo(to: String, pageable: Pageable): Slice<IndexedTransferEvent>
@@ -33,19 +33,19 @@ interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent> 
     fun findByFromAndTokenAddress(
         from: String,
         contractAddress: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
     @Query("{'blockNumber': ?0,'\$or': [ { 'to': {\$in: ?1} }, { 'from': {\$in: ?1} } ] }")
     fun findByBlockNumberAndToOrFromIn(
         blockNumber: Long,
         addresses: List<String>,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
     fun findFungibleTokensContractsByAddress(
         address: String,
         tokenWhitelist: List<String>,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<String>
 }
