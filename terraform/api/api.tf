@@ -101,7 +101,7 @@ module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
   source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.0.66"
-  ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  ssl_policy                = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
   cluster_name              = module.ecs-cluster.name
