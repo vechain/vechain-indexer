@@ -117,7 +117,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nft-events,transactions,transfer-events,history-events
+      spring_profile: nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -127,7 +127,7 @@ enabled_nets:
       cpu: 1024
       memory: 2048
       enabled: true
-      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
