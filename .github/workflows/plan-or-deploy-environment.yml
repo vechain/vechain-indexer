@@ -75,11 +75,7 @@ jobs:
       - name: Determine AWS account ID and role
         id: account
         run: |
-            if [ "${{ env.account }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
+            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
