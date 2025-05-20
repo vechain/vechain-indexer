@@ -12,18 +12,18 @@ import org.vechain.indexer.repository.TransferEventRepository
 @Service
 open class TransferEventService(
     private val transferEventRepository: TransferEventRepository,
-    private val officialTokenService: OfficialTokenService
+    private val officialTokenService: OfficialTokenService,
 ) {
 
     fun find(
         address: Address,
         tokenAddress: Address,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
         return transferEventRepository.findByToOrFromAndTokenAddress(
             address.value,
             tokenAddress.value,
-            pageable
+            pageable,
         )
     }
 
@@ -38,7 +38,7 @@ open class TransferEventService(
     fun findByTo(
         to: Address,
         tokenAddress: Address?,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByToAndTokenAddress(to.value, tokenAddress.value, pageable)
@@ -50,13 +50,13 @@ open class TransferEventService(
     fun findByFrom(
         from: Address,
         tokenAddress: Address?,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
         return if (tokenAddress != null) {
             transferEventRepository.findByFromAndTokenAddress(
                 from.value,
                 tokenAddress.value,
-                pageable
+                pageable,
             )
         } else {
             transferEventRepository.findByFrom(from.value, pageable)
@@ -66,19 +66,19 @@ open class TransferEventService(
     fun findByBlockNumber(
         blockNumber: Long,
         addresses: List<Address>,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
         return transferEventRepository.findByBlockNumberAndToOrFromIn(
             blockNumber,
             addresses.map { it.value },
-            pageable
+            pageable,
         )
     }
 
     fun findFungibleTokensContractsByAddress(
         address: Address,
         officialTokensOnly: Boolean,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<String> {
         val whitelist =
             if (officialTokensOnly) officialTokenService.getOfficialTokenAddresses()
@@ -86,7 +86,7 @@ open class TransferEventService(
         return transferEventRepository.findFungibleTokensContractsByAddress(
             address.value,
             whitelist,
-            pageable
+            pageable,
         )
     }
 }

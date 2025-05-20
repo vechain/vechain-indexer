@@ -10,13 +10,10 @@ object TimeValidationUtils {
      * @param before The timestamp to end the query at.
      * @throws BadRequestException If the timestamps are invalid.
      */
-    fun validateTimestamps(
-        after: Long?,
-        before: Long?,
-    ) {
+    fun validateTimestamps(after: Long?, before: Long?) {
         if (after != null && before != null && after > before) {
             throw BadRequestException(
-                "Invalid time range: 'after' timestamp is greater than 'before'",
+                "Invalid time range: 'after' timestamp is greater than 'before'"
             )
         }
         if (after != null && after < 0) {

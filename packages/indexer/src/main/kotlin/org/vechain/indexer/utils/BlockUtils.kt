@@ -55,7 +55,7 @@ object BlockUtils {
                     tokenAddress = event.address,
                     tokenId = tokenIds.getOrNull(i)?.toString(),
                     eventType = TransferEventType.SEMI_FUNGIBLE_TOKEN,
-                ),
+                )
             )
         }
         return transferEvents

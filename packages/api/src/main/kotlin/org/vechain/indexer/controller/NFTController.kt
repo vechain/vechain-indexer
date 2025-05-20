@@ -34,10 +34,7 @@ open class NFTController(private val nftService: NFTService) {
     @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
     @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid address supplied"),
-            ]
+        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -45,21 +42,21 @@ open class NFTController(private val nftService: NFTService) {
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the NFT owner",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "contractAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The contract address",
-        required = false
+        required = false,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",
         schema = Schema(type = "string"),
         description = "The NFT tokenId",
-        required = false
+        required = false,
     )
     @PaginationParameters
     open fun getOwnedNFTs(
@@ -80,10 +77,7 @@ open class NFTController(private val nftService: NFTService) {
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses by NFT owner")
     @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid address supplied"),
-            ]
+        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -91,7 +85,7 @@ open class NFTController(private val nftService: NFTService) {
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of the NFTs owner",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @PaginationParameters
     open fun getContractsByNFTOwner(

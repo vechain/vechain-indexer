@@ -33,12 +33,12 @@ object VeWorldAPIClient {
 
     data class HealthCheckComponent(
         val status: String = "DOWN",
-        val details: Map<String, Any> = emptyMap()
+        val details: Map<String, Any> = emptyMap(),
     )
 
     data class HealthCheckResponse(
         val status: String = "DOWN",
-        val components: Map<String, HealthCheckComponent> = emptyMap()
+        val components: Map<String, HealthCheckComponent> = emptyMap(),
     )
 
     fun performHealthCheck() {
@@ -48,7 +48,7 @@ object VeWorldAPIClient {
                 "$BASE_URL/actuator/health",
                 HttpMethod.GET,
                 null,
-                HealthCheckResponse::class.java
+                HealthCheckResponse::class.java,
             )
         if (!res.statusCode.is2xxSuccessful)
             throw Exception("Health failed with status code ${res.statusCode}")
@@ -70,7 +70,7 @@ object VeWorldAPIClient {
                         "$INDEXER_URL/actuator/health",
                         HttpMethod.GET,
                         null,
-                        HealthCheckResponse::class.java
+                        HealthCheckResponse::class.java,
                     )
 
                 if (!res.statusCode.is2xxSuccessful || res.body?.status != "UP")
@@ -99,19 +99,19 @@ object VeWorldAPIClient {
         address: String? = null,
         contractAddress: String? = null,
         page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
+        size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedNFT> {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
-                PAGINATED_NFTS_TYPE
+                PAGINATED_NFTS_TYPE,
             )
         else if (address != null)
             getRequest("$API_URL/nfts?address=$address&page=$page&size=$size", PAGINATED_NFTS_TYPE)
         else if (contractAddress != null)
             getRequest(
                 "$API_URL/nfts?contractAddress=$contractAddress&page=$page&size=$size",
-                PAGINATED_NFTS_TYPE
+                PAGINATED_NFTS_TYPE,
             )
         else throw Exception("No address or contractAddress provided")
     }
@@ -119,11 +119,11 @@ object VeWorldAPIClient {
     fun getNftContracts(
         owner: String,
         page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
+        size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<String> {
         return getRequest(
             "$API_URL/nfts/contracts?owner=$owner&page=$page&size=$size",
-            PAGINATED_NFT_CONTRACTS_TYPE
+            PAGINATED_NFT_CONTRACTS_TYPE,
         )
     }
 
@@ -135,22 +135,22 @@ object VeWorldAPIClient {
         address: String,
         includeDelegated: Boolean = false,
         page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
+        size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransaction> {
         return getRequest(
             "$API_URL/transactions?origin=${address}&includeDelegated=$includeDelegated&page=$page&size=$size&expanded=true",
-            PAGINATED_TXS_TYPE
+            PAGINATED_TXS_TYPE,
         )
     }
 
     fun getDelegatedTransactions(
         address: String,
         page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
+        size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransaction> {
         return getRequest(
             "$API_URL/transactions/delegated?delegator=$address&page=$page&size=$size&expanded=true",
-            PAGINATED_TXS_TYPE
+            PAGINATED_TXS_TYPE,
         )
     }
 
@@ -158,22 +158,22 @@ object VeWorldAPIClient {
         address: String? = null,
         tokenAddress: String? = null,
         page: Int = 0,
-        size: Int = PAGE_SIZE_LIMIT
+        size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransferEvent> {
         return if (address != null && tokenAddress != null)
             getRequest(
                 "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress&page=$page&size=$size",
-                PAGINATED_TRANSFER_EVENTS_TYPE
+                PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (address != null)
             getRequest(
                 "$API_URL/transfers?address=$address&page=$page&size=$size",
-                PAGINATED_TRANSFER_EVENTS_TYPE
+                PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (tokenAddress != null)
             getRequest(
                 "$API_URL/transfers?tokenAddress=$tokenAddress&page=$page&size=$size",
-                PAGINATED_TRANSFER_EVENTS_TYPE
+                PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else throw Exception("No address or tokenAddress provided")
     }

@@ -18,7 +18,7 @@ import org.vechain.indexer.model.TokenRegistry
 @Service
 open class OfficialTokenService(
     private val thorClient: ThorClient,
-    private val officialTokenRepoRest: WebClient
+    private val officialTokenRepoRest: WebClient,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

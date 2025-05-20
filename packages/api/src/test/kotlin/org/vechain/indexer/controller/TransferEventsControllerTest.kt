@@ -64,7 +64,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(12)
@@ -87,7 +87,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(12)
@@ -110,7 +110,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(12)
@@ -133,7 +133,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(size)
@@ -156,7 +156,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data)
@@ -187,7 +187,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(70)
@@ -210,7 +210,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 70
@@ -236,7 +236,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 70
@@ -262,7 +262,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(70)
@@ -285,7 +285,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(70)
@@ -308,7 +308,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expect {
@@ -366,7 +366,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(4)
@@ -389,7 +389,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 4
@@ -415,7 +415,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 4
@@ -442,7 +442,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(1)
@@ -466,7 +466,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expect {
@@ -522,7 +522,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(8)
@@ -545,7 +545,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 8
@@ -571,7 +571,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 8
@@ -598,7 +598,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expectThat(transferEvents.data).hasSize(2)
@@ -622,7 +622,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expect {
@@ -706,7 +706,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             expect {
@@ -746,7 +746,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 6
@@ -777,7 +777,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val transferEvents =
                 objectMapper.readValue(
                     result.response.contentAsString,
-                    PAGINATED_TRANSFER_EVENTS_TYPE
+                    PAGINATED_TRANSFER_EVENTS_TYPE,
                 )
 
             // Total elements: 8
@@ -844,7 +844,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts =
                 objectMapper.readValue(
                     res.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expect {
@@ -891,13 +891,13 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts1 =
                 objectMapper.readValue(
                     res1.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             val contracts2 =
                 objectMapper.readValue(
                     res2.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expect {
@@ -939,7 +939,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts =
                 objectMapper.readValue(
                     res.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expectThat(contracts.pagination.hasNext).isFalse()
@@ -969,7 +969,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts =
                 objectMapper.readValue(
                     res.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expectThat(contracts.pagination.hasNext).isTrue()
@@ -989,7 +989,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts =
                 objectMapper.readValue(
                     res.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expect {
@@ -1015,7 +1015,7 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
             val contracts =
                 objectMapper.readValue(
                     res.response.contentAsString,
-                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE
+                    PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE,
                 )
 
             expect { that(contracts.data).isNotEmpty().all { isNotEqualTo(VTHO_CONTRACT_ADDRESS) } }

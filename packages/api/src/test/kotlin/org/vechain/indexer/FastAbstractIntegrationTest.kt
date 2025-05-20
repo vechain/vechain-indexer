@@ -20,7 +20,7 @@ import org.vechain.indexer.utils.JsonUtils
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = [VeWorldIndexerApiApplication::class]
+    classes = [VeWorldIndexerApiApplication::class],
 )
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc

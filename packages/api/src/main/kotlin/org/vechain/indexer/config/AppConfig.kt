@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient
 @Configuration
 open class AppConfig(
     @Value("\${thor.url}") private val thorUrl: String,
-    @Value("\${token.registry.url}") private val tokenRegistryUrl: String
+    @Value("\${token.registry.url}") private val tokenRegistryUrl: String,
 ) {
 
     @Bean

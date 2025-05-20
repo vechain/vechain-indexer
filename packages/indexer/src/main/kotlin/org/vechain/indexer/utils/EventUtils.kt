@@ -23,7 +23,7 @@ object EventUtils {
                 }
             }
             "TransferSingle",
-            "TransferBatch", -> HistoryEventName.TRANSFER_SF
+            "TransferBatch" -> HistoryEventName.TRANSFER_SF
             "VET_TRANSFER" -> HistoryEventName.TRANSFER_VET
             "FT_VET_Swap" -> HistoryEventName.SWAP_FT_TO_VET
             "VET_FT_Swap" -> HistoryEventName.SWAP_VET_TO_FT
@@ -42,7 +42,7 @@ object EventUtils {
                 }
             }
             "TransferSingle",
-            "TransferBatch", -> TransferEventType.SEMI_FUNGIBLE_TOKEN
+            "TransferBatch" -> TransferEventType.SEMI_FUNGIBLE_TOKEN
             "VET_TRANSFER" -> TransferEventType.VET
             else -> null // Other events will not be labeled
         }

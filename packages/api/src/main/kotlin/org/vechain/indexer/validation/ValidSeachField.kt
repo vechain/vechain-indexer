@@ -13,7 +13,7 @@ import kotlin.reflect.KClass
 annotation class ValidSearchFields(
     val message: String = "Invalid search fields. Allowed values: [to, from, origin, gasPayer]",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )
 
 class SearchFieldsValidator : ConstraintValidator<ValidSearchFields, List<String>?> {

@@ -34,10 +34,7 @@ class TransferEventTest {
                 .tokenAddress
 
         // Get transfer event by token address
-        val transferEventsForToken =
-            VeWorldAPIClient.getTransferEvents(
-                tokenAddress = tokenAddress,
-            )
+        val transferEventsForToken = VeWorldAPIClient.getTransferEvents(tokenAddress = tokenAddress)
 
         expectThat(transferEventsForToken.data.size).isGreaterThan(0)
 
@@ -51,7 +48,7 @@ class TransferEventTest {
         val transferEvents =
             VeWorldAPIClient.getTransferEvents(
                 "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
-                size = 1
+                size = 1,
             )
 
         expectThat(transferEvents.data).hasSize(1)

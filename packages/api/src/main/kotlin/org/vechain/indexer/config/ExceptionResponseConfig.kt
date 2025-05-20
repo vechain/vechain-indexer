@@ -17,7 +17,7 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [AbstractHttpException::class])
     protected fun handleHttpException(
         req: HttpServletRequest,
-        ex: AbstractHttpException
+        ex: AbstractHttpException,
     ): ResponseEntity<ExceptionResponse> {
 
         /** If a client error, return the message from the exception. */
@@ -28,7 +28,7 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
                 path = req.servletPath,
                 status = ex.status.value(),
                 error = ex.status.reasonPhrase,
-                message = message
+                message = message,
             )
 
         this.logger.warn(
@@ -42,7 +42,7 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [ConstraintViolationException::class])
     protected fun handleConstrainViolation(
         req: HttpServletRequest,
-        ex: ConstraintViolationException
+        ex: ConstraintViolationException,
     ): ResponseEntity<ExceptionResponse> {
 
         val status = HttpStatus.BAD_REQUEST
@@ -53,7 +53,7 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
                 path = req.servletPath,
                 status = status.value(),
                 error = status.reasonPhrase,
-                message = message
+                message = message,
             )
 
         this.logger.warn(
@@ -67,7 +67,7 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
     @ExceptionHandler(value = [Exception::class])
     protected fun handleException(
         req: HttpServletRequest,
-        ex: Exception
+        ex: Exception,
     ): ResponseEntity<ExceptionResponse> {
 
         val status = HttpStatus.INTERNAL_SERVER_ERROR
@@ -77,12 +77,12 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
                 path = req.servletPath,
                 status = status.value(),
                 error = status.reasonPhrase,
-                message = null
+                message = null,
             )
 
         this.logger.warn(
             "HTTP ${status.value()} (${req.servletPath}) ${status.reasonPhrase}: (id=${response.id}) - ${ex.message}",
-            ex
+            ex,
         )
 
         return ResponseEntity(response, status)

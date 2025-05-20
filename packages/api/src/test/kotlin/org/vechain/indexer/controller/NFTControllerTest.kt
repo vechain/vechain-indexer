@@ -466,7 +466,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .hasSize(2)
                     .containsExactly(
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
-                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf",
                     )
             }
         }
@@ -490,7 +490,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .hasSize(2)
                     .containsExactly(
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
-                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf",
                     )
             }
         }
@@ -512,7 +512,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .hasSize(2)
                     .containsExactly(
                         "0x08f30373569af024d15eb47fd477a35db929eaac",
-                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf"
+                        "0xb44111d908ad0af0949a20a130429f92a4cc0dbf",
                     )
             }
         }
@@ -542,7 +542,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
             val contracts2 =
                 objectMapper.readValue(
                     res2.response.contentAsString,
-                    object : TypeReference<PaginatedResponse<String>>() {}
+                    object : TypeReference<PaginatedResponse<String>>() {},
                 )
 
             expect {

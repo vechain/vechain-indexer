@@ -35,7 +35,4 @@ constructor(
 @JsonView(Views.Public::class)
 data class NFTArchive
 @ConstructorBinding
-constructor(
-    @Id override val id: String,
-    override val data: IndexedNFT,
-) : Archive<IndexedNFT>
+constructor(@Id override val id: String, override val data: IndexedNFT) : Archive<IndexedNFT>

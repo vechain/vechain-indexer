@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.index.Index
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
     val modelObj: Class<*>,
-    val archiveObj: Class<*>? = null
+    val archiveObj: Class<*>? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 

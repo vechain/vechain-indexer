@@ -22,7 +22,7 @@ data class ERC1155Contract(
             // this
             // value gets emitted in transactions
             // Signatures.SemiFungible.URI_EVENT
-        )
+        ),
 ) : ContractSpecification {
     companion object {
 

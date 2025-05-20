@@ -43,7 +43,5 @@ constructor(
     )
 }
 
-fun generateId(
-    proposalId: String,
-    reason: String,
-): String = DigestUtils.sha1Hex("$proposalId-${reason.trim().lowercase()}")
+fun generateId(proposalId: String, reason: String): String =
+    DigestUtils.sha1Hex("$proposalId-${reason.trim().lowercase()}")

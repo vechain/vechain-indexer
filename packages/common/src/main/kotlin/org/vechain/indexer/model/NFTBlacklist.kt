@@ -30,7 +30,4 @@ constructor(
 @JsonView(Views.Public::class)
 data class NFTBlacklistArchive
 @ConstructorBinding
-constructor(
-    @Id override val id: String,
-    override val data: NFTBlacklist,
-) : Archive<NFTBlacklist>
+constructor(@Id override val id: String, override val data: NFTBlacklist) : Archive<NFTBlacklist>

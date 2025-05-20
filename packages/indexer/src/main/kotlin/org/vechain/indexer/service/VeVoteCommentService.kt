@@ -74,17 +74,11 @@ class VeVoteCommentService(
             isEnglish(comment)
 
     /** Comment must be at least 5 characters long after trimming. */
-    fun isTooShort(
-        comment: String?,
-        minLength: Int,
-    ): Boolean = comment == null || comment.trim().length < minLength
+    fun isTooShort(comment: String?, minLength: Int): Boolean =
+        comment == null || comment.trim().length < minLength
 
     /** Only allow one comment per proposal with the same content. */
-    fun isSpam(
-        proposalId: String,
-        comment: String,
-        repository: VevoteCommentRepository,
-    ): Boolean {
+    fun isSpam(proposalId: String, comment: String, repository: VevoteCommentRepository): Boolean {
         val id = generateId(proposalId, comment)
         val isDuplicate = repository.existsById(id)
 
@@ -110,7 +104,7 @@ class VeVoteCommentService(
 
         if (confidence < confidenceThreshold.toDouble()) {
             logger.info(
-                "Failed to meet confidence threshold of $confidenceThreshold for English: $comment",
+                "Failed to meet confidence threshold of $confidenceThreshold for English: $comment"
             )
             return false
         }

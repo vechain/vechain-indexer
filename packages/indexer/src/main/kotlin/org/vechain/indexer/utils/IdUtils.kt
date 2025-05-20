@@ -6,15 +6,11 @@ import org.vechain.indexer.model.VersionedDocument
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object IdUtils {
-    fun buildArchiveId(
-        document: VersionedDocument,
-        version: Int = document.version,
-    ): String = buildHashedId("${document::class.simpleName}-${document.getDocumentId()}-$version")
+    fun buildArchiveId(document: VersionedDocument, version: Int = document.version): String =
+        buildHashedId("${document::class.simpleName}-${document.getDocumentId()}-$version")
 
     fun buildNftId(transferEvent: IndexedEvent): String =
-        buildHashedId(
-            "${transferEvent.address}-${transferEvent.params.getAsString("tokenId")}",
-        )
+        buildHashedId("${transferEvent.address}-${transferEvent.params.getAsString("tokenId")}")
 }
 
 private fun buildHashedId(plainId: String): String = DigestUtils.sha1Hex(plainId)

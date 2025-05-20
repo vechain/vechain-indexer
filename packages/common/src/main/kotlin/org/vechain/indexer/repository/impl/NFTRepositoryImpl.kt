@@ -15,9 +15,7 @@ import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("nft-events")
 @Component
-open class NFTRepositoryImpl(
-    private val mongoTemplate: MongoTemplate,
-) {
+open class NFTRepositoryImpl(private val mongoTemplate: MongoTemplate) {
 
     open fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String> {
         val matchOperation =
@@ -44,11 +42,11 @@ open class NFTRepositoryImpl(
                         pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
                         BLOCK_NUMBER,
                         TX_ID,
-                        NFT_ID_ALIAS
+                        NFT_ID_ALIAS,
                     )
                 ),
                 Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                Aggregation.limit(pageable.pageSize.toLong() + 1)
+                Aggregation.limit(pageable.pageSize.toLong() + 1),
             )
         val distinctContracts =
             mongoTemplate

@@ -47,7 +47,7 @@ internal class NFTServiceTest {
                     txId = "tx1",
                     blockId = "block1",
                     blockNumber = 1L,
-                    blockTimestamp = 1L
+                    blockTimestamp = 1L,
                 )
             )
         val existing =
@@ -61,7 +61,7 @@ internal class NFTServiceTest {
                     txId = "tx2",
                     blockId = "block2",
                     blockNumber = 2L,
-                    blockTimestamp = 2L
+                    blockTimestamp = 2L,
                 )
             )
 
@@ -88,7 +88,7 @@ internal class NFTServiceTest {
                     txId = "tx2",
                     blockId = "block2",
                     blockNumber = 2L,
-                    blockTimestamp = 2L
+                    blockTimestamp = 2L,
                 )
             )
 
@@ -114,7 +114,7 @@ internal class NFTServiceTest {
                     txId = "tx1",
                     blockId = "block1",
                     blockNumber = 1L,
-                    blockTimestamp = 1L
+                    blockTimestamp = 1L,
                 )
             )
         val existing = emptyList<IndexedNFT>()
@@ -194,7 +194,7 @@ internal class NFTServiceTest {
                     txId = "old_tx",
                     blockId = "old_block",
                     blockNumber = 1L,
-                    blockTimestamp = 1L
+                    blockTimestamp = 1L,
                 )
             )
 

@@ -34,24 +34,19 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid txId"),
-            ]
-    )
+    @ApiResponses(value = [ApiResponse(responseCode = "400", description = "Invalid txId")])
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "txId",
         schema = Schema(type = "string", pattern = TransactionUtils.REGEX),
         description = "A valid transaction ID",
         required = true,
-        example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a"
+        example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a",
     )
     @ExpandedParameter
     open fun getTransactionById(
         @TransactionId @PathVariable txId: String,
-        @RequestParam(required = false) expanded: Boolean = false
+        @RequestParam(required = false) expanded: Boolean = false,
     ): IndexedTransaction {
         return transactionService.findById(txId)
             ?: throw ResourceNotFoundException("Transaction not found for txId $txId")
@@ -60,10 +55,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @GetMapping
     @Operation(summary = "Get all transactions by an origin or delegator address")
     @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid address supplied"),
-            ]
+        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -71,7 +63,7 @@ open class TransactionController(private val transactionService: TransactionServ
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "Address of the transaction origin",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -79,7 +71,7 @@ open class TransactionController(private val transactionService: TransactionServ
         schema = Schema(type = "boolean"),
         description = "Whether to include transactions the address paid gas for",
         required = false,
-        example = "false"
+        example = "false",
     )
     @ExpandedParameter
     @PaginationParameters
@@ -95,7 +87,7 @@ open class TransactionController(private val transactionService: TransactionServ
             transactionService.findByOriginOrDelegator(
                 origin,
                 includeDelegated,
-                toPageable(page, size, direction, "blockNumber", "_id")
+                toPageable(page, size, direction, "blockNumber", "_id"),
             )
         )
     }
@@ -103,10 +95,7 @@ open class TransactionController(private val transactionService: TransactionServ
     @GetMapping("/delegated")
     @Operation(summary = "Get all delegated transactions by a delegator address")
     @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "400", description = "Invalid delegator address"),
-            ]
+        value = [ApiResponse(responseCode = "400", description = "Invalid delegator address")]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -114,7 +103,7 @@ open class TransactionController(private val transactionService: TransactionServ
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of the delegator",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
     @ExpandedParameter
     @PaginationParameters
@@ -128,7 +117,7 @@ open class TransactionController(private val transactionService: TransactionServ
         return paginatedResponse(
             transactionService.findAllDelegated(
                 delegator,
-                toPageable(page, size, direction, "blockNumber", "_id")
+                toPageable(page, size, direction, "blockNumber", "_id"),
             )
         )
     }

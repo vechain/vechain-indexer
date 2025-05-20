@@ -1,13 +1,14 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("org.springframework.boot") version "3.4.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("maven-publish")
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
+    kotlin("jvm") version "2.1.21"
+    kotlin("plugin.spring") version "2.1.21"
     id("jacoco-report-aggregation")
-    id("com.diffplug.spotless") version "6.25.0"
+    id("com.diffplug.spotless") version "7.0.3"
     id("org.sonarqube") version "6.0.1.5171"
     jacoco
 }
@@ -86,8 +87,9 @@ allprojects {
     }
 
     tasks.withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "21"
+        compilerOptions {
+            freeCompilerArgs.set(listOf("-Xjsr305=strict"))
+            jvmTarget.set(JvmTarget.JVM_21)
         }
         dependsOn("installGitHooks")
     }
@@ -205,24 +207,10 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
-        implementation("io.netty:netty-codec-http") {
-            version {
-                strictly("4.1.118.Final")
-            }
-        }
-        implementation("io.netty:netty-common") {
-            version {
-                strictly("4.1.118.Final")
-            }
-        }
-        implementation("io.netty:netty-handler") {
-            version {
-                strictly("4.1.118.Final")
-            }
-        }
 
         implementation("org.springframework.boot:spring-boot-starter-actuator:3.4.5")
 
@@ -231,11 +219,11 @@ allprojects {
         implementation("org.web3j:abi:4.9.8")
         implementation("org.web3j:contracts:4.9.8")
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:4.0.0")
+        implementation("org.vechain:indexer-core:4.1.1")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")
@@ -246,6 +234,25 @@ allprojects {
         testImplementation("io.mockk:mockk:1.13.14")
         testImplementation("io.strikt:strikt-core:0.35.1")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+
+        // Ensure Netty Version Consistency
+        implementation("io.netty:netty-handler:4.1.118.Final")
+        implementation("io.netty:netty-codec-http:4.1.118.Final")
+        implementation("io.netty:netty-common:4.1.118.Final")
+        implementation("io.netty:netty-buffer:4.1.118.Final")
+        implementation("io.netty:netty-transport:4.1.118.Final")
+        implementation("io.netty:netty-resolver:4.1.118.Final")
+        implementation("io.netty:netty-codec:4.1.118.Final")
+        implementation("io.netty:netty-codec-http2:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns-native-macos:4.1.118.Final")
+        implementation("io.netty:netty-transport-native-epoll:4.1.118.Final")
+        implementation("io.netty:netty-transport-native-unix-common:4.1.118.Final")
+        implementation("io.netty:netty-codec-dns:4.1.118.Final")
+        implementation("io.netty:netty-resolver-dns-classes-macos:4.1.118.Final")
+        implementation("io.netty:netty-handler-proxy:4.1.118.Final")
+        implementation("io.netty:netty-codec-socks:4.1.118.Final")
+        implementation("io.netty:netty-transport-classes-epoll:4.1.118.Final")
     }
 }
 

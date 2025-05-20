@@ -170,7 +170,7 @@ internal class NFTBlacklistServiceTest {
                     blockId = "0xdead",
                     blockNumber = 8L,
                     blockTimestamp = 1L,
-                ),
+                )
             )
 
         val result = nftBlacklistService.parseRecords(events, existing)
@@ -284,13 +284,13 @@ internal class NFTBlacklistServiceTest {
                     blockId = "0xdead",
                     blockNumber = 8L,
                     blockTimestamp = 1L,
-                ),
+                )
             )
 
         val contractAddresses =
             listOf(
                 "0x4d2b488dd3638459f75040bd7bdf77b17cef7712",
-                "0x884a36ca0b582c54255aac68a2664cd0ca8c592d"
+                "0x884a36ca0b582c54255aac68a2664cd0ca8c592d",
             )
 
         every { repository.findAllById(contractAddresses) } returns existing

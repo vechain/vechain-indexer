@@ -13,5 +13,5 @@ constructor(
     val provedWork: String = "1000",
     val gasPayer: String = "0x0000000000000000000000000000000000000000",
     val expiration: Long = 1000,
-    val blockRef: String
+    val blockRef: String,
 )

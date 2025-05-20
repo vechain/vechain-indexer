@@ -15,14 +15,12 @@ import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
 @Profile("transfer-events")
 @Component
-open class TransferEventRepositoryImpl(
-    private val mongoTemplate: MongoTemplate,
-) {
+open class TransferEventRepositoryImpl(private val mongoTemplate: MongoTemplate) {
 
     fun findFungibleTokensContractsByAddress(
         address: String,
         tokenWhitelist: List<String>,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<String> {
 
         val notVthoMatchOperation =
@@ -34,7 +32,7 @@ open class TransferEventRepositoryImpl(
                 Criteria.where("")
                     .orOperator(
                         Criteria.where(TO).`is`(address),
-                        Criteria.where(FROM).`is`(address)
+                        Criteria.where(FROM).`is`(address),
                     )
             )
         val tokenWhitelistOperation =
@@ -72,13 +70,13 @@ open class TransferEventRepositoryImpl(
                                 pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
                                 BLOCK_NUMBER,
                                 TX_ID,
-                                TRANSFER_EVENT_ID_ALIAS
+                                TRANSFER_EVENT_ID_ALIAS,
                             )
                         ),
                         Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
                         // We retrieve an additional element on purpose to detect remaining elements
                         // in the next page
-                        Aggregation.limit(pageable.pageSize.toLong() + 1)
+                        Aggregation.limit(pageable.pageSize.toLong() + 1),
                     )
             )
         val distinctFungibleTokensContracts =

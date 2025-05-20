@@ -8,7 +8,7 @@ constructor(
     val version: Int,
     val description: String? = null,
     val proof: ProofV? = null,
-    val impact: Impact? = null
+    val impact: Impact? = null,
 )
 
 data class ProofV

@@ -11,8 +11,8 @@ data class ERC20Contract(
             Signatures.Fungible.TRANSFER_FUNCTION,
             Signatures.Common.TRANSFER_FROM_FUNCTION,
             Signatures.Common.APPROVE_FUNCTION,
-            Signatures.Fungible.ALLOWANCE_FUNCTION
+            Signatures.Fungible.ALLOWANCE_FUNCTION,
         ),
     override val events: List<String> =
-        listOf(Signatures.Common.TRANSFER_EVENT, Signatures.Common.APPROVAL_EVENT)
+        listOf(Signatures.Common.TRANSFER_EVENT, Signatures.Common.APPROVAL_EVENT),
 ) : ContractSpecification

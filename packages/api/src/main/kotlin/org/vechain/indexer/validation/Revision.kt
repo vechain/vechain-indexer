@@ -15,13 +15,13 @@ annotation class Revision(
     val message: String =
         "The provided revision is invalid. It must be a positive integer, a valid block ID, 'best' or 'finalized'",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )
 
 class RevisionValidator : ConstraintValidator<Revision, String> {
     override fun isValid(
         value: String,
-        constraintValidatorContext: ConstraintValidatorContext
+        constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
         return RevisionUtils.isValid(value)
     }

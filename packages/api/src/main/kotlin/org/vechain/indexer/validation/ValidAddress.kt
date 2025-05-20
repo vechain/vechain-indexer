@@ -15,13 +15,13 @@ annotation class ValidAddress(
     val message: String =
         "The provided address is invalid. It must match ${Address.REGEX} and not be the zero address",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )
 
 class AddressValidator : ConstraintValidator<ValidAddress, Address> {
     override fun isValid(
         value: Address?,
-        constraintValidatorContext: ConstraintValidatorContext
+        constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
         return value == null || (value.isValid() && !value.isZero())
     }

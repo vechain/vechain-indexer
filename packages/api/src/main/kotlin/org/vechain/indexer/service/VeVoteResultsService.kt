@@ -10,7 +10,7 @@ import org.vechain.indexer.repository.VeVoteProposalResultRepository
 @Profile("vevote-results")
 @Service
 open class VeVoteResultsService(
-    private val vevoteProposalResultRepository: VeVoteProposalResultRepository,
+    private val vevoteProposalResultRepository: VeVoteProposalResultRepository
 ) {
     open fun getResultsByProposalIdAndChoice(
         proposalId: String,
@@ -25,9 +25,6 @@ open class VeVoteResultsService(
     ): Slice<VeVoteProposalResults> =
         vevoteProposalResultRepository.findAllByProposalId(proposalId, pageable)
 
-    open fun getResultsByChoice(
-        choice: Int,
-        pageable: Pageable,
-    ): Slice<VeVoteProposalResults> =
+    open fun getResultsByChoice(choice: Int, pageable: Pageable): Slice<VeVoteProposalResults> =
         vevoteProposalResultRepository.findAllByChoice(choice, pageable)
 }

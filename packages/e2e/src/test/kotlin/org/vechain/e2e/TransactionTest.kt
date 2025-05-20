@@ -36,7 +36,7 @@ class TransactionTest {
         val transactions =
             VeWorldAPIClient.getTransactionsByOrigin(
                 "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
-                size = 1
+                size = 1,
             )
         val txs: List<IndexedTransaction> = transactions.data
 
@@ -63,7 +63,7 @@ class TransactionTest {
         val transactions =
             VeWorldAPIClient.getTransactionsByOrigin(
                 address = "0x435933c8064b4ae76be665428e0307ef2ccfbd68",
-                includeDelegated = true
+                includeDelegated = true,
             )
         val txs: List<IndexedTransaction> = transactions.data
 

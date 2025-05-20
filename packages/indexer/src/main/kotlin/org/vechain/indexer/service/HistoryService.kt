@@ -20,10 +20,7 @@ class HistoryService(
     private val historyRepository: HistoryEventRepository,
     private val mongoTemplate: MongoTemplate,
 ) {
-    fun processBlockEvents(
-        events: List<IndexedEvent>,
-        block: Block,
-    ) {
+    fun processBlockEvents(events: List<IndexedEvent>, block: Block) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
@@ -65,7 +62,7 @@ class HistoryService(
                     to = event.params.getAsString("to"),
                     value = values.getOrNull(i)?.toString(),
                     tokenId = tokenIds.getOrNull(i)?.toString(),
-                ),
+                )
             )
         }
         return historyEvents

@@ -9,15 +9,9 @@ import org.vechain.indexer.model.vevote.VevoteProposalComment
 @Profile("vevote-comments")
 @Repository
 interface VevoteCommentRepository : BaseIndexedRepository<VevoteProposalComment> {
-    fun findAllByProposalId(
-        proposalId: String,
-        pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VevoteProposalComment>
 
-    fun findAllByVoter(
-        voter: String,
-        pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    fun findAllByVoter(voter: String, pageable: Pageable): Slice<VevoteProposalComment>
 
     fun findAllByProposalIdAndVoter(
         proposalId: String,
@@ -25,10 +19,7 @@ interface VevoteCommentRepository : BaseIndexedRepository<VevoteProposalComment>
         pageable: Pageable,
     ): Slice<VevoteProposalComment>
 
-    fun findAllByChoicesContaining(
-        choice: Int,
-        pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    fun findAllByChoicesContaining(choice: Int, pageable: Pageable): Slice<VevoteProposalComment>
 
     fun findAllByProposalIdAndChoicesContaining(
         proposalId: String,

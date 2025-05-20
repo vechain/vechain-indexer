@@ -51,7 +51,7 @@ abstract class AbstractIntegrationTest {
         val thorContainer: GenericContainer<*> =
             GenericContainer("vechain/thor:v2.2.1")
                 .withCommand(
-                    "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'",
+                    "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
                 )
                 .withExposedPorts(8669)
                 .withReuse(true)
@@ -61,14 +61,14 @@ abstract class AbstractIntegrationTest {
                     (LogMessageWaitStrategy())
                         .withRegEx(".*(new block packed).*")
                         .withTimes(1)
-                        .withStartupTimeout(Duration.ofSeconds(180L)),
+                        .withStartupTimeout(Duration.ofSeconds(180L))
                 )
 
         val transactionScript: GenericContainer<*> =
             GenericContainer(
                     DockerImageName.parse(
-                        "ghcr.io/vechain/thor-transactions-script:88bffbb8a24c118a1faa1671dcbb92cd733e7ab4",
-                    ),
+                        "ghcr.io/vechain/thor-transactions-script:88bffbb8a24c118a1faa1671dcbb92cd733e7ab4"
+                    )
                 )
                 .withNetwork(thorNetwork)
                 .withEnv("NODE_URL", "http://thor-node:8669")
@@ -76,7 +76,7 @@ abstract class AbstractIntegrationTest {
                     LogMessageWaitStrategy()
                         .withRegEx(".*(Thor TX Script successfully executed).*")
                         .withTimes(1)
-                        .withStartupTimeout(Duration.ofSeconds(180L)),
+                        .withStartupTimeout(Duration.ofSeconds(180L))
                 )
                 .withReuse(true)
     }
@@ -105,7 +105,7 @@ abstract class AbstractIntegrationTest {
             TestPropertyValues.of(
                     "spring.data.mongodb.uri=$mongoUri",
                     "thor.url=$thorUrl",
-                    "indexer.blacklist.contract_address=$nftBlacklistAddress"
+                    "indexer.blacklist.contract_address=$nftBlacklistAddress",
                 )
                 .applyTo(configurableApplicationContext.environment)
         }

@@ -34,7 +34,7 @@ class NFTTest {
         val nfts =
             VeWorldAPIClient.getNfts(
                 address = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-                size = 1
+                size = 1,
             )
 
         expectThat(nfts.data).hasSize(1).isA<List<IndexedNFT>>()

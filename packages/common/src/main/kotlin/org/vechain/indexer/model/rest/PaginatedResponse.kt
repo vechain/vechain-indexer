@@ -12,10 +12,7 @@ const val COUNT_LIMIT = 500L
 
 /** API response wrapper object */
 @JsonView(Views.Public::class)
-data class PaginatedResponse<T>(
-    val data: List<T>,
-    val pagination: PaginationDetail,
-) where T : Any
+data class PaginatedResponse<T>(val data: List<T>, val pagination: PaginationDetail) where T : Any
 
 /** Wrapper that holds pagination data inside a response */
 @JsonView(Views.Public::class)
@@ -42,7 +39,7 @@ fun <T : Any> paginatedResponse(slice: Slice<T>): PaginatedResponse<T> {
                 countLimit = 0,
                 totalPages = null,
                 totalElements = null,
-                hasNext = slice.hasNext()
-            )
+                hasNext = slice.hasNext(),
+            ),
     )
 }

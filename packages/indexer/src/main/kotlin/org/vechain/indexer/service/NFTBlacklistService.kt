@@ -25,10 +25,7 @@ open class NFTBlacklistService(
     private val logger = LoggerFactory.getLogger(NFTBlacklistService::class.java)
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(
-        updated: List<NFTBlacklist>,
-        existing: List<NFTBlacklist>,
-    ) {
+    open fun update(updated: List<NFTBlacklist>, existing: List<NFTBlacklist>) {
         if (updated.isNotEmpty()) {
             repository.saveAll(updated)
         }
@@ -52,7 +49,7 @@ open class NFTBlacklistService(
                     val contractAddress =
                         event.params.getAsString("nft")
                             ?: throw IllegalArgumentException(
-                                "Missing 'nft' param in event: ${event.id}",
+                                "Missing 'nft' param in event: ${event.id}"
                             )
                     contractAddress to event
                 }
@@ -66,7 +63,7 @@ open class NFTBlacklistService(
             val isBlacklisted =
                 event.params.getAsBoolean("isBlacklisted")
                     ?: throw IllegalArgumentException(
-                        "Missing 'isBlacklisted' param in event: ${event.id}",
+                        "Missing 'isBlacklisted' param in event: ${event.id}"
                     )
 
             val version = existingByAddress[contractAddress]?.version?.plus(1) ?: 1
@@ -136,10 +133,7 @@ open class NFTBlacklistService(
      * function is used to improve the performance of the syncBlacklistedNFTs function by reducing
      * the size of the data that needs to be processed by the pipeline.
      */
-    open fun findContractsToUpdate(
-        collection: String,
-        contractAddress: String,
-    ): List<String> {
+    open fun findContractsToUpdate(collection: String, contractAddress: String): List<String> {
         logger.info("Finding contracts with mismatched blacklist status")
 
         val pipeline =

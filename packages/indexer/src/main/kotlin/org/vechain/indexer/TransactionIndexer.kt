@@ -34,11 +34,7 @@ open class TransactionIndexer(
         if (block.transactions.isNotEmpty()) {
             val eventsByTx = processBlockGenericEvents(block).groupBy { it.txId }
 
-            transactionService.processBlockTransactions(
-                block.transactions,
-                eventsByTx,
-                block,
-            )
+            transactionService.processBlockTransactions(block.transactions, eventsByTx, block)
         }
     }
 }

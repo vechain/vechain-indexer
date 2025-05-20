@@ -15,12 +15,12 @@ interface TransactionRepository : BaseIndexedRepository<IndexedTransaction> {
     fun findByOriginOrGasPayer(
         origin: String,
         gasPayer: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransaction>
 
     fun findByGasPayerAndOriginNot(
         gasPayer: String,
         origin: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedTransaction>
 }

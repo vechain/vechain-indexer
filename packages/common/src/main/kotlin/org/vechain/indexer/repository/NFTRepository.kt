@@ -18,7 +18,7 @@ interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
     fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedNFT>
 
     @Query("{ 'owner': ?0, 'contractAddress': ?1, 'tokenId': ?2, 'isBlacklisted': { \$ne: true } }")
@@ -26,7 +26,7 @@ interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
         owner: String,
         contractAddress: String,
         tokenId: String,
-        pageable: Pageable
+        pageable: Pageable,
     ): Slice<IndexedNFT>
 
     fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String>

@@ -10,14 +10,14 @@ import org.springframework.stereotype.Component
 @Component
 class PrunerScheduler(
     private val prunableIndexers: List<Prunable>,
-    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean
+    @Value("\${indexer.pruner.enabled}") private val prunerEnabled: Boolean,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Scheduled(
         initialDelayString = "\${indexer.pruner.initialDelay:300000}",
-        fixedRateString = "\${indexer.pruner.interval:300000}"
+        fixedRateString = "\${indexer.pruner.interval:300000}",
     )
     fun runPruners() {
         if (!prunerEnabled) return

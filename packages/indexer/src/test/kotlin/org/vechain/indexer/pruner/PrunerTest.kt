@@ -86,14 +86,12 @@ constructor(
     override val blockId: String,
     override val version: Int,
     override val blockNumber: Long,
-    override val blockTimestamp: Long
+    override val blockTimestamp: Long,
 ) : VersionedDocument {
     override fun getDocumentId(): String {
         return blockId
     }
 }
 
-data class MyArchive(
-    override val id: String,
-    override val data: MyVersionedDocument,
-) : Archive<MyVersionedDocument>
+data class MyArchive(override val id: String, override val data: MyVersionedDocument) :
+    Archive<MyVersionedDocument>

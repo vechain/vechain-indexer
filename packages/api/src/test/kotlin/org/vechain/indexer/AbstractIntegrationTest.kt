@@ -21,7 +21,7 @@ import org.vechain.indexer.utils.JsonUtils
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = [VeWorldIndexerApiApplication::class]
+    classes = [VeWorldIndexerApiApplication::class],
 )
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
@@ -59,12 +59,7 @@ abstract class AbstractIntegrationTest {
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
 
-        val repos =
-            listOf(
-                transactionRepository,
-                nftRepository,
-                transferEventRepository,
-            )
+        val repos = listOf(transactionRepository, nftRepository, transferEventRepository)
         repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
@@ -94,9 +89,7 @@ abstract class AbstractIntegrationTest {
 
             val mongoUri = "mongodb://${mongoContainer.host}:${mongoContainer.getMappedPort(27017)}"
 
-            TestPropertyValues.of(
-                    "spring.data.mongodb.uri=${mongoUri}/vechain",
-                )
+            TestPropertyValues.of("spring.data.mongodb.uri=${mongoUri}/vechain")
                 .applyTo(configurableApplicationContext.environment)
         }
     }

@@ -48,13 +48,10 @@ internal class StatefulLogsIndexerTest {
                         archiveService,
                         pruner,
                     ) {
-                    override fun processLogs(
-                        events: List<EventLog>,
-                        transfers: List<TransferLog>,
-                    ) {
+                    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
                         // do nothing
                     }
-                },
+                }
             )
     }
 

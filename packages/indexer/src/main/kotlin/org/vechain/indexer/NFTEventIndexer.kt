@@ -41,19 +41,13 @@ open class NFTEventIndexer(
         businessEventManager = null,
         pruner = Pruner(NFTArchive::class, nftArchiveService, prunerRemovalChunkSize),
     ) {
-    override fun processLogs(
-        events: List<EventLog>,
-        transfers: List<TransferLog>,
-    ) {
+    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         // Extract any relevant data from the block
         val nftEvents =
             processBlockGenericEvents(
                 events,
                 transfers,
-                FilterCriteria(
-                    abiNames = listOf("erc721"),
-                    eventNames = listOf("Transfer"),
-                ),
+                FilterCriteria(abiNames = listOf("erc721"), eventNames = listOf("Transfer")),
             )
         if (nftEvents.isEmpty()) return
 

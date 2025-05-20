@@ -39,14 +39,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To or from address of the transfer event",
         required = false,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false
+        required = false,
     )
     @PaginationParameters
     open fun getTransferEvents(
@@ -79,14 +79,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "From address of the transfer event",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false
+        required = false,
     )
     @PaginationParameters
     open fun getTransferEventsByFrom(
@@ -100,7 +100,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findByFrom(
                 address,
                 tokenAddress,
-                toPageable(page, size, direction)
+                toPageable(page, size, direction),
             )
         )
     }
@@ -113,14 +113,14 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "To address of the transfer event",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1"
+        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenAddress",
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The token contract address",
-        required = false
+        required = false,
     )
     @PaginationParameters
     open fun getTransferEventsByTo(
@@ -143,7 +143,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "array"),
         description = "Addresses to query. Max 20 addresses",
         required = true,
-        example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]"
+        example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -151,7 +151,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "integer", format = "int64"),
         description = "Block number to query",
         required = true,
-        example = "1000000"
+        example = "1000000",
     )
     @PaginationParameters
     open fun getTransfersForBlock(
@@ -165,7 +165,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findByBlockNumber(
                 blockNumber,
                 addresses,
-                toPageable(page, size, direction)
+                toPageable(page, size, direction),
             )
         )
     }
@@ -178,7 +178,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "string", pattern = Address.REGEX),
         description = "The address of origin or destination of the fungible tokens transfer events",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa"
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -186,7 +186,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         schema = Schema(type = "boolean"),
         description = "If set to true, only official tokens will be returned. Defaults to false.",
         required = false,
-        example = "false"
+        example = "false",
     )
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
@@ -200,7 +200,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findFungibleTokensContractsByAddress(
                 address,
                 officialTokensOnly,
-                toPageable(page, size, direction)
+                toPageable(page, size, direction),
             )
         )
     }

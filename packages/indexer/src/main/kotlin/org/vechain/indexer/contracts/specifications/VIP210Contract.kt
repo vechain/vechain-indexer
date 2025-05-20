@@ -11,7 +11,7 @@ data class VIP210Contract(
             SAFE_BATCH_TRANSFER_FROM_FUNCTION,
             SAFE_TRANSFER_FROM_FUNCTION,
             Signatures.Common.SET_APPROVAL_FOR_ALL_FUNCTION,
-            Signatures.SemiFungible.URI_FUNCTION
+            Signatures.SemiFungible.URI_FUNCTION,
         ),
     override val events: List<String> =
         listOf(
@@ -22,7 +22,7 @@ data class VIP210Contract(
             // this
             // value gets emitted in transactions
             // Signatures.SemiFungible.URI_EVENT
-        )
+        ),
 ) : ContractSpecification {
     companion object {
         /**

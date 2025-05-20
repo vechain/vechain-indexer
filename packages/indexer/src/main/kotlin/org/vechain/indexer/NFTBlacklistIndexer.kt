@@ -43,10 +43,7 @@ open class NFTBlacklistIndexer(
         pruner =
             Pruner(NFTBlacklistArchive::class, nftBlacklistArchiveService, prunerRemovalChunkSize),
     ) {
-    override fun processLogs(
-        events: List<EventLog>,
-        transfers: List<TransferLog>,
-    ) {
+    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         if (events.isEmpty()) return
 
         // Extract any relevant data from the block

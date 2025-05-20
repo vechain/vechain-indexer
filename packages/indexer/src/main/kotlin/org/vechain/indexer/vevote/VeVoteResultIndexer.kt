@@ -34,10 +34,7 @@ open class VeVoteResultIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
     ) {
-    override fun processLogs(
-        events: List<EventLog>,
-        transfers: List<TransferLog>,
-    ) {
+    override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         // Process events using the inherited method
         val processedEvents =
             processAllEvents(

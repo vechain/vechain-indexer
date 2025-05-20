@@ -39,9 +39,7 @@ open class VeVoteController(
     private val resultService: VeVoteResultsService,
 ) {
     @GetMapping("proposals/comments")
-    @Operation(
-        summary = "Get comments for a proposal.",
-    )
+    @Operation(summary = "Get comments for a proposal.")
     @ApiResponses(
         value =
             [
@@ -50,7 +48,7 @@ open class VeVoteController(
                     responseCode = "400",
                     description = "A valid proposalId or voter address must be provided",
                 ),
-            ],
+            ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -109,9 +107,7 @@ open class VeVoteController(
     }
 
     @GetMapping("proposal/results")
-    @Operation(
-        summary = "Returns a list of results on vote weight per choice",
-    )
+    @Operation(summary = "Returns a list of results on vote weight per choice")
     @ApiResponses(
         value =
             [
@@ -120,7 +116,7 @@ open class VeVoteController(
                     responseCode = "400",
                     description = "A valid proposalId or voter address must be provided",
                 ),
-            ],
+            ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,

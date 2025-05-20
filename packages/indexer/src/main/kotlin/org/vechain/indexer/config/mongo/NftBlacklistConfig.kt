@@ -27,10 +27,7 @@ open class NftBlacklistConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                "nft_blacklist",
-                version,
-            )
+            indexerVersionService.checkAndResetCollectionIfVersionChanged("nft_blacklist", version)
 
         if (dropped) indexerVersionService.dropArchiveCollection("nft_blacklist_archives")
 

@@ -14,13 +14,13 @@ import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
 annotation class ValidPageSize(
     val message: String = "The page size must be between 1 and $PAGE_SIZE_LIMIT",
     val groups: Array<KClass<*>> = [],
-    val payload: Array<KClass<out Payload>> = []
+    val payload: Array<KClass<out Payload>> = [],
 )
 
 class PageSizeValidator : ConstraintValidator<ValidPageSize, Int> {
     override fun isValid(
         value: Int?,
-        constraintValidatorContext: ConstraintValidatorContext
+        constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
         return value == null || value in 1..PAGE_SIZE_LIMIT
     }

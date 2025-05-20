@@ -10,12 +10,12 @@ import io.swagger.v3.oas.annotations.media.Schema
     schema = Schema(type = "boolean"),
     description = "Whether to return the expanded model",
     required = false,
-    example = "true"
+    example = "true",
 )
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.ANNOTATION_CLASS,
-    AnnotationTarget.VALUE_PARAMETER
+    AnnotationTarget.VALUE_PARAMETER,
 )
 @Retention(AnnotationRetention.RUNTIME)
 annotation class ExpandedParameter

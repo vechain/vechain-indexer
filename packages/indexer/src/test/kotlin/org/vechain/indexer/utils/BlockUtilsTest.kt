@@ -30,24 +30,18 @@ class BlockUtilsTest {
             that(outputs[0].first.events.size).isEqualTo(2)
             that(outputs[0].first.events[0].address)
                 .isEqualTo("0xed324c3628923d9816012cb5bc10c4d817e824a5")
-            that(
-                    outputs[0].first.events[0].topics.size,
-                )
-                .isEqualTo(2)
+            that(outputs[0].first.events[0].topics.size).isEqualTo(2)
             that(outputs[0].first.events[0].topics[0])
                 .isEqualTo("0x26e57b75d51bb4535260f2bbcf7f5ca9f9612af5e3b52e82d20852b529f03290")
             that(outputs[0].first.events[0].topics[1])
                 .isEqualTo("0x000000000000000000000000435933c8064b4ae76be665428e0307ef2ccfbd68")
             that(outputs[0].first.events[0].data)
                 .isEqualTo(
-                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
                 )
             that(outputs[0].first.events[1].address)
                 .isEqualTo("0xed324c3628923d9816012cb5bc10c4d817e824a5")
-            that(
-                    outputs[0].first.events[1].topics.size,
-                )
-                .isEqualTo(4)
+            that(outputs[0].first.events[1].topics.size).isEqualTo(4)
             that(outputs[0].first.events[1].topics[0])
                 .isEqualTo("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
             that(outputs[0].first.events[1].topics[1])
@@ -63,24 +57,18 @@ class BlockUtilsTest {
             that(outputs[1].first.events.size).isEqualTo(2)
             that(outputs[1].first.events[0].address)
                 .isEqualTo("0xed324c3628923d9816012cb5bc10c4d817e824a5")
-            that(
-                    outputs[1].first.events[0].topics.size,
-                )
-                .isEqualTo(2)
+            that(outputs[1].first.events[0].topics.size).isEqualTo(2)
             that(outputs[1].first.events[0].topics[0])
                 .isEqualTo("0x26e57b75d51bb4535260f2bbcf7f5ca9f9612af5e3b52e82d20852b529f03290")
             that(outputs[1].first.events[0].topics[1])
                 .isEqualTo("0x000000000000000000000000f077b491b355e64048ce21e3a6fc4751eeea77fa")
             that(outputs[1].first.events[0].data)
                 .isEqualTo(
-                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001"
                 )
             that(outputs[1].first.events[1].address)
                 .isEqualTo("0xed324c3628923d9816012cb5bc10c4d817e824a5")
-            that(
-                    outputs[1].first.events[1].topics.size,
-                )
-                .isEqualTo(4)
+            that(outputs[1].first.events[1].topics.size).isEqualTo(4)
             that(outputs[1].first.events[1].topics[0])
                 .isEqualTo("0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
             that(outputs[1].first.events[1].topics[1])

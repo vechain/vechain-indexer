@@ -11,9 +11,7 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Status
 
 @Component
-class IndexerHealthIndicator(
-    private val indexers: List<BlockIndexer>,
-) : HealthIndicator {
+class IndexerHealthIndicator(private val indexers: List<BlockIndexer>) : HealthIndicator {
     companion object {
         private const val STATUS_UP = "UP"
         private const val STATUS_DOWN = "DOWN"
@@ -38,8 +36,7 @@ class IndexerHealthIndicator(
                     status = getIndexerHealth(indexer),
                     syncStatus = indexer.status,
                     currentBlock =
-                        NumberFormat.getNumberInstance(Locale.US)
-                            .format(indexer.currentBlockNumber),
+                        NumberFormat.getNumberInstance(Locale.US).format(indexer.currentBlockNumber),
                 )
             }
 
