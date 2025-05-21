@@ -22,63 +22,60 @@ class VeVoteCommentService(
     @Value("\${comments.language.confidence}") private val confidenceThreshold: String,
 ) {
     private val logger = LoggerFactory.getLogger(VeVoteCommentService::class.java)
-    private val detector: LanguageDetector = LanguageDetectorBuilder.fromAllLanguages().build()
 
-    fun processComment(processedEvents: List<IndexedEvent>): List<VevoteProposalComment> {
-        // Process events to extract Reason
-        val potentialComment =
-            processedEvents.mapNotNull { event -> extractVevoteCommentEvent(event) }
-        return potentialComment
-            .filter { vote -> vote.reason.isNotEmpty() }
-            .filter { vote -> allowComment(vote.proposalId, vote.reason, repository, minLength) }
-    }
-
-    fun extractVevoteCommentEvent(event: IndexedEvent): VevoteProposalComment? {
-        try {
-            val params = event.params
-            val voter = params.getReturnValues()["voter"] as? String ?: return null
-            val proposalId = params.getReturnValues()["proposalId"]?.toString() ?: return null
-            val reason = params.getReturnValues()["reason"] as? String
-            val nonNullReasonForId = reason ?: ""
-            // Get the raw choice value
-            val choiceValue = (params.getReturnValues()["choices"] as? Number)?.toLong() ?: 0L
-            val choicesList = getChoice(choiceValue)
-
-            return VevoteProposalComment(
-                id = generateId(proposalId, nonNullReasonForId),
-                blockId = event.blockId,
-                blockNumber = event.blockNumber,
-                blockTimestamp = event.blockTimestamp,
-                voter = voter,
-                proposalId = proposalId,
-                choices = choicesList,
-                weight =
-                    (params.getReturnValues()["weight"] as? Number)?.toLong()?.toBigInteger()
-                        ?: BigInteger.ZERO,
-                reason = reason ?: "",
+    // Only support English to reduce memory usage
+    private val detector: LanguageDetector =
+        LanguageDetectorBuilder.fromLanguages(
+                Language.ENGLISH,
+                Language.FRENCH,
+                Language.GERMAN,
+                Language.SPANISH,
+                Language.ITALIAN,
+                Language.PORTUGUESE,
+                Language.DUTCH,
+                Language.RUSSIAN,
+                Language.POLISH,
+                Language.SWEDISH,
             )
-        } catch (e: Exception) {
-            return null
-        }
+            .build()
+
+    fun processComment(processedEvents: List<IndexedEvent>): List<VevoteProposalComment> =
+        processedEvents
+            .mapNotNull { extractVeVoteCommentEvent(it) }
+            .filter { it.reason.isNotBlank() }
+            .filter { allowComment(it.proposalId, it.reason) }
+
+    fun extractVeVoteCommentEvent(event: IndexedEvent): VevoteProposalComment? {
+        val params = event.params.getReturnValues()
+
+        val reason = params["reason"] as? String ?: return null
+        if (reason.isBlank()) return null // Ignore if no comment provided
+
+        val voter = params["voter"] as? String ?: return null
+        val proposalId = params["proposalId"]?.toString() ?: return null
+        val choiceValue = (params["choices"] as? Number)?.toLong() ?: 0L
+        val weight = (params["weight"] as? Number)?.toLong()?.toBigInteger() ?: BigInteger.ZERO
+        val choicesList = getChoice(choiceValue)
+
+        return VevoteProposalComment(
+            id = generateId(proposalId, reason),
+            blockId = event.blockId,
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
+            voter = voter,
+            proposalId = proposalId,
+            choices = choicesList,
+            weight = weight,
+            reason = reason,
+        )
     }
 
-    /** Used to filter out spam or unwanted comments. */
-    fun allowComment(
-        proposalId: String,
-        comment: String,
-        repository: VevoteCommentRepository,
-        minLength: Int,
-    ): Boolean =
-        !isTooShort(comment, minLength) &&
-            !isSpam(proposalId, comment, repository) &&
-            isEnglish(comment)
+    fun allowComment(proposalId: String, comment: String): Boolean =
+        !isTooShort(comment) && !isSpam(proposalId, comment) && isEnglish(comment)
 
-    /** Comment must be at least 5 characters long after trimming. */
-    fun isTooShort(comment: String?, minLength: Int): Boolean =
-        comment == null || comment.trim().length < minLength
+    fun isTooShort(comment: String?): Boolean = comment == null || comment.trim().length < minLength
 
-    /** Only allow one comment per proposal with the same content. */
-    fun isSpam(proposalId: String, comment: String, repository: VevoteCommentRepository): Boolean {
+    fun isSpam(proposalId: String, comment: String): Boolean {
         val id = generateId(proposalId, comment)
         val isDuplicate = repository.existsById(id)
 
@@ -90,22 +87,19 @@ class VeVoteCommentService(
     }
 
     fun isEnglish(comment: String): Boolean {
-        val confidenceValues = detector.computeLanguageConfidenceValues(comment)
+        val shortened = comment.take(400) // Using only first 400 chars to try avoid memory issues
+        val confidenceValues = detector.computeLanguageConfidenceValues(shortened)
 
         if (confidenceValues.isEmpty()) {
-            logger.info("No language detected for comment: $comment")
+            logger.info("No language detected for comment: $shortened")
             return false
         }
 
-        // If the confidence value of English is less than 0.5, we consider it as non-English
         val confidence = confidenceValues[Language.ENGLISH] ?: 0.0
-
-        logger.debug("English confidence value $confidence for: $comment")
+        logger.debug("English confidence value $confidence for: $shortened")
 
         if (confidence < confidenceThreshold.toDouble()) {
-            logger.info(
-                "Failed to meet confidence threshold of $confidenceThreshold for English: $comment"
-            )
+            logger.info("Below threshold $confidenceThreshold: $shortened")
             return false
         }
 
