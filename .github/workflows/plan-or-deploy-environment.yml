@@ -70,7 +70,7 @@ jobs:
 
       - name: Label
         id: label
-        run: echo "running ${{ env.COLOR }} with M ${{ inputs.mainnet_version }} +T ${{ inputs.testnet_version }} F ${{ inputs.force }} for ${{ inputs.environment }} in ${{ github.workspace}} [ $GITHUB_WORKSPACE ]"
+        run: echo "running ${{ env.COLOR }} with M ${{ inputs.mainnet_version }} +T ${{ inputs.testnet_version }} F ${{ inputs.force }} for ${{ inputs.environment }} in ${{ github.workspace}} [ $workspace ]"
 
       - name: Determine AWS account ID and role
         id: account
