@@ -96,7 +96,6 @@ class VeVoteCommentService(
         }
 
         val confidence = confidenceValues[Language.ENGLISH] ?: 0.0
-        logger.debug("English confidence value $confidence for: $shortened")
 
         if (confidence < confidenceThreshold.toDouble()) {
             logger.info("Below threshold $confidenceThreshold: $shortened")
