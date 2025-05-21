@@ -75,7 +75,7 @@ jobs:
       - name: Determine AWS account ID and role
         id: account
         run: |
-            if [ contains(env.COLOR,"prod") ]; then
+            if [ contains(env.COLOR,'prod') ]; then
               echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
             else
               echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
