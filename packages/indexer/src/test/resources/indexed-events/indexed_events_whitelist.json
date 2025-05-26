@@ -1,0 +1,30 @@
+[
+  {
+    "id": "0xb6e63ebd99799322979f2ede8b34b16ac579b90a0787f27e3a725800ccb88ca9-0-7964--1307282907",
+    "blockId": "0x014c40db5f6d8cda7dc38381b056c0d8f348553d072708e9101d21d2c8c972f4",
+    "blockNumber": 21774555,
+    "blockTimestamp": 1748274770,
+    "txId": "0xb6e63ebd99799322979f2ede8b34b16ac579b90a0787f27e3a725800ccb88ca9",
+    "origin": "0x6411c5156ee44ceef43e2e69d94c2fc0fb39bcaa",
+    "paid": null,
+    "gasUsed": null,
+    "gasPayer": null,
+    "raw": {
+      "data": "0x",
+      "topics": [
+        "0x797c25843e35d46f4254028734c97d60f3f93aaccc1dd994dd6b90683fdb2486",
+        "0x0000000000000000000000009d51a33a211e77fd3621cbf135d543cd3bb7490a"
+      ]
+    },
+    "params": {
+      "returnValues": {
+        "nft": "0x9d51a33a211e77fd3621cbf135d543cd3bb7490a"
+      },
+      "eventType": "NFTWhitelisted"
+    },
+    "address": "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5",
+    "eventType": "NFTWhitelisted",
+    "clauseIndex": 0,
+    "signature": "0x797c25843e35d46f4254028734c97d60f3f93aaccc1dd994dd6b90683fdb2486"
+  }
+]

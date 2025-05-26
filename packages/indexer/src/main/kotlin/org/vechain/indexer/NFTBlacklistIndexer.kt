@@ -53,7 +53,7 @@ open class NFTBlacklistIndexer(
                 transfers,
                 FilterCriteria(
                     abiNames = listOf("NFTBlacklist"),
-                    eventNames = listOf("NFTBlacklisted", "NFTWhitelisted"),
+                    eventNames = listOf("NFTWhitelisted"),
                     contractAddresses = listOf(blacklistContract),
                 ),
             )
