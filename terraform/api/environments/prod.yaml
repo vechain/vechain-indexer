@@ -50,7 +50,7 @@ enabled_nets:
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         nfts:                       '1304112'
-        nft_blacklist:              '21245914'
+        nft_blacklist:              '21774168'
         transactions:               '751'
         transfers:                  '37840'
         history:                    '751'
@@ -117,7 +117,7 @@ enabled_nets:
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
         nfts:                       '1042259'
-        nft_blacklist:              '21294907'
+        nft_blacklist:              '21823565'
         transactions:               '15034'
         transfers:                  '15034'
         history:                    '15034'
