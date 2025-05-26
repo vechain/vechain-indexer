@@ -73,7 +73,7 @@ enabled_nets:
         initial_delay:              '300000'
         removal_chunk_size:         '2000'
       blacklist:
-        contract_address:           '0x14091CC9Ae249f26EaF41a5A21207931162A2826'
+        contract_address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
         interval:                   '180000'
         initial_delay:              '60000'
       version:
@@ -81,7 +81,7 @@ enabled_nets:
         transfers:                  '1'
         transactions:               '1'
         history:                    '3'
-        nft_blacklist:              '1'
+        nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
       log_metric_filters:
@@ -153,7 +153,7 @@ enabled_nets:
         initial_delay:              '300000'
         removal_chunk_size:         '2000'
       blacklist:
-        contract_address:           '0x07310cECa66aD36A0dc02A142dF28B81a653107E'
+        contract_address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
         interval:                   '180000'
         initial_delay:              '60000'
       version:
@@ -161,7 +161,7 @@ enabled_nets:
         transfers:                  '1'
         transactions:               '1'
         history:                    '3'
-        nft_blacklist:              '1'
+        nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
       log_metric_filters:
