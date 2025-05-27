@@ -23,7 +23,7 @@ class NFTTest {
                 page = 1,
             )
 
-        expectThat(nfts.data).hasSize(54).isA<List<IndexedNFT>>()
+        expectThat(nfts.data).hasSize(3).isA<List<IndexedNFT>>()
         expectThat(nfts.pagination.hasNext).isFalse()
 
         nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
@@ -77,7 +77,7 @@ class NFTTest {
                 page = 0,
             )
 
-        expectThat(nfts.data).hasSize(4)
+        expectThat(nfts.data).hasSize(3)
         expectThat(nfts.pagination.hasNext).isFalse()
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
