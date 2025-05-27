@@ -39,7 +39,7 @@ class TransferEventIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
+        val abiFileStreams = FileUtils.loadFileStreams("abis")
         val abiManager = AbiManager()
         abiManager.loadAbis(abiFileStreams)
 
@@ -167,7 +167,7 @@ class TransferEventIndexerTest {
         val fungible = transfers.filter { it.eventType == TransferEventType.FUNGIBLE_TOKEN }
 
         expect {
-            that(erc1155).hasSize(9)
+            that(erc1155).hasSize(16)
             that(nft).hasSize(1)
             that(fungible).hasSize(11)
         }

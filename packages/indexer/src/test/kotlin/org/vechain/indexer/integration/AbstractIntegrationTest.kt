@@ -49,7 +49,7 @@ abstract class AbstractIntegrationTest {
             MongoDBContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
         val thorContainer: GenericContainer<*> =
-            GenericContainer("vechain/thor:v2.2.1")
+            GenericContainer("vechain/thor:v2.3.0")
                 .withCommand(
                     "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
                 )
@@ -67,7 +67,7 @@ abstract class AbstractIntegrationTest {
         val transactionScript: GenericContainer<*> =
             GenericContainer(
                     DockerImageName.parse(
-                        "ghcr.io/vechain/thor-transactions-script:88bffbb8a24c118a1faa1671dcbb92cd733e7ab4"
+                        "ghcr.io/vechain/thor-transactions-script:836f419a20497b7f79cdf16704d14dfcfb3ccaeb"
                     )
                 )
                 .withNetwork(thorNetwork)

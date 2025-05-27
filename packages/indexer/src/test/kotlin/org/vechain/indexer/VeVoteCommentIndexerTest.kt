@@ -36,7 +36,7 @@ class VeVoteCommentIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
+        val abiFileStreams = FileUtils.loadFileStreams("abis")
         val abiManager = AbiManager()
         abiManager.loadAbis(abiFileStreams)
 
