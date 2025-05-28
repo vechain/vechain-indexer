@@ -59,7 +59,15 @@ open class NFTBlacklistService(
                 .mapValues { it.value.second }
 
         return latestEventsByAddress.map { (contractAddress, event) ->
-            val isBlacklisted = event.eventType == "NFTBlacklisted"
+            val isBlacklisted =
+                when (event.eventType) {
+                    "NFTBlacklisted" -> true
+                    "NFTWhitelisted" -> false
+                    else ->
+                        throw IllegalArgumentException(
+                            "Unexpected eventType '${event.eventType}' in event: ${event.id}"
+                        )
+                }
 
             val version = existingByAddress[contractAddress]?.version?.plus(1) ?: 1
 

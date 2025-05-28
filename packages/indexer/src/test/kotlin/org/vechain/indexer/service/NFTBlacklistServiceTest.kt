@@ -6,6 +6,7 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.fail
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
@@ -14,6 +15,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_WHITELI
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
 import org.vechain.indexer.repository.NFTBlacklistRepository
+import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
@@ -228,6 +230,32 @@ internal class NFTBlacklistServiceTest {
                 .isEqualTo("0x014c40db5f6d8cda7dc38381b056c0d8f348553d072708e9101d21d2c8c972f4")
             that(result[0].blockNumber).isEqualTo(21774999L)
             that(result[0].blockTimestamp).isEqualTo(1748299999L)
+        }
+    }
+
+    @Test
+    fun `parseRecords - should throw on unexpected eventType`() {
+        val event =
+            mockk<IndexedEvent> {
+                every { id } returns "event123"
+                every { eventType } returns "UnknownEvent"
+                every { params.getAsString("nft") } returns "0x123"
+                every { blockId } returns "0xblock"
+                every { blockNumber } returns 1L
+                every { blockTimestamp } returns 1000L
+            }
+        val events = listOf(event)
+
+        expect {
+            try {
+                nftBlacklistService.parseRecords(events, emptyList())
+                fail("Expected IllegalArgumentException")
+            } catch (e: IllegalArgumentException) {
+                that(
+                    e.message?.contains("Unexpected eventType")
+                        ?: fail { "Unexpected eventType not found" }
+                )
+            }
         }
     }
 
