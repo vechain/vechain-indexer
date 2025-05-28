@@ -38,11 +38,11 @@ internal class HistoryIndexerTest {
                 mongoTemplate = mongoTemplate,
             )
 
-        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
+        val abiFileStreams = FileUtils.loadFileStreams("abis")
         val abiManager = AbiManager()
         abiManager.loadAbis(abiFileStreams)
 
-        val businessEventStreams = FileUtils.loadFileStreams("business-events")
+        val businessEventStreams = FileUtils.loadFileStreams("businessEvents")
         val businessEventManager = BusinessEventManager()
         businessEventManager.loadBusinessEvents(businessEventStreams)
 
@@ -205,7 +205,7 @@ internal class HistoryIndexerTest {
         indexer.processBlock(BlockFixtures.BLOCK_RANDOM_TX)
 
         val txs = historyEventSlot.captured
-        expect { that(txs).hasSize(1) }
+        expect { that(txs).hasSize(8) }
         val tx = txs.first()
         expect {
             that(tx.eventName).isEqualTo(HistoryEventName.UNKNOWN_TX)

@@ -68,13 +68,25 @@
     "type": "error"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
     "name": "NFTAlreadyBlacklisted",
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "NFTNotBlacklisted",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "NFTAlreadyWhitelisted",
     "type": "error"
   },
   {
@@ -119,15 +131,47 @@
         "internalType": "address",
         "name": "nft",
         "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "bool",
-        "name": "isBlacklisted",
-        "type": "bool"
       }
     ],
     "name": "NFTBlacklisted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "signalCount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "reporter",
+        "type": "address"
+      }
+    ],
+    "name": "NFTReported",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "NFTWhitelisted",
     "type": "event"
   },
   {
@@ -220,7 +264,7 @@
   },
   {
     "inputs": [],
-    "name": "BLACKLISTER_ROLE",
+    "name": "DEFAULT_ADMIN_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -233,7 +277,7 @@
   },
   {
     "inputs": [],
-    "name": "DEFAULT_ADMIN_ROLE",
+    "name": "NFT_MANAGER_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -278,35 +322,22 @@
         "type": "address"
       }
     ],
-    "name": "blacklistNFT",
+    "name": "blacklist",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "getBlacklistedNFTCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getBlacklistedNFTs",
-    "outputs": [
+    "inputs": [
       {
         "internalType": "address[]",
-        "name": "",
+        "name": "nfts",
         "type": "address[]"
       }
     ],
-    "stateMutability": "view",
+    "name": "blacklistBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -323,6 +354,38 @@
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "getSignalCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSignalThreshold",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -379,8 +442,13 @@
       },
       {
         "internalType": "address[]",
-        "name": "blacklisters",
+        "name": "managers",
         "type": "address[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "signalThreshold",
+        "type": "uint256"
       }
     ],
     "name": "initialize",
@@ -408,6 +476,25 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "isWhitelisted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
@@ -418,19 +505,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "nft",
-        "type": "address"
-      }
-    ],
-    "name": "removeNFTFromBlacklist",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -454,6 +528,19 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "report",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes32",
         "name": "role",
         "type": "bytes32"
@@ -465,6 +552,19 @@
       }
     ],
     "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "threshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "setSignalThreshold",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -517,6 +617,32 @@
       }
     ],
     "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "nft",
+        "type": "address"
+      }
+    ],
+    "name": "whitelist",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "nfts",
+        "type": "address[]"
+      }
+    ],
+    "name": "whitelistBatch",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

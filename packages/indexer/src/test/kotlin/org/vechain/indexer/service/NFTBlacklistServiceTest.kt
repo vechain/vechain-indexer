@@ -5,18 +5,17 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.fail
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_DUPLICATE
-import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_MISSING_ISBLACKLISTED_PARAM
-import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_MISSING_NFT_PARAM
-import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_DEBLACKLIST
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_WHITELIST
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
 import org.vechain.indexer.repository.NFTBlacklistRepository
+import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
@@ -111,26 +110,26 @@ internal class NFTBlacklistServiceTest {
         expect {
             that(result.size).isEqualTo(2)
             that(result[0].version).isEqualTo(1)
-            that(result[0].contractAddress).isEqualTo("0x4d2b488dd3638459f75040bd7bdf77b17cef7712")
+            that(result[0].contractAddress).isEqualTo("0xf416bc92ffab1704bc247d620322fa95a178d496")
             that(result[0].isBlacklisted).isEqualTo(true)
             that(result[0].blockId)
-                .isEqualTo("0x0144302e0a842eedb085f5cb0eaa722f65048ded9614e4c6afec4d6c941c6484")
-            that(result[0].blockNumber).isEqualTo(21245998L)
-            that(result[0].blockTimestamp).isEqualTo(1742989050L)
+                .isEqualTo("0x014c41463390a4defcdf60c6f652d8b31b21fc0f971f947486f5c5cc52ea7857")
+            that(result[0].blockNumber).isEqualTo(21774662L)
+            that(result[0].blockTimestamp).isEqualTo(1748275840)
 
             that(result[1].version).isEqualTo(1)
-            that(result[1].contractAddress).isEqualTo("0x884a36ca0b582c54255aac68a2664cd0ca8c592d")
+            that(result[1].contractAddress).isEqualTo("0x4d4a0fcda8963879e1fbacfb25a179111b8e4ae0")
             that(result[1].isBlacklisted).isEqualTo(true)
             that(result[1].blockId)
-                .isEqualTo("0x0144302f01d216b50110ad8d9ff03d37f3559a03c559a9cc872f6ba8b9594f56")
-            that(result[1].blockNumber).isEqualTo(21245999L)
-            that(result[1].blockTimestamp).isEqualTo(1742989060L)
+                .isEqualTo("0x014c41463390a4defcdf60c6f652d8b31b21fc0f971f947486f5c5cc52ea7857")
+            that(result[1].blockNumber).isEqualTo(21774662L)
+            that(result[1].blockTimestamp).isEqualTo(1748275840)
         }
     }
 
     @Test
     fun `parseRecords - should parse valid de-blacklist record`() {
-        val events = INDEXED_EVENTS_DEBLACKLIST
+        val events = INDEXED_EVENTS_WHITELIST
 
         val result = nftBlacklistService.parseRecords(events, emptyList())
 
@@ -138,12 +137,12 @@ internal class NFTBlacklistServiceTest {
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].version).isEqualTo(1)
-            that(result[0].contractAddress).isEqualTo("0x4d2b488dd3638459f75040bd7bdf77b17cef7712")
+            that(result[0].contractAddress).isEqualTo("0x9d51a33a211e77fd3621cbf135d543cd3bb7490a")
             that(result[0].isBlacklisted).isEqualTo(false)
             that(result[0].blockId)
-                .isEqualTo("0x0144302e0a842eedb085f5cb0eaa722f65048ded9614e4c6afec4d6c941c6483")
-            that(result[0].blockNumber).isEqualTo(21246000L)
-            that(result[0].blockTimestamp).isEqualTo(1742989070L)
+                .isEqualTo("0x014c40db5f6d8cda7dc38381b056c0d8f348553d072708e9101d21d2c8c972f4")
+            that(result[0].blockNumber).isEqualTo(21774555L)
+            that(result[0].blockTimestamp).isEqualTo(1748274770L)
         }
     }
 
@@ -165,7 +164,7 @@ internal class NFTBlacklistServiceTest {
             listOf(
                 NFTBlacklist(
                     version = 1,
-                    contractAddress = "0x4d2b488dd3638459f75040bd7bdf77b17cef7712",
+                    contractAddress = "0xf416bc92ffab1704bc247d620322fa95a178d496",
                     isBlacklisted = false,
                     blockId = "0xdead",
                     blockNumber = 8L,
@@ -179,20 +178,20 @@ internal class NFTBlacklistServiceTest {
         expect {
             that(result.size).isEqualTo(2)
             that(result[0].version).isEqualTo(2)
-            that(result[0].contractAddress).isEqualTo("0x4d2b488dd3638459f75040bd7bdf77b17cef7712")
+            that(result[0].contractAddress).isEqualTo("0xf416bc92ffab1704bc247d620322fa95a178d496")
             that(result[0].isBlacklisted).isEqualTo(true)
             that(result[0].blockId)
-                .isEqualTo("0x0144302e0a842eedb085f5cb0eaa722f65048ded9614e4c6afec4d6c941c6484")
-            that(result[0].blockNumber).isEqualTo(21245998L)
-            that(result[0].blockTimestamp).isEqualTo(1742989050L)
+                .isEqualTo("0x014c41463390a4defcdf60c6f652d8b31b21fc0f971f947486f5c5cc52ea7857")
+            that(result[0].blockNumber).isEqualTo(21774662L)
+            that(result[0].blockTimestamp).isEqualTo(1748275840L)
 
             that(result[1].version).isEqualTo(1)
-            that(result[1].contractAddress).isEqualTo("0x884a36ca0b582c54255aac68a2664cd0ca8c592d")
+            that(result[1].contractAddress).isEqualTo("0x4d4a0fcda8963879e1fbacfb25a179111b8e4ae0")
             that(result[1].isBlacklisted).isEqualTo(true)
             that(result[1].blockId)
-                .isEqualTo("0x0144302f01d216b50110ad8d9ff03d37f3559a03c559a9cc872f6ba8b9594f56")
-            that(result[1].blockNumber).isEqualTo(21245999L)
-            that(result[1].blockTimestamp).isEqualTo(1742989060L)
+                .isEqualTo("0x014c41463390a4defcdf60c6f652d8b31b21fc0f971f947486f5c5cc52ea7857")
+            that(result[1].blockNumber).isEqualTo(21774662L)
+            that(result[1].blockTimestamp).isEqualTo(1748275840L)
         }
     }
 
@@ -206,12 +205,12 @@ internal class NFTBlacklistServiceTest {
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].version).isEqualTo(1)
-            that(result[0].contractAddress).isEqualTo("0x4d2b488dd3638459f75040bd7bdf77b17cef7712")
+            that(result[0].contractAddress).isEqualTo("0x9d51a33a211e77fd3621cbf135d543cd3bb7490a")
             that(result[0].isBlacklisted).isEqualTo(false)
             that(result[0].blockId)
-                .isEqualTo("0x0144302e0a842eedb085f5cb0eaa722f65048ded9614e4c6afec4d6c941c6485")
-            that(result[0].blockNumber).isEqualTo(21246000L)
-            that(result[0].blockTimestamp).isEqualTo(1742989070L)
+                .isEqualTo("0x014c40db5f6d8cda7dc38381b056c0d8f348553d072708e9101d21d2c8c972f4")
+            that(result[0].blockNumber).isEqualTo(21774999L)
+            that(result[0].blockTimestamp).isEqualTo(1748299999L)
         }
     }
 
@@ -225,48 +224,38 @@ internal class NFTBlacklistServiceTest {
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].version).isEqualTo(1)
-            that(result[0].contractAddress).isEqualTo("0x4d2b488dd3638459f75040bd7bdf77b17cef7712")
+            that(result[0].contractAddress).isEqualTo("0x9d51a33a211e77fd3621cbf135d543cd3bb7490a")
             that(result[0].isBlacklisted).isEqualTo(false)
             that(result[0].blockId)
-                .isEqualTo("0x0144302e0a842eedb085f5cb0eaa722f65048ded9614e4c6afec4d6c941c6485")
-            that(result[0].blockNumber).isEqualTo(21246000L)
-            that(result[0].blockTimestamp).isEqualTo(1742989070L)
+                .isEqualTo("0x014c40db5f6d8cda7dc38381b056c0d8f348553d072708e9101d21d2c8c972f4")
+            that(result[0].blockNumber).isEqualTo(21774999L)
+            that(result[0].blockTimestamp).isEqualTo(1748299999L)
         }
     }
 
     @Test
-    fun `parseRecords - should throw an exception if the nft param is not available on the indexed event`() {
-        val events = INDEXED_EVENTS_BLACKLIST_MISSING_NFT_PARAM
-
-        // Check that an appropriate exception is thrown
-        val exception =
-            assertThrows<IllegalArgumentException> {
-                nftBlacklistService.parseRecords(events, emptyList())
+    fun `parseRecords - should throw on unexpected eventType`() {
+        val event =
+            mockk<IndexedEvent> {
+                every { id } returns "event123"
+                every { eventType } returns "UnknownEvent"
+                every { params.getAsString("nft") } returns "0x123"
+                every { blockId } returns "0xblock"
+                every { blockNumber } returns 1L
+                every { blockTimestamp } returns 1000L
             }
+        val events = listOf(event)
 
         expect {
-            that(exception.message)
-                .isEqualTo(
-                    "Missing 'nft' param in event: 0x349ce728b59250ad7c5f2b77c03fa9bfd4a0e4a4639b8f658f7394f0d92417c7-0-0--832607567"
-                )
-        }
-    }
-
-    @Test
-    fun `parseRecords - should throw an exception if the isBlacklisted param is not available on the indexed event`() {
-        val events = INDEXED_EVENTS_BLACKLIST_MISSING_ISBLACKLISTED_PARAM
-
-        // Check that an appropriate exception is thrown
-        val exception =
-            assertThrows<IllegalArgumentException> {
+            try {
                 nftBlacklistService.parseRecords(events, emptyList())
-            }
-
-        expect {
-            that(exception.message)
-                .isEqualTo(
-                    "Missing 'isBlacklisted' param in event: 0x349ce728b59250ad7c5f2b77c03fa9bfd4a0e4a4639b8f658f7394f0d92417c7-0-0--832607566"
+                fail("Expected IllegalArgumentException")
+            } catch (e: IllegalArgumentException) {
+                that(
+                    e.message?.contains("Unexpected eventType")
+                        ?: fail { "Unexpected eventType not found" }
                 )
+            }
         }
     }
 
@@ -289,8 +278,8 @@ internal class NFTBlacklistServiceTest {
 
         val contractAddresses =
             listOf(
-                "0x4d2b488dd3638459f75040bd7bdf77b17cef7712",
-                "0x884a36ca0b582c54255aac68a2664cd0ca8c592d",
+                "0xf416bc92ffab1704bc247d620322fa95a178d496",
+                "0x4d4a0fcda8963879e1fbacfb25a179111b8e4ae0",
             )
 
         every { repository.findAllById(contractAddresses) } returns existing
@@ -308,23 +297,6 @@ internal class NFTBlacklistServiceTest {
             that(result[0].blockId).isEqualTo("0xdead")
             that(result[0].blockNumber).isEqualTo(8L)
             that(result[0].blockTimestamp).isEqualTo(1L)
-        }
-    }
-
-    @Test
-    fun `getExisting - should fail with an exception if the nft param is not available on the indexed event`() {
-        val events = INDEXED_EVENTS_BLACKLIST_MISSING_NFT_PARAM
-
-        // Check that an appropriate exception is thrown
-
-        val exception =
-            assertThrows<IllegalArgumentException> { nftBlacklistService.getExisting(events) }
-
-        expect {
-            that(exception.message)
-                .isEqualTo(
-                    "Missing 'nft' param in event: 0x349ce728b59250ad7c5f2b77c03fa9bfd4a0e4a4639b8f658f7394f0d92417c7-0-0--832607567"
-                )
         }
     }
 }

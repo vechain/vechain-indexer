@@ -10,16 +10,8 @@ object IndexedEventsFixtures {
     val INDEXED_EVENTS_BLACKLIST =
         buildIndexedEventsFixture("indexed-events/indexed_events_blacklist.json")
 
-    val INDEXED_EVENTS_DEBLACKLIST =
-        buildIndexedEventsFixture("indexed-events/indexed_events_deblacklist.json")
-
-    val INDEXED_EVENTS_BLACKLIST_MISSING_NFT_PARAM =
-        buildIndexedEventsFixture("indexed-events/indexed_events_blacklist_missing_nft_param.json")
-
-    val INDEXED_EVENTS_BLACKLIST_MISSING_ISBLACKLISTED_PARAM =
-        buildIndexedEventsFixture(
-            "indexed-events/indexed_events_blacklist_missing_isblacklisted_param.json"
-        )
+    val INDEXED_EVENTS_WHITELIST =
+        buildIndexedEventsFixture("indexed-events/indexed_events_whitelist.json")
 
     val INDEXED_EVENTS_BLACKLIST_DUPLICATE =
         buildIndexedEventsFixture("indexed-events/indexed_events_blacklist_duplicate.json")

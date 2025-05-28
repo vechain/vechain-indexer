@@ -12,7 +12,6 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
 import org.vechain.indexer.repository.NFTBlacklistRepository
-import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("nft-events")
@@ -61,10 +60,14 @@ open class NFTBlacklistService(
 
         return latestEventsByAddress.map { (contractAddress, event) ->
             val isBlacklisted =
-                event.params.getAsBoolean("isBlacklisted")
-                    ?: throw IllegalArgumentException(
-                        "Missing 'isBlacklisted' param in event: ${event.id}"
-                    )
+                when (event.eventType) {
+                    "NFTBlacklisted" -> true
+                    "NFTWhitelisted" -> false
+                    else ->
+                        throw IllegalArgumentException(
+                            "Unexpected eventType '${event.eventType}' in event: ${event.id}"
+                        )
+                }
 
             val version = existingByAddress[contractAddress]?.version?.plus(1) ?: 1
 
