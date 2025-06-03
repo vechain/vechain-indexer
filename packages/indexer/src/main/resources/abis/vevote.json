@@ -42,6 +42,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "CheckpointUnorderedInsertion",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -94,12 +99,39 @@
   },
   {
     "inputs": [],
-    "name": "InvalidNode",
+    "name": "InvalidMinimumStake",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidNodeId",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "InvalidVoteChoice",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint48",
+        "name": "timepoint",
+        "type": "uint48"
+      }
+    ],
+    "name": "MinimumStakeNotSetAtTimepoint",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint48",
+        "name": "timepoint",
+        "type": "uint48"
+      }
+    ],
+    "name": "MinimumStakeNotSetAtTimepoint",
     "type": "error"
   },
   {
@@ -217,11 +249,11 @@
     "inputs": [
       {
         "internalType": "uint48",
-        "name": "startTime",
+        "name": "startBlock",
         "type": "uint48"
       }
     ],
-    "name": "VeVoteInvalidStartTime",
+    "name": "VeVoteInvalidStartBlock",
     "type": "error"
   },
   {
@@ -280,11 +312,6 @@
   {
     "inputs": [],
     "name": "VotePowerOverflow",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "VoteWeightDenominatorZero",
     "type": "error"
   },
   {
@@ -348,6 +375,25 @@
     "inputs": [
       {
         "indexed": false,
+        "internalType": "uint256",
+        "name": "previousMinStake",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newMinStake",
+        "type": "uint256"
+      }
+    ],
+    "name": "MinStakedAmountUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
         "internalType": "uint48",
         "name": "oldMinVotingDelay",
         "type": "uint48"
@@ -398,76 +444,6 @@
       }
     ],
     "name": "NodeManagementContractSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "strength",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "thunder",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "mjolnir",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "veThorX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "strengthX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "thunderX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "mjolnirX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "flash",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "lightning",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "dawn",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "validator",
-            "type": "uint256"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct VeVoteTypes.NodeVoteMultiplier",
-        "name": "nodeMultiplier",
-        "type": "tuple"
-      }
-    ],
-    "name": "NodeVoteMultipliersUpdated",
     "type": "event"
   },
   {
@@ -593,6 +569,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "StargateNFTContractSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -600,6 +595,25 @@
       }
     ],
     "name": "Upgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "ValidatorContractSet",
     "type": "event"
   },
   {
@@ -626,7 +640,7 @@
       {
         "indexed": false,
         "internalType": "uint48",
-        "name": "startTime",
+        "name": "startBlock",
         "type": "uint48"
       },
       {
@@ -674,44 +688,6 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "oldBaseLevelNode",
-        "type": "uint8"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint8",
-        "name": "newBaseLevelNode",
-        "type": "uint8"
-      }
-    ],
-    "name": "VechainBaseNodeSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "oldContractAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newContractAddress",
-        "type": "address"
-      }
-    ],
-    "name": "VechainNodeContractSet",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": true,
         "internalType": "address",
         "name": "voter",
@@ -740,9 +716,34 @@
         "internalType": "string",
         "name": "reason",
         "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "stargateNFTs",
+        "type": "uint256[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
       }
     ],
     "name": "VoteCast",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256[]",
+        "name": "updatedMultipliers",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "VoteMultipliersUpdated",
     "type": "event"
   },
   {
@@ -903,6 +904,11 @@
         "internalType": "uint32",
         "name": "choices",
         "type": "uint32"
+      },
+      {
+        "internalType": "address",
+        "name": "masterAddress",
+        "type": "address"
       }
     ],
     "name": "castVote",
@@ -926,6 +932,11 @@
         "internalType": "string",
         "name": "reason",
         "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "masterAddress",
+        "type": "address"
       }
     ],
     "name": "castVoteWithReason",
@@ -967,19 +978,6 @@
   },
   {
     "inputs": [],
-    "name": "getBaseLevelNode",
-    "outputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "getMaxChoices",
     "outputs": [
       {
@@ -999,6 +997,38 @@
         "internalType": "uint48",
         "name": "",
         "type": "uint48"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getMinStakedAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint48",
+        "name": "timepoint",
+        "type": "uint48"
+      }
+    ],
+    "name": "getMinStakedAmountAtTimepoint",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1038,6 +1068,25 @@
         "internalType": "contract INodeManagement",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nodeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getNodeVoteWeight",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1095,10 +1144,23 @@
   },
   {
     "inputs": [],
-    "name": "getVechainNodeContract",
+    "name": "getStargateNFTContract",
     "outputs": [
       {
-        "internalType": "contract ITokenAuction",
+        "internalType": "contract IStargateNFT",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getValidatorContract",
+    "outputs": [
+      {
+        "internalType": "contract IAuthority",
         "name": "",
         "type": "address"
       }
@@ -1111,6 +1173,11 @@
       {
         "internalType": "address",
         "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "masterAddress",
         "type": "address"
       }
     ],
@@ -1136,6 +1203,11 @@
         "internalType": "uint48",
         "name": "timepoint",
         "type": "uint48"
+      },
+      {
+        "internalType": "address",
+        "name": "masterAddress",
+        "type": "address"
       }
     ],
     "name": "getVoteWeightAtTimepoint",
@@ -1224,7 +1296,7 @@
       },
       {
         "internalType": "uint48",
-        "name": "startTime",
+        "name": "startBlock",
         "type": "uint48"
       },
       {
@@ -1274,8 +1346,13 @@
             "type": "address"
           },
           {
-            "internalType": "contract ITokenAuction",
-            "name": "vechainNodesContract",
+            "internalType": "contract IStargateNFT",
+            "name": "stargateNFT",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "authorityContract",
             "type": "address"
           },
           {
@@ -1304,9 +1381,9 @@
             "type": "uint8"
           },
           {
-            "internalType": "uint8",
-            "name": "baseLevelNode",
-            "type": "uint8"
+            "internalType": "uint256",
+            "name": "initialMinStakedAmount",
+            "type": "uint256"
           }
         ],
         "internalType": "struct VeVoteTypes.InitializationData",
@@ -1359,12 +1436,31 @@
   {
     "inputs": [
       {
-        "internalType": "enum VechainNodesDataTypes.NodeStrengthLevel",
-        "name": "nodeLevel",
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isQuorumReached",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "levelId",
         "type": "uint8"
       }
     ],
-    "name": "nodeLevelMultiplier",
+    "name": "levelIdMultiplier",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1484,7 +1580,7 @@
       },
       {
         "internalType": "uint48",
-        "name": "startTime",
+        "name": "startBlock",
         "type": "uint48"
       },
       {
@@ -1535,9 +1631,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint48",
         "name": "timepoint",
-        "type": "uint256"
+        "type": "uint48"
       }
     ],
     "name": "quorum",
@@ -1567,9 +1663,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint48",
         "name": "timepoint",
-        "type": "uint256"
+        "type": "uint48"
       }
     ],
     "name": "quorumNumerator",
@@ -1636,19 +1732,6 @@
     "inputs": [
       {
         "internalType": "uint8",
-        "name": "newBaseLevelNode",
-        "type": "uint8"
-      }
-    ],
-    "name": "setBaseLevelNode",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
         "name": "newMaxChoices",
         "type": "uint8"
       }
@@ -1667,6 +1750,19 @@
       }
     ],
     "name": "setMaxVotingDuration",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "newMinStake",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMinStakedVetAmount",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1714,11 +1810,24 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "tokenAuction",
+        "name": "stargateNFT",
         "type": "address"
       }
     ],
-    "name": "setVechainNodeContract",
+    "name": "setStargateNFTContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "validatorContract",
+        "type": "address"
+      }
+    ],
+    "name": "setValidatorContract",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1783,69 +1892,12 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "strength",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "thunder",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "mjolnir",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "veThorX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "strengthX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "thunderX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "mjolnirX",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "flash",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "lightning",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "dawn",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "validator",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct VeVoteTypes.NodeVoteMultiplier",
-        "name": "updatedNodeMultipliers",
-        "type": "tuple"
+        "internalType": "uint256[]",
+        "name": "newMultipliers",
+        "type": "uint256[]"
       }
     ],
-    "name": "updateNodeMultipliers",
+    "name": "updateLevelIdMultipliers",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
