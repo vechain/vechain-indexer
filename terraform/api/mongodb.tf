@@ -126,7 +126,7 @@ data "aws_ami" "AwsFilteredImage" {
 
 resource "aws_cloudwatch_log_group" "mongo_log_group" {
   for_each          = local.env.enabled_nets
-  name              = "${local.env.environment}-mongodb-${each.key}"
+  name              = "${local.env.project}-${local.env.environment}-mongodb-${each.key}"
   retention_in_days = 30
   lifecycle {
     prevent_destroy = false

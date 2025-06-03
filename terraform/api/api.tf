@@ -86,7 +86,7 @@ resource "aws_security_group" "ecs_service_sg" {
 ################################################################################
 
 module "ecs-cluster" {
-  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.1.0.19"
+  source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.3.1.8"
   env     = local.env.environment
   project = var.project
   vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
