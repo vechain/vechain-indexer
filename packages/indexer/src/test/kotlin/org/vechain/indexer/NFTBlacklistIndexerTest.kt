@@ -29,7 +29,7 @@ internal class NFTBlacklistIndexerTest {
         @BeforeAll
         fun setupAbiManager() {
             abiManager = AbiManager()
-            abiManager.loadAbis(FileUtils.loadFileStreams("test-abis"))
+            abiManager.loadAbis(FileUtils.loadFileStreams("abis"))
         }
     }
 

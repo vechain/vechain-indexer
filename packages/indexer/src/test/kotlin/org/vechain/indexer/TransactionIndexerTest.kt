@@ -38,7 +38,7 @@ internal class TransactionIndexerTest {
                 mongoTemplate = mongoTemplate,
             )
 
-        val abiFileStreams = FileUtils.loadFileStreams("test-abis")
+        val abiFileStreams = FileUtils.loadFileStreams("abis")
         val abiManager = AbiManager()
         abiManager.loadAbis(abiFileStreams)
 
@@ -118,7 +118,8 @@ internal class TransactionIndexerTest {
                 .get(IndexedTransaction::id)
                 .isEqualTo("0x67c2424005a7abd063332a1a6faf39fe808696241bcfda043493ad1f4c004a48")
 
-            that(eventTypes).isEqualTo(setOf("RewardDistributed", "Transfer", null))
+            that(eventTypes)
+                .isEqualTo(setOf("RewardDistributed", "Transfer", "RegisteredAction", null))
 
             that(outputs.first().events[1].params)
                 .isEqualTo(
