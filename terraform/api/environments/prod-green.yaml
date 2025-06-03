@@ -98,7 +98,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x428BE069E21a584fBbAb934Fb4ad55AF346A3513'
+          address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
     mongodb:
       type: atlas
       fqdn: mainnet.rsmhw.mongodb.net
@@ -178,7 +178,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x428BE069E21a584fBbAb934Fb4ad55AF346A3513'
+          address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
     mongodb:
       type: atlas
       fqdn: testnet.rsmhw.mongodb.net
