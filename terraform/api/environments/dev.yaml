@@ -103,7 +103,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                 '0x428be069e21a584fbbab934fb4ad55af346a3513'
+          address:                 '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.imcfs.mongodb.net
