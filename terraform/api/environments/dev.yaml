@@ -84,7 +84,7 @@ enabled_nets:
       version:
         nfts:                       '2'
         transfers:                  '1'
-        transactions:               '1'
+        transactions:               '2'
         history:                    '3'
         nft_blacklist:              '2'
         vevote_comments:            '1'
@@ -166,7 +166,7 @@ enabled_nets:
       version:
         nfts:                       '2'
         transfers:                  '1'
-        transactions:               '1'
+        transactions:               '2'
         history:                    '3'
         nft_blacklist:              '2'
         vevote_comments:            '1'
