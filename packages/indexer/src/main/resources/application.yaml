@@ -50,7 +50,7 @@ businessEvents:
 veworld:
   contract:
     vevote:
-      address: ${VEVOTE_CONTRACT:0x428be069e21a584fbbab934fb4ad55af346a3513}
+      address: ${VEVOTE_CONTRACT:0x90a3c072CF8493cCDd9b86B1C9b5d18F86fdf3E0}
 
 indexer:
   startBlock:
