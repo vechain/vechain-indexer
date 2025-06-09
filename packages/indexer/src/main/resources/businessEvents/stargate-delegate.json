@@ -1,0 +1,49 @@
+{
+  "name": "STARGATE_DELEGATE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationSimulationStarted",
+      "alias": "DelegationSimulationStarted",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "caller",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "isDelegationForever",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "autorenew"
+    },
+    {
+      "name": "rewardsAccumulationStartBlock",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "rewardsAccumulationStartBlock"
+    },
+    {
+      "name": "delegator",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "delegator"
+    }
+  ]
+}

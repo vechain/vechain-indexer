@@ -1,0 +1,63 @@
+{
+  "name": "STARGATE_UNSTAKE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "TokenBurned",
+      "alias": "TokenBurned",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "levelId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "vetAmountStaked",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "owner",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "TokenBurned",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "vetAmountStaked",
+      "eventName": "TokenBurned",
+      "businessEventName": "vetAmountStaked"
+    },
+    {
+      "name": "levelId",
+      "eventName": "TokenBurned",
+      "businessEventName": "levelId"
+    },
+    {
+      "name": "owner",
+      "eventName": "TokenBurned",
+      "businessEventName": "owner"
+    }
+  ]
+}

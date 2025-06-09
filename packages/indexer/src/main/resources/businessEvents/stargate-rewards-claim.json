@@ -7,11 +7,18 @@
       "alias": "BaseVTHORewardsClaimed",
       "conditions": [
         {
-          "firstOperand": "address",
+          "firstOperand": "owner",
           "isFirstStatic": false,
-          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
-          "isSecondStatic": true,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "amount",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     },
@@ -20,11 +27,18 @@
       "alias": "DelegationRewardsClaimed",
       "conditions": [
         {
-          "firstOperand": "address",
+          "firstOperand": "recipient",
           "isFirstStatic": false,
-          "secondOperand": "0x811cddb2ca19509c6f5c8ff341550fb9747702d3",
-          "isSecondStatic": true,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "rewards",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     }

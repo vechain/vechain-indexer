@@ -1,0 +1,118 @@
+{
+  "name": "STARGATE_MINT_DELEGATE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "TokenMinted",
+      "alias": "TokenMinted",
+      "conditions": [
+        {
+          "firstOperand": "levelId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "vetAmountStaked",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "owner",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "DelegationSimulationStarted",
+      "alias": "DelegationSimulationStarted",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "caller",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "TokenMinted",
+      "firstEventProperty": "tokenId",
+      "secondEventName": "DelegationSimulationStarted",
+      "secondEventProperty": "tokenId",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "TokenMinted",
+      "firstEventProperty": "owner",
+      "secondEventName": "DelegationSimulationStarted",
+      "secondEventProperty": "caller",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "TokenMinted",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "vetAmountStaked",
+      "eventName": "TokenMinted",
+      "businessEventName": "vetAmountStaked"
+    },
+    {
+      "name": "levelId",
+      "eventName": "TokenMinted",
+      "businessEventName": "levelId"
+    },
+    {
+      "name": "owner",
+      "eventName": "TokenMinted",
+      "businessEventName": "owner"
+    },
+    {
+      "name": "isDelegationForever",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "autorenew"
+    },
+    {
+      "name": "rewardsAccumulationStartBlock",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "rewardsAccumulationStartBlock"
+    },
+    {
+      "name": "delegator",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "delegator"
+    },
+    {
+      "name": "migrated",
+      "eventName": "TokenMinted",
+      "businessEventName": "migrated"
+    }
+  ]
+}
