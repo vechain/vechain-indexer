@@ -44,6 +44,12 @@ constructor(
     val inputValue: String? = null,
     val outputValue: String? = null,
     val tokenAddress: String? = null,
+    val levelId: String? = null,
+    val owner: String? = null,
+    val vetGeneratedVthoRewards: String? = null,
+    val delegationRewards: String? = null,
+    val migrated: Boolean? = null,
+    val autorenew: Boolean? = null,
     @JsonIgnore val isBlacklisted: Boolean = false,
 ) : IndexedDocument {
     companion object {
