@@ -12,6 +12,13 @@
           "secondOperand": 0,
           "isSecondStatic": true,
           "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x811cddb2ca19509c6f5c8ff341550fb9747702d3",
+          "isSecondStatic": true,
+          "operator": "EQ"
         }
       ]
     }
@@ -22,11 +29,6 @@
       "name": "tokenId",
       "eventName": "DelegationExitRequested",
       "businessEventName": "tokenId"
-    },
-    {
-      "name": "delegationEndBlock",
-      "eventName": "DelegationExitRequested",
-      "businessEventName": "delegationEndBlock"
     }
   ]
 }

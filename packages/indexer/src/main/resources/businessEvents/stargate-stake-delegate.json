@@ -1,10 +1,10 @@
 {
-  "name": "STARGATE_MINT_DELEGATE",
+  "name": "STARGATE_STAKE_DELEGATE",
   "sameClause": true,
   "events": [
     {
       "name": "TokenMinted",
-      "alias": "TokenMinted",
+      "alias": "tokenMinted",
       "conditions": [
         {
           "firstOperand": "levelId",
@@ -33,6 +33,13 @@
           "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "isSecondStatic": true,
+          "operator": "EQ"
         }
       ]
     },
@@ -53,45 +60,79 @@
           "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x811cddb2ca19509c6f5c8ff341550fb9747702d3",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "VET_TRANSFER",
+      "alias": "vetTransfer",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "amount",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     }
   ],
   "rules": [
     {
-      "firstEventName": "TokenMinted",
+      "firstEventName": "tokenMinted",
       "firstEventProperty": "tokenId",
       "secondEventName": "DelegationSimulationStarted",
       "secondEventProperty": "tokenId",
       "operator": "EQ"
     },
     {
-      "firstEventName": "TokenMinted",
+      "firstEventName": "tokenMinted",
       "firstEventProperty": "owner",
       "secondEventName": "DelegationSimulationStarted",
       "secondEventProperty": "caller",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "vetAmountStaked",
+      "secondEventName": "vetTransfer",
+      "secondEventProperty": "amount",
       "operator": "EQ"
     }
   ],
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "TokenMinted",
+      "eventName": "tokenMinted",
       "businessEventName": "tokenId"
     },
     {
       "name": "vetAmountStaked",
-      "eventName": "TokenMinted",
-      "businessEventName": "vetAmountStaked"
+      "eventName": "tokenMinted",
+      "businessEventName": "value"
     },
     {
       "name": "levelId",
-      "eventName": "TokenMinted",
+      "eventName": "tokenMinted",
       "businessEventName": "levelId"
     },
     {
       "name": "owner",
-      "eventName": "TokenMinted",
+      "eventName": "tokenMinted",
       "businessEventName": "owner"
     },
     {
@@ -100,18 +141,8 @@
       "businessEventName": "autorenew"
     },
     {
-      "name": "rewardsAccumulationStartBlock",
-      "eventName": "DelegationSimulationStarted",
-      "businessEventName": "rewardsAccumulationStartBlock"
-    },
-    {
-      "name": "delegator",
-      "eventName": "DelegationSimulationStarted",
-      "businessEventName": "delegator"
-    },
-    {
       "name": "migrated",
-      "eventName": "TokenMinted",
+      "eventName": "tokenMinted",
       "businessEventName": "migrated"
     }
   ]

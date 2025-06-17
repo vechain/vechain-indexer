@@ -1,20 +1,20 @@
 {
-  "name": "STARGATE_UNSTAKE",
+  "name": "STARGATE_STAKE",
   "sameClause": true,
   "events": [
     {
-      "name": "TokenBurned",
-      "alias": "tokenBurned",
+      "name": "TokenMinted",
+      "alias": "tokenMinted",
       "conditions": [
         {
-          "firstOperand": "tokenId",
+          "firstOperand": "levelId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
           "operator": "GT"
         },
         {
-          "firstOperand": "levelId",
+          "firstOperand": "tokenId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
@@ -48,16 +48,9 @@
       "alias": "vetTransfer",
       "conditions": [
         {
-          "firstOperand": "to",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
         },
@@ -73,40 +66,45 @@
   ],
   "rules": [
     {
-      "firstEventName": "tokenBurned",
-      "firstEventProperty": "vetAmountStaked",
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "owner",
       "secondEventName": "vetTransfer",
-      "secondEventProperty": "amount",
+      "secondEventProperty": "from",
       "operator": "EQ"
     },
     {
-      "firstEventName": "tokenBurned",
-      "firstEventProperty": "owner",
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "vetAmountStaked",
       "secondEventName": "vetTransfer",
-      "secondEventProperty": "to",
+      "secondEventProperty": "amount",
       "operator": "EQ"
     }
   ],
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "tokenId"
     },
     {
       "name": "vetAmountStaked",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "value"
     },
     {
       "name": "levelId",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "levelId"
     },
     {
       "name": "owner",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "owner"
+    },
+    {
+      "name": "migrated",
+      "eventName": "tokenMinted",
+      "businessEventName": "migrated"
     }
   ]
 }

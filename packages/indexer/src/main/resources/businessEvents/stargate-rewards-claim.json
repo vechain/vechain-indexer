@@ -1,6 +1,6 @@
 {
-  "name": "STARGATE_REWARDS_CLAIM",
-  "sameClause": true,
+  "name": "STARGATE_CLAIM_REWARDS",
+  "sameClause": false,
   "events": [
     {
       "name": "BaseVTHORewardsClaimed",
@@ -17,6 +17,40 @@
           "firstOperand": "amount",
           "isFirstStatic": false,
           "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "vthoTransferNFT",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000456e65726779",
           "isSecondStatic": true,
           "operator": "GT"
         }
@@ -39,6 +73,40 @@
           "secondOperand": 0,
           "isSecondStatic": true,
           "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x811cddb2ca19509c6f5c8ff341550fb9747702d3",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "alias": "vthoTransferDelegation",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "0x811cddb2ca19509c6f5c8ff341550fb9747702d3",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000456e65726779",
+          "isSecondStatic": true,
+          "operator": "GT"
         }
       ]
     }
@@ -56,6 +124,20 @@
       "firstEventProperty": "owner",
       "secondEventName": "DelegationRewardsClaimed",
       "secondEventProperty": "recipient",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "BaseVTHORewardsClaimed",
+      "firstEventProperty": "amount",
+      "secondEventName": "vthoTransferNFT",
+      "secondEventProperty": "value",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "DelegationRewardsClaimed",
+      "firstEventProperty": "amount",
+      "secondEventName": "vthoTransferDelegation",
+      "secondEventProperty": "value",
       "operator": "EQ"
     }
   ],
@@ -78,7 +160,7 @@
     {
       "name": "owner",
       "eventName": "BaseVTHORewardsClaimed",
-      "businessEventName": "tokenOwner"
+      "businessEventName": "owner"
     }
   ]
 }
