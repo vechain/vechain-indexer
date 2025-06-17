@@ -59,6 +59,13 @@ open class HistoryIndexer(
                                 "wov-action-executed-sale",
                                 "wov-custodial-wov-sale",
                                 "wov-custodial-vet-sale",
+                                "stargate-stake-delegate",
+                                "stargate-stake",
+                                "stargate-unstake",
+                                "stargate-rewards-claim",
+                                "stargate-rewards-claim-base",
+                                "stargate-rewards-claim-delegate",
+                                "stargate-undelegate",
                             ),
                     ),
                 )
