@@ -15,7 +15,6 @@ import org.vechain.indexer.model.vevote.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
 import org.vechain.indexer.service.VeVoteResultService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.utils.FileUtils
 import org.vechain.indexer.vevote.VeVoteResultIndexer
 import strikt.api.expect
 import strikt.api.expectThat
@@ -36,9 +35,7 @@ class VeVoteResultIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val abiFileStreams = FileUtils.loadFileStreams("abis")
-        val abiManager = AbiManager()
-        abiManager.loadAbis(abiFileStreams)
+        val abiManager = AbiManager("abis")
 
         voteResultsIndexer =
             VeVoteResultIndexer(

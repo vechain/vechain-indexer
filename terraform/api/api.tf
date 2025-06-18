@@ -360,6 +360,38 @@ module "ecs-backend-service" {
     {
       name  = "LANGUAGE_CONFIDENCE"
       value = each.value.comments.language.confidence
+    },
+    {
+      name  = "B3TR_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.B3TR_ADDRESS
+    },
+    {
+      name  = "VOT3_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.VOT3_ADDRESS
+    },
+    {
+      name  = "B3TR_GOVERNOR_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_ADDRESS
+    },
+    {
+      name  = "GALAXY_MEMBER_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.GALAXY_MEMBER_ADDRESS
+    },
+    {
+      name = "XALLOC_VOTING_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.XALLOC_VOTING_ADDRESS
+    },
+    {
+      name = "X2EARN_REWARDS_POOL_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_ADDRESS
+    },
+    {
+      name  = "VOTER_REWARDS_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_ADDRESS
+    },
+    {
+      name  = "TREASURY_ADDRESS"
+      value = each.value.indexer.business-event.substitutions.TREASURY_ADDRESS
     }
   ]
 }

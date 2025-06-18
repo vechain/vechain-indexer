@@ -72,6 +72,16 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
+      business-event:
+        substitutions:
+          B3TR_ADDRESS: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
+          VOT3_ADDRESS: '0x76ca782b59c74d088c7d2cce2f211bc00836c602'
+          B3TR_GOVERNOR_ADDRESS: '0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c'
+          GALAXY_MEMBER_ADDRESS: '0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f'
+          XALLOC_VOTING_ADDRESS: '0x89a00bb0947a30ff95beef77a66aede3842fe5b7'
+          X2EARN_REWARDS_POOL_ADDRESS: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
+          VOTER_REWARDS_ADDRESS: '0x838a33af756a6366f93e201423e1425f67ec0fa7'
+          TREASURY_ADDRESS: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -139,6 +149,16 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
+      business-event:
+        substitutions:
+          B3TR_ADDRESS: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
+          VOT3_ADDRESS: '0xa704c45971995467696ee9544da77dd42bc9706e'
+          B3TR_GOVERNOR_ADDRESS: '0xdf5e114d391cac840529802fe8d01f6bdebe41ec'
+          GALAXY_MEMBER_ADDRESS: '0xcf73039913e05aa1838d5869e72290d2b454c1e8'
+          XALLOC_VOTING_ADDRESS: '0x5859ff910d8b0c127364c98e24233b0af7443c1c'
+          X2EARN_REWARDS_POOL_ADDRESS: '0x5f8f86b8d0fa93cdae20936d150175df0205fb38'
+          VOTER_REWARDS_ADDRESS: '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
+          TREASURY_ADDRESS: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'

@@ -17,7 +17,6 @@ import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.model.EventLog
-import org.vechain.indexer.utils.FileUtils
 
 @ExtendWith(MockKExtension::class)
 internal class NFTBlacklistIndexerTest {
@@ -28,8 +27,7 @@ internal class NFTBlacklistIndexerTest {
         @JvmStatic
         @BeforeAll
         fun setupAbiManager() {
-            abiManager = AbiManager()
-            abiManager.loadAbis(FileUtils.loadFileStreams("abis"))
+            abiManager = AbiManager("abis")
         }
     }
 

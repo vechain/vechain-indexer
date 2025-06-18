@@ -11,6 +11,7 @@ object EventUtils {
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
             "B3TR_ProposalDeposit" -> HistoryEventName.B3TR_PROPOSAL_SUPPORT
             "B3TR_ClaimReward" -> HistoryEventName.B3TR_CLAIM_REWARD
+            "B3TR_ClaimReward2" -> HistoryEventName.B3TR_CLAIM_REWARD
             "B3TR_GMUpgrade" -> HistoryEventName.B3TR_UPGRADE_GM
             "B3TR_ActionReward" -> HistoryEventName.B3TR_ACTION
             "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
@@ -26,9 +27,15 @@ object EventUtils {
             "TransferBatch" -> HistoryEventName.TRANSFER_SF
             "VET_TRANSFER" -> HistoryEventName.TRANSFER_VET
             "FT_VET_Swap" -> HistoryEventName.SWAP_FT_TO_VET
+            "FT_VET_Swap2" -> HistoryEventName.SWAP_FT_TO_VET
             "VET_FT_Swap" -> HistoryEventName.SWAP_VET_TO_FT
             "Token_FTSwap" -> HistoryEventName.SWAP_FT_TO_FT
-            "NFT_SALE" -> HistoryEventName.NFT_SALE
+            "MAAS_SALE" -> HistoryEventName.NFT_SALE
+            "WOV_Action_Executed_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Custodial_VET_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Custodial_WOV_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
             else -> null // Other events will not be labeled
         }
 

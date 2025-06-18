@@ -19,7 +19,6 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.TransferEventRepository
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.utils.FileUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.hasSize
@@ -39,9 +38,7 @@ class TransferEventIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val abiFileStreams = FileUtils.loadFileStreams("abis")
-        val abiManager = AbiManager()
-        abiManager.loadAbis(abiFileStreams)
+        val abiManager = AbiManager("abis")
 
         transferEventIndexer =
             TransferEventIndexer(
