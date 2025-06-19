@@ -9,14 +9,14 @@
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "${VOTER_REWARDS_ADDRESS}",
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${B3TR_ADDRESS}",
+          "secondOperand": "${B3TR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -29,7 +29,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${VOTER_REWARDS_ADDRESS}",
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }

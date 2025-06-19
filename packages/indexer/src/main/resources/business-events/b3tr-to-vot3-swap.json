@@ -16,7 +16,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${VOT3_ADDRESS}",
+          "secondOperand": "${VOT3_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -29,14 +29,14 @@
         {
           "firstOperand": "to",
           "isFirstStatic": false,
-          "secondOperand": "${VOT3_ADDRESS}",
+          "secondOperand": "${VOT3_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${B3TR_ADDRESS}",
+          "secondOperand": "${B3TR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }

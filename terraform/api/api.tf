@@ -362,32 +362,32 @@ module "ecs-backend-service" {
       value = each.value.comments.language.confidence
     },
     {
-      name  = "B3TR_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.B3TR_ADDRESS
+      name  = "B3TR_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_CONTRACT
     },
     {
-      name  = "VOT3_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.VOT3_ADDRESS
+      name  = "VOT3_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VOT3_CONTRACT
     },
     {
-      name  = "B3TR_GOVERNOR_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_ADDRESS
+      name  = "B3TR_GOVERNOR_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
     },
     {
-      name  = "GALAXY_MEMBER_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.GALAXY_MEMBER_ADDRESS
+      name  = "GM_NFT_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
-      name = "XALLOC_VOTING_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.XALLOC_VOTING_ADDRESS
+      name = "X_ALLOC_VOTING_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
-      name = "X2EARN_REWARDS_POOL_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_ADDRESS
+      name = "X2EARN_REWARDS_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
     },
     {
-      name  = "VOTER_REWARDS_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_ADDRESS
+      name  = "VOTER_REWARDS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_CONTRACT
     },
     {
       name  = "TREASURY_ADDRESS"

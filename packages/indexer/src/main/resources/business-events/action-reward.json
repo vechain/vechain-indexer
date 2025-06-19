@@ -9,14 +9,14 @@
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "${X2EARN_REWARDS_POOL_ADDRESS}",
+          "secondOperand": "${X2EARN_REWARDS_POOL_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${B3TR_ADDRESS}",
+          "secondOperand": "${B3TR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -29,7 +29,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${X2EARN_REWARDS_POOL_ADDRESS}",
+          "secondOperand": "${X2EARN_REWARDS_POOL_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }

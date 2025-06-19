@@ -9,7 +9,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${GALAXY_MEMBER_ADDRESS}",
+          "secondOperand": "${GM_NFT_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }

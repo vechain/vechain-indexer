@@ -9,7 +9,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${B3TR_GOVERNOR_ADDRESS}",
+          "secondOperand": "${B3TR_GOVERNOR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
