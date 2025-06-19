@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.AbiManager
+import org.vechain.indexer.fixtures.FileFixtures.abiFiles
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_BLACKLIST
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_NFT_MINT_2
 import org.vechain.indexer.model.NFTBlacklist
@@ -27,7 +28,7 @@ internal class NFTBlacklistIndexerTest {
         @JvmStatic
         @BeforeAll
         fun setupAbiManager() {
-            abiManager = AbiManager("abis")
+            abiManager = AbiManager(abiFiles)
         }
     }
 

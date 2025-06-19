@@ -11,6 +11,8 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
+import org.vechain.indexer.fixtures.FileFixtures.abiFiles
+import org.vechain.indexer.fixtures.FileFixtures.businessEventFiles
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryEventRepository
@@ -38,8 +40,8 @@ internal class HistoryIndexerTest {
                 mongoTemplate = mongoTemplate,
             )
 
-        val abiManager = AbiManager("abis")
-        val businessEventManager = BusinessEventManager("businessEvents", BUSINESS_EVENT_PARAMS)
+        val abiManager = AbiManager(abiFiles)
+        val businessEventManager = BusinessEventManager(businessEventFiles, BUSINESS_EVENT_PARAMS)
 
         indexer =
             HistoryIndexer(

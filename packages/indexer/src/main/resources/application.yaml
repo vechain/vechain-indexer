@@ -45,7 +45,7 @@ abis:
   path: ${ABI_PATH:abis}
 
 business-event:
-  path: ${BUSINESS_EVENTS_PATH:businessEvents}
+  path: ${BUSINESS_EVENTS_PATH:business-events}
   substitutions:
     B3TR_ADDRESS: ${B3TR_ADDRESS:0x5ef79995fe8a89e0812330e4378eb2660cede699}
     VOT3_ADDRESS: ${VOT3_ADDRESS:0x76ca782b59c74d088c7d2cce2f211bc00836c602}

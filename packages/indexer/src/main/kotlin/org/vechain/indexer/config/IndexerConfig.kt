@@ -7,6 +7,7 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.utils.FileUtils.getJsonFilePaths
 
 @Configuration
 open class IndexerConfig(
@@ -18,9 +19,9 @@ open class IndexerConfig(
     open fun thorClient(): ThorClient =
         DefaultThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
 
-    @Bean open fun abiManager() = AbiManager(abisPath)
+    @Bean open fun abiManager() = AbiManager(getJsonFilePaths(abisPath))
 
     @Bean
     open fun businessEventManager() =
-        BusinessEventManager(bEProperties.path, bEProperties.substitutions)
+        BusinessEventManager(getJsonFilePaths(bEProperties.path), bEProperties.substitutions)
 }
