@@ -390,8 +390,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_CONTRACT
     },
     {
-      name  = "TREASURY_ADDRESS"
-      value = each.value.indexer.business-event.substitutions.TREASURY_ADDRESS
+      name  = "TREASURY_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.TREASURY_CONTRACT
     }
   ]
 }

@@ -22,7 +22,7 @@
         {
           "firstOperand": "to",
           "isFirstStatic": false,
-          "secondOperand": "${TREASURY_ADDRESS}",
+          "secondOperand": "${TREASURY_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
