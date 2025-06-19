@@ -39,7 +39,7 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Build (Gradle)
-build-local: build-indexer-local build-api-local #@ Build the application with Gradle.
+build-local: format build-indexer-local build-api-local #@ Build the application with Gradle.
 	echo "Build completed."
 build-indexer-local: #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test
