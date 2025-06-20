@@ -52,7 +52,7 @@
           "isFirstStatic": false,
           "secondOperand": "0x0000000000000000000000000000456e65726779",
           "isSecondStatic": true,
-          "operator": "GT"
+          "operator": "EQ"
         }
       ]
     },
@@ -106,7 +106,7 @@
           "isFirstStatic": false,
           "secondOperand": "0x0000000000000000000000000000456e65726779",
           "isSecondStatic": true,
-          "operator": "GT"
+          "operator": "EQ"
         }
       ]
     }
