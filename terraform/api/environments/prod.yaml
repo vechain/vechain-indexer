@@ -82,6 +82,8 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
           VOTER_REWARDS_CONTRACT: '0x838a33af756a6366f93e201423e1425f67ec0fa7'
           TREASURY_CONTRACT: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
+          STARGATE_DELEGATION_CONTRACT: 'NOT YET KNOWN'
+          STARGATE_NFT_CONTRACT: 'NOT YET KNOWN'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -145,7 +147,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '2'
-        history:                    '3'
+        history:                    '4'
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
@@ -159,6 +161,8 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x5f8f86b8d0fa93cdae20936d150175df0205fb38'
           VOTER_REWARDS_CONTRACT: '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
           TREASURY_CONTRACT: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
+          STARGATE_DELEGATION_CONTRACT: '0x811cddb2ca19509c6f5c8ff341550fb9747702d3'
+          STARGATE_NFT_CONTRACT: '0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'

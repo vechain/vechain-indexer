@@ -392,6 +392,14 @@ module "ecs-backend-service" {
     {
       name  = "TREASURY_CONTRACT"
       value = each.value.indexer.business-event.substitutions.TREASURY_CONTRACT
+    },
+    {
+      name  = "STARGATE_DELEGATION_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_DELEGATION_CONTRACT
+    },
+    {
+      name  = "STARGATE_NFT_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     }
   ]
 }

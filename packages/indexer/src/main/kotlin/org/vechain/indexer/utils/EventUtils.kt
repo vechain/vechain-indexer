@@ -3,6 +3,8 @@ package org.vechain.indexer.utils
 import org.vechain.indexer.event.model.generic.GenericEventParameters
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.history.HistoryEventName
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object EventUtils {
     fun determineEventType(params: GenericEventParameters): HistoryEventName? =
@@ -36,6 +38,13 @@ object EventUtils {
             "WOV_Custodial_WOV_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
+            "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
+            "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
+            "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
+            "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             else -> null // Other events will not be labeled
         }
 
@@ -61,5 +70,14 @@ object EventUtils {
         return choiceValue.toString(2).reversed().mapIndexedNotNull { index, bit ->
             if (bit == '1') index + 1 else null
         }
+    }
+
+    fun getStargateRewards(genericParams: GenericEventParameters): String {
+        if (genericParams.getAsString("value") != null) return genericParams.getAsString("value")!!
+
+        val totalRewards =
+            genericParams.getAsBigInteger("vetGeneratedVthoRewards")!! +
+                genericParams.getAsBigInteger("delegationRewards")!!
+        return totalRewards.toString()
     }
 }
