@@ -1,20 +1,20 @@
 {
-  "name": "STARGATE_UNSTAKE",
+  "name": "STARGATE_DELEGATE",
   "sameClause": true,
   "events": [
     {
-      "name": "TokenBurned",
-      "alias": "tokenBurned",
+      "name": "TokenMinted",
+      "alias": "tokenMinted",
       "conditions": [
         {
-          "firstOperand": "tokenId",
+          "firstOperand": "levelId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
           "operator": "GT"
         },
         {
-          "firstOperand": "levelId",
+          "firstOperand": "tokenId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
@@ -37,7 +37,34 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "secondOperand": "${STARGATE_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "DelegationSimulationStarted",
+      "alias": "DelegationSimulationStarted",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "caller",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -48,16 +75,9 @@
       "alias": "vetTransfer",
       "conditions": [
         {
-          "firstOperand": "to",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "secondOperand": "origin",
           "isSecondStatic": false,
           "operator": "EQ"
         },
@@ -73,40 +93,57 @@
   ],
   "rules": [
     {
-      "firstEventName": "tokenBurned",
-      "firstEventProperty": "vetAmountStaked",
-      "secondEventName": "vetTransfer",
-      "secondEventProperty": "amount",
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "tokenId",
+      "secondEventName": "DelegationSimulationStarted",
+      "secondEventProperty": "tokenId",
       "operator": "EQ"
     },
     {
-      "firstEventName": "tokenBurned",
+      "firstEventName": "tokenMinted",
       "firstEventProperty": "owner",
+      "secondEventName": "DelegationSimulationStarted",
+      "secondEventProperty": "caller",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "vetAmountStaked",
       "secondEventName": "vetTransfer",
-      "secondEventProperty": "to",
+      "secondEventProperty": "amount",
       "operator": "EQ"
     }
   ],
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "tokenId"
     },
     {
       "name": "vetAmountStaked",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "value"
     },
     {
       "name": "levelId",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "levelId"
     },
     {
       "name": "owner",
-      "eventName": "tokenBurned",
+      "eventName": "tokenMinted",
       "businessEventName": "owner"
+    },
+    {
+      "name": "isDelegationForever",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "autorenew"
+    },
+    {
+      "name": "migrated",
+      "eventName": "tokenMinted",
+      "businessEventName": "migrated"
     }
   ]
 }

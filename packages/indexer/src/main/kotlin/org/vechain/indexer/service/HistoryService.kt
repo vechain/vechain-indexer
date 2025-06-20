@@ -1,7 +1,6 @@
 package org.vechain.indexer.service
 
 import org.apache.commons.codec.digest.DigestUtils
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
@@ -22,8 +21,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 class HistoryService(
     private val historyRepository: HistoryEventRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${contracts.stargate_delegation}")
-    private val stargateDelegationContractAddress: String,
 ) {
     fun processBlockEvents(events: List<IndexedEvent>, block: Block) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()

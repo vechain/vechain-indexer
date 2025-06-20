@@ -9,7 +9,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
+          "secondOperand": "${X_ALLOC_VOTING_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }

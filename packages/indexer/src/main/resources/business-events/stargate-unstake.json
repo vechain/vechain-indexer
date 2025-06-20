@@ -1,20 +1,20 @@
 {
-  "name": "STARGATE_STAKE",
+  "name": "STARGATE_UNSTAKE",
   "sameClause": true,
   "events": [
     {
-      "name": "TokenMinted",
-      "alias": "tokenMinted",
+      "name": "TokenBurned",
+      "alias": "tokenBurned",
       "conditions": [
         {
-          "firstOperand": "levelId",
+          "firstOperand": "tokenId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
           "operator": "GT"
         },
         {
-          "firstOperand": "tokenId",
+          "firstOperand": "levelId",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
@@ -37,7 +37,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x92b4c06194e941d23d3a4f1bd7f65c6b709fb685",
+          "secondOperand": "${STARGATE_NFT_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -48,9 +48,16 @@
       "alias": "vetTransfer",
       "conditions": [
         {
-          "firstOperand": "from",
+          "firstOperand": "to",
           "isFirstStatic": false,
           "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_NFT_CONTRACT}",
           "isSecondStatic": false,
           "operator": "EQ"
         },
@@ -66,45 +73,40 @@
   ],
   "rules": [
     {
-      "firstEventName": "tokenMinted",
-      "firstEventProperty": "owner",
-      "secondEventName": "vetTransfer",
-      "secondEventProperty": "from",
-      "operator": "EQ"
-    },
-    {
-      "firstEventName": "tokenMinted",
+      "firstEventName": "tokenBurned",
       "firstEventProperty": "vetAmountStaked",
       "secondEventName": "vetTransfer",
       "secondEventProperty": "amount",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "tokenBurned",
+      "firstEventProperty": "owner",
+      "secondEventName": "vetTransfer",
+      "secondEventProperty": "to",
       "operator": "EQ"
     }
   ],
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "tokenMinted",
+      "eventName": "tokenBurned",
       "businessEventName": "tokenId"
     },
     {
       "name": "vetAmountStaked",
-      "eventName": "tokenMinted",
+      "eventName": "tokenBurned",
       "businessEventName": "value"
     },
     {
       "name": "levelId",
-      "eventName": "tokenMinted",
+      "eventName": "tokenBurned",
       "businessEventName": "levelId"
     },
     {
       "name": "owner",
-      "eventName": "tokenMinted",
+      "eventName": "tokenBurned",
       "businessEventName": "owner"
-    },
-    {
-      "name": "migrated",
-      "eventName": "tokenMinted",
-      "businessEventName": "migrated"
     }
   ]
 }

@@ -1,9 +1,9 @@
 {
-  "name": "NFT_SALE",
+  "name": "MAAS_SALE",
   "sameClause": true,
   "events": [
     {
-      "name": "purchase",
+      "name": "PurchaseNonCustodial",
       "alias": "sale",
       "conditions": []
     },
@@ -16,20 +16,7 @@
           "isFirstStatic": false,
           "secondOperand": "0",
           "isSecondStatic": true,
-          "operator": "GT"
-        }
-      ]
-    },
-    {
-      "name": "Transfer",
-      "alias": "payment",
-      "conditions": [
-        {
-          "firstOperand": "value",
-          "isFirstStatic": false,
-          "secondOperand": "0",
-          "isSecondStatic": true,
-          "operator": "GT"
+          "operator": "NE"
         }
       ]
     }
@@ -79,8 +66,8 @@
       "businessEventName": "tokenAddress"
     },
     {
-      "name": "amount",
-      "eventName": "payment",
+      "name": "price",
+      "eventName": "sale",
       "businessEventName": "value"
     }
   ]

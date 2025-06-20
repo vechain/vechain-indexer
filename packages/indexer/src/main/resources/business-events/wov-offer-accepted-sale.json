@@ -1,11 +1,19 @@
 {
-  "name": "NFT_SALE",
+  "name": "WOV_Offer_Accepted_Sale",
   "sameClause": true,
   "events": [
     {
-      "name": "purchaseNonCustodial",
+      "name": "OfferAccepted",
       "alias": "sale",
-      "conditions": []
+      "conditions": [
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
+        }
+      ]
     },
     {
       "name": "Transfer",
@@ -66,7 +74,7 @@
       "businessEventName": "tokenAddress"
     },
     {
-      "name": "price",
+      "name": "value",
       "eventName": "sale",
       "businessEventName": "value"
     }

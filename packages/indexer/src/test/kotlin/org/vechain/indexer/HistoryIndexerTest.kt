@@ -10,12 +10,14 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.fixtures.BlockFixtures
+import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
+import org.vechain.indexer.fixtures.FileFixtures.abiFiles
+import org.vechain.indexer.fixtures.FileFixtures.businessEventFiles
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.service.HistoryService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.utils.FileUtils
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -38,13 +40,8 @@ internal class HistoryIndexerTest {
                 mongoTemplate = mongoTemplate,
             )
 
-        val abiFileStreams = FileUtils.loadFileStreams("abis")
-        val abiManager = AbiManager()
-        abiManager.loadAbis(abiFileStreams)
-
-        val businessEventStreams = FileUtils.loadFileStreams("businessEvents")
-        val businessEventManager = BusinessEventManager()
-        businessEventManager.loadBusinessEvents(businessEventStreams)
+        val abiManager = AbiManager(abiFiles)
+        val businessEventManager = BusinessEventManager(businessEventFiles, BUSINESS_EVENT_PARAMS)
 
         indexer =
             HistoryIndexer(

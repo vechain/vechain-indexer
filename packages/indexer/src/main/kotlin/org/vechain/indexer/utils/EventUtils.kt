@@ -13,6 +13,7 @@ object EventUtils {
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
             "B3TR_ProposalDeposit" -> HistoryEventName.B3TR_PROPOSAL_SUPPORT
             "B3TR_ClaimReward" -> HistoryEventName.B3TR_CLAIM_REWARD
+            "B3TR_ClaimReward2" -> HistoryEventName.B3TR_CLAIM_REWARD
             "B3TR_GMUpgrade" -> HistoryEventName.B3TR_UPGRADE_GM
             "B3TR_ActionReward" -> HistoryEventName.B3TR_ACTION
             "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
@@ -28,15 +29,22 @@ object EventUtils {
             "TransferBatch" -> HistoryEventName.TRANSFER_SF
             "VET_TRANSFER" -> HistoryEventName.TRANSFER_VET
             "FT_VET_Swap" -> HistoryEventName.SWAP_FT_TO_VET
+            "FT_VET_Swap2" -> HistoryEventName.SWAP_FT_TO_VET
             "VET_FT_Swap" -> HistoryEventName.SWAP_VET_TO_FT
             "Token_FTSwap" -> HistoryEventName.SWAP_FT_TO_FT
-            "NFT_SALE" -> HistoryEventName.NFT_SALE
+            "MAAS_SALE" -> HistoryEventName.NFT_SALE
+            "WOV_Action_Executed_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Custodial_VET_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Custodial_WOV_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
+            "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
             "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
-            "STARGATE_STAKE_DELEGATE" -> HistoryEventName.STARGATE_STAKE_DELEGATE
-            "BaseVTHORewardsClaimed" -> HistoryEventName.STARGATE_CLAIM_REWARDS
-            "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
-            "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
+            "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
+            "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             else -> null // Other events will not be labeled
         }
 

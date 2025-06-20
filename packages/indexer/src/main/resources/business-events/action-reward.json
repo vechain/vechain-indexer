@@ -1,42 +1,35 @@
 {
-  "name": "B3TR_B3trToVot3Swap",
+  "name": "B3TR_ActionReward",
   "sameClause": true,
   "events": [
     {
       "name": "Transfer",
-      "alias": "transferVOT3",
+      "alias": "transferB3TR",
       "conditions": [
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "0x0000000000000000000000000000000000000000",
+          "secondOperand": "${X2EARN_REWARDS_POOL_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
+          "secondOperand": "${B3TR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
       ]
     },
     {
-      "name": "Transfer",
-      "alias": "transferB3TR",
+      "name": "RewardDistributed",
+      "alias": "actionReward",
       "conditions": [
-        {
-          "firstOperand": "to",
-          "isFirstStatic": false,
-          "secondOperand": "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
-          "isSecondStatic": true,
-          "operator": "EQ"
-        },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x5ef79995fe8a89e0812330e4378eb2660cede699",
+          "secondOperand": "${X2EARN_REWARDS_POOL_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -47,8 +40,8 @@
     {
       "firstEventName": "transferB3TR",
       "firstEventProperty": "value",
-      "secondEventName": "transferVOT3",
-      "secondEventProperty": "value",
+      "secondEventName": "actionReward",
+      "secondEventProperty": "amount",
       "operator": "EQ"
     }
   ],
@@ -64,24 +57,19 @@
       "businessEventName": "from"
     },
     {
-      "name": "address",
-      "eventName": "transferB3TR",
-      "businessEventName": "inputToken"
-    },
-    {
-      "name": "address",
-      "eventName": "transferVOT3",
-      "businessEventName": "outputToken"
-    },
-    {
       "name": "value",
       "eventName": "transferB3TR",
-      "businessEventName": "inputValue"
+      "businessEventName": "value"
     },
     {
-      "name": "value",
-      "eventName": "transferVOT3",
-      "businessEventName": "outputValue"
+      "name": "appId",
+      "eventName": "actionReward",
+      "businessEventName": "appId"
+    },
+    {
+      "name": "proof",
+      "eventName": "actionReward",
+      "businessEventName": "proof"
     }
   ]
 }

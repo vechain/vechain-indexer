@@ -1,13 +1,18 @@
 {
-  "name": "NFT_SALE",
+  "name": "WOV_Custodial_VET_Sale",
   "sameClause": true,
   "events": [
     {
-      "name": "auctionExecuted",
+      "name": "purchase",
       "alias": "sale",
+      "conditions": []
+    },
+    {
+      "name": "Transfer",
+      "alias": "transfer",
       "conditions": [
         {
-          "firstOperand": "price",
+          "firstOperand": "tokenId",
           "isFirstStatic": false,
           "secondOperand": "0",
           "isSecondStatic": true,
@@ -16,11 +21,11 @@
       ]
     },
     {
-      "name": "Transfer",
-      "alias": "transfer",
+      "name": "VET_TRANSFER",
+      "alias": "payment",
       "conditions": [
         {
-          "firstOperand": "tokenId",
+          "firstOperand": "amount",
           "isFirstStatic": false,
           "secondOperand": "0",
           "isSecondStatic": true,
@@ -39,7 +44,7 @@
     },
     {
       "firstEventName": "sale",
-      "firstEventProperty": "newOwner",
+      "firstEventProperty": "buyer",
       "secondEventName": "transfer",
       "secondEventProperty": "to",
       "operator": "EQ"
@@ -59,7 +64,7 @@
       "businessEventName": "tokenId"
     },
     {
-      "name": "newOwner",
+      "name": "buyer",
       "eventName": "sale",
       "businessEventName": "to"
     },
@@ -74,8 +79,8 @@
       "businessEventName": "tokenAddress"
     },
     {
-      "name": "price",
-      "eventName": "sale",
+      "name": "amount",
+      "eventName": "payment",
       "businessEventName": "value"
     }
   ]
