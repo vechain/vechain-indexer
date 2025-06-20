@@ -1,9 +1,9 @@
 {
-  "name": "NFT_SALE",
+  "name": "WOV_Non_Custodial_Sale",
   "sameClause": true,
   "events": [
     {
-      "name": "PurchaseNonCustodial",
+      "name": "purchaseNonCustodial",
       "alias": "sale",
       "conditions": []
     },
@@ -16,7 +16,7 @@
           "isFirstStatic": false,
           "secondOperand": "0",
           "isSecondStatic": true,
-          "operator": "NE"
+          "operator": "GT"
         }
       ]
     }

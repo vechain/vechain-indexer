@@ -360,6 +360,38 @@ module "ecs-backend-service" {
     {
       name  = "LANGUAGE_CONFIDENCE"
       value = each.value.comments.language.confidence
+    },
+    {
+      name  = "B3TR_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_CONTRACT
+    },
+    {
+      name  = "VOT3_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VOT3_CONTRACT
+    },
+    {
+      name  = "B3TR_GOVERNOR_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
+    },
+    {
+      name  = "GM_NFT_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
+    },
+    {
+      name = "X_ALLOC_VOTING_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
+    },
+    {
+      name = "X2EARN_REWARDS_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
+    },
+    {
+      name  = "VOTER_REWARDS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_CONTRACT
+    },
+    {
+      name  = "TREASURY_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.TREASURY_CONTRACT
     }
   ]
 }

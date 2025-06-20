@@ -9,34 +9,42 @@
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "0x838a33af756a6366f93e201423e1425f67ec0fa7",
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x5ef79995fe8a89e0812330e4378eb2660cede699",
+          "secondOperand": "${B3TR_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
       ]
     },
     {
-      "name": "RewardClaimedV2",
+      "name": "RewardClaimed",
       "alias": "claimReward",
       "conditions": [
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "0x838a33af756a6366f93e201423e1425f67ec0fa7",
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
       ]
     }
   ],
-  "rules": [],
+  "rules": [
+    {
+      "firstEventName": "transferB3TR",
+      "firstEventProperty": "value",
+      "secondEventName": "claimReward",
+      "secondEventProperty": "reward",
+      "operator": "EQ"
+    }
+  ],
   "paramsDefinition": [
     {
       "name": "to",

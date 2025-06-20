@@ -12,11 +12,11 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_B3TR_ACTION
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
+import org.vechain.indexer.fixtures.FileFixtures.abiFiles
 import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.repository.TransactionRepository
 import org.vechain.indexer.service.TransactionService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.utils.FileUtils
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -38,9 +38,7 @@ internal class TransactionIndexerTest {
                 mongoTemplate = mongoTemplate,
             )
 
-        val abiFileStreams = FileUtils.loadFileStreams("abis")
-        val abiManager = AbiManager()
-        abiManager.loadAbis(abiFileStreams)
+        val abiManager = AbiManager(abiFiles)
 
         MockKAnnotations.init(this)
         transactionIndexer =

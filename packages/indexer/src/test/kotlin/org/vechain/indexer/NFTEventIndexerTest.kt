@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.AbiManager
+import org.vechain.indexer.fixtures.FileFixtures.abiFiles
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_NFT_MINT_2
 import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
@@ -16,7 +17,6 @@ import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.service.NFTBlacklistService
 import org.vechain.indexer.service.NFTService
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @ExtendWith(MockKExtension::class)
 internal class NFTEventIndexerTest {
@@ -27,8 +27,7 @@ internal class NFTEventIndexerTest {
         @JvmStatic
         @BeforeAll
         fun setupAbiManager() {
-            abiManager = AbiManager()
-            abiManager.loadAbis(FileUtils.loadFileStreams("abis"))
+            abiManager = AbiManager(abiFiles)
         }
     }
 

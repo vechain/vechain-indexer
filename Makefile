@@ -3,6 +3,9 @@ SHELL := /bin/bash
 help:
 	@egrep -h '\s#@\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?#@ "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
+format: #@ Format the code with Spotless.
+	./gradlew spotlessApply
+
 test: #@ Run all the tests.
 	./gradlew cleanTest test
 test-e2e: #@ Run all the end-to-end tests.
@@ -36,7 +39,7 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Build (Gradle)
-build-local: build-indexer-local build-api-local #@ Build the application with Gradle.
+build-local: format build-indexer-local build-api-local #@ Build the application with Gradle.
 	echo "Build completed."
 build-indexer-local: #@ Build the application with Gradle.
 	./gradlew :package:indexer:build -x test

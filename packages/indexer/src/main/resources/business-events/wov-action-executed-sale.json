@@ -1,13 +1,13 @@
 {
-  "name": "NFT_SALE",
+  "name": "WOV_Action_Executed_Sale",
   "sameClause": true,
   "events": [
     {
-      "name": "OfferAccepted",
+      "name": "auctionExecuted",
       "alias": "sale",
       "conditions": [
         {
-          "firstOperand": "value",
+          "firstOperand": "price",
           "isFirstStatic": false,
           "secondOperand": "0",
           "isSecondStatic": true,
@@ -39,7 +39,7 @@
     },
     {
       "firstEventName": "sale",
-      "firstEventProperty": "buyer",
+      "firstEventProperty": "newOwner",
       "secondEventName": "transfer",
       "secondEventProperty": "to",
       "operator": "EQ"
@@ -59,7 +59,7 @@
       "businessEventName": "tokenId"
     },
     {
-      "name": "buyer",
+      "name": "newOwner",
       "eventName": "sale",
       "businessEventName": "to"
     },
@@ -74,7 +74,7 @@
       "businessEventName": "tokenAddress"
     },
     {
-      "name": "value",
+      "name": "price",
       "eventName": "sale",
       "businessEventName": "value"
     }
