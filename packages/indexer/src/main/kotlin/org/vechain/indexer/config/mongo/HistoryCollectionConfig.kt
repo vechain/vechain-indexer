@@ -31,6 +31,8 @@ open class HistoryCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
+        ensureIndex("eventName_1", Index().on("eventName", Sort.Direction.ASC))
+
         ensureIndex("blockNumber_1", Index().on("blockNumber", Sort.Direction.ASC))
 
         ensureIndex("contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
