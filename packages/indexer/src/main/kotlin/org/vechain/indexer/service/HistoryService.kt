@@ -84,8 +84,6 @@ class HistoryService(
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
                 HistoryEventName.STARGATE_DELEGATE -> event.params.getAsString("vetAmountStaked")!!
-                HistoryEventName.STARGATE_CLAIM_REWARDS ->
-                    EventUtils.getStargateRewards(event.params)
                 else -> event.params.getAsString("value")
             }
 
