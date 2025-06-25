@@ -10,7 +10,6 @@ import org.vechain.indexer.model.b3tr.ProposalSupport
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryEventRepository
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.EventUtils.determineEventType
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -84,8 +83,6 @@ class HistoryService(
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
                 HistoryEventName.STARGATE_DELEGATE -> event.params.getAsString("vetAmountStaked")!!
-                HistoryEventName.STARGATE_CLAIM_REWARDS ->
-                    EventUtils.getStargateRewards(event.params)
                 else -> event.params.getAsString("value")
             }
 
