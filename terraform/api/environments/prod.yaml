@@ -110,7 +110,7 @@ enabled_nets:
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
       cluster_tier:                 M40
-      disk_size_gb:                 350
+      disk_size_gb:                 500
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
   test:
@@ -187,6 +187,6 @@ enabled_nets:
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
       cluster_tier:                 M10
-      disk_size_gb:                 119
+      disk_size_gb:                 130
       iops:                         1000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
