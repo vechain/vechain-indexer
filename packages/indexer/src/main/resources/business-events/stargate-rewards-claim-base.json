@@ -1,6 +1,6 @@
 {
   "name": "STARGATE_CLAIM_REWARDS_BASE",
-  "sameClause": false,
+  "sameClause": true,
   "events": [
     {
       "name": "BaseVTHORewardsClaimed",

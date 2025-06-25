@@ -1,6 +1,6 @@
 {
   "name": "STARGATE_CLAIM_REWARDS_DELEGATE",
-  "sameClause": false,
+  "sameClause": true,
   "events": [
     {
       "name": "DelegationRewardsClaimed",
@@ -60,7 +60,7 @@
   "rules": [
     {
       "firstEventName": "DelegationRewardsClaimed",
-      "firstEventProperty": "amount",
+      "firstEventProperty": "rewards",
       "secondEventName": "vthoTransferDelegation",
       "secondEventProperty": "value",
       "operator": "EQ"
@@ -69,7 +69,7 @@
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "BaseVTHORewardsClaimed",
+      "eventName": "DelegationRewardsClaimed",
       "businessEventName": "tokenId"
     },
     {
@@ -78,8 +78,8 @@
       "businessEventName": "value"
     },
     {
-      "name": "owner",
-      "eventName": "BaseVTHORewardsClaimed",
+      "name": "recipient",
+      "eventName": "DelegationRewardsClaimed",
       "businessEventName": "owner"
     }
   ]
