@@ -42,8 +42,24 @@
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "AddressInsufficientBalance",
+        "type": "error"
+    },
+    {
         "inputs": [],
         "name": "ArrayCannotBeEmpty",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "DelegationExitAlreadyRequested",
         "type": "error"
     },
     {
@@ -198,6 +214,17 @@
             }
         ],
         "name": "SafeCastOverflowedUintDowncast",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "token",
+                "type": "address"
+            }
+        ],
+        "name": "SafeERC20FailedOperation",
         "type": "error"
     },
     {
@@ -537,13 +564,7 @@
             }
         ],
         "name": "claimRewards",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -612,13 +633,7 @@
             }
         ],
         "name": "delegate",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -972,13 +987,7 @@
             }
         ],
         "name": "requestDelegationExit",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
