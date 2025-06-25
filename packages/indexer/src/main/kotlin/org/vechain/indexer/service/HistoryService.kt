@@ -82,7 +82,8 @@ class HistoryService(
         val value =
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
-                HistoryEventName.STARGATE_DELEGATE -> event.params.getAsString("vetAmountStaked")!!
+                HistoryEventName.STARGATE_DELEGATE ->
+                    event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
                 else -> event.params.getAsString("value")
             }
 
@@ -125,6 +126,7 @@ class HistoryService(
             vetGeneratedVthoRewards = event.params.getAsString("vetGeneratedVthoRewards"),
             migrated = event.params.getAsBoolean("migrated"),
             autorenew = event.params.getAsBoolean("autorenew"),
+            levelId = event.params.getAsString("levelId"),
         )
     }
 
