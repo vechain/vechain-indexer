@@ -458,12 +458,6 @@
             {
                 "indexed": false,
                 "internalType": "bool",
-                "name": "isActive",
-                "type": "bool"
-            },
-            {
-                "indexed": false,
-                "internalType": "bool",
                 "name": "isX",
                 "type": "bool"
             },
@@ -702,7 +696,13 @@
             {
                 "indexed": false,
                 "internalType": "uint48",
-                "name": "vthoGenerationEndTimestamp",
+                "name": "oldVthoGenerationEndTimestamp",
+                "type": "uint48"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint48",
+                "name": "newVthoGenerationEndTimestamp",
                 "type": "uint48"
             }
         ],
@@ -854,11 +854,6 @@
                                 "internalType": "string",
                                 "name": "name",
                                 "type": "string"
-                            },
-                            {
-                                "internalType": "bool",
-                                "name": "isActive",
-                                "type": "bool"
                             },
                             {
                                 "internalType": "bool",
@@ -1018,13 +1013,7 @@
             }
         ],
         "name": "claimVetGeneratedVtho",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -1085,6 +1074,25 @@
                 "internalType": "uint8",
                 "name": "_levelId",
                 "type": "uint8"
+            }
+        ],
+        "name": "getCap",
+        "outputs": [
+            {
+                "internalType": "uint32",
+                "name": "",
+                "type": "uint32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint8",
+                "name": "_levelId",
+                "type": "uint8"
             },
             {
                 "internalType": "uint48",
@@ -1098,6 +1106,19 @@
                 "internalType": "uint208",
                 "name": "",
                 "type": "uint208"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getCurrentTokenId",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -1138,11 +1159,6 @@
                         "internalType": "string",
                         "name": "name",
                         "type": "string"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "isActive",
-                        "type": "bool"
                     },
                     {
                         "internalType": "bool",
@@ -1225,11 +1241,6 @@
                         "internalType": "string",
                         "name": "name",
                         "type": "string"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "isActive",
-                        "type": "bool"
                     },
                     {
                         "internalType": "bool",
@@ -1512,11 +1523,6 @@
                                     },
                                     {
                                         "internalType": "bool",
-                                        "name": "isActive",
-                                        "type": "bool"
-                                    },
-                                    {
-                                        "internalType": "bool",
                                         "name": "isX",
                                         "type": "bool"
                                     },
@@ -1712,13 +1718,7 @@
             }
         ],
         "name": "migrate",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "payable",
         "type": "function"
     },
@@ -1736,13 +1736,7 @@
             }
         ],
         "name": "migrateAndDelegate",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "payable",
         "type": "function"
     },
@@ -1786,25 +1780,6 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "_owner",
-                "type": "address"
-            }
-        ],
-        "name": "ownerStakingSince",
-        "outputs": [
-            {
-                "internalType": "uint64",
-                "name": "",
-                "type": "uint64"
             }
         ],
         "stateMutability": "view",
@@ -2081,11 +2056,6 @@
         "name": "stake",
         "outputs": [
             {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            },
-            {
                 "internalType": "uint256",
                 "name": "tokenId",
                 "type": "uint256"
@@ -2109,11 +2079,6 @@
         ],
         "name": "stakeAndDelegate",
         "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            },
             {
                 "internalType": "uint256",
                 "name": "tokenId",
@@ -2179,19 +2144,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint8",
-                "name": "_levelId",
-                "type": "uint8"
-            }
-        ],
-        "name": "toggleLevelIsActive",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -2373,13 +2325,7 @@
             }
         ],
         "name": "unstake",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "success",
-                "type": "bool"
-            }
-        ],
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
     },
@@ -2394,11 +2340,6 @@
                 "internalType": "string",
                 "name": "_name",
                 "type": "string"
-            },
-            {
-                "internalType": "bool",
-                "name": "_isActive",
-                "type": "bool"
             },
             {
                 "internalType": "bool",
@@ -2473,6 +2414,19 @@
             }
         ],
         "stateMutability": "pure",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "vthoGenerationEndTimestamp",
+        "outputs": [
+            {
+                "internalType": "uint48",
+                "name": "",
+                "type": "uint48"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
