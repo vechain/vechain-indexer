@@ -4,16 +4,15 @@ import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
 import org.vechain.indexer.pruner.Prunable
 import org.vechain.indexer.pruner.Pruner
-import org.vechain.indexer.repository.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.thor.client.ThorClient
 
 abstract class StatefulBlockIndexer<T : VersionedDocument, S : Archive<T>>(
-    repository: BasePagingAndSortingIndexedRepository<*, *>,
+    repository: BaseIndexedRepository<*, *>,
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,
-    private val prunerRemovalChunkSize: Int,
     private val archiveService: ArchiveService<T, S>,
     private val pruner: Pruner<T, S>,
 ) :

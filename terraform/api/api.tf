@@ -363,7 +363,11 @@ module "ecs-backend-service" {
     },
     {
       name = "VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_BLOCK"
-        value = each.value.indexer.version.stargate_total_vtho_claimed_by_block
+      value = each.value.indexer.version.stargate_total_vtho_claimed_by_block
+    },
+    {
+      name = "VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_ACCOUNT"
+      value = each.value.indexer.version.stargate_total_vtho_claimed_by_account
     },
     {
       name  = "MIN_COMMENT_LEN"
