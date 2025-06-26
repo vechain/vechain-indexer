@@ -11,7 +11,7 @@ object BusinessEventParamFixtures {
             "X2EARN_REWARDS_POOL_CONTRACT" to "0x6bee7ddab6c99d5b2af0554eaea484ce18f52631",
             "VOTER_REWARDS_CONTRACT" to "0x838a33af756a6366f93e201423e1425f67ec0fa7",
             "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",
-            "STARGATE_DELEGATION_CONTRACT" to "0x5ebd2d7cefc8fd4a557cd317eac86aaac64db722",
-            "STARGATE_NFT_CONTRACT" to "0xdbcb3b6cd64829cef32c917553dfb0eb39e782b1",
+            "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
+            "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
         )
 }
