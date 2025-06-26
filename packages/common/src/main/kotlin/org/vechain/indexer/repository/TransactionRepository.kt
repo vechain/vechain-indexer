@@ -8,7 +8,8 @@ import org.vechain.indexer.model.IndexedTransaction
 
 @Profile("transactions")
 @Repository
-interface TransactionRepository : BaseIndexedRepository<IndexedTransaction> {
+interface TransactionRepository :
+    BasePagingAndSortingIndexedRepository<IndexedTransaction, String> {
 
     fun findByOrigin(origin: String, pageable: Pageable): Slice<IndexedTransaction>
 

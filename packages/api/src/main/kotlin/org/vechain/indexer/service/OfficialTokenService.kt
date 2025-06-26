@@ -6,6 +6,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.scheduling.annotation.Scheduled
@@ -15,6 +16,7 @@ import org.vechain.indexer.client.ThorClient
 import org.vechain.indexer.model.NetworkType
 import org.vechain.indexer.model.TokenRegistry
 
+@Profile("transfer-events")
 @Service
 open class OfficialTokenService(
     private val thorClient: ThorClient,

@@ -274,6 +274,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.vevote
     },
     {
+      name = "INDEXER_START_BLOCK_STARGATE"
+      value = each.value.indexer.start_block.stargate
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
       value = each.value.indexer.sync_logger_interval.nfts
     },
@@ -292,6 +296,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
       value = each.value.indexer.sync_logger_interval.vevote
+    },
+    {
+      name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
+        value = each.value.indexer.sync_logger_interval.stargate
     },
     {
       name  = "PRUNER_ENABLED"
@@ -352,6 +360,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_VEVOTE_RESULTS"
       value = each.value.indexer.version.vevote_results
+    },
+    {
+      name = "VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_BLOCK"
+        value = each.value.indexer.version.stargate_total_vtho_claimed_by_block
     },
     {
       name  = "MIN_COMMENT_LEN"

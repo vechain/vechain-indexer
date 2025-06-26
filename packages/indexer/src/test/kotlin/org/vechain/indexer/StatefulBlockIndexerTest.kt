@@ -9,14 +9,14 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
 import org.vechain.indexer.pruner.Pruner
-import org.vechain.indexer.repository.BaseIndexedRepository
+import org.vechain.indexer.repository.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 
 @ExtendWith(MockKExtension::class)
 internal class StatefulBlockIndexerTest {
-    @MockK lateinit var repository: BaseIndexedRepository<*>
+    @MockK lateinit var repository: BasePagingAndSortingIndexedRepository<*>
 
     @MockK lateinit var thorClient: ThorClient
 

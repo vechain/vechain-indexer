@@ -8,7 +8,8 @@ import org.vechain.indexer.model.vevote.VevoteProposalComment
 
 @Profile("vevote-comments")
 @Repository
-interface VevoteCommentRepository : BaseIndexedRepository<VevoteProposalComment> {
+interface VevoteCommentRepository :
+    BasePagingAndSortingIndexedRepository<VevoteProposalComment, String> {
     fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VevoteProposalComment>
 
     fun findAllByVoter(voter: String, pageable: Pageable): Slice<VevoteProposalComment>
