@@ -8,22 +8,22 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.model.Archive
 import org.vechain.indexer.model.VersionedDocument
 
-@Document(collection = "stargate_total_vtho_claimed_by_account")
-data class TotalVthoClaimedByAccount
+@Document(collection = "stargate_vtho_claimed_by_account")
+data class VthoClaimedByAccount
 @ConstructorBinding
 constructor(
     override val version: Int,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
-    val value: BigInteger,
+    val total: BigInteger,
     @Id val account: String,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = account
 }
 
-@Document(collection = "stargate_total_vtho_claimed_by_account_archives")
-data class TotalVthoClaimedByAccountArchive(
+@Document(collection = "stargate_vtho_claimed_by_account_archives")
+data class VthoClaimedByAccountArchive(
     @Id override val id: String,
-    override val data: TotalVthoClaimedByAccount,
-) : Archive<TotalVthoClaimedByAccount>
+    override val data: VthoClaimedByAccount,
+) : Archive<VthoClaimedByAccount>

@@ -7,12 +7,12 @@ import org.vechain.indexer.StatefulLogsIndexer
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccount
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccountArchive
+import org.vechain.indexer.model.stargate.VthoClaimedByAccount
+import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.pruner.Pruner
-import org.vechain.indexer.repository.stargate.TotalVthoClaimedByAccountRepository
+import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.service.ArchiveService
-import org.vechain.indexer.service.stargate.TotalVthoClaimedByAccountService
+import org.vechain.indexer.service.stargate.VthoClaimedByAccountService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -20,11 +20,11 @@ import org.vechain.indexer.thor.model.TransferLog
 
 @Profile("stargate")
 @Component
-open class TotalVthoClaimedByAccountIndexer(
-    private val service: TotalVthoClaimedByAccountService,
-    repository: TotalVthoClaimedByAccountRepository,
-    totalVthoClaimByAccountArchiveService:
-        ArchiveService<TotalVthoClaimedByAccount, TotalVthoClaimedByAccountArchive>,
+open class VthoClaimedByAccountIndexer(
+    private val service: VthoClaimedByAccountService,
+    repository: VthoClaimedByAccountRepository,
+    vthoClaimByAccountArchiveService:
+        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
@@ -33,9 +33,9 @@ open class TotalVthoClaimedByAccountIndexer(
     @Value("\${indexer.syncBlockBatchSize.stargate}") private val syncBlockBatchSize: Long,
     @Value("\${indexer.syncLogInterval.stargate}") private val logInterval: Long,
 ) :
-    StatefulLogsIndexer<TotalVthoClaimedByAccount, TotalVthoClaimedByAccountArchive>(
+    StatefulLogsIndexer<VthoClaimedByAccount, VthoClaimedByAccountArchive>(
         repository = repository,
-        archiveService = totalVthoClaimByAccountArchiveService,
+        archiveService = vthoClaimByAccountArchiveService,
         startBlock = startBlock,
         thorClient = thorClient,
         syncLogInterval = logInterval,
@@ -45,8 +45,8 @@ open class TotalVthoClaimedByAccountIndexer(
         businessEventManager = businessEventManager,
         pruner =
             Pruner(
-                TotalVthoClaimedByAccountArchive::class,
-                totalVthoClaimByAccountArchiveService,
+                VthoClaimedByAccountArchive::class,
+                vthoClaimByAccountArchiveService,
                 prunerRemovalChunkSize,
             ),
     ) {

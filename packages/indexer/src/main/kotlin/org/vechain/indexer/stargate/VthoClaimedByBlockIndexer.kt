@@ -9,8 +9,8 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByBlock
-import org.vechain.indexer.repository.stargate.TotalVthoClaimedByBlockRepository
+import org.vechain.indexer.model.stargate.VthoClaimedByBlock
+import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -19,8 +19,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 
 @Profile("stargate")
 @Component
-open class TotalVthoClaimedByBlockIndexer(
-    private val repository: TotalVthoClaimedByBlockRepository,
+open class VthoClaimedByBlockIndexer(
+    private val repository: VthoClaimedByBlockRepository,
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
@@ -95,11 +95,11 @@ open class TotalVthoClaimedByBlockIndexer(
         // If there is no latest record, create a new one with the total VTHO claimed
         if (latestRecord == null) {
             repository.save(
-                TotalVthoClaimedByBlock(
+                VthoClaimedByBlock(
                     blockId = latestEvent.blockId,
                     blockNumber = latestEvent.blockNumber,
                     blockTimestamp = latestEvent.blockTimestamp,
-                    value = totalVthoClaimed,
+                    total = totalVthoClaimed,
                 )
             )
             return
@@ -115,11 +115,11 @@ open class TotalVthoClaimedByBlockIndexer(
 
         // Create a new record with the latest block number and the sum of the total VTHO claimed
         repository.save(
-            TotalVthoClaimedByBlock(
+            VthoClaimedByBlock(
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,
                 blockTimestamp = latestEvent.blockTimestamp,
-                value = latestRecord.value + totalVthoClaimed,
+                total = latestRecord.total + totalVthoClaimed,
             )
         )
     }

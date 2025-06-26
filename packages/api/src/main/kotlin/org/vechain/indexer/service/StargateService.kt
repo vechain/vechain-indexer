@@ -3,14 +3,14 @@ package org.vechain.indexer.service
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.repository.stargate.TotalVthoClaimedByAccountRepository
-import org.vechain.indexer.repository.stargate.TotalVthoClaimedByBlockRepository
+import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
+import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
 
 @Profile("stargate")
 @Service
 open class StargateService(
-    private val totalVthoClaimedByBlockRepository: TotalVthoClaimedByBlockRepository,
-    private val totalVthoClaimedByAccountRepository: TotalVthoClaimedByAccountRepository,
+    private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
+    private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
 ) {
 
     /**
@@ -21,13 +21,10 @@ open class StargateService(
      * @return The total VTHO claimed as a BigInteger.
      */
     open fun getTotalVthoClaimed(blockNumber: Long?): BigInteger =
-        (blockNumber?.let { totalVthoClaimedByBlockRepository.findLatestBeforeOrAtBlock(it) }
-                ?: totalVthoClaimedByBlockRepository.getLatestRecord())
-            ?.value ?: BigInteger.ZERO
+        (blockNumber?.let { vthoClaimedByBlockRepository.findLatestBeforeOrAtBlock(it) }
+                ?: vthoClaimedByBlockRepository.getLatestRecord())
+            ?.total ?: BigInteger.ZERO
 
     open fun getTotalVthoClaimed(account: String): BigInteger =
-        totalVthoClaimedByAccountRepository
-            .findById(account)
-            .map { it.value }
-            .orElse(BigInteger.ZERO)
+        vthoClaimedByAccountRepository.findById(account).map { it.total }.orElse(BigInteger.ZERO)
 }

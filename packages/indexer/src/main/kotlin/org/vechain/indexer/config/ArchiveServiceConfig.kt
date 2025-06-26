@@ -8,8 +8,8 @@ import org.vechain.indexer.model.IndexedNFT
 import org.vechain.indexer.model.NFTArchive
 import org.vechain.indexer.model.NFTBlacklist
 import org.vechain.indexer.model.NFTBlacklistArchive
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccount
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccountArchive
+import org.vechain.indexer.model.stargate.VthoClaimedByAccount
+import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.service.ArchiveService
 
 @Configuration
@@ -30,13 +30,13 @@ open class ArchiveServiceConfig {
         ArchiveService(mongoTemplate, NFTBlacklist::class.java, NFTBlacklistArchive::class.java)
 
     @Bean
-    @Qualifier("totalVthoClaimByAccountArchiveService")
-    open fun totalVthoClaimByAccountArchiveService(
+    @Qualifier("vthoClaimByAccountArchiveService")
+    open fun vthoClaimByAccountArchiveService(
         mongoTemplate: MongoTemplate
-    ): ArchiveService<TotalVthoClaimedByAccount, TotalVthoClaimedByAccountArchive> =
+    ): ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
         ArchiveService(
             mongoTemplate,
-            TotalVthoClaimedByAccount::class.java,
-            TotalVthoClaimedByAccountArchive::class.java,
+            VthoClaimedByAccount::class.java,
+            VthoClaimedByAccountArchive::class.java,
         )
 }

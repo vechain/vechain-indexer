@@ -7,38 +7,35 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccount
-import org.vechain.indexer.model.stargate.TotalVthoClaimedByAccountArchive
-import org.vechain.indexer.repository.stargate.TotalVthoClaimedByAccountRepository
+import org.vechain.indexer.model.stargate.VthoClaimedByAccount
+import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
+import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.service.ArchiveService
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("stargate")
 @Service
-open class TotalVthoClaimedByAccountService(
-    private val totalVthoClaimedByAccountRepository: TotalVthoClaimedByAccountRepository,
-    private val totalVthoClaimedByAccountArchiveService:
-        ArchiveService<TotalVthoClaimedByAccount, TotalVthoClaimedByAccountArchive>,
+open class VthoClaimedByAccountService(
+    private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
+    private val vthoClaimedByAccountArchiveService:
+        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(
-        update: List<TotalVthoClaimedByAccount>,
-        existing: List<TotalVthoClaimedByAccount>,
-    ) {
+    open fun update(update: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
         if (update.isNotEmpty()) {
-            totalVthoClaimedByAccountRepository.saveAll(update)
+            vthoClaimedByAccountRepository.saveAll(update)
         }
 
         if (existing.isNotEmpty()) {
-            totalVthoClaimedByAccountArchiveService.saveAll(existing)
+            vthoClaimedByAccountArchiveService.saveAll(existing)
         }
     }
 
     open fun parseRecords(
         events: List<IndexedEvent>,
-        existing: List<TotalVthoClaimedByAccount>,
-    ): List<TotalVthoClaimedByAccount> {
+        existing: List<VthoClaimedByAccount>,
+    ): List<VthoClaimedByAccount> {
 
         if (events.isEmpty()) {
             return emptyList()
@@ -64,19 +61,19 @@ open class TotalVthoClaimedByAccountService(
 
             val totalVthoClaimed =
                 events.sumOf { it.params.getAsBigInteger("amount") ?: BigInteger.ZERO }
-            val value = existing?.value?.add(totalVthoClaimed) ?: totalVthoClaimed
-            TotalVthoClaimedByAccount(
+            val value = existing?.total?.add(totalVthoClaimed) ?: totalVthoClaimed
+            VthoClaimedByAccount(
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,
                 blockTimestamp = latestEvent.blockTimestamp,
-                value = value,
+                total = value,
                 account = account,
                 version = version,
             )
         }
     }
 
-    open fun getExisting(events: List<IndexedEvent>): List<TotalVthoClaimedByAccount> {
+    open fun getExisting(events: List<IndexedEvent>): List<VthoClaimedByAccount> {
         if (events.isEmpty()) {
             return emptyList()
         }
@@ -91,6 +88,6 @@ open class TotalVthoClaimedByAccountService(
                 .distinct()
 
         // Fetch existing records from the repository
-        return totalVthoClaimedByAccountRepository.findAllById(accounts).toList()
+        return vthoClaimedByAccountRepository.findAllById(accounts).toList()
     }
 }
