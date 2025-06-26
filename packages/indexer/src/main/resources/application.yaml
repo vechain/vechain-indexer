@@ -101,8 +101,10 @@ indexer:
     nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
     vevote_comments: ${VERSION_VEVOTE_COMMENTS:1}
     vevote_results: ${VERSION_VEVOTE_RESULTS:1}
-    stargate_vtho_claimed_by_block: ${VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_BLOCK:1}
-    stargate_vtho_claimed_by_account: ${VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_ACCOUNT:1}
+    stargate_vtho_claimed_by_block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
+    stargate_vtho_claimed_by_account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
+    stargate_nft_holders_by_block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
+    stargate_vet_staked_by_block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}

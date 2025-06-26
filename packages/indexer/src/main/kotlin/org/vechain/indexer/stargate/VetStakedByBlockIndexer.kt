@@ -9,18 +9,19 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.BusinessEventManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.VthoClaimedByBlock
-import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
+import org.vechain.indexer.model.stargate.VetStakedByBlock
+import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
 import org.vechain.indexer.thor.model.TransferLog
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsInt
 
 @Profile("stargate")
 @Component
-open class VthoClaimedByBlockIndexer(
-    private val repository: VthoClaimedByBlockRepository,
+open class VetStakedByBlockIndexer(
+    private val repository: VetStakedByBlockRepository,
     thorClient: ThorClient,
     abiManager: AbiManager,
     businessEventManager: BusinessEventManager,
@@ -39,7 +40,7 @@ open class VthoClaimedByBlockIndexer(
         businessEventManager = businessEventManager,
     ) {
     private val businessEventNames =
-        listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
+        listOf("STARGATE_STAKE", "STARGATE_DELEGATE", "STARGATE_UNSTAKE")
 
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         if (events.isEmpty()) {
@@ -70,12 +71,6 @@ open class VthoClaimedByBlockIndexer(
         repository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 
-    /**
-     * Parses the claim events to calculate the total VTHO claimed for each block, then creates a
-     * new record by adding this value to the value on the latest record.
-     *
-     * @param events List of business events containing the claim data.
-     */
     private fun processEvents(events: List<IndexedEvent>) {
 
         if (events.isEmpty()) {
@@ -85,41 +80,42 @@ open class VthoClaimedByBlockIndexer(
         // Get the event with the largest block number
         val latestEvent = events.maxBy { it.blockNumber }
 
-        // Calculate the total VTHO claimed for the events
-        val totalVthoClaimed =
-            events.sumOf { event -> event.params.getAsBigInteger("amount") ?: BigInteger.ZERO }
-
         // Get the latest record from the repository
         val latestRecord = repository.getLatestRecord()
 
-        // If there is no latest record, create a new one with the total VTHO claimed
-        if (latestRecord == null) {
-            repository.save(
-                VthoClaimedByBlock(
-                    blockId = latestEvent.blockId,
-                    blockNumber = latestEvent.blockNumber,
-                    blockTimestamp = latestEvent.blockTimestamp,
-                    total = totalVthoClaimed,
-                )
-            )
-            return
+        var totalStaked = latestRecord?.total ?: BigInteger.ZERO
+        val totalStakedPerLevel = (latestRecord?.byLevel ?: mutableMapOf()).toMutableMap()
+
+        // Iterate through the events to calculate the total staked amount
+        for (event in events) {
+            val amount = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
+            val levelId =
+                event.params.getAsInt("levelId")
+                    ?: throw IllegalArgumentException("Missing levelId in event params")
+
+            when (event.eventType) {
+                "STARGATE_STAKE",
+                "STARGATE_DELEGATE" -> {
+                    totalStaked += amount
+                    totalStakedPerLevel[levelId] =
+                        (totalStakedPerLevel[levelId] ?: BigInteger.ZERO) + amount
+                }
+                "STARGATE_UNSTAKE" -> {
+                    totalStaked -= amount
+                    totalStakedPerLevel[levelId] =
+                        (totalStakedPerLevel[levelId] ?: BigInteger.ZERO) - amount
+                }
+            }
         }
 
-        // If the block number of the latest record is larger than the latest block number from the
-        // events, throw an error
-        if (latestRecord.blockNumber >= latestEvent.blockNumber) {
-            throw IllegalStateException(
-                "Latest record block number ${latestRecord.blockNumber} is greater than or equal to the latest event block number ${latestEvent.blockNumber}"
-            )
-        }
-
-        // Create a new record with the latest block number and the sum of the total VTHO claimed
+        // Store the new record in the repository
         repository.save(
-            VthoClaimedByBlock(
+            VetStakedByBlock(
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,
                 blockTimestamp = latestEvent.blockTimestamp,
-                total = latestRecord.total + totalVthoClaimed,
+                total = totalStaked,
+                byLevel = totalStakedPerLevel,
             )
         )
     }

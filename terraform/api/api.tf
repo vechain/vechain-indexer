@@ -362,12 +362,20 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote_results
     },
     {
-      name = "VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_BLOCK"
+      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
       value = each.value.indexer.version.stargate_vtho_claimed_by_block
     },
     {
-      name = "VERSION_STARGATE_TOTAL_VTHO_CLAIMED_BY_ACCOUNT"
+      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate_vtho_claimed_by_account
+    },
+    {
+      name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
+      value = each.value.indexer.version.stargate_nft_holders_by_account
+    },
+    {
+      name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
+      value = each.value.indexer.version.stargate_vet_staked_by_account
     },
     {
       name  = "MIN_COMMENT_LEN"

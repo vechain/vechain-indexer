@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.model.Address
+import org.vechain.indexer.model.stargate.NftHoldersByBlock
+import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.service.StargateService
 import org.vechain.indexer.validation.ValidAddress
 
@@ -48,10 +50,10 @@ open class StargateController(private val stargateService: StargateService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
-    open fun getVthoClaimedByAccount(@ValidAddress @PathVariable account: String): BigInteger =
+    open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: String): BigInteger =
         stargateService.getTotalVthoClaimed(account)
 
-    @GetMapping("/total-nft-holders")
+    @GetMapping("/nft-holders")
     @Operation(summary = "Get total number of NFT holders in Stargate")
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -62,10 +64,15 @@ open class StargateController(private val stargateService: StargateService) {
         required = false,
         example = "12345678",
     )
-    open fun getTotalNftHolders(@RequestParam(required = false) blockNumber: Long?): String {
-        // TODO: Placeholder for actual implementation
-        return "1000"
-    }
+    open fun getNftHolders(@RequestParam(required = false) blockNumber: Long?): NftHoldersByBlock =
+        stargateService.getNftHolders(blockNumber)
+            ?: NftHoldersByBlock(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = BigInteger.ZERO,
+                byLevel = emptyMap(),
+            )
 
     @GetMapping("/total-vet-staked")
     @Operation(summary = "Get total VET staked in Stargate")
@@ -78,8 +85,15 @@ open class StargateController(private val stargateService: StargateService) {
         required = false,
         example = "12345678",
     )
-    open fun getTotalVetStaked(@RequestParam(required = false) blockNumber: Long?): String {
-        // TODO: Placeholder for actual implementation
-        return "1000000000"
-    }
+    open fun getTotalVetStaked(
+        @RequestParam(required = false) blockNumber: Long?
+    ): VetStakedByBlock =
+        stargateService.getTotalVetStaked(blockNumber)
+            ?: VetStakedByBlock(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = BigInteger.ZERO,
+                byLevel = emptyMap(),
+            )
 }
