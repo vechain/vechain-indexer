@@ -101,8 +101,8 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
           VOTER_REWARDS_CONTRACT: '0x838a33af756a6366f93e201423e1425f67ec0fa7'
           TREASURY_CONTRACT: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
-          STARGATE_DELEGATION_CONTRACT: 'NOT YET KNOWN'
-          STARGATE_NFT_CONTRACT: 'NOT YET KNOWN'
+          STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
+          STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
