@@ -9,6 +9,7 @@ import org.vechain.indexer.repository.stargate.NftHoldersByBlockRepository
 import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
+import org.vechain.indexer.utils.HexUtils
 
 @Profile("stargate")
 @Service
@@ -43,7 +44,10 @@ open class StargateService(
      * @return The total VTHO claimed by the account as a BigInteger.
      */
     open fun getTotalVthoClaimed(account: String): BigInteger =
-        vthoClaimedByAccountRepository.findById(account).map { it.total }.orElse(BigInteger.ZERO)
+        vthoClaimedByAccountRepository
+            .findById(HexUtils.normalise(account))
+            .map { it.total }
+            .orElse(BigInteger.ZERO)
 
     /**
      * Retrieves the total number of NFT holders in Stargate at a specific block number. If no block
