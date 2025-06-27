@@ -26,10 +26,15 @@ open class StargateService(
      * @param blockNumber The block number to retrieve the total VTHO claimed for.
      * @return The total VTHO claimed as a BigInteger.
      */
-    open fun getTotalVthoClaimed(blockNumber: Long?): BigInteger =
-        (blockNumber?.let { vthoClaimedByBlockRepository.findLatestBeforeOrAtBlock(it) }
-                ?: vthoClaimedByBlockRepository.getLatestRecord())
-            ?.total ?: BigInteger.ZERO
+    open fun getTotalVthoClaimed(blockNumber: Long?): BigInteger {
+        val record =
+            if (blockNumber != null) {
+                vthoClaimedByBlockRepository.findLatestBeforeOrAtBlock(blockNumber)
+            } else {
+                vthoClaimedByBlockRepository.getLatestRecord()
+            }
+        return record?.total ?: BigInteger.ZERO
+    }
 
     /**
      * Retrieves the total VTHO claimed by a specific account.
@@ -48,9 +53,13 @@ open class StargateService(
      * @return The total number of NFT holders as an instance of NftHoldersByBlock or null if no
      *   data is found.
      */
-    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlock? =
-        (blockNumber?.let { nftHoldersByBlockRepository.findLatestBeforeOrAtBlock(it) }
-            ?: nftHoldersByBlockRepository.getLatestRecord())
+    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlock? {
+        return if (blockNumber != null) {
+            nftHoldersByBlockRepository.findLatestBeforeOrAtBlock(blockNumber)
+        } else {
+            nftHoldersByBlockRepository.getLatestRecord()
+        }
+    }
 
     /**
      * Retrieves the total VET staked in Stargate at a specific block number. If no block number is
@@ -59,7 +68,11 @@ open class StargateService(
      * @param blockNumber The block number to retrieve the total VET staked for.
      * @return The total VET staked as an instance of VetStakedByBlock or null if no data is found.
      */
-    fun getTotalVetStaked(blockNumber: Long?): VetStakedByBlock? =
-        (blockNumber?.let { vetStakedByBlockRepository.findLatestBeforeOrAtBlock(it) }
-            ?: vetStakedByBlockRepository.getLatestRecord())
+    fun getTotalVetStaked(blockNumber: Long?): VetStakedByBlock? {
+        return if (blockNumber != null) {
+            vetStakedByBlockRepository.findLatestBeforeOrAtBlock(blockNumber)
+        } else {
+            vetStakedByBlockRepository.getLatestRecord()
+        }
+    }
 }
