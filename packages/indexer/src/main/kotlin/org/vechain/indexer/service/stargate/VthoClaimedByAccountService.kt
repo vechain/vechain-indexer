@@ -60,7 +60,7 @@ open class VthoClaimedByAccountService(
             val version = existing?.version?.plus(1) ?: 1
 
             val totalVthoClaimed =
-                events.sumOf { it.params.getAsBigInteger("amount") ?: BigInteger.ZERO }
+                events.sumOf { it.params.getAsBigInteger("value") ?: BigInteger.ZERO }
             val value = existing?.total?.add(totalVthoClaimed) ?: totalVthoClaimed
             VthoClaimedByAccount(
                 blockId = latestEvent.blockId,

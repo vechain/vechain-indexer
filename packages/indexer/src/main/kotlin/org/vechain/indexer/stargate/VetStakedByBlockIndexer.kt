@@ -35,7 +35,7 @@ open class VetStakedByBlockIndexer(
         thorClient = thorClient,
         syncLogInterval = logInterval,
         blockBatchSize = syncBlockBatchSize,
-        logsType = setOf(LogType.EVENT),
+        logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
         businessEventManager = businessEventManager,
     ) {
@@ -88,7 +88,7 @@ open class VetStakedByBlockIndexer(
 
         // Iterate through the events to calculate the total staked amount
         for (event in events) {
-            val amount = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
+            val amount = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
             val levelId =
                 event.params.getAsInt("levelId")
                     ?: throw IllegalArgumentException("Missing levelId in event params")

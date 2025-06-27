@@ -40,7 +40,7 @@ open class VthoClaimedByAccountIndexer(
         thorClient = thorClient,
         syncLogInterval = logInterval,
         blockBatchSize = syncBlockBatchSize,
-        logsType = setOf(LogType.EVENT),
+        logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
         businessEventManager = businessEventManager,
         pruner =

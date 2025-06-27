@@ -34,7 +34,7 @@ open class VthoClaimedByBlockIndexer(
         thorClient = thorClient,
         syncLogInterval = logInterval,
         blockBatchSize = syncBlockBatchSize,
-        logsType = setOf(LogType.EVENT),
+        logsType = setOf(LogType.EVENT, LogType.TRANSFER),
         abiManager = abiManager,
         businessEventManager = businessEventManager,
     ) {
@@ -87,7 +87,7 @@ open class VthoClaimedByBlockIndexer(
 
         // Calculate the total VTHO claimed for the events
         val totalVthoClaimed =
-            events.sumOf { event -> event.params.getAsBigInteger("amount") ?: BigInteger.ZERO }
+            events.sumOf { event -> event.params.getAsBigInteger("value") ?: BigInteger.ZERO }
 
         // Get the latest record from the repository
         val latestRecord = repository.getLatestRecord()
