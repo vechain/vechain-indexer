@@ -1,7 +1,6 @@
 package org.vechain.indexer.model.stargate
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -14,6 +13,6 @@ constructor(
     @JsonIgnore override val blockId: String,
     @JsonIgnore @Id override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    val total: BigInteger,
-    val byLevel: Map<Int, BigInteger>,
+    val total: Long,
+    val byLevel: Map<Int, Long>,
 ) : IndexedDocument

@@ -36,32 +36,22 @@ open class VthoClaimedByAccountService(
         events: List<IndexedEvent>,
         existing: List<VthoClaimedByAccount>,
     ): List<VthoClaimedByAccount> {
+        if (events.isEmpty()) return emptyList()
 
-        if (events.isEmpty()) {
-            return emptyList()
-        }
-
-        // Pre-index existing records for faster lookup
         val existingByAccount = existing.associateBy { it.account }
-
-        // Group events by account address
         val groupedEvents =
             events.groupBy {
                 it.params.getAsString("owner")
                     ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
             }
+        val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()
 
-        // Get the event with the largest block number
-        val latestEvent = events.maxBy { it.blockNumber }
-
-        // Create a new record for each account
-        return groupedEvents.map { (account, events) ->
-            val existing = existingByAccount[account]
-            val version = existing?.version?.plus(1) ?: 1
-
+        return groupedEvents.map { (account, accountEvents) ->
+            val prev = existingByAccount[account]
+            val version = (prev?.version ?: 0) + 1
             val totalVthoClaimed =
-                events.sumOf { it.params.getAsBigInteger("value") ?: BigInteger.ZERO }
-            val value = existing?.total?.add(totalVthoClaimed) ?: totalVthoClaimed
+                accountEvents.sumOf { it.params.getAsBigInteger("value") ?: BigInteger.ZERO }
+            val value = prev?.total?.add(totalVthoClaimed) ?: totalVthoClaimed
             VthoClaimedByAccount(
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,

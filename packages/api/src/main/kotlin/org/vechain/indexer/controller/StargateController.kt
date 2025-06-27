@@ -70,7 +70,7 @@ open class StargateController(private val stargateService: StargateService) {
                 blockId = "ignoredanyway",
                 blockNumber = 0,
                 blockTimestamp = 0,
-                total = BigInteger.ZERO,
+                total = 0L,
                 byLevel = emptyMap(),
             )
 
