@@ -13,7 +13,7 @@ class IntegrationTests : AbstractIntegrationTest() {
 
     @Autowired lateinit var mongoOps: MongoOperations
 
-    @Autowired lateinit var allRepos: List<BasePagingAndSortingIndexedRepository<*>>
+    @Autowired lateinit var allRepos: List<BasePagingAndSortingIndexedRepository<*, *>>
 
     /**
      * This tests checks that ALL repos have been populated after indexing the thor script output.

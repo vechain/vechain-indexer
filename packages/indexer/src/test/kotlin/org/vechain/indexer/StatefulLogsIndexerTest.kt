@@ -18,7 +18,7 @@ import org.vechain.indexer.thor.model.TransferLog
 
 @ExtendWith(MockKExtension::class)
 internal class StatefulLogsIndexerTest {
-    @MockK lateinit var repository: BasePagingAndSortingIndexedRepository<*>
+    @MockK lateinit var repository: BasePagingAndSortingIndexedRepository<*, *>
 
     @MockK lateinit var thorClient: ThorClient
 

@@ -16,7 +16,7 @@ import org.vechain.indexer.thor.model.Block
 
 @ExtendWith(MockKExtension::class)
 internal class StatefulBlockIndexerTest {
-    @MockK lateinit var repository: BasePagingAndSortingIndexedRepository<*>
+    @MockK lateinit var repository: BasePagingAndSortingIndexedRepository<*, *>
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -39,7 +39,6 @@ internal class StatefulBlockIndexerTest {
                         0L,
                         thorClient,
                         1000L,
-                        10000,
                         archiveService,
                         pruner,
                     ) {
