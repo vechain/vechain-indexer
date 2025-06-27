@@ -9,7 +9,7 @@ import org.vechain.indexer.model.IndexedNFT
 
 @Profile("nft-events")
 @Repository
-interface NFTRepository : BaseIndexedRepository<IndexedNFT> {
+interface NFTRepository : BasePagingAndSortingIndexedRepository<IndexedNFT, String> {
 
     @Query("{ 'owner': ?0, 'isBlacklisted': { \$ne: true } }")
     fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNFT>

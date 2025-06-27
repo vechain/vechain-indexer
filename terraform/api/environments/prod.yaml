@@ -40,12 +40,12 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       min_capacity:                 4
-      spring_profile:               nft-events,transactions,transfer-events,history-events
+      spring_profile:               nft-events,transactions,transfer-events,history-events,stargate
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu: 4096
       memory: 8192
-      spring_profile: indexer,nft-events,transactions,transfer-events,history-events
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events,stargate
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -55,6 +55,7 @@ enabled_nets:
         transfers:                  '37840'
         history:                    '751'
         vevote:                     '21432703'
+        stargate:                   '22044000'
       pruner:
         enabled:                    true
         interval:                   '43200000'
@@ -72,6 +73,10 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
+        stargate_vtho_claimed_by_block: '1'
+        stargate_vtho_claimed_by_account: '1'
+        stargate_nft_holders_by_account: '1'
+        stargate_vet_staked_by_account: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -82,20 +87,22 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
           VOTER_REWARDS_CONTRACT: '0x838a33af756a6366f93e201423e1425f67ec0fa7'
           TREASURY_CONTRACT: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
-          STARGATE_DELEGATION_CONTRACT: 'NOT YET KNOWN'
-          STARGATE_NFT_CONTRACT: 'NOT YET KNOWN'
+          STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
+          STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
         vevote:                     '1000'
+        stargate:                   '1000'
       sync_block_batch_size:
         contracts:                  '100'
         fungibleTokens:             '100'
         nfts:                       '100'
         transfers:                  '100'
-        vevote:                     '100'
+        vevote:                     '10'
+        stargate:                   '100'
     comments:
       minLength: 10
       language:
@@ -119,12 +126,12 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       min_capacity:                 2
-      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
+      spring_profile:               nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results,stargate
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
     indexer:
       cpu: 2048
       memory: 4096
-      spring_profile: indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results
+      spring_profile: indexer,nft-events,transactions,transfer-events,history-events,vevote-comments,vevote-results,stargate
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -134,6 +141,7 @@ enabled_nets:
         transfers:                  '15034'
         history:                    '15034'
         vevote:                     '21432703'
+        stargate:                   '22087000'
       pruner:
         enabled:                    true
         interval:                   '43200000'
@@ -151,6 +159,10 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
+        stargate_vtho_claimed_by_block: '1'
+        stargate_vtho_claimed_by_account: '1'
+        stargate_nft_holders_by_account: '1'
+        stargate_vet_staked_by_account: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -161,18 +173,20 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x5f8f86b8d0fa93cdae20936d150175df0205fb38'
           VOTER_REWARDS_CONTRACT: '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
           TREASURY_CONTRACT: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
-          STARGATE_DELEGATION_CONTRACT: '0x5ebd2d7cefc8fd4a557cd317eac86aaac64db722'
-          STARGATE_NFT_CONTRACT: '0xdbcb3b6cd64829cef32c917553dfb0eb39e782b1'
+          STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
+          STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
         vevote:                     '1000'
+        stargate:                   '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
+        stargate:                   '100'
     comments:
       minLength: 10
       language:

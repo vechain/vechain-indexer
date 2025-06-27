@@ -30,8 +30,8 @@ object BlockFixtures {
     val BLOCK_STARGATE_UNSTAKE = buildBlockFixture("stargate_unstake")
     val BLOCK_STARGATE_BASE_REWARD = buildBlockFixture("stargate_claim_base_reward")
     val BLOCK_STARGATE_DELEGATE_REWARD = buildBlockFixture("stargate_claim_delegate_reward")
-    val BLOCK_STARGATE_STAKE_DELEGATGE = buildBlockFixture("stargate_stake_delegate")
-    val BLOCK_STARGATE_UNDELEGATGE = buildBlockFixture("stargate_undelegate")
+    val BLOCK_STARGATE_STAKE_DELEGATE = buildBlockFixture("stargate_stake_delegate")
+    val BLOCK_STARGATE_UNDELEGATE = buildBlockFixture("stargate_undelegate")
 
     private fun buildBlockFixture(name: String): Block =
         objectMapper.readValue(

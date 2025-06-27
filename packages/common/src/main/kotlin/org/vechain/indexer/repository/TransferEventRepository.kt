@@ -9,7 +9,8 @@ import org.vechain.indexer.model.IndexedTransferEvent
 
 @Profile("transfer-events")
 @Repository
-interface TransferEventRepository : BaseIndexedRepository<IndexedTransferEvent> {
+interface TransferEventRepository :
+    BasePagingAndSortingIndexedRepository<IndexedTransferEvent, String> {
     fun findByToOrFromAndTokenAddress(
         address: String,
         contractAddress: String,

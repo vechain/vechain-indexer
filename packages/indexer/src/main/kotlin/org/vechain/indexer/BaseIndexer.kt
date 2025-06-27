@@ -7,7 +7,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseIndexer(
-    private val repository: BaseIndexedRepository<*>,
+    private val repository: BaseIndexedRepository<*, *>,
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,

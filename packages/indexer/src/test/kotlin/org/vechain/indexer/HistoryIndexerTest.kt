@@ -251,7 +251,7 @@ internal class HistoryIndexerTest {
             that(tx4.owner).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
         }
 
-        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_STAKE_DELEGATGE)
+        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_STAKE_DELEGATE)
 
         val txs5 = historyEventSlot.captured
         expect { that(txs5).hasSize(1) }
@@ -266,7 +266,7 @@ internal class HistoryIndexerTest {
             that(tx5.migrated).isEqualTo(false)
         }
 
-        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_UNDELEGATGE)
+        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_UNDELEGATE)
 
         val txs6 = historyEventSlot.captured
         expect { that(txs6).hasSize(1) }

@@ -12,7 +12,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 
 abstract class StatefulLogsIndexer<T : VersionedDocument, S : Archive<T>>(
-    repository: BaseIndexedRepository<*>,
+    repository: BaseIndexedRepository<*, *>,
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,

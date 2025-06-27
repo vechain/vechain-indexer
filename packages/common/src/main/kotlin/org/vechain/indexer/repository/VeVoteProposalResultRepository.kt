@@ -8,7 +8,8 @@ import org.vechain.indexer.model.vevote.VeVoteProposalResults
 
 @Profile("vevote-results")
 @Repository
-interface VeVoteProposalResultRepository : BaseIndexedRepository<VeVoteProposalResults> {
+interface VeVoteProposalResultRepository :
+    BasePagingAndSortingIndexedRepository<VeVoteProposalResults, String> {
     fun findByProposalIdAndChoice(
         proposalId: String,
         choice: Int,

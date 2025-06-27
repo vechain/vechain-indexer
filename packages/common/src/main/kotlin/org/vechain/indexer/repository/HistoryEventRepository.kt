@@ -6,4 +6,5 @@ import org.vechain.indexer.model.*
 
 @Profile("history-events")
 @Repository
-interface HistoryEventRepository : BaseIndexedRepository<IndexedHistoryEvent> {}
+interface HistoryEventRepository :
+    BasePagingAndSortingIndexedRepository<IndexedHistoryEvent, String> {}

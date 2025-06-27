@@ -26,7 +26,7 @@
       "expiration": 100,
       "clauses": [
         {
-          "to": "0x5ebd2d7cefc8fd4a557cd317eac86aaac64db722",
+          "to": "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
           "value": "0x0",
           "data": "0x69e79b7d0000000000000000000000000000000000000000000000000000000000000010"
         }
@@ -49,7 +49,7 @@
           "contractAddress": null,
           "events": [
             {
-              "address": "0x5ebd2d7cefc8fd4a557cd317eac86aaac64db722",
+              "address": "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
               "topics": [
                 "0xa9c4810ca742dbbe9265a83bf95c6bd92653ff80948f8fb013d94abce87528ad",
                 "0x0000000000000000000000000000000000000000000000000000000000000010"
