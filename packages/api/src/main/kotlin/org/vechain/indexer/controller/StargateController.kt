@@ -50,8 +50,8 @@ open class StargateController(private val stargateService: StargateService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
-    open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: String): BigInteger =
-        stargateService.getTotalVthoClaimed(account)
+    open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: Address): BigInteger =
+        stargateService.getTotalVthoClaimed(account.value)
 
     @GetMapping("/nft-holders")
     @Operation(summary = "Get total number of NFT holders in Stargate")
