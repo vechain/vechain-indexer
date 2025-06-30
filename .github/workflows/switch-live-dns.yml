@@ -7,8 +7,11 @@ on:
         description: "Switch testnet ONLY?"
         required: false
         type: boolean
+      mainnet_only:
+        description: "Switch mainnet ONLY?"
+        required: false
+        type: boolean
 
-# Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
@@ -84,19 +87,29 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
             echo "test_only=true" >> $GITHUB_OUTPUT
+            echo "main_only=false" >> $GITHUB_OUTPUT
             echo "Switching only the testnet environment"
             echo "Current testnet live color: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
-            echo "New testent live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+            echo "New testnet live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
             echo "Preparing to switch testnet live environment from ${{ needs.identify-live-color.outputs.testnet_live_color }} to ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+
+          elif [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
+            echo "test_only=false" >> $GITHUB_OUTPUT
+            echo "main_only=true" >> $GITHUB_OUTPUT
+            echo "Switching only the mainnet environment"
+            echo "Current mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
+            echo "New mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
+            echo "Preparing to switch mainnet live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
 
           else
             echo "test_only=false" >> $GITHUB_OUTPUT
+            echo "main_only=false" >> $GITHUB_OUTPUT
             echo "Switching both the testnet and mainnet environments"
             echo "Current mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
             echo "New mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
             echo "Preparing to switch mainnet live environment from ${{ needs.identify-live-color.outputs.mainnet_live_color }} to ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
             echo "Current testnet live color: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
-            echo "New testent live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
+            echo "New testnet live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
             echo "Preparing to switch testnet live environment from ${{ needs.identify-live-color.outputs.testnet_live_color }} to ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
           fi
 
@@ -109,7 +122,17 @@ jobs:
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
-          if [ "${{ github.event.inputs.testnet_only }}" != "true" ]; then
+          if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
+          elif [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
               cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 3 )); then
                 echo "env_ready=true" >> $GITHUB_OUTPUT
@@ -120,6 +143,15 @@ jobs:
                 exit 0
               fi
           else
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
               cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 3 )); then
                 echo "env_ready=true" >> $GITHUB_OUTPUT
@@ -131,7 +163,6 @@ jobs:
               fi
           fi
 
-      # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
