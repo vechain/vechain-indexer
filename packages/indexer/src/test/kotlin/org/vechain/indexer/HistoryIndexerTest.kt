@@ -246,9 +246,9 @@ internal class HistoryIndexerTest {
         val tx4 = txs4.first()
         expect {
             that(tx4.eventName).isEqualTo(HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE)
-            that(tx4.tokenId).isEqualTo("10")
-            that(tx4.value).isEqualTo("34818662265000000000")
-            that(tx4.owner).isEqualTo("0xf077b491b355e64048ce21e3a6fc4751eeea77fa")
+            that(tx4.tokenId).isEqualTo("4")
+            that(tx4.value).isEqualTo("260192920440000000000")
+            that(tx4.owner).isEqualTo("0x0f872421dc479f3c11edd89512731814d0598db5")
         }
 
         indexer.processBlock(BlockFixtures.BLOCK_STARGATE_STAKE_DELEGATE)
@@ -274,6 +274,21 @@ internal class HistoryIndexerTest {
         expect {
             that(tx6.eventName).isEqualTo(HistoryEventName.STARGATE_UNDELEGATE)
             that(tx6.tokenId).isEqualTo("16")
+        }
+
+        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_DELEGATION)
+
+        val txs7 = historyEventSlot.captured
+
+        for (event in txs7) {
+            println(event.eventName)
+        }
+        expect { that(txs7).hasSize(2) }
+        val tx7 = txs7[1]
+        expect {
+            that(tx7.eventName).isEqualTo(HistoryEventName.STARGATE_DELEGATE_ONLY)
+            that(tx7.tokenId).isEqualTo("100031")
+            that(tx7.autorenew).isEqualTo(true)
         }
     }
 
