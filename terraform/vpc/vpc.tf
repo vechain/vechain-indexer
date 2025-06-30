@@ -51,7 +51,7 @@ variable "app_name" {
 module "vpc" {
   count   = local.env.environment == "prod" ? 0 : 1
   source  = "terraform-aws-modules/vpc/aws"
-  version = "v4.0.1"
+  version = "v6.0.1"
   cidr    = local.env.cidr
   name    = "${local.env.environment}-${var.project}-vpc"
   azs     = local.env.azs
