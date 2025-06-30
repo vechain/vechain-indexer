@@ -286,7 +286,7 @@ internal class HistoryIndexerTest {
         expect { that(txs7).hasSize(2) }
         val tx7 = txs7[1]
         expect {
-            that(tx7.eventName).isEqualTo(HistoryEventName.STARGATE_DELEGATE)
+            that(tx7.eventName).isEqualTo(HistoryEventName.STARGATE_DELEGATE_ONLY)
             that(tx7.tokenId).isEqualTo("100031")
             that(tx7.autorenew).isEqualTo(true)
         }
