@@ -70,9 +70,6 @@ open class HistoryIndexer(
                     ),
                 )
 
-            for (event in events) {
-                println(event.eventType)
-            }
             historyService.processBlockEvents(events, block)
         }
     }
