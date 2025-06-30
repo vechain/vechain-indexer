@@ -50,7 +50,7 @@ open class AuthorityNodeIndexer(
                 events,
                 transfers,
                 FilterCriteria(
-                    contractAddresses = listOf("contractAddress"),
+                    contractAddresses = listOf(contractAddress),
                     eventNames = listOf("Candidate"),
                 ),
             )

@@ -8,7 +8,7 @@ import org.vechain.indexer.repository.AuthorityNodeRepository
 
 @Profile("authority-nodes")
 @Service
-class AuthorityNodeQueryService(private val authorityNodeRepository: AuthorityNodeRepository) {
+class AuthorityNodeApiService(private val authorityNodeRepository: AuthorityNodeRepository) {
 
     fun checkUserIsEndorser(user: String): AuthorityNodeEndorserResponse {
         val endorsedNodes =
