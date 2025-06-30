@@ -162,4 +162,48 @@ object CommonABI {
                 stateMutability = "view",
             )
         }
+
+    val get: FunctionDefinition
+        get() {
+            return FunctionDefinition(
+                name = "get",
+                inputs =
+                    listOf(
+                        FunctionParameter(
+                            name = "_nodeMaster",
+                            type = "address",
+                            components = listOf(),
+                            internalType = "address",
+                        )
+                    ),
+                outputs =
+                    listOf(
+                        FunctionParameter(
+                            name = "listed",
+                            type = "bool",
+                            components = listOf(),
+                            internalType = "bool",
+                        ),
+                        FunctionParameter(
+                            name = "endorsor",
+                            type = "address",
+                            components = listOf(),
+                            internalType = "address",
+                        ),
+                        FunctionParameter(
+                            name = "identity",
+                            type = "bytes32",
+                            components = listOf(),
+                            internalType = "bytes32",
+                        ),
+                        FunctionParameter(
+                            name = "active",
+                            type = "bool",
+                            components = listOf(),
+                            internalType = "bool",
+                        ),
+                    ),
+                stateMutability = "view",
+            )
+        }
 }

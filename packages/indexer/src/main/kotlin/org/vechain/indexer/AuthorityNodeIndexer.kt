@@ -2,12 +2,12 @@ package org.vechain.indexer
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.IndexedAuthorityNode
+import org.vechain.indexer.model.AuthorityNode
 import org.vechain.indexer.repository.AuthorityNodeRepository
+import org.vechain.indexer.service.AuthorityNodeService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -18,12 +18,13 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Component
 open class AuthorityNodeIndexer(
     private val authorityNodeRepository: AuthorityNodeRepository,
-    private val mongoTemplate: MongoTemplate,
+    private val authorityNodeService: AuthorityNodeService,
     thorClient: ThorClient,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.authorityNodes}") startBlock: Long,
     @Value("\${indexer.syncLogInterval.authorityNodes}") private val syncLogInterval: Long,
     @Value("\${indexer.syncBlockBatchSize.authorityNodes}") private val syncBlockBatchSize: Long,
+    @Value("\${veworld.contract.authority_node.address}") private val contractAddress: String,
 ) :
     BaseLogIndexer(
         repository = authorityNodeRepository,
@@ -41,16 +42,19 @@ open class AuthorityNodeIndexer(
             "0x7265766f6b656400000000000000000000000000000000000000000000000000"
     }
 
+    private var endorsersChecked = false
+
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         val candidateEvents =
             processAllEvents(
                 events,
                 transfers,
                 FilterCriteria(
-                    contractAddresses = listOf("0x0000000000000000000000417574686f72697479"),
+                    contractAddresses = listOf("contractAddress"),
                     eventNames = listOf("Candidate"),
                 ),
             )
+
         for (event in candidateEvents) {
             val nodeMaster = event.params.getAsString("nodeMaster") ?: continue
             val action = event.params.getAsString("action") ?: continue
@@ -61,7 +65,7 @@ open class AuthorityNodeIndexer(
                 ACTION_ADDED -> {
                     println("Added nodeMaster: $nodeMaster")
                     val node =
-                        IndexedAuthorityNode(
+                        AuthorityNode(
                             nodeMaster = nodeMaster,
                             blockId = event.blockId,
                             blockNumber = event.blockNumber,
@@ -75,9 +79,18 @@ open class AuthorityNodeIndexer(
                 }
             }
         }
+
+        // Check endorsers when fully synced
+        if (this.status == Status.FULLY_SYNCED && !endorsersChecked) {
+            logger.info("Indexer fully synced - checking all node endorsers...")
+            authorityNodeService.syncEndorsersForAllNodes()
+            endorsersChecked = true
+            logger.info("Checked endorsers for all Authority Nodes")
+        }
     }
 
     override fun rollback(blockNumber: Long) {
         authorityNodeRepository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        endorsersChecked = false
     }
 }

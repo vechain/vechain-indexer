@@ -62,6 +62,8 @@ veworld:
   contract:
     vevote:
       address: ${VEVOTE_CONTRACT:0x90a3c072CF8493cCDd9b86B1C9b5d18F86fdf3E0}
+    authority_node:
+      address: ${AUTHORITY_CONTRACT:0x0000000000000000000000417574686f72697479}
 
 indexer:
   startBlock:
