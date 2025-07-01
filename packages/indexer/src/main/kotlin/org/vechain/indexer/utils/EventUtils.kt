@@ -13,7 +13,7 @@ object EventUtils {
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
             "B3TR_ProposalDeposit" -> HistoryEventName.B3TR_PROPOSAL_SUPPORT
             "B3TR_ClaimReward" -> HistoryEventName.B3TR_CLAIM_REWARD
-            "B3TR_ClaimReward2" -> HistoryEventName.B3TR_CLAIM_REWARD
+            "B3TR_ClaimReward_V2" -> HistoryEventName.B3TR_CLAIM_REWARD
             "B3TR_GMUpgrade" -> HistoryEventName.B3TR_UPGRADE_GM
             "B3TR_ActionReward" -> HistoryEventName.B3TR_ACTION
             "B3TR_ProposalVote" -> HistoryEventName.B3TR_PROPOSAL_VOTE
