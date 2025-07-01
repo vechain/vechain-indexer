@@ -13,15 +13,15 @@ import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.fixtures.FileFixtures.abiFiles
 import org.vechain.indexer.fixtures.LogsFixtures.LOGS_AUTHORITY_NODE
 import org.vechain.indexer.repository.AuthorityNodeRepository
-import org.vechain.indexer.service.AuthorityNodeService
+import org.vechain.indexer.service.AuthorityNodeEndorserService
 import org.vechain.indexer.thor.client.DefaultThorClient
 
 @ExtendWith(MockKExtension::class)
-class AuthorityNodeIndexerTest {
+class AuthorityNodeEndorserIndexerTest {
     @MockK private lateinit var authorityNodeRepository: AuthorityNodeRepository
 
-    @MockK private lateinit var authorityNodeService: AuthorityNodeService
-    private lateinit var authorityNodeIndexer: AuthorityNodeIndexer
+    @MockK private lateinit var authorityNodeEndorserService: AuthorityNodeEndorserService
+    private lateinit var authorityNodeEndorserIndexer: AuthorityNodeEndorserIndexer
 
     private val AUTHORITY_CONTRACT = "0x0000000000000000000000417574686f72697479"
     private val ACTION_ADDED = "0x6164646564000000000000000000000000000000000000000000000000000000"
@@ -34,10 +34,10 @@ class AuthorityNodeIndexerTest {
 
         val abiManager = AbiManager(abiFiles)
 
-        authorityNodeIndexer =
-            AuthorityNodeIndexer(
+        authorityNodeEndorserIndexer =
+            AuthorityNodeEndorserIndexer(
                 authorityNodeRepository = authorityNodeRepository,
-                authorityNodeService = authorityNodeService,
+                authorityNodeEndorserService = authorityNodeEndorserService,
                 thorClient = DefaultThorClient("http://localhost:8669"),
                 abiManager = abiManager,
                 startBlock = 0L,
@@ -53,7 +53,7 @@ class AuthorityNodeIndexerTest {
 
         // Create logs with ADDED action
         val addedLogs = LOGS_AUTHORITY_NODE.map { log -> log.copy(data = ACTION_ADDED) }
-        authorityNodeIndexer.processLogs(addedLogs, emptyList())
+        authorityNodeEndorserIndexer.processLogs(addedLogs, emptyList())
 
         verify {
             authorityNodeRepository.save(
@@ -68,7 +68,7 @@ class AuthorityNodeIndexerTest {
 
         // Create logs with REVOKED action
         val revokedLogs = LOGS_AUTHORITY_NODE.map { log -> log.copy(data = ACTION_REVOKED) }
-        authorityNodeIndexer.processLogs(revokedLogs, emptyList())
+        authorityNodeEndorserIndexer.processLogs(revokedLogs, emptyList())
 
         verify { authorityNodeRepository.deleteById("0xdbe84597403b9aec770aef4a93a3065b3b58d306") }
     }
@@ -77,11 +77,11 @@ class AuthorityNodeIndexerTest {
     fun `process logs triggers full sync`() {
         // save first then check if synced
         every { authorityNodeRepository.save(any()) } returns mockk()
-        every { authorityNodeService.syncEndorsersForAllNodes() } returns Unit
-        authorityNodeIndexer.status = Status.FULLY_SYNCED
+        every { authorityNodeEndorserService.syncEndorsersForAllNodes() } returns Unit
+        authorityNodeEndorserIndexer.status = Status.FULLY_SYNCED
 
-        authorityNodeIndexer.processLogs(LOGS_AUTHORITY_NODE, emptyList())
+        authorityNodeEndorserIndexer.processLogs(LOGS_AUTHORITY_NODE, emptyList())
         // Verify endorsers were synced
-        verify { authorityNodeService.syncEndorsersForAllNodes() }
+        verify { authorityNodeEndorserService.syncEndorsersForAllNodes() }
     }
 }

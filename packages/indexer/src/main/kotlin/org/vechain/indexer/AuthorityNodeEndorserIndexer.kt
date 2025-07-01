@@ -5,9 +5,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.AuthorityNode
+import org.vechain.indexer.model.AuthorityNodeEndorser
 import org.vechain.indexer.repository.AuthorityNodeRepository
-import org.vechain.indexer.service.AuthorityNodeService
+import org.vechain.indexer.service.AuthorityNodeEndorserService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.EventLog
@@ -16,9 +16,9 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("authority-nodes")
 @Component
-open class AuthorityNodeIndexer(
+open class AuthorityNodeEndorserIndexer(
     private val authorityNodeRepository: AuthorityNodeRepository,
-    private val authorityNodeService: AuthorityNodeService,
+    private val authorityNodeEndorserService: AuthorityNodeEndorserService,
     thorClient: ThorClient,
     abiManager: AbiManager,
     @Value("\${indexer.startBlock.authorityNodes}") startBlock: Long,
@@ -62,7 +62,7 @@ open class AuthorityNodeIndexer(
             when (action) {
                 ACTION_ADDED -> {
                     val node =
-                        AuthorityNode(
+                        AuthorityNodeEndorser(
                             nodeMaster = nodeMaster,
                             blockId = event.blockId,
                             blockNumber = event.blockNumber,
@@ -79,7 +79,7 @@ open class AuthorityNodeIndexer(
         // Check endorsers when fully synced
         if (this.status == Status.FULLY_SYNCED && !endorsersChecked) {
             logger.info("Indexer fully synced - checking all node endorsers...")
-            authorityNodeService.syncEndorsersForAllNodes()
+            authorityNodeEndorserService.syncEndorsersForAllNodes()
             endorsersChecked = true
             logger.info("Checked endorsers for all Authority Nodes")
         }

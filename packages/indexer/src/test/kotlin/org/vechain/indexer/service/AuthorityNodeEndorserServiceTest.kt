@@ -7,16 +7,16 @@ import io.mockk.mockkObject
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.AuthorityNode
+import org.vechain.indexer.model.AuthorityNodeEndorser
 import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.repository.AuthorityNodeRepository
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.utils.ContractUtils
 
-class AuthorityNodeServiceTest {
+class AuthorityNodeEndorserServiceTest {
     @MockK lateinit var authorityNodeRepository: AuthorityNodeRepository
     @MockK lateinit var thorService: ThorService
-    private lateinit var authorityNodeService: AuthorityNodeService
+    private lateinit var authorityNodeEndorserService: AuthorityNodeEndorserService
 
     private fun createDummyAddress(suffix: String) = "0x${"1".repeat(39)}$suffix"
 
@@ -39,8 +39,8 @@ class AuthorityNodeServiceTest {
         MockKAnnotations.init(this)
         mockkObject(ContractUtils) // Mock the ContractUtils object
 
-        authorityNodeService =
-            AuthorityNodeService(
+        authorityNodeEndorserService =
+            AuthorityNodeEndorserService(
                 authorityNodeRepository,
                 thorService,
                 "0x0000000000000000000000417574686f72697479",
@@ -51,17 +51,17 @@ class AuthorityNodeServiceTest {
     fun `syncEndorsersForAllNodes should not run when no nodes are in the database`() {
         every { authorityNodeRepository.findAll() } returns emptyList()
 
-        authorityNodeService.syncEndorsersForAllNodes()
+        authorityNodeEndorserService.syncEndorsersForAllNodes()
 
         verify(exactly = 0) { thorService.executeReadOnlyCode(any()) }
-        verify(exactly = 0) { authorityNodeRepository.saveAll(any<List<AuthorityNode>>()) }
+        verify(exactly = 0) { authorityNodeRepository.saveAll(any<List<AuthorityNodeEndorser>>()) }
     }
 
     @Test
     fun `syncEndorsersForAllNodes should update nodes with contract data`() {
         // Arrange
-        val node1 = AuthorityNode(node1, 1, "block1", 100)
-        val node2 = AuthorityNode(node2, 2, "block2", 200)
+        val node1 = AuthorityNodeEndorser(node1, 1, "block1", 100)
+        val node2 = AuthorityNodeEndorser(node2, 2, "block2", 200)
 
         every { authorityNodeRepository.findAll() } returns listOf(node1, node2)
 
@@ -85,13 +85,14 @@ class AuthorityNodeServiceTest {
 
         every { thorService.executeReadOnlyCode(any()) } returns
             listOf(successResponse, successResponse)
-        every { authorityNodeRepository.saveAll(any<List<AuthorityNode>>()) } returns listOf()
+        every { authorityNodeRepository.saveAll(any<List<AuthorityNodeEndorser>>()) } returns
+            listOf()
 
         // Act
-        authorityNodeService.syncEndorsersForAllNodes()
+        authorityNodeEndorserService.syncEndorsersForAllNodes()
 
         // Assert
         verify { thorService.executeReadOnlyCode(any()) }
-        verify { authorityNodeRepository.saveAll(any<List<AuthorityNode>>()) }
+        verify { authorityNodeRepository.saveAll(any<List<AuthorityNodeEndorser>>()) }
     }
 }

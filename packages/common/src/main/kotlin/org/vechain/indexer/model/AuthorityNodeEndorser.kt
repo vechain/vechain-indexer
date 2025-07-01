@@ -1,11 +1,10 @@
 package org.vechain.indexer.model
 
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
 @Document(collection = "authority_nodes")
-data class AuthorityNode(
+data class AuthorityNodeEndorser(
     @Id val nodeMaster: String,
     override val blockNumber: Long,
     override val blockId: String,
@@ -15,6 +14,3 @@ data class AuthorityNode(
     val active: Boolean? = null,
     val listed: Boolean? = null,
 ) : IndexedDocument
-
-fun generateId(proposalId: String, reason: String): String =
-    DigestUtils.sha1Hex("$proposalId-${reason.trim().lowercase()}")

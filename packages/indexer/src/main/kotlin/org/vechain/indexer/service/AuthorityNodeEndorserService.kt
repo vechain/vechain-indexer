@@ -19,12 +19,12 @@ import org.web3j.utils.Numeric
 
 @Profile("authority-nodes")
 @Service
-open class AuthorityNodeService(
+open class AuthorityNodeEndorserService(
     private val authorityNodeRepository: AuthorityNodeRepository,
     private val thorService: ThorService,
     @Value("\${veworld.contract.authority_node.address}") private val contractAddress: String,
 ) {
-    private val logger = LoggerFactory.getLogger(AuthorityNodeService::class.java)
+    private val logger = LoggerFactory.getLogger(AuthorityNodeEndorserService::class.java)
 
     private val outputTypes =
         listOf(
