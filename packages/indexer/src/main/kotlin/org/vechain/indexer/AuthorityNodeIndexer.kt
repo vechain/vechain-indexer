@@ -59,11 +59,8 @@ open class AuthorityNodeIndexer(
             val nodeMaster = event.params.getAsString("nodeMaster") ?: continue
             val action = event.params.getAsString("action") ?: continue
 
-            println("NodeMaster: $nodeMaster, Action: $action")
-
             when (action) {
                 ACTION_ADDED -> {
-                    println("Added nodeMaster: $nodeMaster")
                     val node =
                         AuthorityNode(
                             nodeMaster = nodeMaster,
@@ -74,7 +71,6 @@ open class AuthorityNodeIndexer(
                     authorityNodeRepository.save(node)
                 }
                 ACTION_REVOKED -> {
-                    println("→ DELETING from DB $nodeMaster")
                     authorityNodeRepository.deleteById(nodeMaster)
                 }
             }
