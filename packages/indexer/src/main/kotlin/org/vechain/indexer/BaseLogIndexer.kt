@@ -8,7 +8,7 @@ import org.vechain.indexer.thor.enums.LogType
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseLogIndexer(
-    private val repository: BaseIndexedRepository<*>,
+    private val repository: BaseIndexedRepository<*, *>,
     startBlock: Long = 0L,
     thorClient: ThorClient,
     syncLogInterval: Long = 1000L,

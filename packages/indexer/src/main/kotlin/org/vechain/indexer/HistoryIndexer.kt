@@ -59,16 +59,17 @@ open class HistoryIndexer(
                                 "WOV_Custodial_WOV_Sale",
                                 "WOV_Non_Custodial_Sale",
                                 "WOV_Offer_Accepted_Sale",
-                                "STARGATE_DELEGATE",
+                                "STARGATE_STAKE_DELEGATE",
                                 "STARGATE_STAKE",
                                 "STARGATE_UNSTAKE",
-                                "STARGATE_CLAIM_REWARDS",
                                 "STARGATE_CLAIM_REWARDS_BASE",
+                                "STARGATE_DELEGATE",
                                 "STARGATE_CLAIM_REWARDS_DELEGATE",
                                 "STARGATE_UNDELEGATE",
                             ),
                     ),
                 )
+
             historyService.processBlockEvents(events, block)
         }
     }

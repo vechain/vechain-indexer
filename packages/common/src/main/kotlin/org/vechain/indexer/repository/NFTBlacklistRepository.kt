@@ -6,4 +6,4 @@ import org.vechain.indexer.model.NFTBlacklist
 
 @Profile("nft-events")
 @Repository
-interface NFTBlacklistRepository : BaseIndexedRepository<NFTBlacklist>
+interface NFTBlacklistRepository : BasePagingAndSortingIndexedRepository<NFTBlacklist, String>

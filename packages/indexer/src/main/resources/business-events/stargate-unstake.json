@@ -55,13 +55,6 @@
           "operator": "EQ"
         },
         {
-          "firstOperand": "from",
-          "isFirstStatic": false,
-          "secondOperand": "${STARGATE_NFT_CONTRACT}",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "amount",
           "isFirstStatic": false,
           "secondOperand": 0,

@@ -1,5 +1,5 @@
 {
-  "name": "STARGATE_DELEGATE",
+  "name": "STARGATE_STAKE_DELEGATE",
   "sameClause": true,
   "events": [
     {
@@ -55,13 +55,6 @@
           "operator": "GT"
         },
         {
-          "firstOperand": "caller",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "address",
           "isFirstStatic": false,
           "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
@@ -97,13 +90,6 @@
       "firstEventProperty": "tokenId",
       "secondEventName": "DelegationSimulationStarted",
       "secondEventProperty": "tokenId",
-      "operator": "EQ"
-    },
-    {
-      "firstEventName": "tokenMinted",
-      "firstEventProperty": "owner",
-      "secondEventName": "DelegationSimulationStarted",
-      "secondEventProperty": "caller",
       "operator": "EQ"
     },
     {

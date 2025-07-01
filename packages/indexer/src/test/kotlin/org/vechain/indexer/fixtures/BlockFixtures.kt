@@ -26,6 +26,13 @@ object BlockFixtures {
     val BLOCK_NFT_MINT_REVERTED = buildBlockFixture("nft_mint_reverted")
     val BLOCK_DEX = buildBlockFixture("dex")
     val BLOCK_MP_SALES = buildBlockFixture("marketplace_sales")
+    val BLOCK_STARGATE_STAKE = buildBlockFixture("stargate_stake")
+    val BLOCK_STARGATE_UNSTAKE = buildBlockFixture("stargate_unstake")
+    val BLOCK_STARGATE_BASE_REWARD = buildBlockFixture("stargate_claim_base_reward")
+    val BLOCK_STARGATE_DELEGATE_REWARD = buildBlockFixture("stargate_claim_delegate_reward")
+    val BLOCK_STARGATE_STAKE_DELEGATE = buildBlockFixture("stargate_stake_delegate")
+    val BLOCK_STARGATE_UNDELEGATE = buildBlockFixture("stargate_undelegate")
+    val BLOCK_STARGATE_DELEGATION = buildBlockFixture("stargate_delegation")
 
     private fun buildBlockFixture(name: String): Block =
         objectMapper.readValue(
