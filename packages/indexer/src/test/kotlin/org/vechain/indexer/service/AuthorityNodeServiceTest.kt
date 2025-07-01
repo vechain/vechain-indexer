@@ -21,11 +21,11 @@ class AuthorityNodeServiceTest {
     private fun createDummyAddress(suffix: String) = "0x${"1".repeat(39)}$suffix"
 
     private fun createDummyResponse() =
-        "0x${"0".repeat(63)}1${"0".repeat(24)}${testEndorser.substring(2)}${"0".repeat(63)}123${"0".repeat(63)}1"
+        "0x${"0".repeat(63)}1${"0".repeat(24)}${endorser.substring(2)}${"0".repeat(63)}123${"0".repeat(63)}1"
 
-    private val testNode1 = createDummyAddress("1")
-    private val testNode2 = createDummyAddress("2")
-    private val testEndorser = createDummyAddress("3")
+    private val node1 = createDummyAddress("1")
+    private val node2 = createDummyAddress("2")
+    private val endorser = createDummyAddress("3")
     private val successfulResponse = createDummyResponse()
 
     fun dummyHexData(prefix: String = "0x", length: Int = 64): String {
@@ -60,8 +60,8 @@ class AuthorityNodeServiceTest {
     @Test
     fun `syncEndorsersForAllNodes should update nodes with contract data`() {
         // Arrange
-        val node1 = AuthorityNode(testNode1, 1, "block1", 100)
-        val node2 = AuthorityNode(testNode2, 2, "block2", 200)
+        val node1 = AuthorityNode(node1, 1, "block1", 100)
+        val node2 = AuthorityNode(node2, 2, "block2", 200)
 
         every { authorityNodeRepository.findAll() } returns listOf(node1, node2)
 
