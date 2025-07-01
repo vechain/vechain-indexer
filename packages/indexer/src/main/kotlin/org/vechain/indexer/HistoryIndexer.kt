@@ -45,7 +45,7 @@ open class HistoryIndexer(
                                 "B3TR_B3trToVot3Swap",
                                 "B3TR_XAllocationVote",
                                 "B3TR_ClaimReward",
-                                "B3TR_ClaimReward2",
+                                "B3TR_ClaimReward_V2",
                                 "B3TR_GMUpgrade",
                                 "MAAS_SALE",
                                 "B3TR_ProposalDeposit",
