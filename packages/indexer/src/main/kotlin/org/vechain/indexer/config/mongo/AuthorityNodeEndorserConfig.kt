@@ -19,7 +19,7 @@ open class AuthorityNodeEndorserConfig(
 ) : CollectionConfig(mongoTemplate, AuthorityNodeEndorser::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.AUTHORITY_NODE_ENDORSER}") private val version: Int = 1
+    @Value("\${indexer.version.authority_node_endorser}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
@@ -29,7 +29,6 @@ open class AuthorityNodeEndorserConfig(
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("nodeMaster_-1", Index().on("nodeMaster", Sort.Direction.DESC))
         ensureIndex("endorser_-1", Index().on("endorser", Sort.Direction.DESC))
     }
 }
