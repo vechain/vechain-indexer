@@ -39,7 +39,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:https://testnet.vechain.org}
+  url: ${THOR_URL:http://localhost:8669}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -110,7 +110,7 @@ indexer:
     stargate_vtho_claimed_by_account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
     stargate_nft_holders_by_block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate_vet_staked_by_block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
-    AUTHORITY_NODE_ENDORSER : ${VERSION_AUTHORITY_NODE_ENDORSER:-1}
+    AUTHORITY_NODE_ENDORSER : ${VERSION_AUTHORITY_NODE_ENDORSER:1}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}

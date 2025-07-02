@@ -13,15 +13,14 @@ import org.vechain.indexer.repository.AuthorityNodeRepository
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.utils.ContractUtils
 
-class AuthorityNodeEndorserServiceTest {
+class AuthorityNodeEventServiceTest {
     @MockK lateinit var authorityNodeRepository: AuthorityNodeRepository
     @MockK lateinit var thorService: ThorService
-    private lateinit var authorityNodeEndorserService: AuthorityNodeEndorserService
+    private lateinit var authorityNodeEventService: AuthorityNodeEventService
 
     private fun createDummyAddress(suffix: String) = "0x${"1".repeat(39)}$suffix"
 
-    private fun createDummyResponse() =
-        "0x${"0".repeat(63)}1${"0".repeat(24)}${endorser.substring(2)}${"0".repeat(63)}123${"0".repeat(63)}1"
+    private fun createDummyResponse() = "0x${"0".repeat(24)}${endorser.substring(2)}"
 
     private val node1 = createDummyAddress("1")
     private val node2 = createDummyAddress("2")
@@ -39,8 +38,8 @@ class AuthorityNodeEndorserServiceTest {
         MockKAnnotations.init(this)
         mockkObject(ContractUtils) // Mock the ContractUtils object
 
-        authorityNodeEndorserService =
-            AuthorityNodeEndorserService(
+        authorityNodeEventService =
+            AuthorityNodeEventService(
                 authorityNodeRepository,
                 thorService,
                 "0x0000000000000000000000417574686f72697479",
@@ -51,7 +50,7 @@ class AuthorityNodeEndorserServiceTest {
     fun `syncEndorsersForAllNodes should not run when no nodes are in the database`() {
         every { authorityNodeRepository.findAll() } returns emptyList()
 
-        authorityNodeEndorserService.syncEndorsersForAllNodes()
+        authorityNodeEventService.syncEndorsersForAllNodes()
 
         verify(exactly = 0) { thorService.executeReadOnlyCode(any()) }
         verify(exactly = 0) { authorityNodeRepository.saveAll(any<List<AuthorityNodeEndorser>>()) }
@@ -89,7 +88,7 @@ class AuthorityNodeEndorserServiceTest {
             listOf()
 
         // Act
-        authorityNodeEndorserService.syncEndorsersForAllNodes()
+        authorityNodeEventService.syncEndorsersForAllNodes()
 
         // Assert
         verify { thorService.executeReadOnlyCode(any()) }

@@ -10,7 +10,4 @@ data class AuthorityNodeEndorser(
     override val blockId: String,
     override val blockTimestamp: Long,
     val endorser: String? = null,
-    val identity: String? = null,
-    val active: Boolean? = null,
-    val listed: Boolean? = null,
 ) : IndexedDocument

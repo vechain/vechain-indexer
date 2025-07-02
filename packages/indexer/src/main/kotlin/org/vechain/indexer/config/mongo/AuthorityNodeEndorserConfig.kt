@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.model.AuthorityNodeEndorser
 import org.vechain.indexer.service.IndexerVersionService
 
@@ -26,5 +28,8 @@ open class AuthorityNodeEndorserConfig(
         indexerVersionService.checkAndResetCollectionIfVersionChanged("authority_nodes", version)
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
+
+        ensureIndex("nodeMaster_-1", Index().on("nodeMaster", Sort.Direction.DESC))
+        ensureIndex("endorser_-1", Index().on("endorser", Sort.Direction.DESC))
     }
 }

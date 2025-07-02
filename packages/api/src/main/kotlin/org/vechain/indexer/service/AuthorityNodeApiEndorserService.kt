@@ -20,9 +20,6 @@ class AuthorityNodeApiEndorserService(
                 .map { node ->
                     AuthorityNodeInfo(
                         nodeMaster = node.nodeMaster,
-                        listed = node.listed,
-                        identity = node.identity,
-                        active = node.active,
                         blockNumber = node.blockNumber,
                         blockTimestamp = node.blockTimestamp,
                     )

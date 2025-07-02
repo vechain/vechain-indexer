@@ -61,9 +61,6 @@ data class AuthorityNodeEndorserResponse(
 
 data class AuthorityNodeInfo(
     val nodeMaster: String,
-    val listed: Boolean?,
-    val identity: String?,
-    val active: Boolean?,
     val blockNumber: Long,
     val blockTimestamp: Long,
 )

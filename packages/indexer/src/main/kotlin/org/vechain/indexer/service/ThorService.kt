@@ -1,7 +1,6 @@
 package org.vechain.indexer.service
 
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Profile
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -14,7 +13,6 @@ import org.vechain.indexer.model.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 
-@Profile("authority-nodes")
 @Service
 class ThorService(private val thorRest: WebClient) {
 
