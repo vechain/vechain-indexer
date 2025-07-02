@@ -75,10 +75,12 @@ jobs:
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
 
-      - name: "Destroy LB Logs S3 Buckets"
+      - name: "Destroy mainnet LB Logs S3 Buckets"
         run: |
-          echo "Deleting LB logs S3 buckets..."
           aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force || true
+
+      - name: "Destroy testnet LB logs S3 Buckets"
+        run: |
           aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force || true
 
       - name: "Destroy Load Balancers"
