@@ -18,7 +18,6 @@ import strikt.assertions.isNull
 
 @ExtendWith(MockKExtension::class)
 internal class VetStakedByBlockServiceTest {
-
     @MockK lateinit var repository: VetStakedByBlockRepository
 
     private lateinit var service: VetStakedByBlockService
@@ -51,7 +50,7 @@ internal class VetStakedByBlockServiceTest {
                     every { blockId } returns "block2"
                     every { blockNumber } returns 12L
                     every { blockTimestamp } returns 1200L
-                    every { eventType } returns "STARGATE_DELEGATE"
+                    every { eventType } returns "STARGATE_STAKE"
                     every { params.getAsBigInteger("value") } returns BigInteger("200")
                     every { params.getAsInt("levelId") } returns 2
                 },

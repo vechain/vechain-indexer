@@ -274,7 +274,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.vevote
     },
     {
-      name = "INDEXER_START_BLOCK_STARGATE"
+      name  = "INDEXER_START_BLOCK_STARGATE"
       value = each.value.indexer.start_block.stargate
     },
     {
@@ -298,8 +298,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync_logger_interval.vevote
     },
     {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-        value = each.value.indexer.sync_logger_interval.stargate
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
+      value = each.value.indexer.sync_logger_interval.stargate
     },
     {
       name  = "PRUNER_ENABLED"
@@ -362,19 +362,19 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote_results
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
       value = each.value.indexer.version.stargate_vtho_claimed_by_block
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate_vtho_claimed_by_account
     },
     {
-      name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
+      name  = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
       value = each.value.indexer.version.stargate_nft_holders_by_account
     },
     {
-      name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
       value = each.value.indexer.version.stargate_vet_staked_by_account
     },
     {
@@ -402,11 +402,11 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
-      name = "X_ALLOC_VOTING_CONTRACT"
+      name  = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
-      name = "X2EARN_REWARDS_POOL_CONTRACT"
+      name  = "X2EARN_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
     },
     {
