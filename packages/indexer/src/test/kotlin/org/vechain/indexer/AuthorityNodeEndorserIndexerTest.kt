@@ -105,7 +105,7 @@ class AuthorityNodeEndorserIndexerTest {
     }
 
     @Test
-    fun `should process candidate events and sync endorsers when fully synced`() {
+    fun `should only process candidate events when fully synced`() {
         authorityNodeEndorserIndexer.status = Status.FULLY_SYNCED
 
         val eventsSlot = slot<List<IndexedEvent>>()
@@ -116,9 +116,7 @@ class AuthorityNodeEndorserIndexerTest {
 
         authorityNodeEndorserIndexer.processLogs(LOGS_AUTHORITY_NODE, emptyList())
 
-        verify {
-            authorityNodeEventService.processCandidateEvents(any(), true)
-            authorityNodeEventService.syncEndorsersForAllNodes()
-        }
+        verify { authorityNodeEventService.processCandidateEvents(any(), true) }
+        verify(exactly = 0) { authorityNodeEventService.syncEndorsersForAllNodes() }
     }
 }
