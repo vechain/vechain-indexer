@@ -6,4 +6,7 @@ import org.vechain.indexer.model.AuthorityNodeEndorser
 
 @Profile("authority-nodes")
 @Repository
-interface AuthorityNodeRepository : BaseIndexedRepository<AuthorityNodeEndorser, String> {}
+interface AuthorityNodeRepository : BaseIndexedRepository<AuthorityNodeEndorser, String> {
+
+    fun findByEndorser(endorser: String): List<AuthorityNodeEndorser>
+}

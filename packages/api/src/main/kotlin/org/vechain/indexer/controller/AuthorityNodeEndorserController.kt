@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.AUTHORITY_NODES_PATH
 import org.vechain.indexer.model.Address
+import org.vechain.indexer.model.AuthorityNodeEndorser
 import org.vechain.indexer.service.AuthorityNodeApiEndorserService
 import org.vechain.indexer.validation.ValidAddress
 
@@ -47,20 +48,5 @@ open class AuthorityNodeController(
     )
     open fun checkUserIsEndorser(
         @ValidAddress @PathVariable user: Address
-    ): AuthorityNodeEndorserResponse {
-        return authorityNodeApiEndorserService.checkUserIsEndorser(user.value)
-    }
+    ): AuthorityNodeEndorser? = authorityNodeApiEndorserService.findByEndorser(user.value)
 }
-
-data class AuthorityNodeEndorserResponse(
-    val user: String,
-    val isEndorser: Boolean,
-    val endorsedNodes: List<AuthorityNodeInfo>,
-    val totalEndorsedNodes: Int,
-)
-
-data class AuthorityNodeInfo(
-    val nodeMaster: String,
-    val blockNumber: Long,
-    val blockTimestamp: Long,
-)

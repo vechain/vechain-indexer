@@ -44,19 +44,10 @@ open class AuthorityNodeEndorserIndexer(
                     eventNames = listOf("Candidate"),
                 ),
             )
-
-        // Process the candidate events to service
         authorityNodeEventService.processCandidateEvents(
             candidateEvents,
             this.status == Status.FULLY_SYNCED,
         )
-
-        // Check endorsers when fully synced
-        if (this.status == Status.FULLY_SYNCED) {
-            logger.info("Indexer fully synced - checking all node endorsers...")
-            authorityNodeEventService.syncEndorsersForAllNodes()
-            logger.info("Checked endorsers for all Authority Nodes")
-        }
     }
 
     override fun rollback(blockNumber: Long) {

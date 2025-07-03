@@ -1,5 +1,6 @@
 package org.vechain.indexer.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
@@ -7,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class AuthorityNodeEndorser(
     @Id val nodeMaster: String,
     override val blockNumber: Long,
-    override val blockId: String,
-    override val blockTimestamp: Long,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockTimestamp: Long,
     val endorser: String? = null,
 ) : IndexedDocument

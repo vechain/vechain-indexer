@@ -35,27 +35,36 @@ open class AuthorityNodeEventService(
             "0x7265766f6b656400000000000000000000000000000000000000000000000000"
     }
 
-    private fun getEndorserForNode(nodeMaster: String): String? {
-        val clause =
-            ContractUtils.createClause(
-                address = contractAddress,
-                function = CommonABI.get,
-                args = arrayOf(nodeMaster),
-            )
+    // takes a list of all node masters
+    private fun getEndorsersForNodes(nodeMasters: List<String>): Map<String, String?> {
+        if (nodeMasters.isEmpty()) return emptyMap()
+
+        val clauses =
+            nodeMasters.map { nodeMaster ->
+                ContractUtils.createClause(
+                    address = contractAddress,
+                    function = CommonABI.get,
+                    args = arrayOf(nodeMaster),
+                )
+            }
 
         return thorService
-            .executeReadOnlyCode(listOf(clause))
-            .firstOrNull()
-            ?.takeIf { TransactionUtils.isSuccessWithData(it) }
-            ?.let { response ->
+            .executeReadOnlyCode(clauses)
+            .zip(nodeMasters)
+            .mapNotNull { (response, nodeMaster) ->
                 try {
-                    val decoded = FunctionReturnDecoder.decode(response.data, outputTypes)
-                    (decoded[0] as Address).value
+                    if (TransactionUtils.isSuccessWithData(response)) {
+                        val decoded = FunctionReturnDecoder.decode(response.data, outputTypes)
+                        nodeMaster to (decoded[0] as Address).value
+                    } else {
+                        nodeMaster to null
+                    }
                 } catch (e: Exception) {
                     logger.error("Failed to parse contract response for node: $nodeMaster", e)
-                    null
+                    nodeMaster to null
                 }
             }
+            .toMap()
     }
 
     @Transactional
@@ -63,11 +72,11 @@ open class AuthorityNodeEventService(
         val nodesToCheck = authorityNodeRepository.findAll().toList()
         if (nodesToCheck.isEmpty()) return
 
+        val endorsersByNode = getEndorsersForNodes(nodesToCheck.map { it.nodeMaster })
+
         val updates =
             nodesToCheck.mapNotNull { node ->
-                getEndorserForNode(node.nodeMaster)?.let { endorser ->
-                    node.copy(endorser = endorser)
-                }
+                endorsersByNode[node.nodeMaster]?.let { endorser -> node.copy(endorser = endorser) }
             }
 
         if (updates.isNotEmpty()) {
@@ -77,14 +86,15 @@ open class AuthorityNodeEventService(
     }
 
     @Transactional
-    open fun processCandidateEvents(events: List<IndexedEvent>, isFullySynced: Boolean) {
+    open fun processCandidateEvents(events: List<IndexedEvent>, fullySynced: Boolean) {
         if (events.isEmpty()) return
 
-        for (event in events) {
-            val nodeMaster = event.params.getAsString("nodeMaster") ?: continue
-            val action = event.params.getAsString("action") ?: continue
+        // collect the new nodes to save, and revoke in one pass
+        val toSave = mutableListOf<AuthorityNodeEndorser>()
 
-            when (action) {
+        events.forEach { event ->
+            val nodeMaster = event.params.getAsString("nodeMaster") ?: return@forEach
+            when (event.params.getAsString("action")) {
                 ACTION_ADDED -> {
                     val node =
                         AuthorityNodeEndorser(
@@ -94,19 +104,32 @@ open class AuthorityNodeEventService(
                             blockTimestamp = event.blockTimestamp,
                         )
 
+                    // when fully synced
                     val nodeToSave =
-                        getEndorserForNode(nodeMaster)?.let { endorser ->
-                            node.copy(endorser = endorser)
-                        } ?: node
+                        if (fullySynced) {
+                            getEndorsersForNodes(listOf(nodeMaster))[nodeMaster]?.let {
+                                node.copy(endorser = it)
+                            } ?: node
+                        } else node
 
-                    authorityNodeRepository.save(nodeToSave)
+                    toSave += nodeToSave
                 }
                 ACTION_REVOKED -> {
                     authorityNodeRepository.deleteById(nodeMaster)
                     logger.info("AMN revoked: $nodeMaster")
                 }
-                else -> logger.warn("Unknown action: $action for node: $nodeMaster")
+
+                else -> {
+                    logger.warn(
+                        "Unknown action: ${event.params.getAsString("action")} for node: $nodeMaster"
+                    )
+                }
             }
+        }
+        //  used to batch save multiple nodes in one database.
+        if (toSave.isNotEmpty()) {
+            authorityNodeRepository.saveAll(toSave)
+            logger.info("Saved ${toSave.size} new AuthorityNodeEndorsers")
         }
     }
 }
