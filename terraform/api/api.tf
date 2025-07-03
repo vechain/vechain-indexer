@@ -274,6 +274,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.vevote
     },
     {
+      name  = "INDEXER_START_BLOCK_AUTHORITY_NODE"
+      value = each.value.indexer.start_block.authorityNodes
+    },
+    {
       name = "INDEXER_START_BLOCK_STARGATE"
       value = each.value.indexer.start_block.stargate
     },
@@ -296,6 +300,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
       value = each.value.indexer.sync_logger_interval.vevote
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
+      value = each.value.indexer.sync_logger_interval.authorityNodes
     },
     {
       name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
@@ -324,6 +332,10 @@ module "ecs-backend-service" {
     {
       name  = "VEVOTE_CONTRACT"
       value = each.value.veworld.contract.vevote.address
+    },
+    {
+      name  = "AUTHORITY_CONTRACT"
+      value = each.value.veworld.contract.authority_node.address
     },
     {
       name  = "BLACKLIST_INTERVAL"
@@ -360,6 +372,10 @@ module "ecs-backend-service" {
     {
       name  = "VERSION_VEVOTE_RESULTS"
       value = each.value.indexer.version.vevote_results
+    },
+    {
+      name = "VERSION_AUTHORITY_NODE_ENDORSER"
+      value = each.value.indexer.version.authority_node_endorser
     },
     {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
