@@ -31,8 +31,7 @@ open class NftHolderByBlockService(private val repository: NftHoldersByBlockRepo
                 event.params.getAsInt("levelId")
                     ?: throw IllegalArgumentException("Missing levelId in event params")
             when (event.eventType) {
-                "STARGATE_STAKE",
-                "STARGATE_STAKE_DELEGATE" -> {
+                "STARGATE_STAKE" -> {
                     totalNftHolders += 1L
                     totalNftHoldersByLevel[levelId] =
                         totalNftHoldersByLevel.getOrDefault(levelId, 0L) + 1L
