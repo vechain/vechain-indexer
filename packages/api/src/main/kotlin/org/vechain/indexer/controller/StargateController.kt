@@ -15,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.model.Address
+import org.vechain.indexer.model.TimeSeriesRecord
 import org.vechain.indexer.model.stargate.NftHoldersByBlock
 import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.service.StargateService
+import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 
 @Profile("stargate")
@@ -52,6 +54,35 @@ open class StargateController(private val stargateService: StargateService) {
     )
     open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: Address): BigInteger =
         stargateService.getTotalVthoClaimed(account.value)
+
+    @GetMapping("/total-vtho-claimed/historic")
+    @Operation(
+        summary = "Get historic data for total VTHO claimed",
+        description =
+            "This endpoint returns a time series of total VTHO claimed by all Stargate users.",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "after",
+        schema = Schema(type = "integer", format = "int64"),
+        description = "Returns records after this timestamp (inclusive).",
+        required = true,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "integer", format = "int64"),
+        description = "Returns records before this timestamp (inclusive).",
+        required = true,
+    )
+    open fun getTotalVthoClaimedBlockSeries(
+        @RequestParam(required = true) after: Long,
+        @RequestParam(required = true) before: Long,
+    ): List<TimeSeriesRecord<BigInteger>> {
+        TimeValidationUtils.validateTimestamps(after, before)
+
+        return stargateService.getTotalVthoClaimedHistoric(after, before)
+    }
 
     @GetMapping("/nft-holders")
     @Operation(summary = "Get total number of NFT holders in Stargate")
@@ -96,4 +127,34 @@ open class StargateController(private val stargateService: StargateService) {
                 total = BigInteger.ZERO,
                 byLevel = emptyMap(),
             )
+
+    @GetMapping("/total-vet-staked/historic")
+    @Operation(
+        summary = "Get historic data for total VET staked",
+        description =
+            "This endpoint returns a time series of total VET staked in Stargate. The time series is sparsely populated, so it may not contain consistent gaps between records.",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "after",
+        schema = Schema(type = "integer", format = "int64"),
+        description = "Returns records after this timestamp (inclusive).",
+        required = true,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "integer", format = "int64"),
+        description = "Returns records before this timestamp (inclusive).",
+        required = true,
+    )
+    open fun getTotalVetStakedBlockSeries(
+        @RequestParam(required = true) after: Long,
+        @RequestParam(required = true) before: Long,
+    ): List<TimeSeriesRecord<BigInteger>> {
+
+        TimeValidationUtils.validateTimestamps(after, before)
+
+        return stargateService.getTotalVetStakedHistoric(after, before)
+    }
 }

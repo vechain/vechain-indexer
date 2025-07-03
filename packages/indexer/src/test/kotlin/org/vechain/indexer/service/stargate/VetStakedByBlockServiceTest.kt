@@ -69,7 +69,7 @@ internal class VetStakedByBlockServiceTest {
                 blockId = "block0",
                 blockNumber = 9L,
                 blockTimestamp = 900L,
-                total = BigInteger("500"),
+                value = BigInteger("500"),
                 byLevel = mutableMapOf(1 to BigInteger("200"), 2 to BigInteger("100")),
             )
         every { repository.getLatestRecord() } returns latestRecord
@@ -80,7 +80,7 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockId).isEqualTo("block3")
             that(result?.blockNumber).isEqualTo(13L)
             that(result?.blockTimestamp).isEqualTo(1300L)
-            that(result?.total).isEqualTo(BigInteger("750"))
+            that(result?.value).isEqualTo(BigInteger("750"))
             that(result?.byLevel?.get(1)).isEqualTo(BigInteger("250"))
             that(result?.byLevel?.get(2)).isEqualTo(BigInteger("300"))
         }
@@ -107,7 +107,7 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockId).isEqualTo("block1")
             that(result?.blockNumber).isEqualTo(10L)
             that(result?.blockTimestamp).isEqualTo(1000L)
-            that(result?.total).isEqualTo(BigInteger("100"))
+            that(result?.value).isEqualTo(BigInteger("100"))
             that(result?.byLevel?.get(1)).isEqualTo(BigInteger("100"))
         }
     }
@@ -141,7 +141,7 @@ internal class VetStakedByBlockServiceTest {
                 blockId = "blockX",
                 blockNumber = 99L,
                 blockTimestamp = 9999L,
-                total = BigInteger("123"),
+                value = BigInteger("123"),
                 byLevel = mutableMapOf(1 to BigInteger("123")),
             )
         every { repository.save(record) } returns record
