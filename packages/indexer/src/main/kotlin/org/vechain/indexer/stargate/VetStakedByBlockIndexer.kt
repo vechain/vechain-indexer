@@ -37,7 +37,7 @@ open class VetStakedByBlockIndexer(
         businessEventManager = businessEventManager,
     ) {
     private val businessEventNames =
-        listOf("STARGATE_STAKE", "STARGATE_DELEGATE", "STARGATE_UNSTAKE")
+        listOf("STARGATE_STAKE", "STARGATE_STAKE_DELEGATE", "STARGATE_UNSTAKE")
 
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         if (events.isEmpty()) {
