@@ -36,8 +36,6 @@ open class NftCollectionConfig(
 
         ensureIndex("nft_blockNumber_-1", Index().on("blockNumber", Sort.Direction.DESC))
 
-        ensureIndex("nft_contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
-
         ensureIndex(
             "nft_contractAddress_1_tokenId_1",
             Index()
