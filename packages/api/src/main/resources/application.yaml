@@ -12,8 +12,8 @@ logging:
     ROOT: INFO
     org:
       vechain: ${APP_LOG_LEVEL:INFO}
-      springframework:
-        data: DEBUG
+#      springframework:
+#        data: DEBUG
 
 slack:
   webhook:
@@ -23,7 +23,7 @@ spring:
   application:
     name: vechain-api
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:nft-events,transactions,transfer-events,history-events,vevote-results,vevote-comments}
+    active: ${SPRING_PROFILES_ACTIVE:nft-events,transactions,transfer-events,history-events,vevote-results,vevote-comments,stargate}
   output:
     ansi:
       enabled: always
