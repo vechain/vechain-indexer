@@ -161,4 +161,4 @@ jobs:
       - name: Terraform Apply
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         id: apply
-        run: echo "would apply"
+        run: echo "terraform apply "apply.plan"
