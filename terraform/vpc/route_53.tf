@@ -44,26 +44,26 @@ locals {
   live_mainnet_lb = local.update_mainnet ? (
     var.live_color_mainnet == "prod-blue" ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
   ) : (
-    var.live_color_mainnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api_green.outputs.load_balancer_domain_mainnet
+    var.live_color_mainnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
   )
 
   dead_mainnet_lb = local.update_mainnet ? (
-    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain") : try(data.terraform_remote_state.api_green.outputs.load_balancer_domain_mainnet, "place.holder.domain")
+    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain") : try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain")
   ) : (
-    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api_green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : try(data.terraform_remote_state.api_blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain")
+    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain")
   )
 
   # Testnet – analogous logic.
   live_testnet_lb = local.update_testnet ? (
-    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api_green.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api_blue.outputs.load_balancer_domain_testnet
+    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
   ) : (
-    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api_green.outputs.load_balancer_domain_testnet
+    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
   )
 
   dead_testnet_lb = local.update_testnet ? (
-    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api_blue.outputs.load_balancer_domain_testnet,  "place.holder.domain") : try(data.terraform_remote_state.api_green.outputs.load_balancer_domain_testnet, "place.holder.domain")
+    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet,  "place.holder.domain") : try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain")
   ) : (
-    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api_green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api_blue.outputs.load_balancer_domain_testnet,  "place.holder.domain")
+    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet,  "place.holder.domain")
   )
 }
 
