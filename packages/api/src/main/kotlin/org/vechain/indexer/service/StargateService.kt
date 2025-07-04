@@ -5,12 +5,14 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.TimeSeriesRecord
 import org.vechain.indexer.model.stargate.NftHoldersByBlock
+import org.vechain.indexer.model.stargate.TokenLevel
 import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.repository.stargate.NftHoldersByBlockRepository
 import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
 import org.vechain.indexer.utils.HexUtils
+import org.vechain.indexer.utils.TimeSeriesUtils.getHistoricTimeSeries
 
 @Profile("stargate")
 @Service
@@ -61,39 +63,15 @@ open class StargateService(
     open fun getTotalVthoClaimedHistoric(
         after: Long,
         before: Long,
-    ): List<TimeSeriesRecord<BigInteger>> {
-        val data = vthoClaimedByBlockRepository.findByBlockTimestampBetween(after - 1, before + 1)
-
-        // If no records are found, return an empty list
-        if (data.isEmpty()) {
-            return emptyList()
+    ): List<TimeSeriesRecord<BigInteger>> =
+        getHistoricTimeSeries(
+            after,
+            before,
+            vthoClaimedByBlockRepository::findByBlockTimestampBetween,
+            vthoClaimedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
+        ) {
+            it.total
         }
-
-        // If a record doesn't exist for the start block, find the latest before it and create a
-        // record from that
-        val firstRecord = data.first()
-        val startBookend =
-            if (firstRecord.blockTimestamp > after) {
-                val latestBeforeStart =
-                    vthoClaimedByBlockRepository.findLatestBeforeOrAtBlockTimestamp(after)
-                latestBeforeStart?.let { TimeSeriesRecord(after, it.total) }
-            } else null
-
-        // If a record doesn't exist for the end block, find the latest before it and create a
-        // record from that
-        val lastRecord = data.last()
-        val endBookend =
-            if (lastRecord.blockTimestamp < before) {
-                TimeSeriesRecord(before, lastRecord.total)
-            } else null
-
-        // Combine the bookends with the existing data if they are not null
-        val records = mutableListOf<TimeSeriesRecord<BigInteger>>()
-        startBookend?.let { records.add(it) }
-        records.addAll(data.map { TimeSeriesRecord(it.blockTimestamp, it.total) })
-        endBookend?.let { records.add(it) }
-        return records
-    }
 
     /**
      * Retrieves the total number of NFT holders in Stargate at a specific block number. If no block
@@ -114,40 +92,16 @@ open class StargateService(
     open fun getNftHoldersHistoric(
         after: Long,
         before: Long,
-        levelId: Int? = null,
-    ): List<TimeSeriesRecord<Long>> {
-        val data = nftHoldersByBlockRepository.findByBlockTimestampBetween(after - 1, before + 1)
-
-        if (data.isEmpty()) {
-            return emptyList()
+        level: TokenLevel? = null,
+    ): List<TimeSeriesRecord<Long>> =
+        getHistoricTimeSeries(
+            after,
+            before,
+            nftHoldersByBlockRepository::findByBlockTimestampBetween,
+            nftHoldersByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
+        ) {
+            it.valueForLevel(level)
         }
-
-        // If a record doesn't exist for the start block, find the latest before it and create a
-        // record from that
-        val firstRecord = data.first()
-        val startBookend =
-            if (firstRecord.blockTimestamp > after) {
-                val latestBeforeStart =
-                    nftHoldersByBlockRepository.findLatestBeforeOrAtBlockTimestamp(after)
-                latestBeforeStart?.let { TimeSeriesRecord(after, it.valueForLevel(levelId)) }
-            } else null
-
-        // If a record doesn't exist for the end block, find the latest before it and create a
-        // record from that
-        val lastRecord = data.last()
-        val endBookend =
-            if (lastRecord.blockTimestamp < before) {
-                TimeSeriesRecord(before, lastRecord.valueForLevel(levelId))
-            } else null
-
-        // Combine the bookends with the existing data if they are not null
-        val records = mutableListOf<TimeSeriesRecord<Long>>()
-        startBookend?.let { records.add(it) }
-        records.addAll(data.map { TimeSeriesRecord(it.blockTimestamp, it.valueForLevel(levelId)) })
-        endBookend?.let { records.add(it) }
-
-        return records
-    }
 
     /**
      * Retrieves the total VET staked in Stargate at a specific block number. If no block number is
@@ -175,37 +129,14 @@ open class StargateService(
     open fun getTotalVetStakedHistoric(
         after: Long,
         before: Long,
-        levelId: Int? = null,
-    ): List<TimeSeriesRecord<BigInteger>> {
-        val data = vetStakedByBlockRepository.findByBlockTimestampBetween(after - 1, before + 1)
-
-        if (data.isEmpty()) {
-            return emptyList()
+        level: TokenLevel? = null,
+    ): List<TimeSeriesRecord<BigInteger>> =
+        getHistoricTimeSeries(
+            after,
+            before,
+            vetStakedByBlockRepository::findByBlockTimestampBetween,
+            vetStakedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
+        ) {
+            it.valueForLevel(level)
         }
-
-        // If a record doesn't exist for the start block, find the latest before it and create a
-        // record from that
-        val firstRecord = data.first()
-        val startBookend =
-            if (firstRecord.blockTimestamp > after) {
-                val latestBeforeStart =
-                    vetStakedByBlockRepository.findLatestBeforeOrAtBlockTimestamp(after)
-                latestBeforeStart?.let { TimeSeriesRecord(after, it.valueForLevel(levelId)) }
-            } else null
-
-        // If a record doesn't exist for the end block, find the latest before it and create a
-        // record from that
-        val lastRecord = data.last()
-        val endBookend =
-            if (lastRecord.blockTimestamp < before) {
-                TimeSeriesRecord(before, lastRecord.valueForLevel(levelId))
-            } else null
-
-        // Combine the bookends with the existing data if they are not null
-        val records = mutableListOf<TimeSeriesRecord<BigInteger>>()
-        startBookend?.let { records.add(it) }
-        records.addAll(data.map { TimeSeriesRecord(it.blockTimestamp, it.valueForLevel(levelId)) })
-        endBookend?.let { records.add(it) }
-        return records
-    }
 }

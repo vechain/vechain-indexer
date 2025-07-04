@@ -19,11 +19,12 @@ import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.TimeRangePreset
 import org.vechain.indexer.model.TimeSeriesRecord
 import org.vechain.indexer.model.stargate.NftHoldersByBlock
+import org.vechain.indexer.model.stargate.TokenLevel
 import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.service.StargateService
 import org.vechain.indexer.validation.ValidAddress
-import org.vechain.indexer.validation.ValidLevelId
 import org.vechain.indexer.validation.ValidTimeRangePreset
+import org.vechain.indexer.validation.ValidTokenLevel
 
 @Profile("stargate")
 @Tag(name = "Stargate", description = "Stargate related queries")
@@ -38,7 +39,8 @@ open class StargateController(private val stargateService: StargateService) {
         name = "blockNumber",
         schema = Schema(type = "long"),
         description =
-            "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, the latest value will be returned.",
+            "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, " +
+                "the latest value will be returned.",
         required = false,
         example = "12345678",
     )
@@ -95,7 +97,8 @@ open class StargateController(private val stargateService: StargateService) {
         name = "blockNumber",
         schema = Schema(type = "long"),
         description =
-            "Optional query parameter to get the total number of NFT holders at a specific block number. If not provided, the latest value will be returned.",
+            "Optional query parameter to get the total number of NFT holders at a specific block number. If not " +
+                "provided, the latest value will be returned.",
         required = false,
         example = "12345678",
     )
@@ -113,7 +116,8 @@ open class StargateController(private val stargateService: StargateService) {
     @Operation(
         summary = "Get historic data for total NFT holders",
         description =
-            "This endpoint returns a time series of NFT holders in Stargate. The time series is sparsely populated, so it may not contain consistent gaps between records.",
+            "This endpoint returns a time series of NFT holders in Stargate. The time series is sparsely populated, " +
+                "so it may not contain consistent gaps between records.",
     )
     @Parameter(
         `in` = ParameterIn.PATH,
@@ -129,15 +133,31 @@ open class StargateController(private val stargateService: StargateService) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "levelId",
-        schema = Schema(type = "integer"),
+        name = "level",
+        schema =
+            Schema(
+                type = "string",
+                allowableValues =
+                    [
+                        "Strength",
+                        "Thunder",
+                        "Mjolnir",
+                        "VeThorX",
+                        "StrengthX",
+                        "ThunderX",
+                        "MjolnirX",
+                        "Dawn",
+                        "Lightning",
+                        "Flash",
+                    ],
+            ),
         description =
-            "Optional query parameter to filter NFT holders by level ID. If not provided, all levels will be included.",
+            "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included.",
         required = false,
     )
     open fun getNftHolders(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
-        @ValidLevelId @RequestParam(required = false) levelId: Int? = null,
+        @ValidTokenLevel @RequestParam(required = false) level: String? = null,
     ): List<TimeSeriesRecord<Long>> {
         val now = Instant.now()
         val range = TimeRangePreset.fromPathValue(rangeStr)
@@ -145,7 +165,7 @@ open class StargateController(private val stargateService: StargateService) {
         val after = range.computeAfterTimestamp(now)
         val before = now.epochSecond
 
-        return stargateService.getNftHoldersHistoric(after, before, levelId)
+        return stargateService.getNftHoldersHistoric(after, before, TokenLevel.fromString(level))
     }
 
     @GetMapping("/total-vet-staked")
@@ -155,7 +175,8 @@ open class StargateController(private val stargateService: StargateService) {
         name = "blockNumber",
         schema = Schema(type = "long"),
         description =
-            "Optional query parameter to get the total VET staked at a specific block number. If not provided, the latest value will be returned.",
+            "Optional query parameter to get the total VET staked at a specific block number. If not provided, the" +
+                " latest value will be returned.",
         required = false,
         example = "12345678",
     )
@@ -175,7 +196,8 @@ open class StargateController(private val stargateService: StargateService) {
     @Operation(
         summary = "Get historic data for total VET staked",
         description =
-            "This endpoint returns a time series of total VET staked in Stargate. The time series is sparsely populated, so it may not contain consistent gaps between records.",
+            "This endpoint returns a time series of total VET staked in Stargate. The time series is sparsely " +
+                "populated, so it may not contain consistent gaps between records.",
     )
     @Parameter(
         `in` = ParameterIn.PATH,
@@ -191,15 +213,32 @@ open class StargateController(private val stargateService: StargateService) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "levelId",
-        schema = Schema(type = "integer"),
+        name = "level",
+        schema =
+            Schema(
+                type = "string",
+                allowableValues =
+                    [
+                        "Strength",
+                        "Thunder",
+                        "Mjolnir",
+                        "VeThorX",
+                        "StrengthX",
+                        "ThunderX",
+                        "MjolnirX",
+                        "Dawn",
+                        "Lightning",
+                        "Flash",
+                    ],
+            ),
         description =
-            "Optional query parameter to filter total VET staked by level ID. If not provided, all levels will be included.",
+            "Optional query parameter to filter total VET staked by level. If not provided, all levels will be " +
+                "included.",
         required = false,
     )
     open fun getTotalVetStaked(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
-        @ValidLevelId @RequestParam(required = false) levelId: Int? = null,
+        @ValidTokenLevel @RequestParam(required = false) level: String? = null,
     ): List<TimeSeriesRecord<BigInteger>> {
         val now = Instant.now()
         val range = TimeRangePreset.fromPathValue(rangeStr)
@@ -207,6 +246,10 @@ open class StargateController(private val stargateService: StargateService) {
         val after = range.computeAfterTimestamp(now)
         val before = now.epochSecond
 
-        return stargateService.getTotalVetStakedHistoric(after, before, levelId)
+        return stargateService.getTotalVetStakedHistoric(
+            after,
+            before,
+            TokenLevel.fromString(level),
+        )
     }
 }

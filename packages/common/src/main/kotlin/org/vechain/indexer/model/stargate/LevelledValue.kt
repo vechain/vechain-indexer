@@ -2,7 +2,7 @@ package org.vechain.indexer.model.stargate
 
 interface LevelledValue<T> {
     val total: T
-    val byLevel: Map<Int, T>
+    val byLevel: Map<TokenLevel, T>
 
-    fun valueForLevel(levelId: Int?): T
+    fun valueForLevel(level: TokenLevel?): T
 }
