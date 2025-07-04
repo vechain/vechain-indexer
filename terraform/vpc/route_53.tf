@@ -1,41 +1,36 @@
 variable "live_color_mainnet" {
   type        = string
-  description = "The mainnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
+  description = "The COLOUR that should RECEIVE live mainnet traffic after this apply. Allowed values: 'prod-blue' or 'prod-green'."
 
   validation {
     condition     = var.live_color_mainnet == "prod-blue" || var.live_color_mainnet == "prod-green"
-    error_message = "Invalid value for live_color_mainnet. Allowed values are 'prod-blue' or 'prod-green', e.g. `terraform apply --var=live_color_mainnet=prod-blue`"
+    error_message = "Invalid value for live_color_mainnet: must be 'prod-blue' or 'prod-green'"
   }
-
-  default = "unspecified"
 }
 
 variable "live_color_testnet" {
   type        = string
-  description = "The testnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
+  description = "The COLOUR that should RECEIVE live testnet traffic after this apply. Allowed values: 'prod-blue' or 'prod-green'."
 
   validation {
     condition     = var.live_color_testnet == "prod-blue" || var.live_color_testnet == "prod-green"
-    error_message = "Invalid value for live_color_testnet. Allowed values are 'prod-blue' or 'prod-green', e.g. `terraform apply --var=live_color_mainnet=prod-blue`"
-  }
-
-  default = "unspecified"
-}
-variable "testnet_only" {
-  type        = bool
-  description = "If true, only the testnet records will be updated. If false, both mainnet and testnet records will be updated. This variable is optional."
-  validation {
-    condition     = var.testnet_only == true || var.testnet_only == false
-    error_message = "value for testnet_only must be a boolean, e.g. `terraform apply --var=testnet_only=true`"
+    error_message = "Invalid value for live_color_testnet: must be 'prod-blue' or 'prod-green'"
   }
 }
 
 locals {
-  live_mainnet_lb = var.live_color_mainnet == "prod-blue" && var.testnet_only == false ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : (var.live_color_mainnet != "prod-blue" && var.testnet_only == false ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : (var.live_color_mainnet == "prod-blue" && var.testnet_only == true ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : (var.live_color_mainnet != "prod-blue" && var.testnet_only == true ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : "place.holder.domain")))
-  live_testnet_lb = var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
-  # If the dead environment has been torn down, dead records will be nullified
-  dead_mainnet_lb = var.live_color_mainnet == "prod-blue" && var.testnet_only == true ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet != "prod-blue" && var.testnet_only == true ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet == "prod-blue" && var.testnet_only == false ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : (var.live_color_mainnet != "prod-blue" && var.testnet_only == false ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet, "place.holder.domain") : "place.holder.domain")))
-  dead_testnet_lb = var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet, "place.holder.domain")
+  blue_mainnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
+  green_mainnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
+  blue_testnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
+  green_testnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
+
+  # Desired records directly from the requested colours
+  live_mainnet_lb = var.live_color_mainnet == "prod-blue" ? local.blue_mainnet_lb : local.green_mainnet_lb
+  live_testnet_lb = var.live_color_testnet == "prod-blue" ? local.blue_testnet_lb : local.green_testnet_lb
+
+  # Dead records are always the opposite colour (placeholder if environment not yet deployed)
+  dead_mainnet_lb = var.live_color_mainnet == "prod-blue" ? try(local.green_mainnet_lb, "place.holder.domain") : try(local.blue_mainnet_lb, "place.holder.domain")
+  dead_testnet_lb = var.live_color_testnet == "prod-blue" ? try(local.green_testnet_lb, "place.holder.domain") : try(local.blue_testnet_lb, "place.holder.domain")
 }
 
 resource "aws_route53_zone" "veworld_public_zone" {
