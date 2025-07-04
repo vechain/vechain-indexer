@@ -69,14 +69,22 @@ jobs:
             mainnet)
               echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
               echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
+              echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
               ;;
             testnet)
               echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
               echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
+              echo "backend_colour=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
               ;;
             all)
               echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
               echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
+              if [ "${{ needs.identify-live-color.outputs.mainnet_dead_color }}" == "${{ needs.identify-live-color.outputs.testnet_dead_color }}" ]; then
+                echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+              else
+                echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+                echo "::warning::Mainnet and Testnet are moving to different colours. Terraform state will be initialised to ${ { needs.identify-live-color.outputs.mainnet_dead_color }}. Ensure this is acceptable." >> $GITHUB_OUTPUT
+              fi
               ;;
           esac
 
@@ -143,7 +151,7 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
+        run: terraform init -reconfigure -backend-config="../api/environments/${{ steps.set-colours.outputs.backend_colour }}.config"
 
       - name: Terraform Workspace
         id: workspace
