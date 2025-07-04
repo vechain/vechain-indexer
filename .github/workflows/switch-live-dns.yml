@@ -3,14 +3,14 @@ name: Switch Live Environment
 on:
   workflow_dispatch:
     inputs:
-      testnet_only:
-        description: "Switch testnet ONLY?"
-        required: false
-        type: boolean
-      mainnet_only:
-        description: "Switch mainnet ONLY?"
-        required: false
-        type: boolean
+      network:
+        description: "Switch network?"
+        required: true
+        type: choice
+        options:
+          - all
+          - mainnet
+          - testnet
 
 permissions:
   id-token: write  # This is required for requesting the JWT
