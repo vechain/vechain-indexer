@@ -82,13 +82,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ----------------------------------------------------------
-      - name: Check inputs
+      - name: Check test_only
         id: check-test-only
         run: |
           if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
             echo "test_only=true" >> $GITHUB_OUTPUT
             echo "main_only=false" >> $GITHUB_OUTPUT
+            echo "network=testnet" >> $GITHUB_OUTPUT
             echo "Switching only the testnet environment"
             echo "Current testnet live color: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
             echo "New testnet live color: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
@@ -97,6 +97,7 @@ jobs:
           elif [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
             echo "test_only=false" >> $GITHUB_OUTPUT
             echo "main_only=true" >> $GITHUB_OUTPUT
+            echo "network=mainnet" >> $GITHUB_OUTPUT
             echo "Switching only the mainnet environment"
             echo "Current mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
             echo "New mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
@@ -105,6 +106,7 @@ jobs:
           else
             echo "test_only=false" >> $GITHUB_OUTPUT
             echo "main_only=false" >> $GITHUB_OUTPUT
+            echo "network=all" >> $GITHUB_OUTPUT
             echo "Switching both the testnet and mainnet environments"
             echo "Current mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
             echo "New mainnet live color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
@@ -123,36 +125,45 @@ jobs:
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
-          # mainnet-only
-          if [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
-            srv=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-            if (( srv > 3 )); then
-              echo "env_ready=true"  >> $GITHUB_OUTPUT
-            else
-              echo "env_ready=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-
-          # testnet-only
-          elif [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
-            srv=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-            if (( srv > 3 )); then
-              echo "env_ready=true"  >> $GITHUB_OUTPUT
-            else
-              echo "env_ready=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-
-          # both – **new consolidated logic** (minimal change)
+          if [ "${{ github.event.inputs.testnet_only }}" == "true" ]; then
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
+          elif [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
           else
-            main_srv=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-            test_srv=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-            if (( main_srv > 3 && test_srv > 3 )); then
-              echo "env_ready=true"  >> $GITHUB_OUTPUT
-            else
-              echo "env_ready=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 3 )); then
+                echo "env_ready=true" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
+              else
+                echo "env_ready=false" >> $GITHUB_OUTPUT
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
+                exit 0
+              fi
           fi
 
       - name: Set up SSH agent
@@ -164,14 +175,11 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.3
+          terraform_wrapper: true
 
-      - name: Terraform Init
-        run: |
-          if [ "${{ github.event.inputs.mainnet_only }}" == "true" ]; then
-            terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.mainnet_dead_color }}.config"
-          else
-            terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
-          fi
+      - name: Terraform Initialize
+        id: init
+        run: terraform init -backend-config="../api/environments/${{ needs.identify-live-color.outputs.testnet_dead_color }}.config"
 
       - name: Terraform Workspace
         id: workspace
@@ -184,18 +192,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        run: |
-          PLAN_ARGS=""
-          if [ "${{ steps.check-test-only.outputs.test_only }}" == "true" ]; then
-            PLAN_ARGS+=" --var=live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}"
-          elif [ "${{ steps.check-test-only.outputs.main_only }}" == "true" ]; then
-            PLAN_ARGS+=" --var=live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-          else
-            PLAN_ARGS+=" --var=live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }} --var=live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}"
-          fi
-          PLAN_ARGS+=" --var=testnet_only=${{ github.event.inputs.testnet_only }}"
-          PLAN_ARGS+=" --var=mainnet_only=${{ github.event.inputs.mainnet_only }}"
-          terraform plan -out="apply.plan" $PLAN_ARGS
+        run: terraform plan -out "apply.plan" --var=live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }} --var=live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }} --var=network=${{ steps.check-test-only.outputs.network }}
 
       - name: Terraform Apply
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
