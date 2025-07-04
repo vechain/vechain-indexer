@@ -30,42 +30,6 @@ jobs:
       id-token: write
     secrets: inherit
 
-  fetch-lb-dns-names:
-    name: Fetch load balancer DNS names
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
-
-      - name: Get load balancer DNS names
-        id: get-lb-dns-names
-        run: |
-          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
-          { echo "Error: Failed to fetch blue mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
-          { echo "Error: Failed to fetch blue testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
-          { echo "Error: Failed to fetch green mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
-          { echo "Error: Failed to fetch green testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-
-          echo "blue_main_dns=$blue_main_dns" >> $GITHUB_OUTPUT
-          echo "blue_test_dns=$blue_test_dns" >> $GITHUB_OUTPUT
-          echo "green_main_dns=$green_main_dns" >> $GITHUB_OUTPUT
-          echo "green_test_dns=$green_test_dns" >> $GITHUB_OUTPUT
-
-    outputs:
-      blue_main_dns: ${{ steps.get-lb-dns-names.outputs.blue_main_dns }}
-      blue_test_dns: ${{ steps.get-lb-dns-names.outputs.blue_test_dns }}
-      green_main_dns: ${{ steps.get-lb-dns-names.outputs.green_main_dns }}
-      green_test_dns: ${{ steps.get-lb-dns-names.outputs.green_test_dns }}
-
   deploy-vpc-stack:
     name: Deploy VPC stack & switch DNS
     runs-on: ubuntu-latest
@@ -74,7 +38,7 @@ jobs:
       run:
         working-directory: terraform/vpc
 
-    needs: [fetch-lb-dns-names, identify-live-color]
+    needs: [identify-live-color]
     env:
       environment: prod
 
@@ -174,7 +138,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
-        run: terraform plan -out "apply.plan" --var=live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }} --var=live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }} --var=network=${{ github.event.inputs.network }}
+        run: terraform plan -out "apply.plan" --var=network=${{ github.event.inputs.network }}
 
       - name: Terraform Apply
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'

@@ -1,26 +1,3 @@
-variable "live_color_mainnet" {
-  type        = string
-  description = "The mainnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
-
-  validation {
-    condition     = var.live_color_mainnet == "prod-blue" || var.live_color_mainnet == "prod-green"
-    error_message = "Invalid value for live_color_mainnet. Allowed values are 'prod-blue' or 'prod-green', e.g. `terraform apply --var=live_color_mainnet=prod-blue`"
-  }
-
-  default = "unspecified"
-}
-
-variable "live_color_testnet" {
-  type        = string
-  description = "The testnet environment that will receive live traffic. Allowed values are 'prod-blue' or 'prod-green'. This variable is required."
-
-  validation {
-    condition     = var.live_color_testnet == "prod-blue" || var.live_color_testnet == "prod-green"
-    error_message = "Invalid value for live_color_testnet. Allowed values are 'prod-blue' or 'prod-green', e.g. `terraform apply --var=live_color_testnet=prod-blue`"
-  }
-
-  default = "unspecified"
-}
 variable "network" {
   type        = string
   description = "The network that will receive live traffic. Allowed values are 'mainnet' or 'testnet'. This variable is required."
@@ -31,40 +8,68 @@ variable "network" {
   default = "all"
 }
 
+data "aws_route53_zone" "veworld_public_zone_lookup" {
+  name         = "${local.env.environment}.${local.env.application}.${local.env.root_domain}"
+  private_zone = false
+}
+
+# Existing Route53 records (current state)
+data "aws_route53_record" "mainnet_live_current" {
+  zone_id = data.aws_route53_zone.veworld_public_zone_lookup.zone_id
+  name    = "mainnet.live.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+}
+
+data "aws_route53_record" "testnet_live_current" {
+  zone_id = data.aws_route53_zone.veworld_public_zone_lookup.zone_id
+  name    = "testnet.live.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+}
+
+data "aws_route53_record" "mainnet_dead_current" {
+  zone_id = data.aws_route53_zone.veworld_public_zone_lookup.zone_id
+  name    = "mainnet.dead.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+}
+
+data "aws_route53_record" "testnet_dead_current" {
+  zone_id = data.aws_route53_zone.veworld_public_zone_lookup.zone_id
+  name    = "testnet.dead.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+}
+
 locals {
-  # Determine which networks should be switched in this run.
+  # Which networks are being switched this run?
   update_mainnet = var.network == "mainnet" || var.network == "all"
   update_testnet = var.network == "testnet" || var.network == "all"
 
-  # Helper – opposite colour of the value provided (current live colour).
-  opposite_color_mainnet = var.live_color_mainnet == "prod-blue" ? "prod-green" : "prod-blue"
-  opposite_color_testnet = var.live_color_testnet == "prod-blue" ? "prod-green" : "prod-blue"
+  # Target LB hostnames per colour
+  blue_mainnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
+  green_mainnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
+  blue_testnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
+  green_testnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
 
-  # Mainnet – choose LB based on whether we are switching this network.
+  # Identify current live colour by comparing the record value to the blue lb.
+  current_mainnet_is_blue = data.aws_route53_record.mainnet_live_current.records[0] == local.blue_mainnet_lb
+  current_testnet_is_blue = data.aws_route53_record.testnet_live_current.records[0] == local.blue_testnet_lb
+
+  # Compute desired live records
   live_mainnet_lb = local.update_mainnet ? (
-    var.live_color_mainnet == "prod-blue" ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet
-  ) : (
-    var.live_color_mainnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
-  )
+    local.current_mainnet_is_blue ? local.green_mainnet_lb : local.blue_mainnet_lb
+  ) : data.aws_route53_record.mainnet_live_current.records[0]
 
-  dead_mainnet_lb = local.update_mainnet ? (
-    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain") : try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain")
-  ) : (
-    var.live_color_mainnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_mainnet,  "place.holder.domain")
-  )
-
-  # Testnet – analogous logic.
   live_testnet_lb = local.update_testnet ? (
-    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
-  ) : (
-    var.live_color_testnet == "prod-blue" ? data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet : data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
-  )
+    local.current_testnet_is_blue ? local.green_testnet_lb : local.blue_testnet_lb
+  ) : data.aws_route53_record.testnet_live_current.records[0]
+
+  # Compute desired dead records (opposite of live)
+  dead_mainnet_lb = local.update_mainnet ? (
+    local.current_mainnet_is_blue ? try(local.blue_mainnet_lb, "place.holder.domain") : try(local.green_mainnet_lb, "place.holder.domain")
+  ) : data.aws_route53_record.mainnet_dead_current.records[0]
 
   dead_testnet_lb = local.update_testnet ? (
-    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet,  "place.holder.domain") : try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain")
-  ) : (
-    var.live_color_testnet == "prod-blue" ? try(data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet, "place.holder.domain") : try(data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet,  "place.holder.domain")
-  )
+    local.current_testnet_is_blue ? try(local.blue_testnet_lb, "place.holder.domain") : try(local.green_testnet_lb, "place.holder.domain")
+  ) : data.aws_route53_record.testnet_dead_current.records[0]
 }
 
 resource "aws_route53_zone" "veworld_public_zone" {
