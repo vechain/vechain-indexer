@@ -47,7 +47,6 @@ resource "aws_route53_zone" "veworld_public_zone" {
 }
 
 resource "aws_route53_record" "mainnet_live" {
-  count   = startswith(local.env.environment, "prod") ? 1 : 0
   zone_id = aws_route53_zone.veworld_public_zone[0].zone_id
   name    = "mainnet.live.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
   type    = "CNAME"
@@ -56,7 +55,6 @@ resource "aws_route53_record" "mainnet_live" {
 }
 
 resource "aws_route53_record" "testnet_live" {
-  count   = startswith(local.env.environment, "prod") ? 1 : 0
   zone_id = aws_route53_zone.veworld_public_zone[0].zone_id
   name    = "testnet.live.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
   type    = "CNAME"
@@ -65,7 +63,6 @@ resource "aws_route53_record" "testnet_live" {
 }
 
 resource "aws_route53_record" "mainnet_dead" {
-  count   = startswith(local.env.environment, "prod") ? 1 : 0
   zone_id = aws_route53_zone.veworld_public_zone[0].zone_id
   name    = "mainnet.dead.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
   type    = "CNAME"
@@ -74,7 +71,6 @@ resource "aws_route53_record" "mainnet_dead" {
 }
 
 resource "aws_route53_record" "testnet_dead" {
-  count   = startswith(local.env.environment, "prod") ? 1 : 0
   zone_id = aws_route53_zone.veworld_public_zone[0].zone_id
   name    = "testnet.dead.${local.env.environment}.${local.env.application}.${local.env.root_domain}"
   type    = "CNAME"
