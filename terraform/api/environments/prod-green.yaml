@@ -87,8 +87,8 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
+        stargate_vtho_claimed_by_block: '2'
+        stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
         stargate_vet_staked_by_account: '2'
       business-event:
@@ -186,8 +186,8 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
+        stargate_vtho_claimed_by_block: '2'
+        stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
         stargate_vet_staked_by_account: '2'
       business-event:
