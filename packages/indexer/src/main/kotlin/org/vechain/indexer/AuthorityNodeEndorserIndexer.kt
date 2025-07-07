@@ -33,6 +33,7 @@ open class AuthorityNodeEndorserIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
     ) {
+    private var initialSyncChecked = false
 
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         val candidateEvents =
@@ -44,10 +45,19 @@ open class AuthorityNodeEndorserIndexer(
                     eventNames = listOf("Candidate"),
                 ),
             )
+        // After the first full-sync, check any newly-added AMNs
         authorityNodeEventService.processCandidateEvents(
             candidateEvents,
             this.status == Status.FULLY_SYNCED,
         )
+
+        // check all AMNs in DB when first fully synced
+        if (this.status == Status.FULLY_SYNCED && !initialSyncChecked) {
+            logger.info("Indexer fully synced - checking all node endorsers...")
+            authorityNodeEventService.syncEndorsersForAllNodes()
+            logger.info("Checked endorsers for all Authority Nodes")
+            initialSyncChecked = true
+        }
     }
 
     override fun rollback(blockNumber: Long) {
