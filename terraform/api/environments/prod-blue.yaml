@@ -157,7 +157,7 @@ enabled_nets:
         history:                    '15034'
         vevote:                     '21432703'
         stargate:                   '22087000'
-        authorityNodes:             '22087000'
+        authority_nodes:             '22087000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -165,13 +165,13 @@ enabled_nets:
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
-        authorityNodes:             '1000'
+        authority_nodes:             '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '10'
         stargate:                   '100'
-        authorityNodes:             '100'
+        authority_nodes:             '100'
       pruner:
         enabled:                    true
         interval:                   '43200000'

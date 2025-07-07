@@ -275,7 +275,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_START_BLOCK_AUTHORITY_NODE"
-      value = each.value.indexer.start_block.authorityNodes
+      value = each.value.indexer.start_block.authority_nodes
     },
     {
       name = "INDEXER_START_BLOCK_STARGATE"
@@ -303,7 +303,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync_logger_interval.authorityNodes
+      value = each.value.indexer.sync_logger_interval.authority_nodes
     },
     {
       name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"

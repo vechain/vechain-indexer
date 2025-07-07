@@ -19,9 +19,9 @@ open class AuthorityNodeEndorserIndexer(
     private val authorityNodeEventService: AuthorityNodeEventService,
     thorClient: ThorClient,
     abiManager: AbiManager,
-    @Value("\${indexer.startBlock.authorityNodes}") startBlock: Long,
-    @Value("\${indexer.syncLogInterval.authorityNodes}") private val syncLogInterval: Long,
-    @Value("\${indexer.syncBlockBatchSize.authorityNodes}") private val syncBlockBatchSize: Long,
+    @Value("\${indexer.startBlock.authority_nodes}") startBlock: Long,
+    @Value("\${indexer.syncLogInterval.authority_nodes}") private val syncLogInterval: Long,
+    @Value("\${indexer.syncBlockBatchSize.authority_nodes}") private val syncBlockBatchSize: Long,
     @Value("\${veworld.contract.authority_node.address}") private val contractAddress: String,
 ) :
     BaseLogIndexer(
