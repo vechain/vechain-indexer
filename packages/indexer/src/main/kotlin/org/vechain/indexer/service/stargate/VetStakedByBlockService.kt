@@ -12,7 +12,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsInt
 @Profile("stargate")
 @Service
 open class VetStakedByBlockService(private val repository: VetStakedByBlockRepository) {
-
     open fun processEvents(events: List<IndexedEvent>): VetStakedByBlock? {
         if (events.isEmpty()) return null
 
@@ -29,8 +28,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                     ?: throw IllegalArgumentException("Missing levelId in event params")
 
             when (event.eventType) {
-                "STARGATE_STAKE",
-                "STARGATE_DELEGATE" -> {
+                "STARGATE_STAKE" -> {
                     totalStaked += amount
                     totalStakedPerLevel[levelId] =
                         (totalStakedPerLevel[levelId] ?: BigInteger.ZERO) + amount

@@ -73,10 +73,10 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
-        stargate_nft_holders_by_account: '1'
-        stargate_vet_staked_by_account: '1'
+        stargate_vtho_claimed_by_block: '2'
+        stargate_vtho_claimed_by_account: '2'
+        stargate_nft_holders_by_account: '2'
+        stargate_vet_staked_by_account: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -159,10 +159,10 @@ enabled_nets:
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
-        stargate_nft_holders_by_account: '1'
-        stargate_vet_staked_by_account: '1'
+        stargate_vtho_claimed_by_block: '2'
+        stargate_vtho_claimed_by_account: '2'
+        stargate_nft_holders_by_account: '2'
+        stargate_vet_staked_by_account: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'

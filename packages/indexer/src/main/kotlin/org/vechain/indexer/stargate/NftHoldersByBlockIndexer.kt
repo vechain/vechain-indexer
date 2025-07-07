@@ -25,6 +25,8 @@ open class NftHoldersByBlockIndexer(
     @Value("\${indexer.startBlock.stargate}") startBlock: Long,
     @Value("\${indexer.syncBlockBatchSize.stargate}") private val syncBlockBatchSize: Long,
     @Value("\${indexer.syncLogInterval.stargate}") private val logInterval: Long,
+    @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
+    private val stargateNftContractAddress: String,
 ) :
     BaseLogIndexer(
         repository = repository,
@@ -36,8 +38,7 @@ open class NftHoldersByBlockIndexer(
         abiManager = abiManager,
         businessEventManager = businessEventManager,
     ) {
-    private val businessEventNames =
-        listOf("STARGATE_STAKE", "STARGATE_DELEGATE", "STARGATE_UNSTAKE")
+    private val businessEventNames = listOf("STARGATE_STAKE", "STARGATE_UNSTAKE")
 
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         if (events.isEmpty()) {
@@ -50,7 +51,10 @@ open class NftHoldersByBlockIndexer(
                 processBlockGenericEvents(
                     events,
                     transfers,
-                    FilterCriteria(businessEventNames = businessEventNames),
+                    FilterCriteria(
+                        businessEventNames = businessEventNames,
+                        contractAddresses = listOf(stargateNftContractAddress),
+                    ),
                 ),
                 FilterCriteria(businessEventNames = businessEventNames),
             )
