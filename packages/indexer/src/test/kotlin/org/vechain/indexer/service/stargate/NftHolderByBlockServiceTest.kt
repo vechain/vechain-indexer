@@ -16,7 +16,6 @@ import strikt.assertions.isNull
 
 @ExtendWith(MockKExtension::class)
 internal class NftHolderByBlockServiceTest {
-
     @MockK lateinit var repository: NftHoldersByBlockRepository
 
     private lateinit var service: NftHolderByBlockService
@@ -48,7 +47,7 @@ internal class NftHolderByBlockServiceTest {
                     every { blockId } returns "block2"
                     every { blockNumber } returns 12L
                     every { blockTimestamp } returns 1200L
-                    every { eventType } returns "STARGATE_DELEGATE"
+                    every { eventType } returns "STARGATE_STAKE"
                     every { params.getAsInt("levelId") } returns 2
                 },
                 mockk<IndexedEvent> {

@@ -10,7 +10,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsInt
 @Profile("stargate")
 @Service
 open class NftHolderByBlockService(private val repository: NftHoldersByBlockRepository) {
-
     /**
      * Processes a list of events to calculate the total number of NFT holders and their
      * distribution by level.
@@ -32,8 +31,7 @@ open class NftHolderByBlockService(private val repository: NftHoldersByBlockRepo
                 event.params.getAsInt("levelId")
                     ?: throw IllegalArgumentException("Missing levelId in event params")
             when (event.eventType) {
-                "STARGATE_STAKE",
-                "STARGATE_DELEGATE" -> {
+                "STARGATE_STAKE" -> {
                     totalNftHolders += 1L
                     totalNftHoldersByLevel[levelId] =
                         totalNftHoldersByLevel.getOrDefault(levelId, 0L) + 1L
