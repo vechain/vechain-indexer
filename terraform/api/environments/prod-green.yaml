@@ -58,6 +58,7 @@ enabled_nets:
         history:                    '751'
         vevote:                     '21432703'
         stargate:                   '22044000'
+        authority_nodes:             '22044000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -65,11 +66,13 @@ enabled_nets:
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
+        authority_nodes:            '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '10'
         stargate:                   '100'
+        authority_nodes:            '100'
       pruner:
         enabled: true
         interval:                   '43200000'
@@ -83,10 +86,11 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '2'
-        history:                    '5'
+        history:                    '6'
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
+        authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '2'
         stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
@@ -118,6 +122,8 @@ enabled_nets:
       contract:
         vevote:
           address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
+        authority_node:
+          address:                  '0x0000000000000000000000417574686f72697479'
     mongodb:
       type: atlas
       fqdn: mainnet.rsmhw.mongodb.net
@@ -157,7 +163,6 @@ enabled_nets:
         history:                    '15034'
         vevote:                     '21432703'
         stargate:                   '22087000'
-        authority_nodes:             '22087000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -165,13 +170,11 @@ enabled_nets:
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
-        authority_nodes:             '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '10'
         stargate:                   '100'
-        authority_nodes:             '100'
       pruner:
         enabled: true
         interval:                   '43200000'
@@ -185,11 +188,10 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '2'
-        history:                    '5'
+        history:                    '6'
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '2'
         stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
@@ -221,8 +223,6 @@ enabled_nets:
       contract:
         vevote:
           address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
-        authority_node:
-          address: '0x0000000000000000000000417574686f72697479'
     mongodb:
       type: atlas
       fqdn: testnet.rsmhw.mongodb.net

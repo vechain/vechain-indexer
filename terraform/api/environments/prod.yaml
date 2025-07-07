@@ -69,7 +69,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '2'
-        history:                    '5'
+        history:                    '6'
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
@@ -142,7 +142,7 @@ enabled_nets:
         history:                    '15034'
         vevote:                     '21432703'
         stargate:                   '22087000'
-        authority_nodes:             '22087000'
+        authority_nodes:            '22087000'
       pruner:
         enabled:                    true
         interval:                   '43200000'
@@ -156,7 +156,7 @@ enabled_nets:
         nfts:                       '2'
         transfers:                  '1'
         transactions:               '2'
-        history:                    '5'
+        history:                    '6'
         nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
@@ -184,13 +184,13 @@ enabled_nets:
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
-        authority_nodes:             '1000'
+        authority_nodes:            '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
-        authority_nodes:             '100'
+        authority_nodes:            '100'
     comments:
       minLength: 10
       language:
