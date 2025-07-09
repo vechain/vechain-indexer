@@ -100,7 +100,7 @@ enabled_nets:
         contracts:                  '100'
         fungibleTokens:             '100'
         nfts:                       '100'
-        transfers:                  '200
+        transfers:                  '200'
         vevote:                     '10'
         stargate:                   '100'
     comments:
@@ -184,7 +184,7 @@ enabled_nets:
         stargate:                   '1000'
       sync_block_batch_size:
         nfts:                       '100'
-        transfers:                  '200
+        transfers:                  '200'
         vevote:                     '100'
         stargate:                   '100'
     comments:

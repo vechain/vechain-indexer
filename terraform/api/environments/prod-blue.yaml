@@ -67,7 +67,7 @@ enabled_nets:
         stargate:                   '1000'
       sync_block_batch_size:
         nfts:                       '100'
-        transfers:                  '200
+        transfers:                  '200'
         vevote:                     '10'
         stargate:                   '100'
       pruner:
@@ -166,7 +166,7 @@ enabled_nets:
         stargate:                   '1000'
       sync_block_batch_size:
         nfts:                       '100'
-        transfers:                  '200
+        transfers:                  '200'
         vevote:                     '10'
         stargate:                   '100'
       pruner:
