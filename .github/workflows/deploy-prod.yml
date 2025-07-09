@@ -11,7 +11,7 @@ on:
           - testnet
           - mainnet
           - both
-        default: testnet
+        default: both
       environment:
         description: Which color environment to deploy
         required: true
@@ -19,7 +19,7 @@ on:
         options:
           - live
           - dead
-        default: live
+        default: dead
 
 # Required for authentication through GitHub OIDC
 permissions:
