@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - 'main'
+env:
+  COMPOSE_BAKE: "true"
 
 permissions:
   contents: read
