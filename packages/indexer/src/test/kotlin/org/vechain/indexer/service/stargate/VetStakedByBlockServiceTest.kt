@@ -69,10 +69,10 @@ internal class VetStakedByBlockServiceTest {
                 blockId = "block0",
                 blockNumber = 9L,
                 blockTimestamp = 900L,
-                total = BigInteger("500"),
+                total = BigInteger("300"),
                 byLevel =
                     mutableMapOf(
-                        TokenLevel.Dawn to BigInteger("200"),
+                        TokenLevel.Thunder to BigInteger("200"),
                         TokenLevel.Strength to BigInteger("100"),
                     ),
             )
@@ -84,9 +84,9 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockId).isEqualTo("block3")
             that(result?.blockNumber).isEqualTo(13L)
             that(result?.blockTimestamp).isEqualTo(1300L)
-            that(result?.total).isEqualTo(BigInteger("750"))
-            that(result?.byLevel?.get(TokenLevel.Dawn)).isEqualTo(BigInteger("250"))
-            that(result?.byLevel?.get(TokenLevel.Strength)).isEqualTo(BigInteger("300"))
+            that(result?.total).isEqualTo(BigInteger("550"))
+            that(result?.byLevel?.get(TokenLevel.Strength)).isEqualTo(BigInteger("150"))
+            that(result?.byLevel?.get(TokenLevel.Thunder)).isEqualTo(BigInteger("400"))
         }
     }
 
@@ -112,7 +112,7 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockNumber).isEqualTo(10L)
             that(result?.blockTimestamp).isEqualTo(1000L)
             that(result?.total).isEqualTo(BigInteger("100"))
-            that(result?.byLevel?.get(TokenLevel.Dawn)).isEqualTo(BigInteger("100"))
+            that(result?.byLevel?.get(TokenLevel.Strength)).isEqualTo(BigInteger("100"))
         }
     }
 
