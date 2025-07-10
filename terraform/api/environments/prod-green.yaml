@@ -66,10 +66,10 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
       sync_block_batch_size:
-        nfts:                       '400'
-        transfers:                  '400'
-        vevote:                     '10'
-        stargate:                   '100'
+        nfts:                       '500'
+        transfers:                  '500'
+        vevote:                     '500'
+        stargate:                   '500'
       pruner:
         enabled: true
         interval:                   '43200000'
@@ -165,10 +165,10 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
       sync_block_batch_size:
-        nfts:                       '400'
-        transfers:                  '400'
-        vevote:                     '10'
-        stargate:                   '100'
+        nfts:                       '500'
+        transfers:                  '500'
+        vevote:                     '500'
+        stargate:                   '500'
       pruner:
         enabled: true
         interval:                   '43200000'
