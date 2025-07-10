@@ -19,7 +19,7 @@ concurrency:
 jobs:
   check-formatting:
     name: Check Formatting
-    runs-on: ubuntu-latest
+    runs-on: docker-build-arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +37,7 @@ jobs:
 
   unit-tests:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: docker-build-arm64
     strategy:
       matrix:
         package: [api, common, indexer]
@@ -77,7 +77,7 @@ jobs:
 
   e2e-tests:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: docker-build-arm64
     steps:
       - uses: actions/checkout@v4
 
