@@ -59,7 +59,7 @@ internal class VthoClaimByBlockServiceTest {
             that(result?.blockId).isEqualTo("block2")
             that(result?.blockNumber).isEqualTo(12L)
             that(result?.blockTimestamp).isEqualTo(1200L)
-            that(result?.value).isEqualTo(BigInteger("300"))
+            that(result?.total).isEqualTo(BigInteger("300"))
         }
     }
 
@@ -79,7 +79,7 @@ internal class VthoClaimByBlockServiceTest {
                 blockId = "block2",
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
-                value = BigInteger("300"),
+                total = BigInteger("300"),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
@@ -89,7 +89,7 @@ internal class VthoClaimByBlockServiceTest {
             that(result?.blockId).isEqualTo("block3")
             that(result?.blockNumber).isEqualTo(15L)
             that(result?.blockTimestamp).isEqualTo(1500L)
-            that(result?.value).isEqualTo(BigInteger("350"))
+            that(result?.total).isEqualTo(BigInteger("350"))
         }
     }
 
@@ -109,7 +109,7 @@ internal class VthoClaimByBlockServiceTest {
                 blockId = "block2",
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
-                value = BigInteger("300"),
+                total = BigInteger("300"),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
@@ -132,7 +132,7 @@ internal class VthoClaimByBlockServiceTest {
                 blockId = "blockX",
                 blockNumber = 99L,
                 blockTimestamp = 9999L,
-                value = BigInteger("123"),
+                total = BigInteger("123"),
             )
         every { repository.save(record) } returns record
 

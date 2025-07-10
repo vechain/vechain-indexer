@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.model.stargate.TokenLevel
 import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -68,8 +69,12 @@ internal class VetStakedByBlockServiceTest {
                 blockId = "block0",
                 blockNumber = 9L,
                 blockTimestamp = 900L,
-                value = BigInteger("500"),
-                byLevel = mutableMapOf(1 to BigInteger("200"), 2 to BigInteger("100")),
+                total = BigInteger("500"),
+                byLevel =
+                    mutableMapOf(
+                        TokenLevel.Dawn to BigInteger("200"),
+                        TokenLevel.Strength to BigInteger("100"),
+                    ),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
@@ -79,9 +84,9 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockId).isEqualTo("block3")
             that(result?.blockNumber).isEqualTo(13L)
             that(result?.blockTimestamp).isEqualTo(1300L)
-            that(result?.value).isEqualTo(BigInteger("750"))
-            that(result?.byLevel?.get(1)).isEqualTo(BigInteger("250"))
-            that(result?.byLevel?.get(2)).isEqualTo(BigInteger("300"))
+            that(result?.total).isEqualTo(BigInteger("750"))
+            that(result?.byLevel?.get(TokenLevel.Dawn)).isEqualTo(BigInteger("250"))
+            that(result?.byLevel?.get(TokenLevel.Strength)).isEqualTo(BigInteger("300"))
         }
     }
 
@@ -106,8 +111,8 @@ internal class VetStakedByBlockServiceTest {
             that(result?.blockId).isEqualTo("block1")
             that(result?.blockNumber).isEqualTo(10L)
             that(result?.blockTimestamp).isEqualTo(1000L)
-            that(result?.value).isEqualTo(BigInteger("100"))
-            that(result?.byLevel?.get(1)).isEqualTo(BigInteger("100"))
+            that(result?.total).isEqualTo(BigInteger("100"))
+            that(result?.byLevel?.get(TokenLevel.Dawn)).isEqualTo(BigInteger("100"))
         }
     }
 
@@ -140,8 +145,8 @@ internal class VetStakedByBlockServiceTest {
                 blockId = "blockX",
                 blockNumber = 99L,
                 blockTimestamp = 9999L,
-                value = BigInteger("123"),
-                byLevel = mutableMapOf(1 to BigInteger("123")),
+                total = BigInteger("123"),
+                byLevel = mutableMapOf(TokenLevel.Dawn to BigInteger("123")),
             )
         every { repository.save(record) } returns record
 

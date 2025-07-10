@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.stargate.NftHoldersByBlock
+import org.vechain.indexer.model.stargate.TokenLevel
 import org.vechain.indexer.repository.stargate.NftHoldersByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import strikt.api.expect
@@ -63,8 +64,8 @@ internal class NftHolderByBlockServiceTest {
                 blockId = "block0",
                 blockNumber = 9L,
                 blockTimestamp = 900L,
-                value = 5L,
-                byLevel = mutableMapOf(1 to 2L, 2 to 1L),
+                total = 5L,
+                byLevel = mutableMapOf(TokenLevel.Strength to 2L, TokenLevel.Thunder to 1L),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
@@ -74,9 +75,9 @@ internal class NftHolderByBlockServiceTest {
             that(result?.blockId).isEqualTo("block3")
             that(result?.blockNumber).isEqualTo(13L)
             that(result?.blockTimestamp).isEqualTo(1300L)
-            that(result?.value).isEqualTo(6L)
-            that(result?.byLevel?.get(1)).isEqualTo(2L)
-            that(result?.byLevel?.get(2)).isEqualTo(2L)
+            that(result?.total).isEqualTo(6L)
+            that(result?.byLevel?.get(TokenLevel.Strength)).isEqualTo(2L)
+            that(result?.byLevel?.get(TokenLevel.Thunder)).isEqualTo(2L)
         }
     }
 
@@ -108,8 +109,8 @@ internal class NftHolderByBlockServiceTest {
                 blockId = "blockX",
                 blockNumber = 99L,
                 blockTimestamp = 9999L,
-                value = 1L,
-                byLevel = mutableMapOf(1 to 1L),
+                total = 1L,
+                byLevel = mutableMapOf(TokenLevel.Dawn to 1L),
             )
         every { repository.save(record) } returns record
 
