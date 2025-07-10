@@ -160,6 +160,7 @@ enabled_nets:
         nft_blacklist:              '3'
         vevote_comments:            '1'
         vevote_results:             '1'
+        authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '3'
         stargate_vtho_claimed_by_account: '3'
         stargate_nft_holders_by_account: '3'
