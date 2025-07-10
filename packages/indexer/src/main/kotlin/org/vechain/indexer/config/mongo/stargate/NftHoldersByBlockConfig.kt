@@ -5,8 +5,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.model.IndexedDocument
 import org.vechain.indexer.model.stargate.NftHoldersByBlock
 import org.vechain.indexer.service.IndexerVersionService
 
@@ -30,5 +33,11 @@ open class NftHoldersByBlockConfig(
         )
 
         ensureCollection()
+
+        // Ensure indexes
+        ensureIndex(
+            "blockTimestamp_1",
+            Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+        )
     }
 }

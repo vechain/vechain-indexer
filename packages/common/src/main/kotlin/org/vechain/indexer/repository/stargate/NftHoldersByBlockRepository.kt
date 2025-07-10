@@ -6,7 +6,9 @@ import org.vechain.indexer.model.stargate.NftHoldersByBlock
 import org.vechain.indexer.repository.BaseIndexedRepository
 
 @Profile("stargate")
-interface NftHoldersByBlockRepository : BaseIndexedRepository<NftHoldersByBlock, Long> {
+interface NftHoldersByBlockRepository :
+    BaseIndexedRepository<NftHoldersByBlock, Long>, TimeSeriesRepo<NftHoldersByBlock> {
+
     @Aggregation(
         pipeline =
             [
@@ -15,5 +17,15 @@ interface NftHoldersByBlockRepository : BaseIndexedRepository<NftHoldersByBlock,
                 "{ '\$limit': 1 }",
             ]
     )
-    fun findLatestBeforeOrAtBlock(blockNumber: Long): NftHoldersByBlock?
+    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): NftHoldersByBlock?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
+                "{ '\$sort': { 'blockTimestamp': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): NftHoldersByBlock?
 }

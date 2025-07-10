@@ -6,7 +6,8 @@ import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.repository.BaseIndexedRepository
 
 @Profile("stargate")
-interface VetStakedByBlockRepository : BaseIndexedRepository<VetStakedByBlock, Long> {
+interface VetStakedByBlockRepository :
+    BaseIndexedRepository<VetStakedByBlock, Long>, TimeSeriesRepo<VetStakedByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -15,5 +16,15 @@ interface VetStakedByBlockRepository : BaseIndexedRepository<VetStakedByBlock, L
                 "{ '\$limit': 1 }",
             ]
     )
-    fun findLatestBeforeOrAtBlock(blockNumber: Long): VetStakedByBlock?
+    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VetStakedByBlock?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
+                "{ '\$sort': { 'blockTimestamp': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VetStakedByBlock?
 }
