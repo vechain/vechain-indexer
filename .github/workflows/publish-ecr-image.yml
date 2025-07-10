@@ -29,8 +29,8 @@ on:
 
 # Required for authentication through GitHub OIDC
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: read # This is required for actions/checkout
+  id-token: write  # This is required for requesting the JWT
+  contents: read   # This is required for actions/checkout
 
 env:
   latestTag: ${{ inputs.latestTag || 'latest' }}
@@ -67,13 +67,23 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
+      - name: Go Build Cache for Docker
+        uses: actions/cache@v4
+        with:
+          path: go-build-cache
+          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
+
+      - name: Inject go-build-cache
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          cache-source: go-build-cache
       - name: Build images and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           file: Dockerfile
           platforms: ${{ env.imagePlatform }}
@@ -87,6 +97,8 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.versionTag }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.latestTag }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.projectName }}/${{ matrix.packageName }}:${{ env.commitHash }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Scan Docker image
         id: docker-scan

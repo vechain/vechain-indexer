@@ -65,7 +65,7 @@ allprojects {
             content { includeGroup("com.github.vechain") }
         }
         maven {
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
         }
     }
 
@@ -223,7 +223,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:4.3.1")
+        implementation("org.vechain:indexer-core:4.3.2")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")

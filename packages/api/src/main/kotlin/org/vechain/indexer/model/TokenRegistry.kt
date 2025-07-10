@@ -14,6 +14,7 @@ data class TokenRegistry(
     val website: String? = null,
     val whitePaper: String? = null,
     val links: List<SocialLink>? = null,
+    val crossChainProvider: CrossChainProvider? = null,
 )
 
 @Serializable
@@ -24,3 +25,5 @@ data class SocialLink(
     val telegram: String? = null,
     val facebook: String? = null,
 )
+
+@Serializable data class CrossChainProvider(val name: String? = null, val url: String? = null)
