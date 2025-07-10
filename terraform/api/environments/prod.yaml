@@ -181,10 +181,10 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
       sync_block_batch_size:
-        nfts:                       '500'
-        transfers:                  '500'
-        vevote:                     '500'
-        stargate:                   '500'
+        nfts:                       '100'
+        transfers:                  '100'
+        vevote:                     '100'
+        stargate:                   '100'
     comments:
       minLength: 10
       language:
