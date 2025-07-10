@@ -4,6 +4,7 @@ import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.model.stargate.TokenLevel
 import org.vechain.indexer.model.stargate.VetStakedByBlock
 import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -26,17 +27,20 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
             val levelId =
                 event.params.getAsInt("levelId")
                     ?: throw IllegalArgumentException("Missing levelId in event params")
+            val level =
+                TokenLevel.fromOrdinal(levelId)
+                    ?: throw IllegalArgumentException("Invalid levelId: $levelId")
 
             when (event.eventType) {
                 "STARGATE_STAKE" -> {
                     totalStaked += amount
-                    totalStakedPerLevel[levelId] =
-                        (totalStakedPerLevel[levelId] ?: BigInteger.ZERO) + amount
+                    totalStakedPerLevel[level] =
+                        (totalStakedPerLevel[level] ?: BigInteger.ZERO) + amount
                 }
                 "STARGATE_UNSTAKE" -> {
                     totalStaked -= amount
-                    totalStakedPerLevel[levelId] =
-                        (totalStakedPerLevel[levelId] ?: BigInteger.ZERO) - amount
+                    totalStakedPerLevel[level] =
+                        (totalStakedPerLevel[level] ?: BigInteger.ZERO) - amount
                 }
             }
         }

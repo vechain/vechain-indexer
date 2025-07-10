@@ -75,18 +75,18 @@ open class HistoryController(private val historyService: HistoryService) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "long"),
-        description =
-            "Return transactions before and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
         name = "after",
         schema = Schema(type = "long"),
         description =
             "Return transactions after and including this timestamp (Unix time in seconds).",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "long"),
+        description =
+            "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,
     )
     @PaginationParameters
@@ -95,8 +95,8 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) after: Long?,
+        @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
