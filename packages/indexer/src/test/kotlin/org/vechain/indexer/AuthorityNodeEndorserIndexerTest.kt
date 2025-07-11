@@ -107,6 +107,7 @@ class AuthorityNodeEndorserIndexerTest {
     @Test
     fun `should only process candidate events when fully synced`() {
         authorityNodeEndorserIndexer.status = Status.FULLY_SYNCED
+        authorityNodeEndorserIndexer.initialSyncChecked = true
 
         val eventsSlot = slot<List<IndexedEvent>>()
         every {

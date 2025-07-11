@@ -33,7 +33,7 @@ open class AuthorityNodeEndorserIndexer(
         logsType = setOf(LogType.EVENT),
         abiManager = abiManager,
     ) {
-    private var initialSyncChecked = false
+    var initialSyncChecked = false
 
     override fun processLogs(events: List<EventLog>, transfers: List<TransferLog>) {
         val candidateEvents =
