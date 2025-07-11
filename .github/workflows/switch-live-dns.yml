@@ -135,7 +135,7 @@ jobs:
 
           # Check mainnet readiness
           if [ "${{ github.event.inputs.network }}" == "mainnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-b3tr-cluster --query 'length(serviceArns)' --output text)
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 0 )); then
                 mainnet_ready=true
                 echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} mainnet ECS services are ready, proceeding with deployment"
@@ -146,7 +146,7 @@ jobs:
 
           # Check testnet readiness
           if [ "${{ github.event.inputs.network }}" == "testnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-b3tr-cluster --query 'length(serviceArns)' --output text)
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 0 )); then
                 testnet_ready=true
                 echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} testnet ECS services are ready, proceeding with deployment"
