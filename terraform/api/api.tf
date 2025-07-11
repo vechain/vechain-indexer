@@ -440,6 +440,22 @@ module "ecs-backend-service" {
     {
       name  = "STARGATE_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
+      value = each.value.indexer.sync_block_batch_size.nfts
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
+      value = each.value.indexer.sync_block_batch_size.transfers
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
+      value = each.value.indexer.sync_block_batch_size.vevote
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
+      value = each.value.indexer.sync_block_batch_size.stargate
     }
   ]
 }

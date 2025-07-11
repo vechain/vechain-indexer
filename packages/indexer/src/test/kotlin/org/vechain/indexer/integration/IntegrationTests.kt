@@ -24,13 +24,26 @@ class IntegrationTests : AbstractIntegrationTest() {
         // Sleep while indexer catches chain
         waitForFullySynced()
 
+        // TODO: The current transaction script does not contain any stargate data
+        val unsupportedCollections =
+            listOf(
+                "stargate_total_nft_holders_by_block",
+                "stargate_total_vet_staked_by_block",
+                "stargate_vtho_claimed_by_account",
+                "stargate_vtho_claimed_by_block",
+            )
+
         // Do not take into account mongock collections, archive collections
         val changeLogCollections = listOf("mongockChangeLog", "mongockLock")
 
         val collections = mongoOps.collectionNames
 
         collections
-            .filter { !changeLogCollections.contains(it) && !it.endsWith("archives") }
+            .filter {
+                !unsupportedCollections.contains(it) &&
+                    !changeLogCollections.contains(it) &&
+                    !it.endsWith("archives")
+            }
             .forEach { collection ->
                 mongoOps.count(Query(), collection).let { count ->
                     expect {

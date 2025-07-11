@@ -13,6 +13,10 @@ constructor(
     @JsonIgnore override val blockId: String,
     @JsonIgnore @Id override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    val total: Long,
-    val byLevel: Map<Int, Long>,
-) : IndexedDocument
+    override val total: Long,
+    override val byLevel: Map<TokenLevel, Long>,
+) : IndexedDocument, LevelledValue<Long> {
+    override fun valueForLevel(level: TokenLevel?): Long {
+        return if (level == null) total else byLevel[level] ?: 0L
+    }
+}

@@ -73,10 +73,10 @@ enabled_nets:
         nft_blacklist:              '3'
         vevote_comments:            '1'
         vevote_results:             '1'
-        stargate_vtho_claimed_by_block: '3'
-        stargate_vtho_claimed_by_account: '3'
-        stargate_nft_holders_by_account: '3'
-        stargate_vet_staked_by_account: '3'
+        stargate_vtho_claimed_by_block: '1'
+        stargate_vtho_claimed_by_account: '1'
+        stargate_nft_holders_by_account: '1'
+        stargate_vet_staked_by_account: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -97,12 +97,10 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
       sync_block_batch_size:
-        contracts:                  '100'
-        fungibleTokens:             '100'
-        nfts:                       '400'
-        transfers:                  '400'
-        vevote:                     '10'
-        stargate:                   '100'
+        nfts:                       '500'
+        transfers:                  '500'
+        vevote:                     '500'
+        stargate:                   '500'
     comments:
       minLength: 10
       language:
@@ -161,10 +159,10 @@ enabled_nets:
         vevote_comments:            '1'
         vevote_results:             '1'
         authority_node_endorser:    '1'
-        stargate_vtho_claimed_by_block: '3'
-        stargate_vtho_claimed_by_account: '3'
-        stargate_nft_holders_by_account: '3'
-        stargate_vet_staked_by_account: '3'
+        stargate_vtho_claimed_by_block: '1'
+        stargate_vtho_claimed_by_account: '1'
+        stargate_nft_holders_by_account: '1'
+        stargate_vet_staked_by_account: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -186,8 +184,8 @@ enabled_nets:
         stargate:                   '1000'
         authority_nodes:            '1000'
       sync_block_batch_size:
-        nfts:                       '400'
-        transfers:                  '400'
+        nfts:                       '100'
+        transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
         authority_nodes:            '100'
