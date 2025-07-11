@@ -58,7 +58,7 @@ enabled_nets:
         history:                    '751'
         vevote:                     '21432703'
         stargate:                   '22044000'
-        authority_nodes:             '22044000'
+        authority_nodes:            '22044000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -72,6 +72,7 @@ enabled_nets:
         transfers:                  '500'
         vevote:                     '500'
         stargate:                   '500'
+        authority_nodes:            '500'
       pruner:
         enabled: true
         interval:                   '43200000'
@@ -89,6 +90,7 @@ enabled_nets:
         nft_blacklist:              '3'
         vevote_comments:            '1'
         vevote_results:             '1'
+        authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '1'
         stargate_vtho_claimed_by_account: '1'
         stargate_nft_holders_by_account: '1'
