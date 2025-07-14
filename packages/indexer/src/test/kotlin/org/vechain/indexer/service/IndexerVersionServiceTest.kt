@@ -4,103 +4,84 @@ import io.mockk.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext
 import org.vechain.indexer.model.IndexerVersion
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
+@Document("testCollection") class DummyModel
+
 class IndexerVersionServiceTest {
     private lateinit var mongoTemplate: MongoTemplate
+    private lateinit var mongoMappingContext: MongoMappingContext
     private lateinit var indexerVersionService: IndexerVersionService
 
     @BeforeEach
     fun setUp() {
-        mongoTemplate = mockk() // Create a mock of MongoTemplate
-        indexerVersionService = IndexerVersionService(mongoTemplate)
+        mongoTemplate = mockk()
+        mongoMappingContext = mockk()
+
+        every {
+            mongoMappingContext.getPersistentEntity(DummyModel::class.java)?.collection
+        } returns "testCollection"
+
+        indexerVersionService = IndexerVersionService(mongoTemplate, mongoMappingContext)
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - should drop collection and update version if version has changed`() {
-        val collectionName = "testCollection"
-        val newVersion = 2
-
-        every { mongoTemplate.findById(collectionName, IndexerVersion::class.java) } returns
-            IndexerVersion(collectionName, 1)
-
-        every { mongoTemplate.dropCollection(collectionName) } just Runs
-
+    fun `should drop collection and update version if version has changed`() {
+        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
+            IndexerVersion("testCollection", 1)
+        every { mongoTemplate.dropCollection("testCollection") } just Runs
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
-            IndexerVersion(collectionName, newVersion)
+            IndexerVersion("testCollection", 2)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                collectionName,
-                newVersion,
-            )
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 2)
 
-        verify { mongoTemplate.dropCollection(collectionName) }
+        verify { mongoTemplate.dropCollection("testCollection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(true) }
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - should not drop collection if version is not changed`() {
-        val collectionName = "testCollection"
-        val newVersion = 1
-
-        every { mongoTemplate.findById(collectionName, IndexerVersion::class.java) } returns
-            IndexerVersion(collectionName, newVersion)
+    fun `should not drop collection if version is not changed`() {
+        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
+            IndexerVersion("testCollection", 1)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                collectionName,
-                newVersion,
-            )
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 1)
 
-        verify(exactly = 0) { mongoTemplate.dropCollection(collectionName) }
+        verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
         verify(exactly = 0) { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(false) }
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - should create version document if no version document found`() {
-        val collectionName = "testCollection"
-        val newVersion = 1
-
-        every { mongoTemplate.findById(collectionName, IndexerVersion::class.java) } returns null
-
-        every { mongoTemplate.dropCollection(collectionName) } just Runs
-
+    fun `should create version document if no version document found`() {
+        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns null
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
-            IndexerVersion(collectionName, newVersion)
+            IndexerVersion("testCollection", 1)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                collectionName,
-                newVersion,
-            )
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 1)
 
-        verify(exactly = 0) { mongoTemplate.dropCollection(collectionName) }
-
+        verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(false) }
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - should handle error when exception is thrown`() {
-        val collectionName = "testCollection"
-        val newVersion = 2
-
-        every { mongoTemplate.findById(collectionName, IndexerVersion::class.java) } throws
-            RuntimeException("Error fetching version")
+    fun `should handle error when exception is thrown`() {
+        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } throws
+            RuntimeException("Error")
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                collectionName,
-                newVersion,
-            )
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 2)
 
         expect { that(result).isEqualTo(false) }
     }
