@@ -25,7 +25,10 @@ open class HistoryCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged("history_events", version)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            IndexedHistoryEvent::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

@@ -26,7 +26,11 @@ open class NftCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped = indexerVersionService.checkAndResetCollectionIfVersionChanged("nfts", version)
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                IndexedNFT::class.java,
+                version,
+            )
 
         if (dropped) indexerVersionService.dropArchiveCollection("nft_archives")
 
