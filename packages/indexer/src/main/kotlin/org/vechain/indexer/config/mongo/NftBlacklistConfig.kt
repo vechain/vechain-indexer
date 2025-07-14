@@ -32,7 +32,7 @@ open class NftBlacklistConfig(
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection("nft_blacklist_archives")
+        if (dropped) indexerVersionService.dropArchiveCollection(NFTBlacklistArchive::class.java)
 
         ensureCollection()
 

@@ -37,7 +37,7 @@ open class VthoClaimedByAccountConfig(
             )
 
         if (dropped) {
-            indexerVersionService.dropArchiveCollection("stargate_vtho_claimed_by_account_archives")
+            indexerVersionService.dropArchiveCollection(VthoClaimedByAccountArchive::class.java)
         }
 
         ensureCollection()

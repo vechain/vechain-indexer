@@ -32,7 +32,7 @@ open class NftCollectionConfig(
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection("nft_archives")
+        if (dropped) indexerVersionService.dropArchiveCollection(NFTArchive::class.java)
 
         ensureCollection()
 

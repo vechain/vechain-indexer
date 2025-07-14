@@ -53,9 +53,10 @@ open class IndexerVersionService(
     /**
      * Drop the archive collection.
      *
-     * @param archiveCollectionName The name of the archive collection to drop.
+     * @param clazz The archive model class annotated with @Document.
      */
-    fun dropArchiveCollection(archiveCollectionName: String) {
+    fun dropArchiveCollection(clazz: Class<*>) {
+        val archiveCollectionName = getCollectionName(clazz)
         logger.info("Dropping archive collection $archiveCollectionName if it exists.")
         try {
             mongoTemplate.dropCollection(archiveCollectionName)
