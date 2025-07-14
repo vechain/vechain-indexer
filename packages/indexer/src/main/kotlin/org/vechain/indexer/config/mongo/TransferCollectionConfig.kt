@@ -25,7 +25,10 @@ open class TransferCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged("transfer_events", version)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            IndexedTransferEvent::class.java,
+            version,
+        )
 
         ensureCollection()
 

@@ -28,7 +28,7 @@ open class VetStakedByBlockConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            "stargate_vet_staked_by_block",
+            VetStakedByBlock::class.java,
             version,
         )
 

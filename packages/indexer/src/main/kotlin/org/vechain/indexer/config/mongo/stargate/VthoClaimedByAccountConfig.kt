@@ -32,12 +32,13 @@ open class VthoClaimedByAccountConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                "stargate_vtho_claimed_by_account",
+                VthoClaimedByAccount::class.java,
                 version,
             )
 
-        if (dropped)
-            indexerVersionService.dropArchiveCollection("stargate_vtho_claimed_by_account_archives")
+        if (dropped) {
+            indexerVersionService.dropArchiveCollection(VthoClaimedByAccountArchive::class.java)
+        }
 
         ensureCollection()
     }
