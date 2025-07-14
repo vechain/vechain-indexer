@@ -2,21 +2,28 @@ package org.vechain.indexer.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.IndexerVersion
 
 @Service
-open class IndexerVersionService(private val mongoTemplate: MongoTemplate) {
+open class IndexerVersionService(
+    private val mongoTemplate: MongoTemplate,
+    private val mappingContext: MongoMappingContext,
+) {
     private val logger = LoggerFactory.getLogger(IndexerVersionService::class.java)
 
     /**
-     * Checks if the version of the indexer has changed. If the version has changed, it will drop
-     * and recreate the collection and update the version.
+     * Checks if the version of the indexer has changed for the given model class. If the stored
+     * version is lower than the new version, the corresponding MongoDB collection will be dropped
+     * and the version will be updated.
      *
-     * @param collectionName The name of the collection to drop and recreate.
+     * @param clazz The model class annotated with @Document.
      * @param newVersion The new version number of the indexer.
+     * @return True if the collection was dropped and version updated, false otherwise.
      */
-    fun checkAndResetCollectionIfVersionChanged(collectionName: String, newVersion: Int): Boolean {
+    fun checkAndResetCollectionIfVersionChanged(clazz: Class<*>, newVersion: Int): Boolean {
+        val collectionName = getCollectionName(clazz)
         try {
             val storedVersion = getStoredIndexerVersion(collectionName)
 
@@ -82,4 +89,11 @@ open class IndexerVersionService(private val mongoTemplate: MongoTemplate) {
         val metadata = IndexerVersion(id = indexerName, version = newVersion)
         mongoTemplate.save(metadata)
     }
+
+    /**
+     * Returns the MongoDB collection name for the given class. Falls back to the class name if
+     * no @Document mapping is found.
+     */
+    private fun getCollectionName(clazz: Class<*>): String =
+        mappingContext.getPersistentEntity(clazz)?.collection ?: clazz.simpleName
 }
