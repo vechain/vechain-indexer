@@ -63,8 +63,8 @@ jobs:
               echo "Bucket $bucket not found, skipping."
             else
               echo "Bucket $bucket found, deleting..."
-              aws s3api delete-bucket-lifecycle --bucket "$bucket"
-              aws s3 rb "$bucket" --force
+              aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
+              aws s3 rb "$bucket" --force || true
             fi
           done
 
