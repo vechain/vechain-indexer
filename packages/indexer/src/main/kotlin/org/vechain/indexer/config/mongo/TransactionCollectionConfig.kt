@@ -25,7 +25,10 @@ open class TransactionCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged("transactions", version)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            IndexedTransaction::class.java,
+            version,
+        )
 
         ensureCollection()
 

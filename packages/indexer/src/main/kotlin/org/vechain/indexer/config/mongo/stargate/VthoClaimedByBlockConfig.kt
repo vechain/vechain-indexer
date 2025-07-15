@@ -28,7 +28,7 @@ open class VthoClaimedByBlockConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            "stargate_vtho_claimed_by_block",
+            VthoClaimedByBlock::class.java,
             version,
         )
 

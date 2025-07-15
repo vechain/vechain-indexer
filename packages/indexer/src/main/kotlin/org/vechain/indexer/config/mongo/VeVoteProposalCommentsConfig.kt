@@ -26,7 +26,7 @@ open class VeVoteProposalCommentsConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            "vevote_proposal_comments",
+            VevoteProposalComment::class.java,
             version,
         )
 
