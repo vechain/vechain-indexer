@@ -139,6 +139,7 @@ jobs:
 
       - name: Show resources to be destroyed
         run: terraform state list
+
       - name: Plan terraform destroy
         id: plan
         run: terraform plan -out "destroy.plan" -destroy
