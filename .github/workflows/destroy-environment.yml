@@ -165,8 +165,8 @@ jobs:
         run: |
           if terraform state list | grep -q aws_s3_bucket_lifecycle_configuration; then
             echo "Deleting s3 lifecycle configuration from state file..."
-            terraform state rm aws_s3_bucket_lifecycle_configuration.main_api_logs || true
-            terraform state rm aws_s3_bucket_lifecycle_configuration.test_api_logs || true
+            terraform state rm module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs
+            terraform state rm module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs
           else
             echo "No s3 lifecycle configuration found in state file."
           fi
