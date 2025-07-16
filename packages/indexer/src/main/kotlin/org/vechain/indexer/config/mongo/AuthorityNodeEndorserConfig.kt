@@ -25,10 +25,13 @@ open class AuthorityNodeEndorserConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged("authority_nodes", version)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            AuthorityNodeEndorser::class.java,
+            version,
+        )
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("endorser_-1", Index().on("endorser", Sort.Direction.DESC))
+        ensureIndex("endorser_1", Index().on("endorser", Sort.Direction.ASC))
     }
 }
