@@ -62,6 +62,8 @@ veworld:
   contract:
     vevote:
       address: ${VEVOTE_CONTRACT:0x90a3c072CF8493cCDd9b86B1C9b5d18F86fdf3E0}
+    authority_node:
+      address: ${AUTHORITY_CONTRACT:0x0000000000000000000000417574686f72697479}
 
 indexer:
   startBlock:
@@ -78,12 +80,14 @@ indexer:
     transfers: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS:1000}
     history: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORY:1000}
     vevote: ${INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE:1000}
+    authority_nodes: ${INDEXER_SYNC_LOGGER_AUTHORITY_NODE:1000}
     stargate: ${INDEXER_SYNC_LOGGER_INTERVAL_STARGATE:1000}
   syncBlockBatchSize:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:500}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:500}
     vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:500}
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
+    authority_nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
   pruner:
     enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:300000}
@@ -105,6 +109,7 @@ indexer:
     stargate_vtho_claimed_by_account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
     stargate_nft_holders_by_block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate_vet_staked_by_block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
+    authority_node_endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}
