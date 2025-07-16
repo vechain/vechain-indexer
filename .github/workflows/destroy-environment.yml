@@ -75,12 +75,10 @@ jobs:
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
 
-      - name: "Destroy mainnet LB Logs S3 Buckets"
+      - name: "Destroy LB Logs S3 Buckets"
         run: |
+          echo "Deleting LB logs S3 buckets..."
           aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force || true
-
-      - name: "Destroy testnet LB logs S3 Buckets"
-        run: |
           aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force || true
 
       - name: "Destroy Load Balancers"
@@ -159,6 +157,21 @@ jobs:
       - name: Terraform workspace
         id: workspace
         run: terraform workspace select ${{ inputs.environment }}
+
+      - name: Show s3 lifecycle config from state
+        run: terraform state list | grep aws_s3_bucket_lifecycle_configuration
+
+      - name: Delete s3 lifecycle config from state file if found
+        run: |
+          if terraform state list | grep -q aws_s3_bucket_lifecycle_configuration; then
+            echo "Deleting s3 lifecycle configuration from state file..."
+            terraform state rm 'module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs'
+            terraform state rm 'module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs'
+          else
+            echo "No s3 lifecycle configuration found in state file."
+          fi
+      - name: Show resources to be destroyed
+        run: terraform state list
 
       - name: Plan terraform destroy
         id: plan
