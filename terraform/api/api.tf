@@ -274,10 +274,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.vevote
     },
     {
-      name  = "INDEXER_START_BLOCK_AUTHORITY_NODE"
-      value = each.value.indexer.start_block.authority_nodes
-    },
-    {
       name = "INDEXER_START_BLOCK_STARGATE"
       value = each.value.indexer.start_block.stargate
     },
