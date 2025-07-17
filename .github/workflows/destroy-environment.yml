@@ -100,11 +100,11 @@ jobs:
         working-directory: terraform/api
 
     steps:
-      - name: Show dead color
-        run: echo "destroying dead environment - ${{ env.dead_color }}"
-
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Show dead color
+        run: echo "destroying dead environment - ${{ env.dead_color }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
