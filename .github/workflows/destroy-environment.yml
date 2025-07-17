@@ -19,8 +19,8 @@ jobs:
     name: "Identify live and dead colors"
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.${{ env.INDEXER }}.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.${{ env.INDEXER }}.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
@@ -57,14 +57,15 @@ jobs:
       - name: "Destroy LB Logs S3 Buckets"
         run: |
           echo "Deleting LB logs S3 buckets..."
-          buckets=("s3://${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" "s3://${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket")
+          buckets=("${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket")
           for bucket in "${buckets[@]}"; do
-            if aws s3 ls "${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
+            if aws s3 ls "s3://${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
               echo "Bucket $bucket not found, skipping."
+              aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
             else
               echo "Bucket $bucket found, deleting..."
               aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
-              aws s3 rb "$bucket" --force || true
+              aws s3 rb "s3://$bucket" --force || true
             fi
           done
 
@@ -100,11 +101,11 @@ jobs:
         working-directory: terraform/api
 
     steps:
-      - name: Show dead color
-        run: echo "destroying dead environment - ${{ env.dead_color }}"
-
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Show dead color
+        run: echo "destroying dead environment - ${{ env.dead_color }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -132,26 +133,17 @@ jobs:
         id: workspace
         run: terraform workspace select ${{ env.dead_color }}
 
-      - name: Clear s3 lifecycle configs via cli 
+      - name: Clear s3 lifecycle configs via cli
         run: |
-          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket"
-          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket"
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" || true
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket" || true
 
-      - name: Show resources to be destroyed
-        run: terraform state list
-
-      - name: Show s3 lifecycle config from state
-        run: terraform state list | grep aws_s3_bucket_lifecycle_configuration
-
-      - name: Delete s3 lifecycle config from state file if found
+      - name: Remove S3 lifecycle configs from Terraform state
         run: |
-          if terraform state list | grep -q aws_s3_bucket_lifecycle_configuration; then
-            echo "Deleting s3 lifecycle configuration from state file..."
-            terraform state rm 'module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs'
-            terraform state rm 'module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs'
-          else
-            echo "No s3 lifecycle configuration found in state file."
-          fi
+          echo "Removing S3 lifecycle configurations from Terraform state..."
+          terraform state rm 'module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
+          terraform state rm 'module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
+
       - name: Show resources to be destroyed
         run: terraform state list
 

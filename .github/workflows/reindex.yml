@@ -16,7 +16,6 @@ concurrency: 1
 env:
   INDEXER: "veworld"
 
-
 # Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
@@ -27,8 +26,8 @@ jobs:
     name: "Identify live and dead colors"
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.${{ env.INDEXER }}.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.${{ env.INDEXER }}.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read

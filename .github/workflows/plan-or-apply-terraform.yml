@@ -46,8 +46,8 @@ jobs:
     name: Identify Live and Dead Colors
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.${{ env.INDEXER }}.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.${{ env.INDEXER }}.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
       hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
@@ -57,7 +57,7 @@ jobs:
   deploy:
     needs: identify-live-color
     if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
-    name: "Plan/deploy ${{env.INDEXER}}-Indexer terraform - ${{ inputs.environment }}"
+    name: "Plan/deploy ${{ env.INDEXER }}-Indexer terraform - ${{ inputs.environment }}"
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
@@ -145,5 +145,5 @@ jobs:
       #   env:
       #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       #     SLACK_COLOR: ${{ job.status }}
-      #     SLACK_MESSAGE: Deployed ${{ env.INDEXER }}-indexer to *${{ env.COLOR }}* environment
+      #     SLACK_MESSAGE: Deployed ${{ env.INDEXER }}-Indexer to *${{ env.ENVIRONMENT }}* environment
       #     SLACK_TITLE: $(( env.INDEXER }}-Indexer Infrastructure Deployment
