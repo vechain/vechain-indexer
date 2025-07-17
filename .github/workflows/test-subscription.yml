@@ -5,7 +5,7 @@ on:
     branches:
       - log-subscription
     paths:
-      - 'test-subscription.yml'
+      - '.github/workflows/test-subscription.yml'
   
 
 # Required for authentication through GitHub OIDC
