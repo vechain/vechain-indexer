@@ -26,13 +26,16 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
 
+env:
+  INDEXER: "veworld"
+
 jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.${{ env.indexer }}.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.${{ env.indexer }}.vechain.org.
       hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
@@ -52,13 +55,13 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
       - name: Get current version
         id: get-current-version
         run: |
-          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-veworld-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-${{ env.INDEXER }}-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           MAINNET_IMAGE_VERSION=$(echo $MAINNET_IMAGE_URI | cut -d: -f2)
-          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-veworld-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-${{ env.INDEXER }}-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           TESTNET_IMAGE_VERSION=$(echo $TESTNET_IMAGE_URI | cut -d: -f2)
 
           echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT
@@ -127,7 +130,7 @@ jobs:
   deploy-env:
     needs: [define-env-vars]
     name: Run Deployment - ${{ inputs.network}}
-    uses: ./.github/workflows/plan-or-deploy-environment.yml
+    uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
       environment: ${{ needs.define-env-vars.outputs.DEPLOYMENT_COLOR }}
       mainnet_version: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}

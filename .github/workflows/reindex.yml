@@ -13,6 +13,10 @@ on:
 
 concurrency: 1
 
+env:
+  INDEXER: "veworld"
+
+
 # Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
@@ -23,8 +27,8 @@ jobs:
     name: "Identify live and dead colors"
     uses: ./.github/workflows/identify-live-color.yml
     with:
-      dns_record_mainnet_name: mainnet.live.prod.veworld.vechain.org.
-      dns_record_testnet_name: testnet.live.prod.veworld.vechain.org.
+      dns_record_mainnet_name: mainnet.live.prod.${{ env.INDEXER }}.vechain.org.
+      dns_record_testnet_name: testnet.live.prod.${{ env.INDEXER }}.vechain.org.
       hosted_zone_id: Z08093993BM56HB3DD4U4
     permissions:
       contents: read
@@ -62,11 +66,11 @@ jobs:
     env:
       sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
       targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-      ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
-      testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
-      testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
-      mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
-      mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
+      ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
+      testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
+      testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
+      mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
+      mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
       project: ${{ secrets.MONGO_PROJECT_ID }}
     defaults:
       run:
@@ -79,7 +83,7 @@ jobs:
         id: account
         run: |
           if [ "${{ inputs.environment }}" == "dead-prod" ]; then
-            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            echo "role_arn=${{ secrets.AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           else
             echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           fi
@@ -174,11 +178,11 @@ jobs:
         env:
           sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
           targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
-          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
-          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
-          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
-          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
+          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
+          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
+          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
+          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
+          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
           MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
           MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
           # default organisation ID
@@ -191,11 +195,11 @@ jobs:
         env:
           sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
           targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
-          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
-          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
-          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
-          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
+          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
+          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
+          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
+          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
+          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
           MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
           MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
           # default organisation ID

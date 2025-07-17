@@ -11,8 +11,8 @@ terraform {
   }
   backend "s3" {
     # The states of DEV and PROD environments are stored in separate S3 buckets in their
-    # respective AWS accounts. The {{{ENV}}} placeholder is replaced manually (dev/prod)
-    bucket               = "veworld-indexer-terraform-state-{{{ENV}}}"
+    # respective AWS accounts. i.e for dev - replace prod in bucket name with dev
+    bucket               = "veworld-indexer-terraform-state-prod"
     key                  = "veworld-indexer-vpc.tfstate"
     region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
