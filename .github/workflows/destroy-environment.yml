@@ -57,14 +57,15 @@ jobs:
       - name: "Destroy LB Logs S3 Buckets"
         run: |
           echo "Deleting LB logs S3 buckets..."
-          buckets=("s3://${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" "s3://${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket")
+          buckets=("${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket")
           for bucket in "${buckets[@]}"; do
-            if aws s3 ls "${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
+            if aws s3 ls "s3://${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
               echo "Bucket $bucket not found, skipping."
+              aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
             else
               echo "Bucket $bucket found, deleting..."
               aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
-              aws s3 rb "$bucket" --force || true
+              aws s3 rb "s3://$bucket" --force || true
             fi
           done
 
