@@ -26,9 +26,6 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: read # This is required for actions/checkout
 
-env:
-  INDEXER: "veworld"
-
 jobs:
   identify-live-color:
     name: Identify Live and Dead Colors
@@ -59,9 +56,9 @@ jobs:
       - name: Get current version
         id: get-current-version
         run: |
-          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-${{ env.INDEXER }}-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          MAINNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.mainnet_live_color }}-veworld-main-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           MAINNET_IMAGE_VERSION=$(echo $MAINNET_IMAGE_URI | cut -d: -f2)
-          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-${{ env.INDEXER }}-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
+          TESTNET_IMAGE_URI=$(aws ecs describe-task-definition --task-definition ${{ needs.identify-live-color.outputs.testnet_live_color }}-veworld-test-api --query "taskDefinition.containerDefinitions[0].image" --output text)
           TESTNET_IMAGE_VERSION=$(echo $TESTNET_IMAGE_URI | cut -d: -f2)
 
           echo "CURRENT_MAINNET_VERSION=${MAINNET_IMAGE_VERSION}" >> $GITHUB_OUTPUT

@@ -37,9 +37,6 @@ permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
 
-env:
-  INDEXER: "veworld"
-
 jobs:
   identify-live-color:
     if: ${{ github.event_name == 'pull_request' }}
@@ -57,7 +54,7 @@ jobs:
   deploy:
     needs: identify-live-color
     if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
-    name: "Plan/deploy ${{ env.INDEXER }}-Indexer terraform - ${{ inputs.environment }}"
+    name: "Plan/deploy veworld-Indexer terraform - ${{ inputs.environment }}"
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
@@ -123,7 +120,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || inputs.force
         id: check-env
         run: |
-          cluster_services=$(aws ecs list-services --cluster ${{ env.ENVIRONMENT }}-${{ env.INDEXER }}-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
+          cluster_services=$(aws ecs list-services --cluster ${{ env.ENVIRONMENT }}-veworld-cluster --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
           if [ "${{ inputs.force }}" == "true" ]; then
             echo "Force apply enabled, proceeding with deployment"
           elif (( $cluster_services > 0 )); then
@@ -145,5 +142,5 @@ jobs:
       #   env:
       #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       #     SLACK_COLOR: ${{ job.status }}
-      #     SLACK_MESSAGE: Deployed ${{ env.INDEXER }}-Indexer to *${{ env.ENVIRONMENT }}* environment
-      #     SLACK_TITLE: $(( env.INDEXER }}-Indexer Infrastructure Deployment
+      #     SLACK_MESSAGE: Deployed veworld-Indexer to *${{ env.ENVIRONMENT }}* environment
+      #     SLACK_TITLE: veworld-Indexer Infrastructure Deployment

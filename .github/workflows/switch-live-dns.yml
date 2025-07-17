@@ -16,9 +16,6 @@ permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
 
-env:
-  INDEXER: "veworld"
-
 jobs:
 
   identify-live-color:
@@ -49,13 +46,13 @@ jobs:
       - name: Get load balancer DNS names
         id: get-lb-dns-names
         run: |
-          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-${{ env.INDEXER }}-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch blue mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-${{ env.INDEXER }}-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch blue testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-${{ env.INDEXER }}-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch green mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
-          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-${{ env.INDEXER }}-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
           { echo "Error: Failed to fetch green testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
 
           echo "blue_main_dns=$blue_main_dns" >> $GITHUB_OUTPUT
@@ -139,7 +136,7 @@ jobs:
 
           # Check mainnet readiness
           if [ "${{ github.event.inputs.network }}" == "mainnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-${{ env.INDEXER }}-cluster --query 'length(serviceArns)' --output text)
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 0 )); then
                 mainnet_ready=true
                 echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} mainnet ECS services are ready, proceeding with deployment"
@@ -150,7 +147,7 @@ jobs:
 
           # Check testnet readiness
           if [ "${{ github.event.inputs.network }}" == "testnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-${{ env.INDEXER }}-cluster --query 'length(serviceArns)' --output text)
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
               if (( $cluster_services > 0 )); then
                 testnet_ready=true
                 echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} testnet ECS services are ready, proceeding with deployment"
