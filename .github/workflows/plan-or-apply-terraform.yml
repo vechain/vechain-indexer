@@ -57,7 +57,7 @@ jobs:
   deploy:
     needs: identify-live-color
     if: always() && needs.identify-live-color.result == 'success' || needs.identify-live-color.result == 'skipped'
-    name: "Plan/deploy ${{env.INDEXER}}-Indexer terraform - ${{ inputs.environment }}"
+    name: "Plan/deploy ${{ env.INDEXER }}-Indexer terraform - ${{ inputs.environment }}"
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || needs.identify-live-color.outputs.mainnet_live_color }}
     env:
@@ -145,5 +145,5 @@ jobs:
       #   env:
       #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       #     SLACK_COLOR: ${{ job.status }}
-      #     SLACK_MESSAGE: Deployed ${{ env.INDEXER }}-indexer to *${{ env.COLOR }}* environment
+      #     SLACK_MESSAGE: Deployed ${{ env.INDEXER }}-Indexer to *${{ env.ENVIRONMENT }}* environment
       #     SLACK_TITLE: $(( env.INDEXER }}-Indexer Infrastructure Deployment

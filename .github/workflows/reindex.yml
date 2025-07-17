@@ -16,7 +16,6 @@ concurrency: 1
 env:
   INDEXER: "veworld"
 
-
 # Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
