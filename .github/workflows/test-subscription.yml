@@ -1,4 +1,4 @@
-name: Plan or Apply Terraform
+name: Test subscription
 
 on:
   push:
@@ -32,8 +32,8 @@ jobs:
 
       - name: Subscribe S3 buckets to Datadog forwarder
         run: |
-           bash ./scripts/subscribe_s3_bucket_logs.sh
+           bash .github/workflows/scripts/subscribe_s3_bucket_logs.sh
       
       - name: Subscribe cloudwatch logs to Datadog forwarder
         run: |
-           bash ./scripts/subscribe_cloudwatch_logs.sh
+           bash .github/workflows/scripts/subscribe_cloudwatch_logs.sh
