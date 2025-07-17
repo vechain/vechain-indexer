@@ -132,7 +132,12 @@ jobs:
         id: workspace
         run: terraform workspace select ${{ env.dead_color }}
 
-      - name: Show s3 lifecycle config from state- name: Show s3 lifecycle config from state
+      - name: Clear s3 lifecycle configs via cli 
+        run: |
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket"
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket"
+
+      - name: Show s3 lifecycle config from state
         run: terraform state list | grep aws_s3_bucket_lifecycle_configuration
 
       - name: Delete s3 lifecycle config from state file if found
