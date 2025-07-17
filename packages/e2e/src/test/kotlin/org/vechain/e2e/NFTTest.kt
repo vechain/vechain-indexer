@@ -3,7 +3,7 @@ package org.vechain.e2e
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -23,10 +23,10 @@ class NFTTest {
                 page = 1,
             )
 
-        expectThat(nfts.data).hasSize(3).isA<List<IndexedNFT>>()
+        expectThat(nfts.data).hasSize(3).isA<List<IndexedNft>>()
         expectThat(nfts.pagination.hasNext).isFalse()
 
-        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
+        nfts.data.forEach { nft: IndexedNft -> assertValidNft(nft) }
     }
 
     @Test
@@ -37,10 +37,10 @@ class NFTTest {
                 size = 1,
             )
 
-        expectThat(nfts.data).hasSize(1).isA<List<IndexedNFT>>()
+        expectThat(nfts.data).hasSize(1).isA<List<IndexedNft>>()
         expectThat(nfts.pagination.hasNext).isTrue()
 
-        nfts.data.forEach { nft: IndexedNFT -> assertValidNft(nft) }
+        nfts.data.forEach { nft: IndexedNft -> assertValidNft(nft) }
     }
 
     @Test
@@ -55,7 +55,7 @@ class NFTTest {
         expectThat(nfts.data).hasSize(1)
         expectThat(nfts.pagination.hasNext).isTrue()
 
-        val firstNft: IndexedNFT = nfts.data[0]
+        val firstNft: IndexedNft = nfts.data[0]
         val firstContractAddress = firstNft.contractAddress
 
         // Get filtered NFTs
@@ -96,7 +96,7 @@ class NFTTest {
         nfts.data.forEach { contract: String -> assertValidContract(contract) }
     }
 
-    private fun assertValidNft(nft: IndexedNFT) {
+    private fun assertValidNft(nft: IndexedNft) {
         expect {
             that(nft.tokenId).isNotEmpty()
             that(nft.contractAddress).isNotEmpty()

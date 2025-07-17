@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events,history-events,stargate}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate}
   output:
     ansi:
       enabled: always
@@ -45,7 +45,6 @@ abis:
   path: ${ABI_PATH:abis}
 
 business-event:
-  path: ${BUSINESS_EVENTS_PATH:business-events}
   substitutions:
     B3TR_CONTRACT: ${B3TR_CONTRACT:0x5ef79995fe8a89e0812330e4378eb2660cede699}
     VOT3_CONTRACT: ${VOT3_CONTRACT:0x76ca782b59c74d088c7d2cce2f211bc00836c602}

@@ -8,7 +8,7 @@ import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.repository.TransferEventRepository
 
-@Profile("transfer-events")
+@Profile("transfers")
 @Service
 open class TransferEventService(
     private val transferEventRepository: TransferEventRepository,

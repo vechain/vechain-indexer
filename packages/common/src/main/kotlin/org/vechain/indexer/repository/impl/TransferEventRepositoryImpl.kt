@@ -13,7 +13,7 @@ import org.vechain.indexer.model.IndexedTransferEvent
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
-@Profile("transfer-events")
+@Profile("transfers")
 @Component
 open class TransferEventRepositoryImpl(private val mongoTemplate: MongoTemplate) {
 

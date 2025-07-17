@@ -121,9 +121,9 @@ dependency between indexers for this reason. Each indexer and API pair can be en
 profile.
 
 - `transactions` - enabled with `transactions` profile
-- `nft-events` - enabled with `nft-events` profile
-- `transfer-events` - enabled with `transfer-events` profile
-- `history-events` - enabled with `history-events` profile
+- `nfts` - enabled with `nfts` profile
+- `transfers` - enabled with `transfers` profile
+- `history` - enabled with `history` profile
 
 As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
 want the convenience of the Block endpoints without the overhead of indexing the data.

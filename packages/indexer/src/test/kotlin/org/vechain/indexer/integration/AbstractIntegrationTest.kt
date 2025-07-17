@@ -15,8 +15,7 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.containers.Network
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.utility.DockerImageName
-import org.vechain.indexer.BlockIndexer
-import org.vechain.indexer.LogsIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 
 @RunWith(SpringRunner::class)
@@ -24,15 +23,13 @@ import org.vechain.indexer.Status
 @ContextConfiguration(initializers = [AbstractIntegrationTest.Initializer::class])
 @AutoConfigureMockMvc
 abstract class AbstractIntegrationTest {
-    @Autowired lateinit var allBlockIndexer: List<BlockIndexer>
-
-    @Autowired lateinit var allLogIndexer: List<LogsIndexer>
+    @Autowired lateinit var allIndexers: List<Indexer>
 
     fun waitForFullySynced() {
         for (i in 0..120) {
             if (
-                allBlockIndexer.all { it.status == Status.FULLY_SYNCED } &&
-                    allLogIndexer.all { it.status == Status.FULLY_SYNCED }
+                allIndexers.all { it.status == Status.FULLY_SYNCED } &&
+                    allIndexers.all { it.status == Status.FULLY_SYNCED }
             ) {
                 return
             }

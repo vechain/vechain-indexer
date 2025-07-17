@@ -6,6 +6,7 @@ import org.vechain.indexer.utils.JsonUtils
 object BlockFixtures {
     private val objectMapper = JsonUtils.mapper
 
+    val BLOCK_TRANSFERS = buildBlockFixture("transfers")
     val BLOCK_NO_CLAUSES = buildBlockFixture("no_clauses")
     val BLOCK_SINGLE_CLAUSE = buildBlockFixture("single_clause")
     val BLOCK_VIP180_CONTRACTS = buildBlockFixture("vip180_contracts")

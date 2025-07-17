@@ -5,10 +5,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.repository.NFTRepository
 
-@Profile("nft-events")
+@Profile("nfts")
 @Service
 open class NFTService(private val nftRepository: NFTRepository) {
 
@@ -17,7 +17,7 @@ open class NFTService(private val nftRepository: NFTRepository) {
         contractAddress: Address?,
         tokenId: String?,
         pageable: Pageable,
-    ): Slice<IndexedNFT> {
+    ): Slice<IndexedNft> {
         return if (contractAddress != null) {
             return if (!tokenId.isNullOrEmpty()) {
                 nftRepository.findByOwnerAndContractAddressAndTokenId(
