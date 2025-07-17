@@ -2,8 +2,11 @@ package org.vechain.indexer.transaction
 
 import io.mockk.Called
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -48,6 +51,9 @@ internal class TransactionProcessorTest {
     fun `process - should call service when transactions are present`() {
         val events = emptyList<IndexedEvent>()
         val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+
+        every { transactionService.processBlockTransactions(events, block) } just Runs
+
         transactionProcessor.process(events, block)
 
         verify { transactionService.processBlockTransactions(events, block) }
@@ -57,6 +63,9 @@ internal class TransactionProcessorTest {
     fun `process - should call service when transactions and events are present`() {
         val events = INDEXED_EVENTS_BLACKLIST
         val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
+
+        every { transactionService.processBlockTransactions(events, block) } just Runs
+
         transactionProcessor.process(events, block)
 
         verify { transactionService.processBlockTransactions(events, block) }

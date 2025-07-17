@@ -26,7 +26,7 @@ open class TransactionConfig {
             .abiFiles(FileUtils.getJsonFilePaths("abis", 2))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
-            //            .excludeVetTransfers()
+            .excludeVetTransfers()
             .includeFullBlock()
             .build()
 }

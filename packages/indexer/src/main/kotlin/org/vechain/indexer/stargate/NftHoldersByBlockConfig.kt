@@ -38,5 +38,6 @@ open class NftHoldersByBlockConfig {
             .businessEventContracts(listOf(stargateNftContractAddress))
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventSubstitutionParams(bEProperties.substitutions)
+            .excludeVetTransfers()
             .build()
 }

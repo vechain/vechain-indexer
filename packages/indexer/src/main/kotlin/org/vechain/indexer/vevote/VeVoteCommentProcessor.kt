@@ -18,6 +18,9 @@ open class VeVoteCommentProcessor(
 ) : BaseProcessor(repository = vevoteCommentRepository) {
 
     override fun process(events: List<IndexedEvent>, block: Block?) {
+        if (events.isEmpty()) return
+
+        // Filter events to only those related to VeVote comments
         val allowedReason = veVoteCommentService.processComment(events)
 
         // Save the results

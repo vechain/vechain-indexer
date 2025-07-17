@@ -66,6 +66,7 @@ open class VthoClaimedByAccountConfig {
             )
             .businessEventAbiFiles(abiFiles)
             .businessEventSubstitutionParams(bEProperties.substitutions)
+            .excludeVetTransfers()
             .build()
     }
 }

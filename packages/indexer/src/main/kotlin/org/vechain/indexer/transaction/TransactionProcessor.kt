@@ -23,6 +23,13 @@ open class TransactionProcessor(
             throw IllegalArgumentException("Block cannot be null in TransactionProcessor")
         }
 
+        val unknownEvents = events.filter { it.address == null }
+        if (unknownEvents.isNotEmpty()) {
+            logger.warn(
+                "⛔️Unknown events found: ${unknownEvents.joinToString(", ") { it.eventType }}"
+            )
+        }
+
         if (block.transactions.isNotEmpty()) {
             transactionService.processBlockTransactions(events = events, block = block)
         }
