@@ -13,9 +13,6 @@ on:
 
 concurrency: 1
 
-env:
-  INDEXER: "veworld"
-
 # Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
@@ -65,11 +62,11 @@ jobs:
     env:
       sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
       targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-      ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
-      testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
-      testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
-      mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
-      mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
+      ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
+      testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
+      testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
+      mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
+      mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
       project: ${{ secrets.MONGO_PROJECT_ID }}
     defaults:
       run:
@@ -177,11 +174,11 @@ jobs:
         env:
           sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
           targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
-          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
-          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
-          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
-          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
+          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
+          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
+          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
+          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
+          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
           MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
           MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
           # default organisation ID
@@ -194,11 +191,11 @@ jobs:
         env:
           sourcecluster: ${{ needs.set-cluster.outputs.sourcecluster }}
           targetcluster: ${{ needs.set-cluster.outputs.targetcluster }}
-          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-cluster
-          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-indexer-service
-          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-test-api-service
-          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-indexer-service
-          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-${{ env.INDEXER }}-main-api-service
+          ecscluster: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-cluster
+          testidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-indexer-service
+          testapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-test-api-service
+          mainidxsvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-indexer-service
+          mainapisvc: ${{ needs.set-cluster.outputs.targetcluster }}-veworld-main-api-service
           MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
           MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
           # default organisation ID

@@ -11,9 +11,6 @@ permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
 
-env:
-  INDEXER: "veworld"
-
 jobs:
   identify-live-color:
     name: "Identify live and dead colors"
@@ -51,13 +48,13 @@ jobs:
       - name: Destroy Lingering Secrets
         run: |
           echo "Deleting lingering secrets..."
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/${{ env.INDEXER }}/mongo_api_password --force-delete-without-recovery || true
-          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/${{ env.INDEXER }}/mongo_indexer_password --force-delete-without-recovery || true
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
+          aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
 
       - name: "Destroy LB Logs S3 Buckets"
         run: |
           echo "Deleting LB logs S3 buckets..."
-          buckets=("${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket")
+          buckets=("${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket" "${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket")
           for bucket in "${buckets[@]}"; do
             if aws s3 ls "s3://${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
               echo "Bucket $bucket not found, skipping."
@@ -72,8 +69,8 @@ jobs:
       - name: "Destroy Load Balancers"
         run: |
           echo "Fetching load balancer ARNs..."
-          dead_main_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-${{ env.INDEXER }}-alb')].LoadBalancerArn" --output text) || true
-          dead_test_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-${{ env.INDEXER }}-alb')].LoadBalancerArn" --output text) || true
+          dead_main_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text) || true
+          dead_test_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text) || true
 
           if [ ! -z "$dead_main_api_lb_arn" ]; then
             echo "Disabling deletion protection for main API load balancer..."
@@ -135,8 +132,8 @@ jobs:
 
       - name: Clear s3 lifecycle configs via cli
         run: |
-          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-main-api-ecs-lb-bucket" || true
-          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-${{ env.INDEXER }}-test-api-ecs-lb-bucket" || true
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket" || true
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket" || true
 
       - name: Remove S3 lifecycle configs from Terraform state
         run: |
