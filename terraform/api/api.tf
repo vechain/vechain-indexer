@@ -306,16 +306,8 @@ module "ecs-backend-service" {
         value = each.value.indexer.sync_logger_interval.stargate
     },
     {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
-    },
-    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
-    },
-    {
-      name  = "PRUNER_INITIAL_DELAY"
-      value = each.value.indexer.pruner.initial_delay
     },
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"

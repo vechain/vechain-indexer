@@ -39,6 +39,7 @@ open class NftBlacklistConfig {
         thorClient: ThorClient,
         processor: NftBlacklistProcessor,
         nftBlacklistPruner: Pruner,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.startBlock.nft_blacklist}") startBlock: Long,
         @Value("\${indexer.blacklist.contract_address}") blacklistContract: String,
         @Value("\${indexer.syncLogInterval.nfts}") syncLogInterval: Long,
@@ -49,6 +50,7 @@ open class NftBlacklistConfig {
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftBlacklistPruner)
+            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .abiBasePath("abis/nft")

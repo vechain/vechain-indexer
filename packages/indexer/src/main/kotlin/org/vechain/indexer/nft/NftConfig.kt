@@ -35,6 +35,7 @@ open class NftConfig() {
         thorClient: ThorClient,
         processor: NftProcessor,
         nftPruner: Pruner,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.startBlock.nfts}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.nfts}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.nfts}") syncBlockBatchSize: Long,
@@ -44,6 +45,7 @@ open class NftConfig() {
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftPruner)
+            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)

@@ -26,7 +26,7 @@ internal class PrunerTest {
 
     @Test
     fun `should skip if not enough blocks to prune`() {
-        pruner.runPruner(9_000)
+        pruner.run(9_000)
 
         verify(exactly = 0) { archiveService.findRecordsToPrune(any()) }
         verify(exactly = 0) { archiveService.removeAll(any()) }
@@ -36,7 +36,7 @@ internal class PrunerTest {
     fun `should skip if no records to prune`() {
         every { archiveService.findRecordsToPrune(any()) } returns emptyList()
 
-        pruner.runPruner(50_000)
+        pruner.run(50_000)
 
         verify(exactly = 1) { archiveService.findRecordsToPrune(any()) }
         verify(exactly = 0) { archiveService.removeAll(any()) }
@@ -47,7 +47,7 @@ internal class PrunerTest {
         every { archiveService.findRecordsToPrune(any()) } returns listOf("1", "2", "3", "4", "5")
         every { archiveService.removeAll(any()) } just Runs
 
-        pruner.runPruner(50_000)
+        pruner.run(50_000)
 
         verify(exactly = 1) { archiveService.findRecordsToPrune(any()) }
         verify(exactly = 3) { archiveService.removeAll(any()) }

@@ -88,9 +88,7 @@ indexer:
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
     authority_nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
   pruner:
-    enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:300000}
-    initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
     contract_address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}

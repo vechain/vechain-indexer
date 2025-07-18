@@ -45,6 +45,7 @@ open class VthoClaimedByAccountConfig {
         thorClient: ThorClient,
         processor: VthoClaimedByAccountProcessor,
         vthoClaimByAccountPruner: Pruner,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.startBlock.stargate}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.stargate}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
@@ -55,6 +56,7 @@ open class VthoClaimedByAccountConfig {
             .thorClient(thorClient)
             .processor(processor)
             .pruner(vthoClaimByAccountPruner)
+            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
