@@ -14,7 +14,6 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.model.AmnEndorser
 import org.vechain.indexer.repository.AmnRepository
 import org.vechain.indexer.thor.ThorService
-import org.vechain.indexer.utils.FileUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.TransactionUtils
 
@@ -180,7 +179,7 @@ open class AmnService(
             ?: run {
                 val abis =
                     AbiLoader.loadFunctions(
-                        abiFiles = FileUtils.getJsonFilePaths("abis/amn"),
+                        basePath = "abis/amn",
                         functionNames = listOf("authority"),
                     )
 

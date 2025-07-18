@@ -13,7 +13,6 @@ import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.model.NftArchive
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("nfts")
@@ -47,7 +46,7 @@ open class NftConfig() {
             .pruner(nftPruner)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
-            .abiFiles(FileUtils.getJsonFilePaths("abis/nft"))
+            .abiBasePath("abis/nft")
             .abiEventNames(listOf("Transfer"))
             .excludeVetTransfers()
             .build()

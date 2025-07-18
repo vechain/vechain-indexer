@@ -8,7 +8,6 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("history")
@@ -22,15 +21,14 @@ open class HistoryConfig() {
         @Value("\${indexer.syncLogInterval.history}") syncLogInterval: Long,
         bEProperties: BusinessEventProperties,
     ): Indexer {
-        val abiFiles = FileUtils.getJsonFilePaths("abis", 2)
         return IndexerFactory()
             .name("HistoryIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .abiFiles(abiFiles)
+            .abiBasePath("abis")
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
-            .businessEventFiles(FileUtils.getJsonFilePaths("business-events", 2))
-            .businessEventAbiFiles(abiFiles)
+            .businessEventBasePath("business-events")
+            .businessEventAbiBasePath("abis")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)

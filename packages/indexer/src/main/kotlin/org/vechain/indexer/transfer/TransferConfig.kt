@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("transfers")
@@ -24,7 +23,7 @@ open class TransferConfig {
             .name("TransferIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .abiFiles(FileUtils.getJsonFilePaths("abis/tokens"))
+            .abiBasePath("abis/tokens")
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)

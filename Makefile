@@ -59,12 +59,12 @@ load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
 # Application Run (local)
-run-indexer: build-indexer-local #@ Run the indexer locally.
+run-indexer: build-indexer #@ Run the indexer locally.
 	@set -a; \
 	source ./packages/indexer/.env; \
 	set +a; \
 	java -jar packages/indexer/build/libs/indexer*.jar
-run-api: build-api-local #@ Run the api locally.
+run-api: build-api #@ Run the api locally.
 	@set -a; \
         source ./packages/api/.env; \
         set +a; \

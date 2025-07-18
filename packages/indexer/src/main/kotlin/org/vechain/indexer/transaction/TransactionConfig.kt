@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("transactions")
@@ -23,7 +22,7 @@ open class TransactionConfig {
             .name("TransactionIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .abiFiles(FileUtils.getJsonFilePaths("abis", 2))
+            .abiBasePath("abis")
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .excludeVetTransfers()

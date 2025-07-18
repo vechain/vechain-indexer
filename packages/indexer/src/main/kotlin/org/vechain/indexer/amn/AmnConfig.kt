@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("authority-nodes")
@@ -26,7 +25,7 @@ open class AmnConfig {
             .processor(processor)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abiContracts(FileUtils.getJsonFilePaths("abis/amn"))
+            .abiBasePath("abis/amn")
             .abiContracts(listOf(contractAddress))
             .excludeVetTransfers()
             .build()

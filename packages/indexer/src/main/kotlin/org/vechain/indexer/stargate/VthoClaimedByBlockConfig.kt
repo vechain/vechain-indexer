@@ -8,7 +8,6 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("stargate")
@@ -29,8 +28,8 @@ open class VthoClaimedByBlockConfig {
             .startBlock(startBlock)
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
-            .businessEventAbiFiles(FileUtils.getJsonFilePaths("abis/stargate"))
-            .businessEventFiles(FileUtils.getJsonFilePaths("business-events/stargate"))
+            .businessEventAbiBasePath("abis/stargate")
+            .businessEventBasePath("business-events/stargate")
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )

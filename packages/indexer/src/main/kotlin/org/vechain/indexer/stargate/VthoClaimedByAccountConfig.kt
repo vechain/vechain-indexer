@@ -14,7 +14,6 @@ import org.vechain.indexer.model.stargate.VthoClaimedByAccount
 import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("stargate")
@@ -50,9 +49,8 @@ open class VthoClaimedByAccountConfig {
         @Value("\${indexer.syncLogInterval.stargate}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
         bEProperties: BusinessEventProperties,
-    ): Indexer {
-        val abiFiles = FileUtils.getJsonFilePaths("abis/stargate")
-        return IndexerFactory()
+    ): Indexer =
+        IndexerFactory()
             .name("VthoClaimedByAccountIndexer")
             .thorClient(thorClient)
             .processor(processor)
@@ -60,13 +58,12 @@ open class VthoClaimedByAccountConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .businessEventFiles(FileUtils.getJsonFilePaths("business-events/stargate"))
+            .businessEventBasePath("business-events/stargate")
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
-            .businessEventAbiFiles(abiFiles)
+            .businessEventAbiBasePath("abis/stargate")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .excludeVetTransfers()
             .build()
-    }
 }

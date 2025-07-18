@@ -8,7 +8,6 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.utils.FileUtils
 
 @Configuration
 @Profile("stargate")
@@ -31,8 +30,8 @@ open class VetStakedByBlockConfig {
             .startBlock(startBlock)
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
-            .businessEventAbiFiles(FileUtils.getJsonFilePaths("abis/stargate"))
-            .businessEventFiles(FileUtils.getJsonFilePaths("business-events/stargate"))
+            .businessEventAbiBasePath("abis/stargate")
+            .businessEventBasePath("business-events/stargate")
             .businessEventContracts(listOf(stargateNftContractAddress))
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventSubstitutionParams(bEProperties.substitutions)
