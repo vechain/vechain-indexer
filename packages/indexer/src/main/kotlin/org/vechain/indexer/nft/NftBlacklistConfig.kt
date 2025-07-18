@@ -39,7 +39,7 @@ open class NftBlacklistConfig {
         thorClient: ThorClient,
         processor: NftBlacklistProcessor,
         nftBlacklistPruner: Pruner,
-        @Value("\${indexer.startBlock.nfts}") startBlock: Long,
+        @Value("\${indexer.startBlock.nft_blacklist}") startBlock: Long,
         @Value("\${indexer.blacklist.contract_address}") blacklistContract: String,
         @Value("\${indexer.syncLogInterval.nfts}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.nfts}") syncBlockBatchSize: Long,

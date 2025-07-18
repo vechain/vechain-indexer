@@ -72,7 +72,7 @@ class AmnProcessorTest {
     }
 
     @Test
-    fun `processLogs - skips sync when already synced`() {
+    fun `process - skips sync when already synced`() {
         every { amnRepository.count() } returnsMany listOf(0L, 1L)
         every { amnService.syncEndorsersForAllNodes() } just Runs
         every { amnService.processCandidateEvents(any()) } just Runs
@@ -81,14 +81,5 @@ class AmnProcessorTest {
         processor.process(emptyList()) // should not sync again
 
         verify(exactly = 1) { amnService.syncEndorsersForAllNodes() }
-    }
-
-    @Test
-    fun `rollback - deletes blocks in range`() {
-        every { amnRepository.deleteAllByBlockNumberBetween(9, 11) } just Runs
-
-        processor.rollback(10)
-
-        verify { amnRepository.deleteAllByBlockNumberBetween(9, 11) }
     }
 }

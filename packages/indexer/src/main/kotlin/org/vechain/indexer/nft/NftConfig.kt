@@ -46,6 +46,7 @@ open class NftConfig() {
             .pruner(nftPruner)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
+            .blockBatchSize(syncBlockBatchSize)
             .abiBasePath("abis/nft")
             .abiEventNames(listOf("Transfer"))
             .excludeVetTransfers()

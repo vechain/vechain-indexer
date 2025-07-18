@@ -31,7 +31,6 @@ open class NftHoldersByBlockConfig {
             .startBlock(startBlock)
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEventAbiBasePath("abis/stargate")
             .businessEventBasePath("business-events/stargate")
             .businessEventContracts(listOf(stargateNftContractAddress))
