@@ -23,7 +23,7 @@ open class TransferConfig {
             .name("TransferIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .abiBasePath("abis/tokens")
+            .abis("abis/tokens")
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)

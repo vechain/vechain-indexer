@@ -53,7 +53,7 @@ open class NftBlacklistConfig {
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
-            .abiBasePath("abis/nft")
+            .abis("abis/nft")
             .abiEventNames(listOf("NFTBlacklisted", "NFTWhitelisted"))
             .abiContracts(listOf(blacklistContract))
             .blockBatchSize(syncBlockBatchSize)

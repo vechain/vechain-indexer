@@ -60,11 +60,10 @@ open class VthoClaimedByAccountConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .businessEventBasePath("business-events/stargate")
+            .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
-            .businessEventAbiBasePath("abis/stargate")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .excludeVetTransfers()
             .build()

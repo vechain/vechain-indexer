@@ -27,7 +27,7 @@ open class VeVoteCommentConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abiBasePath("abis/vevote")
+            .abis("abis/vevote")
             .abiContracts(listOf(contractAddress))
             .abiEventNames(listOf("VoteCast"))
             .excludeVetTransfers()

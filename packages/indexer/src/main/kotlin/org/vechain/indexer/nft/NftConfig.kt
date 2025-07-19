@@ -49,7 +49,7 @@ open class NftConfig() {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abiBasePath("abis/nft")
+            .abis("abis/nft")
             .abiEventNames(listOf("Transfer"))
             .excludeVetTransfers()
             .build()

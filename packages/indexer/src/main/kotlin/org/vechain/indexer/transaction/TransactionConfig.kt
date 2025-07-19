@@ -22,7 +22,7 @@ open class TransactionConfig {
             .name("TransactionIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .abiBasePath("abis")
+            .abis("abis")
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .excludeVetTransfers()

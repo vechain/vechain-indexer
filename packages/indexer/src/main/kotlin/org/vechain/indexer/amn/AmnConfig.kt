@@ -25,7 +25,7 @@ open class AmnConfig {
             .processor(processor)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abiBasePath("abis/amn")
+            .abis("abis/amn")
             .abiContracts(listOf(contractAddress))
             .excludeVetTransfers()
             .build()

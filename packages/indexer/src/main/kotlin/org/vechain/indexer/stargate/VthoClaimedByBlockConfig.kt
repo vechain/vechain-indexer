@@ -28,8 +28,7 @@ open class VthoClaimedByBlockConfig {
             .startBlock(startBlock)
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
-            .businessEventAbiBasePath("abis/stargate")
-            .businessEventBasePath("business-events/stargate")
+            .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
