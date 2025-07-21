@@ -19,10 +19,10 @@ open class VthoClaimedByBlockProcessor(
             return
         }
 
-        val newRecord = service.processEvents(events)
+        val newRecords = service.processEvents(events)
 
-        if (newRecord != null) {
-            service.saveRecord(newRecord)
+        if (newRecords != null) {
+            service.saveRecord(newRecords)
         }
     }
 }
