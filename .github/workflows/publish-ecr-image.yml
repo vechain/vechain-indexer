@@ -60,7 +60,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Login To Amazon ECR
         id: login-ecr

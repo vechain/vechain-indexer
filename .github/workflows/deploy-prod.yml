@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
       - name: Get current version
         id: get-current-version
         run: |
@@ -127,7 +127,7 @@ jobs:
   deploy-env:
     needs: [define-env-vars]
     name: Run Deployment - ${{ inputs.network}}
-    uses: ./.github/workflows/plan-or-deploy-environment.yml
+    uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
       environment: ${{ needs.define-env-vars.outputs.DEPLOYMENT_COLOR }}
       mainnet_version: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}
