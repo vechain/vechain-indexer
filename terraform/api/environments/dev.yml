@@ -78,9 +78,6 @@ enabled_nets:
         stargate:                   '500'
         authority_nodes:            '500'
       pruner:
-        enabled: true
-        interval: 300000
-        initial_delay: 300000
         removal_chunk_size: 2000
       blacklist:
         contract_address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
@@ -184,9 +181,6 @@ enabled_nets:
         stargate:                   '100'
         authority_nodes:            '100'
       pruner:
-        enabled: true
-        interval: 300000
-        initial_delay: 300000
         removal_chunk_size: 2000
       blacklist:
         contract_address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'

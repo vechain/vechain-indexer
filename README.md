@@ -131,7 +131,7 @@ want the convenience of the Block endpoints without the overhead of indexing the
 ## Pruner
 Some of the indexers are stateful indexers. This means that records are updated with each block. In order to facilitate rollbacks we must store all previous version of each record. These records are stored in collections with a `-archives` postfix. As you might imagine these archive collections can get rather large over time. To prevent the collection from blowing up we have implemented an optional pruner service that can be enabled and configured with the following env variablers.
 
-- `PRUNER_INTERVAL` - How frequently to run the pruner (in milliseconds)
+- `PRUNER_INTERVAL` - How frequently to run the pruner (in blocks)
 - `PRUNER_REMOVAL_CHUNK_SIZE` - Sometimes the number of records to prune can be very large. To prevent mongoDB from blowing up we can set a chunk size for the delete operation
 
 ## Testing
