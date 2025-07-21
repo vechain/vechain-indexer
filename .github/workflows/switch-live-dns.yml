@@ -198,4 +198,4 @@ jobs:
       - name: Terraform Apply
         if: steps.check-dead-env-is-ready.outputs.env_ready == 'true'
         id: apply
-        run: echo "dryrun"
+        run: terraform apply "apply.plan"
