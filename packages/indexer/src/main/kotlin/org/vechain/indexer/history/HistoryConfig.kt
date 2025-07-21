@@ -19,6 +19,7 @@ open class HistoryConfig() {
         processor: HistoryProcessor,
         @Value("\${indexer.startBlock.history}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.history}") syncLogInterval: Long,
+        @Value("\${indexer.channelBatchSize}") channelBatchSize: Int,
         bEProperties: BusinessEventProperties,
     ): Indexer {
         return IndexerFactory()
@@ -31,6 +32,7 @@ open class HistoryConfig() {
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
+            .channelBatchSize(channelBatchSize)
             .includeFullBlock()
             .build()
     }

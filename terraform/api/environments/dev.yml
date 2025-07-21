@@ -77,6 +77,7 @@ enabled_nets:
         vevote:                     '500'
         stargate:                   '500'
         authority_nodes:            '500'
+      channel_batch_size:           '10'
       pruner:
         removal_chunk_size: 2000
       blacklist:
@@ -180,6 +181,7 @@ enabled_nets:
         vevote:                     '100'
         stargate:                   '100'
         authority_nodes:            '100'
+      channel_batch_size:           '10'
       pruner:
         removal_chunk_size: 2000
       blacklist:

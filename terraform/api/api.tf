@@ -444,6 +444,10 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
       value = each.value.indexer.sync_block_batch_size.stargate
+    },
+    {
+      name = "INDEXER_CHANNEL_BATCH_SIZE"
+      value = each.value.indexer.channel_batch_size
     }
   ]
 }

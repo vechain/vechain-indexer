@@ -17,6 +17,7 @@ open class TransactionConfig {
         processor: TransactionProcessor,
         @Value("\${indexer.startBlock.transactions}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.transactions}") syncLogInterval: Long,
+        @Value("\${indexer.channelBatchSize}") channelBatchSize: Int,
     ): Indexer =
         IndexerFactory()
             .name("TransactionIndexer")
@@ -25,6 +26,7 @@ open class TransactionConfig {
             .abis("abis")
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
+            .channelBatchSize(channelBatchSize)
             .excludeVetTransfers()
             .includeFullBlock()
             .build()
