@@ -65,6 +65,5 @@ open class VthoClaimedByAccountConfig {
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
             .businessEventSubstitutionParams(bEProperties.substitutions)
-            .excludeVetTransfers()
             .build()
 }
