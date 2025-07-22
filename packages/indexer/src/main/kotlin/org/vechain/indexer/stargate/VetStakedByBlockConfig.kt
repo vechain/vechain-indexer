@@ -21,6 +21,8 @@ open class VetStakedByBlockConfig {
         @Value("\${indexer.syncLogInterval.stargate}") logInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
+        @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
+        stargateDelegationContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -31,8 +33,10 @@ open class VetStakedByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventContracts(listOf(stargateNftContract))
-            .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
+            .businessEventNames(
+                listOf("STARGATE_STAKE_DELEGATE", "STARGATE_STAKE", "STARGATE_UNSTAKE")
+            )
+            .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

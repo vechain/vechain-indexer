@@ -37,7 +37,8 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
                     ?: throw IllegalArgumentException("Invalid levelId: $levelId")
 
             when (event.eventType) {
-                "STARGATE_STAKE" -> {
+                "STARGATE_STAKE",
+                "STARGATE_STAKE_DELEGATE" -> {
                     totalNftHolders += 1L
                     totalNftHoldersByLevel[level] =
                         totalNftHoldersByLevel.getOrDefault(level, 0L) + 1L
