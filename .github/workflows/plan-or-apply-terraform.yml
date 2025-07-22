@@ -144,3 +144,10 @@ jobs:
       #     SLACK_COLOR: ${{ job.status }}
       #     SLACK_MESSAGE: Deployed veworld-Indexer to *${{ env.ENVIRONMENT }}* environment
       #     SLACK_TITLE: veworld-Indexer Infrastructure Deployment
+      - name: Subscribe S3 buckets to Datadog forwarder
+        run: |
+           bash ../../.github/workflows/scripts/subscribe_s3_bucket_logs.sh
+      
+      - name: Subscribe cloudwatch logs to Datadog forwarder
+        run: |
+           bash ../../.github/workflows/scripts/subscribe_cloudwatch_logs.sh
