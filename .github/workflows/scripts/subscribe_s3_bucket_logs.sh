@@ -5,7 +5,7 @@ set -euo pipefail
 # ----------- Configuration ----------
 AWS_REGION="eu-west-1"
 FORWARDER_FUNCTION_NAME="DatadogIntegration-ForwarderStack-1X0QSW-Forwarder-XCjAm0MJ9pej"
-PREFIX_FILTER="AWSLogs/"  # Optional: folder prefix inside the bucket to filter logs
+
 
 # List of S3 bucket names to configure
 S3_BUCKETS=("prod-blue-veworld-main-api-ecs-lb-bucket" "prod-blue-veworld-test-api-ecs-lb-bucket" "prod-green-veworld-main-api-ecs-lb-bucket" "prod-green-veworld-test-api-ecs-lb-bucket")
@@ -40,17 +40,7 @@ for BUCKET in "${S3_BUCKETS[@]}"; do
       \"LambdaFunctionConfigurations\": [
         {
           \"LambdaFunctionArn\": \"${FORWARDER_ARN}\",
-          \"Events\": [\"s3:ObjectCreated:*\"]$( [[ -n "$PREFIX_FILTER" ]] && echo ",
-          \"Filter\": {
-            \"Key\": {
-              \"FilterRules\": [
-                {
-                  \"Name\": \"prefix\",
-                  \"Value\": \"${PREFIX_FILTER}\"
-                }
-              ]
-            }
-          }")
+          \"Events\": [\"s3:ObjectCreated:*\"]        
         }
       ]
     }"
