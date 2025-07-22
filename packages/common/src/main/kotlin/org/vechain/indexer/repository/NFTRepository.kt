@@ -5,21 +5,21 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 
-@Profile("nft-events")
+@Profile("nfts")
 @Repository
-interface NFTRepository : BasePagingAndSortingIndexedRepository<IndexedNFT, String> {
+interface NFTRepository : BasePagingAndSortingIndexedRepository<IndexedNft, String> {
 
     @Query("{ 'owner': ?0, 'isBlacklisted': { \$ne: true } }")
-    fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNFT>
+    fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft>
 
     @Query("{ 'owner': ?0, 'contractAddress': ?1, 'isBlacklisted': { \$ne: true } }")
     fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
         pageable: Pageable,
-    ): Slice<IndexedNFT>
+    ): Slice<IndexedNft>
 
     @Query("{ 'owner': ?0, 'contractAddress': ?1, 'tokenId': ?2, 'isBlacklisted': { \$ne: true } }")
     fun findByOwnerAndContractAddressAndTokenId(
@@ -27,7 +27,7 @@ interface NFTRepository : BasePagingAndSortingIndexedRepository<IndexedNFT, Stri
         contractAddress: String,
         tokenId: String,
         pageable: Pageable,
-    ): Slice<IndexedNFT>
+    ): Slice<IndexedNft>
 
     fun findContractsByNFTOwner(owner: String, pageable: Pageable): Slice<String>
 }

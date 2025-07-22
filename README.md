@@ -121,9 +121,9 @@ dependency between indexers for this reason. Each indexer and API pair can be en
 profile.
 
 - `transactions` - enabled with `transactions` profile
-- `nft-events` - enabled with `nft-events` profile
-- `transfer-events` - enabled with `transfer-events` profile
-- `history-events` - enabled with `history-events` profile
+- `nfts` - enabled with `nfts` profile
+- `transfers` - enabled with `transfers` profile
+- `history` - enabled with `history` profile
 
 As you can see from the list above, the block indexer offers the option to proxy to the Thor node. This is useful if you
 want the convenience of the Block endpoints without the overhead of indexing the data.
@@ -131,9 +131,7 @@ want the convenience of the Block endpoints without the overhead of indexing the
 ## Pruner
 Some of the indexers are stateful indexers. This means that records are updated with each block. In order to facilitate rollbacks we must store all previous version of each record. These records are stored in collections with a `-archives` postfix. As you might imagine these archive collections can get rather large over time. To prevent the collection from blowing up we have implemented an optional pruner service that can be enabled and configured with the following env variablers.
 
-- `PRUNER_ENABLED` - A boolean to enable or disable the pruner
-- `PRUNER_INTERVAL` - How frequently to run the pruner (in milliseconds)
-- `PRUNER_INITIAL_DELAY` - An initial delay after startup before running for the first time (in milliseconds)
+- `PRUNER_INTERVAL` - How frequently to run the pruner (in blocks)
 - `PRUNER_REMOVAL_CHUNK_SIZE` - Sometimes the number of records to prune can be very large. To prevent mongoDB from blowing up we can set a chunk size for the delete operation
 
 ## Testing

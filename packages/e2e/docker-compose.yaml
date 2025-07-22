@@ -5,24 +5,18 @@ services:
     environment:
       - BLACKLIST_CONTRACT_ADDRESS=${BLACKLIST_CONTRACT_ADDRESS}
     networks:
-      - vechain-e2e
+      - vechain
       - vechain-thor-e2e
       - vechain-database
 
   vechain-indexer-api:
     env_file: packages/e2e/api.env
     networks:
-      - vechain-e2e
+      - vechain
       - vechain-thor-e2e
       - vechain-database
 
 networks:
-  vechain-e2e:
-    driver: bridge
-    name: vechain-e2e
-  vechain-database:
-    external: true
-    name: vechain-database
   vechain-thor-e2e:
     external: true
     name: vechain-thor-e2e

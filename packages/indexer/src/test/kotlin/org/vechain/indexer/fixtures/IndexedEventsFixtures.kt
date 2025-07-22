@@ -7,6 +7,9 @@ import org.vechain.indexer.utils.JsonUtils
 object IndexedEventsFixtures {
     private val objectMapper = JsonUtils.mapper
 
+    val INDEXED_EVENTS_TRANSFERS =
+        buildIndexedEventsFixture("indexed-events/indexed_events_transfers.json")
+
     val INDEXED_EVENTS_BLACKLIST =
         buildIndexedEventsFixture("indexed-events/indexed_events_blacklist.json")
 

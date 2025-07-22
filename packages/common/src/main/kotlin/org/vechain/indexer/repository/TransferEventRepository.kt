@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.model.IndexedTransferEvent
 
-@Profile("transfer-events")
+@Profile("transfers")
 @Repository
 interface TransferEventRepository :
     BasePagingAndSortingIndexedRepository<IndexedTransferEvent, String> {

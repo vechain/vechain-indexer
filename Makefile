@@ -6,6 +6,25 @@ help:
 format: #@ Format the code with Spotless.
 	./gradlew spotlessApply
 
+# Application Build (Gradle)
+build: format build-indexer build-api #@ Build the application with Gradle.
+	echo "Build completed."
+.PHONY:build
+build-indexer: #@ Build the application with Gradle.
+	./gradlew :package:indexer:build -x test
+build-api: #@ Build the application with Gradle.
+	./gradlew :package:api:build -x test
+
+# Application Build (Docker)
+build-image: build-indexer build-api #@ Build the application with Docker.
+	echo "Build completed."
+build-image-indexer: #@ Build the application with Docker.
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
+build-image-api: #@ Build the application with Docker.
+	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
+build-k6: #@ Build the K6 docker image.
+	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
+
 test: #@ Run all the tests.
 	./gradlew cleanTest test
 test-e2e: #@ Run all the end-to-end tests.
@@ -38,36 +57,17 @@ load-test-history: #@ Run only the History test.
 load-test-clean: #@ Clean the load tests data.
 	$(LOAD_TEST_COMMAND) down -v --remove-orphans
 
-# Application Build (Gradle)
-build-local: format build-indexer-local build-api-local #@ Build the application with Gradle.
-	echo "Build completed."
-build-indexer-local: #@ Build the application with Gradle.
-	./gradlew :package:indexer:build -x test
-build-api-local: #@ Build the application with Gradle.
-	./gradlew :package:api:build -x test
-
 # Application Run (local)
-run-indexer: build-indexer-local #@ Run the indexer locally.
+run-indexer: build-indexer #@ Run the indexer locally.
 	@set -a; \
 	source ./packages/indexer/.env; \
 	set +a; \
 	java -jar packages/indexer/build/libs/indexer*.jar
-run-api: build-api-local #@ Run the api locally.
+run-api: build-api #@ Run the api locally.
 	@set -a; \
         source ./packages/api/.env; \
         set +a; \
 	java -jar packages/api/build/libs/api*.jar
-
-# Application Build (Docker)
-build: build-indexer build-api #@ Build the application with Docker.
-	echo "Build completed."
-.PHONY:build
-build-indexer: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .
-build-api: #@ Build the application with Docker.
-	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=api -t veworld-api .
-build-k6: #@ Build the K6 docker image.
-	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
 # All
 start: #@ Remove, clean and start all the infrastructure and the application.
@@ -122,18 +122,3 @@ db-restore: #@ Restore MongoDB database from the latest backup or a specified di
 	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
 	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16
-
-# Thor
-THOR_COMMAND=docker compose -f thor/docker-compose.yaml
-
-thor-all: #@ Remove, clean and start VeChainThor.
-	make thor-down thor-clean thor-up
-thor-clean: #@ Clean the VeChainThor data
-	$(THOR_COMMAND) down -v --remove-orphans
-thor-down: #@ Stop VeChainThor
-	$(THOR_COMMAND) down
-thor-up: #@ Start VeChainThor
-	$(THOR_COMMAND) up -d --wait --build
-thor-test: #@ Test VeChainThor
-	$(THOR_COMMAND) up thor-tx-script
-

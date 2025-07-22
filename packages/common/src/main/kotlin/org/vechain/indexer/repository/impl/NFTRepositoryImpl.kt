@@ -10,10 +10,10 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.repository.impl.SliceBuilder.buildResultsSlice
 
-@Profile("nft-events")
+@Profile("nfts")
 @Component
 open class NFTRepositoryImpl(private val mongoTemplate: MongoTemplate) {
 
@@ -58,13 +58,13 @@ open class NFTRepositoryImpl(private val mongoTemplate: MongoTemplate) {
     }
 
     companion object {
-        val NFTS_COLLECTION = IndexedNFT::class.java
-        val OWNER = IndexedNFT::owner.name
-        val CONTRACT_ADDRESS = IndexedNFT::contractAddress.name
-        val BLOCK_NUMBER = IndexedNFT::blockNumber.name
-        val IS_BLACKLISTED = IndexedNFT::isBlacklisted.name
-        val TX_ID = IndexedNFT::txId.name
-        val NFT_ID = IndexedNFT::id.name
+        val NFTS_COLLECTION = IndexedNft::class.java
+        val OWNER = IndexedNft::owner.name
+        val CONTRACT_ADDRESS = IndexedNft::contractAddress.name
+        val BLOCK_NUMBER = IndexedNft::blockNumber.name
+        val IS_BLACKLISTED = IndexedNft::isBlacklisted.name
+        val TX_ID = IndexedNft::txId.name
+        val NFT_ID = IndexedNft::id.name
         const val NFT_ID_ALIAS = "nftId"
     }
 }

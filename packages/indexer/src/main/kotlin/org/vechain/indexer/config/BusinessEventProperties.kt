@@ -6,6 +6,5 @@ import org.springframework.stereotype.Component
 @Component
 @ConfigurationProperties(prefix = "business-event")
 class BusinessEventProperties {
-    lateinit var path: String
     lateinit var substitutions: Map<String, String>
 }

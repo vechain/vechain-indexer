@@ -32,8 +32,8 @@ abstract class AbstractIntegrationTest {
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
     protected val PAGINATED_TXS_TYPE =
         object : TypeReference<PaginatedResponse<IndexedTransaction>>() {}
-    protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
-    protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNFT>>() {}
+    protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNft>>() {}
+    protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNft>>() {}
     protected val PAGINATED_NFT_CONTRACTS_TYPE =
         object : TypeReference<PaginatedResponse<String>>() {}
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
@@ -55,7 +55,7 @@ abstract class AbstractIntegrationTest {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", LIST_TX_TYPE)
-        val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
+        val nfts: List<IndexedNft> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
 

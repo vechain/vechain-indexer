@@ -27,7 +27,7 @@ import org.vechain.indexer.utils.JsonUtils
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class FastAbstractIntegrationTest {
     protected val TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
-    protected val NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
+    protected val NFT_TYPE = object : TypeReference<List<IndexedNft>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
 
     protected val objectMapper = JsonUtils.mapper
@@ -43,7 +43,7 @@ abstract class FastAbstractIntegrationTest {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
-        val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", NFT_TYPE)
+        val nfts: List<IndexedNft> = loadDataFromResources("/nfts.json", NFT_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
 

@@ -2,7 +2,7 @@ package org.vechain.indexer.utils
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.event.model.generic.GenericEventParameters
+import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.history.HistoryEventName
 
@@ -28,7 +28,7 @@ class EventUtilsTest {
             )
 
         cases.forEach { (eventType, expected) ->
-            val params = GenericEventParameters(emptyMap(), eventType)
+            val params = AbiEventParameters(emptyMap(), eventType)
             val result = EventUtils.determineEventType(params)
             assertEquals(expected, result, "Failed for eventType: $eventType")
         }
@@ -36,9 +36,9 @@ class EventUtilsTest {
 
     @Test
     fun `determineEventType should detect FT and NFT in Transfer`() {
-        val ftParams = GenericEventParameters(mapOf("value" to "100"), "Transfer")
-        val nftParams = GenericEventParameters(mapOf("tokenId" to "1"), "Transfer")
-        val unknownParams = GenericEventParameters(emptyMap(), "Transfer")
+        val ftParams = AbiEventParameters(mapOf("value" to "100"), "Transfer")
+        val nftParams = AbiEventParameters(mapOf("tokenId" to "1"), "Transfer")
+        val unknownParams = AbiEventParameters(emptyMap(), "Transfer")
 
         assertEquals(HistoryEventName.TRANSFER_FT, EventUtils.determineEventType(ftParams))
         assertEquals(HistoryEventName.TRANSFER_NFT, EventUtils.determineEventType(nftParams))
@@ -47,17 +47,17 @@ class EventUtilsTest {
 
     @Test
     fun `determineEventType should return null for unknown types`() {
-        val params = GenericEventParameters(emptyMap(), "SomeRandomEvent")
+        val params = AbiEventParameters(emptyMap(), "SomeRandomEvent")
         assertNull(EventUtils.determineEventType(params))
     }
 
     @Test
     fun `determineTransferType should detect transfer types correctly`() {
-        val ftParams = GenericEventParameters(mapOf("value" to "100"), "Transfer")
-        val nftParams = GenericEventParameters(mapOf("tokenId" to "1"), "Transfer")
-        val sfParams = GenericEventParameters(emptyMap(), "TransferSingle")
-        val vetParams = GenericEventParameters(emptyMap(), "VET_TRANSFER")
-        val unknownParams = GenericEventParameters(emptyMap(), "OtherEvent")
+        val ftParams = AbiEventParameters(mapOf("value" to "100"), "Transfer")
+        val nftParams = AbiEventParameters(mapOf("tokenId" to "1"), "Transfer")
+        val sfParams = AbiEventParameters(emptyMap(), "TransferSingle")
+        val vetParams = AbiEventParameters(emptyMap(), "VET_TRANSFER")
+        val unknownParams = AbiEventParameters(emptyMap(), "OtherEvent")
 
         assertEquals(TransferEventType.FUNGIBLE_TOKEN, EventUtils.determineTransferType(ftParams))
         assertEquals(TransferEventType.NFT, EventUtils.determineTransferType(nftParams))
