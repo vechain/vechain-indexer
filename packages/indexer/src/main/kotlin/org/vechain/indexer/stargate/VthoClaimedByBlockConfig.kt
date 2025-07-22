@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -19,6 +20,8 @@ open class VthoClaimedByBlockConfig {
         @Value("\${indexer.startBlock.stargate}") startBlock: Long,
         @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
         @Value("\${indexer.syncLogInterval.stargate}") logInterval: Long,
+        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
+        stargateNftContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -32,6 +35,7 @@ open class VthoClaimedByBlockConfig {
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
+            .businessEventContracts(listOf(stargateNftContract, VTHO_CONTRACT))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

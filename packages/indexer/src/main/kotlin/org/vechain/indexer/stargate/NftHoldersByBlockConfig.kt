@@ -21,7 +21,7 @@ open class NftHoldersByBlockConfig {
         @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
         @Value("\${indexer.syncLogInterval.stargate}") logInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
-        stargateNftContractAddress: String,
+        stargateNftContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -32,7 +32,7 @@ open class NftHoldersByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventContracts(listOf(stargateNftContractAddress))
+            .businessEventContracts(listOf(stargateNftContract))
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
