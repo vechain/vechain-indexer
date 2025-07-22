@@ -6,7 +6,6 @@ help:
 format: #@ Format the code with Spotless.
 	./gradlew spotlessApply
 
-
 # Application Build (Gradle)
 build: format build-indexer build-api #@ Build the application with Gradle.
 	echo "Build completed."
@@ -123,18 +122,3 @@ db-restore: #@ Restore MongoDB database from the latest backup or a specified di
 	echo "Use the command 'docker log --tail 100 -f mongo-restore' to see the progress";
 	docker rm -f mongo-restore 2>/dev/null || true
 	docker run --name mongo-restore -d --network=host -v $(PWD)/$(BACKUP_DIR):/backup -u $(shell id -u):$(shell id -g) mongo:8 mongorestore --uri="$(MONGO_URL)" --drop --gzip --archive="/backup/$(notdir $(FILE))" --numInsertionWorkersPerCollection 16
-
-# Thor
-THOR_COMMAND=docker compose -f thor/docker-compose.yaml
-
-thor-all: #@ Remove, clean and start VeChainThor.
-	make thor-down thor-clean thor-up
-thor-clean: #@ Clean the VeChainThor data
-	$(THOR_COMMAND) down -v --remove-orphans
-thor-down: #@ Stop VeChainThor
-	$(THOR_COMMAND) down
-thor-up: #@ Start VeChainThor
-	$(THOR_COMMAND) up -d --wait --build
-thor-test: #@ Test VeChainThor
-	$(THOR_COMMAND) up thor-tx-script
-
