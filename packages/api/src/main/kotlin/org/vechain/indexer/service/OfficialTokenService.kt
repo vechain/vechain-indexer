@@ -16,7 +16,7 @@ import org.vechain.indexer.client.ThorClient
 import org.vechain.indexer.model.NetworkType
 import org.vechain.indexer.model.TokenRegistry
 
-@Profile("transfer-events")
+@Profile("transfers")
 @Service
 open class OfficialTokenService(
     private val thorClient: ThorClient,

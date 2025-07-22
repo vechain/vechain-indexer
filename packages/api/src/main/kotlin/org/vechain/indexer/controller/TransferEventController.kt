@@ -24,7 +24,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAddressList
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("transfer-events")
+@Profile("transfers")
 @Tag(name = "TransferEvent", description = "Query blockchain transfer events")
 @Validated
 @RestController

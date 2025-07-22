@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nft-events,transactions,transfer-events,history-events,stargate}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate}
   output:
     ansi:
       enabled: always
@@ -45,7 +45,6 @@ abis:
   path: ${ABI_PATH:abis}
 
 business-event:
-  path: ${BUSINESS_EVENTS_PATH:business-events}
   substitutions:
     B3TR_CONTRACT: ${B3TR_CONTRACT:0x5ef79995fe8a89e0812330e4378eb2660cede699}
     VOT3_CONTRACT: ${VOT3_CONTRACT:0x76ca782b59c74d088c7d2cce2f211bc00836c602}
@@ -55,8 +54,8 @@ business-event:
     X2EARN_REWARDS_POOL_CONTRACT: ${X2EARN_REWARDS_POOL_CONTRACT:0x6bee7ddab6c99d5b2af0554eaea484ce18f52631}
     VOTER_REWARDS_CONTRACT: ${VOTER_REWARDS_CONTRACT:0x838a33af756a6366f93e201423e1425f67ec0fa7}
     TREASURY_CONTRACT: ${TREASURY_CONTRACT:0xd5903bcc66e439c753e525f8af2fec7be2429593}
-    STARGATE_DELEGATION_CONTRACT: ${STARGATE_DELEGATION_CONTRACT:0x7240e3bc0d26431512d5b67dbd26d199205bffe8}
-    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x1ec1d168574603ec35b9d229843b7c2b44bcb770}
+    STARGATE_DELEGATION_CONTRACT: ${STARGATE_DELEGATION_CONTRACT:0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e}
+    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7}
 
 veworld:
   contract:
@@ -88,10 +87,9 @@ indexer:
     vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:500}
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
     authority_nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
+  channelBatchSize: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
-    enabled: ${PRUNER_ENABLED:true}
     interval: ${PRUNER_INTERVAL:300000}
-    initialDelay: ${PRUNER_INITIAL_DELAY:300000}
     removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
     contract_address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}

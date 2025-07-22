@@ -4,9 +4,9 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.NFTArchive
+import org.vechain.indexer.model.NftArchive
 import org.web3j.utils.Numeric
 import strikt.api.expect
 import strikt.assertions.*
@@ -15,8 +15,8 @@ class NFTArchivingTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("TransferEventIndexer")
-        VeWorldAPIClient.performIndexerHealthCheck("NFTEventIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("TransferIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("NFTIndexer")
     }
 
     @Test
@@ -28,8 +28,8 @@ class NFTArchivingTest {
         // types sanity check
         expect {
             that(nftTransfers).isA<List<IndexedTransferEvent>>()
-            that(nfts).isA<List<IndexedNFT>>()
-            that(nftArchives).isA<List<NFTArchive>>()
+            that(nfts).isA<List<IndexedNft>>()
+            that(nftArchives).isA<List<NftArchive>>()
         }
 
         // verify that the updated NFTs have their corresponding archives

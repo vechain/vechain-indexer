@@ -21,13 +21,13 @@ object VeWorldAPIClient {
     private val PAGINATED_TXS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransaction>>() {}
     private val PAGINATED_NFTS_TYPE =
-        object : ParameterizedTypeReference<PaginatedResponse<IndexedNFT>>() {}
+        object : ParameterizedTypeReference<PaginatedResponse<IndexedNft>>() {}
     private val PAGINATED_NFT_CONTRACTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
-    private val NFT_ARCHIVES_TYPE = object : ParameterizedTypeReference<List<NFTArchive>>() {}
-    private val NFTS_TYPE = object : ParameterizedTypeReference<List<IndexedNFT>>() {}
+    private val NFT_ARCHIVES_TYPE = object : ParameterizedTypeReference<List<NftArchive>>() {}
+    private val NFTS_TYPE = object : ParameterizedTypeReference<List<IndexedNft>>() {}
     private val TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
@@ -100,7 +100,7 @@ object VeWorldAPIClient {
         contractAddress: String? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT,
-    ): PaginatedResponse<IndexedNFT> {
+    ): PaginatedResponse<IndexedNft> {
         return if (address != null && contractAddress != null)
             getRequest(
                 "$API_URL/nfts?address=$address&contractAddress=$contractAddress&page=$page&size=$size",
@@ -178,7 +178,7 @@ object VeWorldAPIClient {
         else throw Exception("No address or tokenAddress provided")
     }
 
-    fun getNftArchives(): List<NFTArchive> {
+    fun getNftArchives(): List<NftArchive> {
         return getRequest("$API_URL/e2e/nft-archives", NFT_ARCHIVES_TYPE)
     }
 
@@ -186,7 +186,7 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/e2e/transfers", TRANSFER_EVENTS_TYPE)
     }
 
-    fun getNfts(): List<IndexedNFT> {
+    fun getNfts(): List<IndexedNft> {
         return getRequest("$API_URL/e2e/nfts", NFTS_TYPE)
     }
 

@@ -1,13 +1,13 @@
 package org.vechain.indexer.utils
 
-import org.vechain.indexer.event.model.generic.GenericEventParameters
+import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object EventUtils {
-    fun determineEventType(params: GenericEventParameters): HistoryEventName? =
+    fun determineEventType(params: AbiEventParameters): HistoryEventName? =
         when (params.getEventType()) {
             "B3TR_Vot3ToB3trSwap" -> HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
@@ -48,7 +48,7 @@ object EventUtils {
             else -> null // Other events will not be labeled
         }
 
-    fun determineTransferType(genericParams: GenericEventParameters): TransferEventType? =
+    fun determineTransferType(genericParams: AbiEventParameters): TransferEventType? =
         when (genericParams.getEventType()) {
             "Transfer" -> {
                 when {
@@ -72,7 +72,7 @@ object EventUtils {
         }
     }
 
-    fun getStargateRewards(genericParams: GenericEventParameters): String {
+    fun getStargateRewards(genericParams: AbiEventParameters): String {
         if (genericParams.getAsString("value") != null) return genericParams.getAsString("value")!!
 
         val totalRewards =

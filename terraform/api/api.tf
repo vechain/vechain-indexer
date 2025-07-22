@@ -306,16 +306,8 @@ module "ecs-backend-service" {
         value = each.value.indexer.sync_logger_interval.stargate
     },
     {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
-    },
-    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
-    },
-    {
-      name  = "PRUNER_INITIAL_DELAY"
-      value = each.value.indexer.pruner.initial_delay
     },
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
@@ -452,6 +444,10 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
       value = each.value.indexer.sync_block_batch_size.stargate
+    },
+    {
+      name = "INDEXER_CHANNEL_BATCH_SIZE"
+      value = each.value.indexer.channel_batch_size
     }
   ]
 }

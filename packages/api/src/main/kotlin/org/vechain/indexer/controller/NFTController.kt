@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.model.rest.PaginatedResponse
 import org.vechain.indexer.model.rest.paginatedResponse
 import org.vechain.indexer.service.NFTService
@@ -23,7 +23,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("nft-events")
+@Profile("nfts")
 @Tag(name = "NFT", description = "Query on chain NFTs")
 @Validated
 @RestController
@@ -66,7 +66,7 @@ open class NFTController(private val nftService: NFTService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<IndexedNFT> {
+    ): PaginatedResponse<IndexedNft> {
         val pageable = toPageable(page, size, direction)
 
         return paginatedResponse(

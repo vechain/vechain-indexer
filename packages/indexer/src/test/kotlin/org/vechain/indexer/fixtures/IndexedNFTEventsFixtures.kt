@@ -23,6 +23,9 @@ object IndexedNFTEventsFixtures {
     val INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE =
         buildIndexedEventsFixture("indexed-events/indexed_events_nft_transfer_duplicate.json")
 
+    val INDEXED_EVENTS_NFT_MINT =
+        buildIndexedEventsFixture("indexed-events/indexed_events_nft_mint.json")
+
     private fun buildIndexedEventsFixture(name: String): List<IndexedEvent> {
         val resource =
             IndexedNFTEventsFixtures::class.java.classLoader.getResource(name)

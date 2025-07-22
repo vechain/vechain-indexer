@@ -13,8 +13,8 @@ import org.vechain.indexer.model.*
 open class E2EService(private val mongoTemplate: MongoTemplate) {
 
     @TestOnly
-    open fun getNftArchives(): List<NFTArchive> {
-        return mongoTemplate.findAll(NFTArchive::class.java)
+    open fun getNftArchives(): List<NftArchive> {
+        return mongoTemplate.findAll(NftArchive::class.java)
     }
 
     @TestOnly
@@ -28,7 +28,7 @@ open class E2EService(private val mongoTemplate: MongoTemplate) {
     }
 
     @TestOnly
-    open fun getNfts(): List<IndexedNFT> {
-        return mongoTemplate.findAll(IndexedNFT::class.java)
+    open fun getNfts(): List<IndexedNft> {
+        return mongoTemplate.findAll(IndexedNft::class.java)
     }
 }

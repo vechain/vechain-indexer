@@ -11,7 +11,7 @@ class TransferEventTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("TransferEventIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("TransferIndexer")
     }
 
     @Test

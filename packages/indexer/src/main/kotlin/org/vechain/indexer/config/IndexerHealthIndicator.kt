@@ -8,10 +8,11 @@ import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 
 @Component
-class IndexerHealthIndicator(private val indexers: List<BlockIndexer>) : HealthIndicator {
+class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndicator {
     companion object {
         private const val STATUS_UP = "UP"
         private const val STATUS_DOWN = "DOWN"
@@ -36,7 +37,12 @@ class IndexerHealthIndicator(private val indexers: List<BlockIndexer>) : HealthI
                     status = getIndexerHealth(indexer),
                     syncStatus = indexer.status,
                     currentBlock =
-                        NumberFormat.getNumberInstance(Locale.US).format(indexer.currentBlockNumber),
+                        if (indexer is BlockIndexer) {
+                            NumberFormat.getNumberInstance(Locale.US)
+                                .format(indexer.currentBlockNumber)
+                        } else {
+                            "N/A"
+                        },
                 )
             }
 
@@ -54,7 +60,7 @@ class IndexerHealthIndicator(private val indexers: List<BlockIndexer>) : HealthI
      * determine if it is down If the indexer is not syncing we use the PROCESS_TIMEOUT to determine
      * if it is down
      */
-    private fun getIndexerHealth(indexer: BlockIndexer): String {
+    private fun getIndexerHealth(indexer: Indexer): String {
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeout =
@@ -64,9 +70,13 @@ class IndexerHealthIndicator(private val indexers: List<BlockIndexer>) : HealthI
                 PROCESS_TIMEOUT
             }
 
-        val timeLastProcessed = indexer.timeLastProcessed
-        return if (timeNow.minusSeconds(timeout) > timeLastProcessed) {
-            STATUS_DOWN
+        val timeLastProcessed = if (indexer is BlockIndexer) indexer.timeLastProcessed else null
+        return if (timeLastProcessed != null) {
+            if (timeNow.minusSeconds(timeout) > timeLastProcessed) {
+                STATUS_DOWN
+            } else {
+                STATUS_UP
+            }
         } else {
             STATUS_UP
         }
