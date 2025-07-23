@@ -18,14 +18,14 @@ open class NftBlacklistProcessor(
     repository: NftBlacklistRepository,
 ) : BaseStatefulProcessor(repository = repository, archiveService = nftBlacklistArchiveService) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) return
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) return
 
         // Find any existing records
-        val existing = nftBlacklistService.getExisting(events)
+        val existing = nftBlacklistService.getExisting(matchedEvents)
 
         // Process the updated records
-        val updated = nftBlacklistService.parseRecords(events, existing)
+        val updated = nftBlacklistService.parseRecords(matchedEvents, existing)
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {

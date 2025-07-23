@@ -14,15 +14,15 @@ open class HistoryProcessor(
     private val historyService: HistoryService,
 ) : BaseProcessor(repository) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (block == null) {
             throw IllegalArgumentException("Block cannot be null")
         }
         // If no events or transactions, do nothing
-        if (events.isEmpty() && block.transactions.isEmpty()) {
+        if (matchedEvents.isEmpty() && block.transactions.isEmpty()) {
             return
         }
 
-        historyService.processBlockEvents(events, block)
+        historyService.processBlockEvents(matchedEvents, block)
     }
 }

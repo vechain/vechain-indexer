@@ -17,11 +17,11 @@ open class VeVoteCommentProcessor(
     private val mongoTemplate: MongoTemplate,
 ) : BaseProcessor(repository = vevoteCommentRepository) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) return
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) return
 
         // Filter events to only those related to VeVote comments
-        val allowedReason = veVoteCommentService.processComment(events)
+        val allowedReason = veVoteCommentService.processComment(matchedEvents)
 
         // Save the results
         if (allowedReason.isNotEmpty()) {

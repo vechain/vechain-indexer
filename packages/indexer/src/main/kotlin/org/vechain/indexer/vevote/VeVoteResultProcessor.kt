@@ -13,11 +13,11 @@ open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     private val repository: VeVoteProposalResultRepository,
 ) : BaseProcessor(repository = repository) {
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) return
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) return
 
         // Process votes in the service
-        val results = service.processVeVoteResults(events)
+        val results = service.processVeVoteResults(matchedEvents)
 
         // Save the results
         if (results.isNotEmpty()) {

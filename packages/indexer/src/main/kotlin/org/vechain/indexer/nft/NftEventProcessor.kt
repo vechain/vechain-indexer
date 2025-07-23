@@ -18,14 +18,14 @@ open class NftProcessor(
     repository: NFTRepository,
 ) : BaseProcessor(repository) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) return
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) return
 
         // Find any existing records
-        val existing = nftService.getExisting(events)
+        val existing = nftService.getExisting(matchedEvents)
 
         // Process the updated records
-        val updated = nftService.parseRecords(events, existing)
+        val updated = nftService.parseRecords(matchedEvents, existing)
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {

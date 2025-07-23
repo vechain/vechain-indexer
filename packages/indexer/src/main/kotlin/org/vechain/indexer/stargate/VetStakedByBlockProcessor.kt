@@ -14,12 +14,12 @@ open class VetStakedByBlockProcessor(
     repository: VetStakedByBlockRepository,
 ) : BaseProcessor(repository) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) {
             return
         }
 
-        val newRecords = service.processEvents(events)
+        val newRecords = service.processEvents(matchedEvents)
 
         if (newRecords != null) {
             service.saveRecord(newRecords)

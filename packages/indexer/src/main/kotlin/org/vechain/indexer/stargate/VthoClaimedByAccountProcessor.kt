@@ -23,16 +23,16 @@ open class VthoClaimedByAccountProcessor(
         archiveService = vthoClaimByAccountArchiveService,
     ) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) {
             return
         }
 
         // Find any existing records
-        val existing = service.getExisting(events)
+        val existing = service.getExisting(matchedEvents)
 
         // Process the updated records
-        val updated = service.parseRecords(events, existing)
+        val updated = service.parseRecords(matchedEvents, existing)
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {

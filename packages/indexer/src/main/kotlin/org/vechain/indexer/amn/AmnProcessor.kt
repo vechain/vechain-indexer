@@ -22,7 +22,7 @@ open class AmnProcessor(
 
     private var hasSynced = false
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (!hasSynced && repository.count() == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")
             amnService.syncEndorsersForAllNodes()
@@ -31,7 +31,7 @@ open class AmnProcessor(
             hasSynced = true
         }
 
-        amnService.processCandidateEvents(events)
+        amnService.processCandidateEvents(matchedEvents)
     }
 
     override fun getLastSyncedBlock(): BlockIdentifier? {

@@ -17,10 +17,10 @@ open class TransferProcessor(
     repository: TransferEventRepository,
 ) : BaseProcessor(repository) {
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
-        if (events.isEmpty()) return
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        if (matchedEvents.isEmpty()) return
 
-        val transferEvents = BlockUtils.getAllTransferEvents(events)
+        val transferEvents = BlockUtils.getAllTransferEvents(matchedEvents)
 
         if (transferEvents.isNotEmpty()) {
             mongoTemplate.insert(transferEvents, IndexedTransferEvent::class.java)

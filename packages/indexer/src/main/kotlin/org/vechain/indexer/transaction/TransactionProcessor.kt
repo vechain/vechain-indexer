@@ -17,13 +17,13 @@ open class TransactionProcessor(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun process(events: List<IndexedEvent>, block: Block?) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         // The block should never be null here, throw an error if it is.
         if (block == null) {
             throw IllegalArgumentException("Block cannot be null in TransactionProcessor")
         }
 
-        val unknownEvents = events.filter { it.address == null }
+        val unknownEvents = matchedEvents.filter { it.address == null }
         if (unknownEvents.isNotEmpty()) {
             logger.warn(
                 "⛔️Unknown events found: ${unknownEvents.joinToString(", ") { it.eventType }}"
@@ -31,7 +31,7 @@ open class TransactionProcessor(
         }
 
         if (block.transactions.isNotEmpty()) {
-            transactionService.processBlockTransactions(events = events, block = block)
+            transactionService.processBlockTransactions(events = matchedEvents, block = block)
         }
     }
 }
