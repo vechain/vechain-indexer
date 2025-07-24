@@ -178,10 +178,7 @@ open class AmnService(
         cachedAuthorityAbi[name]
             ?: run {
                 val abis =
-                    AbiLoader.loadFunctions(
-                        basePath = "abis/amn",
-                        functionNames = listOf("authority"),
-                    )
+                    AbiLoader.loadFunctions(basePath = "abis/amn", functionNames = listOf(name))
 
                 val abi =
                     abis.firstOrNull { it.name == name }
