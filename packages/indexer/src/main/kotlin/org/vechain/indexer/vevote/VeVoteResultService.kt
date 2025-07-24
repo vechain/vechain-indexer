@@ -1,15 +1,13 @@
 package org.vechain.indexer.vevote
 
-import java.math.BigDecimal
-import java.math.RoundingMode
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.model.vevote.Support
 import org.vechain.indexer.model.vevote.VeVoteProposalResults
 import org.vechain.indexer.repository.VeVoteProposalResultRepository
-import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
-import org.vechain.indexer.utils.ParamUtils.getAsLong
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-results")
@@ -29,37 +27,32 @@ class VeVoteResultService(private val repository: VeVoteProposalResultRepository
             val params = vote.params
 
             val proposalId = params.getAsString("proposalId") ?: return@forEach
-            val choiceValue = params.getAsLong("choices") ?: return@forEach
+            val supportRaw = params.getAsBigInteger("support") ?: return@forEach
             val weight = params.getAsBigDecimal("weight") ?: return@forEach
 
-            val choices = EventUtils.getChoice(choiceValue)
-            if (choices.isEmpty()) return@forEach
+            val support = Support.map(supportRaw)
 
-            val weightPerChoice = weight.divide(BigDecimal(choices.size), 18, RoundingMode.HALF_UP)
+            val id = "$proposalId-${support.name}"
+            val existing = aggregates[id]
 
-            choices.forEach { choice ->
-                val id = "$proposalId-$choice"
-                val existing = aggregates[id]
-
-                if (existing != null) {
-                    aggregates[id] =
-                        existing.copy(
-                            totalWeight = existing.totalWeight.add(weightPerChoice),
-                            totalVoters = existing.totalVoters + 1,
-                        )
-                } else {
-                    aggregates[id] =
-                        VeVoteProposalResults(
-                            id = id,
-                            blockId = vote.blockId,
-                            blockNumber = vote.blockNumber,
-                            blockTimestamp = vote.blockTimestamp,
-                            proposalId = proposalId,
-                            choice = choice,
-                            totalWeight = weightPerChoice,
-                            totalVoters = 1,
-                        )
-                }
+            if (existing != null) {
+                aggregates[id] =
+                    existing.copy(
+                        totalWeight = existing.totalWeight.add(weight),
+                        totalVoters = existing.totalVoters + 1,
+                    )
+            } else {
+                aggregates[id] =
+                    VeVoteProposalResults(
+                        id = id,
+                        blockId = vote.blockId,
+                        blockNumber = vote.blockNumber,
+                        blockTimestamp = vote.blockTimestamp,
+                        proposalId = proposalId,
+                        support = support,
+                        totalWeight = weight,
+                        totalVoters = 1,
+                    )
             }
         }
 
