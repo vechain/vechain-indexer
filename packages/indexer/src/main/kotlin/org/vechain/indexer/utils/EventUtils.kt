@@ -3,8 +3,6 @@ package org.vechain.indexer.utils
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
-import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object EventUtils {
     fun determineEventType(params: AbiEventParameters): HistoryEventName? =
@@ -62,22 +60,4 @@ object EventUtils {
             "VET_TRANSFER" -> TransferEventType.VET
             else -> null // Other events will not be labeled
         }
-
-    fun getChoice(choiceValue: Long): List<Int> {
-        if (choiceValue < 0) {
-            return emptyList()
-        }
-        return choiceValue.toString(2).reversed().mapIndexedNotNull { index, bit ->
-            if (bit == '1') index + 1 else null
-        }
-    }
-
-    fun getStargateRewards(genericParams: AbiEventParameters): String {
-        if (genericParams.getAsString("value") != null) return genericParams.getAsString("value")!!
-
-        val totalRewards =
-            genericParams.getAsBigInteger("vetGeneratedVthoRewards")!! +
-                genericParams.getAsBigInteger("delegationRewards")!!
-        return totalRewards.toString()
-    }
 }
