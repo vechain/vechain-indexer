@@ -1,0 +1,51 @@
+{
+  "name": "STARGATE_DELEGATE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationSimulationStarted",
+      "alias": "delegation",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "delegator",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "delegation",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "delegator",
+      "eventName": "delegation",
+      "businessEventName": "owner"
+    },
+    {
+      "name": "isDelegationForever",
+      "eventName": "delegation",
+      "businessEventName": "autorenew"
+    }
+  ]
+}

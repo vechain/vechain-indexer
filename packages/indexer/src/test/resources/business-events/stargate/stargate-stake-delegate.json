@@ -1,0 +1,135 @@
+{
+  "name": "STARGATE_STAKE_DELEGATE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "TokenMinted",
+      "alias": "tokenMinted",
+      "conditions": [
+        {
+          "firstOperand": "levelId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "vetAmountStaked",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "owner",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "DelegationSimulationStarted",
+      "alias": "DelegationSimulationStarted",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "VET_TRANSFER",
+      "alias": "vetTransfer",
+      "conditions": [
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "origin",
+          "isSecondStatic": false,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "amount",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "tokenId",
+      "secondEventName": "DelegationSimulationStarted",
+      "secondEventProperty": "tokenId",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "tokenMinted",
+      "firstEventProperty": "vetAmountStaked",
+      "secondEventName": "vetTransfer",
+      "secondEventProperty": "amount",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "tokenMinted",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "vetAmountStaked",
+      "eventName": "tokenMinted",
+      "businessEventName": "value"
+    },
+    {
+      "name": "levelId",
+      "eventName": "tokenMinted",
+      "businessEventName": "levelId"
+    },
+    {
+      "name": "owner",
+      "eventName": "tokenMinted",
+      "businessEventName": "owner"
+    },
+    {
+      "name": "isDelegationForever",
+      "eventName": "DelegationSimulationStarted",
+      "businessEventName": "autorenew"
+    },
+    {
+      "name": "migrated",
+      "eventName": "tokenMinted",
+      "businessEventName": "migrated"
+    }
+  ]
+}
