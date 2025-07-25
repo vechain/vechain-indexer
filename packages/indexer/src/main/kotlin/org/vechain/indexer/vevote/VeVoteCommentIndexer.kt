@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseLogIndexer
 import org.vechain.indexer.event.AbiManager
 import org.vechain.indexer.event.model.generic.FilterCriteria
-import org.vechain.indexer.model.vevote.VevoteProposalComment
+import org.vechain.indexer.model.vevote.VeVoteProposalComment
 import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.service.VeVoteCommentService
 import org.vechain.indexer.thor.client.ThorClient
@@ -50,7 +50,7 @@ open class VeVoteCommentIndexer(
         val allowedReason = veVoteCommentService.processComment(processedEvents)
         // Save the results
         if (allowedReason.isNotEmpty()) {
-            mongoTemplate.insert(allowedReason, VevoteProposalComment::class.java)
+            mongoTemplate.insert(allowedReason, VeVoteProposalComment::class.java)
         }
     }
 
