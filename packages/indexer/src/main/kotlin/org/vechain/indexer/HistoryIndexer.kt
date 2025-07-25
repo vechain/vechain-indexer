@@ -64,6 +64,7 @@ open class HistoryIndexer(
                                 "STARGATE_UNSTAKE",
                                 "STARGATE_CLAIM_REWARDS_BASE",
                                 "STARGATE_DELEGATE",
+                                "STARGATE_CLAIM_REWARDS_DELEGATE_REFUND",
                                 "STARGATE_CLAIM_REWARDS_DELEGATE",
                                 "STARGATE_UNDELEGATE",
                             ),

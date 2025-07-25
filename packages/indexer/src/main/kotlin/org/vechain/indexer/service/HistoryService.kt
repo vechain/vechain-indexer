@@ -30,6 +30,8 @@ class HistoryService(
 
             if (event.params.getEventType() == "TransferBatch") {
                 historyEvents.addAll(processBatchTransferEvents(event))
+            } else if (event.params.getEventType() == "STARGATE_CLAIM_REWARDS_DELEGATE_REFUND") {
+                historyEvents.addAll(handleStargateClaimReimbursement(event))
             } else {
                 historyEvents.add(createIndexedHistoryEvent(event, eventName))
             }
@@ -128,6 +130,56 @@ class HistoryService(
             autorenew = event.params.getAsBoolean("autorenew"),
             levelId = event.params.getAsString("levelId"),
         )
+    }
+
+    private fun handleStargateClaimReimbursement(event: IndexedEvent): List<IndexedHistoryEvent> {
+        val tokenId = event.params.getAsString("tokenId")
+        val owner = event.params.getAsString("owner")
+
+        val value1 = event.params.getAsString("value")
+        val value2 = event.params.getAsString("value2")
+
+        val result = mutableListOf<IndexedHistoryEvent>()
+
+        if (!value1.isNullOrBlank()) {
+            result.add(
+                IndexedHistoryEvent(
+                    id = DigestUtils.sha1Hex("${event.id}-1"),
+                    blockId = event.blockId,
+                    blockNumber = event.blockNumber,
+                    blockTimestamp = event.blockTimestamp,
+                    txId = event.txId,
+                    contractAddress = event.address,
+                    origin = event.origin,
+                    eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                    gasPayer = event.gasPayer,
+                    value = value1,
+                    tokenId = tokenId,
+                    owner = owner,
+                )
+            )
+        }
+
+        if (!value2.isNullOrBlank()) {
+            result.add(
+                IndexedHistoryEvent(
+                    id = DigestUtils.sha1Hex("${event.id}-2"),
+                    blockId = event.blockId,
+                    blockNumber = event.blockNumber,
+                    blockTimestamp = event.blockTimestamp,
+                    txId = event.txId,
+                    contractAddress = event.address,
+                    origin = event.origin,
+                    eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                    gasPayer = event.gasPayer,
+                    value = value2,
+                    tokenId = tokenId,
+                    owner = owner,
+                )
+            )
+        }
+
+        return result
     }
 
     private fun getMissingTransactions(
