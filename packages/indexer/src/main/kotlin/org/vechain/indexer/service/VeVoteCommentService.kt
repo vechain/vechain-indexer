@@ -3,16 +3,17 @@ package org.vechain.indexer.service
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
-import java.math.BigInteger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.vevote.VevoteProposalComment
+import org.vechain.indexer.model.vevote.Support
+import org.vechain.indexer.model.vevote.VeVoteProposalComment
 import org.vechain.indexer.model.vevote.generateId
 import org.vechain.indexer.repository.VevoteCommentRepository
-import org.vechain.indexer.utils.EventUtils.getChoice
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-comments")
 @Service
@@ -39,32 +40,33 @@ class VeVoteCommentService(
             )
             .build()
 
-    fun processComment(processedEvents: List<IndexedEvent>): List<VevoteProposalComment> =
+    fun processComment(processedEvents: List<IndexedEvent>): List<VeVoteProposalComment> =
         processedEvents
             .mapNotNull { extractVeVoteCommentEvent(it) }
             .filter { it.reason.isNotBlank() }
             .filter { allowComment(it.proposalId, it.reason) }
 
-    fun extractVeVoteCommentEvent(event: IndexedEvent): VevoteProposalComment? {
-        val params = event.params.getReturnValues()
+    fun extractVeVoteCommentEvent(event: IndexedEvent): VeVoteProposalComment? {
+        val params = event.params
 
-        val reason = params["reason"] as? String ?: return null
+        val reason = params.getAsString("reason") ?: return null
         if (reason.isBlank()) return null // Ignore if no comment provided
 
-        val voter = params["voter"] as? String ?: return null
-        val proposalId = params["proposalId"]?.toString() ?: return null
-        val choiceValue = (params["choices"] as? Number)?.toLong() ?: 0L
-        val weight = (params["weight"] as? Number)?.toLong()?.toBigInteger() ?: BigInteger.ZERO
-        val choicesList = getChoice(choiceValue)
+        val voter = params.getAsString("voter") ?: return null
+        val proposalId = params.getAsString("proposalId") ?: return null
+        val weight = params.getAsBigInteger("weight") ?: return null
+        val supportRaw = params.getAsBigInteger("support") ?: return null
 
-        return VevoteProposalComment(
+        val support = Support.map(supportRaw)
+
+        return VeVoteProposalComment(
             id = generateId(proposalId, reason),
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             voter = voter,
             proposalId = proposalId,
-            choices = choicesList,
+            support = support,
             weight = weight,
             reason = reason,
         )
