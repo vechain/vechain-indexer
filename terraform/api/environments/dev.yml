@@ -233,7 +233,7 @@ enabled_nets:
         vevote:
           address:                '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
         authority_node:
-          address:                '0x9cb58354da24edeef021d3ce76b18004f982493e'
+          address:                '0x0000000000000000000000417574686f72697479'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.imcfs.mongodb.net
