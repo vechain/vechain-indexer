@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,historical-proposals}
   output:
     ansi:
       enabled: always
@@ -39,7 +39,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:http://localhost:8669}
+  url: ${THOR_URL:https://mainnet.vechain.org}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -63,6 +63,9 @@ veworld:
       address: ${VEVOTE_CONTRACT:0x90a3c072CF8493cCDd9b86B1C9b5d18F86fdf3E0}
     authority_node:
       address: ${AUTHORITY_CONTRACT:0x0000000000000000000000417574686f72697479}
+    historical_proposals:
+      steering_committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
+      all_stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
 
 indexer:
   startBlock:
@@ -73,6 +76,7 @@ indexer:
     history: ${INDEXER_START_BLOCK_HISTORY:0}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
     stargate: ${INDEXER_START_BLOCK_STARGATE:0}
+    historical_proposals: ${INDEXER_START_BLOCK_HISTORICAL_PROPOSALS:5775276}
   syncLogInterval:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
@@ -81,12 +85,14 @@ indexer:
     vevote: ${INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE:1000}
     authority_nodes: ${INDEXER_SYNC_LOGGER_AUTHORITY_NODE:1000}
     stargate: ${INDEXER_SYNC_LOGGER_INTERVAL_STARGATE:1000}
+    historical_proposals: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS:1000}
   syncBlockBatchSize:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:500}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:500}
     vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:500}
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
     authority_nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
+    historical_proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS:500}
   channelBatchSize: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
     interval: ${PRUNER_INTERVAL:300000}
@@ -108,6 +114,7 @@ indexer:
     stargate_nft_holders_by_block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate_vet_staked_by_block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
     authority_node_endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
+    historical_proposals: ${VERSION_HISTORICAL_PROPOSALS:1}
 
 comments:
   minLength: ${MIN_COMMENT_LEN:10}
