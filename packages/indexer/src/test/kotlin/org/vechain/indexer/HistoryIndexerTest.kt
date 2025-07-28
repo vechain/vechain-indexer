@@ -290,6 +290,36 @@ internal class HistoryIndexerTest {
             that(tx7.tokenId).isEqualTo("100031")
             that(tx7.autorenew).isEqualTo(true)
         }
+
+        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_VTHO_REFUND_1)
+
+        val txs8 = historyEventSlot.captured
+        expect { that(txs8).hasSize(1) }
+        val tx8 = txs8.first()
+        expect {
+            that(tx8.eventName).isEqualTo(HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE)
+            that(tx8.tokenId).isEqualTo("100001")
+            that(tx8.value).isEqualTo("62785350000000000")
+            that(tx8.owner).isEqualTo("0x3f90bf8b314c42005103b3c94505634fa680dcee")
+        }
+
+        indexer.processBlock(BlockFixtures.BLOCK_STARGATE_VTHO_REFUND_2)
+
+        val txs9 = historyEventSlot.captured
+        expect { that(txs9).hasSize(2) }
+        val tx9a = txs9[0]
+        val tx9b = txs9[1]
+        expect {
+            that(tx9a.eventName).isEqualTo(HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE)
+            that(tx9a.tokenId).isEqualTo("100001")
+            that(tx9a.value).isEqualTo("1020928450000000000")
+            that(tx9a.owner).isEqualTo("0x3f90bf8b314c42005103b3c94505634fa680dcee")
+
+            that(tx9b.eventName).isEqualTo(HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE)
+            that(tx9b.tokenId).isEqualTo("100001")
+            that(tx9b.value).isEqualTo("1000000000000000000")
+            that(tx9b.owner).isEqualTo("0x3f90bf8b314c42005103b3c94505634fa680dcee")
+        }
     }
 
     @Test
