@@ -1,5 +1,5 @@
 {
-  "name": "STARGATE_CLAIM_REWARDS_DELEGATE_BUG_FIX",
+  "name": "STARGATE_CLAIM_REWARDS_DELEGATE_REFUND",
   "sameClause": true,
   "events": [
     {
