@@ -4,40 +4,41 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.model.vevote.VevoteProposalComment
+import org.vechain.indexer.model.vevote.Support
+import org.vechain.indexer.model.vevote.VeVoteProposalComment
 
 @Profile("vevote-comments")
 @Repository
 interface VevoteCommentRepository :
-    BasePagingAndSortingIndexedRepository<VevoteProposalComment, String> {
-    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VevoteProposalComment>
+    BasePagingAndSortingIndexedRepository<VeVoteProposalComment, String> {
+    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VeVoteProposalComment>
 
-    fun findAllByVoter(voter: String, pageable: Pageable): Slice<VevoteProposalComment>
+    fun findAllByVoter(voter: String, pageable: Pageable): Slice<VeVoteProposalComment>
 
     fun findAllByProposalIdAndVoter(
         proposalId: String,
         voter: String,
         pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    ): Slice<VeVoteProposalComment>
 
-    fun findAllByChoicesContaining(choice: Int, pageable: Pageable): Slice<VevoteProposalComment>
+    fun findAllBySupport(support: Support, pageable: Pageable): Slice<VeVoteProposalComment>
 
-    fun findAllByProposalIdAndChoicesContaining(
+    fun findAllByProposalIdAndSupport(
         proposalId: String,
-        choice: Int,
+        support: Support,
         pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    ): Slice<VeVoteProposalComment>
 
-    fun findAllByVoterAndChoicesContaining(
+    fun findAllByVoterAndSupport(
         voter: String,
-        choice: Int,
+        support: Support,
         pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    ): Slice<VeVoteProposalComment>
 
-    fun findAllByProposalIdAndVoterAndChoicesContaining(
+    fun findAllByProposalIdAndVoterAndSupport(
         proposalId: String,
         voter: String,
-        choice: Int,
+        support: Support,
         pageable: Pageable,
-    ): Slice<VevoteProposalComment>
+    ): Slice<VeVoteProposalComment>
 }
