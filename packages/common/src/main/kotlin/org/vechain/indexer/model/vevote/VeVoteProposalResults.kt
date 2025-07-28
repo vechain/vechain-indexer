@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.thor.model.Block
 
 @Document(collection = "vevote_proposal_results")
 data class VeVoteProposalResults
@@ -17,26 +16,7 @@ constructor(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val proposalId: String,
-    val choice: Int,
+    val support: Support,
     val totalWeight: BigDecimal,
     val totalVoters: Int,
-) : IndexedDocument {
-    constructor(
-        block: Block,
-        proposalId: String,
-        choice: Int,
-        totalWeight: BigDecimal,
-        totalVoters: Int,
-    ) : this(
-        id = generateVoteAggregateId(proposalId, choice),
-        blockId = block.id,
-        blockNumber = block.number,
-        blockTimestamp = block.timestamp,
-        proposalId = proposalId,
-        choice = choice,
-        totalWeight = totalWeight,
-        totalVoters = totalVoters,
-    )
-}
-
-fun generateVoteAggregateId(proposalId: String, choice: Int): String = "$proposalId-$choice"
+) : IndexedDocument

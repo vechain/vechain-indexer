@@ -56,7 +56,7 @@ enabled_nets:
         transactions:               '751'
         transfers:                  '37840'
         history:                    '751'
-        vevote:                     '21432703'
+        vevote:                     '22331866'
         stargate:                   '22044000'
       sync_logger_interval:
         nfts:                       '1000'
@@ -86,8 +86,8 @@ enabled_nets:
         transactions:               '4'
         history:                    '8'
         nft_blacklist:              '5'
-        vevote_comments:            '3'
-        vevote_results:             '3'
+        vevote_comments:            '1'
+        vevote_results:             '4'
         authority_node_endorser:    '3'
         stargate_vtho_claimed_by_block: '3'
         stargate_vtho_claimed_by_account: '3'
@@ -119,7 +119,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
+          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
     mongodb:
@@ -140,7 +140,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-comments,vevote-results,stargate,authority-nodes
+      spring_profile: nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -150,7 +150,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-comments,vevote-results,stargate,authority-nodes
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -159,7 +159,7 @@ enabled_nets:
         transactions:               '15034'
         transfers:                  '15034'
         history:                    '15034'
-        vevote:                     '21432703'
+        vevote:                     '22331866'
         stargate:                   '22087000'
       sync_logger_interval:
         nfts:                       '1000'
@@ -189,8 +189,8 @@ enabled_nets:
         transactions:               '4'
         history:                    '8'
         nft_blacklist:              '5'
-        vevote_comments:            '3'
-        vevote_results:             '3'
+        vevote_comments:            '1'
+        vevote_results:             '4'
         authority_node_endorser:    '3'
         stargate_vtho_claimed_by_block: '3'
         stargate_vtho_claimed_by_account: '3'
@@ -222,7 +222,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x90a3c072cf8493ccdd9b86b1c9b5d18f86fdf3e0'
+          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority_node:
           address:                  '0x9cb58354da24edeef021d3ce76b18004f982493e'
     mongodb:
@@ -234,5 +234,5 @@ enabled_nets:
       disk_size_gb: 119
       iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M30
+      auto_scaling_compute_max_instance_size: M40
       auto_scaling_compute_min_instance_size: M10
