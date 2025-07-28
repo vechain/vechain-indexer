@@ -43,6 +43,7 @@ object EventUtils {
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
             "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
+            "STARGATE_CLAIM_REWARDS_DELEGATE_REFUND",
             "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             else -> null // Other events will not be labeled
