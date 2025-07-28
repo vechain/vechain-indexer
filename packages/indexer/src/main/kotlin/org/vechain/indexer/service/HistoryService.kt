@@ -30,7 +30,10 @@ class HistoryService(
 
             if (event.params.getEventType() == "TransferBatch") {
                 historyEvents.addAll(processBatchTransferEvents(event))
-            } else if (event.params.getEventType() == "STARGATE_CLAIM_REWARDS_DELEGATE_REFUND") {
+            } else if (
+                eventName == HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE &&
+                    event.params.getAsString("value2") != null
+            ) {
                 historyEvents.addAll(handleStargateClaimReimbursement(event))
             } else {
                 historyEvents.add(createIndexedHistoryEvent(event, eventName))
