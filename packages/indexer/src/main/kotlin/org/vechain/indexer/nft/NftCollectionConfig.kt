@@ -9,8 +9,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.model.IndexedNft
-import org.vechain.indexer.model.NftArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts")

@@ -4,10 +4,8 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.b3tr.ProposalSupport
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedHistoryEvent
-import org.vechain.indexer.model.b3tr.ProposalSupport
-import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean

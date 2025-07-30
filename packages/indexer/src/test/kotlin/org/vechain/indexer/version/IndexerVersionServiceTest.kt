@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext
-import org.vechain.indexer.model.IndexerVersion
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 

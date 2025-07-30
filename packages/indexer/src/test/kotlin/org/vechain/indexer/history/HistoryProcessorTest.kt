@@ -13,7 +13,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
-import org.vechain.indexer.repository.HistoryRepository
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 

@@ -14,9 +14,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.CombinedEventProcessor
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.mocks.TestableBlockIndexer
-import org.vechain.indexer.model.IndexedHistoryEvent
-import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.repository.HistoryRepository
 import org.vechain.indexer.thor.client.MockThorClient
 import strikt.api.expect
 import strikt.assertions.hasSize

@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
-import org.vechain.indexer.model.NftBlacklist
-import org.vechain.indexer.model.NftBlacklistArchive
-import org.vechain.indexer.repository.NftBlacklistRepository
 
 @ExtendWith(MockKExtension::class)
 internal class NftBlacklistProcessorTest {

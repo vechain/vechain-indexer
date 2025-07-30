@@ -12,9 +12,6 @@ import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_
 import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
-import org.vechain.indexer.model.IndexedNft
-import org.vechain.indexer.model.NftArchive
-import org.vechain.indexer.repository.NftRepository
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo

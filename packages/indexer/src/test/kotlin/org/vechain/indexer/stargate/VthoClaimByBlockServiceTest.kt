@@ -8,8 +8,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.VthoClaimedByBlock
-import org.vechain.indexer.repository.stargate.VthoClaimedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import strikt.api.expect
 import strikt.assertions.isEqualTo

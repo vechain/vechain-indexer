@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.NotFoundException
-import org.vechain.indexer.model.rest.ExecuteCodeRequest
-import org.vechain.indexer.model.rest.ExecuteCodeResponse
+import org.vechain.indexer.rest.ExecuteCodeRequest
+import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 

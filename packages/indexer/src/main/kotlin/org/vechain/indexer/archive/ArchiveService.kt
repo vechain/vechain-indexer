@@ -7,9 +7,8 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.model.Archive
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 

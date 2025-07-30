@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
-import org.vechain.indexer.repository.TransactionRepository
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionProcessorTest {

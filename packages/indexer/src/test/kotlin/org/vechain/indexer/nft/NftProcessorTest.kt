@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedNFTEventsFixtures.INDEXED_EVENTS_NFT_MINT
-import org.vechain.indexer.model.IndexedNft
-import org.vechain.indexer.model.NftArchive
-import org.vechain.indexer.repository.NftRepository
 
 @ExtendWith(MockKExtension::class)
 internal class NftProcessorTest {

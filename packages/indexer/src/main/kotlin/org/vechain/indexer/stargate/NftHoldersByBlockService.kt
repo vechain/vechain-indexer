@@ -3,9 +3,6 @@ package org.vechain.indexer.stargate
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.NftHoldersByBlock
-import org.vechain.indexer.model.stargate.TokenLevel
-import org.vechain.indexer.repository.stargate.NftHoldersByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 
 @Profile("stargate")

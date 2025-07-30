@@ -3,6 +3,7 @@ package org.vechain.indexer.utils
 import org.vechain.devkit.Function
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.specifications.ContractSpecification
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Clause
 import org.web3j.abi.EventEncoder
 import org.web3j.crypto.Hash

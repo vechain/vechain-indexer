@@ -4,9 +4,6 @@ import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.TokenLevel
-import org.vechain.indexer.model.stargate.VetStakedByBlock
-import org.vechain.indexer.repository.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 

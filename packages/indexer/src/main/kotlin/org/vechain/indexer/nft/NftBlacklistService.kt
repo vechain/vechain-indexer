@@ -7,9 +7,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.NftBlacklist
-import org.vechain.indexer.model.NftBlacklistArchive
-import org.vechain.indexer.repository.NftBlacklistRepository
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("nfts")

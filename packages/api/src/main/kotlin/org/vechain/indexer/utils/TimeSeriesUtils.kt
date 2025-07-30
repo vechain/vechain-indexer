@@ -1,7 +1,7 @@
 package org.vechain.indexer.utils
 
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.model.TimeSeriesRecord
+import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.timeseries.TimeSeriesRecord
 
 object TimeSeriesUtils {
     /**
