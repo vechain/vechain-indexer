@@ -1,6 +1,5 @@
 package org.vechain.indexer.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -50,7 +49,6 @@ constructor(
     val delegationRewards: String? = null,
     val migrated: Boolean? = null,
     val autorenew: Boolean? = null,
-    @JsonIgnore val isBlacklisted: Boolean = false,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {

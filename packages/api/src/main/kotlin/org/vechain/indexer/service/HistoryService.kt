@@ -3,17 +3,15 @@ package org.vechain.indexer.service
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedHistoryEvent
+import org.vechain.indexer.repository.HistoryRepository
 
 @Profile("history")
 @Service
-open class HistoryService(private val mongoTemplate: MongoTemplate) {
+open class HistoryService(private val historyRepository: HistoryRepository) {
     open fun findUserHistoryByFilters(
         account: String,
         eventNames: List<String>?,
@@ -23,62 +21,55 @@ open class HistoryService(private val mongoTemplate: MongoTemplate) {
         after: Long?,
         pageable: Pageable,
     ): Slice<IndexedHistoryEvent> {
-        val query = Query()
+        val criteria =
+            buildCriteria(account, eventNames, searchFields, contractAddress, before, after)
+        return historyRepository.findByCriteria(criteria, pageable)
+    }
+
+    private fun buildCriteria(
+        account: String,
+        eventNames: List<String>?,
+        searchFields: List<String>?,
+        contractAddress: Address?,
+        before: Long?,
+        after: Long?,
+    ): Criteria {
+
+        val criteria = Criteria()
 
         // Add dynamic search fields
         if (!searchFields.isNullOrEmpty()) {
-            val fieldCriteria =
-                Criteria()
-                    .orOperator(
-                        *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
-                    )
-            query.addCriteria(fieldCriteria)
+            criteria.orOperator(
+                *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
+            )
         } else {
             // Default to "to", "from", "origin"
-            query.addCriteria(
-                Criteria()
-                    .orOperator(
-                        Criteria.where("to").`is`(account),
-                        Criteria.where("from").`is`(account),
-                        Criteria.where("origin").`is`(account),
-                    )
+            criteria.orOperator(
+                Criteria.where(IndexedHistoryEvent::to.name).`is`(account),
+                Criteria.where(IndexedHistoryEvent::from.name).`is`(account),
+                Criteria.where(IndexedHistoryEvent::origin.name).`is`(account),
             )
         }
+
         // Add contractAddress filter
         if (contractAddress != null) {
-            query.addCriteria(Criteria.where("contractAddress").`is`(contractAddress.value))
+            criteria.and(IndexedHistoryEvent::contractAddress.name).`is`(contractAddress.value)
         }
 
         // Add eventNames filter
         if (!eventNames.isNullOrEmpty()) {
-            query.addCriteria(Criteria.where("eventName").`in`(eventNames))
+            criteria.and(IndexedHistoryEvent::eventName.name).`in`(eventNames)
         }
 
         // Add timestamp filters
         if (before != null && after != null) {
-            query.addCriteria(Criteria.where("blockTimestamp").gte(after).lte(before))
+            criteria.and(IndexedHistoryEvent::blockTimestamp.name).gte(after).lte(before)
         } else if (before != null) {
-            query.addCriteria(Criteria.where("blockTimestamp").lte(before))
+            criteria.and(IndexedHistoryEvent::blockTimestamp.name).lte(before)
         } else if (after != null) {
-            query.addCriteria(Criteria.where("blockTimestamp").gte(after))
+            criteria.and(IndexedHistoryEvent::blockTimestamp.name).gte(after)
         }
 
-        // Ignore blacklisted events
-        query.addCriteria(Criteria.where("isBlacklisted").ne(true))
-
-        // Fetch one extra item beyond pageSize to check if another page exists
-        query.with(pageable)
-        // Fetch results
-        val results = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
-
-        val pageSize = pageable.pageSize - 1
-
-        // Determine if another page exists (if we got more than pageSize items)
-        val hasNext = results.size > pageSize
-
-        // Limit results to only the requested pageSize
-        val limitedResults = if (hasNext) results.subList(0, pageSize) else results
-
-        return SliceImpl(limitedResults, pageable, hasNext)
+        return criteria
     }
 }

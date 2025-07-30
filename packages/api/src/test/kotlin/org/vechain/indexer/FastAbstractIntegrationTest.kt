@@ -34,7 +34,7 @@ abstract class FastAbstractIntegrationTest {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NftRepository
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 

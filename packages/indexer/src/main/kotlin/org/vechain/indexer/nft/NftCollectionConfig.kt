@@ -88,11 +88,6 @@ open class NftCollectionConfig(
                 .on("_id", Sort.Direction.DESC),
         )
 
-        ensureIndex(
-            "nft_isBlacklisted_1_contractAddress_1",
-            Index()
-                .on("isBlacklisted", Sort.Direction.ASC)
-                .on("contractAddress", Sort.Direction.ASC),
-        )
+        ensureIndex("nft_contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
     }
 }

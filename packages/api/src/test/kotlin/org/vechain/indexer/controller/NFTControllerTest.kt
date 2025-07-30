@@ -417,7 +417,7 @@ class NFTControllerTest : AbstractIntegrationTest() {
     }
 
     @Nested
-    inner class GetContractsByNFTOwner {
+    inner class GetContractsByNftOwner {
 
         @Test
         fun `get contracts by NFT owner - bad owner address`() {

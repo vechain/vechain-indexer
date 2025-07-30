@@ -6,13 +6,13 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.model.Address
 import org.vechain.indexer.model.IndexedNft
-import org.vechain.indexer.repository.NFTRepository
+import org.vechain.indexer.repository.NftRepository
 
 @Profile("nfts")
 @Service
-open class NFTService(private val nftRepository: NFTRepository) {
+open class NftService(private val nftRepository: NftRepository) {
 
-    open fun findOwnedNFTs(
+    open fun findOwnedNfts(
         owner: Address,
         contractAddress: Address?,
         tokenId: String?,
@@ -38,7 +38,7 @@ open class NFTService(private val nftRepository: NFTRepository) {
         }
     }
 
-    open fun findContractsByNFTOwner(owner: Address, pageable: Pageable): Slice<String> {
-        return nftRepository.findContractsByNFTOwner(owner.value, pageable)
+    open fun findContractsByNftOwner(owner: Address, pageable: Pageable): Slice<String> {
+        return nftRepository.findContractsByNftOwner(owner.value, pageable)
     }
 }

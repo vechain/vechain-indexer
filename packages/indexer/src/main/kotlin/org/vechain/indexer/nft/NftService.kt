@@ -7,14 +7,14 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.model.IndexedNft
 import org.vechain.indexer.model.NftArchive
-import org.vechain.indexer.repository.NFTRepository
+import org.vechain.indexer.repository.NftRepository
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("nfts")
 @Service
 open class NftService(
-    private val nftRepository: NFTRepository,
+    private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])

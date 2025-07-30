@@ -41,8 +41,6 @@ open class HistoryCollectionConfig(
 
         ensureIndex("contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
 
-        ensureIndex("isBlacklisted_1", Index().on("isBlacklisted", Sort.Direction.ASC))
-
         ensureIndex(
             "to_1_contractAddress_1_blockTimestamp_-1",
             Index()
@@ -68,30 +66,27 @@ open class HistoryCollectionConfig(
         )
 
         ensureIndex(
-            "from_1_blockTimestamp_-1_eventName_1_isBlacklisted_1",
+            "from_1_blockTimestamp_-1_eventName_1",
             Index()
                 .on("from", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
-                .on("isBlacklisted", Sort.Direction.ASC),
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
-            "to_1_blockTimestamp_-1_eventName_1_isBlacklisted_1",
+            "to_1_blockTimestamp_-1_eventName_1",
             Index()
                 .on("to", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
-                .on("isBlacklisted", Sort.Direction.ASC),
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
-            "origin_1_blockTimestamp_-1_eventName_1_isBlacklisted_1",
+            "origin_1_blockTimestamp_-1_eventName_1",
             Index()
                 .on("origin", Sort.Direction.ASC)
                 .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC)
-                .on("isBlacklisted", Sort.Direction.ASC),
+                .on("eventName", Sort.Direction.ASC),
         )
 
         ensureIndex(
