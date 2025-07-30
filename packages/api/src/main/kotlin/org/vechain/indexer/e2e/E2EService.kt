@@ -1,4 +1,4 @@
-package org.vechain.indexer.nft.e2e
+package org.vechain.indexer.e2e
 
 import org.jetbrains.annotations.TestOnly
 import org.springframework.context.annotation.Profile
