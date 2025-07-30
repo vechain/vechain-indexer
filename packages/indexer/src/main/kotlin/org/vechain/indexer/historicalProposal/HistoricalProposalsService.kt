@@ -108,25 +108,13 @@ class HistoricalProposalsService(
     private fun getAbiFunction(name: String): AbiElement {
         return cachedAbi[name]
             ?: run {
-                // Map the Steering Committee function names to the actual JSON function names
-                val actualFunctionName =
-                    when (name) {
-                        "getBasicInfoSC" -> "getBasicInfo"
-                        "getConditionSC" -> "getCondition"
-                        "getTallySC" -> "getTally"
-                        else -> name
-                    }
+                val basePath = "abis/historical-proposals"
 
                 val abis =
-                    AbiLoader.loadFunctions(
-                        basePath = "abis/historical-proposals",
-                        functionNames = listOf(actualFunctionName),
-                    )
+                    AbiLoader.loadFunctions(basePath = basePath, functionNames = listOf(name))
                 val abi =
-                    abis.firstOrNull { it.name == actualFunctionName }
-                        ?: throw IllegalArgumentException(
-                            "Function '$actualFunctionName' not found in proposal ABI"
-                        )
+                    abis.firstOrNull { it.name == name }
+                        ?: throw IllegalArgumentException("Function '$name' not found in $basePath")
                 cachedAbi[name] = abi
                 abi
             }
