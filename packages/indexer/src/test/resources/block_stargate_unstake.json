@@ -1,8 +1,8 @@
 {
   "number": 2,
-  "id": "0x01502267f59ee9c5120d6091684a1a4f27720643c23359b46328b80540a8b4a6",
+  "id": "0x0000000a00000000000000000000000000000000000000000000000000000002",
   "size": 542,
-  "parentID": "0x01502266fbd599ccf323436947977ec372da4cc5e185738c3922b3435af65cd6",
+  "parentID": "0x0000000a00000000000000000000000000000000000000000000000000000001",
   "timestamp": 1750326670,
   "gasLimit": 40000000,
   "beneficiary": "0xb4094c25f86d628fdd571afc4077f0d0196afb48",
@@ -32,7 +32,7 @@
         }
       ],
       "maxFeePerGas": "0x95ff980a220",
-      "maxPriorityFeePerGas": "0x1d1a94a20",
+      "maxPriorityFeePerGas": "x",
       "gas": 231744,
       "origin": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
       "delegator": null,
