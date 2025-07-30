@@ -61,5 +61,13 @@ open class TransactionCollectionConfig(
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC),
         )
+
+        ensureIndex(
+            "tx_clauses.to_1_blockNumber_-1__id_-1",
+            Index()
+                .on("clauses.to", Sort.Direction.ASC)
+                .on("blockNumber", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
+        )
     }
 }

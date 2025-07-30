@@ -121,4 +121,34 @@ open class TransactionController(private val transactionService: TransactionServ
             )
         )
     }
+
+    @GetMapping("/contract")
+    @Operation(summary = "Get all transactions for a contract address")
+    @ApiResponses(
+        value = [ApiResponse(responseCode = "400", description = "Invalid contract address")]
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "contractAddress",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "The contract address to query transactions for",
+        required = true,
+        example = "0x0000000000000000000000000000456e65726779",
+    )
+    @ExpandedParameter
+    @PaginationParameters
+    open fun getTransactionsByContract(
+        @ValidAddress @RequestParam contractAddress: Address,
+        @RequestParam(required = false) expanded: Boolean = false,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<IndexedTransaction> {
+        return paginatedResponse(
+            transactionService.findByContractAddress(
+                contractAddress,
+                toPageable(page, size, direction, "blockNumber", "_id"),
+            )
+        )
+    }
 }
