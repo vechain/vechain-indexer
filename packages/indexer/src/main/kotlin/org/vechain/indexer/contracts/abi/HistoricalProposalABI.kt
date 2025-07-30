@@ -1,7 +1,6 @@
 package org.vechain.indexer.contracts.abi
 
 object HistoricalProposalABI {
-    // All Stakeholders contract (dynamic arrays)
     val getBasicInfo: FunctionDefinition
         get() =
             FunctionDefinition(
@@ -24,16 +23,52 @@ object HistoricalProposalABI {
                             internalType = "string",
                         ),
                         FunctionParameter(
-                            name = "options",
-                            type = "string[]",
+                            name = "pType",
+                            type = "uint8",
                             components = listOf(),
-                            internalType = "string[]",
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "minChecked",
+                            type = "uint8",
+                            components = listOf(),
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "maxChecked",
+                            type = "uint8",
+                            components = listOf(),
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "creator",
+                            type = "address",
+                            components = listOf(),
+                            internalType = "address",
                         ),
                         FunctionParameter(
                             name = "createTime",
                             type = "uint64",
                             components = listOf(),
                             internalType = "uint64",
+                        ),
+                        FunctionParameter(
+                            name = "cancelTime",
+                            type = "uint64",
+                            components = listOf(),
+                            internalType = "uint64",
+                        ),
+                        FunctionParameter(
+                            name = "options",
+                            type = "string[]",
+                            components = listOf(),
+                            internalType = "string[]",
+                        ),
+                        FunctionParameter(
+                            name = "_ratio",
+                            type = "uint16[3]",
+                            components = listOf(),
+                            internalType = "uint16[3]",
                         ),
                     ),
                 stateMutability = "view",
@@ -95,7 +130,6 @@ object HistoricalProposalABI {
                 stateMutability = "view",
             )
 
-    // Steering Committee contract (fixed arrays)
     val getBasicInfoSC: FunctionDefinition
         get() =
             FunctionDefinition(
@@ -118,16 +152,46 @@ object HistoricalProposalABI {
                             internalType = "string",
                         ),
                         FunctionParameter(
-                            name = "options",
-                            type = "bytes32[10]",
+                            name = "checkType",
+                            type = "uint8",
                             components = listOf(),
-                            internalType = "bytes32[10]",
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "minChecked",
+                            type = "uint8",
+                            components = listOf(),
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "maxChecked",
+                            type = "uint8",
+                            components = listOf(),
+                            internalType = "uint8",
+                        ),
+                        FunctionParameter(
+                            name = "creator",
+                            type = "address",
+                            components = listOf(),
+                            internalType = "address",
                         ),
                         FunctionParameter(
                             name = "createTime",
                             type = "uint64",
                             components = listOf(),
                             internalType = "uint64",
+                        ),
+                        FunctionParameter(
+                            name = "cancelTime",
+                            type = "uint64",
+                            components = listOf(),
+                            internalType = "uint64",
+                        ),
+                        FunctionParameter(
+                            name = "options",
+                            type = "bytes32[10]",
+                            components = listOf(),
+                            internalType = "bytes32[10]",
                         ),
                     ),
                 stateMutability = "view",
@@ -154,6 +218,49 @@ object HistoricalProposalABI {
                             components = listOf(),
                             internalType = "uint64[10]",
                         )
+                    ),
+                stateMutability = "view",
+            )
+
+    val getConditionSC: FunctionDefinition
+        get() =
+            FunctionDefinition(
+                name = "getCondition",
+                inputs =
+                    listOf(
+                        FunctionParameter(
+                            name = "_proposalId",
+                            type = "uint256",
+                            components = listOf(),
+                            internalType = "uint256",
+                        )
+                    ),
+                outputs =
+                    listOf(
+                        FunctionParameter(
+                            name = "checkpoint",
+                            type = "uint256",
+                            components = listOf(),
+                            internalType = "uint256",
+                        ),
+                        FunctionParameter(
+                            name = "checkBalance",
+                            type = "uint256",
+                            components = listOf(),
+                            internalType = "uint256",
+                        ),
+                        FunctionParameter(
+                            name = "votingStartTime",
+                            type = "uint64",
+                            components = listOf(),
+                            internalType = "uint64",
+                        ),
+                        FunctionParameter(
+                            name = "votingEndTime",
+                            type = "uint64",
+                            components = listOf(),
+                            internalType = "uint64",
+                        ),
                     ),
                 stateMutability = "view",
             )

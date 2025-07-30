@@ -29,6 +29,7 @@ class HistoricalProposalsService(
         events.mapNotNull { extractNewProposalEvent(it) }
 
     fun extractNewProposalEvent(event: IndexedEvent): HistoricalProposals? {
+
         try {
             val contractAddress = event.address ?: return null
             if (
@@ -39,6 +40,11 @@ class HistoricalProposalsService(
                 return null
             }
 
+            val isSteeringCommittee = contractAddress.equals(steeringCommitteeAddress, true)
+            val basicInfoFunction = if (isSteeringCommittee) "getBasicInfoSC" else "getBasicInfo"
+            val conditionFunction = if (isSteeringCommittee) "getConditionSC" else "getCondition"
+            val tallyFunction = if (isSteeringCommittee) "getTallySC" else "getTally"
+
             val params = event.params.getReturnValues()
             val proposalId = params["proposalId"]?.toString() ?: return null
             val proposalType = params["ptype"] as? Int // keep as Int?
@@ -46,25 +52,28 @@ class HistoricalProposalsService(
                 listOf(
                     ContractUtils.createClause(
                         contractAddress,
-                        HistoricalProposalABI.getBasicInfo,
+                        if (isSteeringCommittee) HistoricalProposalABI.getBasicInfoSC
+                        else HistoricalProposalABI.getBasicInfo,
                         proposalId.toBigInteger(),
                     ),
                     ContractUtils.createClause(
                         contractAddress,
-                        HistoricalProposalABI.getCondition,
+                        if (isSteeringCommittee) HistoricalProposalABI.getConditionSC
+                        else HistoricalProposalABI.getCondition,
                         proposalId.toBigInteger(),
                     ),
                     ContractUtils.createClause(
                         contractAddress,
-                        HistoricalProposalABI.getTally,
+                        if (isSteeringCommittee) HistoricalProposalABI.getTallySC
+                        else HistoricalProposalABI.getTally,
                         proposalId.toBigInteger(),
                     ),
                 )
 
             val responses = thorService.executeReadOnlyCode(clauses)
-            val basicInfo = decodeResponse(responses.getOrNull(0)?.data, "getBasicInfo")
-            val condition = decodeResponse(responses.getOrNull(1)?.data, "getCondition")
-            val tally = decodeResponse(responses.getOrNull(2)?.data, "getTally")
+            val basicInfo = decodeResponse(responses.getOrNull(0)?.data, basicInfoFunction)
+            val condition = decodeResponse(responses.getOrNull(1)?.data, conditionFunction)
+            val tally = decodeResponse(responses.getOrNull(2)?.data, tallyFunction)
 
             return HistoricalProposals(
                 id = "$contractAddress-$proposalId",
@@ -91,25 +100,32 @@ class HistoricalProposalsService(
     private fun decodeResponse(data: String?, functionName: String): Map<String, Any?>? {
         if (data.isNullOrBlank()) return null
 
-        // Get the ABI definition for this function
         val abiElement = getAbiFunction(functionName)
-        // Decode the hex data according to the ABI outputs
+        // Decode the hex data
         return FunctionReturnDecoder.decode(data, abiElement.outputs)
     }
 
-    // Helper to get ABI definitions - will move it to util
     private fun getAbiFunction(name: String): AbiElement {
         return cachedAbi[name]
             ?: run {
+                // Map the Steering Committee function names to the actual JSON function names
+                val actualFunctionName =
+                    when (name) {
+                        "getBasicInfoSC" -> "getBasicInfo"
+                        "getConditionSC" -> "getCondition"
+                        "getTallySC" -> "getTally"
+                        else -> name
+                    }
+
                 val abis =
                     AbiLoader.loadFunctions(
                         basePath = "abis/historical-proposals",
-                        functionNames = listOf(name),
+                        functionNames = listOf(actualFunctionName),
                     )
                 val abi =
-                    abis.firstOrNull { it.name == name }
+                    abis.firstOrNull { it.name == actualFunctionName }
                         ?: throw IllegalArgumentException(
-                            "Function '$name' not found in proposal ABI"
+                            "Function '$actualFunctionName' not found in proposal ABI"
                         )
                 cachedAbi[name] = abi
                 abi
@@ -123,10 +139,7 @@ class HistoricalProposalsService(
         return when (contractAddress.lowercase()) {
             steeringCommitteeAddress.lowercase() -> {
                 val options = basicInfo?.get("options") as? Array<*>
-                options?.map {
-                    // Remove null bytes from bytes32 strings
-                    it.toString().trim { c -> c == '\u0000' }
-                }
+                options?.map { it.toString().trim { c -> c == '\u0000' } }
             }
             allStakeholdersAddress.lowercase() -> {
                 val options = basicInfo?.get("options") as? List<*>
@@ -139,7 +152,6 @@ class HistoricalProposalsService(
         }
     }
 
-    // All Stakeholders uses dynamic uint64[] and Steering Committee uses fixed uint64[10]
     private fun extractVoteTallies(
         tally: Map<String, Any?>?,
         contractAddress: String,
