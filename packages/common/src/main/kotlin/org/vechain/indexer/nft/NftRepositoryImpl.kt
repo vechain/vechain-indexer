@@ -10,55 +10,23 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Component
+import org.vechain.indexer.BlacklistableRepository
 import org.vechain.indexer.utils.SliceBuilder
 
 @Profile("nfts")
 @Component
-open class NftRepositoryImpl(private val mongoTemplate: MongoTemplate) {
-
-    private fun findByCriteria(criteria: Criteria, pageable: Pageable): Slice<IndexedNft> {
-        val matchOperation = Aggregation.match(criteria)
-        val lookupBlacklistOperation =
-            Aggregation.lookup(
-                "nft_blacklist",
-                IndexedNft::contractAddress.name,
-                "_id",
-                "blacklistInfo",
-            )
-        val matchBlacklistOperation =
-            Aggregation.match(
-                Criteria()
-                    .orOperator(
-                        Criteria.where("blacklistInfo.isBlacklisted").ne(true),
-                        Criteria.where("blacklistInfo").exists(false),
-                    )
-            )
-        val aggregation =
-            Aggregation.newAggregation(
-                matchOperation,
-                lookupBlacklistOperation,
-                matchBlacklistOperation,
-                Aggregation.sort(pageable.sort),
-                Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                Aggregation.limit(pageable.pageSize.toLong() + 1),
-            )
-        return SliceBuilder.buildResultsSlice(
-            mongoTemplate
-                .aggregate(aggregation, IndexedNft::class.java, IndexedNft::class.java)
-                .mappedResults,
-            pageable,
-        )
-    }
+open class NftRepositoryImpl(private val mongoTemplate: MongoTemplate) :
+    BlacklistableRepository<IndexedNft>(mongoTemplate, IndexedNft::class.java) {
 
     open fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft> =
-        findByCriteria(Criteria.where(IndexedNft::owner.name).`is`(owner), pageable)
+        findNotBlacklisted(Criteria.where(IndexedNft::owner.name).`is`(owner), pageable)
 
     open fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
         pageable: Pageable,
     ): Slice<IndexedNft> =
-        findByCriteria(
+        findNotBlacklisted(
             Criteria.where(IndexedNft::owner.name)
                 .`is`(owner)
                 .and(IndexedNft::contractAddress.name)
@@ -72,7 +40,7 @@ open class NftRepositoryImpl(private val mongoTemplate: MongoTemplate) {
         tokenId: String,
         pageable: Pageable,
     ): Slice<IndexedNft> =
-        findByCriteria(
+        findNotBlacklisted(
             Criteria.where(IndexedNft::owner.name)
                 .`is`(owner)
                 .and(IndexedNft::contractAddress.name)

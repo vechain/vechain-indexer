@@ -21,7 +21,7 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
     ): Slice<IndexedHistoryEvent> {
         val criteria =
             buildCriteria(account, eventNames, searchFields, contractAddress, before, after)
-        return historyRepository.findByCriteria(criteria, pageable)
+        return historyRepository.findNotBlacklisted(criteria, pageable)
     }
 
     private fun buildCriteria(

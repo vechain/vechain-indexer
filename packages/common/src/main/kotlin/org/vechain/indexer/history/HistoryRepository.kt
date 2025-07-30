@@ -10,5 +10,5 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 @Profile("history")
 @Repository
 interface HistoryRepository : BasePagingAndSortingIndexedRepository<IndexedHistoryEvent, String> {
-    fun findByCriteria(criteria: Criteria, pageable: Pageable): Slice<IndexedHistoryEvent>
+    fun findNotBlacklisted(criteria: Criteria, pageable: Pageable): Slice<IndexedHistoryEvent>
 }
