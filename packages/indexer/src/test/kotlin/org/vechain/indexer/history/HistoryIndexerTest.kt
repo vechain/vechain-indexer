@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.event.CombinedEventProcessor
+import org.vechain.indexer.factories.BlockIndexerFactory
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.history.HistoryEventName
@@ -27,23 +27,6 @@ class HistoryIndexerTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
 
     private val repository = mockk<HistoryRepository>(relaxed = true)
-
-    private val bEProperties =
-        BusinessEventProperties().apply {
-            substitutions =
-                mapOf(
-                    "B3TR_CONTRACT" to "0x5ef79995fe8a89e0812330e4378eb2660cede699",
-                    "VOT3_CONTRACT" to "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
-                    "B3TR_GOVERNOR_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
-                    "GM_NFT_CONTRACT" to "0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f",
-                    "X_ALLOC_VOTING_CONTRACT" to "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
-                    "X2EARN_REWARDS_POOL_CONTRACT" to "0x6bee7ddab6c99d5b2af0554eaea484ce18f52631",
-                    "VOTER_REWARDS_CONTRACT" to "0x838a33af756a6366f93e201423e1425f67ec0fa7",
-                    "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",
-                    "STARGATE_DELEGATION_CONTRACT" to "0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e",
-                    "STARGATE_NFT_CONTRACT" to "0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7",
-                )
-        }
 
     lateinit var processor: HistoryProcessor
 
@@ -66,19 +49,16 @@ class HistoryIndexerTest {
             mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
         } returns mutableListOf()
 
+        val eventProcessor = buildEventProcessor()
+
         val indexer =
-            IndexerFactory()
-                .name("TestHistoryIndexer")
-                .thorClient(MockThorClient(mapOf(b3trBlock.number to b3trBlock)))
-                .processor(processor)
-                .abiEventNames(
-                    listOf("Transfer", "TransferSingle", "TransferBatch", "TRANSFER_VET")
-                )
-                .businessEvents("business-events", "abis")
-                .businessEventSubstitutionParams(bEProperties.substitutions)
-                .startBlock(b3trBlock.number)
-                .includeFullBlock()
-                .build()
+            BlockIndexerFactory(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(mapOf(b3trBlock.number to b3trBlock)),
+                processor = processor,
+                eventProcessor = eventProcessor,
+                startBlock = b3trBlock.number,
+            )
 
         indexer.start(1)
 
@@ -112,18 +92,13 @@ class HistoryIndexerTest {
         } returns mutableListOf()
 
         val indexer =
-            IndexerFactory()
-                .name("TestHistoryIndexer")
-                .thorClient(MockThorClient(mapOf(dexBlock.number to dexBlock)))
-                .processor(processor)
-                .abiEventNames(
-                    listOf("Transfer", "TransferSingle", "TransferBatch", "TRANSFER_VET")
-                )
-                .businessEvents("business-events", "abis")
-                .businessEventSubstitutionParams(bEProperties.substitutions)
-                .startBlock(dexBlock.number)
-                .includeFullBlock()
-                .build()
+            BlockIndexerFactory(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(mapOf(dexBlock.number to dexBlock)),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = dexBlock.number,
+            )
 
         indexer.start(1)
 
@@ -159,18 +134,13 @@ class HistoryIndexerTest {
         } returns mutableListOf()
 
         val indexer =
-            IndexerFactory()
-                .name("TestHistoryIndexer")
-                .thorClient(MockThorClient(mapOf(mpSales.number to mpSales)))
-                .processor(processor)
-                .abiEventNames(
-                    listOf("Transfer", "TransferSingle", "TransferBatch", "TRANSFER_VET")
-                )
-                .businessEvents("business-events", "abis")
-                .businessEventSubstitutionParams(bEProperties.substitutions)
-                .startBlock(mpSales.number)
-                .includeFullBlock()
-                .build()
+            BlockIndexerFactory(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(mapOf(mpSales.number to mpSales)),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = mpSales.number,
+            )
 
         indexer.start(1)
 
@@ -212,25 +182,20 @@ class HistoryIndexerTest {
             }
 
         val indexer =
-            IndexerFactory()
-                .name("TestHistoryIndexer")
-                .thorClient(
-                    MockThorClient(mapOf(blockSF.number to blockSF, blockSF2.number to blockSF2))
-                )
-                .processor(processor)
-                .abiEventNames(
-                    listOf("Transfer", "TransferSingle", "TransferBatch", "TRANSFER_VET")
-                )
-                .businessEvents("business-events", "abis")
-                .businessEventSubstitutionParams(bEProperties.substitutions)
-                .startBlock(blockSF.number) // since we're using block numbers 1 and 2
-                .includeFullBlock()
-                .build()
+            BlockIndexerFactory(
+                name = "TestHistoryIndexer",
+                thorClient =
+                    MockThorClient(mapOf(blockSF.number to blockSF, blockSF2.number to blockSF2)),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = blockSF.number,
+            )
 
         indexer.start(2)
 
         // Flatten all captured events
         val allTxs = insertedEvents.flatten()
+        print(allTxs)
 
         expect { that(allTxs).hasSize(5) }
 
@@ -286,25 +251,19 @@ class HistoryIndexerTest {
         val blockMap = stargateBlocks.mapIndexed { i, block -> (i + 1L) to block }.toMap()
 
         val indexer =
-            IndexerFactory()
-                .name("TestHistoryIndexer")
-                .thorClient(MockThorClient(blockMap))
-                .processor(processor)
-                .abiEventNames(
-                    listOf("Transfer", "TransferSingle", "TransferBatch", "TRANSFER_VET")
-                )
-                .businessEvents("business-events", "abis")
-                .businessEventSubstitutionParams(bEProperties.substitutions)
-                .startBlock(1L)
-                .includeFullBlock()
-                .build()
+            BlockIndexerFactory(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(blockMap),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = 1L,
+            )
 
         indexer.start(7)
 
         val allEvents = insertedEvents.flatten()
 
-        allEvents.forEach { event -> println(event.eventName) }
-        expect { that(allEvents).hasSize(11) }
+        expect { that(allEvents).hasSize(12) }
 
         fun assertTx(
             idx: Int,
@@ -330,16 +289,30 @@ class HistoryIndexerTest {
 
         assertTx(
             idx = 0,
-            eventName = HistoryEventName.STARGATE_DELEGATE,
+            eventName = HistoryEventName.STARGATE_DELEGATE_ONLY,
             tokenId = "16",
-            value = "100000000000000000000",
-            levelId = "1",
-            owner = "0x0f872421dc479f3c11edd89512731814d0598db5",
-            migrated = false,
+            autorenew = true,
         )
 
         assertTx(
             idx = 1,
+            eventName = HistoryEventName.STARGATE_STAKE,
+            tokenId = "16",
+            value = "100000000000000000000",
+            levelId = "1",
+            owner = "0x0f872421dc479f3c11edd89512731814d0598db5",
+        )
+
+        assertTx(
+            idx = 2,
+            eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_BASE,
+            tokenId = "9",
+            value = "8750000000000",
+            owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+        )
+
+        assertTx(
+            idx = 3,
             eventName = HistoryEventName.STARGATE_UNSTAKE,
             tokenId = "9",
             value = "5000000000000000000",
@@ -348,7 +321,7 @@ class HistoryIndexerTest {
         )
 
         assertTx(
-            idx = 2,
+            idx = 4,
             eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_BASE,
             tokenId = "8",
             value = "2177150000000000",
@@ -356,7 +329,15 @@ class HistoryIndexerTest {
         )
 
         assertTx(
-            idx = 6,
+            idx = 5,
+            eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_BASE,
+            tokenId = "10",
+            value = "2176250000000000",
+            owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
+        )
+
+        assertTx(
+            idx = 8,
             eventName = HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
             tokenId = "4",
             value = "260192920440000000000",
@@ -364,23 +345,47 @@ class HistoryIndexerTest {
         )
 
         assertTx(
-            idx = 7,
-            eventName = HistoryEventName.STARGATE_DELEGATE,
+            idx = 9,
+            eventName = HistoryEventName.STARGATE_DELEGATE_ONLY,
+            tokenId = "10",
+            autorenew = true,
+        )
+
+        assertTx(
+            idx = 10,
+            eventName = HistoryEventName.STARGATE_STAKE,
             tokenId = "10",
             value = "1000000000000000000",
             owner = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
             levelId = "8",
-            autorenew = true,
             migrated = false,
         )
 
-        assertTx(idx = 8, eventName = HistoryEventName.STARGATE_UNDELEGATE, tokenId = "16")
-
-        assertTx(
-            idx = 10,
-            eventName = HistoryEventName.STARGATE_DELEGATE_ONLY,
-            tokenId = "100031",
-            autorenew = true,
-        )
+        assertTx(idx = 11, eventName = HistoryEventName.STARGATE_UNDELEGATE, tokenId = "16")
     }
+
+    fun buildEventProcessor(): CombinedEventProcessor =
+        CombinedEventProcessor.create(
+            abiBasePath = "abis",
+            abiEventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
+            abiContracts = emptyList(),
+            includeVetTransfers = true,
+            businessEventPath = "business-events",
+            businessEventAbiBasePath = "abis",
+            businessEventContracts = emptyList(),
+            businessEventNames = emptyList(),
+            substitutionParams =
+                mapOf(
+                    "B3TR_CONTRACT" to "0x5ef79995fe8a89e0812330e4378eb2660cede699",
+                    "VOT3_CONTRACT" to "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
+                    "B3TR_GOVERNOR_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
+                    "GM_NFT_CONTRACT" to "0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f",
+                    "X_ALLOC_VOTING_CONTRACT" to "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
+                    "X2EARN_REWARDS_POOL_CONTRACT" to "0x6bee7ddab6c99d5b2af0554eaea484ce18f52631",
+                    "VOTER_REWARDS_CONTRACT" to "0x838a33af756a6366f93e201423e1425f67ec0fa7",
+                    "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",
+                    "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
+                    "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
+                ),
+        )
 }
