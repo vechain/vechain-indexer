@@ -33,9 +33,7 @@ open class VetStakedByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(
-                listOf("STARGATE_STAKE_DELEGATE", "STARGATE_STAKE", "STARGATE_UNSTAKE")
-            )
+            .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
