@@ -32,8 +32,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                     ?: throw IllegalArgumentException("Invalid levelId: $levelId")
 
             when (event.eventType) {
-                "STARGATE_STAKE",
-                "STARGATE_STAKE_DELEGATE" -> {
+                "STARGATE_STAKE" -> {
                     totalStaked += amount
                     totalStakedPerLevel[level] =
                         (totalStakedPerLevel[level] ?: BigInteger.ZERO) + amount
