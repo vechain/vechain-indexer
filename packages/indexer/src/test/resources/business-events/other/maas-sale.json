@@ -1,0 +1,74 @@
+{
+  "name": "MAAS_SALE",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "PurchaseNonCustodial",
+      "alias": "sale",
+      "conditions": []
+    },
+    {
+      "name": "Transfer",
+      "alias": "transfer",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "NE"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "sale",
+      "firstEventProperty": "tokenId",
+      "secondEventName": "transfer",
+      "secondEventProperty": "tokenId",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "sale",
+      "firstEventProperty": "buyer",
+      "secondEventName": "transfer",
+      "secondEventProperty": "to",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "sale",
+      "firstEventProperty": "nft",
+      "secondEventName": "transfer",
+      "secondEventProperty": "address",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "sale",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "buyer",
+      "eventName": "sale",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transfer",
+      "businessEventName": "from"
+    },
+    {
+      "name": "nft",
+      "eventName": "sale",
+      "businessEventName": "tokenAddress"
+    },
+    {
+      "name": "price",
+      "eventName": "sale",
+      "businessEventName": "value"
+    }
+  ]
+}
