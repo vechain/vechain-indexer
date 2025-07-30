@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.CombinedEventProcessor
-import org.vechain.indexer.factories.BlockIndexerFactory
 import org.vechain.indexer.fixtures.BlockFixtures
+import org.vechain.indexer.mocks.TestableBlockIndexer
 import org.vechain.indexer.model.IndexedHistoryEvent
 import org.vechain.indexer.model.history.HistoryEventName
 import org.vechain.indexer.repository.HistoryRepository
@@ -52,7 +52,7 @@ class HistoryIndexerTest {
         val eventProcessor = buildEventProcessor()
 
         val indexer =
-            BlockIndexerFactory(
+            TestableBlockIndexer(
                 name = "TestHistoryIndexer",
                 thorClient = MockThorClient(mapOf(b3trBlock.number to b3trBlock)),
                 processor = processor,
@@ -92,7 +92,7 @@ class HistoryIndexerTest {
         } returns mutableListOf()
 
         val indexer =
-            BlockIndexerFactory(
+            TestableBlockIndexer(
                 name = "TestHistoryIndexer",
                 thorClient = MockThorClient(mapOf(dexBlock.number to dexBlock)),
                 processor = processor,
@@ -134,7 +134,7 @@ class HistoryIndexerTest {
         } returns mutableListOf()
 
         val indexer =
-            BlockIndexerFactory(
+            TestableBlockIndexer(
                 name = "TestHistoryIndexer",
                 thorClient = MockThorClient(mapOf(mpSales.number to mpSales)),
                 processor = processor,
@@ -182,7 +182,7 @@ class HistoryIndexerTest {
             }
 
         val indexer =
-            BlockIndexerFactory(
+            TestableBlockIndexer(
                 name = "TestHistoryIndexer",
                 thorClient =
                     MockThorClient(mapOf(blockSF.number to blockSF, blockSF2.number to blockSF2)),
@@ -251,7 +251,7 @@ class HistoryIndexerTest {
         val blockMap = stargateBlocks.mapIndexed { i, block -> (i + 1L) to block }.toMap()
 
         val indexer =
-            BlockIndexerFactory(
+            TestableBlockIndexer(
                 name = "TestHistoryIndexer",
                 thorClient = MockThorClient(blockMap),
                 processor = processor,

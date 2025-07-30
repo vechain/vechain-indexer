@@ -1,4 +1,4 @@
-package org.vechain.indexer.factories
+package org.vechain.indexer.mocks
 
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerProcessor
@@ -9,7 +9,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
-class BlockIndexerFactory(
+class TestableBlockIndexer(
     name: String,
     thorClient: ThorClient,
     processor: IndexerProcessor,
