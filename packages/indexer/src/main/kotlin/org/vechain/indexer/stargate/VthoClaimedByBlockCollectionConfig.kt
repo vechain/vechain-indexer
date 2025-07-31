@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-block")
 @Configuration
 open class VthoClaimedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,

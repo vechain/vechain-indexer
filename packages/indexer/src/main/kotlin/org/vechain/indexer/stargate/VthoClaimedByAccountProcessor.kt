@@ -7,7 +7,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-account")
 @Component
 open class VthoClaimedByAccountProcessor(
     private val service: VthoClaimedByAccountService,

@@ -15,7 +15,7 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-account")
 open class VthoClaimedByAccountConfig {
     @Bean
     open fun vthoClaimByAccountArchiveService(

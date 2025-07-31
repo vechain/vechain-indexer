@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
 
-@Profile("stargate")
+@Profile("stargate", "vet-staked-by-block")
 interface VetStakedByBlockRepository :
     BaseIndexedRepository<VetStakedByBlock, Long>, TimeSeriesRepo<VetStakedByBlock> {
     @Aggregation(

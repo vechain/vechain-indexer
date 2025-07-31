@@ -10,7 +10,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "vet-staked-by-block")
 open class VetStakedByBlockConfig {
     @Bean
     open fun vetStakedByBlockIndexer(

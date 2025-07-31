@@ -11,7 +11,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-account")
 @Service
 open class VthoClaimedByAccountService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,

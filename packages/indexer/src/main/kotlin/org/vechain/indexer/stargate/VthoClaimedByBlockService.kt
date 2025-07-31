@@ -6,42 +6,86 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-block")
 @Service
 open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockRepository) {
 
-    open fun processEvents(events: List<IndexedEvent>): VthoClaimedByBlock? {
-        if (events.isEmpty()) return null
+    /**
+     * Builds per-block cumulative records from the provided events.
+     *
+     * Invariants / Fail-fast rules:
+     * - If there is a latest persisted record, throw if ANY incoming event has blockNumber <=
+     *   latestRecord.blockNumber (reprocessing or regression).
+     *
+     * Processing:
+     * - Group events by blockNumber (ascending).
+     * - Sum each block's required "value" (throws immediately if missing).
+     * - Accumulate totals starting from the latest persisted total (or zero).
+     * - Use the first event in each block as representative for blockId/timestamp, assuming they
+     *   are identical within a block.
+     */
+    open fun processEvents(events: List<IndexedEvent>): List<VthoClaimedByBlock> {
+        if (events.isEmpty()) return emptyList()
 
-        val latestEvent = events.maxByOrNull { it.blockNumber } ?: return null
-        val totalVthoClaimed =
-            events.sumOf { it.params.getAsBigInteger("value") ?: BigInteger.ZERO }
         val latestRecord = repository.getLatestRecord()
+        val lastPersistedBlockNumber = latestRecord?.blockNumber
 
-        if (latestRecord == null) {
-            return VthoClaimedByBlock(
-                blockId = latestEvent.blockId,
-                blockNumber = latestEvent.blockNumber,
-                blockTimestamp = latestEvent.blockTimestamp,
-                total = totalVthoClaimed,
-            )
+        // Fail fast on same/earlier block numbers than the last persisted block
+        if (lastPersistedBlockNumber != null) {
+            val offending =
+                events
+                    .asSequence()
+                    .map { it.blockNumber }
+                    .filter { it <= lastPersistedBlockNumber }
+                    .minOrNull()
+            if (offending != null) {
+                throw IllegalStateException(
+                    "Provided events include blockNumber $offending which is <= last persisted blockNumber $lastPersistedBlockNumber"
+                )
+            }
         }
 
-        if (latestRecord.blockNumber >= latestEvent.blockNumber) {
-            throw IllegalStateException(
-                "Latest record block number ${latestRecord.blockNumber} is greater than or equal to the latest event block number ${latestEvent.blockNumber}"
-            )
+        val startingTotal = latestRecord?.total ?: BigInteger.ZERO
+
+        // Group by block and process in ascending order to build the cumulative total
+        val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
+
+        var runningTotal = startingTotal
+        val output = mutableListOf<VthoClaimedByBlock>()
+
+        for ((blockNumber, blockEvents) in eventsByBlock) {
+            // Summing throws immediately if a 'value' is missing for any event in the block
+            val blockSum =
+                blockEvents.fold(BigInteger.ZERO) { acc, e ->
+                    acc + e.requireValue() // throws if missing
+                }
+            runningTotal += blockSum
+
+            // All events in a block share the same timestamp; first is fine
+            val representative = blockEvents.first()
+
+            output +=
+                VthoClaimedByBlock(
+                    blockId = representative.blockId,
+                    blockNumber = blockNumber,
+                    blockTimestamp = representative.blockTimestamp,
+                    total = runningTotal,
+                )
         }
 
-        return VthoClaimedByBlock(
-            blockId = latestEvent.blockId,
-            blockNumber = latestEvent.blockNumber,
-            blockTimestamp = latestEvent.blockTimestamp,
-            total = latestRecord.total + totalVthoClaimed,
-        )
+        return output
     }
 
-    open fun saveRecord(record: VthoClaimedByBlock) {
-        repository.save(record)
+    open fun saveRecords(record: List<VthoClaimedByBlock>) {
+        repository.saveAll(record)
     }
 }
+
+/**
+ * Helper that enforces presence of the required "value" param and throws with context if missing.
+ */
+private fun IndexedEvent.requireValue(): BigInteger =
+    this.params.getAsBigInteger("value")
+        ?: throw IllegalStateException(
+            "Event for block $blockNumber (blockId=$blockId) is missing required 'value' parameter"
+        )

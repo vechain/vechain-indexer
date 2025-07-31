@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("stargate")
+@Profile("stargate", "nft-holders-by-block")
 @Component
 open class NftHoldersByBlockProcessor(
     private val service: NftHoldersByBlockService,
@@ -20,8 +20,8 @@ open class NftHoldersByBlockProcessor(
 
         val newRecords = service.processEvents(matchedEvents)
 
-        if (newRecords != null) {
-            service.saveRecord(newRecords)
+        if (newRecords.isNotEmpty()) {
+            service.saveRecords(newRecords)
         }
     }
 }

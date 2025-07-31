@@ -12,7 +12,7 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate")
+@Profile("stargate", "nft-holders-by-block")
 @Configuration
 open class NftHoldersByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
