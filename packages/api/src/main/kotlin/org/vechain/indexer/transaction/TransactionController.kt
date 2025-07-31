@@ -22,6 +22,7 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.TransactionId
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
