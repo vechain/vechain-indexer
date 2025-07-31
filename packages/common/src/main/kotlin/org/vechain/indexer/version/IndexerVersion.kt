@@ -7,7 +7,7 @@ import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.thor.model.Views
 
-@Document("indexer-versions")
+@Document("indexer_versions")
 @JsonView(Views.Public::class)
 data class IndexerVersion(
     @Id val id: String,
