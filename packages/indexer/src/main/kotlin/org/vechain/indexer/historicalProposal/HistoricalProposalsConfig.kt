@@ -29,7 +29,7 @@ open class HistoricalProposalsConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abis("abis/historical-Proposals")
+            .abis("abis/historical-proposals")
             .abiContracts(listOf(steeringCommittee, allStakeholders))
             .abiEventNames(listOf("NewProposal"))
             .excludeVetTransfers()

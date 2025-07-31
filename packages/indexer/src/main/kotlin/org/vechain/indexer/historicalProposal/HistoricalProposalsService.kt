@@ -123,45 +123,30 @@ class HistoricalProposalsService(
     private fun extractChoices(
         basicInfo: Map<String, Any?>?,
         contractAddress: String,
-    ): List<String>? {
-        return when (contractAddress.lowercase()) {
-            steeringCommitteeAddress.lowercase() -> {
-                val options = basicInfo?.get("options") as? Array<*>
-                options?.map { it.toString().trim { c -> c == '\u0000' } }
-            }
-            allStakeholdersAddress.lowercase() -> {
-                val options = basicInfo?.get("options") as? List<*>
-                options?.map { it.toString() }
-            }
-            else -> {
-                logger.warn("Unknown contract address: $contractAddress")
-                null
-            }
-        }
-    }
+    ): List<String>? =
+        HistoricalUtils.extractChoices(
+            basicInfo,
+            contractAddress,
+            steeringCommitteeAddress,
+            allStakeholdersAddress,
+        )
 
     private fun extractVoteTallies(
         tally: Map<String, Any?>?,
         contractAddress: String,
-    ): List<Long>? {
-        return when (contractAddress.lowercase()) {
-            steeringCommitteeAddress.lowercase() -> {
-                val tallyArray = tally?.get("tally") as? Array<*>
-                tallyArray?.map { (it as? Number)?.toLong() ?: 0L }
-            }
-            allStakeholdersAddress.lowercase() -> {
-                val tallyList = tally?.get("tally") as? List<*>
-                tallyList?.map { (it as? Number)?.toLong() ?: 0L }
-            }
-            else -> {
-                logger.warn("Unknown contract address: $contractAddress")
-                null
-            }
-        }
-    }
+    ): List<Long>? =
+        HistoricalUtils.extractVoteTallies(
+            tally,
+            contractAddress,
+            steeringCommitteeAddress,
+            allStakeholdersAddress,
+        )
 
-    private fun calculateTotalVotes(tally: Map<String, Any?>?, contractAddress: String): Long {
-        val tallies = extractVoteTallies(tally, contractAddress)
-        return tallies?.sum() ?: 0L
-    }
+    private fun calculateTotalVotes(tally: Map<String, Any?>?, contractAddress: String): Long =
+        HistoricalUtils.calculateTotalVotes(
+            tally,
+            contractAddress,
+            steeringCommitteeAddress,
+            allStakeholdersAddress,
+        )
 }
