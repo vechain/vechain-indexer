@@ -58,7 +58,7 @@ class BaseStatefulProcessorTest {
         archiveService: ArchiveService<*, *>,
     ) : BaseStatefulProcessor(repository, archiveService) {
 
-        override fun process(events: List<IndexedEvent>, block: Block?) {
+        override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
             // does nothing
         }
     }

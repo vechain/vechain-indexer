@@ -77,7 +77,7 @@ class BaseProcessorTest {
     class TestableBaseProcessor(repository: BaseIndexedRepository<*, *>) :
         BaseProcessor(repository) {
 
-        override fun process(events: List<IndexedEvent>, block: Block?) {
+        override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
             // does nothing
         }
     }

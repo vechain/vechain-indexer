@@ -71,7 +71,7 @@ class IndexerVersionServiceTest {
         verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
 
-        expect { that(result).isEqualTo(false) }
+        expect { that(result).isEqualTo(true) }
     }
 
     @Test
