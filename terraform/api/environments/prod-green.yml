@@ -89,8 +89,8 @@ enabled_nets:
         vevote_comments:            '1'
         vevote_results:             '4'
         authority_node_endorser:    '3'
-        stargate_vtho_claimed_by_block: '3'
-        stargate_vtho_claimed_by_account: '3'
+        stargate_vtho_claimed_by_block: '5'
+        stargate_vtho_claimed_by_account: '5'
         stargate_nft_holders_by_account: '4'
         stargate_vet_staked_by_account: '3'
       business-event:
@@ -192,8 +192,8 @@ enabled_nets:
         vevote_comments:            '1'
         vevote_results:             '4'
         authority_node_endorser:    '3'
-        stargate_vtho_claimed_by_block: '3'
-        stargate_vtho_claimed_by_account: '3'
+        stargate_vtho_claimed_by_block: '5'
+        stargate_vtho_claimed_by_account: '5'
         stargate_nft_holders_by_account: '4'
         stargate_vet_staked_by_account: '3'
       business-event:
