@@ -28,8 +28,8 @@ open class IndexerVersionService(
 
             if (storedVersion == -1) {
                 logger.info("No version document found for $collectionName. No action taken.")
-                updateIndexerVersion(collectionName, 1)
-                return false
+                updateIndexerVersion(collectionName, newVersion)
+                return true
             }
 
             if (storedVersion < newVersion) {
