@@ -37,7 +37,6 @@ object EventUtils {
             "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
             "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE_ONLY
-            "STARGATE_STAKE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
             "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE

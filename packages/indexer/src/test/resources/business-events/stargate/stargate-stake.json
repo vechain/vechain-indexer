@@ -1,5 +1,5 @@
 {
-  "name": "STARGATE_STAKE_DELEGATE",
+  "name": "STARGATE_STAKE",
   "sameClause": true,
   "events": [
     {
@@ -44,26 +44,6 @@
       ]
     },
     {
-      "name": "DelegationSimulationStarted",
-      "alias": "DelegationSimulationStarted",
-      "conditions": [
-        {
-          "firstOperand": "tokenId",
-          "isFirstStatic": false,
-          "secondOperand": 0,
-          "isSecondStatic": true,
-          "operator": "GT"
-        },
-        {
-          "firstOperand": "address",
-          "isFirstStatic": false,
-          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
-          "isSecondStatic": true,
-          "operator": "EQ"
-        }
-      ]
-    },
-    {
       "name": "VET_TRANSFER",
       "alias": "vetTransfer",
       "conditions": [
@@ -87,9 +67,9 @@
   "rules": [
     {
       "firstEventName": "tokenMinted",
-      "firstEventProperty": "tokenId",
-      "secondEventName": "DelegationSimulationStarted",
-      "secondEventProperty": "tokenId",
+      "firstEventProperty": "owner",
+      "secondEventName": "vetTransfer",
+      "secondEventProperty": "from",
       "operator": "EQ"
     },
     {
@@ -120,11 +100,6 @@
       "name": "owner",
       "eventName": "tokenMinted",
       "businessEventName": "owner"
-    },
-    {
-      "name": "isDelegationForever",
-      "eventName": "DelegationSimulationStarted",
-      "businessEventName": "autorenew"
     },
     {
       "name": "migrated",
