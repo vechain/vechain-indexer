@@ -7,9 +7,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.context.properties.bind.ConstructorBinding
+import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.model.Archive
-import org.vechain.indexer.model.VersionedDocument
 
 @ExtendWith(MockKExtension::class)
 internal class PrunerTest {

@@ -5,8 +5,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.vevote.VeVoteProposalComment
-import org.vechain.indexer.repository.VevoteCommentRepository
 import org.vechain.indexer.thor.model.Block
 
 @Profile("vevote-comments")

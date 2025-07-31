@@ -1,8 +1,8 @@
 package org.vechain.indexer.amn
 
 import org.vechain.indexer.contracts.abi.AuthorityABI
+import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.model.Clause
-import org.vechain.indexer.utils.AddressUtils
 import org.vechain.indexer.utils.ContractUtils
 
 object AmnUtils {

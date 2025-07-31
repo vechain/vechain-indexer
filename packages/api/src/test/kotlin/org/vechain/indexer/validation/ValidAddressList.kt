@@ -1,7 +1,7 @@
 package org.vechain.indexer.validation
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.Address
+import org.vechain.indexer.thor.Address
 import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue

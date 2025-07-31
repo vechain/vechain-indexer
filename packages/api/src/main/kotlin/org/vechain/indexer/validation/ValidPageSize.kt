@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)

@@ -2,9 +2,9 @@ package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.thor.model.*
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventType
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object BlockUtils {

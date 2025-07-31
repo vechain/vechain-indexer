@@ -2,8 +2,8 @@ package org.vechain.indexer.client
 
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import org.vechain.indexer.config.NetworkType
 import org.vechain.indexer.exception.NotFoundException
-import org.vechain.indexer.model.NetworkType
 import org.vechain.indexer.thor.model.Block
 
 @Service

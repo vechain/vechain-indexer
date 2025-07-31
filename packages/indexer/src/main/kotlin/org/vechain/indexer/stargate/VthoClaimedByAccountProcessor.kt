@@ -5,12 +5,9 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.VthoClaimedByAccount
-import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
-import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.thor.model.Block
 
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-account")
 @Component
 open class VthoClaimedByAccountProcessor(
     private val service: VthoClaimedByAccountService,

@@ -3,9 +3,11 @@ package org.vechain.e2e
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.RestTemplate
-import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
-import org.vechain.indexer.model.rest.PaginatedResponse
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transfer.IndexedTransferEvent
 
 object VeWorldAPIClient {
 
@@ -26,8 +28,10 @@ object VeWorldAPIClient {
         object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
-    private val NFT_ARCHIVES_TYPE = object : ParameterizedTypeReference<List<NftArchive>>() {}
-    private val NFTS_TYPE = object : ParameterizedTypeReference<List<IndexedNft>>() {}
+    private val NFT_ARCHIVES_TYPE =
+        object : ParameterizedTypeReference<List<org.vechain.indexer.nft.NftArchive>>() {}
+    private val NFTS_TYPE =
+        object : ParameterizedTypeReference<List<org.vechain.indexer.nft.IndexedNft>>() {}
     private val TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<List<IndexedTransferEvent>>() {}
 
@@ -178,7 +182,7 @@ object VeWorldAPIClient {
         else throw Exception("No address or tokenAddress provided")
     }
 
-    fun getNftArchives(): List<NftArchive> {
+    fun getNftArchives(): List<org.vechain.indexer.nft.NftArchive> {
         return getRequest("$API_URL/e2e/nft-archives", NFT_ARCHIVES_TYPE)
     }
 
@@ -186,7 +190,7 @@ object VeWorldAPIClient {
         return getRequest("$API_URL/e2e/transfers", TRANSFER_EVENTS_TYPE)
     }
 
-    fun getNfts(): List<IndexedNft> {
+    fun getNfts(): List<org.vechain.indexer.nft.IndexedNft> {
         return getRequest("$API_URL/e2e/nfts", NFTS_TYPE)
     }
 

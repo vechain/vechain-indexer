@@ -1,7 +1,7 @@
 package org.vechain.indexer.validation
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.rest.ContractType
+import org.vechain.indexer.rest.ContractType
 import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue

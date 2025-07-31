@@ -10,7 +10,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "nft-holders-by-block")
 open class NftHoldersByBlockConfig {
     @Bean
     open fun nftHoldersByBlockIndexer(

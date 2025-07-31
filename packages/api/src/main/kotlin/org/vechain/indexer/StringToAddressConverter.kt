@@ -2,8 +2,8 @@ package org.vechain.indexer
 
 import org.springframework.core.convert.converter.Converter
 import org.springframework.stereotype.Component
-import org.vechain.indexer.model.Address
-import org.vechain.indexer.utils.HexUtils
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.HexUtils
 
 @Component
 class StringToAddressConverter : Converter<String, Address> {

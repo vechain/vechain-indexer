@@ -1,8 +1,8 @@
 package org.vechain.indexer.utils
 
 import org.vechain.indexer.event.model.generic.AbiEventParameters
-import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.model.history.HistoryEventName
+import org.vechain.indexer.history.HistoryEventName
+import org.vechain.indexer.transfer.TransferEventType
 
 object EventUtils {
     fun determineEventType(params: AbiEventParameters): HistoryEventName? =

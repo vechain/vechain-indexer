@@ -9,8 +9,6 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.model.NftBlacklist
-import org.vechain.indexer.model.NftBlacklistArchive
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 

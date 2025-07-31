@@ -5,7 +5,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoOperations
 import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.repository.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import strikt.api.expect
 import strikt.assertions.isGreaterThan
 

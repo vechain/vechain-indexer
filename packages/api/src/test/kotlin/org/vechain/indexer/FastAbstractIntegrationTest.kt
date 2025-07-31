@@ -9,8 +9,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
-import org.vechain.indexer.model.*
-import org.vechain.indexer.repository.*
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.nft.NftRepository
+import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transaction.TransactionRepository
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventRepository
 import org.vechain.indexer.utils.JsonUtils
 
 /**
@@ -34,7 +38,7 @@ abstract class FastAbstractIntegrationTest {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NftRepository
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 

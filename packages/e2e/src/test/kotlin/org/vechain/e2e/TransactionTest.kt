@@ -2,7 +2,7 @@ package org.vechain.e2e
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.IndexedTransaction
+import org.vechain.indexer.transaction.IndexedTransaction
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*

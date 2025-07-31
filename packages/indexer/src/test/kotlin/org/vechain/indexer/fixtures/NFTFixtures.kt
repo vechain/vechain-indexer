@@ -1,6 +1,6 @@
 package org.vechain.indexer.fixtures
 
-import org.vechain.indexer.model.IndexedNft
+import org.vechain.indexer.nft.IndexedNft
 
 object NFTFixtures {
 

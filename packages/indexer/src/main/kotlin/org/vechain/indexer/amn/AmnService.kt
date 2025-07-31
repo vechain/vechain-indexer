@@ -11,11 +11,9 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.model.AmnEndorser
-import org.vechain.indexer.repository.AmnRepository
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.transaction.TransactionUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.utils.TransactionUtils
 
 @Profile("authority-nodes")
 @Service
