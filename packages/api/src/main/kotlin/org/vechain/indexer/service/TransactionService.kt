@@ -37,4 +37,22 @@ open class TransactionService(private val transactionRepository: TransactionRepo
             pageable,
         )
     }
+
+    open fun findByContractAddress(
+        contractAddress: Address,
+        pageable: Pageable,
+    ): Slice<IndexedTransaction> {
+        return transactionRepository.findByContractAddress(
+            HexUtils.normalise(contractAddress.value),
+            pageable,
+        )
+    }
+
+    open fun findByContractAddresses(
+        contractAddresses: List<Address>,
+        pageable: Pageable,
+    ): Slice<IndexedTransaction> {
+        val normalizedAddresses = contractAddresses.map { HexUtils.normalise(it.value) }
+        return transactionRepository.findByContractAddresses(normalizedAddresses, pageable)
+    }
 }
