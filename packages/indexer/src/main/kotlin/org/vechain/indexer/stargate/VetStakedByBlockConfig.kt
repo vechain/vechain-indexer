@@ -10,7 +10,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "vet-staked-by-block")
 open class VetStakedByBlockConfig {
     @Bean
     open fun vetStakedByBlockIndexer(
@@ -33,9 +33,7 @@ open class VetStakedByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(
-                listOf("STARGATE_STAKE_DELEGATE", "STARGATE_STAKE", "STARGATE_UNSTAKE")
-            )
+            .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()

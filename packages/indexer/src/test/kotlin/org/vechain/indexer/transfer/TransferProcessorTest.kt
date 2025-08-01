@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.repository.TransferEventRepository
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {

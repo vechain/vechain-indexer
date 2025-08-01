@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
-import org.vechain.indexer.repository.VeVoteProposalResultRepository
 
 @ExtendWith(MockKExtension::class)
 class VeVoteResultIndexerTest {

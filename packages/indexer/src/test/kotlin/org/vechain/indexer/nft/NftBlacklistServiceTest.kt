@@ -13,9 +13,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_WHITELIST
-import org.vechain.indexer.model.NftBlacklist
-import org.vechain.indexer.model.NftBlacklistArchive
-import org.vechain.indexer.repository.NftBlacklistRepository
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
 import strikt.assertions.isEqualTo

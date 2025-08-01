@@ -5,9 +5,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedNft
-import org.vechain.indexer.model.NftArchive
-import org.vechain.indexer.repository.NFTRepository
 import org.vechain.indexer.thor.model.Block
 
 @Profile("nfts")
@@ -15,7 +12,7 @@ import org.vechain.indexer.thor.model.Block
 open class NftProcessor(
     private val nftService: NftService,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-    repository: NFTRepository,
+    repository: NftRepository,
 ) : BaseProcessor(repository) {
 
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {

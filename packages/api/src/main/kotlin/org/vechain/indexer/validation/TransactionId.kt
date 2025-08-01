@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
-import org.vechain.indexer.utils.TransactionUtils
+import org.vechain.indexer.transaction.TransactionUtils
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)

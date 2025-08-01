@@ -8,8 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
-import org.vechain.indexer.model.Archive
-import org.vechain.indexer.model.VersionedDocument
+import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.utils.IdUtils
 import strikt.api.expect
 import strikt.assertions.hasSize

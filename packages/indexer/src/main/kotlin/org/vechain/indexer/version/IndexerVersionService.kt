@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext
 import org.springframework.stereotype.Service
-import org.vechain.indexer.model.IndexerVersion
 
 @Service
 open class IndexerVersionService(
@@ -29,8 +28,8 @@ open class IndexerVersionService(
 
             if (storedVersion == -1) {
                 logger.info("No version document found for $collectionName. No action taken.")
-                updateIndexerVersion(collectionName, 1)
-                return false
+                updateIndexerVersion(collectionName, newVersion)
+                return true
             }
 
             if (storedVersion < newVersion) {

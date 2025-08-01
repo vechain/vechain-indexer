@@ -10,11 +10,9 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.Archive
-import org.vechain.indexer.model.VersionedDocument
-import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.thor.model.Block
 
 @ExtendWith(MockKExtension::class)
@@ -60,7 +58,7 @@ class BaseStatefulProcessorTest {
         archiveService: ArchiveService<*, *>,
     ) : BaseStatefulProcessor(repository, archiveService) {
 
-        override fun process(events: List<IndexedEvent>, block: Block?) {
+        override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
             // does nothing
         }
     }

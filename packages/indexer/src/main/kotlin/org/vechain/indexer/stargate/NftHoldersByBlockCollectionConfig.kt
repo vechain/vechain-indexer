@@ -8,12 +8,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.model.stargate.NftHoldersByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate")
+@Profile("stargate", "nft-holders-by-block")
 @Configuration
 open class NftHoldersByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,

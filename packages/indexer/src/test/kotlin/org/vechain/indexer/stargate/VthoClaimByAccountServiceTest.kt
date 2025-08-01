@@ -9,9 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.stargate.VthoClaimedByAccount
-import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
-import org.vechain.indexer.repository.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect

@@ -4,9 +4,8 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.DecodedEvent
-import org.vechain.indexer.model.DecodedOutputs
-import org.vechain.indexer.model.IndexedTransaction
+import org.vechain.indexer.thor.DecodedEvent
+import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 
 @Profile("transactions")

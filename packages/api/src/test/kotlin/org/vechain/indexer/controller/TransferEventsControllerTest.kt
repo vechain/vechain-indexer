@@ -7,9 +7,9 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
-import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.transfer.IndexedTransferEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*

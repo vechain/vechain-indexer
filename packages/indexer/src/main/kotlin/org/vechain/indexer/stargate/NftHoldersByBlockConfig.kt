@@ -10,9 +10,8 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "nft-holders-by-block")
 open class NftHoldersByBlockConfig {
-
     @Bean
     open fun nftHoldersByBlockIndexer(
         thorClient: ThorClient,
@@ -34,9 +33,7 @@ open class NftHoldersByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(
-                listOf("STARGATE_STAKE_DELEGATE", "STARGATE_STAKE", "STARGATE_UNSTAKE")
-            )
+            .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
             .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()

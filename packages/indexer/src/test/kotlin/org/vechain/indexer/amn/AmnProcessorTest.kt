@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.fixtures.BlockFixtures
-import org.vechain.indexer.model.AmnEndorser
-import org.vechain.indexer.repository.AmnRepository
 import org.vechain.indexer.thor.ThorService
 
 @ExtendWith(MockKExtension::class)

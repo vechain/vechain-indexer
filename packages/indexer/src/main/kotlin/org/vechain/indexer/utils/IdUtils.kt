@@ -1,8 +1,8 @@
 package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.VersionedDocument
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object IdUtils {

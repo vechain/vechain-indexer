@@ -3,9 +3,9 @@ package org.vechain.indexer.pruner
 import kotlin.reflect.KClass
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.Pruner
+import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.model.Archive
-import org.vechain.indexer.model.VersionedDocument
 
 class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,

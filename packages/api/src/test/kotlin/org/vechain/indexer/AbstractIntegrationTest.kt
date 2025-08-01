@@ -13,9 +13,13 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
-import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.repository.*
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.nft.NftRepository
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transaction.TransactionRepository
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventRepository
 import org.vechain.indexer.utils.JsonUtils
 
 @RunWith(SpringRunner::class)
@@ -46,7 +50,7 @@ abstract class AbstractIntegrationTest {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NftRepository
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 

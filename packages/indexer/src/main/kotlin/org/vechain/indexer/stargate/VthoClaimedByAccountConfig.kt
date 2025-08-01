@@ -11,13 +11,11 @@ import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
-import org.vechain.indexer.model.stargate.VthoClaimedByAccount
-import org.vechain.indexer.model.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-account")
 open class VthoClaimedByAccountConfig {
     @Bean
     open fun vthoClaimByAccountArchiveService(

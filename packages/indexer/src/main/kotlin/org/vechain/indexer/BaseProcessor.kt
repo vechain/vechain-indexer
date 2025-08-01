@@ -1,7 +1,6 @@
 package org.vechain.indexer
 
 import org.slf4j.LoggerFactory
-import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 abstract class BaseProcessor(private val repository: BaseIndexedRepository<*, *>) :

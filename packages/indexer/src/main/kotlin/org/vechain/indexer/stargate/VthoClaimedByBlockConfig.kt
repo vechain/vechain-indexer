@@ -11,7 +11,7 @@ import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate")
+@Profile("stargate", "vtho-claimed-by-block")
 open class VthoClaimedByBlockConfig {
     @Bean
     open fun vthoClaimedByBlockIndexer(
@@ -22,6 +22,8 @@ open class VthoClaimedByBlockConfig {
         @Value("\${indexer.syncLogInterval.stargate}") logInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
+        @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
+        stargateDelegationContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -35,7 +37,9 @@ open class VthoClaimedByBlockConfig {
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
-            .businessEventContracts(listOf(stargateNftContract, VTHO_CONTRACT))
+            .businessEventContracts(
+                listOf(stargateNftContract, stargateDelegationContract, VTHO_CONTRACT)
+            )
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

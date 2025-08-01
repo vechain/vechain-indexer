@@ -3,9 +3,6 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.vevote.Support
-import org.vechain.indexer.model.vevote.VeVoteProposalResults
-import org.vechain.indexer.repository.VeVoteProposalResultRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString

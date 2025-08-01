@@ -9,7 +9,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.model.IndexedTransaction
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("transactions")
@@ -58,6 +57,14 @@ open class TransactionCollectionConfig(
             Index()
                 .on("origin", Sort.Direction.ASC)
                 .on("gasPayer", Sort.Direction.ASC)
+                .on("blockNumber", Sort.Direction.DESC)
+                .on("_id", Sort.Direction.DESC),
+        )
+
+        ensureIndex(
+            "tx_clauses.to_1_blockNumber_-1__id_-1",
+            Index()
+                .on("clauses.to", Sort.Direction.ASC)
                 .on("blockNumber", Sort.Direction.DESC)
                 .on("_id", Sort.Direction.DESC),
         )

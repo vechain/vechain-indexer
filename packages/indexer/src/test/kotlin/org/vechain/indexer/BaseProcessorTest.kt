@@ -12,8 +12,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.repository.BaseIndexedRepository
 import org.vechain.indexer.thor.model.Block
 
 @ExtendWith(MockKExtension::class)
@@ -79,7 +77,7 @@ class BaseProcessorTest {
     class TestableBaseProcessor(repository: BaseIndexedRepository<*, *>) :
         BaseProcessor(repository) {
 
-        override fun process(events: List<IndexedEvent>, block: Block?) {
+        override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
             // does nothing
         }
     }
