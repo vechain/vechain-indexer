@@ -50,6 +50,8 @@ open class VthoClaimedByAccountConfig {
         @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
+        @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
+        stargateDelegationContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -65,7 +67,9 @@ open class VthoClaimedByAccountConfig {
             .businessEventNames(
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
-            .businessEventContracts(listOf(stargateNftContract, VTHO_CONTRACT))
+            .businessEventContracts(
+                listOf(stargateNftContract, stargateDelegationContract, VTHO_CONTRACT)
+            )
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }
