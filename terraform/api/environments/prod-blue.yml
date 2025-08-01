@@ -90,7 +90,7 @@ enabled_nets:
         vevote_results:             '1'
         authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
+        stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '1'
         stargate_vet_staked_by_account: '1'
       business-event:
@@ -193,7 +193,7 @@ enabled_nets:
         vevote_results:             '1'
         authority_node_endorser:    '1'
         stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '1'
+        stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '1'
         stargate_vet_staked_by_account: '1'
       business-event:
