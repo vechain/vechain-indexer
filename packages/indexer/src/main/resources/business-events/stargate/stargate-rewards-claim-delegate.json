@@ -7,13 +7,6 @@
       "alias": "DelegationRewardsClaimed",
       "conditions": [
         {
-          "firstOperand": "recipient",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "rewards",
           "isFirstStatic": false,
           "secondOperand": 0,
