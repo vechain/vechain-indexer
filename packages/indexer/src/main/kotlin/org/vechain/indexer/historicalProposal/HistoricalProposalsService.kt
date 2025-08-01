@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.ContractUtils
 
 @Profile("historical-proposals")
 @Service
-class HistoricalProposalsService(
+open class HistoricalProposalsService(
     private val thorService: ThorService,
     @Value("\${veworld.contract.historical_proposals.steering_committee}")
     private val steeringCommitteeAddress: String,
@@ -29,64 +29,33 @@ class HistoricalProposalsService(
         events.mapNotNull { extractNewProposalEvent(it) }
 
     fun extractNewProposalEvent(event: IndexedEvent): HistoricalProposals? {
-
         try {
             val contractAddress = event.address ?: return null
-            if (
-                !contractAddress.equals(steeringCommitteeAddress, true) &&
-                    !contractAddress.equals(allStakeholdersAddress, true)
-            ) {
+            if (!isValidContractAddress(contractAddress)) {
                 logger.warn("Event from unknown contract address: $contractAddress")
                 return null
             }
 
             val isSteeringCommittee = contractAddress.equals(steeringCommitteeAddress, true)
-            val basicInfoFunction = if (isSteeringCommittee) "getBasicInfoSC" else "getBasicInfo"
-            val conditionFunction = if (isSteeringCommittee) "getConditionSC" else "getCondition"
-            val tallyFunction = if (isSteeringCommittee) "getTallySC" else "getTally"
-
             val params = event.params.getReturnValues()
             val proposalId = params["proposalId"]?.toString() ?: return null
-            val proposalType = params["ptype"] as? Int // keep as Int?
-            val clauses =
-                listOf(
-                    ContractUtils.createClause(
-                        contractAddress,
-                        if (isSteeringCommittee) HistoricalProposalABI.getBasicInfoSC
-                        else HistoricalProposalABI.getBasicInfo,
-                        proposalId.toBigInteger(),
-                    ),
-                    ContractUtils.createClause(
-                        contractAddress,
-                        if (isSteeringCommittee) HistoricalProposalABI.getConditionSC
-                        else HistoricalProposalABI.getCondition,
-                        proposalId.toBigInteger(),
-                    ),
-                    ContractUtils.createClause(
-                        contractAddress,
-                        if (isSteeringCommittee) HistoricalProposalABI.getTallySC
-                        else HistoricalProposalABI.getTally,
-                        proposalId.toBigInteger(),
-                    ),
-                )
+            val proposalType = params["ptype"] as? Int
 
-            val responses = thorService.executeReadOnlyCode(clauses)
-            val basicInfo = decodeResponse(responses.getOrNull(0)?.data, basicInfoFunction)
-            val condition = decodeResponse(responses.getOrNull(1)?.data, conditionFunction)
-            val tally = decodeResponse(responses.getOrNull(2)?.data, tallyFunction)
+            val contractData = fetchContractData(contractAddress, proposalId, isSteeringCommittee)
 
             return HistoricalProposals(
                 id = "$contractAddress-$proposalId",
                 proposalId = proposalId,
                 createdDate = event.blockTimestamp.toString(),
-                title = basicInfo?.get("title") as? String,
+                title = contractData.basicInfo?.get("title") as? String,
                 proposalType = proposalType,
-                choices = extractChoices(basicInfo, contractAddress),
-                createTime = (basicInfo?.get("createTime") as? Number)?.toLong(),
-                votingStartTime = (condition?.get("votingStartTime") as? Number)?.toLong(),
-                votingEndTime = (condition?.get("votingEndTime") as? Number)?.toLong(),
-                voteTallies = extractVoteTallies(tally, contractAddress),
-                totalVotes = calculateTotalVotes(tally, contractAddress),
+                choices = extractChoices(contractData.basicInfo, contractAddress),
+                createTime = (contractData.basicInfo?.get("createTime") as? Number)?.toLong(),
+                votingStartTime =
+                    (contractData.condition?.get("votingStartTime") as? Number)?.toLong(),
+                votingEndTime = (contractData.condition?.get("votingEndTime") as? Number)?.toLong(),
+                voteTallies = extractVoteTallies(contractData.tally, contractAddress),
+                totalVotes = calculateTotalVotes(contractData.tally, contractAddress),
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
@@ -97,11 +66,60 @@ class HistoricalProposalsService(
         }
     }
 
+    private fun isValidContractAddress(contractAddress: String): Boolean =
+        contractAddress.equals(steeringCommitteeAddress, true) ||
+            contractAddress.equals(allStakeholdersAddress, true)
+
+    private data class ContractData(
+        val basicInfo: Map<String, Any?>?,
+        val condition: Map<String, Any?>?,
+        val tally: Map<String, Any?>?,
+    )
+
+    private fun fetchContractData(
+        contractAddress: String,
+        proposalId: String,
+        isSteeringCommittee: Boolean,
+    ): ContractData {
+        val basicInfoFunction = if (isSteeringCommittee) "getBasicInfoSC" else "getBasicInfo"
+        val conditionFunction = if (isSteeringCommittee) "getConditionSC" else "getCondition"
+        val tallyFunction = if (isSteeringCommittee) "getTallySC" else "getTally"
+
+        val clauses =
+            listOf(
+                ContractUtils.createClause(
+                    contractAddress,
+                    if (isSteeringCommittee) HistoricalProposalABI.getBasicInfoSC
+                    else HistoricalProposalABI.getBasicInfo,
+                    proposalId.toBigInteger(),
+                ),
+                ContractUtils.createClause(
+                    contractAddress,
+                    if (isSteeringCommittee) HistoricalProposalABI.getConditionSC
+                    else HistoricalProposalABI.getCondition,
+                    proposalId.toBigInteger(),
+                ),
+                ContractUtils.createClause(
+                    contractAddress,
+                    if (isSteeringCommittee) HistoricalProposalABI.getTallySC
+                    else HistoricalProposalABI.getTally,
+                    proposalId.toBigInteger(),
+                ),
+            )
+
+        val responses = thorService.executeReadOnlyCode(clauses)
+
+        return ContractData(
+            basicInfo = decodeResponse(responses.getOrNull(0)?.data, basicInfoFunction),
+            condition = decodeResponse(responses.getOrNull(1)?.data, conditionFunction),
+            tally = decodeResponse(responses.getOrNull(2)?.data, tallyFunction),
+        )
+    }
+
     private fun decodeResponse(data: String?, functionName: String): Map<String, Any?>? {
         if (data.isNullOrBlank()) return null
 
         val abiElement = getAbiFunction(functionName)
-        // Decode the hex data
         return FunctionReturnDecoder.decode(data, abiElement.outputs)
     }
 
@@ -109,7 +127,6 @@ class HistoricalProposalsService(
         return cachedAbi[name]
             ?: run {
                 val basePath = "abis/historical-proposals"
-
                 val abis =
                     AbiLoader.loadFunctions(basePath = basePath, functionNames = listOf(name))
                 val abi =

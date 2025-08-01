@@ -34,9 +34,6 @@ open class HistoricalProposalsCollectionConfig(
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-
-        ensureIndex("voter_-1", Index().on("voter", Sort.Direction.DESC))
-
         ensureIndex("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC))
     }
 }

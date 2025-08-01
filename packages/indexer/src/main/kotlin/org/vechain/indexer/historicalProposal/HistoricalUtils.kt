@@ -10,8 +10,16 @@ object HistoricalUtils {
     ): List<String>? {
         return when (contractAddress.lowercase()) {
             steeringCommitteeAddress.lowercase() -> {
-                val options = basicInfo?.get("options") as? Array<*>
-                options?.map { it.toString().trim { c -> c == '\u0000' } }
+                val optionsList = basicInfo?.get("options") as? List<*>
+                val optionsArray = basicInfo?.get("options") as? Array<*>
+                val options = optionsList ?: optionsArray
+
+                when (options) {
+                    is List<*> -> options.map { it.toString().trim { c -> c == '\u0000' } }
+                    is Array<*> ->
+                        options.toList().map { it.toString().trim { c -> c == '\u0000' } }
+                    else -> null
+                }
             }
             allStakeholdersAddress.lowercase() -> {
                 val options = basicInfo?.get("options") as? List<*>
@@ -29,8 +37,15 @@ object HistoricalUtils {
     ): List<Long>? {
         return when (contractAddress.lowercase()) {
             steeringCommitteeAddress.lowercase() -> {
+                val tallyList = tally?.get("tally") as? List<*>
                 val tallyArray = tally?.get("tally") as? Array<*>
-                tallyArray?.map { (it as? Number)?.toLong() ?: 0L }
+                val tallyData = tallyList ?: tallyArray
+
+                when (tallyData) {
+                    is List<*> -> tallyData.map { (it as? Number)?.toLong() ?: 0L }
+                    is Array<*> -> tallyData.toList().map { (it as? Number)?.toLong() ?: 0L }
+                    else -> null
+                }
             }
             allStakeholdersAddress.lowercase() -> {
                 val tallyList = tally?.get("tally") as? List<*>
@@ -43,8 +58,8 @@ object HistoricalUtils {
     fun calculateTotalVotes(
         tally: Map<String, Any?>?,
         contractAddress: String,
-        allStakeholdersAddress: String,
         steeringCommitteeAddress: String,
+        allStakeholdersAddress: String,
     ): Long {
         val tallies =
             extractVoteTallies(
