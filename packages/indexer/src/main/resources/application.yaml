@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,indexer,nfts,transactions,transfers,history,stargate,historical-proposals}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,indexer,nfts,transactions,transfers,history,stargate}
   output:
     ansi:
       enabled: always

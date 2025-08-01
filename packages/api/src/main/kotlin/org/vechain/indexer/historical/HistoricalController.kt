@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.HISTORICAL_PROPOSAL_PATH
-import org.vechain.indexer.historical.HistoricalApiService
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
-import org.vechain.indexer.historical.HistoricalProposals
 
 @Tag(
     name = "Historical Proposal API",

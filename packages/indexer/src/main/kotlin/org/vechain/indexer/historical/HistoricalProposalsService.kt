@@ -116,10 +116,15 @@ open class HistoricalProposalsService(
     }
 
     private fun decodeResponse(data: String?, functionName: String): Map<String, Any?>? {
-        if (data.isNullOrBlank()) return null
+        if (data.isNullOrBlank() || data == "0x") return null
 
-        val abiElement = getAbiFunction(functionName)
-        return FunctionReturnDecoder.decode(data, abiElement.outputs)
+        return try {
+            val abi = getAbiFunction(functionName)
+            FunctionReturnDecoder.decode(data, abi.outputs)
+        } catch (ex: Exception) {
+            logger.error("Failed to decode $functionName response: ${ex.message}")
+            null
+        }
     }
 
     private fun getAbiFunction(name: String): AbiElement {
