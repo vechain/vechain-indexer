@@ -278,6 +278,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start_block.stargate
     },
     {
+      name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.start_block.historical_proposals
+    },
+    {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
       value = each.value.indexer.sync_logger_interval.nfts
     },
@@ -306,6 +310,10 @@ module "ecs-backend-service" {
         value = each.value.indexer.sync_logger_interval.stargate
     },
     {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.sync_logger_interval.historical_proposals
+    },
+    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
@@ -325,6 +333,14 @@ module "ecs-backend-service" {
       name  = "AUTHORITY_CONTRACT"
       value = each.value.veworld.contract.authority_node.address
     },
+    {
+      name  = "STEERING_COMMITTEE_ADDRESS"
+      value = each.value.veworld.contract.historical_proposals.steering_committee
+    },
+    {
+      name  = "ALL_STAKEHOLDERS_ADDRESS"
+      value = each.value.veworld.contract.historical_proposals.all_stakeholders
+     },
     {
       name  = "BLACKLIST_INTERVAL"
       value = each.value.indexer.blacklist.interval
@@ -380,6 +396,10 @@ module "ecs-backend-service" {
     {
       name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
       value = each.value.indexer.version.stargate_vet_staked_by_account
+    },
+    {
+      name = "VERSION_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.version.historical_proposals
     },
     {
       name  = "MIN_COMMENT_LEN"
@@ -440,6 +460,10 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
       value = each.value.indexer.sync_block_batch_size.vevote
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.sync_block_batch_size.historical_proposals
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"

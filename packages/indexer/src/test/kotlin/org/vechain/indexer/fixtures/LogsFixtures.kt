@@ -17,6 +17,8 @@ object LogsFixtures {
     val LOGS_BATCH_TRANSFERS = buildLogsFixture("logs/logs_batch_transfers.json")
     val LOGS_BLACKLIST = buildLogsFixture("logs/logs_blacklist.json")
     val LOGS_AUTHORITY_NODE = buildLogsFixture("logs/logs_authority_node.json")
+    val LOG_STEERING_COMMITTEE = buildLogsFixture("logs/log_steering_committee.json")
+    val LOG_ALL_STAKING_HOLDER = buildLogsFixture("logs/log_staking_holder.json")
 
     private fun buildLogsFixture(name: String): List<EventLog> {
         val resource =

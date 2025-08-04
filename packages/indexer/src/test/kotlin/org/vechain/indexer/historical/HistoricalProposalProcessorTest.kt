@@ -1,67 +1,127 @@
 package org.vechain.indexer.historical
 
-import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.slot
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.fixtures.BlockFixtures
+import org.vechain.indexer.fixtures.LogsFixtures
+import org.vechain.indexer.thor.ThorService
+import strikt.api.expectThat
+import strikt.assertions.contains
+import strikt.assertions.hasSize
+import strikt.assertions.isNotNull
 
 @ExtendWith(MockKExtension::class)
 class HistoricalProposalsProcessorTest {
-    @MockK lateinit var repository: HistoricalProposalsRepository
-
-    @MockK lateinit var service: HistoricalProposalsService
-
     @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var thorService: ThorService
 
-    private lateinit var processor: HistoricalProposalsProcessor
+    private val repository = mockk<HistoricalProposalsRepository>(relaxed = true)
+    lateinit var processor: HistoricalProposalsProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-
-        processor = HistoricalProposalsProcessor(repository, mongoTemplate, service)
+        val historicalProposalsService =
+            HistoricalProposalsService(
+                thorService = thorService,
+                steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
+                allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
+            )
+        processor =
+            HistoricalProposalsProcessor(repository, mongoTemplate, historicalProposalsService)
     }
 
     @Test
-    fun `process - if no events then service and repository should not be called`() {
-        processor.process(emptyList(), BlockFixtures.BLOCK_NO_CLAUSES)
+    fun `process with Steering committee NewProposal Event`() = runBlocking {
+        val events = createIndexedEvents(LogsFixtures.LOG_STEERING_COMMITTEE.take(3))
 
-        verify { service wasNot Called }
-        verify { repository wasNot Called }
+        val proposalsSlot = slot<List<HistoricalProposals>>()
+        every { repository.getLatestRecord() } returns null
+        every { repository.saveAll(capture(proposalsSlot)) } returns emptyList()
+
+        // Mock thorService responses for contract calls
+        every { thorService.executeReadOnlyCode(any()) } returns
+            listOf(
+                mockk { every { data } returns "0x" }, // title
+                mockk { every { data } returns "0x" }, // choices
+                mockk { every { data } returns "0x" }, // vote tallies
+            )
+
+        // call the processor with the indexed events
+        processor.process(events, null)
+        val proposals = proposalsSlot.captured
+        expectThat(proposals).hasSize(3)
+        proposals.forEach { proposal ->
+            expectThat(proposal.proposalType).isNotNull()
+            expectThat(proposal.id).contains("0x7e54f0790153647ec0651c35ced28171adb5d44a")
+        }
     }
 
     @Test
-    fun `process - if events are present and service returns proposals then repository saveAll should be called`() {
-        val events = listOf(mockk<IndexedEvent>())
-        val proposals = listOf(mockk<HistoricalProposals>())
+    fun `process with All Stakeholders NewProposal Event`() = runBlocking {
+        val events = createIndexedEvents(LogsFixtures.LOG_ALL_STAKING_HOLDER.take(2))
 
-        every { service.processNewProposals(events) } returns proposals
-        every { repository.saveAll(proposals) } returns proposals
+        val proposalsSlot = slot<List<HistoricalProposals>>()
+        every { repository.getLatestRecord() } returns null
+        every { repository.saveAll(capture(proposalsSlot)) } returns emptyList()
 
-        processor.process(events, BlockFixtures.BLOCK_SINGLE_CLAUSE)
+        every { thorService.executeReadOnlyCode(any()) } returns
+            listOf(
+                mockk { every { data } returns "0x" },
+                mockk { every { data } returns "0x" },
+                mockk { every { data } returns "0x" },
+            )
 
-        verify { service.processNewProposals(events) }
-        verify { repository.saveAll(proposals) }
+        processor.process(events, null)
+        val proposals = proposalsSlot.captured
+        expectThat(proposals).hasSize(2)
+        proposals.forEach { proposal ->
+            expectThat(proposal.proposalType).isNotNull()
+            expectThat(proposal.id).contains("0xa6416a72f816d3a69f33d0814700545c8e3fe4be")
+        }
     }
 
-    @Test
-    fun `process - if events are present but service returns empty list then repository saveAll should not be called`() {
-        val events = listOf(mockk<IndexedEvent>())
+    private fun createIndexedEvents(
+        logs: List<org.vechain.indexer.thor.model.EventLog>
+    ): List<IndexedEvent> {
+        return logs.map { log ->
+            // Extract values from topics
+            val proposalId =
+                if (log.topics.size > 1) {
+                    log.topics[1].removePrefix("0x").toBigInteger(16).toString()
+                } else {
+                    throw IllegalArgumentException(
+                        "Log missing proposalId in topics[1]: ${log.topics}"
+                    )
+                }
 
-        every { service.processNewProposals(events) } returns emptyList()
+            val ptype =
+                if (log.topics.size > 2) {
+                    log.topics[2].removePrefix("0x").toBigInteger(16).toLong().toInt()
+                } else {
+                    throw IllegalArgumentException("Log missing ptype in topics[2]: ${log.topics}")
+                }
 
-        processor.process(events, BlockFixtures.BLOCK_SINGLE_CLAUSE)
-
-        verify { service.processNewProposals(events) }
-        verify { repository wasNot Called }
+            mockk<IndexedEvent> {
+                every { address } returns log.address
+                every { params } returns
+                    mockk {
+                        every { getReturnValues() } returns
+                            mapOf("proposalId" to proposalId, "ptype" to ptype)
+                    }
+                every { blockId } returns log.meta.blockID
+                every { blockNumber } returns log.meta.blockNumber
+                every { blockTimestamp } returns log.meta.blockTimestamp
+            }
+        }
     }
 }
