@@ -91,13 +91,13 @@ jobs:
       - name: Set environment
         id: set-environment
         run: |
-          if [[ '${{ inputs.network }}' == 'main' || '${{ inputs.network }}' == 'both' ]]; then
+          if [[ '${{ inputs.network }}' == 'mainnet' || '${{ inputs.network }}' == 'both' ]]; then
             if [[ '${{ inputs.environment }}' == 'live' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
             elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
             fi
-          elif [[ '${{ inputs.network }}' == 'test' ]]; then
+          elif [[ '${{ inputs.network }}' == 'testnet' ]]; then
             if [[ '${{ inputs.environment }}' == 'live' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
             elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
