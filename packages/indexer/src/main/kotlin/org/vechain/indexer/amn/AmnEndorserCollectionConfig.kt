@@ -19,7 +19,7 @@ open class AmnEndorserCollectionConfig(
 ) : CollectionConfig(mongoTemplate, AmnEndorser::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.authority_node_endorser}") private val version: Int = 1
+    @Value("\${indexer.version.authority-node-endorser}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

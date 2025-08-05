@@ -15,9 +15,9 @@ open class VeVoteCommentConfig {
     open fun vevoteCommentIndexer(
         thorClient: ThorClient,
         processor: VeVoteCommentProcessor,
-        @Value("\${indexer.startBlock.vevote}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.vevote}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.vevote}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.vevote}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
         @Value("\${veworld.contract.vevote.address}") contractAddress: String,
     ): Indexer =
         IndexerFactory()

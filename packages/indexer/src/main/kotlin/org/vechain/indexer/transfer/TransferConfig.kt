@@ -15,9 +15,9 @@ open class TransferConfig {
     open fun transferIndexer(
         thorClient: ThorClient,
         processor: TransferProcessor,
-        @Value("\${indexer.startBlock.transfers}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.transfers}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.transfers}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.transfers}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.transfers}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
             .name("TransferIndexer")

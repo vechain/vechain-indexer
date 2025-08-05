@@ -20,7 +20,7 @@ open class VetStakedByBlockCollectionConfig(
 ) : CollectionConfig(mongoTemplate, VetStakedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate_vet_staked_by_block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vet-staked-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

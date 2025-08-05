@@ -251,31 +251,39 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_START_BLOCK_NFTS"
-      value = each.value.indexer.start_block.nfts
+      value = each.value.indexer.start-block.nfts
     },
     {
       name  = "INDEXER_START_BLOCK_NFT_BLACKLIST",
-      value = each.value.indexer.start_block.nft_blacklist
+      value = each.value.indexer.start-block.nft-blacklist
     },
     {
       name  = "INDEXER_START_BLOCK_TRANSACTIONS"
-      value = each.value.indexer.start_block.transactions
+      value = each.value.indexer.start-block.transactions
     },
     {
       name  = "INDEXER_START_BLOCK_TRANSFERS"
-      value = each.value.indexer.start_block.transfers
+      value = each.value.indexer.start-block.transfers
     },
     {
       name  = "INDEXER_START_BLOCK_HISTORY"
-      value = each.value.indexer.start_block.history
+      value = each.value.indexer.start-block.history
     },
     {
       name  = "INDEXER_START_BLOCK_VEVOTE"
-      value = each.value.indexer.start_block.vevote
+      value = each.value.indexer.start-block.vevote
     },
     {
       name = "INDEXER_START_BLOCK_STARGATE"
-      value = each.value.indexer.start_block.stargate
+      value = each.value.indexer.start-block.stargate
+    },
+    {
+      name = "INDEXER_START_BLOCK_B3TR"
+      value = each.value.indexer.start-block.b3tr
+    },
+    {
+      name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
+      value = each.value.indexer.start-round.b3tr.sustainable_actions
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
@@ -299,11 +307,15 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync_logger_interval.authority_nodes
+      value = each.value.indexer.sync_logger_interval.authority-nodes
     },
     {
       name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
         value = each.value.indexer.sync_logger_interval.stargate
+    },
+    {
+      name = "INDEXER_SYNC_LOGGER_INTERVAL_B3TR"
+      value = each.value.indexer.sync_logger_interval.b3tr
     },
     {
       name  = "PRUNER_INTERVAL"
@@ -315,7 +327,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
-      value = each.value.indexer.blacklist.contract_address
+      value = each.value.indexer.blacklist.contract-address
     },
     {
       name  = "VEVOTE_CONTRACT"
@@ -324,14 +336,6 @@ module "ecs-backend-service" {
     {
       name  = "AUTHORITY_CONTRACT"
       value = each.value.veworld.contract.authority_node.address
-    },
-    {
-      name  = "BLACKLIST_INTERVAL"
-      value = each.value.indexer.blacklist.interval
-    },
-    {
-      name  = "BLACKLIST_INITIAL_DELAY"
-      value = each.value.indexer.blacklist.initial_delay
     },
     {
       name  = "VERSION_NFTS"
@@ -351,27 +355,27 @@ module "ecs-backend-service" {
     },
     {
       name  = "VERSION_NFT_BLACKLIST"
-      value = each.value.indexer.version.nft_blacklist
+      value = each.value.indexer.version.nft-blacklist
     },
     {
       name  = "VERSION_VEVOTE_COMMENTS"
-      value = each.value.indexer.version.vevote_comments
+      value = each.value.indexer.version.vevote-comments
     },
     {
       name  = "VERSION_VEVOTE_RESULTS"
-      value = each.value.indexer.version.vevote_results
+      value = each.value.indexer.version.vevote-results
     },
     {
       name = "VERSION_AUTHORITY_NODE_ENDORSER"
-      value = each.value.indexer.version.authority_node_endorser
+      value = each.value.indexer.version.authority-node-endorser
     },
     {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
-      value = each.value.indexer.version.stargate_vtho_claimed_by_block
+      value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
-      value = each.value.indexer.version.stargate_vtho_claimed_by_account
+      value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
       name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
@@ -382,8 +386,56 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate_vet_staked_by_account
     },
     {
+      name = "VERSION_B3TR_PROPOSAL_COMMENTS"
+      value = each.value.indexer.version.b3tr-proposal-comments
+    },
+    {
+      name = "VERSION_B3TR_PROPOSAL_RESULTS"
+      value = each.value.indexer.version.b3tr-proposal-results
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_APPS_DAILY"
+      value = each.value.indexer.version.b3tr-sustainability-apps-daily
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_APPS_ALL"
+      value = each.value.indexer.version.b3tr-sustainability-apps-all
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_APPS_ROUND"
+      value = each.value.indexer.version.b3tr-sustainability-apps-round
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_DAILY"
+      value = each.value.indexer.version.b3tr-sustainability-overview-daily
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
+      value = each.value.indexer.version.b3tr-sustainability-overview-all
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ROUND"
+      value = each.value.indexer.version.b3tr-sustainability-overview-round
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
+      value = each.value.indexer.version.b3tr-sustainability-action
+    },
+    {
+      name = "VERSION_B3TR_USER_TRANSACTIONS"
+      value = each.value.indexer.version.b3tr-user-transactions
+    },
+    {
+      name = "VERSION_B3TR_X_ALLOC_RESULT"
+      value = each.value.indexer.version.b3tr-x-alloc-result
+    },
+    {
+      name = "VERSION_B3TR_GM_NFT"
+      value = each.value.indexer.version.b3tr-gm-nft
+    },
+    {
       name  = "MIN_COMMENT_LEN"
-      value = each.value.comments.minLength
+      value = each.value.comments.min-length
     },
     {
       name  = "LANGUAGE_CONFIDENCE"
@@ -431,23 +483,31 @@ module "ecs-backend-service" {
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
-      value = each.value.indexer.sync_block_batch_size.nfts
+      value = each.value.indexer.sync-block-batch-size.nfts
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
-      value = each.value.indexer.sync_block_batch_size.transfers
+      value = each.value.indexer.sync-block-batch-size.transfers
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
-      value = each.value.indexer.sync_block_batch_size.vevote
+      value = each.value.indexer.sync-block-batch-size.vevote
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
-      value = each.value.indexer.sync_block_batch_size.stargate
+      value = each.value.indexer.sync-block-batch-size.stargate
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
+      value = each.value.indexer.sync-block-batch-size.authority-nodes
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"
+      value = each.value.indexer.sync-block-batch-size.b3tr
     },
     {
       name = "INDEXER_CHANNEL_BATCH_SIZE"
-      value = each.value.indexer.channel_batch_size
+      value = each.value.indexer.channel-batch-size
     }
   ]
 }

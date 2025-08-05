@@ -19,7 +19,7 @@ open class VeVoteCommentCollectionConfig(
 ) : CollectionConfig(mongoTemplate, VeVoteProposalComment::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.vevote_comments}") private val version: Int = 1
+    @Value("\${indexer.version.vevote-comments}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

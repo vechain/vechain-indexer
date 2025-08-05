@@ -15,9 +15,9 @@ open class TransactionConfig {
     open fun transactionIndexer(
         thorClient: ThorClient,
         processor: TransactionProcessor,
-        @Value("\${indexer.startBlock.transactions}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.transactions}") syncLogInterval: Long,
-        @Value("\${indexer.channelBatchSize}") channelBatchSize: Int,
+        @Value("\${indexer.start-block.transactions}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.transactions}") syncLogInterval: Long,
+        @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
     ): Indexer =
         IndexerFactory()
             .name("TransactionIndexer")

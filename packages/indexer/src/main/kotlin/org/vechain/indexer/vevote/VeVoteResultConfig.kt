@@ -15,10 +15,10 @@ open class VeVoteResultConfig {
     open fun vevoteResultIndexer(
         thorClient: ThorClient,
         processor: VeVoteResultProcessor,
-        @Value("\${indexer.startBlock.vevote}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.vevote}") syncLogInterval: Long,
+        @Value("\${indexer.start-block.vevote}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,
         @Value("\${veworld.contract.vevote.address}") contractAddress: String,
-        @Value("\${indexer.syncBlockBatchSize.vevote}") syncBlockBatchSize: Long,
+        @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
             .name("VeVoteResultIndexer")

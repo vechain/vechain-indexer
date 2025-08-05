@@ -102,7 +102,7 @@ abstract class AbstractIntegrationTest {
             TestPropertyValues.of(
                     "spring.data.mongodb.uri=$mongoUri",
                     "thor.url=$thorUrl",
-                    "indexer.blacklist.contract_address=$nftBlacklistAddress",
+                    "indexer.blacklist.contract-address=$nftBlacklistAddress",
                 )
                 .applyTo(configurableApplicationContext.environment)
         }

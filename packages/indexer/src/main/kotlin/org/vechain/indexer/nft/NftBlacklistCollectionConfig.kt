@@ -19,7 +19,7 @@ open class NftBlacklistCollectionConfig(
 ) : CollectionConfig(mongoTemplate, NftBlacklist::class.java, NftBlacklistArchive::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.nft_blacklist}") private val version: Int = 1
+    @Value("\${indexer.version.nft-blacklist}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

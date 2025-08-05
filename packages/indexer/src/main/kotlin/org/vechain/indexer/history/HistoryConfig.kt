@@ -17,9 +17,9 @@ open class HistoryConfig() {
     open fun historyIndexer(
         thorClient: ThorClient,
         processor: HistoryProcessor,
-        @Value("\${indexer.startBlock.history}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.history}") syncLogInterval: Long,
-        @Value("\${indexer.channelBatchSize}") channelBatchSize: Int,
+        @Value("\${indexer.start-block.history}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.history}") syncLogInterval: Long,
+        @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         bEProperties: BusinessEventProperties,
     ): Indexer {
         return IndexerFactory()

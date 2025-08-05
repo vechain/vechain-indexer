@@ -20,7 +20,7 @@ open class NftHoldersByBlockCollectionConfig(
 ) : CollectionConfig(mongoTemplate, NftHoldersByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate_nft_holders_by_block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-nft-holders-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

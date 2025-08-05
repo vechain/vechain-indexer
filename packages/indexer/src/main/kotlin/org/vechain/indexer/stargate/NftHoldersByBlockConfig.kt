@@ -16,9 +16,9 @@ open class NftHoldersByBlockConfig {
     open fun nftHoldersByBlockIndexer(
         thorClient: ThorClient,
         processor: NftHoldersByBlockProcessor,
-        @Value("\${indexer.startBlock.stargate}") startBlock: Long,
-        @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
-        @Value("\${indexer.syncLogInterval.stargate}") logInterval: Long,
+        @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
+        @Value("\${indexer.sync-log-interval.stargate}") logInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
