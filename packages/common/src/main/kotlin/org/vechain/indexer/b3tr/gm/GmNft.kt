@@ -9,7 +9,7 @@ import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 
 @Document(collection = "gm_nfts")
-data class GalaxyMemberNFT
+data class GmNft
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String, // tokenId as string
@@ -48,5 +48,4 @@ constructor(
 }
 
 @Document(collection = "gm_nfts_archives")
-data class GalaxyMemberNFTArchive(@Id override val id: String, override val data: GalaxyMemberNFT) :
-    Archive<GalaxyMemberNFT>
+data class GmNftArchive(@Id override val id: String, override val data: GmNft) : Archive<GmNft>

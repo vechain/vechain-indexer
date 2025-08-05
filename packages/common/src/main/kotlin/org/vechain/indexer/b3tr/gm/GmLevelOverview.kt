@@ -9,7 +9,7 @@ import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 
 @Document(collection = "gm_level_overviews")
-data class GMLevelOverview
+data class GmLevelOverview
 @ConstructorBinding
 constructor(
     @Id val id: String,
@@ -47,5 +47,5 @@ constructor(
 }
 
 @Document(collection = "gm_level_overviews_archives")
-data class GMLevelOverviewArchive(@Id override val id: String, override val data: GMLevelOverview) :
-    Archive<GMLevelOverview>
+data class GmLevelOverviewArchive(@Id override val id: String, override val data: GmLevelOverview) :
+    Archive<GmLevelOverview>
