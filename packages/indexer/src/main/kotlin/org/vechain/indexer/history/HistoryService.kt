@@ -4,7 +4,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.vechain.indexer.b3tr.ProposalSupport
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
@@ -104,8 +104,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
                     event.params.getReturnValues()["appsIds"],
                     event.params.getReturnValues()["voteWeights"],
                 ),
-            support =
-                event.params.getAsInt("support")?.let { ProposalSupport.Companion.fromValue(it) },
+            support = event.params.getAsInt("support")?.let { Support.Companion.fromValue(it) },
             voteWeight = event.params.getAsString("voteWeight"),
             votePower = event.params.getAsString("votePower"),
             reason = event.params.getAsString("reason"),

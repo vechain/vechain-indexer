@@ -1,17 +1,31 @@
-package org.vechain.indexer.b3tr
+package org.vechain.indexer.b3tr.sustainability
 
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 
-data class SustainabilityProof
+data class Metadata @ConstructorBinding constructor(val description: String? = null)
+
+data class SustainabilityProofV1
+@ConstructorBinding
+constructor(
+    val app_name: String,
+    val action_type: String,
+    val metadata: Metadata? = null,
+    val proof: ProofV1? = null,
+    val impact: Impact? = null,
+)
+
+data class SustainabilityProofV2
 @ConstructorBinding
 constructor(
     val version: Int,
     val description: String? = null,
-    val proof: ProofV? = null,
+    val proof: ProofV2? = null,
     val impact: Impact? = null,
 )
 
-data class ProofV
+data class ProofV1 @ConstructorBinding constructor(val proof_type: String, val proof_data: String)
+
+data class ProofV2
 @ConstructorBinding
 constructor(val image: String? = null, val link: String?, val text: String?, val video: String?)
 

@@ -1,0 +1,51 @@
+package org.vechain.indexer.b3tr.voting
+
+import com.fasterxml.jackson.annotation.JsonIgnore
+import java.math.BigInteger
+import org.apache.commons.codec.digest.DigestUtils
+import org.springframework.boot.context.properties.bind.ConstructorBinding
+import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.archive.Archive
+import org.vechain.indexer.thor.model.Block
+
+@Document(collection = "x_alloc_results")
+data class XAllocResult
+@ConstructorBinding
+constructor(
+    @JsonIgnore @Id val id: String,
+    @JsonIgnore override val version: Int,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockNumber: Long,
+    @JsonIgnore override val blockTimestamp: Long,
+    val roundId: Int,
+    val appId: String,
+    val voters: Long,
+    val totalVotes: BigInteger,
+) : VersionedDocument {
+    constructor(
+        version: Int,
+        block: Block,
+        roundId: Int,
+        appId: String,
+        voters: Long,
+        totalVotes: BigInteger,
+    ) : this(
+        version = version,
+        id = DigestUtils.sha1Hex("$roundId-$appId"),
+        blockId = block.id,
+        blockNumber = block.number,
+        blockTimestamp = block.timestamp,
+        roundId = roundId,
+        appId = appId,
+        voters = voters,
+        totalVotes = totalVotes,
+    )
+
+    @JsonIgnore override fun getDocumentId(): String = id
+}
+
+@Document(collection = "x_alloc_result_archives")
+data class XAllocResultArchive(@Id override val id: String, override val data: XAllocResult) :
+    Archive<XAllocResult>
