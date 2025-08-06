@@ -1,6 +1,7 @@
 package org.vechain.indexer.transaction
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,9 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class TransactionCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, IndexedTransaction::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedTransaction::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.transactions}") private val version: Int = 1
@@ -34,7 +36,7 @@ open class TransactionCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexesAsync(
+        ensureIndexes(
             listOf(
                 Pair("tx_blockNumber_-1", Index().on("blockNumber", Sort.Direction.DESC)),
                 Pair(

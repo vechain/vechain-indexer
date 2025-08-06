@@ -1,6 +1,7 @@
 package org.vechain.indexer.nft
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,15 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class NftCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, IndexedNft::class.java, NftArchive::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        IndexedNft::class.java,
+        NftArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.nfts}") private var version: Int = 1
@@ -37,7 +45,7 @@ open class NftCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexesAsync(
+        ensureIndexes(
             listOf(
                 "nft_blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "nft_contractAddress_1_tokenId_1" to

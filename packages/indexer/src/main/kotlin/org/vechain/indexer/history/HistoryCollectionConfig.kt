@@ -1,6 +1,7 @@
 package org.vechain.indexer.history
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -16,7 +17,8 @@ import org.vechain.indexer.version.IndexerVersionService
 open class HistoryCollectionConfig(
     mongoTemplate: MongoTemplate,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, IndexedHistoryEvent::class.java) {
+    appCoroutineScope: CoroutineScope,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedHistoryEvent::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.history}") private val version: Int = 1
@@ -34,7 +36,7 @@ open class HistoryCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexesAsync(
+        ensureIndexes(
             listOf(
                 "eventName_1" to Index().on("eventName", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),

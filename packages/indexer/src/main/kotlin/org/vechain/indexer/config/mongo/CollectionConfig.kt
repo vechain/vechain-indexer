@@ -1,7 +1,6 @@
 package org.vechain.indexer.config.mongo
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
@@ -10,6 +9,7 @@ import org.springframework.data.mongodb.core.index.Index
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
+    private val coroutineScope: CoroutineScope,
     val modelObj: Class<*>,
     val archiveObj: Class<*>? = null,
 ) {
@@ -54,7 +54,7 @@ abstract class CollectionConfig(
      * @param indexName The name of the index
      * @param index The index to create
      */
-    fun ensureIndex(indexName: String, index: Index) {
+    private fun ensureIndex(indexName: String, index: Index) {
         try {
             logger.info("⏱ Creating Index:    $indexName for ${modelObj.simpleName}️")
             mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
@@ -64,8 +64,8 @@ abstract class CollectionConfig(
         }
     }
 
-    fun ensureIndexesAsync(indexes: Collection<Pair<String, Index>>) {
-        CoroutineScope(Dispatchers.IO).launch {
+    fun ensureIndexes(indexes: Collection<Pair<String, Index>>) {
+        coroutineScope.launch {
             for ((indexName, index) in indexes) {
                 ensureIndex(indexName, index)
             }
@@ -76,8 +76,6 @@ abstract class CollectionConfig(
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        ensureIndexesAsync(
-            listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC))
-        )
+        ensureIndexes(listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC)))
     }
 }

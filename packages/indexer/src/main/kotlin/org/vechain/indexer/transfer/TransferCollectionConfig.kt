@@ -1,6 +1,7 @@
 package org.vechain.indexer.transfer
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,9 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class TransferCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, IndexedTransferEvent::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedTransferEvent::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.transfers}") private val version: Int = 1
@@ -34,7 +36,7 @@ open class TransferCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexesAsync(
+        ensureIndexes(
             listOf(
                 "transfer_blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "transfer_to_1_blockNumber_-1_txId_-1__id_-1" to
