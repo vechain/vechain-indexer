@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -47,7 +47,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -119,7 +119,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
     mongodb:
@@ -222,7 +222,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
     mongodb:
