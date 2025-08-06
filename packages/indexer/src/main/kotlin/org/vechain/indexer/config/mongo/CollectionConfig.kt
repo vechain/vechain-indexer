@@ -1,5 +1,7 @@
 package org.vechain.indexer.config.mongo
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -7,6 +9,7 @@ import org.springframework.data.mongodb.core.index.Index
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
+    private val coroutineScope: CoroutineScope,
     val modelObj: Class<*>,
     val archiveObj: Class<*>? = null,
 ) {
@@ -15,26 +18,30 @@ abstract class CollectionConfig(
     abstract fun initCollection()
 
     fun ensureCollection() {
-        if (archiveObj != null) {
-            logger.info(
-                "Initializing collection ${modelObj.simpleName} and archive ${archiveObj.simpleName}"
-            )
-        } else {
-            logger.info("Initializing collection ${modelObj.simpleName}")
-        }
-
         // Create the collection if it does not exist
         if (!mongoTemplate.collectionExists(modelObj)) {
-            logger.info("Collection ${modelObj.simpleName} does not exist. Creating...")
-            mongoTemplate.createCollection(modelObj)
+            try {
+                logger.info("⏱ Creating Collection: ${modelObj.simpleName}")
+                mongoTemplate.createCollection(modelObj)
+                logger.info("✅ Creation Success:   ${modelObj.simpleName}.")
+            } catch (e: Exception) {
+                logger.error("⛔ Creation Failed:  ${modelObj.simpleName}", e)
+                throw e
+            }
         } else {
             logger.debug("Collection ${modelObj.simpleName} already exists.")
         }
 
         // Create the archive collection if it does not exist and an archive class is provided
         if (archiveObj != null && !mongoTemplate.collectionExists(archiveObj)) {
-            logger.info("Archive collection ${archiveObj.simpleName} does not exist. Creating...")
-            mongoTemplate.createCollection(archiveObj)
+            try {
+                logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
+                mongoTemplate.createCollection(archiveObj)
+                logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
+            } catch (e: Exception) {
+                logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
+                throw e
+            }
             ensureArchiveIndexes()
         } else if (archiveObj != null) {
             logger.debug("Collection ${archiveObj.simpleName} already exists.")
@@ -47,23 +54,28 @@ abstract class CollectionConfig(
      * @param indexName The name of the index
      * @param index The index to create
      */
-    fun ensureIndex(indexName: String, index: Index) {
-        logger.debug("Creating index: $indexName for ${modelObj.simpleName}")
-        mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
+    private fun ensureIndex(indexName: String, index: Index) {
+        try {
+            logger.info("⏱ Creating Index:    $indexName for ${modelObj.simpleName}️")
+            mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
+            logger.info("✅ Creation Success: $indexName for ${modelObj.simpleName}.")
+        } catch (e: Exception) {
+            logger.error("⛔ Creation Failed:  $indexName for ${modelObj.simpleName}️", e)
+        }
+    }
+
+    fun ensureIndexes(indexes: Collection<Pair<String, Index>>) {
+        coroutineScope.launch {
+            for ((indexName, index) in indexes) {
+                ensureIndex(indexName, index)
+            }
+        }
     }
 
     private fun ensureArchiveIndexes() {
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        logger.debug("Creating index: blockNumber_1 for ${archiveObj.simpleName}")
-        mongoTemplate
-            .indexOps(archiveObj)
-            .ensureIndex(
-                Index()
-                    .on("data.blockNumber", Sort.Direction.ASC)
-                    .named("blockNumber_1")
-                    .background()
-            )
+        ensureIndexes(listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC)))
     }
 }
