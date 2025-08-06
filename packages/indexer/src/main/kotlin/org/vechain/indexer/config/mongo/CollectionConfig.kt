@@ -18,26 +18,30 @@ abstract class CollectionConfig(
     abstract fun initCollection()
 
     fun ensureCollection() {
-        if (archiveObj != null) {
-            logger.info(
-                "Initializing collection ${modelObj.simpleName} and archive ${archiveObj.simpleName}"
-            )
-        } else {
-            logger.info("Initializing collection ${modelObj.simpleName}")
-        }
-
         // Create the collection if it does not exist
         if (!mongoTemplate.collectionExists(modelObj)) {
-            logger.info("Collection ${modelObj.simpleName} does not exist. Creating...")
-            mongoTemplate.createCollection(modelObj)
+            try {
+                logger.info("⏱ Creating Collection: ${modelObj.simpleName}")
+                mongoTemplate.createCollection(modelObj)
+                logger.info("✅ Creation Success:   ${modelObj.simpleName}.")
+            } catch (e: Exception) {
+                logger.error("⛔ Creation Failed:  ${modelObj.simpleName}", e)
+                throw e
+            }
         } else {
             logger.debug("Collection ${modelObj.simpleName} already exists.")
         }
 
         // Create the archive collection if it does not exist and an archive class is provided
         if (archiveObj != null && !mongoTemplate.collectionExists(archiveObj)) {
-            logger.info("Archive collection ${archiveObj.simpleName} does not exist. Creating...")
-            mongoTemplate.createCollection(archiveObj)
+            try {
+                logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
+                mongoTemplate.createCollection(archiveObj)
+                logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
+            } catch (e: Exception) {
+                logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
+                throw e
+            }
             ensureArchiveIndexes()
         } else if (archiveObj != null) {
             logger.debug("Collection ${archiveObj.simpleName} already exists.")
@@ -72,14 +76,8 @@ abstract class CollectionConfig(
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        logger.info("Creating index: blockNumber_1 for ${archiveObj.simpleName}")
-        mongoTemplate
-            .indexOps(archiveObj)
-            .ensureIndex(
-                Index()
-                    .on("data.blockNumber", Sort.Direction.ASC)
-                    .named("blockNumber_1")
-                    .background()
-            )
+        ensureIndexesAsync(
+            listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC))
+        )
     }
 }
