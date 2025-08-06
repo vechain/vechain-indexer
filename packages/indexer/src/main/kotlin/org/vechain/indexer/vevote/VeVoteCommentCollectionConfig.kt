@@ -34,8 +34,11 @@ open class VeVoteCommentCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("voter_-1", Index().on("voter", Sort.Direction.DESC))
-
-        ensureIndex("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC))
+        ensureIndexesAsync(
+            listOf(
+                Pair("voter_-1", Index().on("voter", Sort.Direction.DESC)),
+                Pair("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC)),
+            )
+        )
     }
 }

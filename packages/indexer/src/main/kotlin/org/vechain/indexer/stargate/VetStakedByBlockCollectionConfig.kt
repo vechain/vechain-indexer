@@ -34,9 +34,11 @@ open class VetStakedByBlockCollectionConfig(
         ensureCollection()
 
         // Ensure indexes
-        ensureIndex(
-            "blockTimestamp_1",
-            Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+        ensureIndexesAsync(
+            listOf(
+                "blockTimestamp_1" to
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC)
+            )
         )
     }
 }

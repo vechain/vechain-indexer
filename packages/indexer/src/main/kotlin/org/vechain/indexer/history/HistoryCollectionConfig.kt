@@ -34,66 +34,47 @@ open class HistoryCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("eventName_1", Index().on("eventName", Sort.Direction.ASC))
-
-        ensureIndex("blockNumber_1", Index().on("blockNumber", Sort.Direction.ASC))
-
-        ensureIndex("contractAddress_1", Index().on("contractAddress", Sort.Direction.ASC))
-
-        ensureIndex(
-            "to_1_contractAddress_1_blockTimestamp_-1",
-            Index()
-                .on("to", Sort.Direction.ASC)
-                .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC),
-        )
-
-        ensureIndex(
-            "from_1_contractAddress_1_blockTimestamp_-1",
-            Index()
-                .on("from", Sort.Direction.ASC)
-                .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC),
-        )
-
-        ensureIndex(
-            "origin_1_contractAddress_1_blockTimestamp_-1",
-            Index()
-                .on("origin", Sort.Direction.ASC)
-                .on("contractAddress", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC),
-        )
-
-        ensureIndex(
-            "from_1_blockTimestamp_-1_eventName_1",
-            Index()
-                .on("from", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC),
-        )
-
-        ensureIndex(
-            "to_1_blockTimestamp_-1_eventName_1",
-            Index()
-                .on("to", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC),
-        )
-
-        ensureIndex(
-            "origin_1_blockTimestamp_-1_eventName_1",
-            Index()
-                .on("origin", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC),
-        )
-
-        ensureIndex(
-            "gasPayer_1_blockTimestamp_-1_eventName_1",
-            Index()
-                .on("gasPayer", Sort.Direction.ASC)
-                .on("blockTimestamp", Sort.Direction.DESC)
-                .on("eventName", Sort.Direction.ASC),
+        ensureIndexesAsync(
+            listOf(
+                "eventName_1" to Index().on("eventName", Sort.Direction.ASC),
+                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),
+                "to_1_contractAddress_1_blockTimestamp_-1" to
+                    Index()
+                        .on("to", Sort.Direction.ASC)
+                        .on("contractAddress", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
+                "from_1_contractAddress_1_blockTimestamp_-1" to
+                    Index()
+                        .on("from", Sort.Direction.ASC)
+                        .on("contractAddress", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
+                "origin_1_contractAddress_1_blockTimestamp_-1" to
+                    Index()
+                        .on("origin", Sort.Direction.ASC)
+                        .on("contractAddress", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
+                "from_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("from", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
+                "to_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("to", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
+                "origin_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("origin", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
+                "gasPayer_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("gasPayer", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
+            )
         )
     }
 }

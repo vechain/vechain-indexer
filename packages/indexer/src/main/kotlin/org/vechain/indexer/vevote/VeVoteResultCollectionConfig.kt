@@ -34,8 +34,11 @@ open class VeVoteResultCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("support_1", Index().on("support", Sort.Direction.ASC))
-
-        ensureIndex("proposalId_1", Index().on("proposalId", Sort.Direction.ASC))
+        ensureIndexesAsync(
+            listOf(
+                "support_1" to Index().on("support", Sort.Direction.ASC),
+                "proposalId_1" to Index().on("proposalId", Sort.Direction.ASC),
+            )
+        )
     }
 }

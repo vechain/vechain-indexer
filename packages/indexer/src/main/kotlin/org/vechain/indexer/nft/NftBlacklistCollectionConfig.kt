@@ -35,9 +35,11 @@ open class NftBlacklistCollectionConfig(
 
         ensureCollection()
 
-        ensureIndex(
-            "nft_blacklist__id_1_blacklisted_1",
-            Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC),
+        ensureIndexesAsync(
+            listOf(
+                "nft_blacklist__id_1_blacklisted_1" to
+                    Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC)
+            )
         )
     }
 }

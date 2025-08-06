@@ -1,5 +1,8 @@
 package org.vechain.indexer.config.mongo
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -48,15 +51,28 @@ abstract class CollectionConfig(
      * @param index The index to create
      */
     fun ensureIndex(indexName: String, index: Index) {
-        logger.debug("Creating index: $indexName for ${modelObj.simpleName}")
-        mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
+        try {
+            logger.info("⏱ Creating Index:    $indexName for ${modelObj.simpleName}️")
+            mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
+            logger.info("✅ Creation Success: $indexName for ${modelObj.simpleName}.")
+        } catch (e: Exception) {
+            logger.error("⛔ Creation Failed:  $indexName for ${modelObj.simpleName}️", e)
+        }
+    }
+
+    fun ensureIndexesAsync(indexes: Collection<Pair<String, Index>>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            for ((indexName, index) in indexes) {
+                ensureIndex(indexName, index)
+            }
+        }
     }
 
     private fun ensureArchiveIndexes() {
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        logger.debug("Creating index: blockNumber_1 for ${archiveObj.simpleName}")
+        logger.info("Creating index: blockNumber_1 for ${archiveObj.simpleName}")
         mongoTemplate
             .indexOps(archiveObj)
             .ensureIndex(
