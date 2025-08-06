@@ -23,9 +23,33 @@ open class HistoricalProposalsService(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val cachedAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private var hasReachedCurrentBlock = false
+    private var bestBlockNumber: Long = 0
 
-    fun processNewProposals(events: List<IndexedEvent>): List<HistoricalProposals> =
-        events.mapNotNull { extractNewProposalEvent(it) }
+    fun processNewProposals(
+        events: List<IndexedEvent>,
+        currentBlockNumber: Long? = null,
+    ): List<HistoricalProposals> {
+        if (!hasReachedCurrentBlock) {
+            // Get the current best block number
+            val bestBlock = thorService.getBestBlock()
+            bestBlockNumber = bestBlock.number
+
+            val blockToCheck = currentBlockNumber ?: events.firstOrNull()?.blockNumber
+            if (blockToCheck != null && blockToCheck >= bestBlockNumber) {
+                logger.info(
+                    "Historical proposals service reached current block $bestBlockNumber. Stopping processing."
+                )
+                hasReachedCurrentBlock = true
+                return emptyList()
+            }
+        }
+
+        if (hasReachedCurrentBlock) {
+            return emptyList()
+        }
+        return events.mapNotNull { extractNewProposalEvent(it) }
+    }
 
     fun extractNewProposalEvent(event: IndexedEvent): HistoricalProposals? {
         try {
@@ -46,6 +70,7 @@ open class HistoricalProposalsService(
                 id = "$contractAddress-$proposalId",
                 proposalId = proposalId,
                 createdDate = event.blockTimestamp.toString(),
+                proposer = contractData.basicInfo?.get("creator") as? String,
                 title = contractData.basicInfo?.get("title") as? String,
                 proposalType = proposalType,
                 choices = extractChoices(contractData.basicInfo, contractAddress),

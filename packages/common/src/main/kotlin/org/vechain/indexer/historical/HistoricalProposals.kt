@@ -9,6 +9,7 @@ data class HistoricalProposals(
     @Id val id: String,
     val proposalId: String,
     val createdDate: String,
+    val proposer: String?,
     val title: String?,
     val proposalType: Int?,
     val choices: List<String>?,

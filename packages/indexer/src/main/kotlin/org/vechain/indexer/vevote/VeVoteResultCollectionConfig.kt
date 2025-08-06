@@ -37,5 +37,7 @@ open class VeVoteResultCollectionConfig(
         ensureIndex("support_1", Index().on("support", Sort.Direction.ASC))
 
         ensureIndex("proposalId_1", Index().on("proposalId", Sort.Direction.ASC))
+
+        ensureIndex("blockNumber_-1", Index().on("blockNumber", Sort.Direction.DESC))
     }
 }

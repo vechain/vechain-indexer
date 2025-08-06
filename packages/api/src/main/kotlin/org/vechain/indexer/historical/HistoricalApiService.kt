@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 open class HistoricalApiService(
     private val historicalProposalsRepository: HistoricalProposalsRepository
 ) {
-
-    fun findByProposalId(proposalId: String, pageable: Pageable): Slice<HistoricalProposals> =
-        historicalProposalsRepository.findByProposalId(proposalId, pageable)
+    fun findAll(pageable: Pageable): Slice<HistoricalProposals> =
+        historicalProposalsRepository.findAll(pageable)
 }
