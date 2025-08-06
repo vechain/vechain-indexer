@@ -1,6 +1,7 @@
 package org.vechain.indexer.vevote
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,9 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class VeVoteResultCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, VeVoteProposalResults::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, VeVoteProposalResults::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.vevote-results}") private val version: Int = 1
@@ -34,8 +36,11 @@ open class VeVoteResultCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndex("support_1", Index().on("support", Sort.Direction.ASC))
-
-        ensureIndex("proposalId_1", Index().on("proposalId", Sort.Direction.ASC))
+        ensureIndexes(
+            listOf(
+                "support_1" to Index().on("support", Sort.Direction.ASC),
+                "proposalId_1" to Index().on("proposalId", Sort.Direction.ASC),
+            )
+        )
     }
 }

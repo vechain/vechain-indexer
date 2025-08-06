@@ -1,6 +1,7 @@
 package org.vechain.indexer.nft
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,15 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class NftBlacklistCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, NftBlacklist::class.java, NftBlacklistArchive::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        NftBlacklist::class.java,
+        NftBlacklistArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.nft-blacklist}") private val version: Int = 1
@@ -35,9 +43,11 @@ open class NftBlacklistCollectionConfig(
 
         ensureCollection()
 
-        ensureIndex(
-            "nft_blacklist__id_1_blacklisted_1",
-            Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC),
+        ensureIndexes(
+            listOf(
+                "nft_blacklist__id_1_blacklisted_1" to
+                    Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC)
+            )
         )
     }
 }

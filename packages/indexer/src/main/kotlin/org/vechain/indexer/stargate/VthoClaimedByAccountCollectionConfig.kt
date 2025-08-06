@@ -1,6 +1,7 @@
 package org.vechain.indexer.stargate
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -13,10 +14,12 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class VthoClaimedByAccountCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
 ) :
     CollectionConfig(
         mongoTemplate,
+        appCoroutineScope,
         VthoClaimedByAccount::class.java,
         VthoClaimedByAccountArchive::class.java,
     ) {
