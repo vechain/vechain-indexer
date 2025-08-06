@@ -17,7 +17,7 @@ constructor(
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    val level: GMLevelName,
+    val level: GmLevelName,
     val attachedNodeId: String?,
     val b3trDonated: BigInteger,
     val owner: String,
@@ -29,7 +29,7 @@ constructor(
         blockNumber: Long,
         blockTimestamp: Long,
         owner: String,
-        level: GMLevelName,
+        level: GmLevelName,
         attachedNodeId: String?,
         b3trDonated: BigInteger,
     ) : this(

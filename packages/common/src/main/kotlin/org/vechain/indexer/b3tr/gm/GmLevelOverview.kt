@@ -27,7 +27,7 @@ constructor(
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        gmLevel: GMLevelName,
+        gmLevel: GmLevelName,
         nfts: Long,
         b3trDonated: BigInteger,
         nodeHolders: Long,

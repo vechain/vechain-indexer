@@ -2,7 +2,7 @@ package org.vechain.indexer.b3tr.gm
 
 import java.math.BigInteger
 
-enum class GMLevelName {
+enum class GmLevelName {
     ALL,
     EARTH,
     MOON,
@@ -16,7 +16,7 @@ enum class GMLevelName {
     GALAXY;
 
     companion object {
-        fun map(bi: BigInteger): GMLevelName =
+        fun map(bi: BigInteger): GmLevelName =
             when (bi) {
                 BigInteger.ZERO -> ALL
                 BigInteger.ONE -> EARTH
