@@ -124,7 +124,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                 '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                 '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
         authority_node:
           address:                 '0x0000000000000000000000417574686f72697479'
     mongodb:
@@ -229,7 +229,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
         authority_node:
           address:                '0x0000000000000000000000417574686f72697479'
     mongodb:
