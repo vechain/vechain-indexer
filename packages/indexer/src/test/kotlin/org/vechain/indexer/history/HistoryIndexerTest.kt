@@ -361,6 +361,47 @@ class HistoryIndexerTest {
         assertTx(idx = 11, eventName = HistoryEventName.STARGATE_UNDELEGATE, tokenId = "16")
     }
 
+    @Test
+    fun `Process block - Stargate VTHO refund`() = runBlocking {
+        val block = BlockFixtures.BLOCK_STARGATE_VTHO_REFUND
+
+        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
+        every { repository.getLatestRecord() } returns null
+        every {
+            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
+        } returns mutableListOf()
+
+        val indexer =
+            TestableBlockIndexer(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(mapOf(block.number to block)),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = block.number,
+            )
+
+        indexer.start(1)
+
+        val txs = historyEventSlot.captured
+
+        txs.forEach { tx -> println(tx.eventName) }
+        expect { that(txs).hasSize(6) }
+        val eventNames = txs.map { it.eventName }
+        expect {
+            that(eventNames)
+                .isEqualTo(
+                    listOf(
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                    )
+                )
+        }
+    }
+
     fun buildEventProcessor(): CombinedEventProcessor =
         CombinedEventProcessor.create(
             abiBasePath = "abis",

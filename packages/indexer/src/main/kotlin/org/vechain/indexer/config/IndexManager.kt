@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ExitCodeGenerator
 import org.springframework.boot.SpringApplication
@@ -13,6 +14,7 @@ import org.vechain.indexer.Indexer
 class IndexManager(
     private val indexers: List<Indexer>,
     private val applicationContext: ApplicationContext,
+    private val appCoroutineScope: CoroutineScope,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -22,7 +24,7 @@ class IndexManager(
 
         indexers.forEach { indexer ->
             try {
-                indexer.startInCoroutine()
+                indexer.startInCoroutine(scope = appCoroutineScope)
             } catch (e: Exception) {
                 logger.error("Error starting indexer ${indexer.javaClass.simpleName}: ", e)
                 // Exit the application if one of the indexers fails to start
