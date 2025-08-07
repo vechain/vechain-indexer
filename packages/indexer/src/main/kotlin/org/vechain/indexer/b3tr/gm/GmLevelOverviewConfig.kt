@@ -14,26 +14,26 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "gm-nft")
-open class GmNftConfig {
+@Profile("b3tr", "gm-nft-level-overview")
+open class GmLevelOverviewConfig {
 
     @Bean
     open fun gmNftArchiveService(
         mongoTemplate: MongoTemplate
-    ): ArchiveService<GmNft, GmNftArchive> =
+    ): ArchiveService<GmLevelOverview, GmLevelOverviewArchive> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
-            clazz = GmNft::class.java,
-            archiveClazz = GmNftArchive::class.java,
+            clazz = GmLevelOverview::class.java,
+            archiveClazz = GmLevelOverviewArchive::class.java,
         )
 
     @Bean
     open fun gmNftPruner(
-        gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+        gmNftArchiveService: ArchiveService<GmLevelOverview, GmLevelOverviewArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
         PrunerService(
-            klass = GmNftArchive::class,
+            klass = GmLevelOverviewArchive::class,
             archiveService = gmNftArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
         )
@@ -41,7 +41,7 @@ open class GmNftConfig {
     @Bean
     open fun gmNftIndexer(
         thorClient: ThorClient,
-        processor: GmNftProcessor,
+        processor: GmLevelOverviewProcessor,
         gmNftPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
@@ -54,7 +54,7 @@ open class GmNftConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name("GmNftIndexer")
+            .name("GmLevelOverviewIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .pruner(gmNftPruner)
@@ -65,7 +65,6 @@ open class GmNftConfig {
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(
                 listOf(
-                    "B3TR_GmTransfer",
                     "B3TR_GmBurned",
                     "B3TR_GmMinted",
                     "B3TR_GmNodeAttached",

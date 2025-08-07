@@ -1,0 +1,51 @@
+{
+  "name": "B3TR_GmBurned",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "transferEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${GM_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GE"
+        },
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000000000000000",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "transferEvent",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "to",
+      "eventName": "transferEvent",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferEvent",
+      "businessEventName": "from"
+    }
+  ]
+}

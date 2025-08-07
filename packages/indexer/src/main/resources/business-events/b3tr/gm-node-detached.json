@@ -1,0 +1,65 @@
+{
+  "name": "B3TR_GmNodeDetached",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "NodeDetached",
+      "alias": "unlinkEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${GM_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "LevelWhenDetached",
+      "alias": "levelEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${GM_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "unlinkEvent",
+      "firstEventProperty": "nodeTokenId",
+      "secondEventName": "levelEvent",
+      "secondEventProperty": "nodeTokenId",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "unlinkEvent",
+      "firstEventProperty": "tokenId",
+      "secondEventName": "levelEvent",
+      "secondEventProperty": "tokenId",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "levelEvent",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "nodeTokenId",
+      "eventName": "levelEvent",
+      "businessEventName": "nodeTokenId"
+    },
+    {
+      "name": "level",
+      "eventName": "levelEvent",
+      "businessEventName": "level"
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 {
-  "name": "B3TR_GMUpgrade",
+  "name": "B3TR_GmUpgrade",
   "sameClause": true,
   "events": [
     {
       "name": "Upgraded",
-      "alias": "upgradeGM",
+      "alias": "upgradeEvent",
       "conditions": [
         {
           "firstOperand": "address",
@@ -12,6 +12,13 @@
           "secondOperand": "${GM_NFT_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GE"
         }
       ]
     },
@@ -19,6 +26,20 @@
       "name": "Transfer",
       "alias": "transferB3TR",
       "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "value",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
         {
           "firstOperand": "to",
           "isFirstStatic": false,
@@ -32,6 +53,11 @@
   "rules": [],
   "paramsDefinition": [
     {
+      "name": "tokenId",
+      "eventName": "upgradeEvent",
+      "businessEventName": "tokenId"
+    },
+    {
       "name": "from",
       "eventName": "transferB3TR",
       "businessEventName": "from"
@@ -42,24 +68,19 @@
       "businessEventName": "to"
     },
     {
-      "name": "value",
-      "eventName": "transferB3TR",
-      "businessEventName": "value"
-    },
-    {
-      "name": "tokenId",
-      "eventName": "upgradeGM",
-      "businessEventName": "tokenId"
+      "name": "oldLevel",
+      "eventName": "upgradeEvent",
+      "businessEventName": "oldLevel"
     },
     {
       "name": "newLevel",
-      "eventName": "upgradeGM",
+      "eventName": "upgradeEvent",
       "businessEventName": "newLevel"
     },
     {
-      "name": "oldLevel",
-      "eventName": "upgradeGM",
-      "businessEventName": "oldLevel"
+      "name": "value",
+      "eventName": "transferB3TR",
+      "businessEventName": "value"
     }
   ]
 }
