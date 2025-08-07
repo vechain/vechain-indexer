@@ -79,7 +79,8 @@ enabled_nets:
         authority_nodes:            '500'
       channel_batch_size:           '5'
       pruner:
-        removal_chunk_size: 2000
+        interval:                   '43200000'
+        removal_chunk_size:         '2000'
       blacklist:
         contract_address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
         interval:                   '180000'
@@ -183,7 +184,8 @@ enabled_nets:
         authority_nodes:            '100'
       channel_batch_size:           '5'
       pruner:
-        removal_chunk_size: 2000
+        interval:                   '43200000'
+        removal_chunk_size:         '2000'
       blacklist:
         contract_address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
         interval:                   '180000'
