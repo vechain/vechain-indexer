@@ -274,18 +274,4 @@ object GmNftEventUtils {
      */
     fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
         events.groupBy { it.blockNumber }.toSortedMap()
-
-    /**
-     * Groups a list of events by their block number and then by tokenId, returning a map where the
-     * keys are block numbers and the values are lists of events grouped by tokenId.
-     *
-     * @param events List of IndexedEvent to group.
-     * @return Map where keys are block numbers and values are lists of events grouped by token id.
-     */
-    fun groupByBlockNumberAndTokenId(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
-        groupByBlockNumber(events)
-            .values
-            .flatMap { groupByTokenId(it).entries }
-            .groupBy({ it.key }, { it.value })
-            .mapValues { it.value.flatten() }
 }

@@ -6,7 +6,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByBlockNumberAndTokenId
+import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByBlockNumber
+import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -25,11 +26,13 @@ open class GmNftService(
         val updatedNfts = mutableMapOf<String, GmNft>()
         val existingNfts = mutableListOf<GmNft>()
 
-        groupByBlockNumberAndTokenId(events).forEach { (tokenId, tokenEvents) ->
-            val existing = resolveExistingNft(tokenId, updatedNfts)
-            val updated = processAllTokenEvents(existing, tokenEvents)
-            existing?.let { existingNfts.add(it) }
-            updatedNfts[tokenId] = updated
+        groupByBlockNumber(events).forEach { (blockNumber, blockEvents) ->
+            groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
+                val existing = resolveExistingNft(tokenId, updatedNfts)
+                val updated = processAllTokenEvents(existing, tokenEvents)
+                existing?.let { existingNfts.add(it) }
+                updatedNfts[tokenId] = updated
+            }
         }
 
         return updatedNfts.values.toList() to existingNfts
