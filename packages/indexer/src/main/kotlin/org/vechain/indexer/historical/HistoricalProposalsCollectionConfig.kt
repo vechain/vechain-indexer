@@ -1,6 +1,7 @@
 package org.vechain.indexer.historical
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -15,8 +16,9 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class HistoricalProposalsCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, HistoricalProposals::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricalProposals::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.historical_proposals}") private val version: Int = 1
@@ -33,7 +35,11 @@ open class HistoricalProposalsCollectionConfig(
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
-        ensureIndex("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC))
-        ensureIndex("blockNumber_1", Index().on("blockNumber", Sort.Direction.ASC))
+        ensureIndexes(
+            listOf(
+                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
+                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+            )
+        )
     }
 }
