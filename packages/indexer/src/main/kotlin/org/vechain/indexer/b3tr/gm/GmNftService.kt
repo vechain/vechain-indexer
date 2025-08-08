@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.gm
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -17,25 +16,34 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 open class GmNftService(
     private val gmNftRepository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
-    @param:Value("\${business-event.substitutions.GM_NFT_CONTRACT}")
-    private val contractAddress: String,
 ) {
+
+    /**
+     * Processes a list of IndexedEvents related to GM NFTs and returns a pair of lists:
+     * - The first list contains updated GmNft objects to be saved.
+     * - The second list contains GmNft objects that should be archived. This method groups events
+     *   by block number and token ID, then processes each group to update or create GmNft objects.
+     *
+     * @param events A list of IndexedEvent objects representing NFT-related events.
+     * @return A pair of lists: the first containing updated GmNft objects, the second containing
+     *   GmNft objects to be archived.
+     */
     open fun processEvents(events: List<IndexedEvent>): Pair<List<GmNft>, List<GmNft>> {
         if (events.isEmpty()) return emptyList<GmNft>() to emptyList()
 
         val updatedNfts = mutableMapOf<String, GmNft>()
-        val existingNfts = mutableListOf<GmNft>()
+        val archiveNfts = mutableListOf<GmNft>()
 
         groupByBlockNumber(events).forEach { (blockNumber, blockEvents) ->
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
                 val existing = resolveExistingNft(tokenId, updatedNfts)
                 val updated = processAllTokenEvents(existing, tokenEvents)
-                existing?.let { existingNfts.add(it) }
+                existing?.let { archiveNfts.add(it) }
                 updatedNfts[tokenId] = updated
             }
         }
 
-        return updatedNfts.values.toList() to existingNfts
+        return updatedNfts.values.toList() to archiveNfts
     }
 
     @Transactional(rollbackFor = [Exception::class])
