@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,historical-proposals
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -47,7 +47,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,historical-proposals
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -84,19 +84,19 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
-        transfers:                  '1'
-        transactions:               '1'
-        history:                    '1'
-        nft_blacklist:              '1'
+        nfts:                       '4'
+        transfers:                  '2'
+        transactions:               '2'
+        history:                    '2'
+        nft_blacklist:              '2'
         vevote_comments:            '1'
         vevote_results:             '1'
-        authority_node_endorser:    '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '2'
-        stargate_nft_holders_by_account: '1'
-        stargate_vet_staked_by_account: '1'
-        historical_proposals:           '1'
+        authority_node_endorser:    '5'
+        stargate_vtho_claimed_by_block: '5'
+        stargate_vtho_claimed_by_account: '6'
+        stargate_nft_holders_by_account: '5'
+        stargate_vet_staked_by_account: '5'
+        historical_proposals:          '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -123,7 +123,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
         historical_proposals:
@@ -139,7 +139,7 @@ enabled_nets:
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M50
-      auto_scaling_compute_min_instance_size: M30
+      auto_scaling_compute_min_instance_size: M40
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
@@ -194,19 +194,19 @@ enabled_nets:
         interval:                   '180000'
         initial_delay:              '60000'
       version:
-        nfts:                       '1'
-        transfers:                  '1'
-        transactions:               '1'
-        history:                    '1'
-        nft_blacklist:              '1'
+        nfts:                       '5'
+        transfers:                  '4'
+        transactions:               '4'
+        history:                    '8'
+        nft_blacklist:              '5'
         vevote_comments:            '1'
-        vevote_results:             '1'
-        authority_node_endorser:    '1'
-        stargate_vtho_claimed_by_block: '1'
-        stargate_vtho_claimed_by_account: '2'
-        stargate_nft_holders_by_account: '1'
-        stargate_vet_staked_by_account: '1'
-        historical_proposals:           '1'
+        vevote_results:             '5'
+        authority_node_endorser:    '3'
+        stargate_vtho_claimed_by_block: '3'
+        stargate_vtho_claimed_by_account: '3'
+        stargate_nft_holders_by_account: '4'
+        stargate_vet_staked_by_account: '3'
+        historical_proposals:          '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -233,7 +233,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
         historical_proposals:
@@ -249,4 +249,4 @@ enabled_nets:
       iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M40
-      auto_scaling_compute_min_instance_size: M10
+      auto_scaling_compute_min_instance_size: M20
