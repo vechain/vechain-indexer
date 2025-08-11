@@ -25,4 +25,5 @@ enum class HistoryEventName {
     STARGATE_UNDELEGATE,
     STARGATE_UNSTAKE,
     STARGATE_DELEGATE_ONLY,
+    VEVOTE_VOTE_CAST,
 }
