@@ -11,4 +11,6 @@ import org.vechain.indexer.BaseIndexedRepository
 interface HistoricalProposalsRepository : BaseIndexedRepository<HistoricalProposals, String> {
 
     fun findAll(pageable: Pageable): Slice<HistoricalProposals>
+
+    fun findByProposalId(proposalId: String, pageable: Pageable): Slice<HistoricalProposals>
 }

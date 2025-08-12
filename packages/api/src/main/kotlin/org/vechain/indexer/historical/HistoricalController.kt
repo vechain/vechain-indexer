@@ -15,10 +15,7 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
 
-@Tag(
-    name = "Historical Proposal API",
-    description = "Proposal API for querying Historical Proposal endpoint",
-)
+@Tag(name = "VeVote Historical Proposals", description = "Query VeVote Historical Proposals")
 @Validated
 @RestController
 @Profile("historical-proposals")
@@ -30,10 +27,11 @@ open class HistoricalController(private val historicalApiService: HistoricalApiS
     @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Success")])
     open fun getAllProposals(
         @RequestParam(required = false) page: Int?,
+        @RequestParam(required = false) proposalId: String?,
         @RequestParam(required = false) size: Int?,
     ): PaginatedResponse<HistoricalProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
-        val result = historicalApiService.findAll(pageable)
+        val result = historicalApiService.findAll(proposalId, pageable)
         return paginatedResponse(result)
     }
 }
