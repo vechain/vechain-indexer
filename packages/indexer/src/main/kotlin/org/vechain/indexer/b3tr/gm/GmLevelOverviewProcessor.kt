@@ -22,6 +22,6 @@ open class GmLevelOverviewProcessor(
         }
 
         // Process the events using the service
-        service.processEvents(matchedEvents)
+        //        service.processEvents(matchedEvents)
     }
 }

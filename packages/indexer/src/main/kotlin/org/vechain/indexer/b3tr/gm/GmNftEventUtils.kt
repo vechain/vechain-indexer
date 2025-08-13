@@ -10,6 +10,16 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object GmNftEventUtils {
 
+    /**
+     * Processes a list of token events to update or create a GM NFT. It checks the type of each
+     * event and applies the appropriate processing logic based on the event type. The function
+     * ensures that all events have the same tokenId and blockNumber, and it handles minting,
+     * upgrading, transferring, and node attachment/detachment events.
+     *
+     * @param existing The existing GmNft to update, or null if creating a new one.
+     * @param tokenEvents List of IndexedEvent representing the token events to process.
+     * @return The updated or newly created GmNft.
+     */
     fun processAllTokenEvents(existing: GmNft?, tokenEvents: List<IndexedEvent>): GmNft {
         require(tokenEvents.isNotEmpty()) { "No events provided" }
 
@@ -72,9 +82,7 @@ object GmNftEventUtils {
      */
     fun processMintedEvent(event: IndexedEvent): GmNft {
         // Check the event type
-        if (event.eventType != "B3TR_GmMinted") {
-            error("Invalid event type for mint: ${event.eventType}")
-        }
+        requireEventType(event, "B3TR_GmMinted")
 
         val tokenId =
             event.params.getAsString("tokenId")
@@ -107,9 +115,7 @@ object GmNftEventUtils {
      */
     fun processUpgradedEvent(event: IndexedEvent, existing: GmNft): GmNft {
         // Check the event type
-        if (event.eventType != "B3TR_GmUpgrade") {
-            error("Invalid event type for upgrade: ${event.eventType}")
-        }
+        requireEventType(event, "B3TR_GmUpgrade")
 
         val newLevelStr =
             event.params.getAsString("newLevel")
@@ -141,9 +147,7 @@ object GmNftEventUtils {
      */
     fun processNodeAttachedEvent(event: IndexedEvent, existing: GmNft): GmNft {
         // Check the event type
-        if (event.eventType != "B3TR_GmNodeAttached") {
-            error("Invalid event type for node attached: ${event.eventType}")
-        }
+        requireEventType(event, "B3TR_GmNodeAttached")
 
         val levelStr =
             event.params.getAsString("level")
@@ -174,9 +178,7 @@ object GmNftEventUtils {
      */
     fun processNodeDetachedEvent(event: IndexedEvent, existing: GmNft): GmNft {
         // Check the event type
-        if (event.eventType != "B3TR_GmNodeDetached") {
-            error("Invalid event type for node detached: ${event.eventType}")
-        }
+        requireEventType(event, "B3TR_GmNodeDetached")
 
         val levelStr =
             event.params.getAsString("level")
@@ -206,9 +208,8 @@ object GmNftEventUtils {
      *   invalid or does not match the GM contract address.
      */
     fun processTransferEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        if (event.eventType !in listOf("B3TR_GmTransfer", "B3TR_GmBurned")) {
-            error("Invalid event type or missing address in event: ${event.id}")
-        }
+        // Check the event type
+        requireEventType(event, "B3TR_GmTransfer", "B3TR_GmBurned")
 
         val owner =
             event.params.getAsString("to") ?: error("Missing 'to' param in event: ${event.id}")
@@ -231,6 +232,10 @@ object GmNftEventUtils {
      *   removed.
      */
     fun processLevelCheckEvent(event: IndexedEvent, existing: GmNft): GmNft {
+        // Check the event type
+        requireEventType(event, "B3TR_GmNodeLevel")
+
+        // Process parameters
         val newLevelRaw =
             event.params.getAsString("level")?.toBigInteger()
                 ?: error("Missing 'level' param in event: ${event.id}")
@@ -274,4 +279,13 @@ object GmNftEventUtils {
      */
     fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
         events.groupBy { it.blockNumber }.toSortedMap()
+
+    /** Checks if the event type of the given IndexedEvent matches any of the required types. */
+    fun requireEventType(event: IndexedEvent, vararg requiredTypes: String) {
+        if (event.eventType !in requiredTypes) {
+            error(
+                "Invalid event type: ${event.eventType}. Expected: ${requiredTypes.joinToString()}"
+            )
+        }
+    }
 }

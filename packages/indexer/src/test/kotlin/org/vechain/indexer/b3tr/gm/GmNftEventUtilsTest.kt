@@ -285,7 +285,7 @@ class GmNftEventUtilsTest {
             val exception =
                 assertThrows<IllegalStateException> { GmNftEventUtils.processMintedEvent(event) }
 
-            assertTrue(exception.message!!.contains("Invalid event type for mint"))
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
 
         @Test
@@ -378,7 +378,7 @@ class GmNftEventUtilsTest {
                     GmNftEventUtils.processUpgradedEvent(event, baseNft)
                 }
 
-            assertTrue(exception.message!!.contains("Invalid event type for upgrade"))
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
 
         @Test
@@ -478,7 +478,7 @@ class GmNftEventUtilsTest {
                     GmNftEventUtils.processNodeAttachedEvent(event, baseNft)
                 }
 
-            assertTrue(exception.message!!.contains("Invalid event type for node attached"))
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
 
         @Test
@@ -570,7 +570,7 @@ class GmNftEventUtilsTest {
                     GmNftEventUtils.processNodeDetachedEvent(event, baseNft)
                 }
 
-            assertTrue(exception.message!!.contains("Invalid event type for node detached"))
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
 
         @Test
@@ -661,7 +661,7 @@ class GmNftEventUtilsTest {
                     GmNftEventUtils.processTransferEvent(event, baseNft)
                 }
 
-            assertTrue(exception.message!!.contains("Invalid event type or missing address"))
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
 
         @Test
@@ -703,6 +703,7 @@ class GmNftEventUtilsTest {
             val event =
                 buildIndexedEvent(
                     blockNumber = 101,
+                    eventType = "B3TR_GmNodeLevel",
                     params =
                         AbiEventParameters(
                             returnValues = mapOf("level" to GmLevelName.MOON.ordinal.toString())
@@ -726,6 +727,7 @@ class GmNftEventUtilsTest {
             val event =
                 buildIndexedEvent(
                     blockNumber = 102,
+                    eventType = "B3TR_GmNodeLevel",
                     params =
                         AbiEventParameters(
                             returnValues = mapOf("level" to GmLevelName.EARTH.ordinal.toString())
@@ -743,6 +745,7 @@ class GmNftEventUtilsTest {
             val event =
                 buildIndexedEvent(
                     blockNumber = 103,
+                    eventType = "B3TR_GmNodeLevel",
                     params =
                         AbiEventParameters(
                             returnValues = mapOf("level" to GmLevelName.MOON.ordinal.toString())
@@ -763,6 +766,7 @@ class GmNftEventUtilsTest {
             val event =
                 buildIndexedEvent(
                     blockNumber = 104,
+                    eventType = "B3TR_GmNodeLevel",
                     params = AbiEventParameters(returnValues = emptyMap()),
                 )
 
@@ -772,6 +776,26 @@ class GmNftEventUtilsTest {
                 }
 
             assertTrue(exception.message!!.contains("Missing 'level' param in event"))
+        }
+
+        @Test
+        fun `processLevelCheckEvent throws if event type is not B3TR_GmNodeLevelCheck`() {
+            val event =
+                buildIndexedEvent(
+                    blockNumber = 105,
+                    eventType = "InvalidType",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("level" to GmLevelName.MOON.ordinal.toString())
+                        ),
+                )
+
+            val exception =
+                assertThrows<IllegalStateException> {
+                    GmNftEventUtils.processLevelCheckEvent(event, baseNft)
+                }
+
+            assertTrue(exception.message!!.contains("Invalid event type"))
         }
     }
 
@@ -933,7 +957,7 @@ class GmNftEventUtilsTest {
     }
 
     @Nested
-    inner class GroupByBlockNumber {
+    inner class GroupByBlockNumberTest {
         @Test
         fun `groupByBlockNumber groups events by blockNumber`() {
             val events =

@@ -14,7 +14,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 @Profile("b3tr", "gm-nft")
 @Service
 open class GmNftService(
-    private val gmNftRepository: GmNftRepository,
+    private val repository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
 ) {
 
@@ -34,7 +34,7 @@ open class GmNftService(
         val updatedNfts = mutableMapOf<String, GmNft>()
         val archiveNfts = mutableListOf<GmNft>()
 
-        groupByBlockNumber(events).forEach { (blockNumber, blockEvents) ->
+        groupByBlockNumber(events).forEach { (_, blockEvents) ->
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
                 val existing = resolveExistingNft(tokenId, updatedNfts)
                 val updated = processAllTokenEvents(existing, tokenEvents)
@@ -47,18 +47,18 @@ open class GmNftService(
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(updatedNfts: List<GmNft>, existingNFTs: List<GmNft>) {
+    open fun save(updated: List<GmNft>, existing: List<GmNft>) {
         // Apply updates
-        if (updatedNfts.isNotEmpty()) {
-            gmNftRepository.saveAll(updatedNfts)
+        if (updated.isNotEmpty()) {
+            repository.saveAll(updated)
         }
 
         // Apply archives
-        if (existingNFTs.isNotEmpty()) {
-            gmNftArchiveService.saveAll(existingNFTs)
+        if (existing.isNotEmpty()) {
+            gmNftArchiveService.saveAll(existing)
         }
     }
 
     private fun resolveExistingNft(tokenId: String, cache: Map<String, GmNft>): GmNft? =
-        cache[tokenId] ?: gmNftRepository.findByIdOrNull(tokenId)
+        cache[tokenId] ?: repository.findByIdOrNull(tokenId)
 }
