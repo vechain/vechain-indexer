@@ -17,7 +17,7 @@ open class VeVoteResultConfig {
         processor: VeVoteResultProcessor,
         @Value("\${indexer.startBlock.vevote}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.vevote}") syncLogInterval: Long,
-        @Value("\${veworld.contract.vevote.address}") contractAddress: String,
+        @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
         @Value("\${indexer.syncBlockBatchSize.vevote}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()

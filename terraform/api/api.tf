@@ -326,10 +326,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.blacklist.contract_address
     },
     {
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.veworld.contract.vevote.address
-    },
-    {
       name  = "AUTHORITY_CONTRACT"
       value = each.value.veworld.contract.authority_node.address
     },
@@ -448,6 +444,10 @@ module "ecs-backend-service" {
     {
       name  = "STARGATE_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
+    },
+    {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"

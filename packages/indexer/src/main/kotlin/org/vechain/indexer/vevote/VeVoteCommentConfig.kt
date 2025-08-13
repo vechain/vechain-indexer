@@ -18,7 +18,7 @@ open class VeVoteCommentConfig {
         @Value("\${indexer.startBlock.vevote}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.vevote}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.vevote}") syncBlockBatchSize: Long,
-        @Value("\${veworld.contract.vevote.address}") contractAddress: String,
+        @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("VeVoteCommentIndexer")
