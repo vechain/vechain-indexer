@@ -27,6 +27,7 @@ internal class HistoricalProposalsServiceTest {
                 steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
                 allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
             )
+        every { thorService.getBestBlock() } returns mockk { every { number } returns 9999999L }
     }
 
     @Test

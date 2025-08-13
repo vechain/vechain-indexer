@@ -10,7 +10,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.LogsFixtures
 import org.vechain.indexer.thor.ThorService
@@ -21,23 +20,16 @@ import strikt.assertions.isNotNull
 
 @ExtendWith(MockKExtension::class)
 class HistoricalProposalsProcessorTest {
-    @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var thorService: ThorService
-
+    @MockK private lateinit var historicalProposalsService: HistoricalProposalsService
     private val repository = mockk<HistoricalProposalsRepository>(relaxed = true)
     lateinit var processor: HistoricalProposalsProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        val historicalProposalsService =
-            HistoricalProposalsService(
-                thorService = thorService,
-                steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
-                allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
-            )
-        processor =
-            HistoricalProposalsProcessor(repository, mongoTemplate, historicalProposalsService)
+        every { thorService.getBestBlock() } returns mockk { every { number } returns 0L }
+        processor = HistoricalProposalsProcessor(repository, historicalProposalsService)
     }
 
     @Test
@@ -51,12 +43,20 @@ class HistoricalProposalsProcessorTest {
         // Mock thorService responses for contract calls
         every { thorService.executeReadOnlyCode(any()) } returns
             listOf(
-                mockk { every { data } returns "0x" }, // title
-                mockk { every { data } returns "0x" }, // choices
-                mockk { every { data } returns "0x" }, // vote tallies
+                mockk { every { data } returns "0x" },
+                mockk { every { data } returns "0x" },
+                mockk { every { data } returns "0x" },
             )
 
-        // call the processor with the indexed events
+        every {
+            historicalProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
+        } returns
+            events.map { event ->
+                mockk<HistoricalProposals> {
+                    every { proposalType } returns 1
+                    every { id } returns "${event.address}-1"
+                }
+            }
         processor.process(events, null)
         val proposals = proposalsSlot.captured
         expectThat(proposals).hasSize(3)
@@ -80,6 +80,17 @@ class HistoricalProposalsProcessorTest {
                 mockk { every { data } returns "0x" },
                 mockk { every { data } returns "0x" },
             )
+
+        val mockProposals =
+            events.map { event ->
+                mockk<HistoricalProposals> {
+                    every { proposalType } returns 1
+                    every { id } returns "${event.address}-1"
+                }
+            }
+        every {
+            historicalProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
+        } returns mockProposals
 
         processor.process(events, null)
         val proposals = proposalsSlot.captured
