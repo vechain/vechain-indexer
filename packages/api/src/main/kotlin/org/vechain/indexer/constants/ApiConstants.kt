@@ -14,6 +14,8 @@ const val E2E_PATH = "$API_PATH/e2e"
 const val VEVOTE_PATH = "$API_PATH/vevote"
 const val AUTHORITY_NODES_PATH = "$API_PATH/authority_endorsers"
 const val STARGATE_PATH = "$API_PATH/stargate"
+const val B3TR_PATH = "$API_PATH/b3r"
+const val GM_NFT_PATH = "$B3TR_PATH/gm-nft"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0
