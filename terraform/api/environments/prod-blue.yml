@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -47,7 +47,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start_block:
@@ -58,6 +58,7 @@ enabled_nets:
         history:                    '751'
         vevote:                     '22331866'
         stargate:                   '22044000'
+        historical_proposals:       '4510483'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -66,12 +67,14 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority_nodes:            '1000'
+        historical_proposals:       '1000'
       sync_block_batch_size:
         nfts:                       '500'
         transfers:                  '500'
         vevote:                     '500'
         stargate:                   '500'
         authority_nodes:            '500'
+        historical_proposals:       '500'
       channel_batch_size:           '5'
       pruner:
         interval:                   '43200000'
@@ -93,6 +96,7 @@ enabled_nets:
         stargate_vtho_claimed_by_account: '6'
         stargate_nft_holders_by_account: '5'
         stargate_vet_staked_by_account: '5'
+        historical_proposals:          '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -121,6 +125,9 @@ enabled_nets:
       contract:
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
+        historical_proposals:
+          steering_committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all_stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
@@ -160,6 +167,7 @@ enabled_nets:
         history:                    '15034'
         vevote:                     '22331866'
         stargate:                   '22087000'
+        historical_proposals:       '22087000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -168,12 +176,14 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority_nodes:            '1000'
+        historical_proposals:       '1000'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
         authority_nodes:            '100'
+        historical_proposals:       '100'
       channel_batch_size:           '5'
       pruner:
         interval:                   '43200000'
@@ -195,6 +205,7 @@ enabled_nets:
         stargate_vtho_claimed_by_account: '3'
         stargate_nft_holders_by_account: '4'
         stargate_vet_staked_by_account: '3'
+        historical_proposals:          '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -223,6 +234,9 @@ enabled_nets:
       contract:
         authority_node:
           address:                  '0x0000000000000000000000417574686f72697479'
+        historical_proposals:
+          steering_committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all_stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.rsmhw.mongodb.net
