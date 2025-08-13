@@ -9,67 +9,31 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object GmNftEventUtils {
-
     /**
-     * Processes a list of token events to update or create a GM NFT. It checks the type of each
-     * event and applies the appropriate processing logic based on the event type. The function
-     * ensures that all events have the same tokenId and blockNumber, and it handles minting,
-     * upgrading, transferring, and node attachment/detachment events.
+     * Routes a single GM NFT event to the appropriate handler and returns the new NFT state.
      *
-     * @param existing The existing GmNft to update, or null if creating a new one.
-     * @param tokenEvents List of IndexedEvent representing the token events to process.
-     * @return The updated or newly created GmNft.
+     * @param event The incoming indexed blockchain event for a GM NFT.
+     * @param gmContractAddress Contract address to validate transfers against.
+     * @param nft The current NFT snapshot; must be non-null for all update-style events except
+     *   mint.
+     * @return Updated NFT, or null if the event is ignored/no-op.
+     * @throws NullPointerException if [nft] is null for events that require an existing NFT (e.g.,
+     *   upgrade/attach/detach/level-check).
+     * @throws IllegalArgumentException from handlers if required event params are missing/invalid.
      */
-    fun processAllTokenEvents(existing: GmNft?, tokenEvents: List<IndexedEvent>): GmNft {
-        require(tokenEvents.isNotEmpty()) { "No events provided" }
-
-        val firstTokenId =
-            tokenEvents.first().params.getAsString("tokenId")
-                ?: error("Missing tokenId in first event")
-        val firstBlockNumber = tokenEvents.first().blockNumber
-
-        require(
-            tokenEvents.all {
-                it.params.getAsString("tokenId") == firstTokenId &&
-                    it.blockNumber == firstBlockNumber
-            }
-        ) {
-            "All events must have the same tokenId and blockNumber"
-        }
-
-        val mintEvents = tokenEvents.filter { it.eventType == "B3TR_GmMinted" }
-
-        if (existing == null) {
-            require(mintEvents.size == 1) {
-                when {
-                    mintEvents.isEmpty() -> "No mint event found for tokenId $firstTokenId"
-                    else -> "Multiple mint events found for tokenId $firstTokenId"
-                }
-            }
-        } else {
-            require(mintEvents.isEmpty()) {
-                "Mint event should not be present when existing NFT is provided"
-            }
-        }
-
-        val startingNft = existing ?: processMintedEvent(mintEvents.first())
-
-        val updatedNft =
-            tokenEvents.fold(startingNft) { nft, event ->
-                when (event.eventType) {
-                    "B3TR_GmTransfer",
-                    "B3TR_GmBurned" -> processTransferEvent(event, nft)
-                    "B3TR_GmUpgrade" -> processUpgradedEvent(event, nft)
-                    "B3TR_GmNodeAttached" -> processNodeAttachedEvent(event, nft)
-                    "B3TR_GmNodeDetached" -> processNodeDetachedEvent(event, nft)
-                    "B3TR_GmNodeLevel" -> processLevelCheckEvent(event, nft)
-                    "B3TR_GmMinted" -> nft // Already processed
-                    else -> error("Unknown event type ${event.eventType}")
-                }
+    fun processTokenEvent(event: IndexedEvent, nft: GmNft?): GmNft? {
+        val result =
+            when (event.eventType) {
+                "B3TR_GmMinted" -> processMintedEvent(event)
+                "B3TR_GmUpgrade" -> processUpgradedEvent(event, nft!!)
+                "B3TR_GmNodeAttached" -> processNodeAttachedEvent(event, nft!!)
+                "B3TR_GmNodeDetached" -> processNodeDetachedEvent(event, nft!!)
+                "B3TR_GmTransfer" -> processTransferEvent(event, nft!!)
+                "B3TR_GmNodeLevel" -> processLevelCheckEvent(event, nft!!)
+                else -> null
             }
 
-        return if (updatedNft == existing) existing
-        else updatedNft.copy(version = updatedNft.version + 1)
+        return result
     }
 
     /**
@@ -81,9 +45,6 @@ object GmNftEventUtils {
      * @return A new GmNft instance with the details from the mint event.
      */
     fun processMintedEvent(event: IndexedEvent): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmMinted")
-
         val tokenId =
             event.params.getAsString("tokenId")
                 ?: error("Missing 'tokenId' param in event: ${event.id}")
@@ -114,9 +75,6 @@ object GmNftEventUtils {
      * @return The updated GmNft with the new level and donation amount.
      */
     fun processUpgradedEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmUpgrade")
-
         val newLevelStr =
             event.params.getAsString("newLevel")
                 ?: error("Missing 'newLevel' param in event: ${event.id}")
@@ -146,9 +104,6 @@ object GmNftEventUtils {
      * @return The updated GmNft with the attached node ID and level set.
      */
     fun processNodeAttachedEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmNodeAttached")
-
         val levelStr =
             event.params.getAsString("level")
                 ?: error("Missing 'level' param in event: ${event.id}")
@@ -177,9 +132,6 @@ object GmNftEventUtils {
      * @return The updated GmNft with the attached node ID set to null and the level updated.
      */
     fun processNodeDetachedEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmNodeDetached")
-
         val levelStr =
             event.params.getAsString("level")
                 ?: error("Missing 'level' param in event: ${event.id}")
@@ -203,14 +155,10 @@ object GmNftEventUtils {
      *
      * @param event The IndexedEvent representing the transfer.
      * @param existing The existing GmNft to update.
-     * @param gmContractAddress The address of the GM contract to validate against.
      * @return The updated GmNft with the new owner and block information, or null if the event is
      *   invalid or does not match the GM contract address.
      */
-    fun processTransferEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmTransfer", "B3TR_GmBurned")
-
+    fun processTransferEvent(event: IndexedEvent, existing: GmNft): GmNft? {
         val owner =
             event.params.getAsString("to") ?: error("Missing 'to' param in event: ${event.id}")
 
@@ -232,9 +180,6 @@ object GmNftEventUtils {
      *   removed.
      */
     fun processLevelCheckEvent(event: IndexedEvent, existing: GmNft): GmNft {
-        // Check the event type
-        requireEventType(event, "B3TR_GmNodeLevel")
-
         // Process parameters
         val newLevelRaw =
             event.params.getAsString("level")?.toBigInteger()
@@ -270,22 +215,4 @@ object GmNftEventUtils {
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, tokenEvents) -> tokenEvents.sortedBy { it.blockNumber } }
-
-    /**
-     * Groups a list of events by their block number.
-     *
-     * @param events List of IndexedEvent to group.
-     * @return Map where keys are blockNumbers and values are lists of events in that block.
-     */
-    fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
-        events.groupBy { it.blockNumber }.toSortedMap()
-
-    /** Checks if the event type of the given IndexedEvent matches any of the required types. */
-    fun requireEventType(event: IndexedEvent, vararg requiredTypes: String) {
-        if (event.eventType !in requiredTypes) {
-            error(
-                "Invalid event type: ${event.eventType}. Expected: ${requiredTypes.joinToString()}"
-            )
-        }
-    }
 }

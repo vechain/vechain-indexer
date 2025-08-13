@@ -16,7 +16,6 @@ import org.vechain.indexer.thor.client.ThorClient
 @Configuration
 @Profile("b3tr", "gm-nft")
 open class GmNftConfig {
-
     @Bean
     open fun gmNftArchiveService(
         mongoTemplate: MongoTemplate

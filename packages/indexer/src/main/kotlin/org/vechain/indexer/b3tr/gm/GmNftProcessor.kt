@@ -15,16 +15,12 @@ open class GmNftProcessor(
     gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
     private val service: GmNftService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = gmNftArchiveService) {
-
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return
         }
 
         // Process the events using the service
-        val (updated, archives) = service.processEvents(matchedEvents)
-
-        // Save the updated NFTs and archives
-        service.save(updated, archives)
+        service.processEvents(matchedEvents)
     }
 }
