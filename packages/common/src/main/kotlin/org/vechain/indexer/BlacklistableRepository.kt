@@ -20,12 +20,21 @@ abstract class BlacklistableRepository<T : Any>(
         // Get blacklisted NFTs
         val blacklisted: List<NftBlacklist> = repo.findByIsBlacklisted(true)
 
-        val matchOperation =
-            Aggregation.match(
+        // Build blacklist predicate only when there are blacklisted addresses
+        val blacklistedAddresses = blacklisted.map { it.contractAddress }
+        val combinedCriteria =
+            if (blacklistedAddresses.isEmpty()) {
+                // Nothing to exclude
                 criteria
-                    .and(IndexedNft::contractAddress.name)
-                    .nin(blacklisted.map { it.contractAddress })
-            )
+            } else {
+                // Avoid "second 'contractAddress' expression" by wrapping with $and
+                Criteria()
+                    .andOperator(
+                        criteria,
+                        Criteria.where(IndexedNft::contractAddress.name).nin(blacklistedAddresses),
+                    )
+            }
+        val matchOperation = Aggregation.match(combinedCriteria)
 
         val aggregation =
             Aggregation.newAggregation(
