@@ -15,8 +15,10 @@ import org.vechain.indexer.utils.SliceBuilder
 
 @Profile("nfts")
 @Component
-open class NftRepositoryImpl(private val mongoTemplate: MongoTemplate) :
-    BlacklistableRepository<IndexedNft>(mongoTemplate, IndexedNft::class.java) {
+open class NftRepositoryImpl(
+    private val mongoTemplate: MongoTemplate,
+    repo: NftBlacklistRepository,
+) : BlacklistableRepository<IndexedNft>(mongoTemplate, repo, IndexedNft::class.java) {
 
     open fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft> =
         findNotBlacklisted(Criteria.where(IndexedNft::owner.name).`is`(owner), pageable)

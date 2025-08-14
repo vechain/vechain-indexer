@@ -282,40 +282,48 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr
     },
     {
+      name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.start-block.historical-proposals
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
-      value = each.value.indexer.start-round.b3tr.sustainable_actions
+      value = each.value.indexer.start-round.b3tr.sustainable-actions
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
-      value = each.value.indexer.sync_logger_interval.nfts
+      value = each.value.indexer.sync-logger-interval.nfts
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
-      value = each.value.indexer.sync_logger_interval.transactions
+      value = each.value.indexer.sync-logger-interval.transactions
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
-      value = each.value.indexer.sync_logger_interval.transfers
+      value = each.value.indexer.sync-logger-interval.transfers
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
-      value = each.value.indexer.sync_logger_interval.history
+      value = each.value.indexer.sync-logger-interval.history
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
-      value = each.value.indexer.sync_logger_interval.vevote
+      value = each.value.indexer.sync-logger-interval.vevote
     },
     {
       name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync_logger_interval.authority-nodes
+      value = each.value.indexer.sync-logger-interval.authority-nodes
     },
     {
       name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-        value = each.value.indexer.sync_logger_interval.stargate
+        value = each.value.indexer.sync-logger-interval.stargate
     },
     {
       name = "INDEXER_SYNC_LOGGER_INTERVAL_B3TR"
-      value = each.value.indexer.sync_logger_interval.b3tr
+      value = each.value.indexer.sync-logger-interval.b3tr
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.sync-logger-interval.historical-proposals
     },
     {
       name  = "PRUNER_INTERVAL"
@@ -323,7 +331,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
-      value = each.value.indexer.pruner.removal_chunk_size
+      value = each.value.indexer.pruner.removal-chunk-size
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -335,7 +343,23 @@ module "ecs-backend-service" {
     },
     {
       name  = "AUTHORITY_CONTRACT"
-      value = each.value.veworld.contract.authority_node.address
+      value = each.value.veworld.contract.authority-node.address
+    },
+    {
+      name  = "STEERING_COMMITTEE_ADDRESS"
+      value = each.value.veworld.contract.historical-proposals.steering-committee
+    },
+    {
+      name  = "ALL_STAKEHOLDERS_ADDRESS"
+      value = each.value.veworld.contract.historical-proposals.all-stakeholders
+     },
+    {
+      name  = "BLACKLIST_INTERVAL"
+      value = each.value.indexer.blacklist.interval
+    },
+    {
+      name  = "BLACKLIST_INITIAL_DELAY"
+      value = each.value.indexer.blacklist.initial-delay
     },
     {
       name  = "VERSION_NFTS"
@@ -379,11 +403,15 @@ module "ecs-backend-service" {
     },
     {
       name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
-      value = each.value.indexer.version.stargate_nft_holders_by_account
+      value = each.value.indexer.version.stargate-nft-holders-by-account
     },
     {
       name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
-      value = each.value.indexer.version.stargate_vet_staked_by_account
+      value = each.value.indexer.version.stargate-vet-staked-by-account
+    },
+    {
+      name = "VERSION_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.version.historical-proposals
     },
     {
       name = "VERSION_B3TR_PROPOSAL_COMMENTS"
@@ -496,6 +524,10 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
       value = each.value.indexer.sync-block-batch-size.vevote
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS"
+      value = each.value.indexer.sync-block-batch-size.historical-proposals
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"

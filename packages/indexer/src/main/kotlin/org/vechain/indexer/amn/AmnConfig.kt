@@ -17,7 +17,7 @@ open class AmnConfig {
         processor: AmnProcessor,
         @Value("\${indexer.sync-log-interval.authority-nodes}") syncLogInterval: Long,
         @Value("\${indexer.sync-block-batch-size.authority-nodes}") syncBlockBatchSize: Long,
-        @Value("\${veworld.contract.authority_node.address}") contractAddress: String,
+        @Value("\${veworld.contract.authority-node.address}") contractAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("AuthorityNodeIndexer")

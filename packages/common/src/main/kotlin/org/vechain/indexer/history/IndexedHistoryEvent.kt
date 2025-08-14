@@ -49,6 +49,8 @@ constructor(
     val delegationRewards: String? = null,
     val migrated: Boolean? = null,
     val autorenew: Boolean? = null,
+    val tokenIds: List<String>? = null,
+    val validator: String? = null,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
