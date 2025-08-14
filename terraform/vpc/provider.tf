@@ -27,11 +27,12 @@ provider "mongodbatlas" {
 }
 
 # Import outputs from the api module
+# blue green concept only applies to prod
 data "terraform_remote_state" "api-blue" {
   backend = "s3"
   config = {
-    bucket = "veworld-indexer-terraform-state-prod"
-    key    = "workspaces/prod-blue/veworld-indexer-api.tfstate"
+    bucket = "veworld-indexer-terraform-state-${terraform.workspace}"
+    key    = terraform.workspace == "prod" ? "workspaces/prod-blue/veworld-indexer-api.tfstate" : "workspaces/${terraform.workspace}/veworld-indexer-api.tfstate"
     region = "eu-west-1"
   }
 }
@@ -40,8 +41,8 @@ data "terraform_remote_state" "api-blue" {
 data "terraform_remote_state" "api-green" {
   backend = "s3"
   config = {
-    bucket = "veworld-indexer-terraform-state-prod"
-    key    = "workspaces/prod-green/veworld-indexer-api.tfstate"
+    bucket = "veworld-indexer-terraform-state-${terraform.workspace}"
+    key    = terraform.workspace == "prod" ? "workspaces/prod-green/veworld-indexer-api.tfstate" : "workspaces/${terraform.workspace}/veworld-indexer-api.tfstate"
     region = "eu-west-1"
   }
 }
