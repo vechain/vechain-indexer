@@ -5,6 +5,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByBlockNumber
+import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
+import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 
@@ -14,53 +17,36 @@ open class GmNftService(
     private val repository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
 ) {
+
     /**
-     * Processes a list of IndexedEvents related to GM NFTs.
-     *
-     * For each tokenId found in the events:
-     * - Loads the existing NFT from the repository (if any) and archives it if updates occur.
-     * - Applies each event in order to update the NFT state.
-     * - Marks NFTs for deletion if a burn event is detected.
-     *
-     * After processing all events:
-     * - Saves updated NFTs back to the repository.
-     * - Archives the previous versions of updated NFTs.
-     * - Deletes NFTs marked for removal.
+     * Processes a list of IndexedEvents related to GM NFTs and returns a pair of lists:
+     * - The first list contains updated GmNft objects to be saved.
+     * - The second list contains GmNft objects that should be archived. This method groups events
+     *   by block number and token ID, then processes each group to update or create GmNft objects.
      *
      * @param events A list of IndexedEvent objects representing NFT-related events.
+     * @return A pair of lists: the first containing updated GmNft objects, the second containing
+     *   GmNft objects to be archived.
      */
-    @Transactional(rollbackFor = [Exception::class])
-    open fun processEvents(events: List<IndexedEvent>) {
-        val nftUpdates = mutableMapOf<String, GmNft>()
-        val existingNFTs = mutableListOf<GmNft>()
-        val nftDeletions = mutableListOf<String>()
+    open fun processEvents(events: List<IndexedEvent>): Pair<List<GmNft>, List<GmNft>> {
+        if (events.isEmpty()) return emptyList<GmNft>() to emptyList()
 
-        val eventsByTokenId = GmNftEventUtils.groupByTokenId(events)
-        for ((tokenId, tokenEvents) in eventsByTokenId) {
-            var nft = resolveExistingNft(tokenId, nftUpdates)
-            if (nft != null) existingNFTs.add(nft)
-            for (event in tokenEvents) {
-                if (event.eventType == "GM_Burned") {
-                    nftDeletions.add(nft!!.id)
-                    nft = null
-                    break
-                }
+        val updatedNfts = mutableMapOf<String, GmNft>()
+        val archiveNfts = mutableListOf<GmNft>()
 
-                nft = GmNftEventUtils.processTokenEvent(event, nft)
-            }
-
-            if (nft != null) {
-                nftUpdates[nft.id] = nft.copy(version = nft.version + 1)
+        groupByBlockNumber(events).forEach { (_, blockEvents) ->
+            groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
+                val existing = resolveExistingNft(tokenId, updatedNfts)
+                val updated = processAllTokenEvents(existing, tokenEvents)
+                existing?.let { archiveNfts.add(it) }
+                updatedNfts[tokenId] = updated
             }
         }
 
-        save(nftUpdates.values.toList(), existingNFTs)
-
-        if (nftDeletions.isNotEmpty()) {
-            repository.deleteAllById(nftDeletions)
-        }
+        return updatedNfts.values.toList() to archiveNfts
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
         // Apply updates
         if (updated.isNotEmpty()) {
