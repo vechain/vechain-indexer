@@ -50,6 +50,6 @@ open class GMNftController(private val gmNftRepository: GmNftRepository) {
         if (level == null || level.name == "ALL") {
             gmNftRepository.levelCounts()
         } else {
-            listOf(GMLevelOverview(level, gmNftRepository.countByLevel(level)))
+            listOf(GMLevelOverview(level, gmNftRepository.countByLevelAndOwnerNot(level)))
         }
 }
