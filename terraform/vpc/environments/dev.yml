@@ -51,8 +51,7 @@ waf_profile:
           requirement: "MEETS_ALL"
           condition:
             - label_name_condition: "waf_glob_rl"
-              action_condition: 
-  rate_based_rules: 
+  rate_based_rules:
     - name: "rate_limit_rule"
       priority: 1
       rate_based_statement:
@@ -68,34 +67,16 @@ waf_profile:
               priority: 1
               type: "LOWERCASE"
       action: "COUNT"
-  managed_rule_group_statement_rules: 
-    - managed_rule_group_statement:
-      name: "RateBasedRule-IP-300-CreatedByCloudFront"
-      vendor_name: "AWS"
+  managed_rule_group_statement_rules:
+    - name: "RateLimitRule-IP-300-CreatedByCloudFront"
       priority: 1
       override_action: "COUNT"
-    - managed_rule_group_statement:
-      name: "AWSManagedRulesAmazonIpReputationList"
-      vendor_name: "AWS"
-      priority: 2
-      override_action: ""
-    - managed_rule_group_statement:
-      name: "AWSManagedRulesCommonRuleSet"
-      vendor_name: "AWS"
-      priority: 3
-      excluded_rule:
-        - name: "NoUserAgent_HEADER"
-      override_action: ""
-    - managed_rule_group_statement:
-      name: "AWSManagedRulesKnownBadInputsRuleSet"
-      vendor_name: "AWS"
-      priority: 4
-      override_action: ""
-    - managed_rule_group_statement:
-      name: "AWSManagedRulesSQLiRuleSet"
-      vendor_name: "AWS"
-      priority: 5
-      override_action: ""
+      managed_rule_group_statement:
+        - name: "RateBasedRule-IP-300-CreatedByCloudFront"
+          vendor_name: "AWS"
+          excluded_rule:
+            - name: "NoUserAgent_HEADER"
+
 cdn_api_paths:
   - "/api/v1/stargate/nft-holders/historic/1-hour"
   - "/api/v1/stargate/nft-holders/historic/1-day"

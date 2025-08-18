@@ -5,17 +5,18 @@ module "indexer_cachewaf" {
   env                                = local.env.environment
   project_name                       = "indexer-waf-${each.value}"
   waf_cloudfront_enable              = true
-  waf_regional_enable                = true
+  waf_regional_enable                = false
   scope                              = "CLOUDFRONT"
   global_rule                        = "testnet-glob-rl"
   logs_s3_enable                     = true
   logs_retension                     = 90
-  logging_redacted_fields            = local.env.waf_profile.logging_redacted_fields
-  logging_filter                     = local.env.waf_profile.logging_filter
+  logging_redacted_fields            = []
+  logging_filter                     = []
   rate_based_statement_rules         = local.env.waf_profile.rate_based_rules
   rate_limit                         = 1000
   managed_rule_group_statement_rules = local.env.waf_profile.managed_rule_group_statement_rules
 }
+
 
 module "indexer_cloudfront" {
   source              = "git@github.com:vechain/terraform_infrastructure_modules.git//cloudfront/assets"
