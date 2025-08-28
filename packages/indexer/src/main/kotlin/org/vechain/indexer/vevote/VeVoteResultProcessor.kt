@@ -10,21 +10,12 @@ import org.vechain.indexer.thor.model.Block
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
-    private val repository: VeVoteProposalResultRepository,
+    repository: VeVoteProposalResultRepository,
 ) : BaseProcessor(repository = repository) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 
         // Process votes in the service
-        val results = service.processVeVoteResults(matchedEvents)
-
-        // Save the results
-        if (results.isNotEmpty()) {
-            repository.saveAll(results)
-        }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        repository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        service.processVeVoteResults(matchedEvents)
     }
 }
