@@ -11,6 +11,11 @@ import org.vechain.indexer.thor.client.ThorClient
 @Configuration
 @Profile("historical-proposals")
 open class VoteTallyConfig {
+    @Value("\${veworld.contract.historical_proposals.steering_committee}")
+    private lateinit var steeringCommittee: String
+    @Value("\${veworld.contract.historical_proposals.all_stakeholders}")
+    private lateinit var allStakeholders: String
+
     @Bean
     open fun voteTally(
         thorClient: ThorClient,
