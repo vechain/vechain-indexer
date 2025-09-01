@@ -6,4 +6,6 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 
 @Profile("nfts")
 @Repository
-interface NftBlacklistRepository : BasePagingAndSortingIndexedRepository<NftBlacklist, String>
+interface NftBlacklistRepository : BasePagingAndSortingIndexedRepository<NftBlacklist, String> {
+    fun findByIsBlacklisted(blacklisted: Boolean): List<NftBlacklist>
+}

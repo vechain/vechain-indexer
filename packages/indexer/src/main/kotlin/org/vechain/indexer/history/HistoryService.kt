@@ -122,6 +122,8 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             migrated = event.params.getAsBoolean("migrated"),
             autorenew = event.params.getAsBoolean("autorenew"),
             levelId = event.params.getAsString("levelId"),
+            tokenIds = event.params.getReturnValues()["tokenIds"] as? List<String>,
+            validator = event.params.getAsString("validator"),
         )
     }
 

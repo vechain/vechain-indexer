@@ -42,6 +42,7 @@ object EventUtils {
             "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
             "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
+            "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
             else -> null // Other events will not be labeled
         }
 

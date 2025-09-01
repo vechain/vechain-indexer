@@ -42,7 +42,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -52,7 +52,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes"
+      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start_block:
@@ -63,6 +63,7 @@ enabled_nets:
         history:                    '21300000'
         vevote:                     '22331866'
         stargate:                   '22044000'
+        historical_proposals:       '4510483'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -71,15 +72,18 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority_nodes:            '1000'
+        historical_proposals:       '1000'
       sync_block_batch_size:
         nfts:                       '500'
         transfers:                  '500'
         vevote:                     '500'
         stargate:                   '500'
         authority_nodes:            '500'
+        historical_proposals:       '500'
       channel_batch_size:           '5'
       pruner:
-        removal_chunk_size: 2000
+        interval:                   '43200000'
+        removal_chunk_size:         '2000'
       blacklist:
         contract_address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
         interval:                   '180000'
@@ -97,6 +101,7 @@ enabled_nets:
         stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
         stargate_vet_staked_by_account: '1'
+        historical_proposals:           '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -109,6 +114,7 @@ enabled_nets:
           TREASURY_CONTRACT: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
           STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
           STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
+          VEVOTE_CONTRACT: '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -122,10 +128,11 @@ enabled_nets:
         confidence: '0.9'
     veworld:
       contract:
-        vevote:
-          address:                 '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority_node:
           address:                 '0x0000000000000000000000417574686f72697479'
+        historical_proposals:
+          steering_committee:      '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all_stakeholders:        '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.imcfs.mongodb.net
@@ -167,6 +174,7 @@ enabled_nets:
         history:                    '21300000'
         vevote:                     '22331866'
         stargate:                   '22087000'
+        historical_proposals:       '22087000'
       sync_logger_interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -175,15 +183,18 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority_nodes:            '1000'
+        historical_proposals:       '100'
       sync_block_batch_size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
         authority_nodes:            '100'
+        historical_proposals:       '100'
       channel_batch_size:           '5'
       pruner:
-        removal_chunk_size: 2000
+        interval:                   '43200000'
+        removal_chunk_size:         '2000'
       blacklist:
         contract_address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
         interval:                   '180000'
@@ -201,6 +212,7 @@ enabled_nets:
         stargate_vtho_claimed_by_account: '2'
         stargate_nft_holders_by_account: '2'
         stargate_vet_staked_by_account: '1'
+        historical_proposals:           '1'
       business-event:
         substitutions:
           B3TR_CONTRACT:             '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -213,6 +225,7 @@ enabled_nets:
           TREASURY_CONTRACT:         '0x039893ebe092a2d22b08e2b029735d211bff7f50'
           STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
           STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
+          VEVOTE_CONTRACT:             '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -226,10 +239,11 @@ enabled_nets:
         confidence: "0.9"
     veworld:
       contract:
-        vevote:
-          address:                '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority_node:
           address:                '0x0000000000000000000000417574686f72697479'
+        historical_proposals:
+          steering_committee:     '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all_stakeholders:       '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.imcfs.mongodb.net

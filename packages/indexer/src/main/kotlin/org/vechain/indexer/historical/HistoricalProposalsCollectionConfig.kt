@@ -1,4 +1,4 @@
-package org.vechain.indexer.nft
+package org.vechain.indexer.historical
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,41 +12,33 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("nfts")
+@Profile("historical-proposals")
 @Configuration
-open class NftBlacklistCollectionConfig(
+open class HistoricalProposalsCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        NftBlacklist::class.java,
-        NftBlacklistArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricalProposals::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.nft_blacklist}") private val version: Int = 1
+    @Value("\${indexer.version.historical_proposals}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                NftBlacklist::class.java,
-                version,
-            )
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            HistoricalProposals::class.java,
+            version,
+        )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(NftBlacklistArchive::class.java)
+        this.ensureCollection()
 
-        ensureCollection()
-
+        logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "nft_blacklist__id_1_blacklisted_1" to
-                    Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC)
+                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
+                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
             )
         )
     }

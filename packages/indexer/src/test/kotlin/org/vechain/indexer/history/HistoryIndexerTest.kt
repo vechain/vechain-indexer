@@ -424,6 +424,7 @@ class HistoryIndexerTest {
                     "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",
                     "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
                     "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
+                    "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
                 ),
         )
 }

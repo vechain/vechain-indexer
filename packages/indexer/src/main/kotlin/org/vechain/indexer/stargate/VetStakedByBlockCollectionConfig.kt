@@ -1,6 +1,7 @@
 package org.vechain.indexer.stargate
 
 import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
@@ -16,8 +17,9 @@ import org.vechain.indexer.version.IndexerVersionService
 @Configuration
 open class VetStakedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, VetStakedByBlock::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, VetStakedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.stargate_vet_staked_by_block}") private val version: Int = 1
@@ -34,9 +36,11 @@ open class VetStakedByBlockCollectionConfig(
         ensureCollection()
 
         // Ensure indexes
-        ensureIndex(
-            "blockTimestamp_1",
-            Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+        ensureIndexes(
+            listOf(
+                "blockTimestamp_1" to
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC)
+            )
         )
     }
 }
