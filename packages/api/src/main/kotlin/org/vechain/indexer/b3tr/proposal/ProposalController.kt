@@ -23,8 +23,7 @@ import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
 @Profile("b3tr", "b3tr-proposal")
-@Tag(name = "B3TR", description = "B3TR related endpoints.")
-@Tag(name = "B3TR Governance Proposals", description = "Query voting data on VeBetterDAO.")
+@Tag(name = "B3TR - Governance Proposals", description = "Query voting data on VeBetterDAO.")
 @Validated
 @RestController
 @RequestMapping(PROPOSAL_PATH)

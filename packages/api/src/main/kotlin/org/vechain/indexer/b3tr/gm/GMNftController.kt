@@ -16,7 +16,10 @@ import org.vechain.indexer.constants.GM_NFT_PATH
 import org.vechain.indexer.exception.ExceptionResponse
 
 @Profile("b3tr", "b3tr-gm-nft")
-@Tag(name = "Galaxy Member", description = "Endpoints for Galaxy Member level statistics.")
+@Tag(
+    name = "B3TR - Galaxy Member NFTs",
+    description = "Endpoints for Galaxy Member level statistics.",
+)
 @Validated
 @RestController
 @RequestMapping(GM_NFT_PATH)

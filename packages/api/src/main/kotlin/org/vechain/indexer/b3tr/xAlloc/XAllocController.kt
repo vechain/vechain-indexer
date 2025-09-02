@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.X_ALLOC_PATH
 
 @Profile("b3tr", "b3tr-x-alloc")
-@Tag(name = "B3TR", description = "B3TR related endpoints.")
-@Tag(name = "B3TR X-Allocations", description = "Query XAllocation voting data on VeBetterDAO.")
+@Tag(name = "B3TR - X-Allocations", description = "Query XAllocation voting data on VeBetterDAO.")
 @Validated
 @RestController
 @RequestMapping(X_ALLOC_PATH)
