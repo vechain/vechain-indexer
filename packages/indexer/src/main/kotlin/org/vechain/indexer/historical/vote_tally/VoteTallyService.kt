@@ -1,7 +1,7 @@
 package org.vechain.indexer.historical.vote_tally
 
+import jakarta.annotation.PostConstruct
 import kotlin.jvm.java
-import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.historical.HistoricalProposals
 import org.vechain.indexer.thor.ThorService
 
 @Profile("historical-proposals")
@@ -22,34 +23,24 @@ open class VoteTallyService(
     @Value("\${veworld.contract.historical_proposals.all_stakeholders}")
     private val allStakeholdersAddress: String,
     private val mongoTemplate: MongoTemplate,
+    @Value("\${indexer.historical_proposals.triggerAggregation:false}")
+    private var shouldTriggerAggregation: Boolean = false,
 ) {
-    private var bestBlockNumber: Long = 0
-    private var hasReachedCurrentBlock = false
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun processNewVotes(events: List<IndexedEvent>, currentBlockNumber: Long?): List<VoteTally> {
+    @PostConstruct
+    fun init() {
         logger.info(
-            "Processing votes. hasReachedCurrentBlock: $hasReachedCurrentBlock, bestBlockNumber: $bestBlockNumber"
+            "VoteTallyService initialized with shouldTriggerAggregation: $shouldTriggerAggregation"
         )
-
-        if (!hasReachedCurrentBlock) {
-            val bestBlock = thorService.getBestBlock()
-            bestBlockNumber = bestBlock.number
-            val blockCheck = currentBlockNumber ?: events.firstOrNull()?.blockNumber
-
-            logger.info("Block check: $blockCheck, bestBlockNumber: $bestBlockNumber")
-
-            if (blockCheck != null && blockCheck >= bestBlockNumber) {
-                logger.info("Vote tally indexer has reached the current $bestBlockNumber")
-                aggregateAndUpdateProposals()
-                hasReachedCurrentBlock = true
-                return emptyList()
-            }
+        if (shouldTriggerAggregation) {
+            logger.info("Manually triggering aggregation")
+            aggregateAndUpdateProposals()
         }
+    }
 
-        if (hasReachedCurrentBlock) {
-            return emptyList()
-        }
+    fun processNewVotes(events: List<IndexedEvent>, currentBlockNumber: Long?): List<VoteTally> {
+        logger.info("Processing ${events.size} votes")
 
         return events.mapNotNull { event ->
             try {
@@ -68,74 +59,132 @@ open class VoteTallyService(
         }
     }
 
-    private fun aggregateAndUpdateProposals() {
+    fun updateProposalTallies(proposalId: String) {
+        logger.info("Updating tallies for proposal $proposalId")
+
+        // Get all votes for this proposal
+        val votes =
+            mongoTemplate.find(
+                Query.query(Criteria.where("proposalId").`is`(proposalId)),
+                VoteTally::class.java,
+            )
+
+        if (votes.isEmpty()) {
+            logger.info("No votes found for proposal $proposalId")
+            return
+        }
+
+        // Get the first vote to determine the contract address
+        val firstVote = votes.first()
+        val contractAddress =
+            when {
+                firstVote.endorser != null -> allStakeholdersAddress
+                else -> steeringCommitteeAddress
+            }
+
+        val proposalFullId = "$contractAddress-$proposalId".lowercase()
+
+        // Get the proposal object
+        val proposal =
+            mongoTemplate.findOne(
+                Query.query(Criteria.where("_id").`is`(proposalFullId)),
+                HistoricalProposals::class.java,
+            )
+
+        if (proposal == null) {
+            logger.warn("No proposal found with ID $proposalFullId")
+            return
+        }
+
+        val tallies = calculateTalliesFromVotes(votes, proposal)
+        logger.info(
+            "Calculated tallies for proposal $proposalId: ${tallies.tallies}, total: ${tallies.total}"
+        )
+
+        try {
+            mongoTemplate.updateFirst(
+                Query.query(Criteria.where("_id").`is`(proposalFullId)),
+                Update().set("voteTallies", tallies.tallies).set("totalVotes", tallies.total),
+                HistoricalProposals::class.java,
+            )
+            logger.info("Successfully updated tallies for proposal $proposalId")
+        } catch (e: Exception) {
+            logger.error("Error updating proposal $proposalId: ${e.message}", e)
+        }
+    }
+
+    fun aggregateAndUpdateProposals() {
         logger.info("Starting vote tally aggregation...")
         val startTime = System.currentTimeMillis()
 
-        val pipeline =
-            listOf(
-                // unwind the already decoded selectedOptions array
-                """
-            {
-                ${'$'}unwind: "${'$'}selectedOptions"
-            }
-            """,
-                // Group by proposalId and option to count votes
-                """
-            {
-                ${'$'}group: {
-                    _id: {
-                        proposalId: "${'$'}proposalId",
-                        option: "${'$'}selectedOptions"
-                    },
-                    count: { ${'$'}sum: 1 }
-                }
-            }
-            """,
-                // Reshape the output
-                """
-            {
-                ${'$'}project: {
-                    _id: 0,
-                    proposalId: "${'$'}_id.proposalId",
-                    option: "${'$'}_id.option",
-                    count: 1
-                }
-            }
-            """,
-            )
+        val count = mongoTemplate.getCollection("historical-vote-tally").countDocuments()
+        logger.info("Found $count documents in historical-vote-tally collection")
 
-        // Execute the aggregation using the raw pipeline above
-        val results =
-            mongoTemplate
-                .getCollection("historical-vote-tally")
-                .aggregate(pipeline.map { Document.parse(it) })
-                .into(ArrayList<Document>())
-                .map {
-                    ResultClass(
-                        it.getString("proposalId"),
-                        it.getInteger("option"),
-                        it.getInteger("count"),
+        if (count == 0L) {
+            logger.warn("No data to aggregate, skipping")
+            return
+        }
+
+        // Get all proposals
+        val proposals = mongoTemplate.findAll(HistoricalProposals::class.java)
+        logger.info("Found ${proposals.size} proposals to update")
+
+        proposals.forEach { proposal ->
+            // Get all votes for this proposal
+            val votes =
+                mongoTemplate.find(
+                    Query.query(Criteria.where("proposalId").`is`(proposal.proposalId)),
+                    VoteTally::class.java,
+                )
+
+            if (votes.isNotEmpty()) {
+                val tallies = calculateTalliesFromVotes(votes, proposal)
+
+                try {
+                    mongoTemplate.updateFirst(
+                        Query.query(Criteria.where("_id").`is`(proposal.id)),
+                        Update()
+                            .set("voteTallies", tallies.tallies)
+                            .set("totalVotes", tallies.total),
+                        HistoricalProposals::class.java,
                     )
+                    logger.info("Updated tallies for proposal ${proposal.proposalId}")
+                } catch (e: Exception) {
+                    logger.error("Error updating proposal ${proposal.proposalId}: ${e.message}", e)
                 }
+            }
+        }
 
         val duration = System.currentTimeMillis() - startTime
-        logger.info("Vote tallying complete. Processed ${results.size} results in ${duration}ms")
+        logger.info("Vote tallying complete in ${duration}ms")
+    }
 
-        // Group results by proposalId for easier processing
-        val resultsByProposal = results.groupBy { it.proposalId }
-
-        // Now update the tallies
-        resultsByProposal.forEach { (proposalId, optionResults) ->
-            val optionCounts = optionResults.associate { it.option to it.count }
-
-            // Update all VoteTally documents for this proposal with the tally
-            val query = Query.query(Criteria.where("proposalId").`is`(proposalId))
-            val update = Update().set("tally", optionCounts)
-
-            mongoTemplate.updateMulti(query, update, VoteTally::class.java)
-            logger.info("Updated tally for proposal $proposalId in VoteTally documents")
+    private fun calculateTalliesFromVotes(
+        votes: List<VoteTally>,
+        proposal: HistoricalProposals,
+    ): TallyResult {
+        // Get number of choices from proposal
+        val numChoices = proposal.choices?.size ?: 0
+        if (numChoices == 0) {
+            logger.warn("Proposal ${proposal.proposalId} has no choices")
+            return TallyResult(emptyList(), 0)
         }
+
+        // Create array with size equal to number of choices
+        val tallies = MutableList(numChoices) { 0 }
+
+        // Count votes for each option
+        votes.forEach { vote ->
+            vote.selectedOptions.forEach { option ->
+                // Adjust for 0-based index since options start at 1
+                val index = option - 1
+                if (index in tallies.indices) {
+                    tallies[index] = tallies[index] + 1
+                }
+            }
+        }
+
+        return TallyResult(tallies = tallies, total = votes.size)
     }
 
     private fun processSteeringCommitteeVote(event: IndexedEvent): VoteTally? {
@@ -143,10 +192,8 @@ open class VoteTallyService(
         val proposalId = param["proposalId"]?.toString() ?: return null
         val voter = param["voter"]?.toString() ?: return null
         val optionRaw = param["options"]?.toString() ?: return null
-        val optionValue = optionRaw.toInt()
-
+        val optionValue = optionRaw.toLong()
         val selectedOptions = decodeOptions(optionValue)
-        val weight = selectedOptions.size
 
         return VoteTally(
             id = "${proposalId}_${voter}",
@@ -155,8 +202,6 @@ open class VoteTallyService(
             selectedOptions = selectedOptions,
             tokenId = null,
             endorser = null,
-            weight = weight,
-            tally = null,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
@@ -170,10 +215,8 @@ open class VoteTallyService(
         val endorser = params["endorser"]?.toString() ?: return null
         val tokenId = params["tokenId"]?.toString() ?: return null
         val optionRaw = params["options"]?.toString() ?: return null
-        val optionValue = optionRaw.toInt()
-
+        val optionValue = optionRaw.toLong()
         val selectedOptions = decodeOptions(optionValue)
-        val weight = selectedOptions.size
 
         return VoteTally(
             id = "${proposalId}_${sender}",
@@ -182,24 +225,23 @@ open class VoteTallyService(
             selectedOptions = selectedOptions,
             tokenId = tokenId,
             endorser = endorser,
-            weight = weight,
-            tally = null,
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
         )
     }
 
-    // Helper function to decode options bitmask
-    private fun decodeOptions(optionValue: Int): List<Int> {
+    private fun decodeOptions(optionValue: Long): List<Int> {
         val selectedOptions = mutableListOf<Int>()
         for (i in 0 until 32) {
-            if ((optionValue and (1 shl i)) != 0) {
+            if ((optionValue and (1L shl i)) != 0L) {
                 selectedOptions.add(i + 1)
             }
         }
         return selectedOptions
     }
 }
+
+private data class TallyResult(val tallies: List<Int>, val total: Int)
 
 private data class ResultClass(val proposalId: String, val option: Int, val count: Int)

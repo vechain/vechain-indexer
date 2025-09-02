@@ -3,6 +3,7 @@ package org.vechain.indexer.historical
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.contracts.abi.HistoricalProposalABI
 import org.vechain.indexer.event.AbiLoader
@@ -20,6 +21,7 @@ open class HistoricalProposalsService(
     private val steeringCommitteeAddress: String,
     @Value("\${veworld.contract.historical_proposals.all_stakeholders}")
     private val allStakeholdersAddress: String,
+    private val mongoTemplate: MongoTemplate,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val cachedAbi: MutableMap<String, AbiElement> = mutableMapOf()
@@ -59,12 +61,28 @@ open class HistoricalProposalsService(
                 return null
             }
 
-            val isSteeringCommittee = contractAddress.equals(steeringCommitteeAddress, true)
             val params = event.params.getReturnValues()
             val proposalId = params["proposalId"]?.toString() ?: return null
-            val proposalType = params["ptype"] as? Int
 
-            val contractData = fetchContractData(contractAddress, proposalId, isSteeringCommittee)
+            // Check if this proposal already exists
+            val existingProposal =
+                mongoTemplate.findById(
+                    "$contractAddress-$proposalId",
+                    HistoricalProposals::class.java,
+                )
+
+            if (existingProposal != null) {
+                logger.info("Returning existing proposal $proposalId")
+                return existingProposal
+            }
+
+            // Only fetch basic contract data for new proposals
+            val contractData =
+                fetchContractData(
+                    contractAddress,
+                    proposalId,
+                    contractAddress.equals(steeringCommitteeAddress, true),
+                )
 
             return HistoricalProposals(
                 id = "$contractAddress-$proposalId",
@@ -72,14 +90,14 @@ open class HistoricalProposalsService(
                 createdDate = event.blockTimestamp.toString(),
                 proposer = contractData.basicInfo?.get("creator") as? String,
                 title = contractData.basicInfo?.get("title") as? String,
-                proposalType = proposalType,
+                proposalType = params["ptype"] as? Int,
                 choices = extractChoices(contractData.basicInfo, contractAddress),
                 createTime = (contractData.basicInfo?.get("createTime") as? Number)?.toLong(),
                 votingStartTime =
                     (contractData.condition?.get("votingStartTime") as? Number)?.toLong(),
                 votingEndTime = (contractData.condition?.get("votingEndTime") as? Number)?.toLong(),
-                voteTallies = extractVoteTallies(contractData.tally, contractAddress),
-                totalVotes = calculateTotalVotes(contractData.tally, contractAddress),
+                voteTallies = emptyList(),
+                totalVotes = 0,
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,

@@ -33,7 +33,6 @@ open class VoteTallyCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "id_1" to Index().on("id", Sort.Direction.ASC),
                 "proposalId_1" to Index().on("proposalId", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
             )

@@ -21,8 +21,11 @@ open class HistoricalProposalsProcessor(
         val proposals: List<HistoricalProposals> =
             historicalProposalsService.processNewProposals(matchedEvents, block?.number)
 
-        if (proposals.isNotEmpty()) {
-            repository.saveAll(proposals)
+        // Only save proposals that don't already have tallyFixed = true
+        val proposalsToSave = proposals.filter { !it.tallyFixed }
+
+        if (proposalsToSave.isNotEmpty()) {
+            repository.saveAll(proposalsToSave)
         }
     }
 

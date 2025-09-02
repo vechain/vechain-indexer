@@ -2,6 +2,7 @@ package org.vechain.indexer.historical.vote_tally
 
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -12,6 +13,7 @@ import org.vechain.indexer.thor.model.Block
 open class VoteTallyProcessor(
     private val repository: VoteTallyRepository,
     private val voteTallyService: VoteTallyService,
+    private val mongoTemplate: MongoTemplate,
 ) : BaseProcessor(repository = repository) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -21,12 +23,18 @@ open class VoteTallyProcessor(
         }
         val votes = voteTallyService.processNewVotes(matchedEvents, block?.number)
         logger.info("VoteTallyProcessor: Got ${votes.size} votes to save")
+
         if (votes.isNotEmpty()) {
             try {
                 repository.saveAll(votes)
                 logger.info("VoteTallyProcessor: Saved ${votes.size} votes")
+
+                val proposalIds = votes.map { it.proposalId }.distinct()
+                proposalIds.forEach { proposalId ->
+                    voteTallyService.updateProposalTallies(proposalId)
+                }
             } catch (e: Exception) {
-                logger.error("Error saving votes: ${e.message}", e)
+                logger.error("Error processing votes: ${e.message}", e)
             }
         }
     }

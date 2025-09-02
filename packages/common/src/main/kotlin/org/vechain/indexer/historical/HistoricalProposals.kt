@@ -18,6 +18,7 @@ data class HistoricalProposals(
     val votingEndTime: Long?,
     val voteTallies: List<Long>?,
     val totalVotes: Long?,
+    val tallyFixed: Boolean = false,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
