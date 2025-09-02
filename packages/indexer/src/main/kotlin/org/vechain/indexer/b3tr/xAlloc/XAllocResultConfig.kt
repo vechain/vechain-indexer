@@ -43,11 +43,11 @@ open class XAllocResultConfig {
         processor: XAllocResultProcessor,
         xAllocResultPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.start-block.b3tr}") startBlock: Long,
+        @Value("\${indexer.start-block.b3tr-x-alloc-result}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
-        @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
-        b3trGovernorContract: String,
+        @Value("\${business-event.substitutions.X_ALLOC_VOTING_CONTRACT}")
+        xAllocVotingContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -60,8 +60,8 @@ open class XAllocResultConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(listOf("B3TR_ProposalVote"))
-            .businessEventContracts(listOf(b3trGovernorContract))
+            .businessEventNames(listOf("B3TR_XAllocationVote"))
+            .businessEventContracts(listOf(xAllocVotingContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

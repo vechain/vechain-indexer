@@ -1,12 +1,13 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import java.math.BigInteger
-import java.util.Locale.getDefault
+import java.util.Locale
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-object VoteEventUtils {
+object ProposalEventUtils {
     fun getProposalId(event: IndexedEvent): String =
         event.params.getAsString("proposalId")
             ?: error("Missing param 'proposalId' in event: ${event.id}")
@@ -15,7 +16,7 @@ object VoteEventUtils {
         event.params.getAsString("from") ?: error("Missing 'from' param in event: ${event.id}")
 
     fun getSupport(event: IndexedEvent): Support =
-        Support.fromValue(
+        Support.Companion.fromValue(
             event.params.getAsInt("support")
                 ?: error("Missing param 'support' in event: ${event.id}")
         ) ?: error("Invalid 'support' value in event: ${event.id}")
@@ -34,7 +35,7 @@ object VoteEventUtils {
         events
             .map {
                 it.params.getAsString("proposalId")?.let { proposalId ->
-                    proposalId.lowercase(getDefault()) to it
+                    proposalId.lowercase(Locale.getDefault()) to it
                 } ?: error("Missing proposalId in event: ${it.id}")
             }
             .groupBy({ it.first }, { it.second })

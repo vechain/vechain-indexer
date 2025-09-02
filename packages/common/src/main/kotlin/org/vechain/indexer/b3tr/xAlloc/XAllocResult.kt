@@ -8,7 +8,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.thor.model.Block
 
 @Document(collection = "x_alloc_results")
 data class XAllocResult
@@ -26,17 +25,19 @@ constructor(
 ) : VersionedDocument {
     constructor(
         version: Int,
-        block: Block,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
         roundId: Int,
         appId: String,
         voters: Long,
         totalVotes: BigInteger,
     ) : this(
         version = version,
-        id = DigestUtils.sha1Hex("$roundId-$appId"),
-        blockId = block.id,
-        blockNumber = block.number,
-        blockTimestamp = block.timestamp,
+        id = calculateId(roundId, appId),
+        blockId = blockId,
+        blockNumber = blockNumber,
+        blockTimestamp = blockTimestamp,
         roundId = roundId,
         appId = appId,
         voters = voters,
@@ -44,6 +45,11 @@ constructor(
     )
 
     @JsonIgnore override fun getDocumentId(): String = id
+
+    companion object {
+        fun calculateId(roundId: Int, appId: String): String =
+            DigestUtils.sha1Hex("$roundId-$appId")
+    }
 }
 
 @Document(collection = "x_alloc_result_archives")

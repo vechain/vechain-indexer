@@ -6,9 +6,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
+import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
+import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
-import org.vechain.indexer.b3tr.voting.repository.ProposalCommentRepository
-import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
 import org.vechain.indexer.thor.HexUtils
 
 @Profile("b3tr", "b3tr-proposal")

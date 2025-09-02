@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -11,11 +11,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.proposal.ProposalResult
 import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
-import org.vechain.indexer.b3tr.proposal.ProposalResultArchive
-import org.vechain.indexer.b3tr.proposal.ProposalResultService
-import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
+import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 

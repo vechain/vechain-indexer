@@ -3,7 +3,7 @@ package org.vechain.indexer.b3tr.xAlloc
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
-import org.vechain.indexer.b3tr.voting.repository.XAllocResultRepository
+import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Service

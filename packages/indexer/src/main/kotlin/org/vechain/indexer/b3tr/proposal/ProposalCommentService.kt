@@ -8,13 +8,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getPower
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getProposalId
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getReason
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getSupport
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getVoter
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getWeight
-import org.vechain.indexer.b3tr.voting.repository.ProposalCommentRepository
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getReason
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getSupport
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getVoter
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
+import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")

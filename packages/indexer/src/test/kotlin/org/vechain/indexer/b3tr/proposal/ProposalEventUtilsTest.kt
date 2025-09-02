@@ -1,13 +1,14 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 
-class VoteEventUtilsTest {
+class ProposalEventUtilsTest {
     @Nested
     inner class GetProposalIdTest {
         @Test
@@ -17,7 +18,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("proposalId" to "12345")),
                 )
-            assertEquals("12345", VoteEventUtils.getProposalId(event))
+            assertEquals("12345", ProposalEventUtils.getProposalId(event))
         }
 
         @Test
@@ -27,7 +28,9 @@ class VoteEventUtilsTest {
                     id = "event2",
                     params = AbiEventParameters(mapOf("notproposalid" to "243423")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getProposalId(event) }
+            assertThrows(IllegalStateException::class.java) {
+                ProposalEventUtils.getProposalId(event)
+            }
         }
 
         @Test
@@ -37,7 +40,9 @@ class VoteEventUtilsTest {
                     id = "event3",
                     params = AbiEventParameters(returnValues = mapOf("ProposalId" to "67890")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getProposalId(event) }
+            assertThrows(IllegalStateException::class.java) {
+                ProposalEventUtils.getProposalId(event)
+            }
         }
     }
 
@@ -50,7 +55,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("from" to "0x123")),
                 )
-            assertEquals("0x123", VoteEventUtils.getVoter(event))
+            assertEquals("0x123", ProposalEventUtils.getVoter(event))
         }
 
         @Test
@@ -60,7 +65,7 @@ class VoteEventUtilsTest {
                     id = "event2",
                     params = AbiEventParameters(mapOf("notfrom" to "0x456")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getVoter(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getVoter(event) }
         }
 
         @Test
@@ -70,7 +75,7 @@ class VoteEventUtilsTest {
                     id = "event3",
                     params = AbiEventParameters(returnValues = mapOf("From" to "0x789")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getVoter(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getVoter(event) }
         }
     }
 
@@ -84,7 +89,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to 0)),
                 )
-            assertEquals(Support.AGAINST, VoteEventUtils.getSupport(event))
+            assertEquals(Support.AGAINST, ProposalEventUtils.getSupport(event))
         }
 
         @Test
@@ -94,7 +99,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to 1)),
                 )
-            assertEquals(Support.FOR, VoteEventUtils.getSupport(event))
+            assertEquals(Support.FOR, ProposalEventUtils.getSupport(event))
         }
 
         @Test
@@ -104,7 +109,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to 2)),
                 )
-            assertEquals(Support.ABSTAIN, VoteEventUtils.getSupport(event))
+            assertEquals(Support.ABSTAIN, ProposalEventUtils.getSupport(event))
         }
 
         @Test
@@ -114,7 +119,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to "notanint")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -124,7 +129,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to -1)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -134,7 +139,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("support" to 3)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -144,7 +149,7 @@ class VoteEventUtilsTest {
                     id = "event2",
                     params = AbiEventParameters(mapOf("notsupport" to 0)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -154,7 +159,7 @@ class VoteEventUtilsTest {
                     id = "event3",
                     params = AbiEventParameters(returnValues = mapOf("support" to 3)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -164,7 +169,7 @@ class VoteEventUtilsTest {
                     id = "event4",
                     params = AbiEventParameters(mapOf("notsupport" to 2)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
 
         @Test
@@ -174,7 +179,7 @@ class VoteEventUtilsTest {
                     id = "event4",
                     params = AbiEventParameters(returnValues = mapOf("Support" to 2)),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getSupport(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getSupport(event) }
         }
     }
 
@@ -187,7 +192,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("voteWeight" to "1000")),
                 )
-            assertEquals(BigInteger("1000"), VoteEventUtils.getWeight(event))
+            assertEquals(BigInteger("1000"), ProposalEventUtils.getWeight(event))
         }
 
         @Test
@@ -197,7 +202,7 @@ class VoteEventUtilsTest {
                     id = "event2",
                     params = AbiEventParameters(mapOf("notweight" to "2000")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getWeight(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getWeight(event) }
         }
 
         @Test
@@ -207,7 +212,7 @@ class VoteEventUtilsTest {
                     id = "event3",
                     params = AbiEventParameters(returnValues = mapOf("VoteWeight" to "3000")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getWeight(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getWeight(event) }
         }
 
         @Test
@@ -218,7 +223,7 @@ class VoteEventUtilsTest {
                     params =
                         AbiEventParameters(returnValues = mapOf("voteWeight" to "notabiginteger")),
                 )
-            assertThrows(NumberFormatException::class.java) { VoteEventUtils.getWeight(event) }
+            assertThrows(NumberFormatException::class.java) { ProposalEventUtils.getWeight(event) }
         }
     }
 
@@ -231,7 +236,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("votePower" to "5000")),
                 )
-            assertEquals(BigInteger("5000"), VoteEventUtils.getPower(event))
+            assertEquals(BigInteger("5000"), ProposalEventUtils.getPower(event))
         }
 
         @Test
@@ -241,7 +246,7 @@ class VoteEventUtilsTest {
                     id = "event2",
                     params = AbiEventParameters(mapOf("notpower" to "6000")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getPower(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getPower(event) }
         }
 
         @Test
@@ -251,7 +256,7 @@ class VoteEventUtilsTest {
                     id = "event3",
                     params = AbiEventParameters(returnValues = mapOf("VotePower" to "7000")),
                 )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getPower(event) }
+            assertThrows(IllegalStateException::class.java) { ProposalEventUtils.getPower(event) }
         }
 
         @Test
@@ -262,7 +267,7 @@ class VoteEventUtilsTest {
                     params =
                         AbiEventParameters(returnValues = mapOf("votePower" to "notabiginteger")),
                 )
-            assertThrows(NumberFormatException::class.java) { VoteEventUtils.getPower(event) }
+            assertThrows(NumberFormatException::class.java) { ProposalEventUtils.getPower(event) }
         }
     }
 
@@ -275,7 +280,7 @@ class VoteEventUtilsTest {
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("reason" to "test reason")),
                 )
-            assertEquals("test reason", VoteEventUtils.getReason(event))
+            assertEquals("test reason", ProposalEventUtils.getReason(event))
         }
 
         @Test
@@ -285,7 +290,7 @@ class VoteEventUtilsTest {
                     id = "event4",
                     params = AbiEventParameters(returnValues = mapOf("reason" to "")),
                 )
-            assertEquals("", VoteEventUtils.getReason(event))
+            assertEquals("", ProposalEventUtils.getReason(event))
         }
     }
 
@@ -309,7 +314,7 @@ class VoteEventUtilsTest {
                     params = AbiEventParameters(returnValues = mapOf("proposalId" to "456")),
                 )
 
-            val groupedEvents = VoteEventUtils.groupByProposalId(listOf(event1, event2, event3))
+            val groupedEvents = ProposalEventUtils.groupByProposalId(listOf(event1, event2, event3))
 
             assertEquals(2, groupedEvents.size)
             assertTrue(groupedEvents.containsKey("123"))
@@ -326,7 +331,7 @@ class VoteEventUtilsTest {
                     params = AbiEventParameters(mapOf("notproposalid" to "value")),
                 )
             assertThrows(IllegalStateException::class.java) {
-                VoteEventUtils.groupByProposalId(listOf(event))
+                ProposalEventUtils.groupByProposalId(listOf(event))
             }
         }
     }
@@ -351,7 +356,7 @@ class VoteEventUtilsTest {
                     params = AbiEventParameters(returnValues = mapOf("support" to 2)),
                 )
 
-            val groupedEvents = VoteEventUtils.groupBySupport(listOf(event1, event2, event3))
+            val groupedEvents = ProposalEventUtils.groupBySupport(listOf(event1, event2, event3))
 
             assertEquals(3, groupedEvents.size)
             assertTrue(groupedEvents.containsKey(Support.AGAINST))
@@ -370,7 +375,7 @@ class VoteEventUtilsTest {
                     params = AbiEventParameters(mapOf("notsupport" to "value")),
                 )
             assertThrows(IllegalStateException::class.java) {
-                VoteEventUtils.groupBySupport(listOf(event))
+                ProposalEventUtils.groupBySupport(listOf(event))
             }
         }
     }

@@ -8,15 +8,14 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getSupport
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
-import org.vechain.indexer.b3tr.voting.Support
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getPower
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getProposalId
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getSupport
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.getWeight
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.groupByProposalId
-import org.vechain.indexer.b3tr.voting.VoteEventUtils.groupBySupport
-import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
+import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
 
@@ -45,10 +44,11 @@ open class ProposalResultService(
         groupByBlockNumber(events).forEach { (_, blockEvents) ->
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
                 groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
-                    val existing = resolveExisting(proposalId, support, updatedResult)
-                    val updated = processEvents(existing, supportEvents)
+                    val recordId = calculateId(proposalId, support)
+                    val existing = resolveExisting(recordId, updatedResult)
+                    val updated = creatOrUpdateExisting(supportEvents, existing)
                     existing?.let { archiveResult.add(it) }
-                    updatedResult[proposalId] = updated
+                    updatedResult[recordId] = updated
                 }
             }
         }
@@ -89,9 +89,9 @@ open class ProposalResultService(
      * @param events The list of IndexedEvents to process.
      * @return A ProposalResult containing the aggregated data from the events.
      */
-    protected fun processEvents(
-        existing: ProposalResult?,
+    protected fun creatOrUpdateExisting(
         events: List<IndexedEvent>,
+        existing: ProposalResult?,
     ): ProposalResult {
         require(events.isNotEmpty()) { "No events provided" }
 
@@ -136,9 +136,7 @@ open class ProposalResultService(
     }
 
     protected fun resolveExisting(
-        proposalId: String,
-        support: Support,
+        recordId: String,
         cache: Map<String, ProposalResult>,
-    ): ProposalResult? =
-        cache[proposalId] ?: repository.findByIdOrNull(calculateId(proposalId, support))
+    ): ProposalResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

@@ -59,6 +59,7 @@ enabled_nets:
         vevote:                     '22331866'
         stargate:                   '22044000'
         b3tr:                       '18868500'
+        b3tr-x-alloc-result:        '18926115'
         b3tr-proposal:              '19107910'
         historical-proposals:       '4510483'
       start-round:
@@ -189,6 +190,7 @@ enabled_nets:
         vevote:                     '22331866'
         stargate:                   '22087000'
         b3tr:                       '19661986'
+        b3tr-x-alloc-result:        '19661986'
         b3tr-proposal:              '19661986'
         historical-proposals:       '22087000'
       start-round:

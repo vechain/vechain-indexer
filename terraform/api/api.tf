@@ -286,6 +286,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-proposal
     },
     {
+      name = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
+      value = each.value.indexer.start-block.b3tr-x-alloc-result
+    },
+    {
       name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
       value = each.value.indexer.start-block.historical-proposals
     },

@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting.repository
+package org.vechain.indexer.b3tr.xAlloc.repository
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository

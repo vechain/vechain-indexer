@@ -3,7 +3,7 @@ package org.vechain.indexer.b3tr.proposal
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.b3tr.voting.repository.ProposalCommentRepository
+import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
