@@ -1,6 +1,7 @@
 package org.vechain.indexer.utils
 
 import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.transfer.TransferEventType
 
@@ -60,4 +61,13 @@ object EventUtils {
             "VET_TRANSFER" -> TransferEventType.VET
             else -> null // Other events will not be labeled
         }
+
+    /**
+     * Groups a list of events by their block number.
+     *
+     * @param events List of IndexedEvent to group.
+     * @return Map where keys are blockNumbers and values are lists of events in that block.
+     */
+    fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
+        events.groupBy { it.blockNumber }.toSortedMap()
 }

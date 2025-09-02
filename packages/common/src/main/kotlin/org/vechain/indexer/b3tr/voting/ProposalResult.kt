@@ -8,7 +8,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.thor.model.Block
 
 @Document(collection = "proposal_results")
 data class ProposalResult
@@ -27,7 +26,9 @@ constructor(
 ) : VersionedDocument {
     constructor(
         version: Int,
-        block: Block,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
         proposalId: String,
         support: Support,
         voters: Long,
@@ -35,10 +36,10 @@ constructor(
         totalPower: BigInteger,
     ) : this(
         version = version,
-        id = DigestUtils.sha1Hex("$proposalId-$support"),
-        blockId = block.id,
-        blockNumber = block.number,
-        blockTimestamp = block.timestamp,
+        id = calculateId(proposalId, support),
+        blockId = blockId,
+        blockNumber = blockNumber,
+        blockTimestamp = blockTimestamp,
         proposalId = proposalId,
         support = support,
         voters = voters,
@@ -47,6 +48,11 @@ constructor(
     )
 
     @JsonIgnore override fun getDocumentId(): String = id
+
+    companion object {
+        fun calculateId(proposalId: String, support: Support): String =
+            DigestUtils.sha1Hex("$proposalId-$support")
+    }
 }
 
 @Document(collection = "proposal_result_archives")

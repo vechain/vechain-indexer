@@ -9,7 +9,7 @@ import org.vechain.indexer.b3tr.gm.GmLevelName
 import org.vechain.indexer.b3tr.gm.GmNft
 import org.vechain.indexer.thor.Address
 
-@Profile("b3tr", "gm-nft")
+@Profile("b3tr", "b3tr-gm-nft")
 @Repository
 interface GmNftRepository : BasePagingAndSortingIndexedRepository<GmNft, String> {
     fun countByLevelAndOwnerNot(level: GmLevelName, owner: String = Address.ZERO_ADDRESS): Long

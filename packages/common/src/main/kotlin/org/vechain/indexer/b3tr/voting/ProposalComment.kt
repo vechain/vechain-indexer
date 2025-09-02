@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.HexUtils
 
 @Document(collection = "proposal_comments")
 data class ProposalComment
@@ -25,7 +25,9 @@ constructor(
     val reason: String,
 ) : IndexedDocument {
     constructor(
-        block: Block,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
         voter: String,
         proposalId: String,
         support: Support,
@@ -33,10 +35,10 @@ constructor(
         power: BigInteger,
         reason: String,
     ) : this(
-        id = generateId(proposalId, reason),
-        blockId = block.id,
-        blockNumber = block.number,
-        blockTimestamp = block.timestamp,
+        id = generateId(proposalId, voter),
+        blockId = blockId,
+        blockNumber = blockNumber,
+        blockTimestamp = blockTimestamp,
         voter = voter,
         proposalId = proposalId,
         support = support,
@@ -46,5 +48,5 @@ constructor(
     )
 }
 
-fun generateId(proposalId: String, reason: String): String =
-    DigestUtils.sha1Hex("$proposalId-${reason.trim().lowercase()}")
+fun generateId(proposalId: String, voter: String): String =
+    DigestUtils.sha1Hex("$proposalId-${HexUtils.normalise(voter)}")

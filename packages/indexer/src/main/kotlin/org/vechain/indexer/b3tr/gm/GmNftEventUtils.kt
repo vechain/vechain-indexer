@@ -271,15 +271,6 @@ object GmNftEventUtils {
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, tokenEvents) -> tokenEvents.sortedBy { it.blockNumber } }
 
-    /**
-     * Groups a list of events by their block number.
-     *
-     * @param events List of IndexedEvent to group.
-     * @return Map where keys are blockNumbers and values are lists of events in that block.
-     */
-    fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
-        events.groupBy { it.blockNumber }.toSortedMap()
-
     /** Checks if the event type of the given IndexedEvent matches any of the required types. */
     fun requireEventType(event: IndexedEvent, vararg requiredTypes: String) {
         if (event.eventType !in requiredTypes) {

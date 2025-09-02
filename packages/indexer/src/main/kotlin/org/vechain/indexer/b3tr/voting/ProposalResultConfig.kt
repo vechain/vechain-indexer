@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.gm
+package org.vechain.indexer.b3tr.voting
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -14,69 +14,54 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("b3tr", "b3tr-gm-nft")
-open class GmNftConfig {
-
+@Profile("b3tr", "b3tr-voting", "b3tr-proposal-results")
+open class ProposalResultConfig {
     @Bean
-    open fun gmNftArchiveService(
+    open fun proposalResultArchiveService(
         mongoTemplate: MongoTemplate
-    ): ArchiveService<GmNft, GmNftArchive> =
+    ): ArchiveService<ProposalResult, ProposalResultArchive> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
-            clazz = GmNft::class.java,
-            archiveClazz = GmNftArchive::class.java,
+            clazz = ProposalResult::class.java,
+            archiveClazz = ProposalResultArchive::class.java,
         )
 
     @Bean
-    open fun gmNftPruner(
-        gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+    open fun proposalResultPruner(
+        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
         PrunerService(
-            klass = GmNftArchive::class,
-            archiveService = gmNftArchiveService,
+            klass = ProposalResultArchive::class,
+            archiveService = proposalResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
         )
 
     @Bean
-    open fun gmNftIndexer(
+    open fun proposalResultIndexer(
         thorClient: ThorClient,
-        processor: GmNftProcessor,
-        gmNftPruner: Pruner,
+        processor: ProposalResultProcessor,
+        proposalResultPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.start-block.b3tr}") startBlock: Long,
+        @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
-        @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContractAddress: String,
-        @Value("\${business-event.substitutions.VOTER_REWARDS_CONTRACT}")
-        voterRewardsContractAddress: String,
-        @Value("\${business-event.substitutions.GM_NFT_CONTRACT}") gmNftContractAddress: String,
+        @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
+        b3trGovernorContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name("GmNftIndexer")
+            .name("ProposalResultIndexer")
             .thorClient(thorClient)
             .processor(processor)
-            .pruner(gmNftPruner)
+            .pruner(proposalResultPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(
-                listOf(
-                    "B3TR_GmTransfer",
-                    "B3TR_GmBurned",
-                    "B3TR_GmMinted",
-                    "B3TR_GmNodeAttached",
-                    "B3TR_GmNodeDetached",
-                    "B3TR_GmUpgrade",
-                    "B3TR_GmNodeLevel",
-                )
-            )
-            .businessEventContracts(
-                listOf(b3trContractAddress, voterRewardsContractAddress, gmNftContractAddress)
-            )
+            .businessEventNames(listOf("B3TR_ProposalVote"))
+            .businessEventContracts(listOf(b3trGovernorContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

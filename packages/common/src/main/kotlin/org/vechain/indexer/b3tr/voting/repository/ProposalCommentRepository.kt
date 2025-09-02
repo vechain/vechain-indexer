@@ -8,7 +8,7 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.voting.ProposalComment
 import org.vechain.indexer.b3tr.voting.Support
 
-@Profile("proposal-comments", "voting")
+@Profile("b3tr", "b3tr-proposal-comments", "b3tr-voting")
 @Repository
 interface ProposalCommentRepository :
     BasePagingAndSortingIndexedRepository<ProposalComment, String> {

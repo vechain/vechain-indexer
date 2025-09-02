@@ -81,8 +81,7 @@ open class NftBlacklistService(
         val uniqueAddresses =
             blackListEvents
                 .map {
-                    it.params.getAsString("nft")
-                        ?: throw IllegalArgumentException("Missing 'nft' param in event: ${it.id}")
+                    it.params.getAsString("nft") ?: error("Missing 'nft' param in event: ${it.id}")
                 }
                 .distinct()
         return repository.findAllById(uniqueAddresses).toList()

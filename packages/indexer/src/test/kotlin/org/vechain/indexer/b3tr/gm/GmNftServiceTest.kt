@@ -65,10 +65,12 @@ internal class GmNftServiceTest {
         // The updated NFT should have id = tokenId
         assertEquals(tokenId, updated.first().id)
         assertEquals("owner2", updated.first().owner)
+        assertEquals(2, updated.first().version)
 
         // The archived NFT should also have id = tokenId
         assertEquals(tokenId, archived.first().id)
         assertEquals("owner1", archived.first().owner)
+        assertEquals(1, archived.first().version)
     }
 
     @Test
@@ -107,6 +109,7 @@ internal class GmNftServiceTest {
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
         assertEquals(2, updated.size)
+        updated.forEach { assertEquals(1, it.version) }
         assertEquals(0, archived.size)
         assertEquals(setOf(tokenId1, tokenId2), updated.map { it.id }.toSet())
     }
@@ -149,5 +152,42 @@ internal class GmNftServiceTest {
         assertEquals(tokenId, archived.first().id)
         assertEquals("owner2", updated.first().owner)
         assertEquals("owner1", archived.first().owner)
+        assertEquals(2, updated.first().version)
+        assertEquals(1, archived.first().version)
+    }
+
+    @Test
+    fun `processEvents is the existing and updated NFT are the same, no archive or update occurs`() {
+        val tokenId = "token-1"
+
+        val event1 =
+            buildIndexedEvent(
+                id = "e2",
+                blockNumber = 2L,
+                eventType = "B3TR_GmNodeLevel",
+                params =
+                    AbiEventParameters(returnValues = mapOf("tokenId" to tokenId, "level" to 1)),
+            )
+
+        // Existing NFT has same level as event1 so no change should occur
+        val existingNft =
+            GmNft(
+                tokenId = tokenId,
+                version = 1,
+                blockId = "block1",
+                blockNumber = 1L,
+                blockTimestamp = 100L,
+                owner = "owner1",
+                level = GmLevelName.EARTH,
+                attachedNodeId = null,
+                b3trDonated = BigInteger.valueOf(500),
+            )
+
+        every { repository.findByIdOrNull(tokenId) } returns existingNft
+
+        val (updated, archived) = service.processEvents(listOf(event1))
+
+        assertEquals(0, updated.size)
+        assertEquals(0, archived.size)
     }
 }

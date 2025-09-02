@@ -1,7 +1,6 @@
-package org.vechain.indexer.b3tr.gm
+package org.vechain.indexer.b3tr.voting
 
 import jakarta.annotation.PostConstruct
-import kotlin.jvm.java
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -13,16 +12,16 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr-gm-nft")
+@Profile("b3tr", "b3tr-voting", "b3tr-proposal-results")
 @Configuration
-open class GmNftCollectionConfig(
+open class ProposalResultCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, GmNft::class.java) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    @param:Value("\${indexer.version.b3tr-proposal-results}") private val version: Int,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalResult::class.java) {
 
-    @Value("\${indexer.version.b3tr-gm-nft}") private val version: Int = 1
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
@@ -30,21 +29,16 @@ open class GmNftCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                GmNft::class.java,
+                ProposalResult::class.java,
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(GmNftArchive::class.java)
+        if (dropped) indexerVersionService.dropArchiveCollection(ProposalResultArchive::class.java)
 
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(
-            listOf(
-                "attachedNodeId_1" to Index().on("attachedNodeId", Sort.Direction.ASC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
-            )
-        )
+        ensureIndexes(listOf("proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC)))
     }
 }

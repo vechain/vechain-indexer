@@ -15,7 +15,7 @@ import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.constants.GM_NFT_PATH
 import org.vechain.indexer.exception.ExceptionResponse
 
-@Profile("b3tr", "gm-nft")
+@Profile("b3tr", "b3tr-gm-nft")
 @Tag(name = "Galaxy Member", description = "Endpoints for Galaxy Member level statistics.")
 @Validated
 @RestController
