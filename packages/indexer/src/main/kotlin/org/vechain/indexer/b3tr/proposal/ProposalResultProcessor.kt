@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -8,7 +8,7 @@ import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("b3tr", "b3tr-voting", "b3tr-proposal-results")
+@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Component
 open class ProposalResultProcessor(
     repository: ProposalResultRepository,

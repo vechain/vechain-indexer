@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
@@ -17,7 +17,7 @@ import org.vechain.indexer.b3tr.voting.VoteEventUtils.getWeight
 import org.vechain.indexer.b3tr.voting.repository.ProposalCommentRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 
-@Profile("b3tr", "b3tr-voting", "b3tr-proposal-comments")
+@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
 @Service
 open class ProposalCommentService(
     private val repository: ProposalCommentRepository,

@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.xAlloc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger

@@ -17,7 +17,8 @@ const val STARGATE_PATH = "$API_PATH/stargate"
 const val B3TR_PATH = "$API_PATH/b3tr"
 const val GM_NFT_PATH = "$B3TR_PATH/gm-nft"
 const val SUSTAINABILITY_PATH = "$B3TR_PATH/sustainability"
-const val VOTING_PATH = "$B3TR_PATH/voting"
+const val PROPOSAL_PATH = "$B3TR_PATH/proposals"
+const val X_ALLOC_PATH = "$B3TR_PATH/x-alloc"
 const val B3TR_TXS_PATH = "$B3TR_PATH/b3tr-txs"
 
 // PAGINATION DEFAULTS

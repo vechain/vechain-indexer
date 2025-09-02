@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import org.vechain.indexer.constants.VOTING_PATH
+import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.constants.PROPOSAL_PATH
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -21,31 +22,15 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
 
-@Profile("b3tr", "b3tr-voting")
-@Tag(name = "Voting", description = "Query voting data on VeBetterDAO.")
+@Profile("b3tr", "b3tr-proposal")
+@Tag(name = "B3TR", description = "B3TR related endpoints.")
+@Tag(name = "B3TR Governance Proposals", description = "Query voting data on VeBetterDAO.")
 @Validated
 @RestController
-@RequestMapping(VOTING_PATH)
-open class VotingController(private val votingService: VotingService) {
+@RequestMapping(PROPOSAL_PATH)
+open class ProposalController(private val proposalService: ProposalService) {
 
-    @GetMapping("xallocations/{roundId}/results")
-    @Operation(summary = "Get the results of XAllocation voting for a specific round.")
-    @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Success")])
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "roundId",
-        description = "Round to filter by.",
-        required = true,
-        schema = Schema(type = "integer"),
-        example = "2",
-    )
-    open fun getAllocationVoteResults(
-        @PathVariable(required = true) roundId: Int
-    ): List<XAllocResult> {
-        return votingService.getXAllocResults(roundId)
-    }
-
-    @GetMapping("proposals/{proposalId}/results")
+    @GetMapping("{proposalId}/results")
     @Operation(summary = "Get the results of a proposal.")
     @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Success")])
     @Parameter(
@@ -58,10 +43,10 @@ open class VotingController(private val votingService: VotingService) {
     open fun getProposalResult(
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId
     ): List<ProposalResult> {
-        return votingService.getProposalResult(proposalId.value)
+        return proposalService.getProposalResult(proposalId.value)
     }
 
-    @GetMapping("proposals/comments")
+    @GetMapping("comments")
     @Operation(summary = "Get comments for a proposal.")
     @ApiResponses(
         value =
@@ -110,11 +95,11 @@ open class VotingController(private val votingService: VotingService) {
             if (proposalId == null && voter == null) {
                 throw BadRequestException("Either a proposalId or voter address must be provided")
             } else if (proposalId != null && voter != null) {
-                votingService.getComments(proposalId.value, voter.value, support, pageable)
+                proposalService.getComments(proposalId.value, voter.value, support, pageable)
             } else if (proposalId != null) {
-                votingService.getComments(proposalId.value, support, pageable)
+                proposalService.getComments(proposalId.value, support, pageable)
             } else {
-                votingService.getCommentsForVoter(voter!!.value, support, pageable)
+                proposalService.getCommentsForVoter(voter!!.value, support, pageable)
             }
 
         return paginatedResponse(result)

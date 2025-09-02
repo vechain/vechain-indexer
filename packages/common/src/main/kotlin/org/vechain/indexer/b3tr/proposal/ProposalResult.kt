@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
+import org.vechain.indexer.b3tr.voting.Support
 
 @Document(collection = "proposal_results")
 data class ProposalResult

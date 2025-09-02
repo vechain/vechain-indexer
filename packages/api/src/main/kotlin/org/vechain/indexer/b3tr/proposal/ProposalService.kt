@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import kotlin.to
 import org.springframework.context.annotation.Profile
@@ -6,25 +6,17 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.b3tr.voting.repository.ProposalCommentRepository
 import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
-import org.vechain.indexer.b3tr.voting.repository.XAllocResultRepository
 import org.vechain.indexer.thor.HexUtils
 
-@Profile("b3tr", "b3tr-voting")
+@Profile("b3tr", "b3tr-proposal")
 @Service
-open class VotingService(
-    private val xallocResultRepository: XAllocResultRepository,
+open class ProposalService(
     private val proposalResultRepository: ProposalResultRepository,
     private val proposalCommentRepository: ProposalCommentRepository,
 ) : IndexerService {
-    /**
-     * Get the results of XAllocation voting for a specific round.
-     *
-     * @param roundId Round to filter by.
-     */
-    open fun getXAllocResults(roundId: Int): List<XAllocResult> =
-        xallocResultRepository.findByRoundId(roundId)
 
     /**
      * Get the results of a proposal.
@@ -94,7 +86,6 @@ open class VotingService(
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
         mapOf(
-            "XAllocResult" to (xallocResultRepository.getLatestRecord()?.blockNumber ?: 0),
             "ProposalResult" to (proposalResultRepository.getLatestRecord()?.blockNumber ?: 0),
             "ProposalComment" to (proposalCommentRepository.getLatestRecord()?.blockNumber ?: 0),
         )

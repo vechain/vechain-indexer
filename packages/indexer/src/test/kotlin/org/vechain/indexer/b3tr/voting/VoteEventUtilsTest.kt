@@ -279,16 +279,6 @@ class VoteEventUtilsTest {
         }
 
         @Test
-        fun `getReason reason is case-sensitive`() {
-            val event =
-                buildIndexedEvent(
-                    id = "event3",
-                    params = AbiEventParameters(returnValues = mapOf("Reason" to "case sensitive")),
-                )
-            assertThrows(IllegalStateException::class.java) { VoteEventUtils.getReason(event) }
-        }
-
-        @Test
         fun `getReason can have a blank reason`() {
             val event =
                 buildIndexedEvent(

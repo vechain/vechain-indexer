@@ -5,10 +5,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
-import org.vechain.indexer.b3tr.voting.ProposalComment
+import org.vechain.indexer.b3tr.proposal.ProposalComment
 import org.vechain.indexer.b3tr.voting.Support
 
-@Profile("b3tr", "b3tr-proposal-comments", "b3tr-voting")
+@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
 @Repository
 interface ProposalCommentRepository :
     BasePagingAndSortingIndexedRepository<ProposalComment, String> {

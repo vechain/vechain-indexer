@@ -11,7 +11,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.voting.ProposalResult.Companion.calculateId
+import org.vechain.indexer.b3tr.proposal.ProposalResult
+import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
+import org.vechain.indexer.b3tr.proposal.ProposalResultArchive
+import org.vechain.indexer.b3tr.proposal.ProposalResultService
 import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent

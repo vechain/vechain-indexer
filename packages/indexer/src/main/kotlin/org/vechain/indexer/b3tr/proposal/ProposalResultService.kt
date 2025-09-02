@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -8,7 +8,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.voting.ProposalResult.Companion.calculateId
+import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
+import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.b3tr.voting.VoteEventUtils.getPower
 import org.vechain.indexer.b3tr.voting.VoteEventUtils.getProposalId
 import org.vechain.indexer.b3tr.voting.VoteEventUtils.getSupport
@@ -19,7 +20,7 @@ import org.vechain.indexer.b3tr.voting.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
 
-@Profile("b3tr", "b3tr-voting", "b3tr-proposal-results")
+@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Service
 open class ProposalResultService(
     private val repository: ProposalResultRepository,

@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
-import org.vechain.indexer.b3tr.voting.ProposalId
+import org.vechain.indexer.b3tr.proposal.ProposalId
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)

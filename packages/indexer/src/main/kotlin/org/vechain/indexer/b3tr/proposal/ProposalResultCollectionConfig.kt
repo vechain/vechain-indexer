@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.voting
+package org.vechain.indexer.b3tr.proposal
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,34 +12,33 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr", "b3tr-voting", "b3tr-proposal-comments")
+@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Configuration
-open class ProposalCommentCollectionConfig(
+open class ProposalResultCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-    @param:Value("\${indexer.version.b3tr-proposal-comments}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalComment::class.java) {
+    @param:Value("\${indexer.version.b3tr-proposal-results}") private val version: Int,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalResult::class.java) {
+
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            ProposalComment::class.java,
-            version,
-        )
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                ProposalResult::class.java,
+                version,
+            )
+
+        if (dropped) indexerVersionService.dropArchiveCollection(ProposalResultArchive::class.java)
 
         this.ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(
-            listOf(
-                "voter_-1" to Index().on("voter", Sort.Direction.DESC),
-                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
-            )
-        )
+        ensureIndexes(listOf("proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC)))
     }
 }
