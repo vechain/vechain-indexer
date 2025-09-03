@@ -35,9 +35,10 @@ object XAllocEventUtils {
                         try {
                             BigInteger(elem.trim())
                         } catch (_: Exception) {
-                            null
+                            error("Invalid weight number format in event: ${event.id}")
                         }
-                    else -> null
+                    else ->
+                        error("Unexpected weight type: ${elem?.let { it::class.java } ?: "null"}")
                 }
             }
         return list ?: error("Missing or invalid weights in event: ${event.id}")
@@ -59,7 +60,8 @@ object XAllocEventUtils {
 
     /**
      * Parses the votes from an IndexedEvent and returns a map of appId to weight. Validates that
-     * the number of appIds matches the number of weights and that there are no duplicate appIds.
+     * the number of appIds matches the number of weights and merges duplicate appIds by summing
+     * their weights.
      *
      * @param event The IndexedEvent containing the vote data.
      * @return A map where keys are appIds and values are their corresponding weights.
@@ -74,12 +76,15 @@ object XAllocEventUtils {
             error("Mismatched appIds and weights sizes in event: ${event.id}")
         }
 
-        // Ensure no duplicate appIds
-        if (appIds.size != appIds.toSet().size) {
-            error("Duplicate appIds found in event: ${event.id}")
+        // Merge into a map of appId to total weight (duplicates summed)
+        val merged = mutableMapOf<String, BigInteger>()
+        for (i in appIds.indices) {
+            val id = appIds[i]
+            val w = weights[i]
+            merged[id] = (merged[id] ?: BigInteger.ZERO) + w
         }
 
         // Combine into a map of appId to weight
-        return appIds.zip(weights).toMap()
+        return merged
     }
 }

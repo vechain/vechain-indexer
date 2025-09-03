@@ -147,7 +147,7 @@ class XAllocEventsUtilsTest {
         }
 
         @Test
-        fun `ignores unparsable strings`() {
+        fun `unparsable weight value should throw an error`() {
             val e =
                 buildIndexedEvent(
                     id = "weights-badstr",
@@ -156,8 +156,8 @@ class XAllocEventsUtilsTest {
                             returnValues = mapOf("voteWeights" to listOf("10", "oops", "30"))
                         ),
                 )
-            val result = XAllocEventUtils.getWeights(e)
-            assertEquals(listOf(BigInteger("10"), BigInteger("30")), result)
+
+            assertThrows(IllegalStateException::class.java) { XAllocEventUtils.getWeights(e) }
         }
 
         @Test
@@ -234,7 +234,7 @@ class XAllocEventsUtilsTest {
         }
 
         @Test
-        fun `throws when duplicate appIds`() {
+        fun `duplicate appIds should be merged`() {
             val e =
                 buildIndexedEvent(
                     id = "single-dup",
@@ -247,7 +247,8 @@ class XAllocEventsUtilsTest {
                                 )
                         ),
                 )
-            assertThrows(IllegalStateException::class.java) { XAllocEventUtils.parseVotes(e) }
+            val result = XAllocEventUtils.parseVotes(e)
+            assertEquals(mapOf("app1" to BigInteger("300")), result)
         }
     }
 
