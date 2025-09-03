@@ -39,7 +39,7 @@ open class NftConfig() {
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name("NFTIndexer")
+            .name("NftIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftPruner)
