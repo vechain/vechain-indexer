@@ -44,7 +44,7 @@ open class NftBlacklistConfig {
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name("NFTBlacklistIndexer")
+            .name("NftBlacklistIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftBlacklistPruner)
