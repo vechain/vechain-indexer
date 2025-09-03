@@ -18,6 +18,9 @@ open class VeVoteResultProcessor(
         if (matchedEvents.isEmpty()) return
 
         // Process votes in the service
-        service.processVeVoteResults(matchedEvents)
+        val updates = service.processVeVoteResults(matchedEvents)
+
+        // Save the results
+        service.save(updates.first, updates.second)
     }
 }

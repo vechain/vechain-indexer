@@ -2,6 +2,7 @@ package org.vechain.indexer.vevote
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
@@ -10,14 +11,16 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-results")
 @Service
-class VeVoteResultService(
+open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
     private val vevoteResultArchiveService:
         ArchiveService<VeVoteProposalResults, VeVoteProposalResultsArchive>,
 ) {
-    fun processVeVoteResults(events: List<IndexedEvent>) {
+    open fun processVeVoteResults(
+        events: List<IndexedEvent>
+    ): Pair<List<VeVoteProposalResults>, List<VeVoteProposalResults>> {
         val aggregates = aggregateFromEvents(events)
-        if (aggregates.isEmpty()) return
+        if (aggregates.isEmpty()) return emptyList<VeVoteProposalResults>() to emptyList()
 
         val existing = repository.findAllById(aggregates.keys).associateBy { it.id }
 
@@ -38,11 +41,7 @@ class VeVoteResultService(
                 }
             }
 
-        repository.saveAll(voteResults)
-
-        if (existing.isNotEmpty()) {
-            vevoteResultArchiveService.saveAll(existing.values.toList())
-        }
+        return voteResults to existing.values.toList()
     }
 
     private fun aggregateFromEvents(
@@ -88,5 +87,16 @@ class VeVoteResultService(
         }
 
         return aggregates
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(updated: List<VeVoteProposalResults>, existing: List<VeVoteProposalResults>) {
+        if (updated.isNotEmpty()) {
+            repository.saveAll(updated)
+        }
+
+        if (existing.isNotEmpty()) {
+            vevoteResultArchiveService.saveAll(existing)
+        }
     }
 }
