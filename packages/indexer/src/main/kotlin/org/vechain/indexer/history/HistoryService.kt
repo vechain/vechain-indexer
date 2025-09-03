@@ -4,6 +4,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
@@ -96,7 +97,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             value = value,
             tokenId = tokenId,
             appId = event.params.getAsString("appId"),
-            proof = event.params.getAsString("proof"),
+            proof = event.params.getAsString("proof")?.let { ProofUtils.parseProofFromJson(it) },
             roundId = event.params.getAsString("roundId"),
             proposalId = event.params.getAsString("proposalId"),
             appVotes =

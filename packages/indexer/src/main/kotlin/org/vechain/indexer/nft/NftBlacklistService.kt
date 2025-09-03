@@ -9,7 +9,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Service
 open class NftBlacklistService(
     private val mongoTemplate: MongoTemplate,

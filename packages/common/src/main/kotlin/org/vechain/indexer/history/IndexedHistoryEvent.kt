@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.b3tr.sustainability.SustainabilityProofV2
 import org.vechain.indexer.b3tr.voting.AppVote
 import org.vechain.indexer.b3tr.voting.Support
 
@@ -28,7 +29,7 @@ constructor(
     val from: String? = null,
     val value: String? = null,
     val appId: String? = null,
-    val proof: String? = null,
+    val proof: SustainabilityProofV2? = null,
     val roundId: String? = null,
     val appVotes: List<AppVote>? = null,
     val support: Support? = null,

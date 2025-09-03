@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Configuration
 open class NftBlacklistCollectionConfig(
     mongoTemplate: MongoTemplate,

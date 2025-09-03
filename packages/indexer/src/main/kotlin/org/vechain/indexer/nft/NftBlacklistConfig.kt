@@ -13,7 +13,7 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("nfts")
+@Profile("nfts", "history")
 open class NftBlacklistConfig {
     @Bean
     open fun nftBlacklistArchiveService(
