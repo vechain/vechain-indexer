@@ -23,7 +23,7 @@ import org.vechain.indexer.exception.ExceptionResponse
 @Validated
 @RestController
 @RequestMapping(GM_NFT_PATH)
-open class GMNftController(private val gmNftRepository: GmNftRepository) {
+open class GmNftController(private val gmNftRepository: GmNftRepository) {
     @Operation(
         summary = "Get B3TR GM Level Overview",
         description =
