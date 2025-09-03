@@ -53,7 +53,8 @@ internal class VeVoteResultServiceProcessTest {
         // archive should not be called when nothing existed
         every { archiveService.saveAll(any<List<VeVoteProposalResults>>()) } just Runs
 
-        service.processVeVoteResults(listOf(event))
+        val results = service.processVeVoteResults(listOf(event))
+        service.save(results.first, results.second)
 
         // Assert saved contents
         val saved = savedSlot.captured.toList()
@@ -95,7 +96,8 @@ internal class VeVoteResultServiceProcessTest {
         val archivedSlot = slot<List<VeVoteProposalResults>>()
         every { archiveService.saveAll(capture(archivedSlot)) } just Runs
 
-        service.processVeVoteResults(listOf(event))
+        val results = service.processVeVoteResults(listOf(event))
+        service.save(results.first, results.second)
 
         val saved = savedSlot.captured.toList()
         assertEquals(1, saved.size)

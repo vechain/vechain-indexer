@@ -6,7 +6,7 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -15,7 +15,8 @@ class VeVoteResultIndexerTest {
 
     @MockK lateinit var veVoteResultService: VeVoteResultService
 
-    @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK
+    lateinit var archiveService: ArchiveService<VeVoteProposalResults, VeVoteProposalResultsArchive>
 
     private lateinit var voteResultsIndexer: VeVoteResultProcessor
 
@@ -27,6 +28,7 @@ class VeVoteResultIndexerTest {
             VeVoteResultProcessor(
                 service = veVoteResultService,
                 repository = veVoteProposalResultRepository,
+                archiveService,
             )
     }
 
@@ -34,6 +36,6 @@ class VeVoteResultIndexerTest {
     fun `process block with no vote events`() {
         voteResultsIndexer.process(emptyList(), BLOCK_NO_CLAUSES)
 
-        verify { mongoTemplate wasNot Called }
+        verify { veVoteProposalResultRepository wasNot Called }
     }
 }
