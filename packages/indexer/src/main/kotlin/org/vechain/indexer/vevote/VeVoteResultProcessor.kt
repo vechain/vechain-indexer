@@ -2,7 +2,8 @@ package org.vechain.indexer.vevote
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
@@ -11,7 +12,8 @@ import org.vechain.indexer.thor.model.Block
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     repository: VeVoteProposalResultRepository,
-) : BaseProcessor(repository = repository) {
+    archive: ArchiveService<VeVoteProposalResults, VeVoteProposalResultsArchive>,
+) : BaseStatefulProcessor(repository = repository, archiveService = archive) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 
