@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.thor.HexUtils
 
-@Document(collection = "proposal_comments")
+@Document(collection = "b3tr_proposal_comments")
 data class ProposalComment
 @ConstructorBinding
 constructor(

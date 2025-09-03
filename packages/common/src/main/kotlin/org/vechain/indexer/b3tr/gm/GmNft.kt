@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 
-@Document(collection = "gm_nfts")
+@Document(collection = "b3tr_gm_nfts")
 data class GmNft
 @ConstructorBinding
 constructor(
@@ -47,5 +47,5 @@ constructor(
     @JsonIgnore override fun getDocumentId(): String = id
 }
 
-@Document(collection = "gm_nfts_archives")
+@Document(collection = "b3tr_gm_nfts_archives")
 data class GmNftArchive(@Id override val id: String, override val data: GmNft) : Archive<GmNft>

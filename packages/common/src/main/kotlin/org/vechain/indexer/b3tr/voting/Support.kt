@@ -6,6 +6,6 @@ enum class Support(val value: Int) {
     ABSTAIN(2);
 
     companion object {
-        fun fromValue(value: Int?): Support? = values().find { it.value == value }
+        fun fromValue(value: Int?): Support? = entries.find { it.value == value }
     }
 }

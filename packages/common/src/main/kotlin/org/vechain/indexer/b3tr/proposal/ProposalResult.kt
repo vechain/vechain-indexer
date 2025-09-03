@@ -10,7 +10,7 @@ import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.voting.Support
 
-@Document(collection = "proposal_results")
+@Document(collection = "b3tr_proposal_results")
 data class ProposalResult
 @ConstructorBinding
 constructor(
@@ -56,6 +56,6 @@ constructor(
     }
 }
 
-@Document(collection = "proposal_result_archives")
+@Document(collection = "b3tr_proposal_result_archives")
 data class ProposalResultArchive(@Id override val id: String, override val data: ProposalResult) :
     Archive<ProposalResult>

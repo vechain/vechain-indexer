@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 
-@Document(collection = "x_alloc_results")
+@Document(collection = "b3tr_x_alloc_results")
 data class XAllocResult
 @ConstructorBinding
 constructor(
@@ -52,6 +52,6 @@ constructor(
     }
 }
 
-@Document(collection = "x_alloc_result_archives")
+@Document(collection = "b3tr_x_alloc_result_archives")
 data class XAllocResultArchive(@Id override val id: String, override val data: XAllocResult) :
     Archive<XAllocResult>
