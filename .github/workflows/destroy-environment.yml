@@ -2,6 +2,12 @@ name: Destroy Dead Environment
 
 on:
   workflow_dispatch:
+    inputs:
+      drop-mongo-cluster:
+        description: 'Drop MongoDB cluster'
+        required: false
+        default: false
+        type: boolean
 
 # Prevent parallel deploy/destroy of the node cluster infrastructure in the same workspace
 concurrency: 1
@@ -42,10 +48,11 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Destroy Lingering Secrets
+        if: ${{ inputs.drop-mongo-cluster }}
         run: |
           echo "Deleting lingering secrets..."
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
@@ -107,8 +114,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-            aws-region: eu-west-1
-            role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
@@ -144,10 +151,55 @@ jobs:
       - name: Show resources to be destroyed
         run: terraform state list
 
-      - name: Plan terraform destroy
-        id: plan
-        run: terraform plan -out "destroy.plan" -destroy
+      - name: Plan terraform mongo destroy
+        if: ${{ inputs.drop-mongo-cluster }}
+        id: planmongo
+        run: terraform plan -out "mongo-destroy.plan" -destroy --target module.mongoatlas-test-net --target module.mongoatlas-main-net
 
-      - name: Terraform destroy
-        id: destroy
-        run: terraform apply "destroy.plan"
+      - name: Terraform mongo destroy
+        if: ${{ inputs.drop-mongo-cluster }}
+        id: destroymongo
+        run: terraform apply "mongo-destroy.plan"
+
+      - name: Atlas setup
+        if: ${{ inputs.drop-mongo-cluster == false }}
+        id: atlas-setup
+        uses: mongodb/atlas-github-action@v0.2.0
+        env:
+          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+          # default organisation ID
+          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
+          # default project ID
+          MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+      - name: Pause Mongodb clusters
+        if: ${{ inputs.drop-mongo-cluster == false }}
+        id: pausemongo
+        env:
+          MONGODB_ATLAS_PUBLIC_API_KEY: ${{ secrets.MONGO_PUBLIC_KEY }}
+          MONGODB_ATLAS_PRIVATE_API_KEY: ${{ secrets.MONGO_PRIVATE_KEY }}
+          # default organisation ID
+          MONGODB_ATLAS_ORG_ID: ${{ secrets.MONGO_ORG_ID }}
+          # default project ID
+          MONGODB_ATLAS_PROJECT_ID: ${{ secrets.MONGO_PROJECT_ID }}
+          deadcolor: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+        run: |
+          MainDB="$deadcolor-Mainnet"
+          TestDB="$deadcolor-Testnet"
+          echo "Pausing $TestDB MongoDB cluster..."
+          atlas cluster pause $TestDB --force
+          atlas cluster watch $TestDB
+          echo "Pausing $MainDB MongoDB cluster..."
+          atlas cluster pause $MainDB --force
+          atlas cluster watch $MainDB
+
+      - name: Plan terraform destroy non-mongo
+        id: plannonmongo
+        run: terraform plan -out "non-mongo-destroy.plan" -destroy --target \
+             module.cloud_watch_alarms --target module.ecs-backend-service --target \
+             module.ecs-lb-service-api --target module.ecs-lb-service-indexer --target \
+             module.waf
+
+      - name: Terraform destroy non-mongo
+        id: destroynonmongo
+        run: terraform apply "non-mongo-destroy.plan"
