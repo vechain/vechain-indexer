@@ -6,30 +6,31 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.shared.EntityType
-import org.vechain.indexer.b3tr.sustainability.RoundOverview
+import org.vechain.indexer.b3tr.sustainability.UserRoundActionSummary
 
-@Profile("b3tr", "sustainability", "sustainability-rounds")
+@Profile("b3tr", "b3tr-sustainability", "b3tr-user-round-action-summary")
 @Repository
-interface RoundOverviewRepository : BasePagingAndSortingIndexedRepository<RoundOverview, String> {
-    fun findFirstByOrderByBlockNumberDesc(): RoundOverview?
+interface UserRoundActionSummaryRepository :
+    BasePagingAndSortingIndexedRepository<UserRoundActionSummary, String> {
+    fun findFirstByOrderByBlockNumberDesc(): UserRoundActionSummary?
 
-    fun findByEntityAndRoundId(entity: String, roundId: Int): RoundOverview?
+    fun findByEntityAndRoundId(entity: String, roundId: Int): UserRoundActionSummary?
 
     fun findAllByEntityAndRoundId(
         entity: String,
         roundId: Int,
         pageable: Pageable,
-    ): Slice<RoundOverview>
+    ): Slice<UserRoundActionSummary>
 
-    fun findAllByEntityOrderByRoundIdDesc(entity: String): List<RoundOverview>
+    fun findAllByEntityOrderByRoundIdDesc(entity: String): List<UserRoundActionSummary>
 
-    fun findAllByEntity(entity: String, pageable: Pageable): Slice<RoundOverview>
+    fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserRoundActionSummary>
 
     fun findAllByRoundIdAndEntityType(
         roundId: Int,
         type: EntityType,
         pageable: Pageable,
-    ): Slice<RoundOverview>
+    ): Slice<UserRoundActionSummary>
 
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type and round ID

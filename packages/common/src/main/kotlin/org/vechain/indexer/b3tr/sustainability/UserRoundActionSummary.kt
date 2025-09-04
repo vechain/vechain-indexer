@@ -1,16 +1,20 @@
 package org.vechain.indexer.b3tr.sustainability
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.EntityType
-import org.vechain.indexer.b3tr.shared.OverviewDocument
+import org.vechain.indexer.b3tr.shared.UserActionSummaryDocument
+import org.vechain.indexer.b3tr.sustainability.IdUtils.generateId
 
-@Document(collection = "all_time_sustainability_overviews")
-data class Overview
+/**
+ * Sustainable overview This model is used to track how apps and users are doing in terms of
+ * sustainability over each round.
+ */
+@Document(collection = "b3tr_user_action_summaries_round")
+data class UserRoundActionSummary
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String,
@@ -20,10 +24,11 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     override val entity: String,
     @JsonIgnore val entityType: EntityType,
+    val roundId: Int,
     override val actionsRewarded: Long,
     override val totalRewardAmount: Double,
     override val totalImpact: Impact?,
-) : OverviewDocument {
+) : UserActionSummaryDocument {
     constructor(
         version: Int,
         blockId: String,
@@ -31,17 +36,21 @@ constructor(
         blockTimestamp: Long,
         entity: String,
         entityType: EntityType,
+        roundId: Int,
         actionsRewarded: Long,
         totalRewardAmount: Double,
         totalImpact: Impact?,
     ) : this(
-        id = if (entityType == EntityType.GLOBAL) generateGlobalId() else generateId(entity),
+        id =
+            if (entityType == EntityType.GLOBAL) generateId("GLOBAL", "$roundId")
+            else generateId(entity, "$roundId"),
         version = version,
         blockId = blockId,
         blockNumber = blockNumber,
         blockTimestamp = blockTimestamp,
         entity = entity,
         entityType = entityType,
+        roundId = roundId,
         actionsRewarded = actionsRewarded,
         totalRewardAmount = totalRewardAmount,
         totalImpact = totalImpact,
@@ -50,10 +59,8 @@ constructor(
     @JsonIgnore override fun getDocumentId(): String = id
 }
 
-@Document(collection = "all_time_sustainability_overviews_archives")
-data class OverviewArchive(@Id override val id: String, override val data: Overview) :
-    Archive<Overview>
-
-fun generateId(entity: String): String = DigestUtils.sha1Hex(entity)
-
-fun generateGlobalId(): String = generateId("GLOBAL")
+@Document(collection = "b3tr_user_action_summaries_round_archives")
+data class UserRoundActionSummaryArchive(
+    @Id override val id: String,
+    override val data: UserRoundActionSummary,
+) : Archive<UserRoundActionSummary>

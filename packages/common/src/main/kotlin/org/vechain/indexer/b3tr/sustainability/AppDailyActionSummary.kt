@@ -1,19 +1,19 @@
 package org.vechain.indexer.b3tr.sustainability
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.b3tr.shared.AppOverviewDocument
+import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
+import org.vechain.indexer.b3tr.sustainability.IdUtils.generateId
 
 /**
- * Sustainable overview This model is used to track how apps are doing in terms of sustainability
- * over each round.
+ * Sustainable overview This model is used to track how apps are doing in terms of sustainability on
+ * a daily basis.
  */
-@Document(collection = "app_round_sustainability_overviews")
-data class AppRoundOverview
+@Document(collection = "b3tr_app_action_summaries_daily")
+data class AppDailyActionSummary
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String,
@@ -23,11 +23,11 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     override val appId: String,
     override val user: String,
-    val roundId: Int,
+    val date: String,
     override val actionsRewarded: Long,
     override val totalRewardAmount: Double,
     override val totalImpact: Impact?,
-) : AppOverviewDocument {
+) : AppActionSummaryDocument {
     constructor(
         version: Int,
         blockId: String,
@@ -35,34 +35,32 @@ constructor(
         blockTimestamp: Long,
         appId: String,
         user: String,
-        roundId: Int,
+        date: String,
         actionsRewarded: Long,
         totalRewardAmount: Double,
         totalImpact: Impact?,
     ) : this(
-        id = generateId(appId, user, roundId),
+        id = generateId(appId, user, date),
         version = version,
         blockId = blockId,
         blockNumber = blockNumber,
         blockTimestamp = blockTimestamp,
         appId = appId,
         user = user,
-        roundId = roundId,
+        date = date,
         actionsRewarded = actionsRewarded,
         totalRewardAmount = totalRewardAmount,
         totalImpact = totalImpact,
     )
 
-    @JsonIgnore override fun getDocumentId(): String = id
-
-    companion object {
-        fun generateId(appId: String, user: String, roundId: Int): String =
-            DigestUtils.sha1Hex("$appId-$user-$roundId")
+    @JsonIgnore
+    override fun getDocumentId(): String {
+        return id
     }
 }
 
-@Document(collection = "app_round_sustainability_overviews_archives")
-data class AppRoundOverviewArchive(
+@Document(collection = "b3tr_app_action_summaries_daily_archives")
+data class AppDailyActionSummaryArchive(
     @Id override val id: String,
-    override val data: AppRoundOverview,
-) : Archive<AppRoundOverview>
+    override val data: AppDailyActionSummary,
+) : Archive<AppDailyActionSummary>

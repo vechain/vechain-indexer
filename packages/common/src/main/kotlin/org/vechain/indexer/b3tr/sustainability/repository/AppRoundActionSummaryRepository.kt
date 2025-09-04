@@ -5,33 +5,33 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
-import org.vechain.indexer.b3tr.sustainability.AppRoundOverview
+import org.vechain.indexer.b3tr.sustainability.AppRoundActionSummary
 
-@Profile("b3tr", "sustainability", "sustainability-apps-rounds")
+@Profile("b3tr", "b3tr-sustainability", "b3tr-app-round-action-summary")
 @Repository
-interface AppRoundOverviewRepository :
-    BasePagingAndSortingIndexedRepository<AppRoundOverview, String> {
-    fun findFirstByOrderByBlockNumberDesc(): AppRoundOverview?
+interface AppRoundActionSummaryRepository :
+    BasePagingAndSortingIndexedRepository<AppRoundActionSummary, String> {
+    fun findFirstByOrderByBlockNumberDesc(): AppRoundActionSummary?
 
     fun findAllByAppIdAndRoundId(
         appId: String,
         roundId: Int,
         pageable: Pageable,
-    ): Slice<AppRoundOverview>
+    ): Slice<AppRoundActionSummary>
 
     fun findAllByUserAndRoundId(
         user: String,
         roundId: Int,
         pageable: Pageable,
-    ): Slice<AppRoundOverview>
+    ): Slice<AppRoundActionSummary>
 
     fun findAllByAppIdAndUser(
         appId: String,
         user: String,
         pageable: Pageable,
-    ): Slice<AppRoundOverview>
+    ): Slice<AppRoundActionSummary>
 
-    fun findByIdAndRoundId(id: String, roundId: Int): AppRoundOverview?
+    fun findByIdAndRoundId(id: String, roundId: Int): AppRoundActionSummary?
 
     fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
         totalRewardAmount: Double,
@@ -45,7 +45,7 @@ interface AppRoundOverviewRepository :
         roundId: Int,
     ): Long
 
-    fun findAppIdsByUserAndRoundId(user: String, roundId: Int): List<AppRoundOverview>
+    fun findAppIdsByUserAndRoundId(user: String, roundId: Int): List<AppRoundActionSummary>
 
     fun countByAppIdAndRoundId(appId: String, roundId: Int): Long
 }
