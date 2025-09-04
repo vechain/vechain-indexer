@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
@@ -6,10 +6,10 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.b3tr.action.UserDailyActionSummary
 import org.vechain.indexer.b3tr.shared.EntityType
-import org.vechain.indexer.b3tr.sustainability.UserDailyActionSummary
 
-@Profile("b3tr", "b3tr-sustainability", "b3tr-user-daily-action-summary")
+@Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 @Repository
 interface UserDailyActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserDailyActionSummary, String> {

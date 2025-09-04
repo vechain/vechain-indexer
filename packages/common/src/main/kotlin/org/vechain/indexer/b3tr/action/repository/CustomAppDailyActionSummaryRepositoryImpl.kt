@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
@@ -9,10 +9,10 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.b3tr.sustainability.AppDailyActionSummary
+import org.vechain.indexer.b3tr.action.AppDailyActionSummary
 import org.vechain.indexer.thor.HexUtils
 
-@Profile("b3tr", "b3tr-sustainability", "b3tr-app-daily-action-summary")
+@Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
 @Repository
 open class CustomAppDailyActionSummaryRepositoryImpl
 @Autowired

@@ -1,12 +1,12 @@
 package org.vechain.indexer.b3tr
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.b3tr.sustainability.Impact
-import org.vechain.indexer.b3tr.sustainability.Metadata
-import org.vechain.indexer.b3tr.sustainability.ProofV1
-import org.vechain.indexer.b3tr.sustainability.ProofV2
-import org.vechain.indexer.b3tr.sustainability.SustainabilityProofV1
-import org.vechain.indexer.b3tr.sustainability.SustainabilityProofV2
+import org.vechain.indexer.b3tr.action.Impact
+import org.vechain.indexer.b3tr.action.Metadata
+import org.vechain.indexer.b3tr.action.ProofV1
+import org.vechain.indexer.b3tr.action.ProofV2
+import org.vechain.indexer.b3tr.action.SustainabilityProofV1
+import org.vechain.indexer.b3tr.action.SustainabilityProofV2
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 

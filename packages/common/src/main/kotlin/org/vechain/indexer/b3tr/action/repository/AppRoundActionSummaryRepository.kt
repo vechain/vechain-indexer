@@ -1,13 +1,13 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
-import org.vechain.indexer.b3tr.sustainability.AppRoundActionSummary
+import org.vechain.indexer.b3tr.action.AppRoundActionSummary
 
-@Profile("b3tr", "b3tr-sustainability", "b3tr-app-round-action-summary")
+@Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 @Repository
 interface AppRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<AppRoundActionSummary, String> {

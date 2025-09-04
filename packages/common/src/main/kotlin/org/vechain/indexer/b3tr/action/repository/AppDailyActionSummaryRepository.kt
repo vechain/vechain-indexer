@@ -1,11 +1,11 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
-import org.vechain.indexer.b3tr.sustainability.AppDailyActionSummary
+import org.vechain.indexer.b3tr.action.AppDailyActionSummary
 
-@Profile("b3tr", "b3tr-sustainability", "b3tr-app-daily-action-summary")
+@Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
 @Repository
 interface AppDailyActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<AppDailyActionSummary, String>,

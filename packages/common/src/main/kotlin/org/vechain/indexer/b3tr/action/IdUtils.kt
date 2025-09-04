@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.sustainability
+package org.vechain.indexer.b3tr.action
 
 import org.apache.commons.codec.digest.DigestUtils
 

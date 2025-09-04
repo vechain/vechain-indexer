@@ -1,8 +1,8 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.vechain.indexer.b3tr.sustainability.AppDailyActionSummary
+import org.vechain.indexer.b3tr.action.AppDailyActionSummary
 
 interface CustomAppDailyActionSummaryRepository {
     fun findAppUserOverviewsByFilters(

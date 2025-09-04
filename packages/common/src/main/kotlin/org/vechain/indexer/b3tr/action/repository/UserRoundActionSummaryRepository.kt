@@ -1,14 +1,14 @@
-package org.vechain.indexer.b3tr.sustainability.repository
+package org.vechain.indexer.b3tr.action.repository
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.b3tr.action.UserRoundActionSummary
 import org.vechain.indexer.b3tr.shared.EntityType
-import org.vechain.indexer.b3tr.sustainability.UserRoundActionSummary
 
-@Profile("b3tr", "b3tr-sustainability", "b3tr-user-round-action-summary")
+@Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 @Repository
 interface UserRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserRoundActionSummary, String> {

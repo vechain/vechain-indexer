@@ -4,9 +4,9 @@ import kotlin.jvm.java
 import kotlin.run
 import kotlin.text.isEmpty
 import org.slf4j.LoggerFactory
-import org.vechain.indexer.b3tr.sustainability.ProofV2
-import org.vechain.indexer.b3tr.sustainability.SustainabilityProofV1
-import org.vechain.indexer.b3tr.sustainability.SustainabilityProofV2
+import org.vechain.indexer.b3tr.action.ProofV2
+import org.vechain.indexer.b3tr.action.SustainabilityProofV1
+import org.vechain.indexer.b3tr.action.SustainabilityProofV2
 import org.vechain.indexer.utils.JsonUtils
 
 object ProofUtils {
