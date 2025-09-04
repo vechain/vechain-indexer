@@ -159,7 +159,7 @@ jobs:
       - name: Terraform mongo destroy
         if: ${{ inputs.drop-mongo-cluster }}
         id: destroymongo
-        run: terraform apply "mongo-destroy.plan"
+        run: echo would run terraform apply "mongo-destroy.plan"
 
       - name: Atlas setup
         if: ${{ inputs.drop-mongo-cluster == false }}
@@ -190,7 +190,7 @@ jobs:
           atlas cluster pause $TestDB --force
           atlas cluster watch $TestDB
           echo "Pausing $MainDB MongoDB cluster..."
-          atlas cluster pause $MainDB --force
+          echo would run  atlas cluster pause $MainDB --force
           atlas cluster watch $MainDB
 
       - name: Plan terraform destroy non-mongo
@@ -202,4 +202,4 @@ jobs:
 
       - name: Terraform destroy non-mongo
         id: destroynonmongo
-        run: terraform apply "non-mongo-destroy.plan"
+        run: echo would run terraform apply "non-mongo-destroy.plan"
