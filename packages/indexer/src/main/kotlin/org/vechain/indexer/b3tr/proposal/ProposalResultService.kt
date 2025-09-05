@@ -46,7 +46,7 @@ open class ProposalResultService(
                 groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
                     val recordId = calculateId(proposalId, support)
                     val existing = resolveExisting(recordId, updatedResult)
-                    val updated = creatOrUpdateExisting(supportEvents, existing)
+                    val updated = createOrUpdateExisting(supportEvents, existing)
                     existing?.let { archiveResult.add(it) }
                     updatedResult[recordId] = updated
                 }
@@ -89,7 +89,7 @@ open class ProposalResultService(
      * @param events The list of IndexedEvents to process.
      * @return A ProposalResult containing the aggregated data from the events.
      */
-    protected fun creatOrUpdateExisting(
+    protected fun createOrUpdateExisting(
         events: List<IndexedEvent>,
         existing: ProposalResult?,
     ): ProposalResult {

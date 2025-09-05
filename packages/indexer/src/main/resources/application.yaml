@@ -122,14 +122,12 @@ indexer:
     historical-proposals: ${VERSION_HISTORICAL_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
     b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
-    b3tr-sustainability-apps-daily: ${VERSION_B3TR_SUSTAINABILITY_APPS_DAILY:1}
-    b3tr-sustainability-apps-all: ${VERSION_B3TR_SUSTAINABILITY_APPS_ALL:1}
-    b3tr-sustainability-apps-round: ${VERSION_B3TR_SUSTAINABILITY_APPS_ROUND:1}
-    b3tr-sustainability-overview-daily: ${VERSION_B3TR_SUSTAINABILITY_OVERVIEW_DAILY:1}
-    b3tr-sustainability-overview-all: ${VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL:1}
-    b3tr-sustainability-overview-round: ${VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ROUND:1}
-    b3tr-sustainability-action: ${VERSION_B3TR_SUSTAINABILITY_ACTION:1}
-    b3tr-user-transactions: ${VERSION_B3TR_USER_TRANSACTIONS:1}
+    b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
+    b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:1}
+    b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:1}
+    b3tr-app-all-time-action-summary: ${VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY:1}
+    b3tr-app-round-action-summary: ${VERSION_B3TR_APP_ROUND_ACTION_SUMMARY:1}
+    b3tr-app-daily-action-summary: ${VERSION_B3TR_APP_DAILY_ACTION_SUMMARY:1}
     b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:1}
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}

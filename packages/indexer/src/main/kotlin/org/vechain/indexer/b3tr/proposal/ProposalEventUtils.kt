@@ -16,7 +16,7 @@ object ProposalEventUtils {
         event.params.getAsString("from") ?: error("Missing 'from' param in event: ${event.id}")
 
     fun getSupport(event: IndexedEvent): Support =
-        Support.Companion.fromValue(
+        Support.fromValue(
             event.params.getAsInt("support")
                 ?: error("Missing param 'support' in event: ${event.id}")
         ) ?: error("Invalid 'support' value in event: ${event.id}")

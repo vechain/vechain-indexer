@@ -430,28 +430,28 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-proposal-results
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_APPS_DAILY"
-      value = each.value.indexer.version.b3tr-sustainability-apps-daily
+      name = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_APPS_ALL"
-      value = each.value.indexer.version.b3tr-sustainability-apps-all
+      name = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_APPS_ROUND"
-      value = each.value.indexer.version.b3tr-sustainability-apps-round
+      name = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_DAILY"
-      value = each.value.indexer.version.b3tr-sustainability-overview-daily
+      name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
       name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
       value = each.value.indexer.version.b3tr-sustainability-overview-all
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ROUND"
-      value = each.value.indexer.version.b3tr-sustainability-overview-round
+      name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-round-action-summary
     },
     {
       name = "VERSION_B3TR_SUSTAINABILITY_ACTION"

@@ -25,14 +25,17 @@ import org.vechain.indexer.exception.ExceptionResponse
 @RequestMapping(GM_NFT_PATH)
 open class GmNftController(private val gmNftRepository: GmNftRepository) {
     @Operation(
-        summary = "Get B3TR GM Level Overview",
+        summary = "Get B3TR GM Level UserAllTimeActionSummary",
         description =
             "Returns the current overview (holders, B3TR donated, etc.) for each Galaxy Member level.",
     )
     @ApiResponses(
         value =
             [
-                ApiResponse(responseCode = "200", description = "Overview retrieved successfully"),
+                ApiResponse(
+                    responseCode = "200",
+                    description = "UserAllTimeActionSummary retrieved successfully",
+                ),
                 ApiResponse(
                     responseCode = "400",
                     description = "Invalid level filter",

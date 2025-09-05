@@ -35,7 +35,7 @@ open class XAllocResultService(
                     val recordId = XAllocResult.calculateId(roundId, appId)
                     val existing = resolveExisting(recordId, updatedResult)
                     val updated =
-                        creatOrUpdateExisting(
+                        createOrUpdateExisting(
                             roundId = roundId,
                             appId = appId,
                             voters = aggregatedVote.voters,
@@ -55,7 +55,7 @@ open class XAllocResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
-    protected fun creatOrUpdateExisting(
+    protected fun createOrUpdateExisting(
         roundId: Int,
         appId: String,
         voters: Long,

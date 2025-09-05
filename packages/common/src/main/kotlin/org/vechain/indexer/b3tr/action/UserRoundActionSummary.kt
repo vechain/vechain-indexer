@@ -1,9 +1,12 @@
 package org.vechain.indexer.b3tr.action
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import java.math.BigDecimal
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.shared.EntityType
@@ -26,7 +29,7 @@ constructor(
     @JsonIgnore val entityType: EntityType,
     val roundId: Int,
     override val actionsRewarded: Long,
-    override val totalRewardAmount: Double,
+    @Field(targetType = FieldType.DECIMAL128) override val totalRewardAmount: BigDecimal,
     override val totalImpact: Impact?,
 ) : UserActionSummaryDocument {
     constructor(
@@ -38,7 +41,7 @@ constructor(
         entityType: EntityType,
         roundId: Int,
         actionsRewarded: Long,
-        totalRewardAmount: Double,
+        totalRewardAmount: BigDecimal,
         totalImpact: Impact?,
     ) : this(
         id =
