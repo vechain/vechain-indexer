@@ -47,15 +47,17 @@ object ActionSummaryUtils {
     }
 
     // Events
-    fun getTo(event: IndexedEvent): String =
-        event.params.getAsString("to") ?: error("Missing param 'to' in event: ${event.id}")
+    fun getReceiver(event: IndexedEvent): String =
+        event.params.getAsString("receiver")
+            ?: error("Missing param 'receiver' in event: ${event.id}")
 
-    fun getFrom(event: IndexedEvent): String =
-        event.params.getAsString("from") ?: error("Missing param 'from' in event: ${event.id}")
+    fun getDistributor(event: IndexedEvent): String =
+        event.params.getAsString("distributor")
+            ?: error("Missing param 'distributor' in event: ${event.id}")
 
-    fun getValue(event: IndexedEvent): BigDecimal =
-        event.params.getAsBigInteger("value")?.let { scaleDown(it, 18) }
-            ?: error("Missing param 'value' in event: ${event.id}")
+    fun getAmount(event: IndexedEvent): BigDecimal =
+        event.params.getAsBigInteger("amount")?.let { scaleDown(it, 18) }
+            ?: error("Missing param 'amount' in event: ${event.id}")
 
     fun getAppId(event: IndexedEvent): String =
         event.params.getAsString("appId") ?: error("Missing param 'appId' in event: ${event.id}")
@@ -65,15 +67,15 @@ object ActionSummaryUtils {
 
     fun getAction(event: IndexedEvent): Action {
         val appId = getAppId(event)
-        val to = getTo(event)
-        val from = getFrom(event)
-        val value = getValue(event)
+        val receiver = getReceiver(event)
+        val distributor = getDistributor(event)
+        val value = getAmount(event)
         val proof = getProof(event)
 
         return Action(
             appId = appId,
-            receiver = to,
-            distributor = from,
+            receiver = receiver,
+            distributor = distributor,
             amount = value,
             proof = proof,
         )
@@ -81,19 +83,30 @@ object ActionSummaryUtils {
 
     fun getEntity(event: IndexedEvent, entityType: EntityType): String =
         when (entityType) {
-            EntityType.USER -> getTo(event)
+            EntityType.USER -> getReceiver(event)
             EntityType.APP -> getAppId(event)
             EntityType.GLOBAL -> "GLOBAL"
         }
 
-    fun groupByTo(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
+    fun groupByReceiver(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
         events
             .map {
-                it.params.getAsString("to")?.let { to -> to.lowercase(Locale.getDefault()) to it }
-                    ?: error("Missing 'to' in event: ${it.id}")
+                it.params.getAsString("receiver")?.let { to ->
+                    to.lowercase(Locale.getDefault()) to it
+                } ?: error("Missing 'receiver' in event: ${it.id}")
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, proposalEvents) -> proposalEvents.sortedBy { it.blockNumber } }
+
+    fun groupByDistributor(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
+        events
+            .map {
+                it.params.getAsString("distributor")?.let { from ->
+                    from.lowercase(Locale.getDefault()) to it
+                } ?: error("Missing 'distributor' in event: ${it.id}")
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, distributorEvents) -> distributorEvents.sortedBy { it.blockNumber } }
 
     fun groupByAppId(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
         events

@@ -47,19 +47,9 @@
   ],
   "paramsDefinition": [
     {
-      "name": "to",
-      "eventName": "transferB3TR",
-      "businessEventName": "to"
-    },
-    {
-      "name": "from",
-      "eventName": "transferB3TR",
-      "businessEventName": "from"
-    },
-    {
-      "name": "value",
-      "eventName": "transferB3TR",
-      "businessEventName": "value"
+      "name": "amount",
+      "eventName": "actionReward",
+      "businessEventName": "amount"
     },
     {
       "name": "appId",
@@ -70,6 +60,16 @@
       "name": "proof",
       "eventName": "actionReward",
       "businessEventName": "proof"
+    },
+    {
+      "name": "distributor",
+      "eventName": "actionReward",
+      "businessEventName": "distributor"
+    },
+    {
+      "name": "receiver",
+      "eventName": "actionReward",
+      "businessEventName": "receiver"
     }
   ]
 }

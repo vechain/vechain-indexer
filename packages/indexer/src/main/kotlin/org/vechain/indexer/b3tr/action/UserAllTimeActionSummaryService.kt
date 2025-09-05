@@ -9,10 +9,10 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getValue
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByTo
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
@@ -36,10 +36,10 @@ open class UserAllTimeActionSummaryService(
 
         groupByBlockNumber(events).forEach { (_, blockEvents) ->
             // Process Users
-            groupByTo(blockEvents).forEach { (userId, eventsPerUser) ->
+            groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId)
                 val existing = resolveExisting(recordId, updatedResult)
-                val updated = createOrUpdateExisting(EntityType.USER, eventsPerUser, existing)
+                val updated = createOrUpdateExisting(EntityType.USER, eventsPerReceiver, existing)
                 existing?.let { archiveResult.add(it) }
                 updatedResult[recordId] = updated
             }
@@ -96,7 +96,7 @@ open class UserAllTimeActionSummaryService(
             "All events must have the same block number and entity"
         }
 
-        val rewardAmountIncrease = events.sumOf { getValue(it) }
+        val rewardAmountIncrease = events.sumOf { getAmount(it) }
         val proofs = events.mapNotNull { getAction(it).proof }
         val impacts = proofs.mapNotNull { it.impact }
 

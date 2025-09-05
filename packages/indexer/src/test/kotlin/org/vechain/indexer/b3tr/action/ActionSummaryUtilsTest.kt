@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAppId
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getFrom
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getDistributor
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getProof
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getTo
-import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getValue
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -65,109 +65,109 @@ class ActionSummaryUtilsTest {
     }
 
     @Nested
-    inner class GetToTests {
+    inner class GetReceiverTests {
         @Test
-        fun `getTo gets the to param if available`() {
+        fun `getReceiver gets the to param if available`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(returnValues = mapOf("to" to "0x34234")),
+                    params = AbiEventParameters(returnValues = mapOf("receiver" to "0x34234")),
                 )
-            assertEquals("0x34234", getTo(event))
+            assertEquals("0x34234", getReceiver(event))
         }
 
         @Test
-        fun `getTo throws error if to param is missing`() {
+        fun `getReceiver throws error if to param is missing`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params = AbiEventParameters(returnValues = emptyMap()),
                 )
-            assertThrows(IllegalStateException::class.java) { getTo(event) }
+            assertThrows(IllegalStateException::class.java) { getReceiver(event) }
         }
 
         @Test
-        fun `getTo is case sensitive`() {
+        fun `getReceiver is case sensitive`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(returnValues = mapOf("To" to "0x34234")),
+                    params = AbiEventParameters(returnValues = mapOf("Receiver" to "0x34234")),
                 )
-            assertThrows(IllegalStateException::class.java) { getTo(event) }
+            assertThrows(IllegalStateException::class.java) { getReceiver(event) }
         }
     }
 
     @Nested
-    inner class GetFromTests {
+    inner class GetDistributorTests {
         @Test
-        fun `getFrom gets the from param if available`() {
+        fun `getDistributor gets the from param if available`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(returnValues = mapOf("from" to "0x34234")),
+                    params = AbiEventParameters(returnValues = mapOf("distributor" to "0x34234")),
                 )
-            assertEquals("0x34234", getFrom(event))
+            assertEquals("0x34234", getDistributor(event))
         }
 
         @Test
-        fun `getFrom throws error if from param is missing`() {
+        fun `getDistributor throws error if from param is missing`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params = AbiEventParameters(returnValues = emptyMap()),
                 )
-            assertThrows(IllegalStateException::class.java) { getFrom(event) }
+            assertThrows(IllegalStateException::class.java) { getDistributor(event) }
         }
 
         @Test
-        fun `getFrom is case sensitive`() {
+        fun `getDistributor is case sensitive`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params = AbiEventParameters(returnValues = mapOf("From" to "0x34234")),
                 )
-            assertThrows(IllegalStateException::class.java) { getFrom(event) }
+            assertThrows(IllegalStateException::class.java) { getDistributor(event) }
         }
     }
 
     @Nested
-    inner class GetValueTests {
+    inner class GetAmountTests {
         @Test
-        fun `getValue gets the value param if available`() {
+        fun `getAmount gets the value param if available`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params =
                         AbiEventParameters(
-                            returnValues = mapOf("value" to "12345000000000000000000")
+                            returnValues = mapOf("amount" to "12345000000000000000000")
                         ),
                 )
 
-            val result = getValue(event)
+            val result = getAmount(event)
             assertEquals(result.compareTo(12345.toBigDecimal()), 0)
         }
 
         @Test
-        fun `getValue throws error if value param is missing`() {
+        fun `getAmount throws error if value param is missing`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params = AbiEventParameters(returnValues = emptyMap()),
                 )
-            assertThrows(IllegalStateException::class.java) { getValue(event) }
+            assertThrows(IllegalStateException::class.java) { getAmount(event) }
         }
 
         @Test
-        fun `getValue is case sensitive`() {
+        fun `getAmount is case sensitive`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
                     params =
                         AbiEventParameters(
-                            returnValues = mapOf("Value" to "12345000000000000000000")
+                            returnValues = mapOf("Amount" to "12345000000000000000000")
                         ),
                 )
-            assertThrows(IllegalStateException::class.java) { getValue(event) }
+            assertThrows(IllegalStateException::class.java) { getAmount(event) }
         }
     }
 
@@ -271,9 +271,9 @@ class ActionSummaryUtilsTest {
                         AbiEventParameters(
                             returnValues =
                                 mapOf(
-                                    "to" to "0xToAddress",
-                                    "from" to "0xFromAddress",
-                                    "value" to "1000000000000000000000",
+                                    "receiver" to "0xToAddress",
+                                    "distributor" to "0xFromAddress",
+                                    "amount" to "1000000000000000000000",
                                     "appId" to "myApp",
                                     "proof" to validProof,
                                 )
@@ -300,7 +300,8 @@ class ActionSummaryUtilsTest {
                     id = "event1",
                     params =
                         AbiEventParameters(
-                            returnValues = mapOf("to" to "0xToAddress", "from" to "0xFromAddress")
+                            returnValues =
+                                mapOf("receiver" to "0xToAddress", "distributor" to "0xFromAddress")
                         ),
                 )
             val toEntity = ActionSummaryUtils.getEntity(event, EntityType.USER)
@@ -318,8 +319,8 @@ class ActionSummaryUtilsTest {
                             returnValues =
                                 mapOf(
                                     "appId" to "myApp",
-                                    "to" to "0xToAddress",
-                                    "from" to "0xFromAddress",
+                                    "receiver" to "0xToAddress",
+                                    "distributor" to "0xFromAddress",
                                 )
                         ),
                 )
@@ -338,8 +339,8 @@ class ActionSummaryUtilsTest {
                             returnValues =
                                 mapOf(
                                     "appId" to "myApp",
-                                    "to" to "0xToAddress",
-                                    "from" to "0xFromAddress",
+                                    "receiver" to "0xToAddress",
+                                    "distributor" to "0xFromAddress",
                                 )
                         ),
                 )
@@ -355,7 +356,8 @@ class ActionSummaryUtilsTest {
                     id = "event1",
                     params =
                         AbiEventParameters(
-                            returnValues = mapOf("To" to "0xToAddress", "from" to "0xFromAddress")
+                            returnValues =
+                                mapOf("To" to "0xToAddress", "distributor" to "0xFromAddress")
                         ),
                 )
             assertThrows(IllegalStateException::class.java) {
@@ -365,26 +367,26 @@ class ActionSummaryUtilsTest {
     }
 
     @Nested
-    inner class GroupByToTest {
+    inner class GroupByReceiverTest {
         @Test
-        fun `groupByTo groups events by to address`() {
+        fun `groupByReceiver groups events by to address`() {
             val event1 =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(returnValues = mapOf("to" to "0xABC")),
+                    params = AbiEventParameters(returnValues = mapOf("receiver" to "0xABC")),
                 )
             val event2 =
                 buildIndexedEvent(
                     id = "event2",
-                    params = AbiEventParameters(returnValues = mapOf("to" to "0xabc")),
+                    params = AbiEventParameters(returnValues = mapOf("receiver" to "0xabc")),
                 )
             val event3 =
                 buildIndexedEvent(
                     id = "event3",
-                    params = AbiEventParameters(returnValues = mapOf("to" to "0xDEF")),
+                    params = AbiEventParameters(returnValues = mapOf("receiver" to "0xDEF")),
                 )
 
-            val groupedEvents = ActionSummaryUtils.groupByTo(listOf(event1, event2, event3))
+            val groupedEvents = ActionSummaryUtils.groupByReceiver(listOf(event1, event2, event3))
 
             assertEquals(2, groupedEvents.size)
             assertTrue(groupedEvents.containsKey("0xabc"))
@@ -394,14 +396,57 @@ class ActionSummaryUtilsTest {
         }
 
         @Test
-        fun `groupByTo throws an error if to is missing`() {
+        fun `groupByReceiver throws an error if to is missing`() {
             val event =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(mapOf("notto" to "value")),
+                    params = AbiEventParameters(mapOf("notto" to "amount")),
                 )
             assertThrows(IllegalStateException::class.java) {
-                ActionSummaryUtils.groupByTo(listOf(event))
+                ActionSummaryUtils.groupByReceiver(listOf(event))
+            }
+        }
+    }
+
+    @Nested
+    inner class GroupByDistributorTests {
+        @Test
+        fun `groupByDistributor groups events by from address`() {
+            val event1 =
+                buildIndexedEvent(
+                    id = "event1",
+                    params = AbiEventParameters(returnValues = mapOf("distributor" to "0xABC")),
+                )
+            val event2 =
+                buildIndexedEvent(
+                    id = "event2",
+                    params = AbiEventParameters(returnValues = mapOf("distributor" to "0xabc")),
+                )
+            val event3 =
+                buildIndexedEvent(
+                    id = "event3",
+                    params = AbiEventParameters(returnValues = mapOf("distributor" to "0xDEF")),
+                )
+
+            val groupedEvents =
+                ActionSummaryUtils.groupByDistributor(listOf(event1, event2, event3))
+
+            assertEquals(2, groupedEvents.size)
+            assertTrue(groupedEvents.containsKey("0xabc"))
+            assertTrue(groupedEvents.containsKey("0xdef"))
+            assertEquals(2, groupedEvents["0xabc"]!!.size)
+            assertEquals(1, groupedEvents["0xdef"]!!.size)
+        }
+
+        @Test
+        fun `groupByDistributor throws an error if from is missing`() {
+            val event =
+                buildIndexedEvent(
+                    id = "event1",
+                    params = AbiEventParameters(mapOf("notfrom" to "amount")),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                ActionSummaryUtils.groupByDistributor(listOf(event))
             }
         }
     }
@@ -440,7 +485,7 @@ class ActionSummaryUtilsTest {
             val event =
                 buildIndexedEvent(
                     id = "event1",
-                    params = AbiEventParameters(mapOf("notappid" to "value")),
+                    params = AbiEventParameters(mapOf("notappid" to "amount")),
                 )
             assertThrows(IllegalStateException::class.java) { groupByAppId(listOf(event)) }
         }
