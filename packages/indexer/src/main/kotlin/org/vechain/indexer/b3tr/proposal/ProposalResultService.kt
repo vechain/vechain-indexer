@@ -17,7 +17,7 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Service
@@ -41,7 +41,7 @@ open class ProposalResultService(
         val updatedResult = mutableMapOf<String, ProposalResult>()
         val archiveResult = mutableListOf<ProposalResult>()
 
-        groupByBlockNumber(events).forEach { (_, blockEvents) ->
+        groupByBlock(events).forEach { (_, blockEvents) ->
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
                 groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
                     val recordId = calculateId(proposalId, support)

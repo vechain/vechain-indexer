@@ -346,7 +346,7 @@ class ActionSummaryUtilsTest {
                 )
             val globalEntity = ActionSummaryUtils.getEntity(event, EntityType.GLOBAL)
 
-            assertEquals("GLOBAL", globalEntity)
+            assertEquals(EntityType.GLOBAL.name, globalEntity)
         }
 
         @Test

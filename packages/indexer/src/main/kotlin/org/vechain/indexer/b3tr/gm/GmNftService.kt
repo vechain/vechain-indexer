@@ -9,7 +9,7 @@ import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Service
@@ -34,7 +34,7 @@ open class GmNftService(
         val updatedNfts = mutableMapOf<String, GmNft>()
         val archiveNfts = mutableListOf<GmNft>()
 
-        groupByBlockNumber(events).forEach { (_, blockEvents) ->
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
                 val existing = resolveExistingNft(tokenId, updatedNfts)
                 val updated = processAllTokenEvents(existing, tokenEvents)

@@ -12,7 +12,8 @@ import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
+import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Service
@@ -27,9 +28,7 @@ open class XAllocResultService(
         val updatedResult = mutableMapOf<String, XAllocResult>()
         val archiveResult = mutableListOf<XAllocResult>()
 
-        groupByBlockNumber(events).forEach { (blockNumber, blockEvents) ->
-            val blockId = blockEvents.first().blockId
-            val blockTimestamp = blockEvents.first().blockTimestamp
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
                 parseVotes(roundEvents).forEach { (appId, aggregatedVote) ->
                     val recordId = XAllocResult.calculateId(roundId, appId)
@@ -40,9 +39,7 @@ open class XAllocResultService(
                             appId = appId,
                             voters = aggregatedVote.voters,
                             totalVotes = aggregatedVote.weight,
-                            blockNumber = blockNumber,
-                            blockId = blockId,
-                            blockTimestamp = blockTimestamp,
+                            blockDetails = blockDetails,
                             existing = existing,
                         )
 
@@ -60,17 +57,15 @@ open class XAllocResultService(
         appId: String,
         voters: Long,
         totalVotes: BigInteger,
-        blockNumber: Long,
-        blockId: String,
-        blockTimestamp: Long,
+        blockDetails: BlockDetails,
         existing: XAllocResult?,
     ): XAllocResult {
         return if (existing != null) {
             XAllocResult(
                 version = existing.version + 1,
-                blockId = blockId,
-                blockNumber = blockNumber,
-                blockTimestamp = blockTimestamp,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
                 roundId = roundId,
                 appId = appId,
                 voters = existing.voters + voters,
@@ -79,9 +74,9 @@ open class XAllocResultService(
         } else {
             XAllocResult(
                 version = 1,
-                blockId = blockId,
-                blockNumber = blockNumber,
-                blockTimestamp = blockTimestamp,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
                 roundId = roundId,
                 appId = appId,
                 voters = voters,

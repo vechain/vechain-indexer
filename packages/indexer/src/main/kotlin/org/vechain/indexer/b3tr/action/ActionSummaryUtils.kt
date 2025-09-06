@@ -85,7 +85,7 @@ object ActionSummaryUtils {
         when (entityType) {
             EntityType.USER -> getReceiver(event)
             EntityType.APP -> getAppId(event)
-            EntityType.GLOBAL -> "GLOBAL"
+            EntityType.GLOBAL -> EntityType.GLOBAL.name
         }
 
     fun groupByReceiver(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =

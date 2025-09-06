@@ -36,6 +36,7 @@ internal class GmNftServiceTest {
         val event1 =
             buildIndexedEvent(
                 id = "e1",
+                blockId = "block-1",
                 blockNumber = 1L,
                 eventType = "B3TR_GmMinted",
                 params =
@@ -44,6 +45,7 @@ internal class GmNftServiceTest {
         val event2 =
             buildIndexedEvent(
                 id = "e2",
+                blockId = "block-2",
                 blockNumber = 2L,
                 eventType = "B3TR_GmTransfer",
                 params =

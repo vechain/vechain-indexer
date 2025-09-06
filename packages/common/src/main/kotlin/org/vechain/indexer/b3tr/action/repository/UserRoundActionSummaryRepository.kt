@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -35,7 +36,7 @@ interface UserRoundActionSummaryRepository :
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type and round ID
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
-        totalRewardAmount: Double,
+        totalRewardAmount: BigDecimal,
         entityType: EntityType,
         roundId: Int,
     ): Long

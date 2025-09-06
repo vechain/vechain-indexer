@@ -4,21 +4,21 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
 open class AppDailyActionSummaryProcessor(
-    repository: UserRoundActionSummaryRepository,
-    appRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    private val service: UserRoundActionSummaryService,
+    repository: AppDailyActionSummaryRepository,
+    appDailyActionSummaryArchiveService:
+        ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+    private val service: AppDailyActionSummaryService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
-        archiveService = appRoundActionSummaryArchiveService,
+        archiveService = appDailyActionSummaryArchiveService,
     ) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {

@@ -17,7 +17,8 @@ import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.EventUtils.groupByBlockNumber
+import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
@@ -34,12 +35,19 @@ open class UserAllTimeActionSummaryService(
         val updatedResult = mutableMapOf<String, UserAllTimeActionSummary>()
         val archiveResult = mutableListOf<UserAllTimeActionSummary>()
 
-        groupByBlockNumber(events).forEach { (_, blockEvents) ->
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             // Process Users
             groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId)
                 val existing = resolveExisting(recordId, updatedResult)
-                val updated = createOrUpdateExisting(EntityType.USER, eventsPerReceiver, existing)
+                val updated =
+                    createOrUpdateExisting(
+                        userId,
+                        EntityType.USER,
+                        eventsPerReceiver,
+                        blockDetails,
+                        existing,
+                    )
                 existing?.let { archiveResult.add(it) }
                 updatedResult[recordId] = updated
             }
@@ -47,15 +55,29 @@ open class UserAllTimeActionSummaryService(
             groupByAppId(blockEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId)
                 val existing = resolveExisting(recordId, updatedResult)
-                val updated = createOrUpdateExisting(EntityType.APP, eventsPerApp, existing)
+                val updated =
+                    createOrUpdateExisting(
+                        appId,
+                        EntityType.APP,
+                        eventsPerApp,
+                        blockDetails,
+                        existing,
+                    )
                 existing?.let { archiveResult.add(it) }
                 updatedResult[recordId] = updated
             }
 
             // Process Global
-            val recordId = generateId("GLOBAL")
+            val recordId = generateId(EntityType.GLOBAL.name)
             val existing = resolveExisting(recordId, updatedResult)
-            val updated = createOrUpdateExisting(EntityType.GLOBAL, blockEvents, existing)
+            val updated =
+                createOrUpdateExisting(
+                    EntityType.GLOBAL.name,
+                    EntityType.GLOBAL,
+                    blockEvents,
+                    blockDetails,
+                    existing,
+                )
             existing?.let { archiveResult.add(it) }
             updatedResult[recordId] = updated
         }
@@ -80,20 +102,18 @@ open class UserAllTimeActionSummaryService(
     }
 
     protected fun createOrUpdateExisting(
+        entity: String,
         entityType: EntityType,
         events: List<IndexedEvent>,
+        blockDetails: BlockDetails,
         existing: UserAllTimeActionSummary?,
     ): UserAllTimeActionSummary {
         require(events.isNotEmpty()) { "No events provided" }
 
-        // All events must have the same 'to' and block number
-        val blockNumber = events.first().blockNumber
-        val entity = getEntity(events.first(), entityType)
-
         require(
-            events.all { it.blockNumber == blockNumber && getEntity(it, entityType) == entity }
+            events.all { it.blockId == blockDetails.blockId && getEntity(it, entityType) == entity }
         ) {
-            "All events must have the same block number and entity"
+            "All events must have the same block id and entity"
         }
 
         val rewardAmountIncrease = events.sumOf { getAmount(it) }
@@ -105,9 +125,9 @@ open class UserAllTimeActionSummaryService(
 
             UserAllTimeActionSummary(
                 version = existing.version + 1,
-                blockId = events.first().blockId,
-                blockNumber = blockNumber,
-                blockTimestamp = events.first().blockTimestamp,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
                 entity = existing.entity,
                 entityType = existing.entityType,
                 actionsRewarded = existing.actionsRewarded + events.size,
@@ -117,9 +137,9 @@ open class UserAllTimeActionSummaryService(
         } else {
             UserAllTimeActionSummary(
                 version = 1,
-                blockId = events.first().blockId,
-                blockNumber = blockNumber,
-                blockTimestamp = events.first().blockTimestamp,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
                 entity = entity,
                 entityType = entityType,
                 actionsRewarded = events.size.toLong(),

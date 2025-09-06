@@ -45,7 +45,7 @@ constructor(
         totalImpact: Impact?,
     ) : this(
         id =
-            if (entityType == EntityType.GLOBAL) generateId("GLOBAL", date)
+            if (entityType == EntityType.GLOBAL) generateId(EntityType.GLOBAL.name, date)
             else generateId(entity, date),
         version = version,
         blockId = blockId,

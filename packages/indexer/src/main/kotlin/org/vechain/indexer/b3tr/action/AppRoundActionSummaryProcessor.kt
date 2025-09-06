@@ -4,17 +4,17 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 open class AppRoundActionSummaryProcessor(
-    repository: UserRoundActionSummaryRepository,
+    repository: AppRoundActionSummaryRepository,
     appRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    private val service: UserRoundActionSummaryService,
+        ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+    private val service: AppRoundActionSummaryService,
 ) :
     BaseStatefulProcessor(
         repository = repository,

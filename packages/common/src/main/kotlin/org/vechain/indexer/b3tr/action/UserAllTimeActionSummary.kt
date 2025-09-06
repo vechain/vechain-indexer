@@ -38,7 +38,9 @@ constructor(
         totalRewardAmount: BigDecimal,
         totalImpact: Impact?,
     ) : this(
-        id = if (entityType == EntityType.GLOBAL) generateId("GLOBAL") else generateId(entity),
+        id =
+            if (entityType == EntityType.GLOBAL) generateId(EntityType.GLOBAL.name)
+            else generateId(entity),
         version = version,
         blockId = blockId,
         blockNumber = blockNumber,

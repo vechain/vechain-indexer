@@ -4,17 +4,17 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
+import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
 open class AppAllTimeActionSummaryProcessor(
-    repository: UserAllTimeActionSummaryRepository,
+    repository: AppAllTimeActionSummaryRepository,
     appAllTimeActionSummaryArchiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    private val service: UserAllTimeActionSummaryService,
+        ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
+    private val service: AppAllTimeActionSummaryService,
 ) :
     BaseStatefulProcessor(
         repository = repository,

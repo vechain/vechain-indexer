@@ -78,59 +78,71 @@ class EventUtilsTest {
     }
 
     @Nested
-    inner class GroupByBlockNumberTest {
+    inner class GroupByBlockTests {
         @Test
-        fun `groupByBlockNumber groups events by blockNumber`() {
+        fun `groupByBlock groups events by blockId`() {
             val events =
                 listOf(
                     buildIndexedEvent(
+                        blockId = "block1",
                         blockNumber = 1L,
+                        blockTimestamp = 10L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                     buildIndexedEvent(
+                        blockId = "block2",
                         blockNumber = 2,
+                        blockTimestamp = 20L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                     buildIndexedEvent(
-                        blockNumber = 1,
+                        blockId = "block2",
+                        blockNumber = 2,
+                        blockTimestamp = 20L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                 )
 
-            val grouped = EventUtils.groupByBlockNumber(events)
+            val grouped = EventUtils.groupByBlock(events)
 
             assertEquals(2, grouped.size)
-            assertEquals(2, grouped[1]!!.size)
-            assertEquals(1, grouped[2]!!.size)
+            assertEquals(1, grouped[BlockDetails("block1", 1L, 10L)]!!.size)
+            assertEquals(2, grouped[BlockDetails("block2", 2L, 20L)]!!.size)
         }
 
         @Test
-        fun `groupByBlockNumber returns empty map for empty input list`() {
-            val grouped = EventUtils.groupByBlockNumber(emptyList())
+        fun `groupByBlock returns empty map for empty input list`() {
+            val grouped = EventUtils.groupByBlock(emptyList())
             assertTrue(grouped.isEmpty())
         }
 
         @Test
-        fun `groupByBlockNumber returns map sorted by blockNumber`() {
+        fun `groupByBlock returns map sorted by blockNumber`() {
             val events =
                 listOf(
                     buildIndexedEvent(
+                        blockId = "block-a",
                         blockNumber = 3,
+                        blockTimestamp = 30L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                     buildIndexedEvent(
+                        blockId = "block-b",
                         blockNumber = 1,
+                        blockTimestamp = 10L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                     buildIndexedEvent(
+                        blockId = "block-c",
                         blockNumber = 2,
+                        blockTimestamp = 20L,
                         params = AbiEventParameters(returnValues = emptyMap()),
                     ),
                 )
 
-            val grouped = EventUtils.groupByBlockNumber(events)
+            val grouped = EventUtils.groupByBlock(events)
 
-            assertEquals(listOf(1L, 2L, 3L), grouped.keys.toList())
+            assertEquals(listOf(1L, 2L, 3L), grouped.keys.toList().map { it.blockNumber })
         }
     }
 }

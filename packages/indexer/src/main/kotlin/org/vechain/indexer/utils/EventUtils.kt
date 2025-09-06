@@ -5,6 +5,8 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.transfer.TransferEventType
 
+data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
+
 object EventUtils {
     fun determineEventType(params: AbiEventParameters): HistoryEventName? =
         when (params.getEventType()) {
@@ -63,11 +65,26 @@ object EventUtils {
         }
 
     /**
-     * Groups a list of events by their block number.
+     * Groups events by blockId, then sorts the groups by blockNumber (ascending). The returned Map
+     * preserves the sorted order of blocks via insertion order.
      *
      * @param events List of IndexedEvent to group.
-     * @return Map where keys are blockNumbers and values are lists of events in that block.
+     * @return Map where keys are BlockDetails (blockId, blockNumber, blockTimestamp) and values are
+     *   lists of events in that block.
      */
-    fun groupByBlockNumber(events: List<IndexedEvent>): Map<Long, List<IndexedEvent>> =
-        events.groupBy { it.blockNumber }.toSortedMap()
+    fun groupByBlock(events: List<IndexedEvent>): Map<BlockDetails, List<IndexedEvent>> {
+        // First group by blockId so the canonical key is the blockId
+        val byId: Map<String, List<IndexedEvent>> = events.groupBy { it.blockId }
+
+        // Build (BlockDetails -> events) pairs. We derive number/timestamp from the first event in
+        // each block.
+        val entries: List<Pair<BlockDetails, List<IndexedEvent>>> =
+            byId.map { (id, evs) ->
+                val first = evs.first()
+                BlockDetails(id, first.blockNumber, first.blockTimestamp) to evs
+            }
+
+        // Sort by blockNumber and return as a LinkedHashMap to preserve order
+        return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
+    }
 }

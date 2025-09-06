@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -38,7 +39,7 @@ interface UserDailyActionSummaryRepository :
     fun findByEntityAndDate(entity: String, date: String): UserDailyActionSummary?
 
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
-        totalRewardAmount: Double,
+        totalRewardAmount: BigDecimal,
         entityType: EntityType,
         date: String,
     ): Long

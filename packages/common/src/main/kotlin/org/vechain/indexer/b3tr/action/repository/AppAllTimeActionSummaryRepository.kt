@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
+import java.math.BigDecimal
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -15,7 +16,10 @@ interface AppAllTimeActionSummaryRepository :
 
     fun findAllByUser(user: String, pageable: Pageable): Slice<AppAllTimeActionSummary>
 
-    fun countByTotalRewardAmountGreaterThanAndAppId(totalRewardAmount: Double, appId: String): Long
+    fun countByTotalRewardAmountGreaterThanAndAppId(
+        totalRewardAmount: BigDecimal,
+        appId: String,
+    ): Long
 
     fun countByActionsRewardedGreaterThanAndAppId(actionsRewarded: Long, appId: String): Long
 
