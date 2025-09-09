@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.action
+package org.vechain.indexer.b3tr.action.mongo
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -9,17 +9,19 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.b3tr.action.AppRoundActionSummary
+import org.vechain.indexer.b3tr.action.AppRoundActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
-@Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
-open class AppAllTimeActionSummaryCollectionConfig(
+@Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
+open class AppRoundActionSummaryCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-    @param:Value("\${indexer.version.b3tr-app-all-time-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, AppAllTimeActionSummary::class.java) {
+    @param:Value("\${indexer.version.b3tr-app-round-action-summary}") private val version: Int,
+) : CollectionConfig(mongoTemplate, appCoroutineScope, AppRoundActionSummary::class.java) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -29,12 +31,12 @@ open class AppAllTimeActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                AppAllTimeActionSummary::class.java,
+                AppRoundActionSummary::class.java,
                 version,
             )
 
         if (dropped) {
-            indexerVersionService.dropArchiveCollection(AppAllTimeActionSummaryArchive::class.java)
+            indexerVersionService.dropArchiveCollection(AppRoundActionSummaryArchive::class.java)
         }
 
         this.ensureCollection()
@@ -43,15 +45,25 @@ open class AppAllTimeActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "user_-1" to Index().on("user", Sort.Direction.DESC),
-                "appId_-1_totalRewardAmount_-1" to
+                "user_-1_roundId_-1" to
+                    Index().on("user", Sort.Direction.DESC).on("roundId", Sort.Direction.DESC),
+                "appId_-1_user_-1" to
+                    Index().on("appId", Sort.Direction.DESC).on("user", Sort.Direction.DESC),
+                "appId_-1_roundId_-1_totalRewardAmount_-1" to
                     Index()
                         .on("appId", Sort.Direction.DESC)
+                        .on("roundId", Sort.Direction.DESC)
                         .on("totalRewardAmount", Sort.Direction.DESC),
-                "appId_-1_actionsRewarded_-1" to
+                "appId_-1_roundId_-1_actionsRewarded_-1" to
                     Index()
                         .on("appId", Sort.Direction.DESC)
+                        .on("roundId", Sort.Direction.DESC)
                         .on("actionsRewarded", Sort.Direction.DESC),
+                "appId_1_roundId_1_actionsRewarded_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("roundId", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.ASC),
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
