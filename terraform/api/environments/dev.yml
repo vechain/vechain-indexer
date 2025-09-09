@@ -65,6 +65,7 @@ enabled_nets:
         stargate:                   '22044000'
         b3tr:                       '18868500'
         b3tr-x-alloc-result:        '18926115'
+        b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
         historical-proposals:       '4510483'
       start-round:
@@ -125,6 +126,7 @@ enabled_nets:
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
+          EMISSIONS_CONTRACT: '0xdf94739bd169c84fe6478d8420bb807f1f47b135'
           VOT3_CONTRACT: '0x76ca782b59c74d088c7d2cce2f211bc00836c602'
           B3TR_GOVERNOR_CONTRACT: '0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c'
           GM_NFT_CONTRACT: '0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f'
@@ -197,6 +199,7 @@ enabled_nets:
         historical-proposals:       '22087000'
         b3tr:                       '19661986'
         b3tr-x-alloc-result:        '19661986'
+        b3tr-sustainable-actions:   '19661986'
         b3tr-proposal:              '19661986'
       start-round:
         b3tr-sustainable-actions:   '4'
@@ -255,6 +258,7 @@ enabled_nets:
       business-event:
         substitutions:
           B3TR_CONTRACT:             '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
+          EMISSIONS_CONTRACT: '0x148d21032f4a7b4aef236e2e9c0c5bf62d10f8eb'
           VOT3_CONTRACT:             '0xa704c45971995467696ee9544da77dd42bc9706e'
           B3TR_GOVERNOR_CONTRACT:    '0xdf5e114d391cac840529802fe8d01f6bdebe41ec'
           GM_NFT_CONTRACT:    '0xcf73039913e05aa1838d5869e72290d2b454c1e8'

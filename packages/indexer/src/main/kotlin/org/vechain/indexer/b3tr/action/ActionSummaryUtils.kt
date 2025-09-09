@@ -13,6 +13,7 @@ import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.scaleDown
 
@@ -64,6 +65,9 @@ object ActionSummaryUtils {
 
     fun getProof(event: IndexedEvent): SustainabilityProofV2? =
         event.params.getAsString("proof")?.let { ProofUtils.parseProofFromJson(it) }
+
+    fun getCycle(event: IndexedEvent): Int =
+        event.params.getAsInt("cycle") ?: error("Missing param 'cycle' in event: ${event.id}")
 
     fun getAction(event: IndexedEvent): Action {
         val appId = getAppId(event)

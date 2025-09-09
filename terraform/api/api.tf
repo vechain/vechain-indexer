@@ -290,12 +290,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-x-alloc-result
     },
     {
+      name = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
+      value = each.value.indexer.start-block.b3tr-sustainable-actions
+    },
+    {
       name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
       value = each.value.indexer.start-block.historical-proposals
     },
     {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
-      value = each.value.indexer.start-round.b3tr.sustainable-actions
+      value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
@@ -484,6 +488,10 @@ module "ecs-backend-service" {
     {
       name  = "B3TR_CONTRACT"
       value = each.value.indexer.business-event.substitutions.B3TR_CONTRACT
+    },
+    {
+      name  = "EMISSIONS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.EMISSIONS_CONTRACT
     },
     {
       name  = "VOT3_CONTRACT"

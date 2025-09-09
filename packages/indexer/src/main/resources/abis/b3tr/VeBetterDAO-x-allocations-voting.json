@@ -53,6 +53,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "DuplicateAppVote",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -665,6 +670,19 @@
   },
   {
     "inputs": [],
+    "name": "b3trGovernor",
+    "outputs": [
+      {
+        "internalType": "contract IB3TRGovernor",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "baseAllocationPercentage",
     "outputs": [
       {
@@ -890,6 +908,30 @@
         "internalType": "struct X2EarnAppsDataTypes.AppWithDetailsReturnType[]",
         "name": "",
         "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "timepoint",
+        "type": "uint256"
+      }
+    ],
+    "name": "getDepositVotingPower",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1186,6 +1228,19 @@
       }
     ],
     "name": "initializeV2",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IB3TRGovernor",
+        "name": "_b3trGovernor",
+        "type": "address"
+      }
+    ],
+    "name": "initializeV7",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1501,6 +1556,19 @@
       }
     ],
     "name": "setAppSharesCap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IB3TRGovernor",
+        "name": "newB3TRGovernor",
+        "type": "address"
+      }
+    ],
+    "name": "setB3TRGovernor",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
