@@ -485,7 +485,7 @@ class ActionSummaryUtilsTest {
     }
 
     @Nested
-    inner class GroupByAppIdTest {
+    inner class GroupByAppIdTests {
         @Test
         fun `groupByAppId groups events by appId`() {
             val event1 =
@@ -521,6 +521,47 @@ class ActionSummaryUtilsTest {
                     params = AbiEventParameters(mapOf("notappid" to "amount")),
                 )
             assertThrows(IllegalStateException::class.java) { groupByAppId(listOf(event)) }
+        }
+    }
+
+    @Nested
+    inner class AssertEventTypeTests {
+        @Test
+        fun `assertEventType does not throw if all events match expected type`() {
+            val event1 =
+                buildIndexedEvent(
+                    id = "event1",
+                    eventType = "B3TR_ActionReward",
+                    params = AbiEventParameters(returnValues = mapOf("appId" to "123")),
+                )
+            val event2 =
+                buildIndexedEvent(
+                    id = "event2",
+                    eventType = "B3TR_ActionReward",
+                    params = AbiEventParameters(returnValues = mapOf("appId" to "123")),
+                )
+
+            ActionSummaryUtils.assertEventTypes(listOf(event1, event2), "B3TR_ActionReward")
+        }
+
+        @Test
+        fun `assertEventType throws if any event does not match expected type`() {
+            val event1 =
+                buildIndexedEvent(
+                    id = "event1",
+                    eventType = "B3TR_ActionReward",
+                    params = AbiEventParameters(returnValues = mapOf("appId" to "123")),
+                )
+            val event2 =
+                buildIndexedEvent(
+                    id = "event2",
+                    eventType = "SomeOtherEvent",
+                    params = AbiEventParameters(returnValues = mapOf("appId" to "123")),
+                )
+
+            assertThrows(IllegalStateException::class.java) {
+                ActionSummaryUtils.assertEventTypes(listOf(event1, event2), "B3TR_ActionReward")
+            }
         }
     }
 }

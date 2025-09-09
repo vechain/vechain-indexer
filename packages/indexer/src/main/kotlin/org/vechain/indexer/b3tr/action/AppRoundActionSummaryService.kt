@@ -9,6 +9,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAppId
@@ -33,6 +34,8 @@ open class AppRoundActionSummaryService(
         events: List<IndexedEvent>,
         roundId: Int,
     ): Pair<List<AppRoundActionSummary>, List<AppRoundActionSummary>> {
+        assertEventTypes(events, "B3TR_ActionReward")
+
         // All events must be from the block
         require(events.all { it.blockId == blockDetails.blockId }) {
             "All events must be from the same block"

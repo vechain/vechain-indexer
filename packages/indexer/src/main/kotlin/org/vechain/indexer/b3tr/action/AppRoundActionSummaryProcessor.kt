@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getCycle
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -66,9 +67,10 @@ open class AppRoundActionSummaryProcessor(
     /**
      * Discover what the current round is
      *
-     * @param emissionDistributedEvents used to check for a change of round id
+     * @param events used to check for a change of round id
      */
-    private fun discoverRoundId(emissionDistributedEvents: List<IndexedEvent>): Int {
+    private fun discoverRoundId(events: List<IndexedEvent>): Int {
+        assertEventTypes(events, "EmissionDistributed", "EmissionDistributedV2")
         // If the roundId is not set, we need to set it
         if (roundId == null) {
             // First check to see if there is an existing record that we can use
@@ -77,14 +79,14 @@ open class AppRoundActionSummaryProcessor(
             logger.info("Initialising roundId: $roundId")
         }
         // Next we check if the roundId has changed in the current block
-        if (emissionDistributedEvents.isNotEmpty()) {
-            require(emissionDistributedEvents.size == 1) {
-                "Expected only one EmissionDistributed or EmissionDistributedV2 event per block, but found ${emissionDistributedEvents.size} in block ${emissionDistributedEvents[0].blockNumber}"
+        if (events.isNotEmpty()) {
+            require(events.size == 1) {
+                "Expected only one EmissionDistributed or EmissionDistributedV2 event per block, but found ${events.size} in block ${events[0].blockNumber}"
             }
-            val newRoundId = getCycle(emissionDistributedEvents[0])
+            val newRoundId = getCycle(events[0])
             if (newRoundId != roundId) {
                 logger.info(
-                    "Round has changed from $roundId to $newRoundId at block ${emissionDistributedEvents[0].blockNumber}"
+                    "Round has changed from $roundId to $newRoundId at block ${events[0].blockNumber}"
                 )
                 roundId = newRoundId
             }

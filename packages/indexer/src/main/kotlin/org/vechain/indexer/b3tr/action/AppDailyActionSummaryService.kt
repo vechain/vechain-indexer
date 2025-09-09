@@ -9,6 +9,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAppId
@@ -33,6 +34,7 @@ open class AppDailyActionSummaryService(
     open fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<AppDailyActionSummary>, List<AppDailyActionSummary>> {
+        assertEventTypes(events, "B3TR_ActionReward")
 
         val updatedResult = mutableMapOf<String, AppDailyActionSummary>()
         val archiveResult = mutableListOf<AppDailyActionSummary>()

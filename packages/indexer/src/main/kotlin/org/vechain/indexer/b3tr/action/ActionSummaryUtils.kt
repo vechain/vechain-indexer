@@ -121,4 +121,14 @@ object ActionSummaryUtils {
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, appEvents) -> appEvents.sortedBy { it.blockNumber } }
+
+    fun assertEventTypes(event: List<IndexedEvent>, vararg allowedTypes: String) {
+        event.forEach {
+            if (it.eventType !in allowedTypes) {
+                error(
+                    "Unexpected event type: ${it.eventType}, expected one of: ${allowedTypes.joinToString()}"
+                )
+            }
+        }
+    }
 }
