@@ -260,6 +260,39 @@ class ActionSummaryUtilsTest {
     }
 
     @Nested
+    inner class GetCycleTests {
+        @Test
+        fun `getCycle gets the cycle param if available`() {
+            val event =
+                buildIndexedEvent(
+                    id = "event1",
+                    params = AbiEventParameters(returnValues = mapOf("cycle" to "42")),
+                )
+            assertEquals(42, ActionSummaryUtils.getCycle(event))
+        }
+
+        @Test
+        fun `getCycle throws error if cycle param is missing`() {
+            val event =
+                buildIndexedEvent(
+                    id = "event1",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) { ActionSummaryUtils.getCycle(event) }
+        }
+
+        @Test
+        fun `getCycle is case sensitive`() {
+            val event =
+                buildIndexedEvent(
+                    id = "event1",
+                    params = AbiEventParameters(returnValues = mapOf("Cycle" to "42")),
+                )
+            assertThrows(IllegalStateException::class.java) { ActionSummaryUtils.getCycle(event) }
+        }
+    }
+
+    @Nested
     inner class GetActionTests {
         @Test
         fun `getAction constructs Action correctly`() {
