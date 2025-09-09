@@ -9,6 +9,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
@@ -33,6 +34,7 @@ open class UserRoundActionSummaryService(
         events: List<IndexedEvent>,
         roundId: Int,
     ): Pair<List<UserRoundActionSummary>, List<UserRoundActionSummary>> {
+        assertEventTypes(events, "B3TR_ActionReward")
 
         val updatedResult = mutableMapOf<String, UserRoundActionSummary>()
         val archiveResult = mutableListOf<UserRoundActionSummary>()

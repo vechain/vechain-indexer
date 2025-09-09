@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
+import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.thor.model.Block
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
@@ -18,10 +20,7 @@ open class UserAllTimeActionSummaryProcessor(
         repository = repository,
         archiveService = userAllTimeActionSummaryArchiveService,
     ) {
-    override fun process(
-        matchedEvents: List<org.vechain.indexer.event.model.generic.IndexedEvent>,
-        block: org.vechain.indexer.thor.model.Block?,
-    ) {
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return
         }

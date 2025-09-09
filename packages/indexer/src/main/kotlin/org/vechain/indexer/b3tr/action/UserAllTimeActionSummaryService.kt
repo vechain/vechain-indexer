@@ -8,6 +8,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
@@ -27,10 +28,12 @@ open class UserAllTimeActionSummaryService(
     private val userAllTimeActionSummaryArchiveService:
         ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
 ) {
+    private val globalId = generateId(EntityType.GLOBAL.name)
 
     open fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<UserAllTimeActionSummary>, List<UserAllTimeActionSummary>> {
+        assertEventTypes(events, "B3TR_ActionReward")
 
         val updatedResult = mutableMapOf<String, UserAllTimeActionSummary>()
         val archiveResult = mutableListOf<UserAllTimeActionSummary>()
@@ -68,8 +71,7 @@ open class UserAllTimeActionSummaryService(
             }
 
             // Process Global
-            val recordId = generateId(EntityType.GLOBAL.name)
-            val existing = resolveExisting(recordId, updatedResult)
+            val existing = resolveExisting(globalId, updatedResult)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -79,7 +81,7 @@ open class UserAllTimeActionSummaryService(
                     existing,
                 )
             existing?.let { archiveResult.add(it) }
-            updatedResult[recordId] = updated
+            updatedResult[globalId] = updated
         }
 
         return updatedResult.values.toList() to archiveResult
