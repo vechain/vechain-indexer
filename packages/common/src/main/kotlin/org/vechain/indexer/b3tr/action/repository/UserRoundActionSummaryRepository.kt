@@ -15,6 +15,12 @@ interface UserRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserRoundActionSummary, String> {
     fun findFirstByOrderByBlockNumberDesc(): UserRoundActionSummary?
 
+    fun findAllByEntityTypeAndRoundId(
+        entityType: EntityType,
+        roundId: Int,
+        pageable: Pageable,
+    ): Slice<UserRoundActionSummary>
+
     fun findByEntityAndRoundId(entity: String, roundId: Int): UserRoundActionSummary?
 
     fun findAllByEntityAndRoundId(

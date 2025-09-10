@@ -2,16 +2,21 @@ package org.vechain.indexer.b3tr.action
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.vechain.indexer.b3tr.action.SortFieldUtils.assertSortFields
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.utils.PaginationUtils.toPageable
 
 @Profile("b3tr", "b3tr-actions")
 @Service
@@ -156,5 +161,67 @@ open class ActionService(
             uniqueXAppInteractions = uniqueInteractions,
             date = null,
         )
+    }
+
+    fun getAllTimeLeaderboard(
+        page: Int?,
+        size: Int?,
+        direction: String?,
+        sortBy: String,
+    ): PaginatedResponse<UserLeaderboardItem> {
+        // Ensure the sortBy field is valid
+        assertSortFields(
+            sortBy,
+            UserAllTimeActionSummary::totalRewardAmount.name,
+            UserAllTimeActionSummary::actionsRewarded.name,
+        )
+
+        val pageable = toPageable(page, size, direction, sortBy)
+
+        val result = userAllTimeRepo.findAllByEntityType(EntityType.USER, pageable)
+
+        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
+    }
+
+    fun getDailyLeaderboard(
+        date: String,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+        sortBy: String,
+    ): PaginatedResponse<UserLeaderboardItem> {
+        // Ensure the sortBy field is valid
+        assertSortFields(
+            sortBy,
+            UserDailyActionSummary::totalRewardAmount.name,
+            UserDailyActionSummary::actionsRewarded.name,
+        )
+
+        val pageable = toPageable(page, size, direction, sortBy)
+
+        val result = userDailyRepo.findAllByEntityTypeAndDate(EntityType.USER, date, pageable)
+
+        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
+    }
+
+    fun getRoundLeaderboard(
+        roundId: Int,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+        sortBy: String,
+    ): PaginatedResponse<UserLeaderboardItem> {
+        // Ensure the sortBy field is valid
+        assertSortFields(
+            sortBy,
+            UserRoundActionSummary::totalRewardAmount.name,
+            UserRoundActionSummary::actionsRewarded.name,
+        )
+
+        val pageable = toPageable(page, size, direction, sortBy)
+
+        val result = userRoundRepo.findAllByEntityTypeAndRoundId(EntityType.USER, roundId, pageable)
+
+        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
     }
 }

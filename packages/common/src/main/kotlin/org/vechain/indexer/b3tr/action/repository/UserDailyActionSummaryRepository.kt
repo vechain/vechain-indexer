@@ -36,6 +36,12 @@ interface UserDailyActionSummaryRepository :
 
     fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserDailyActionSummary>
 
+    fun findAllByEntityTypeAndDate(
+        entityType: EntityType,
+        date: String,
+        pageable: Pageable,
+    ): Slice<UserDailyActionSummary>
+
     fun findByEntityAndDate(entity: String, date: String): UserDailyActionSummary?
 
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
