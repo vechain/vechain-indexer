@@ -1,0 +1,97 @@
+package org.vechain.indexer.b3tr.action
+
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.just
+import io.mockk.verify
+import java.math.BigDecimal
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+
+@ExtendWith(MockKExtension::class)
+internal class AppAllTimeActionSummaryProcessorTest {
+    @MockK lateinit var repository: AppAllTimeActionSummaryRepository
+
+    @MockK
+    lateinit var archiveService:
+        ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
+
+    @MockK lateinit var service: AppAllTimeActionSummaryService
+
+    private lateinit var processor: AppAllTimeActionSummaryProcessor
+
+    @BeforeEach
+    fun setUp() {
+        MockKAnnotations.init(this)
+        processor = AppAllTimeActionSummaryProcessor(repository, archiveService, service = service)
+    }
+
+    @Test
+    fun `process empty events doesn't save any records`() {
+        processor.process(emptyList(), null)
+
+        // Verify that service.save is not called
+        verify(exactly = 0) { service.save(any(), any()) }
+
+        // Verify that service.processEvents is not called
+        verify(exactly = 0) { service.processEvents(any()) }
+    }
+
+    @Test
+    fun `process updated records and archives are saved`() {
+        val events =
+            listOf(
+                buildIndexedEvent(
+                    id = "e1",
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    eventType = "B3TR_ActionReward",
+                    params =
+                        AbiEventParameters(
+                            returnValues =
+                                mapOf(
+                                    "appId" to "app-1",
+                                    "receiver" to "user-1",
+                                    "amount" to "10000000000000000000",
+                                    "action" to "",
+                                    "distributor" to "0x0",
+                                )
+                        ),
+                )
+            )
+
+        val updatedRecords =
+            listOf(
+                AppAllTimeActionSummary(
+                    version = 2,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1L,
+                    user = "user-1",
+                    appId = "app-1",
+                    actionsRewarded = 1,
+                    totalRewardAmount = BigDecimal.ONE,
+                    totalImpact = null,
+                )
+            )
+
+        val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
+
+        every { service.processEvents(events) } returns (updatedRecords to archiveRecords)
+        every { service.save(updatedRecords, archiveRecords) } just Runs
+
+        // Verify that service.save is called with the correct parameters
+        processor.process(events, null)
+
+        verify(exactly = 1) { service.processEvents(events) }
+        verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
+    }
+}
