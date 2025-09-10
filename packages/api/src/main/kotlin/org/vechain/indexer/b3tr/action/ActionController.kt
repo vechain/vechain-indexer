@@ -131,7 +131,7 @@ open class ActionController(private val service: ActionService) {
         return service.getAllTimeWalletOverview(wallet)
     }
 
-    @GetMapping("user/leaderboard")
+    @GetMapping("user/action/leaderboard")
     @Operation(
         summary = "Get leaderboard of user's B3TR actions.",
         description =
