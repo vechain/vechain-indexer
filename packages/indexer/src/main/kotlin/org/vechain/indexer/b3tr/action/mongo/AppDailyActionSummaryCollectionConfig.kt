@@ -47,8 +47,16 @@ open class AppDailyActionSummaryCollectionConfig(
             listOf(
                 "appId_-1_date_-1" to
                     Index().on("appId", Sort.Direction.DESC).on("date", Sort.Direction.DESC),
-                "user_-1_date_-1" to
-                    Index().on("user", Sort.Direction.DESC).on("date", Sort.Direction.DESC),
+                "appId_-1_date_-1_totalRewardAmount_-1" to
+                    Index()
+                        .on("appId", Sort.Direction.DESC)
+                        .on("date", Sort.Direction.DESC)
+                        .on("totalRewardAmount", Sort.Direction.DESC),
+                "appId_-1_date_-1_actionsRewarded_-1" to
+                    Index()
+                        .on("appId", Sort.Direction.DESC)
+                        .on("date", Sort.Direction.DESC)
+                        .on("actionsRewarded", Sort.Direction.DESC),
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )

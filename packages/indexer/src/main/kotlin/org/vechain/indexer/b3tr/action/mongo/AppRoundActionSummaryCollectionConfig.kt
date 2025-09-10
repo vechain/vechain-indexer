@@ -45,8 +45,15 @@ open class AppRoundActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "user_-1_roundId_-1" to
-                    Index().on("user", Sort.Direction.DESC).on("roundId", Sort.Direction.DESC),
+                "roundId_-1" to Index().on("roundId", Sort.Direction.DESC),
+                "roundId_-1_actionsRewarded_-1" to
+                    Index()
+                        .on("roundId", Sort.Direction.DESC)
+                        .on("actionsRewarded", Sort.Direction.DESC),
+                "roundId_-1_totalRewardAmount_-1" to
+                    Index()
+                        .on("roundId", Sort.Direction.DESC)
+                        .on("totalRewardAmount", Sort.Direction.DESC),
                 "appId_-1_user_-1" to
                     Index().on("appId", Sort.Direction.DESC).on("user", Sort.Direction.DESC),
                 "appId_-1_roundId_-1_totalRewardAmount_-1" to

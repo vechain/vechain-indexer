@@ -14,6 +14,8 @@ interface AppRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<AppRoundActionSummary, String> {
     fun findFirstByOrderByBlockNumberDesc(): AppRoundActionSummary?
 
+    fun findAllByRoundId(roundId: Int, pageable: Pageable): Slice<AppRoundActionSummary>
+
     fun findAllByAppIdAndRoundId(
         appId: String,
         roundId: Int,
