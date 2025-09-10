@@ -37,7 +37,7 @@ import org.vechain.indexer.validation.ValidPageSize
 @RequestMapping(B3TR_PATH)
 open class ActionController(private val service: ActionService) {
 
-    @GetMapping("user/{wallet}/action/overview")
+    @GetMapping("user/{wallet}/actions/overview")
     @Operation(
         summary =
             "Get B3TR action overview for a specific wallet, optionally for a specific round or date.",
@@ -131,7 +131,7 @@ open class ActionController(private val service: ActionService) {
         return service.getAllTimeWalletOverview(wallet)
     }
 
-    @GetMapping("user/action/leaderboard")
+    @GetMapping("actions/leaderboard/users")
     @Operation(
         summary = "Get leaderboard of user's B3TR actions.",
         description =
