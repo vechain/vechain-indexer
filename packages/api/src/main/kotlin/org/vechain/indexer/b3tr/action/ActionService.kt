@@ -11,6 +11,7 @@ import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryReposi
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
+import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserOverview
@@ -31,7 +32,10 @@ open class ActionService(
     private val appDailyRepo: AppDailyActionSummaryRepository,
     private val appRoundRepo: AppRoundActionSummaryRepository,
 ) {
-    open fun getAllTimeWalletOverview(wallet: Address): UserOverview {
+
+    // User overviews
+
+    open fun getAllTimeUserOverview(wallet: Address): UserOverview {
         // Normalize the entity
         val normalizedEntity = HexUtils.normalise(wallet.value)
 
@@ -75,7 +79,7 @@ open class ActionService(
         )
     }
 
-    open fun getDailyWalletOverview(wallet: Address, date: String): UserOverview {
+    open fun getDailyUserOverview(wallet: Address, date: String): UserOverview {
         // Normalize the entity
         val normalizedEntity = HexUtils.normalise(wallet.value)
 
@@ -120,7 +124,7 @@ open class ActionService(
         )
     }
 
-    open fun getRoundWalletOverview(wallet: Address, roundId: Int): UserOverview {
+    open fun getRoundUserOverview(wallet: Address, roundId: Int): UserOverview {
         // Normalize the entity
         val normalizedEntity = HexUtils.normalise(wallet.value)
 
@@ -163,6 +167,134 @@ open class ActionService(
             rankByActionsRewarded = rankByActionsRewarded,
             uniqueXAppInteractions = uniqueInteractions,
             date = null,
+        )
+    }
+
+    // App Overviews
+
+    fun getAppAllTimeOverview(appId: AppId): AppOverview {
+
+        // Retrieve the overview from the repository
+        val overview = userAllTimeRepo.findByEntity(appId.value)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                userAllTimeRepo.countByTotalRewardAmountGreaterThanAndEntityType(
+                    overview.totalRewardAmount,
+                    EntityType.APP,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                userAllTimeRepo.countByActionsRewardedGreaterThanAndEntityType(
+                    overview.actionsRewarded,
+                    EntityType.APP,
+                ) + 1
+        }
+
+        // Fetch totalUniqueUserInteractions
+        val totalUniqueUserInteractions: Long = appAllTimeRepo.countByAppId(appId.value)
+
+        // Return AppOverview with the calculated position fields
+        return AppOverview(
+            appId = appId.value,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
+            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            roundId = null,
+            date = null,
+        )
+    }
+
+    fun getAppRoundOverview(appId: AppId, roundId: Int): AppOverview {
+        // Retrieve the overview from the repository
+        val overview = userRoundRepo.findByEntityAndRoundId(appId.value, roundId)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                userRoundRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
+                    overview.totalRewardAmount,
+                    EntityType.APP,
+                    roundId,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                userRoundRepo.countByActionsRewardedGreaterThanAndEntityTypeAndRoundId(
+                    overview.actionsRewarded,
+                    EntityType.APP,
+                    roundId,
+                ) + 1
+        }
+
+        // Fetch totalUniqueUserInteractions
+        val totalUniqueUserInteractions: Long =
+            appRoundRepo.countByAppIdAndRoundId(appId.value, roundId)
+
+        // Return AppOverview with the calculated position fields
+        return AppOverview(
+            appId = appId.value,
+            roundId = roundId,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
+            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            date = null,
+        )
+    }
+
+    fun getAppDailyOverview(appId: AppId, date: String): AppOverview {
+        // Retrieve the overview from the repository
+        val overview = userDailyRepo.findByEntityAndDate(appId.value, date)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                userDailyRepo.countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
+                    overview.totalRewardAmount,
+                    EntityType.APP,
+                    date,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                userDailyRepo.countByActionsRewardedGreaterThanAndEntityTypeAndDate(
+                    overview.actionsRewarded,
+                    EntityType.APP,
+                    date,
+                ) + 1
+        }
+
+        // Fetch totalUniqueUserInteractions
+        val totalUniqueUserInteractions: Long = appDailyRepo.countByAppIdAndDate(appId.value, date)
+
+        // Return AppOverview with the calculated position fields
+        return AppOverview(
+            appId = appId.value,
+            date = date,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
+            totalUniqueUserInteractions = totalUniqueUserInteractions,
+            roundId = null,
         )
     }
 

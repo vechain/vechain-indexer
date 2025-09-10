@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
+import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.ERROR_CANT_PASS_ROUND_AND_DATE
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
@@ -125,14 +126,87 @@ open class ActionController(private val service: ActionService) {
         }
 
         if (roundId != null) {
-            return service.getRoundWalletOverview(wallet, roundId)
+            return service.getRoundUserOverview(wallet, roundId)
         }
 
         if (date != null) {
-            return service.getDailyWalletOverview(wallet, date)
+            return service.getDailyUserOverview(wallet, date)
         }
 
-        return service.getAllTimeWalletOverview(wallet)
+        return service.getAllTimeUserOverview(wallet)
+    }
+
+    @GetMapping("/actions/apps/{appId}/overview")
+    @Operation(
+        summary =
+            "Get B3TR action overview for a specific app, optionally for a specific round or date.",
+        description =
+            """
+            This endpoint retrieves the B3TR action overview for an app.
+            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
+
+            - If roundId is provided, the overview for the specific round is returned.
+            - If date is provided, the overview for the specific date is returned.
+            - If roundId/date are not provided, the all time sustainability overview for the app is returned.
+            - If both roundId and date are provided, a BadRequest error is returned.
+        """,
+    )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "Validation errors occurred, eg: must provide wallet or roundId",
+                    content =
+                        [
+                            Content(
+                                mediaType = "application/json",
+                                schema = Schema(implementation = ExceptionResponse::class),
+                            )
+                        ],
+                ),
+            ]
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "appId",
+        description = "App ID to query by.",
+        required = true,
+        schema = Schema(type = "string", pattern = AppId.REGEX),
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "roundId",
+        schema = Schema(type = "integer"),
+        description = "Round ID to filter by.",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "date",
+        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
+        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
+        required = false,
+    )
+    open fun getAppOverview(
+        @ValidAppId @PathVariable appId: AppId,
+        @RequestParam(required = false) roundId: Int?,
+        @ValidISODateString @RequestParam(required = false) date: String?,
+    ): AppOverview {
+        if (roundId != null && date != null) {
+            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
+        }
+
+        if (roundId != null) {
+            return service.getAppRoundOverview(appId, roundId)
+        }
+
+        if (date != null) {
+            return service.getAppDailyOverview(appId, date)
+        }
+
+        return service.getAppAllTimeOverview(appId)
     }
 
     @GetMapping("actions/leaderboards/users")

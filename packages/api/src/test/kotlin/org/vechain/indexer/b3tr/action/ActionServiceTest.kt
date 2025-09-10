@@ -45,14 +45,14 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getAllTimeWalletOverview returns default overview when no data exists`() {
+    fun `getAllTimeUserOverview returns default overview when no data exists`() {
         val wallet = Address("0xdef")
         val normalized = "0xdef"
 
         every { userAllTimeRepo.findByEntity(normalized) } returns null
         every { appAllTimeRepo.findAppIdsByUser(normalized) } returns emptyList()
 
-        val result = service.getAllTimeWalletOverview(wallet)
+        val result = service.getAllTimeUserOverview(wallet)
         assertEquals(normalized, result.wallet)
         assertEquals(0.0, result.totalRewardAmount)
         assertEquals(0, result.actionsRewarded)
@@ -65,7 +65,7 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getAllTimeWalletOverview returns correct overview when data exists`() {
+    fun `getAllTimeUserOverview returns correct overview when data exists`() {
         val wallet = Address("0xabc")
         val normalized = "0xabc"
         val impact =
@@ -91,7 +91,7 @@ internal class ActionServiceTest {
 
         every { appAllTimeRepo.findAppIdsByUser(normalized) } returns listOf(app1, app2)
 
-        val result = service.getAllTimeWalletOverview(wallet)
+        val result = service.getAllTimeUserOverview(wallet)
 
         assertEquals(normalized, result.wallet)
         assertEquals(100.0, result.totalRewardAmount)
@@ -105,7 +105,7 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getDailyWalletOverview returns default overview when no data exists`() {
+    fun `getDailyUserOverview returns default overview when no data exists`() {
         val wallet = Address("0xdef")
         val date = "2023-10-10"
         val normalized = "0xdef"
@@ -113,7 +113,7 @@ internal class ActionServiceTest {
         every { userDailyRepo.findByEntityAndDate(normalized, date) } returns null
         every { appDailyRepo.findAppIdsByUserAndDate(normalized, date) } returns emptyList()
 
-        val result = service.getDailyWalletOverview(wallet, date)
+        val result = service.getDailyUserOverview(wallet, date)
 
         assertEquals(normalized, result.wallet)
 
@@ -128,7 +128,7 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getDailyWalletOverview returns correct overview when data exists`() {
+    fun `getDailyUserOverview returns correct overview when data exists`() {
         val wallet = Address("0xabc")
         val date = "2023-10-10"
         val normalized = "0xabc"
@@ -160,7 +160,7 @@ internal class ActionServiceTest {
 
         every { appDailyRepo.findAppIdsByUserAndDate(normalized, date) } returns listOf(app1, app2)
 
-        val result = service.getDailyWalletOverview(wallet, date)
+        val result = service.getDailyUserOverview(wallet, date)
 
         assertEquals(normalized, result.wallet)
         assertEquals(50.0, result.totalRewardAmount)
@@ -174,7 +174,7 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getRoundWalletOverview returns default overview when no data exists`() {
+    fun `getRoundUserOverview returns default overview when no data exists`() {
         val wallet = Address("0xdef")
         val roundId = 1
         val normalized = "0xdef"
@@ -182,7 +182,7 @@ internal class ActionServiceTest {
         every { userRoundRepo.findByEntityAndRoundId(normalized, roundId) } returns null
         every { appRoundRepo.findAppIdsByUserAndRoundId(normalized, roundId) } returns emptyList()
 
-        val result = service.getRoundWalletOverview(wallet, roundId)
+        val result = service.getRoundUserOverview(wallet, roundId)
 
         assertEquals(normalized, result.wallet)
         assertEquals(0.0, result.totalRewardAmount)
@@ -195,7 +195,7 @@ internal class ActionServiceTest {
     }
 
     @Test
-    fun `getRoundWalletOverview returns correct overview when data exists`() {
+    fun `getRoundUserOverview returns correct overview when data exists`() {
         val wallet = Address("0xabc")
         val roundId = 1
         val normalized = "0xabc"
@@ -227,7 +227,7 @@ internal class ActionServiceTest {
         every { appRoundRepo.findAppIdsByUserAndRoundId(normalized, roundId) } returns
             listOf(app1, app2)
 
-        val result = service.getRoundWalletOverview(wallet, roundId)
+        val result = service.getRoundUserOverview(wallet, roundId)
 
         assertEquals(normalized, result.wallet)
         assertEquals(75.0, result.totalRewardAmount)
