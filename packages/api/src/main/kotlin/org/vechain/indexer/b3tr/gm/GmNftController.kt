@@ -3,17 +3,14 @@ package org.vechain.indexer.b3tr.gm
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.constants.GM_NFT_PATH
-import org.vechain.indexer.exception.ExceptionResponse
+import org.vechain.indexer.docs.CommonApiResponses
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Tag(
@@ -29,21 +26,8 @@ open class GmNftController(private val gmNftRepository: GmNftRepository) {
         description =
             "Returns the current overview (holders, B3TR donated, etc.) for each Galaxy Member level.",
     )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(
-                    responseCode = "200",
-                    description = "UserAllTimeActionSummary retrieved successfully",
-                ),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid level filter",
-                    content = [Content(schema = Schema(implementation = ExceptionResponse::class))],
-                ),
-            ]
-    )
     @GetMapping("/level-overview")
+    @CommonApiResponses
     open fun getLevelOverviews(
         @Parameter(
             `in` = ParameterIn.QUERY,

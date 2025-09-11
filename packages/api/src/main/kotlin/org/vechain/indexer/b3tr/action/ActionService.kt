@@ -12,6 +12,7 @@ import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryReposito
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.AppOverview
+import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserOverview
@@ -295,6 +296,52 @@ open class ActionService(
             rankByActionsRewarded = rankByActionsRewarded,
             totalUniqueUserInteractions = totalUniqueUserInteractions,
             roundId = null,
+        )
+    }
+
+    // Global Overviews
+    fun getGlobalAllTimeOverview(): GlobalOverview {
+        val overview = userAllTimeRepo.findByEntity(EntityType.GLOBAL.name)
+
+        val distinctUsers = userAllTimeRepo.countByEntityType(EntityType.USER)
+
+        return GlobalOverview(
+            roundId = null,
+            date = null,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            totalUniqueUserInteractions = distinctUsers,
+        )
+    }
+
+    fun getGlobalDailyOverview(date: String): GlobalOverview {
+        val overview = userDailyRepo.findByEntityAndDate(EntityType.GLOBAL.name, date)
+
+        val distinctUsers = userDailyRepo.countByEntityTypeAndDate(EntityType.USER, date)
+
+        return GlobalOverview(
+            roundId = null,
+            date = date,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            totalUniqueUserInteractions = distinctUsers,
+        )
+    }
+
+    fun getGlobalRoundOverview(roundId: Int): GlobalOverview {
+        val overview = userRoundRepo.findByEntityAndRoundId(EntityType.GLOBAL.name, roundId)
+
+        val distinctUsers = userRoundRepo.countByEntityTypeAndRoundId(EntityType.USER, roundId)
+
+        return GlobalOverview(
+            roundId = roundId,
+            date = null,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            totalUniqueUserInteractions = distinctUsers,
         )
     }
 

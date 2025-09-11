@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.action
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigDecimal
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -15,11 +14,11 @@ import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
 data class AppAllTimeActionSummary
 @ConstructorBinding
 constructor(
-    @JsonIgnore @Id val id: String,
-    @JsonIgnore override val version: Int,
-    @JsonIgnore override val blockId: String,
-    @JsonIgnore override val blockNumber: Long,
-    @JsonIgnore override val blockTimestamp: Long,
+    @Id val id: String,
+    override val version: Int,
+    override val blockId: String,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
     override val appId: String,
     override val user: String,
     override val actionsRewarded: Long,
@@ -49,7 +48,7 @@ constructor(
         totalImpact = totalImpact,
     )
 
-    @JsonIgnore override fun getDocumentId(): String = id
+    override fun getDocumentId(): String = id
 }
 
 @Document(collection = "b3tr_app_action_summaries_all_time_archives")

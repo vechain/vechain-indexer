@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -34,9 +35,6 @@ open class NftController(private val nftService: NftService) {
     @GetMapping
     @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "address",
@@ -59,6 +57,7 @@ open class NftController(private val nftService: NftService) {
         description = "The NFT tokenId",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,

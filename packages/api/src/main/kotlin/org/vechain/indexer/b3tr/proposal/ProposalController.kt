@@ -1,19 +1,18 @@
 package org.vechain.indexer.b3tr.proposal
 
+import ProposalIdParameter
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.b3tr.voting.Support
-import org.vechain.indexer.constants.PROPOSAL_PATH
+import org.vechain.indexer.constants.B3TR_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
-import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.docs.SupportParameter
+import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -26,81 +25,68 @@ import org.vechain.indexer.validation.ValidProposalId
 @Tag(name = "B3TR - Governance Proposals", description = "Query voting data on VeBetterDAO.")
 @Validated
 @RestController
-@RequestMapping(PROPOSAL_PATH)
+@RequestMapping(B3TR_PATH)
 open class ProposalController(private val proposalService: ProposalService) {
 
-    @GetMapping("{proposalId}/results")
+    @GetMapping("proposals/{proposalId}/results")
     @Operation(summary = "Get the results of a proposal.")
-    @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Success")])
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "proposalId",
-        description = "Proposal ID to filter by.",
-        required = true,
-        schema = Schema(type = "string", pattern = ProposalId.REGEX),
-    )
+    @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
+    @CommonApiResponses
     open fun getProposalResult(
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId
     ): List<ProposalResult> {
         return proposalService.getProposalResult(proposalId.value)
     }
 
-    @GetMapping("comments")
-    @Operation(summary = "Get comments for a proposal.")
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "A valid proposalId or voter address must be provided",
-                ),
-            ]
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "proposalId",
-        description = "Proposal ID to filter by.",
-        required = false,
-        schema = Schema(type = "string", pattern = ProposalId.REGEX),
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "voter",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Voter address to filter by.",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "support",
-        schema = Schema(type = "string", allowableValues = ["FOR", "AGAINST", "ABSTAIN"]),
-        description = "Filter by support.",
-        required = false,
-    )
+    @GetMapping("proposals/{proposalId}/comments")
+    @Operation(summary = "Get the comments for a proposal.")
+    @ProposalIdParameter(required = true, `in` = ParameterIn.PATH)
+    @SupportParameter
+    @CommonApiResponses
     @PaginationParameters
-    open fun getComments(
-        @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
-        @ValidAddress @RequestParam(required = false) voter: Address?,
+    open fun getProposalComments(
+        @ValidProposalId @PathVariable(required = true) proposalId: ProposalId,
         @RequestParam(required = false) support: Support?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ProposalComment> {
         val pageable = toPageable(page, size, direction, ProposalComment::blockNumber.name)
-        // Either a proposalId or voter must be provided. Return an appropriate response code if
-        // not.
-        val result =
-            if (proposalId == null && voter == null) {
-                throw BadRequestException("Either a proposalId or voter address must be provided")
-            } else if (proposalId != null && voter != null) {
-                proposalService.getComments(proposalId.value, voter.value, support, pageable)
-            } else if (proposalId != null) {
-                proposalService.getComments(proposalId.value, support, pageable)
-            } else {
-                proposalService.getCommentsForVoter(voter!!.value, support, pageable)
-            }
+        val result = proposalService.getComments(proposalId.value, support, pageable)
+        return paginatedResponse(result)
+    }
 
+    @GetMapping("users/{wallet}/proposal-comments")
+    @Operation(summary = "Get the comments made by a user on proposals.")
+    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @ProposalIdParameter
+    @SupportParameter
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getUserProposalComments(
+        @ValidAddress @PathVariable wallet: Address,
+        @RequestParam(required = false) proposalId: ProposalId?,
+        @RequestParam(required = false) support: Support?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<ProposalComment> {
+        val pageable = toPageable(page, size, direction, ProposalComment::blockNumber.name)
+        val result =
+            if (proposalId != null) {
+                proposalService.getComments(
+                    proposalId = proposalId.value,
+                    voter = wallet.value,
+                    support = support,
+                    pageable = pageable,
+                )
+            } else {
+                proposalService.getCommentsForVoter(
+                    voter = wallet.value,
+                    support = support,
+                    pageable = pageable,
+                )
+            }
         return paginatedResponse(result)
     }
 }

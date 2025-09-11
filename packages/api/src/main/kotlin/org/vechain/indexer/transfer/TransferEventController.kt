@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -46,6 +47,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         description = "The token contract address",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getTransferEvents(
         @ValidAddress @RequestParam(required = false) address: Address?,
@@ -86,6 +88,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         description = "The token contract address",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByFrom(
         @ValidAddress @RequestParam address: Address,
@@ -120,6 +123,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         description = "The token contract address",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByTo(
         @ValidAddress @RequestParam address: Address,
@@ -155,6 +159,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = true,
         example = "1000000",
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getTransfersForBlock(
         @ValidAddressList @RequestParam addresses: List<Address>,
@@ -190,6 +195,7 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = false,
         example = "false",
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getFungibleTokensContractsByAddress(
         @ValidAddress @RequestParam address: Address,

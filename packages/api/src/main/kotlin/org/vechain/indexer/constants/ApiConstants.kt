@@ -15,9 +15,8 @@ const val VEVOTE_PATH = "$API_PATH/vevote"
 const val AUTHORITY_NODES_PATH = "$API_PATH/authority_endorsers"
 const val STARGATE_PATH = "$API_PATH/stargate"
 const val B3TR_PATH = "$API_PATH/b3tr"
-const val GM_NFT_PATH = "$B3TR_PATH/gm-nft"
-const val PROPOSAL_PATH = "$B3TR_PATH/proposals"
-const val X_ALLOC_PATH = "$B3TR_PATH/x-alloc"
+const val GM_NFT_PATH = "$B3TR_PATH/galaxy-members"
+const val X_ALLOC_PATH = "$B3TR_PATH/xallocations"
 const val B3TR_TXS_PATH = "$B3TR_PATH/b3tr-txs"
 
 // PAGINATION DEFAULTS
