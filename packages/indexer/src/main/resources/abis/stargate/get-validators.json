@@ -1,0 +1,160 @@
+[
+  {
+    "inputs": [],
+    "name": "getValidators",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "masters",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "endorsors",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint8[]",
+        "name": "statuses",
+        "type": "uint8[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "onlines",
+        "type": "bool[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "offlineBlocks",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "stakingPeriodLengths",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "startBlocks",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "exitBlocks",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint32[]",
+        "name": "completedPeriods",
+        "type": "uint32[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "validatorLockedStakes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "validatorLockedWeights",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "delegatorsStake",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "validatorQueuedStakes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "totalQueuedStakes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "totalExitingStakes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "totalNextPeriodWeights",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "queuedStake",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "queuedStake",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "stakerBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "stakerBalance",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalBurned",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalBurned",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalStake",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalStake",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalWeight",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "vthoTotalSupply",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "vthoTotalSupply",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
