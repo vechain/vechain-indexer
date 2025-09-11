@@ -47,6 +47,21 @@
   ],
   "paramsDefinition": [
     {
+      "name": "to",
+      "eventName": "transferB3TR",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferB3TR",
+      "businessEventName": "from"
+    },
+    {
+      "name": "value",
+      "eventName": "transferB3TR",
+      "businessEventName": "value"
+    },
+    {
       "name": "amount",
       "eventName": "actionReward",
       "businessEventName": "amount"

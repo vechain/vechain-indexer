@@ -19,9 +19,9 @@ annotation class ValidAppId(
 
 class AppIdValidator : ConstraintValidator<ValidAppId, AppId> {
     override fun isValid(
-        value: AppId,
+        value: AppId?,
         constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
-        return value.isValid()
+        return value == null || value.isValid()
     }
 }

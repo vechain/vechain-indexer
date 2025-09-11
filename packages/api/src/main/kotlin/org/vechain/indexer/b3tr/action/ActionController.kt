@@ -3,7 +3,9 @@ package org.vechain.indexer.b3tr.action
 import DateParameter
 import RoundIdParameter
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -20,12 +22,16 @@ import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidISODateString
+import org.vechain.indexer.validation.ValidPageNumber
+import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("b3tr", "b3tr-actions")
 @Tag(name = "B3TR - Actions", description = "Endpoints for B3TR Actions.")
@@ -35,6 +41,93 @@ import org.vechain.indexer.validation.ValidISODateString
 open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}")
+    @Operation(summary = "Get B3TR actions for a user")
+    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AppIdParameter
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "after",
+        schema = Schema(type = "long"),
+        description = "Return transactions after this timestamp (Unix time in milliseconds).",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "long"),
+        description = "Return transactions before this timestamp (Unix time in milliseconds).",
+        required = false,
+    )
+    @PaginationParameters
+    open fun getUserActions(
+        @ValidAddress @PathVariable(required = true) wallet: Address,
+        @ValidAppId @RequestParam(required = false) appId: AppId?,
+        @RequestParam(required = false) after: Long?,
+        @RequestParam(required = false) before: Long?,
+        @ValidPageNumber @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<Action> {
+
+        if (appId != null) {
+            return service.getUserActionsForApp(
+                wallet = wallet,
+                appId = appId,
+                after = after,
+                before = before,
+                page = page,
+                size = size,
+                direction = direction,
+            )
+        }
+
+        return service.getUserActions(
+            wallet = wallet,
+            after = after,
+            before = before,
+            page = page,
+            size = size,
+            direction = direction,
+        )
+    }
+
+    @GetMapping("/actions/apps/{appId}")
+    @Operation(summary = "Get B3TR actions for an app")
+    @AppIdParameter(required = true, `in` = ParameterIn.PATH)
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "after",
+        schema = Schema(type = "long"),
+        description = "Return transactions after this timestamp (Unix time in milliseconds).",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "long"),
+        description = "Return transactions before this timestamp (Unix time in milliseconds).",
+        required = false,
+    )
+    @PaginationParameters
+    open fun getAppActions(
+        @ValidAppId @PathVariable(required = true) appId: AppId,
+        @RequestParam(required = false) after: Long?,
+        @RequestParam(required = false) before: Long?,
+        @ValidPageNumber @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<Action> {
+        return service.getAppActions(
+            appId = appId,
+            after = after,
+            before = before,
+            page = page,
+            size = size,
+            direction = direction,
+        )
+    }
+
+    @GetMapping("/actions/users/{wallet}/overview")
     @Operation(
         summary =
             "Get B3TR action overview for a specific wallet, optionally for a specific round or date.",
@@ -71,7 +164,7 @@ open class ActionController(private val service: ActionService) {
         return service.getAllTimeUserOverview(wallet)
     }
 
-    @GetMapping("/actions/apps/{appId}")
+    @GetMapping("/actions/apps/{appId}/overview")
     @Operation(
         summary =
             "Get B3TR action overview for a specific app, optionally for a specific round or date.",
@@ -109,7 +202,7 @@ open class ActionController(private val service: ActionService) {
         return service.getAppAllTimeOverview(appId)
     }
 
-    @GetMapping("/actions/global")
+    @GetMapping("/actions/global/overview")
     @Operation(
         summary = "Get global B3TR action overview, optionally for a specific round or date.",
         description =

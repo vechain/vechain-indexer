@@ -28,13 +28,13 @@ internal class ActionServiceTest {
     @MockK lateinit var appDailyRepo: AppDailyActionSummaryRepository
     @MockK lateinit var appRoundRepo: AppRoundActionSummaryRepository
 
-    private lateinit var service: ActionService
+    private lateinit var service: ActionLeaderboardService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
         service =
-            ActionService(
+            ActionLeaderboardService(
                 userAllTimeRepo,
                 userDailyRepo,
                 userRoundRepo,

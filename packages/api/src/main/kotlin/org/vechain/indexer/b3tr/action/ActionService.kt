@@ -3,20 +3,18 @@ package org.vechain.indexer.b3tr.action
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.b3tr.AppId
-import org.vechain.indexer.b3tr.action.SortFieldUtils.assertSortFields
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
-import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.GlobalOverview
-import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
-import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.history.HistoryEventName
+import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -26,6 +24,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 @Profile("b3tr", "b3tr-actions")
 @Service
 open class ActionService(
+    private val historyRepo: HistoryRepository,
     private val userAllTimeRepo: UserAllTimeActionSummaryRepository,
     private val userDailyRepo: UserDailyActionSummaryRepository,
     private val userRoundRepo: UserRoundActionSummaryRepository,
@@ -33,6 +32,143 @@ open class ActionService(
     private val appDailyRepo: AppDailyActionSummaryRepository,
     private val appRoundRepo: AppRoundActionSummaryRepository,
 ) {
+    // User Actions
+    open fun getUserActionsForApp(
+        wallet: Address,
+        appId: AppId,
+        after: Long?,
+        before: Long?,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+    ): PaginatedResponse<Action> {
+        val pageable = toPageable(page, size, direction, "blockTimestamp")
+
+        val result =
+            if (after != null && before != null) {
+                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampBetween(
+                    HexUtils.normalise(wallet.value),
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    before,
+                    pageable,
+                )
+            } else if (after != null) {
+                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampAfter(
+                    HexUtils.normalise(wallet.value),
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    pageable,
+                )
+            } else if (before != null) {
+                historyRepo.findAllByToAndAppIdAndEventNameAndBlockTimestampBefore(
+                    HexUtils.normalise(wallet.value),
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    before,
+                    pageable,
+                )
+            } else {
+                historyRepo.findAllByToAndAppIdAndEventName(
+                    HexUtils.normalise(wallet.value),
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    pageable,
+                )
+            }
+
+        return paginatedResponse(result.map { Action.from(it) })
+    }
+
+    open fun getUserActions(
+        wallet: Address,
+        after: Long?,
+        before: Long?,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+    ): PaginatedResponse<Action> {
+        val pageable = toPageable(page, size, direction, "blockTimestamp")
+
+        val result =
+            if (after != null && before != null) {
+                historyRepo.findAllByToAndEventNameAndBlockTimestampBetween(
+                    HexUtils.normalise(wallet.value),
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    before,
+                    pageable,
+                )
+            } else if (after != null) {
+                historyRepo.findAllByToAndEventNameAndBlockTimestampAfter(
+                    HexUtils.normalise(wallet.value),
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    pageable,
+                )
+            } else if (before != null) {
+                historyRepo.findAllByToAndEventNameAndBlockTimestampBefore(
+                    HexUtils.normalise(wallet.value),
+                    HistoryEventName.B3TR_ACTION.name,
+                    before,
+                    pageable,
+                )
+            } else {
+                historyRepo.findAllByToAndEventName(
+                    HexUtils.normalise(wallet.value),
+                    HistoryEventName.B3TR_ACTION.name,
+                    pageable,
+                )
+            }
+
+        return paginatedResponse(result.map { Action.from(it) })
+    }
+
+    fun getAppActions(
+        appId: AppId,
+        after: Long?,
+        before: Long?,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+    ): PaginatedResponse<Action> {
+        val pageable = toPageable(page, size, direction, "blockTimestamp")
+
+        val result =
+            if (after != null && before != null) {
+                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampBetween(
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    before,
+                    pageable,
+                )
+            } else if (after != null) {
+                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampAfter(
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    after,
+                    pageable,
+                )
+            } else if (before != null) {
+                historyRepo.findAllByAppIdAndEventNameAndBlockTimestampBefore(
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    before,
+                    pageable,
+                )
+            } else {
+                historyRepo.findAllByAppIdAndEventName(
+                    appId.value,
+                    HistoryEventName.B3TR_ACTION.name,
+                    pageable,
+                )
+            }
+
+        return paginatedResponse(result.map { Action.from(it) })
+    }
 
     // User overviews
 
@@ -343,200 +479,5 @@ open class ActionService(
             totalImpact = overview?.totalImpact,
             totalUniqueUserInteractions = distinctUsers,
         )
-    }
-
-    // User leaderboards
-
-    fun getUserAllTimeLeaderboard(
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserAllTimeActionSummary::totalRewardAmount.name,
-            UserAllTimeActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userAllTimeRepo.findAllByEntityType(EntityType.USER, pageable)
-
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
-    }
-
-    fun getUserDailyLeaderboard(
-        date: String,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserDailyActionSummary::totalRewardAmount.name,
-            UserDailyActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userDailyRepo.findAllByEntityTypeAndDate(EntityType.USER, date, pageable)
-
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
-    }
-
-    fun getUserRoundLeaderboard(
-        roundId: Int,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserRoundActionSummary::totalRewardAmount.name,
-            UserRoundActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userRoundRepo.findAllByEntityTypeAndRoundId(EntityType.USER, roundId, pageable)
-
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
-    }
-
-    // App leaderboards
-
-    fun getAppAllTimeLeaderboard(
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserAllTimeActionSummary::totalRewardAmount.name,
-            UserAllTimeActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userAllTimeRepo.findAllByEntityType(EntityType.APP, pageable)
-
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
-    }
-
-    fun getAppDailyLeaderboard(
-        date: String,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserDailyActionSummary::totalRewardAmount.name,
-            UserDailyActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userDailyRepo.findAllByEntityTypeAndDate(EntityType.APP, date, pageable)
-
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
-    }
-
-    fun getAppRoundLeaderboard(
-        roundId: Int,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            UserRoundActionSummary::totalRewardAmount.name,
-            UserRoundActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = userRoundRepo.findAllByEntityTypeAndRoundId(EntityType.APP, roundId, pageable)
-
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
-    }
-
-    // User leaderboards by app
-
-    fun getUserAppAllTimeLeaderboard(
-        appId: AppId,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            AppAllTimeActionSummary::totalRewardAmount.name,
-            AppAllTimeActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = appAllTimeRepo.findAllByAppId(appId.value, pageable)
-
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
-    }
-
-    fun getUserAppDailyLeaderboard(
-        appId: AppId,
-        date: String,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            AppDailyActionSummary::totalRewardAmount.name,
-            AppDailyActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = appDailyRepo.findAllByAppIdAndDate(appId.value, date, pageable)
-
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
-    }
-
-    fun getUserAppRoundLeaderboard(
-        appId: AppId,
-        roundId: Int,
-        page: Int?,
-        size: Int?,
-        direction: String?,
-        sortBy: String,
-    ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
-        assertSortFields(
-            sortBy,
-            AppRoundActionSummary::totalRewardAmount.name,
-            AppRoundActionSummary::actionsRewarded.name,
-        )
-
-        val pageable = toPageable(page, size, direction, sortBy)
-
-        val result = appRoundRepo.findAllByAppIdAndRoundId(appId.value, roundId, pageable)
-
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
     }
 }

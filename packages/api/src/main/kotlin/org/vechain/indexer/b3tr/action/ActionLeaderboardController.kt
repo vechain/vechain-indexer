@@ -35,7 +35,7 @@ import org.vechain.indexer.validation.ValidPageSize
 @Validated
 @RestController
 @RequestMapping(B3TR_PATH)
-open class ActionLeaderboardController(private val service: ActionService) {
+open class ActionLeaderboardController(private val service: ActionLeaderboardService) {
 
     @GetMapping("actions/leaderboards/users")
     @Operation(
