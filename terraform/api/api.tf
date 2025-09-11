@@ -364,14 +364,6 @@ module "ecs-backend-service" {
     {
       name  = "ALL_STAKEHOLDERS_ADDRESS"
       value = each.value.veworld.contract.historical-proposals.all-stakeholders
-     },
-    {
-      name  = "BLACKLIST_INTERVAL"
-      value = each.value.indexer.blacklist.interval
-    },
-    {
-      name  = "BLACKLIST_INITIAL_DELAY"
-      value = each.value.indexer.blacklist.initial-delay
     },
     {
       name  = "VERSION_NFTS"
