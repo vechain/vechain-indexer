@@ -17,10 +17,12 @@ import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryReposi
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.thor.Address
 
 @ExtendWith(MockKExtension::class)
 internal class ActionServiceTest {
+    @MockK lateinit var historyRepo: HistoryRepository
     @MockK lateinit var userAllTimeRepo: UserAllTimeActionSummaryRepository
     @MockK lateinit var userDailyRepo: UserDailyActionSummaryRepository
     @MockK lateinit var userRoundRepo: UserRoundActionSummaryRepository
@@ -35,6 +37,7 @@ internal class ActionServiceTest {
         MockKAnnotations.init(this)
         service =
             ActionService(
+                historyRepo,
                 userAllTimeRepo,
                 userDailyRepo,
                 userRoundRepo,
