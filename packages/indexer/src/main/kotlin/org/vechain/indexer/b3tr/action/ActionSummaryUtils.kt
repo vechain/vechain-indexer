@@ -77,6 +77,9 @@ object ActionSummaryUtils {
         val proof = getProof(event)
 
         return Action(
+            blockNumber = event.blockNumber,
+            blockTimestamp = event.blockTimestamp,
+            blockId = event.blockId,
             appId = appId,
             receiver = receiver,
             distributor = distributor,
