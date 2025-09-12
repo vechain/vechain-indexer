@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.HISTORY_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -35,7 +34,6 @@ import org.vechain.indexer.validation.ValidPageSize
 open class HistoryController(private val historyService: HistoryService) {
     @GetMapping("{account}")
     @Operation(summary = "Get account history")
-    @ApiResponses(value = [ApiResponse(responseCode = "400", description = "Invalid txId")])
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "account",
@@ -90,6 +88,7 @@ open class HistoryController(private val historyService: HistoryService) {
             "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistory(
         @ValidAddress @PathVariable account: Address,

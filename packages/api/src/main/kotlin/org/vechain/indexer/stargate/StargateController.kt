@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
@@ -40,6 +41,7 @@ open class StargateController(private val stargateService: StargateService) {
         required = false,
         example = "12345678",
     )
+    @CommonApiResponses
     open fun getTotalVthoClaimed(@RequestParam(required = false) blockNumber: Long?): BigInteger =
         stargateService.getTotalVthoClaimed(blockNumber)
 
@@ -53,6 +55,7 @@ open class StargateController(private val stargateService: StargateService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
+    @CommonApiResponses
     open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: Address): BigInteger =
         stargateService.getTotalVthoClaimed(account.value)
 
@@ -74,6 +77,7 @@ open class StargateController(private val stargateService: StargateService) {
         required = true,
         example = "1-day",
     )
+    @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
     ): List<TimeSeriesRecord<BigInteger>> {
@@ -98,6 +102,7 @@ open class StargateController(private val stargateService: StargateService) {
         required = false,
         example = "12345678",
     )
+    @CommonApiResponses
     open fun getNftHolders(@RequestParam(required = false) blockNumber: Long?): NftHoldersByBlock =
         stargateService.getNftHolders(blockNumber)
             ?: NftHoldersByBlock(
@@ -151,6 +156,7 @@ open class StargateController(private val stargateService: StargateService) {
             "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included.",
         required = false,
     )
+    @CommonApiResponses
     open fun getNftHolders(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
         @ValidTokenLevel @RequestParam(required = false) level: String? = null,
@@ -180,6 +186,7 @@ open class StargateController(private val stargateService: StargateService) {
         required = false,
         example = "12345678",
     )
+    @CommonApiResponses
     open fun getTotalVetStaked(
         @RequestParam(required = false) blockNumber: Long?
     ): VetStakedByBlock =
@@ -236,6 +243,7 @@ open class StargateController(private val stargateService: StargateService) {
                 "included.",
         required = false,
     )
+    @CommonApiResponses
     open fun getTotalVetStaked(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
         @ValidTokenLevel @RequestParam(required = false) level: String? = null,

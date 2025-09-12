@@ -16,7 +16,7 @@ class NftArchivingTest {
     @BeforeEach
     fun `perform healthcheck`() {
         VeWorldAPIClient.performIndexerHealthCheck("TransferIndexer")
-        VeWorldAPIClient.performIndexerHealthCheck("NFTIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("NftIndexer")
     }
 
     @Test

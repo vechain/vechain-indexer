@@ -25,7 +25,7 @@ open class VthoClaimedByAccountCollectionConfig(
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate_vtho_claimed_by_account}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vtho-claimed-by-account}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

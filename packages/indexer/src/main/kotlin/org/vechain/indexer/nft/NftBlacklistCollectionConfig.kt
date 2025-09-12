@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Configuration
 open class NftBlacklistCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -27,7 +27,7 @@ open class NftBlacklistCollectionConfig(
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.nft_blacklist}") private val version: Int = 1
+    @Value("\${indexer.version.nft-blacklist}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

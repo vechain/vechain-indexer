@@ -38,6 +38,10 @@ open class HistoryCollectionConfig(
 
         ensureIndexes(
             listOf(
+                "appId_1_blockTimestamp_-1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
                 "eventName_1" to Index().on("eventName", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
                 "contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),

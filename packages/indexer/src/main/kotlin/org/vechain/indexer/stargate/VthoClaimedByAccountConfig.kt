@@ -31,7 +31,7 @@ open class VthoClaimedByAccountConfig {
     open fun vthoClaimByAccountPruner(
         vthoClaimByAccountArchiveService:
             ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
-        @Value("\${indexer.pruner.removalChunkSize}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
         PrunerService(
             VthoClaimedByAccountArchive::class,
@@ -45,9 +45,9 @@ open class VthoClaimedByAccountConfig {
         processor: VthoClaimedByAccountProcessor,
         vthoClaimByAccountPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.startBlock.stargate}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.stargate}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.stargate}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.stargate}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")

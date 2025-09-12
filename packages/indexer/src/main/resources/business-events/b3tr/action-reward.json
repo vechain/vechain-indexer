@@ -62,6 +62,11 @@
       "businessEventName": "value"
     },
     {
+      "name": "amount",
+      "eventName": "actionReward",
+      "businessEventName": "amount"
+    },
+    {
       "name": "appId",
       "eventName": "actionReward",
       "businessEventName": "appId"
@@ -70,6 +75,16 @@
       "name": "proof",
       "eventName": "actionReward",
       "businessEventName": "proof"
+    },
+    {
+      "name": "distributor",
+      "eventName": "actionReward",
+      "businessEventName": "distributor"
+    },
+    {
+      "name": "receiver",
+      "eventName": "actionReward",
+      "businessEventName": "receiver"
     }
   ]
 }

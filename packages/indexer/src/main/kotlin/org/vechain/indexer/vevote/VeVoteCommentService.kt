@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 class VeVoteCommentService(
     private val repository: VevoteCommentRepository,
-    @Value("\${comments.minLength}") private val minLength: Int,
+    @Value("\${comments.min-length}") private val minLength: Int,
     @Value("\${comments.language.confidence}") private val confidenceThreshold: String,
 ) {
     private val logger = LoggerFactory.getLogger(VeVoteCommentService::class.java)

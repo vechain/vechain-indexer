@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
@@ -20,7 +19,6 @@ import strikt.assertions.isEqualTo
 @ExtendWith(MockKExtension::class)
 internal class NftBlacklistServiceTest {
 
-    @MockK lateinit var mongoTemplate: MongoTemplate
     @MockK lateinit var repository: NftBlacklistRepository
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
@@ -32,7 +30,6 @@ internal class NftBlacklistServiceTest {
         MockKAnnotations.init(this)
         nftBlacklistService =
             NftBlacklistService(
-                mongoTemplate = mongoTemplate,
                 repository = repository,
                 nftBlacklistArchiveService = nftBlacklistArchiveService,
             )

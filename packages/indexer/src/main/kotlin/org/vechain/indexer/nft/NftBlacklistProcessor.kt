@@ -7,7 +7,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Component
 open class NftBlacklistProcessor(
     private val nftBlacklistService: NftBlacklistService,
