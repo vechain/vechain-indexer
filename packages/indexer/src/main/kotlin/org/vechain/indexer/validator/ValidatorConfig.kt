@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -23,8 +24,14 @@ open class ValidatorConfig {
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
         stargateStakerAddress: String,
-    ): Indexer =
-        IndexerFactory()
+    ): Indexer {
+        // TODO: Use the thorClient bean post hayabusa hardfork on testnet
+        val thorClient =
+            DefaultThorClient(
+                "https://hayabusa.live.dev.node.vechain.org",
+                Pair("X-Project-Id", "veworld-indexer"),
+            )
+        return IndexerFactory()
             .name("ValidatorIndexer")
             .thorClient(thorClient)
             .processor(processor)
@@ -38,4 +45,5 @@ open class ValidatorConfig {
             .abiEventNames(listOf("DelegationInitiated", "DelegationAdded", "DelegationWithdrawn"))
             .excludeVetTransfers()
             .build()
+    }
 }
