@@ -20,7 +20,7 @@ object ValidatorUtils {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-    ): List<Validator> {
+    ): Pair<List<Validator>, List<String>> {
         val masters = decoded["masters"] as List<String>
         val endorsors = decoded["endorsors"] as List<String>
         val statuses = decoded["statuses"] as List<BigInteger>
@@ -135,7 +135,9 @@ object ValidatorUtils {
             validators.add(fresh)
         }
 
-        return validators
+        val toDelete = existingDocs.keys.minus(masters.toSet()).toList()
+
+        return validators to toDelete
     }
 
     private fun calculateValidatorYield(

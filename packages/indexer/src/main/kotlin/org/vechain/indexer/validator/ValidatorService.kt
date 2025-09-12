@@ -69,7 +69,7 @@ class ValidatorService(
         val existingDocs: Map<String, Validator> = repository.findAll().associateBy { it.id }
 
         // Get latest validators info
-        val latestValidators =
+        val (updatedValidators, toDelete) =
             ValidatorUtils.unpackValidators(
                 decodedValidators,
                 existingDocs,
@@ -83,7 +83,12 @@ class ValidatorService(
             )
 
         // 4. Persist
-        repository.saveAll(latestValidators)
+        repository.saveAll(updatedValidators)
+
+        // 5. Delete removed validators
+        if (toDelete.isNotEmpty()) {
+            repository.deleteAllById(toDelete)
+        }
     }
 
     fun buildClauses(): List<Clause> {
