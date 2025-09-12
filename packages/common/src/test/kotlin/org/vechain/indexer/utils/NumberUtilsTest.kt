@@ -14,7 +14,7 @@ class NumberUtilsTest {
         val expected = BigDecimal(1.0) // 1 ether in Double
         val result = scaleDown(oneEtherInWei, 18)
 
-        assertEquals(expected, result)
+        assertEquals(0, expected.compareTo(result))
     }
 
     @Test
@@ -24,7 +24,7 @@ class NumberUtilsTest {
         val expected = BigDecimal(1000.0) // 1000 ether in Double
         val result = scaleDown(oneThousandEtherInWei, 18)
 
-        assertEquals(expected, result)
+        assertEquals(0, expected.compareTo(result))
     }
 
     @Test
@@ -34,6 +34,6 @@ class NumberUtilsTest {
         val expected = BigDecimal(0.0) // Expect 0 ether
         val result = scaleDown(zeroWei, 18)
 
-        assertEquals(expected, result)
+        assertEquals(0, expected.compareTo(result))
     }
 }
