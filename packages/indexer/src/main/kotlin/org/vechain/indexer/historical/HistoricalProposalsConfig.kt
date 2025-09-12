@@ -15,7 +15,7 @@ open class HistoricalProposalsConfig {
     open fun historicalProposalsIndexer(
         thorClient: ThorClient,
         processor: HistoricalProposalsProcessor,
-        @Value("\${indexer.startBlock.historical-proposals}") startBlock: Long,
+        @Value("\${indexer.start-block.historical-proposals}") startBlock: Long,
         @Value("\${indexer.syncLogInterval.historical-proposals}") syncLogInterval: Long,
         @Value("\${indexer.syncBlockBatchSize.historical-proposals}") syncBlockBatchSize: Long,
         @Value("\${veworld.contract.historical-proposals.steering-committee}")
