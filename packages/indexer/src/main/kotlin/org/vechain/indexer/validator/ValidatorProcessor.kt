@@ -15,20 +15,12 @@ open class ValidatorProcessor(
     private val thorService: ThorService,
 ) : BaseProcessor(repository) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        println("Processing ${matchedEvents.size} validator events at block ${block?.number}")
-        for (event in matchedEvents) {
-            println("Event: $event ")
-        }
-        service.handleValidatorEvents(matchedEvents)
-
         val bestBlock = thorService.getBestBlock()
-        if (bestBlock.number - (block?.number ?: 0) > 25) {
-            println(
-                "Skipping validator refresh at block ${block?.number}, too far from best block ${bestBlock.number}"
-            )
-            return
+        if (bestBlock.number - (block?.number ?: 0) <= 25) {
+            service.refreshValidators(block!!.id, block.number, block.timestamp)
         }
 
-        service.refreshValidators(block!!.id, block.number, block.timestamp)
+        if (matchedEvents.isEmpty()) return
+        service.handleValidatorEvents(matchedEvents)
     }
 }

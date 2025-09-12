@@ -3,6 +3,7 @@ package org.vechain.indexer.validator
 import java.math.BigInteger
 import kotlin.collections.set
 import kotlin.random.Random
+import org.bson.types.Decimal128
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.AbiLoader
@@ -36,58 +37,46 @@ class ValidatorService(
                 getValidatorsAbiFunctions("getValidators").outputs,
             )
 
-        val decodedStakerBalance =
-            FunctionReturnDecoder.decode(
-                responses[1].data,
-                getValidatorsAbiFunctions("stakerBalance").outputs,
-            )
-        val stakerBalance = decodedStakerBalance["stakerBalance"] as BigInteger
-
         val decodedTotalStake =
             FunctionReturnDecoder.decode(
-                responses[2].data,
+                responses[1].data,
                 getValidatorsAbiFunctions("totalStake").outputs,
             )
-        val totalStake = decodedTotalStake["totalStake"] as BigInteger
         val totalWeight = decodedTotalStake["totalWeight"] as BigInteger
-
-        val decodedQueuedStake =
-            FunctionReturnDecoder.decode(
-                responses[3].data,
-                getValidatorsAbiFunctions("queuedStake").outputs,
-            )
-        val queuedStake = decodedQueuedStake["queuedStake"] as BigInteger
-        /*        val decodedGetBalance = FunctionReturnDecoder.decode(responses[4].data, getValidatorsAbiFunctions("getBalance").outputs)
-        val getBalance = decodedGetBalance["balance"] as BigInteger*/
 
         val decodedTotalSupply =
             FunctionReturnDecoder.decode(
-                responses[4].data,
+                responses[2].data,
                 getValidatorsAbiFunctions("vthoTotalSupply").outputs,
             )
         val vthoTotalSupply = decodedTotalSupply["vthoTotalSupply"] as BigInteger
 
-        val decodedTotalBurned =
+        val decodedVetPriceUsd =
             FunctionReturnDecoder.decode(
-                responses[5].data,
-                getValidatorsAbiFunctions("totalBurned").outputs,
+                responses[3].data,
+                getValidatorsAbiFunctions("getVetPriceUsd").outputs,
             )
-        val totalBurned = decodedTotalBurned["totalBurned"] as BigInteger
+        val vetPriceUsd = decodedVetPriceUsd["vetPriceUsd"] as BigInteger
+
+        val decodedVthoPriceUsd =
+            FunctionReturnDecoder.decode(
+                responses[4].data,
+                getValidatorsAbiFunctions("getVthoPriceUsd").outputs,
+            )
+        val vthoPriceUsd = decodedVthoPriceUsd["vthoPriceUsd"] as BigInteger
 
         // 2. Fetch existing DB docs
         val existingDocs: Map<String, Validator> = repository.findAll().associateBy { it.id }
 
         // Get latest validators info
         val latestValidators =
-            unpackValidators(
+            ValidatorUtils.unpackValidators(
                 decodedValidators,
                 existingDocs,
-                stakerBalance,
-                totalStake,
                 totalWeight,
-                queuedStake,
                 vthoTotalSupply,
-                totalBurned,
+                vetPriceUsd,
+                vthoPriceUsd,
                 blockId,
                 blockNumber,
                 blockTimestamp,
@@ -101,11 +90,10 @@ class ValidatorService(
         val functionNames =
             listOf(
                 "getValidators",
-                "stakerBalance",
                 "totalStake",
-                "queuedStake",
                 "vthoTotalSupply",
-                "totalBurned",
+                "getVetPriceUsd",
+                "getVthoPriceUsd",
             )
 
         return functionNames.map { fnName ->
@@ -116,13 +104,13 @@ class ValidatorService(
     // -------------------------------- Event Handling --------------------------------
 
     fun handleValidatorEvents(events: List<IndexedEvent>) {
-        val sortedEvents =
+        // global sort once
+        val sorted =
             events.sortedWith(
                 compareBy<IndexedEvent>(
                     { it.blockNumber },
-                    { it.clauseIndex },
-                    { event ->
-                        when (event.eventType) {
+                    {
+                        when (it.eventType) {
                             "DelegationInitiated" -> 0
                             "DelegationAdded" -> 1
                             "DelegationWithdrawn" -> 2
@@ -132,60 +120,95 @@ class ValidatorService(
                 )
             )
 
-        // Group by validator ID to handle multiple events for the same validator
-        val groupedByDelegation =
-            sortedEvents.groupBy {
-                it.params.getAsString("delegationId") ?: it.params.getAsString("delegationID")
-            }
+        val validatorIds = sorted.mapNotNull { it.params.getAsString("validator") }.distinct()
 
-        println("Grouped by validator: $groupedByDelegation")
+        val delegationIds =
+            sorted
+                .mapNotNull {
+                    it.params.getAsString("delegationId") ?: it.params.getAsString("delegationID")
+                }
+                .distinct()
 
-        // Process per validator
-        groupedByDelegation.forEach { (delegationId, validatorEvents) ->
-            if (delegationId == null) return@forEach
+        val validatorsById =
+            repository.findAllById(validatorIds).associateBy { it.id }.toMutableMap()
+        val validatorsByDelegation = repository.findByDelegationIdListIn(delegationIds)
 
-            var validator = repository.findById(delegationId).orElse(null)
+        // merge delegation-sourced validators into the main map
+        validatorsByDelegation.forEach { v -> validatorsById.putIfAbsent(v.id, v) }
 
-            validatorEvents.forEach { event ->
-                when (EventUtils.determineValidatorEventType(event.params)) {
-                    ValidatorAction.DELEGATION_INITIATED -> {
-                        println("DELEGATION_INITIATED")
-                        validator = initiateDelegation(validator, event)
-                    }
-                    ValidatorAction.DELEGATION_APPLIED -> {
-                        println("DELEGATION_APPLIED")
-                        validator = applyDelegation(validator, event)
-                    }
-                    ValidatorAction.DELEGATION_REMOVED -> {
-                        println("DELEGATION_REMOVED")
-                        validator = removeDelegation(validator, event)
-                    }
-                    // add more cases as you add event mappings
-                    else -> {}
+        // also build delegation→validator lookup
+        val delegationToValidator = mutableMapOf<String, String>()
+        validatorsByDelegation.forEach { v ->
+            v.delegationIds.keys.forEach { dId -> delegationToValidator[dId] = v.id }
+        }
+        // walk once in order
+        sorted.forEach { ev ->
+            when (EventUtils.determineValidatorEventType(ev.params)) {
+                ValidatorAction.DELEGATION_INITIATED -> {
+                    val validatorId = ev.params.getAsString("validator")!!
+                    val validator = initiateDelegation(validatorsById[validatorId], ev)
+                    validatorsById[validatorId] = validator
+
+                    val dId =
+                        ev.params.getAsString("delegationId")
+                            ?: ev.params.getAsString("delegationID")!!
+                    delegationToValidator[dId] = validatorId
+                }
+
+                ValidatorAction.DELEGATION_APPLIED -> {
+                    val dId =
+                        ev.params.getAsString("delegationId")
+                            ?: ev.params.getAsString("delegationID")!!
+                    val validatorId =
+                        delegationToValidator[dId]
+                            ?: ev.params.getAsString("validator") // fallback if event has validator
+                            ?: throw IllegalStateException(
+                                "no validator mapping yet for delegation $dId"
+                            )
+                    val updated = applyDelegation(requireNotNull(validatorsById[validatorId]), ev)
+                    validatorsById[validatorId] = updated
+                    delegationToValidator[dId] = validatorId
+                }
+
+                ValidatorAction.DELEGATION_REMOVED -> {
+                    val dId =
+                        ev.params.getAsString("delegationId")
+                            ?: ev.params.getAsString("delegationID")!!
+                    val validatorId =
+                        delegationToValidator[dId]
+                            ?: throw IllegalStateException(
+                                "no validator mapping yet for delegation $dId"
+                            )
+
+                    val updated = removeDelegation(requireNotNull(validatorsById[validatorId]), ev)
+                    validatorsById[validatorId] = updated
+                }
+                else -> {
+                    println(
+                        "Skipping unsupported event type for validator processing: ${ev.eventType}"
+                    )
                 }
             }
-
-            // Persist only once at the end
-            if (validator != null) {
-                repository.save(validator)
-            }
         }
+
+        repository.saveAll(validatorsById.values)
     }
 
     fun applyDelegation(existing: Validator, event: IndexedEvent): Validator {
-        println("Applying delegation for event: $event")
-        println("existing: $existing")
-
         val delegationId = event.params.getAsLong("delegationID")!!.toString()
 
-        println("delegation id: $delegationId")
+        val level = existing.delegationIds[delegationId] ?: TokenLevel.All
 
-        // Look up level from delegationIds (must have been queued first so it exists)
-        val level = existing.delegationIds[delegationId] ?: TokenLevel.None
+        // If already counted, skip increment
+        val alreadyCounted = existing.delegations[level]?.let { it > 0 } ?: false
 
-        // Update delegations map
         val updatedDelegations =
-            existing.delegations.toMutableMap().apply { this[level] = (this[level] ?: 0L) + 1 }
+            existing.delegations.toMutableMap().apply {
+                if (!alreadyCounted) {
+                    this[level] = (this[level] ?: 0L) + 1
+                    this[TokenLevel.All] = (this[TokenLevel.All] ?: 0L) + 1
+                }
+            }
 
         return existing.copy(
             blockId = event.blockId,
@@ -197,17 +220,10 @@ class ValidatorService(
 
     private fun initiateDelegation(existing: Validator?, event: IndexedEvent): Validator {
         val id = event.params.getAsString("validator")!!
-        println("Initiating delegation for validator ID: $id")
         val delegationId = event.params.getAsLong("delegationId")!!
 
-        /*val tokenLevel =
-                   event.params
-                       .getAsInt("level")
-                       ?.let { TokenLevel.fromOrdinal(it) }!!
-        */
-        // TODO: Update when levelId is incldued in event
-        val randomLevel = Random.nextInt(2, 10) // upper bound is exclusive, so 10 → gives 2..9
-        val tokenLevel = TokenLevel.fromOrdinal(randomLevel)!!
+        // For testing, assign a random level between 2 and 10
+        val tokenLevel = TokenLevel.fromOrdinal(Random.nextInt(2, 10))!!
 
         val base =
             existing
@@ -218,7 +234,8 @@ class ValidatorService(
                     blockTimestamp = event.blockTimestamp,
                     delegationIds = emptyMap(),
                     delegations = emptyMap(),
-                    totalVTHOSupply = 1.toBigDecimal(),
+                    delegationIdList = emptyList(),
+                    totalVTHOSupply = Decimal128(1),
                 )
 
         return base.copy(
@@ -226,6 +243,7 @@ class ValidatorService(
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             delegationIds = base.delegationIds + (delegationId.toString() to tokenLevel),
+            delegationIdList = base.delegationIdList + delegationId.toString(),
         )
     }
 
@@ -233,11 +251,14 @@ class ValidatorService(
         val delegationId = event.params.getAsLong("delegationID")!!.toString()
 
         // Look up level from delegationIds (must have been queued first so it exists)
-        val level = existing.delegationIds[delegationId] ?: TokenLevel.None
+        val level = existing.delegationIds[delegationId] ?: TokenLevel.All
 
         // Update delegations map
         val updatedDelegations =
-            existing.delegations.toMutableMap().apply { this[level] = this[level]!! - 1 }
+            existing.delegations.toMutableMap().apply {
+                this[level] = this[level]!! - 1
+                this[TokenLevel.All] = this[TokenLevel.All]!! - 1
+            }
 
         // Remove delegationId from map
         val updatedDelegationIds = existing.delegationIds - delegationId
