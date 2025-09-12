@@ -100,8 +100,6 @@ enabled_nets:
         authority-node-endorser:    '5'
         stargate-vtho-claimed-by-block: '5'
         stargate-vtho-claimed-by-account: '6'
-        stargate-nft-holders-by-account: '5'
-        stargate-vet-staked-by-account: '5'
         stargate-nft-holders-by-block: '1'
         stargate-vet-staked-by-block: '1'
         b3tr-proposal-comments: '1'

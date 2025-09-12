@@ -406,14 +406,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
-      value = each.value.indexer.version.stargate-nft-holders-by-account
-    },
-    {
-      name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
-      value = each.value.indexer.version.stargate-vet-staked-by-account
-    },
-    {
       name = "VERSION_HISTORICAL_PROPOSALS"
       value = each.value.indexer.version.historical-proposals
     },
