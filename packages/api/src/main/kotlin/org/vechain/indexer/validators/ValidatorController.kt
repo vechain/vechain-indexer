@@ -81,12 +81,6 @@ open class ValidatorController(private val repository: ValidatorRepository) {
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
-        name = "status",
-        schema = Schema(implementation = Status::class),
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
         name = "sortBy",
         description = "The sort by field",
         required = false,
@@ -98,7 +92,6 @@ open class ValidatorController(private val repository: ValidatorRepository) {
     )
     @PaginationParameters
     open fun getValidators(
-        @RequestParam(required = false) status: Status?,
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
         @RequestParam(required = false) page: Int?,
@@ -119,7 +112,6 @@ open class ValidatorController(private val repository: ValidatorRepository) {
                         SliceImpl(emptyList(), pageable, false)
                     }
                 }
-                status != null -> repository.findByStatus(status, pageable)
                 endorser != null -> repository.findByEndorser(endorser, pageable)
                 else -> repository.findAll(pageable)
             }

@@ -11,7 +11,5 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 interface ValidatorRepository : BasePagingAndSortingIndexedRepository<Validator, String> {
     fun findByDelegationIdListIn(delegationIds: List<String>): List<Validator>
 
-    fun findByStatus(status: Status, pageable: Pageable): Slice<Validator>
-
     fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator>
 }
