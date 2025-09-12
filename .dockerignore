@@ -28,7 +28,6 @@ nbdist/
 
 mvnw
 mvnw.cmd
-.env
 .DS_Store
 
 ### Build stuff
@@ -45,4 +44,8 @@ packages/**/src/test/**
 load-testing/node_modules/
 node_modules/
 
-
+# Ignore env files everywhere
+**/.env
+**/.env.*
+packages/**/.env
+packages/**/.env.*

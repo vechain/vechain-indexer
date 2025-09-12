@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.ExpandedParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
@@ -36,7 +35,6 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("{txId}")
     @Operation(summary = "Get transaction by ID")
-    @ApiResponses(value = [ApiResponse(responseCode = "400", description = "Invalid txId")])
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "txId",
@@ -45,6 +43,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0xacc8566c931235a43a775120d48680278d42fa12111aa3c4d4e3a7e8cfcd360a",
     )
+    @CommonApiResponses
     @ExpandedParameter
     open fun getTransactionById(
         @TransactionId @PathVariable txId: String,
@@ -56,9 +55,6 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping
     @Operation(summary = "Get all transactions by an origin or delegator address")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "origin",
@@ -75,6 +71,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = false,
         example = "false",
     )
+    @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
     open fun getTransactionsByOriginOrDelegator(
@@ -96,9 +93,6 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/delegated")
     @Operation(summary = "Get all delegated transactions by a delegator address")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid delegator address")]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "delegator",
@@ -107,6 +101,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
+    @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
     open fun getDelegatedTransactions(
@@ -126,9 +121,6 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/contract")
     @Operation(summary = "Get all transactions for a contract address")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid contract address")]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "contractAddress",
@@ -137,6 +129,7 @@ open class TransactionController(private val transactionService: TransactionServ
         required = true,
         example = "0x0000000000000000000000000000456e65726779",
     )
+    @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
     open fun getTransactionsByContract(

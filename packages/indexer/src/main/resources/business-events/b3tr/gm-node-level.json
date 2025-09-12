@@ -1,0 +1,46 @@
+{
+  "name": "B3TR_GmNodeLevel",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "GMVoteRegistered",
+      "alias": "voteEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${VOTER_REWARDS_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GE"
+        },
+        {
+          "firstOperand": "level",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GT"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "voteEvent",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "level",
+      "eventName": "voteEvent",
+      "businessEventName": "level"
+    }
+  ]
+}

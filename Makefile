@@ -16,7 +16,7 @@ build-api: #@ Build the application with Gradle.
 	./gradlew :package:api:build -x test
 
 # Application Build (Docker)
-build-image: build-indexer build-api #@ Build the application with Docker.
+build-image: build-image-indexer build-image-api #@ Build the application with Docker.
 	echo "Build completed."
 build-image-indexer: #@ Build the application with Docker.
 	docker build --build-arg APP_VERSION=v.1.0.0 --build-arg PACKAGE_NAME=indexer -t veworld-indexer .

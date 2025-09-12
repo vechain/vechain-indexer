@@ -22,7 +22,7 @@ open class VthoClaimedByBlockCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VthoClaimedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate_vtho_claimed_by_block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vtho-claimed-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

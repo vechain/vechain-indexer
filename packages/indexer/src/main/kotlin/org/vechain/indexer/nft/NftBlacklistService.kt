@@ -1,22 +1,18 @@
 package org.vechain.indexer.nft
 
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("nfts")
+@Profile("nfts", "history")
 @Service
 open class NftBlacklistService(
-    private val mongoTemplate: MongoTemplate,
     private val repository: NftBlacklistRepository,
     private val nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>,
 ) {
-    private val logger = LoggerFactory.getLogger(NftBlacklistService::class.java)
 
     @Transactional(rollbackFor = [Exception::class])
     open fun update(updated: List<NftBlacklist>, existing: List<NftBlacklist>) {
@@ -81,8 +77,7 @@ open class NftBlacklistService(
         val uniqueAddresses =
             blackListEvents
                 .map {
-                    it.params.getAsString("nft")
-                        ?: throw IllegalArgumentException("Missing 'nft' param in event: ${it.id}")
+                    it.params.getAsString("nft") ?: error("Missing 'nft' param in event: ${it.id}")
                 }
                 .distinct()
         return repository.findAllById(uniqueAddresses).toList()

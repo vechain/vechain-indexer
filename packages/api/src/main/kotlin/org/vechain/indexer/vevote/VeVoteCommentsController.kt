@@ -3,13 +3,12 @@ package org.vechain.indexer.vevote
 import io.swagger.v3.oas.annotations.*
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VEVOTE_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -26,16 +25,6 @@ import org.vechain.indexer.validation.ValidPageSize
 open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
     @GetMapping("proposals/comments")
     @Operation(summary = "Get comments for a proposal.")
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "A valid proposalId or voter address must be provided",
-                ),
-            ]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "proposalId",
@@ -57,6 +46,7 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
         description = "Filter by support: AGAINST, FOR, or ABSTAIN.",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getComments(
         @RequestParam(required = false) proposalId: String?,

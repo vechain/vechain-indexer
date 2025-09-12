@@ -48,6 +48,7 @@ business-event:
   substitutions:
     B3TR_CONTRACT: ${B3TR_CONTRACT:0x5ef79995fe8a89e0812330e4378eb2660cede699}
     VOT3_CONTRACT: ${VOT3_CONTRACT:0x76ca782b59c74d088c7d2cce2f211bc00836c602}
+    EMISSIONS: ${EMISSIONS_CONTRACT:0x148d21032f4a7b4aef236e2e9c0c5bf62d10f8eb}
     B3TR_GOVERNOR_CONTRACT: ${B3TR_GOVERNOR_CONTRACT:0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c}
     GM_NFT_CONTRACT: ${GM_NFT_CONTRACT:0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f}
     X_ALLOC_VOTING_CONTRACT: ${X_ALLOC_VOTING_CONTRACT:0x89a00bb0947a30ff95beef77a66aede3842fe5b7}
@@ -59,62 +60,81 @@ business-event:
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0xe1ecc51fc02c29e54b428279c0456010fda5c4f2}
 veworld:
   contract:
-    authority_node:
+    vevote:
+      address: ${VEVOTE_CONTRACT:0x90a3c072CF8493cCDd9b86B1C9b5d18F86fdf3E0}
+    authority-node:
       address: ${AUTHORITY_CONTRACT:0x0000000000000000000000417574686f72697479}
-    historical_proposals:
-      steering_committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
-      all_stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
+    historical-proposals:
+      steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
+      all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
 
 indexer:
-  startBlock:
+  start-block:
     nfts: ${INDEXER_START_BLOCK_NFTS:0}
-    nft_blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
+    nft-blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
     stargate: ${INDEXER_START_BLOCK_STARGATE:0}
-    historical_proposals: ${INDEXER_START_BLOCK_HISTORICAL_PROPOSALS:0}
-  syncLogInterval:
+    b3tr: ${INDEXER_START_BLOCK_B3TR:0}
+    b3tr-x-alloc-result: ${INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT:0}
+    b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
+    b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
+    historical-proposals: ${INDEXER_START_BLOCK_HISTORICAL_PROPOSALS:0}
+  start-round:
+    b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
+  sync-log-interval:
     nfts: ${INDEXER_SYNC_LOGGER_INTERVAL_NFTS:1000}
     transactions: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS:1000}
     transfers: ${INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS:1000}
     history: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORY:1000}
     vevote: ${INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE:1000}
-    authority_nodes: ${INDEXER_SYNC_LOGGER_AUTHORITY_NODE:1000}
+    authority-nodes: ${INDEXER_SYNC_LOGGER_AUTHORITY_NODE:1000}
     stargate: ${INDEXER_SYNC_LOGGER_INTERVAL_STARGATE:1000}
-    historical_proposals: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS:1000}
-  syncBlockBatchSize:
+    b3tr: ${INDEXER_SYNC_LOGGER_INTERVAL_B3TR:1000}
+    historical-proposals: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS:1000}
+  sync-block-batch-size:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:500}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:500}
     vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:500}
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
-    authority_nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
-    historical_proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS:500}
-  channelBatchSize: ${INDEXER_CHANNEL_BATCH_SIZE:10}
+    authority-nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
+    b3tr: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR:500}
+    historical-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS:500}
+  channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
     interval: ${PRUNER_INTERVAL:300000}
-    removalChunkSize: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
+    removal-chunk-size: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
-    contract_address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
-    initialDelay: ${BLACKLIST_INITIAL_DELAY:1}
-    interval: ${BLACKLIST_INTERVAL:1800000}
+    contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
   version:
     nfts: ${VERSION_NFTS:1}
     transfers: ${VERSION_TRANSFERS:1}
     transactions: ${VERSION_TRANSACTIONS:1}
     history: ${VERSION_HISTORY:1}
-    nft_blacklist: ${VERSION_NFT_BLACKLIST:1}
-    vevote_comments: ${VERSION_VEVOTE_COMMENTS:1}
-    vevote_results: ${VERSION_VEVOTE_RESULTS:1}
-    stargate_vtho_claimed_by_block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
-    stargate_vtho_claimed_by_account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
-    stargate_nft_holders_by_block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
-    stargate_vet_staked_by_block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
-    authority_node_endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
-    historical_proposals: ${VERSION_HISTORICAL_PROPOSALS:1}
+    nft-blacklist: ${VERSION_NFT_BLACKLIST:1}
+    vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
+    vevote-results: ${VERSION_VEVOTE_RESULTS:1}
+    stargate-vtho-claimed-by-block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
+    stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
+    stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
+    stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
+    authority-node-endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
+    historical-proposals: ${VERSION_HISTORICAL_PROPOSALS:1}
+    b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
+    b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
+    b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
+    b3tr-user-round-action-summary: ${VERSION_B3TR_USER_ROUND_ACTION_SUMMARY:1}
+    b3tr-user-daily-action-summary: ${VERSION_B3TR_USER_DAILY_ACTION_SUMMARY:1}
+    b3tr-app-all-time-action-summary: ${VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY:1}
+    b3tr-app-round-action-summary: ${VERSION_B3TR_APP_ROUND_ACTION_SUMMARY:1}
+    b3tr-app-daily-action-summary: ${VERSION_B3TR_APP_DAILY_ACTION_SUMMARY:1}
+    b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:1}
+    b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
+    b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
 
 comments:
-  minLength: ${MIN_COMMENT_LEN:10}
+  min-length: ${MIN_COMMENT_LEN:10}
   language:
     confidence: ${LANGUAGE_CONFIDENCE:0.9}

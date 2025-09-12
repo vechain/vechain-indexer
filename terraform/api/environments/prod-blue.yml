@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -47,59 +47,80 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
-      start_block:
+      start-block:
         nfts:                       '1304112'
-        nft_blacklist:              '21774168'
+        nft-blacklist:              '21774168'
         transactions:               '751'
         transfers:                  '37840'
         history:                    '751'
         vevote:                     '22331866'
         stargate:                   '22044000'
-        historical_proposals:       '4510483'
-      sync_logger_interval:
+        b3tr:                       '18868500'
+        b3tr-x-alloc-result:        '18926115'
+        b3tr-sustainable-actions:   '19122233'
+        b3tr-proposal:              '19107910'
+        historical-proposals:       '4510483'
+      start-round:
+        b3tr-sustainable-actions:   '4'
+      sync-logger-interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
-        authority_nodes:            '1000'
-        historical_proposals:       '1000'
-      sync_block_batch_size:
+        authority-nodes:            '1000'
+        b3tr:                       '1000'
+        historical-proposals:       '1000'
+      sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
         vevote:                     '500'
         stargate:                   '500'
-        authority_nodes:            '500'
-        historical_proposals:       '500'
-      channel_batch_size:           '5'
+        authority-nodes:            '500'
+        b3tr:                       '500'
+        historical-proposals:       '500'
+      channel-batch-size:           '2'
       pruner:
         interval:                   '43200000'
-        removal_chunk_size:         '2000'
+        removal-chunk-size:         '2000'
       blacklist:
-        contract_address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
-        interval:                   '180000'
-        initial_delay:              '60000'
+        contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
       version:
-        nfts: '4'
-        transfers: '2'
-        transactions: '2'
-        history: '2'
-        nft_blacklist: '2'
-        vevote_comments: '1'
-        vevote_results: '1'
-        authority_node_endorser: '5'
-        stargate_vtho_claimed_by_block: '5'
-        stargate_vtho_claimed_by_account: '6'
-        stargate_nft_holders_by_account: '5'
-        stargate_vet_staked_by_account: '5'
-        historical_proposals:          '1'
+        nfts:                       '4'
+        transfers:                  '2'
+        transactions:               '2'
+        history:                    '2'
+        nft-blacklist:              '2'
+        vevote-comments:            '1'
+        vevote-results:             '1'
+        authority-node-endorser:    '5'
+        stargate-vtho-claimed-by-block: '5'
+        stargate-vtho-claimed-by-account: '6'
+        stargate-nft-holders-by-block: '1'
+        stargate-vet-staked-by-block: '1'
+        historical-proposals:          '1'
+        b3tr-proposal-comments: '1'
+        b3tr-proposal-results: '1'
+        b3tr-user-all-time-action-summary: '1'
+        b3tr-app-all-time-action-summary: '1'
+        b3tr-app-round-action-summary: '1'
+        b3tr-user-daily-action-summary: '1'
+        b3tr-sustainability-overview-all: '1'
+        b3tr-user-round-action-summary: '1'
+        b3tr-sustainability-action: '1'
+        b3tr-user-transactions: '1'
+        b3tr-x-alloc-result: '1'
+        b3tr-gm-nft: '1'
+        b3tr-gm-nft-level-overview: '1'
+        historical-proposals: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
+          EMISSIONS_CONTRACT: '0xdf94739bd169c84fe6478d8420bb807f1f47b135'
           VOT3_CONTRACT: '0x76ca782b59c74d088c7d2cce2f211bc00836c602'
           B3TR_GOVERNOR_CONTRACT: '0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c'
           GM_NFT_CONTRACT: '0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f'
@@ -118,23 +139,25 @@ enabled_nets:
           pattern: "REORG Detected"
           threshold: 1
     comments:
-      minLength: 10
+      min-length: 10
       language:
         confidence:                 '0.9'
     veworld:
       contract:
-        authority_node:
+        vevote:
+          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+        authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
-        historical_proposals:
-          steering_committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
-          all_stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
+        historical-proposals:
+          steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         mainnet.rsmhw.mongodb.net
       proto:                        mongodb+srv
       opts:                         retryWrites=true&w=majority
       cluster_tier:                 M40
-      disk_size_gb:                 700
+      disk_size_gb:                 1000
       iops:                         2000
       secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M50
@@ -146,7 +169,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 2
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -156,59 +179,79 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
-      start_block:
+      start-block:
         nfts:                       '1042259'
-        nft_blacklist:              '21823565'
+        nft-blacklist:              '21823565'
         transactions:               '15034'
         transfers:                  '15034'
         history:                    '15034'
         vevote:                     '22331866'
         stargate:                   '22087000'
-        historical_proposals:       '22087000'
-      sync_logger_interval:
+        b3tr:                       '19661986'
+        b3tr-x-alloc-result:        '19661986'
+        b3tr-sustainable-actions:   '19661986'
+        b3tr-proposal:              '19661986'
+        historical-proposals:       '22087000'
+      start-round:
+        b3tr-sustainable-actions:   '4'
+      sync-logger-interval:
         nfts:                       '1000'
         transactions:               '1000'
         transfers:                  '1000'
         history:                    '1000'
         vevote:                     '1000'
         stargate:                   '1000'
-        authority_nodes:            '1000'
-        historical_proposals:       '1000'
-      sync_block_batch_size:
+        authority-nodes:            '1000'
+        b3tr:                       '1000'
+        historical-proposals:       '1000'
+      sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
-        authority_nodes:            '100'
-        historical_proposals:       '100'
-      channel_batch_size:           '5'
+        authority-nodes:            '100'
+        b3tr:                       '100'
+        historical-proposals:       '100'
+      channel-batch-size:           '2'
       pruner:
         interval:                   '43200000'
-        removal_chunk_size:         '2000'
+        removal-chunk-size:         '2000'
       blacklist:
-        contract_address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
-        interval:                   '180000'
-        initial_delay:              '60000'
+        contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
       version:
-        nfts: '5'
-        transfers: '4'
-        transactions: '4'
-        history: '8'
-        nft_blacklist: '5'
-        vevote_comments: '1'
-        vevote_results: '5'
-        authority_node_endorser: '3'
-        stargate_vtho_claimed_by_block: '3'
-        stargate_vtho_claimed_by_account: '3'
-        stargate_nft_holders_by_account: '4'
-        stargate_vet_staked_by_account: '3'
-        historical_proposals:          '1'
+        nfts:                       '5'
+        transfers:                  '4'
+        transactions:               '4'
+        history:                    '8'
+        nft-blacklist:              '5'
+        vevote-comments:            '1'
+        vevote-results:             '5'
+        authority-node-endorser:    '3'
+        stargate-vtho-claimed-by-block: '3'
+        stargate-vtho-claimed-by-account: '3'
+        stargate-nft-holders-by-block: '4'
+        stargate-vet-staked-by-block: '1'
+        b3tr-proposal-comments: '1'
+        b3tr-proposal-results: '1'
+        b3tr-user-all-time-action-summary: '1'
+        b3tr-app-all-time-action-summary: '1'
+        b3tr-app-round-action-summary: '1'
+        b3tr-user-daily-action-summary: '1'
+        b3tr-sustainability-overview-all: '1'
+        b3tr-user-round-action-summary: '1'
+        b3tr-sustainability-action: '1'
+        b3tr-user-transactions: '1'
+        b3tr-x-alloc-result: '1'
+        b3tr-gm-nft: '1'
+        b3tr-gm-nft-level-overview: '1'
+        historical-proposals: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
+          EMISSIONS_CONTRACT: '0x148d21032f4a7b4aef236e2e9c0c5bf62d10f8eb'
           VOT3_CONTRACT: '0xa704c45971995467696ee9544da77dd42bc9706e'
           B3TR_GOVERNOR_CONTRACT: '0xdf5e114d391cac840529802fe8d01f6bdebe41ec'
           GM_NFT_CONTRACT: '0xcf73039913e05aa1838d5869e72290d2b454c1e8'
@@ -227,16 +270,18 @@ enabled_nets:
           pattern: "REORG Detected"
           threshold: 1
     comments:
-      minLength: 10
+      min-length: 10
       language:
         confidence:                 '0.9'
     veworld:
       contract:
-        authority_node:
+        vevote:
+          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+        authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
-        historical_proposals:
-          steering_committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
-          all_stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
+        historical-proposals:
+          steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
+          all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
       type:                         atlas
       fqdn:                         testnet.rsmhw.mongodb.net
