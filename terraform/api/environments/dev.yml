@@ -42,7 +42,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -52,7 +52,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals"
+      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start-block:
@@ -175,7 +175,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -185,7 +185,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes"
+      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start-block:
