@@ -2,7 +2,7 @@ package org.vechain.indexer.validator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
-import java.math.BigDecimal
+import org.bson.types.Decimal128
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
@@ -17,28 +17,31 @@ data class Validator(
     override val blockTimestamp: Long,
     val endorser: String? = null, // address of the endorser
     val status: Status? = null, // active, inactive, jailed, etc.
-    val vetStaked: String? = null, // amount of VET staked
+    val vetStaked: Decimal128? = null, // amount of VET staked
+    val validatorVetStaked: Decimal128? = null,
+    val delegatorVetStaked: Decimal128? = null,
     val delegations: Map<TokenLevel, Long> = emptyMap(), // number of delegations by level
     @JsonIgnore
     val delegationIds: Map<String, TokenLevel> = emptyMap(), // mapping of delegation ID to level
-    val cycleEndblock: Long? = null, // end block of the current cycle
-    val totalRewards: String? = null, // total rewards earned
-    val blockProbability: String? = null,
-    val blocksPerEpoch: String? = null,
-    val totalTvl: String? = null,
-    val validatorTvl: String? = null,
-    val delegatorTvl: String? = null,
-    val validatorTvlPercentage: String? = null,
-    val tvlBasedYield: String? = null,
-    val validatorYield: String? = null,
-    val avgDelegatorYield: String? = null,
-    val totalWeight: String? = null,
+    @JsonIgnore val delegationIdList: List<String> = emptyList(),
+    val cycleEndBlock: Long? = null, // end block of the current cycle
+    val totalRewards: Decimal128? = null, // total rewards earned
+    val blockProbability: Decimal128? = null,
+    val blocksPerEpoch: Decimal128? = null,
+    val totalTvl: Decimal128? = null,
+    val validatorTvl: Decimal128? = null,
+    val delegatorTvl: Decimal128? = null,
+    val validatorTvlPercentage: Decimal128? = null,
+    val tvlBasedYield: Decimal128? = null,
+    val validatorYield: Decimal128? = null,
+    val avgDelegatorYield: Decimal128? = null,
+    val totalWeight: Decimal128? = null,
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
     val startBlock: Long? = null,
     val stakingPeriodLength: Long? = null,
-    val blocksPerYear: Long? = null,
-    val hasDelegations: Boolean? = null,
+    val blocksPerYear: Decimal128? = null,
+    val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
-    @JsonIgnore val totalVTHOSupply: BigDecimal,
+    @JsonIgnore val totalVTHOSupply: Decimal128,
 ) : IndexedDocument
