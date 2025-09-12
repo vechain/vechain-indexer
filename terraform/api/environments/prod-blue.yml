@@ -44,8 +44,8 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 4096
-      memory: 8192
+      cpu: 8192
+      memory: 16384
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
