@@ -18,7 +18,7 @@ import org.vechain.indexer.utils.PaginationUtils
 @Validated
 @RestController
 @Profile("historical-proposals")
-@RequestMapping("$VEVOTE_PATH/historical_proposals")
+@RequestMapping("$VEVOTE_PATH/historical-proposals")
 open class HistoricalController(private val historicalApiService: HistoricalApiService) {
 
     @GetMapping

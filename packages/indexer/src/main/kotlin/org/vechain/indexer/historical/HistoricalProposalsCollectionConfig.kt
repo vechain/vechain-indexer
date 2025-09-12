@@ -21,7 +21,7 @@ open class HistoricalProposalsCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricalProposals::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.historical_proposals}") private val version: Int = 1
+    @Value("\${indexer.version.historical-proposals}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

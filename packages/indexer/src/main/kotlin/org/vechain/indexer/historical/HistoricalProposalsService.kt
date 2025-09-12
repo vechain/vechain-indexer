@@ -16,9 +16,9 @@ import org.vechain.indexer.utils.ContractUtils
 @Service
 open class HistoricalProposalsService(
     private val thorService: ThorService,
-    @Value("\${veworld.contract.historical_proposals.steering_committee}")
+    @Value("\${veworld.contract.historical-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
-    @Value("\${veworld.contract.historical_proposals.all_stakeholders}")
+    @Value("\${veworld.contract.historical-proposals.all-stakeholders}")
     private val allStakeholdersAddress: String,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)

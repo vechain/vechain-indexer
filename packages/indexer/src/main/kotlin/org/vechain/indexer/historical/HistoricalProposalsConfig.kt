@@ -15,12 +15,12 @@ open class HistoricalProposalsConfig {
     open fun historicalProposalsIndexer(
         thorClient: ThorClient,
         processor: HistoricalProposalsProcessor,
-        @Value("\${indexer.startBlock.historical_proposals}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.historical_proposals}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.historical_proposals}") syncBlockBatchSize: Long,
-        @Value("\${veworld.contract.historical_proposals.steering_committee}")
+        @Value("\${indexer.startBlock.historical-proposals}") startBlock: Long,
+        @Value("\${indexer.syncLogInterval.historical-proposals}") syncLogInterval: Long,
+        @Value("\${indexer.syncBlockBatchSize.historical-proposals}") syncBlockBatchSize: Long,
+        @Value("\${veworld.contract.historical-proposals.steering-committee}")
         steeringCommittee: String,
-        @Value("\${veworld.contract.historical_proposals.all_stakeholders}") allStakeholders: String,
+        @Value("\${veworld.contract.historical-proposals.all-stakeholders}") allStakeholders: String,
     ): Indexer =
         IndexerFactory()
             .name("historicalProposalsIndexer")
