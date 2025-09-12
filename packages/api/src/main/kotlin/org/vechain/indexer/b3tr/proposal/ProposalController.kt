@@ -56,7 +56,7 @@ open class ProposalController(private val proposalService: ProposalService) {
         return paginatedResponse(result)
     }
 
-    @GetMapping("users/{wallet}/proposal-comments")
+    @GetMapping("users/{wallet}/proposals/comments")
     @Operation(summary = "Get the comments made by a user on proposals.")
     @WalletParameter(required = true, `in` = ParameterIn.PATH)
     @ProposalIdParameter
