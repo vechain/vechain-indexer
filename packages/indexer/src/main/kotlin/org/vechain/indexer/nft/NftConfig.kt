@@ -25,7 +25,7 @@ open class NftConfig() {
     @Bean
     open fun nftPruner(
         nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-        @Value("\${indexer.pruner.removalChunkSize}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner = PrunerService(NftArchive::class, nftArchiveService, prunerRemovalChunkSize)
 
     @Bean
@@ -34,12 +34,12 @@ open class NftConfig() {
         processor: NftProcessor,
         nftPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.startBlock.nfts}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.nfts}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.nfts}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.nfts}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.nfts}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name("NFTIndexer")
+            .name("NftIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftPruner)

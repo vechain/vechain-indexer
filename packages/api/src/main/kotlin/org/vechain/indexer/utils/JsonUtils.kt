@@ -1,5 +1,6 @@
 package org.vechain.indexer.utils
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
@@ -10,6 +11,7 @@ object JsonUtils {
 
     init {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
         mapper.registerModule(
             KotlinModule.Builder()
                 .withReflectionCacheSize(512)

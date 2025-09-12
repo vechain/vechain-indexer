@@ -17,6 +17,9 @@ open class JacksonConfig {
                 addSerializer(BigInteger::class.java, ToStringSerializer.instance)
             }
 
-        return ObjectMapper().apply { registerModule(module) }
+        return ObjectMapper().apply {
+            registerModule(module)
+            setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        }
     }
 }

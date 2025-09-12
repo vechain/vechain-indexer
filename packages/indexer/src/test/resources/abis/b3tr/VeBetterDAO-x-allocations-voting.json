@@ -53,6 +53,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "DuplicateAppVote",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",

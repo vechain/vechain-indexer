@@ -21,7 +21,7 @@ open class AmnService(
     private val thorService: ThorService,
     private val amnRepository: AmnRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${veworld.contract.authority_node.address}") private val contractAddress: String,
+    @Value("\${veworld.contract.authority-node.address}") private val contractAddress: String,
 ) {
     private val cachedAuthorityAbi: MutableMap<String, AbiElement> = mutableMapOf()
 

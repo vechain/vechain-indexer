@@ -1,8 +1,6 @@
 package org.vechain.indexer.historical
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -11,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
@@ -24,7 +23,7 @@ open class HistoricalController(private val historicalApiService: HistoricalApiS
 
     @GetMapping
     @Operation(summary = "Fetch all historical proposals")
-    @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Success")])
+    @CommonApiResponses
     open fun getAllProposals(
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) proposalId: String?,

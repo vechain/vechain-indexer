@@ -13,7 +13,7 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("nfts")
+@Profile("nfts", "history")
 open class NftBlacklistConfig {
     @Bean
     open fun nftBlacklistArchiveService(
@@ -24,7 +24,7 @@ open class NftBlacklistConfig {
     @Bean
     open fun nftBlacklistPruner(
         nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>,
-        @Value("\${indexer.pruner.removalChunkSize}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
         PrunerService(
             NftBlacklistArchive::class,
@@ -38,13 +38,13 @@ open class NftBlacklistConfig {
         processor: NftBlacklistProcessor,
         nftBlacklistPruner: Pruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.startBlock.nft_blacklist}") startBlock: Long,
-        @Value("\${indexer.blacklist.contract_address}") blacklistContract: String,
-        @Value("\${indexer.syncLogInterval.nfts}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.nfts}") syncBlockBatchSize: Long,
+        @Value("\${indexer.start-block.nft-blacklist}") startBlock: Long,
+        @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
+        @Value("\${indexer.sync-log-interval.nfts}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name("NFTBlacklistIndexer")
+            .name("NftBlacklistIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftBlacklistPruner)
