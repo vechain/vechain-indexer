@@ -89,6 +89,32 @@
   },
   {
     "inputs": [],
+    "name": "getVetPriceUsd",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "vetPriceUsd",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getVthoPriceUsd",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "vthoPriceUsd",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "queuedStake",
     "outputs": [
       {
