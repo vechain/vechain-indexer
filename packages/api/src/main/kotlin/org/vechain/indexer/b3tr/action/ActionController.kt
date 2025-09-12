@@ -27,6 +27,7 @@ import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.validation.ISODateString
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidISODateString
@@ -162,6 +163,41 @@ open class ActionController(private val service: ActionService) {
         }
 
         return service.getAllTimeUserOverview(wallet)
+    }
+
+    @GetMapping("/actions/users/{wallet}/daily-summaries")
+    @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
+    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @Parameter(
+        name = "startDate",
+        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
+        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
+        required = true,
+    )
+    @Parameter(
+        name = "endDate",
+        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
+        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
+        required = true,
+    )
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getDailySummariesForRange(
+        @ValidAddress @PathVariable wallet: Address,
+        @ValidISODateString @RequestParam startDate: String,
+        @ValidISODateString @RequestParam endDate: String,
+        @ValidPageNumber @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<UserDailyActionSummary> {
+        return service.getDailySummariesForRange(
+            wallet = wallet,
+            startDate = startDate,
+            endDate = endDate,
+            page = page,
+            size = size,
+            direction = direction,
+        )
     }
 
     @GetMapping("/actions/apps/{appId}/overview")

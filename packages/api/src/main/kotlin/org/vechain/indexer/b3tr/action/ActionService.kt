@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action
 
+import java.time.LocalDate
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.b3tr.AppId
@@ -13,6 +14,7 @@ import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.rest.PaginatedResponse
@@ -258,6 +260,31 @@ open class ActionService(
             rankByActionsRewarded = rankByActionsRewarded,
             uniqueXAppInteractions = uniqueInteractions,
             roundId = null,
+        )
+    }
+
+    open fun getDailySummariesForRange(
+        wallet: Address,
+        startDate: String,
+        endDate: String,
+        page: Int?,
+        size: Int?,
+        direction: String?,
+    ): PaginatedResponse<UserDailyActionSummary> {
+        val walletNormalised = HexUtils.normalise(wallet.value)
+        val pageable = toPageable(page, size, direction, "date")
+        val start = LocalDate.parse(startDate)
+        val end = LocalDate.parse(endDate)
+        if (end.isBefore(start)) {
+            throw BadRequestException("End date must be equal or after start date")
+        }
+        return paginatedResponse(
+            userDailyRepo.findAllByEntityAndDateBetween(
+                walletNormalised,
+                startDate,
+                endDate,
+                pageable,
+            )
         )
     }
 
