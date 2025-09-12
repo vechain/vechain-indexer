@@ -130,6 +130,7 @@ object ValidatorUtils {
                     avgDelegatorYield = Decimal128(avgDelegatorYield),
                     totalVTHOSupply = Decimal128(vthoSupply),
                     percentageOffline = Decimal128(percentageOffline),
+                    version = (existingDoc?.version ?: 0) + 1,
                 )
 
             validators.add(fresh)

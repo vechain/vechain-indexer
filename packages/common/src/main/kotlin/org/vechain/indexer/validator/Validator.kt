@@ -2,11 +2,15 @@ package org.vechain.indexer.validator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonView
 import org.bson.types.Decimal128
+import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.thor.model.Views
 
 @Document(collection = "validators")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,4 +48,13 @@ data class Validator(
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
     @JsonIgnore val totalVTHOSupply: Decimal128,
-) : IndexedDocument
+    @JsonIgnore override val version: Int,
+) : VersionedDocument {
+    @JsonIgnore override fun getDocumentId(): String = id
+}
+
+@Document("validators_archives")
+@JsonView(Views.Public::class)
+data class ValidatorArchive
+@ConstructorBinding
+constructor(@Id override val id: String, override val data: Validator) : Archive<Validator>

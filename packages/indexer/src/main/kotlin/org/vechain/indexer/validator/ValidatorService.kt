@@ -6,6 +6,7 @@ import kotlin.random.Random
 import org.bson.types.Decimal128
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -21,6 +22,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 class ValidatorService(
     private val repository: ValidatorRepository,
+    private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     private val contractAddress: String,
@@ -89,6 +91,9 @@ class ValidatorService(
         if (toDelete.isNotEmpty()) {
             repository.deleteAllById(toDelete)
         }
+
+        // 6. Archive
+        archiveService.saveAll(existingDocs.values.toList())
     }
 
     fun buildClauses(): List<Clause> {
@@ -220,6 +225,7 @@ class ValidatorService(
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             delegations = updatedDelegations,
+            version = existing.version + 1,
         )
     }
 
@@ -241,6 +247,7 @@ class ValidatorService(
                     delegations = emptyMap(),
                     delegationIdList = emptyList(),
                     totalVTHOSupply = Decimal128(1),
+                    version = 0,
                 )
 
         return base.copy(
@@ -249,6 +256,7 @@ class ValidatorService(
             blockTimestamp = event.blockTimestamp,
             delegationIds = base.delegationIds + (delegationId.toString() to tokenLevel),
             delegationIdList = base.delegationIdList + delegationId.toString(),
+            version = base.version + 1,
         )
     }
 
@@ -274,6 +282,7 @@ class ValidatorService(
             blockTimestamp = event.blockTimestamp,
             delegations = updatedDelegations,
             delegationIds = updatedDelegationIds,
+            version = existing.version + 1,
         )
     }
 
