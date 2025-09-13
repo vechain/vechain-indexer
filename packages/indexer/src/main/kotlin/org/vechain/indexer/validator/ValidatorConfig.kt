@@ -33,10 +33,9 @@ open class ValidatorConfig {
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
-        @Value("\${indexer.startBlock.validator}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval.vevote}") syncLogInterval: Long,
-        @Value("\${indexer.syncBlockBatchSize.vevote}") syncBlockBatchSize: Long,
-        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateNFTAddress: String,
+        @Value("\${indexer.start-block.validator}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.validator}") syncLogInterval: Long,
+        @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
@@ -54,11 +53,10 @@ open class ValidatorConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
-            .channelBatchSize(1)
+            .channelBatchSize(channelBatchSize)
             .includeFullBlock()
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/stargate")
-            .abiContracts(listOf(stargateNFTAddress, builtinStakerAddress, stargateStakerAddress))
+            .abiContracts(listOf(builtinStakerAddress, stargateStakerAddress))
             .abiEventNames(listOf("DelegationInitiated", "DelegationAdded", "DelegationWithdrawn"))
             .excludeVetTransfers()
             .build()

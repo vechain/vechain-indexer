@@ -5,6 +5,7 @@ import kotlin.collections.set
 import kotlin.random.Random
 import org.bson.types.Decimal128
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
@@ -19,6 +20,7 @@ import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
+@Profile("validator")
 @Service
 class ValidatorService(
     private val repository: ValidatorRepository,
