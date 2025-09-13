@@ -141,7 +141,7 @@ object ValidatorUtils {
         return validators to toDelete
     }
 
-    private fun calculateValidatorYield(
+    fun calculateValidatorYield(
         validatorTvl: BigDecimal,
         delegatorTvl: BigDecimal,
         hasDelegations: Boolean,
