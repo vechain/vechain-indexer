@@ -300,7 +300,7 @@ module "ecs-backend-service" {
     {
         name = "INDEXER_START_BLOCK_VALIDATOR"
         value = each.value.indexer.start-block.validator
-    }
+    },
     {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
