@@ -176,7 +176,7 @@ enabled_nets:
   # disabled_nets:
   test:
     image_version:                  dev-latest
-    thor_url:                       https://testnet.vechain.org
+    thor_url:                       https://hayabusa.live.dev.node.vechain.org
     api:
       cpu:                          256
       memory:                       512
@@ -191,7 +191,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr"
+      spring_profile:               "indexer,nfts,transactions,transfers,history,stargate,validator"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start-block:
@@ -207,7 +207,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '19661986'
         b3tr-sustainable-actions:   '19661986'
         b3tr-proposal:              '19661986'
-        validator:                   '0'
+        validator:                   '50000'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
@@ -273,8 +273,8 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x5f8f86b8d0fa93cdae20936d150175df0205fb38'
           VOTER_REWARDS_CONTRACT:    '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
           TREASURY_CONTRACT:         '0x039893ebe092a2d22b08e2b029735d211bff7f50'
-          STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
-          STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
+          STARGATE_DELEGATION_CONTRACT: '0xd9ee859de7b47c151619bd45f3e0d73cce68af60'
+          STARGATE_NFT_CONTRACT: '0xd9fda6a9afe7854835e7f0abcfe02c621792c28b'
           VEVOTE_CONTRACT:             '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
           STARGATE_STAKER_CONTRACT: '0x97b3f18de4d9197af33ed623d93096b3b55dba20'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
