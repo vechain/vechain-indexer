@@ -160,8 +160,6 @@ object ValidatorUtils {
             return Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
         }
 
-        val validatorPct = validatorTvl.divide(totalTvl, 6, RoundingMode.HALF_UP)
-
         val validatorYield =
             if (validatorTvl > BigDecimal.ZERO) {
                 if (hasDelegations) {
@@ -183,7 +181,6 @@ object ValidatorUtils {
                 if (hasDelegations) {
                     annualIssuanceUsd
                         .divide(validatorTvl, 12, RoundingMode.HALF_UP)
-                        .multiply(validatorPct)
                         .multiply(BigDecimal(100))
                 } else {
                     annualIssuanceUsd
