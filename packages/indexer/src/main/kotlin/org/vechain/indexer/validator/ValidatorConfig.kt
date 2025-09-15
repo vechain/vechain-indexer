@@ -24,7 +24,7 @@ open class ValidatorConfig {
     @Bean
     open fun validatorPruner(
         validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
-        @Value("\${indexer.pruner.removalChunkSize}") prunerRemovalChunkSize: Int,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
         PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
 
