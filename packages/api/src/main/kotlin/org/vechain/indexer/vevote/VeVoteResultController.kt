@@ -17,7 +17,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Tag(name = "VeVote", description = "Indexer API for VeVote.")
 @Validated
 @RestController

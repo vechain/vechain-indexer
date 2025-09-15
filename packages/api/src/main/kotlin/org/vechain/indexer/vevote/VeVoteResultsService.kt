@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Service
 open class VeVoteResultsService(
     private val vevoteProposalResultRepository: VeVoteProposalResultRepository

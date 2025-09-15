@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Configuration
 open class VeVoteCommentCollectionConfig(
     mongoTemplate: MongoTemplate,

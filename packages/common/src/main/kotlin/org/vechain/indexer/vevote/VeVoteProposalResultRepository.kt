@@ -6,7 +6,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Repository
 interface VeVoteProposalResultRepository :
     BasePagingAndSortingIndexedRepository<VeVoteProposalResults, String> {

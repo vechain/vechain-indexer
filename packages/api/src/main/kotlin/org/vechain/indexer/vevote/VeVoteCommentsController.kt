@@ -17,7 +17,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Tag(name = "VeVote", description = "Indexer API for VeVote.")
 @Validated
 @RestController

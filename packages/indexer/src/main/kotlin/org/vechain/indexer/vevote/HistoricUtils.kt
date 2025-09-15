@@ -1,6 +1,6 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
-object HistoricalUtils {
+object HistoricUtils {
 
     fun extractChoices(
         basicInfo: Map<String, Any?>?,

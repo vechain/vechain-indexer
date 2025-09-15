@@ -42,7 +42,7 @@ enabled_nets:
       cpu:                          256
       memory:                       512
       max_capacity:                 1
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals,b3tr
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -52,7 +52,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       enabled:                      true
-      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,historical-proposals,b3tr"
+      spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
       start-block:
@@ -67,7 +67,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
-        historical-proposals:       '4510483'
+        historic-proposals:       '4510483'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
@@ -79,7 +79,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historical-proposals:       '1000'
+        historic-proposals:       '1000'
       sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
@@ -87,7 +87,7 @@ enabled_nets:
         stargate:                   '500'
         authority-nodes:            '500'
         b3tr:                       '500'
-        historical-proposals:       '500'
+        historic-proposals:       '500'
       channel-batch-size:           '2'
       pruner:
         interval:                   '43200000'
@@ -109,7 +109,7 @@ enabled_nets:
         stargate_vet_staked_by_account: '1'
         stargate-nft-holders-by-block: '1'
         stargate-vet-staked-by-block: '1'
-        historical-proposals:   '1'
+        historic-proposals:   '1'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '1'
         b3tr-user-all-time-action-summary: '1'
@@ -152,7 +152,7 @@ enabled_nets:
       contract:
         authority-node:
           address:                 '0x0000000000000000000000417574686f72697479'
-        historical-proposals:
+        historic-proposals:
           steering-committee:      '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:        '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
@@ -196,7 +196,7 @@ enabled_nets:
         history:                    '21300000'
         vevote:                     '22331866'
         stargate:                   '22087000'
-        historical-proposals:       '22087000'
+        historic-proposals:       '22087000'
         b3tr:                       '19661986'
         b3tr-x-alloc-result:        '19661986'
         b3tr-sustainable-actions:   '19661986'
@@ -212,7 +212,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historical-proposals:       '100'
+        historic-proposals:       '100'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
@@ -220,7 +220,7 @@ enabled_nets:
         stargate:                   '100'
         authority-nodes:            '100'
         b3tr:                       '100'
-        historical-proposals:       '100'
+        historic-proposals:       '100'
       channel-batch-size:           '2'
       pruner:
         removal-chunk-size: 2000
@@ -237,7 +237,7 @@ enabled_nets:
         authority-node-endorser:    '1'
         stargate-vtho-claimed-by-block: '1'
         stargate-vtho-claimed-by-account: '2'
-        historical-proposals: '1'
+        historic-proposals: '1'
         stargate-nft-holders-by-block: '1'
         stargate-vet-staked-by-block: '1'
         b3tr-proposal-comments: '1'
@@ -284,7 +284,7 @@ enabled_nets:
           address:                '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority-node:
           address:                '0x0000000000000000000000417574686f72697479'
-        historical-proposals:
+        historic-proposals:
           steering-committee:     '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:       '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:

@@ -295,7 +295,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.start-block.historical-proposals
+      value = each.value.indexer.start-block.historic-proposals
     },
     {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
@@ -335,7 +335,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.sync-logger-interval.historical-proposals
+      value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
       name  = "PRUNER_INTERVAL"
@@ -359,11 +359,11 @@ module "ecs-backend-service" {
     },
     {
       name  = "STEERING_COMMITTEE_ADDRESS"
-      value = each.value.veworld.contract.historical-proposals.steering-committee
+      value = each.value.veworld.contract.historic-proposals.steering-committee
     },
     {
       name  = "ALL_STAKEHOLDERS_ADDRESS"
-      value = each.value.veworld.contract.historical-proposals.all-stakeholders
+      value = each.value.veworld.contract.historic-proposals.all-stakeholders
     },
     {
       name  = "VERSION_NFTS"
@@ -407,7 +407,7 @@ module "ecs-backend-service" {
     },
     {
       name = "VERSION_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.version.historical-proposals
+      value = each.value.indexer.version.historic-proposals
     },
     {
       name = "VERSION_B3TR_PROPOSAL_COMMENTS"
@@ -527,7 +527,7 @@ module "ecs-backend-service" {
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.sync-block-batch-size.historical-proposals
+      value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"

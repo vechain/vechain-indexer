@@ -6,7 +6,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.HexUtils
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Service
 open class VeVoteService(private val vevoteCommentRepository: VevoteCommentRepository) {
     /** Get comments for a specific proposal. */

@@ -1,11 +1,11 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 
-@Document(collection = "historical-proposals")
-data class HistoricalProposals(
+@Document(collection = "historic-proposals")
+data class HistoricProposals(
     @Id val id: String,
     val proposalId: String,
     val createdDate: String,

@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,23 +12,23 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("historical-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Configuration
-open class HistoricalProposalsCollectionConfig(
+open class HistoricProposalsCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricalProposals::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposals::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.historical-proposals}") private val version: Int = 1
+    @Value("\${indexer.version.historic-proposals}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            HistoricalProposals::class.java,
+            HistoricProposals::class.java,
             version,
         )
 

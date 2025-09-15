@@ -7,7 +7,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Service
 class VeVoteResultService(private val repository: VeVoteProposalResultRepository) {
     fun processVeVoteResults(processedEvents: List<IndexedEvent>): List<VeVoteProposalResults> {
