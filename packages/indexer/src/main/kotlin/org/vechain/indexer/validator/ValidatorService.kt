@@ -211,15 +211,10 @@ class ValidatorService(
 
         val level = existing.delegationIds[delegationId] ?: TokenLevel.All
 
-        // If already counted, skip increment
-        val alreadyCounted = existing.delegations[level]?.let { it > 0 } ?: false
-
         val updatedDelegations =
             existing.delegations.toMutableMap().apply {
-                if (!alreadyCounted) {
-                    this[level] = (this[level] ?: 0L) + 1
-                    this[TokenLevel.All] = (this[TokenLevel.All] ?: 0L) + 1
-                }
+                this[level] = (this[level] ?: 0L) + 1
+                this[TokenLevel.All] = (this[TokenLevel.All] ?: 0L) + 1
             }
 
         return existing.copy(
