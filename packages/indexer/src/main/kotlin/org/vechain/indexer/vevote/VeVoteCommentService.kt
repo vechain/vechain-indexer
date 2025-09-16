@@ -11,7 +11,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Service
 class VeVoteCommentService(
     private val repository: VevoteCommentRepository,

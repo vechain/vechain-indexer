@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,

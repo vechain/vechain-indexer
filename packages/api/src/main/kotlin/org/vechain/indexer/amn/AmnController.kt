@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.vechain.indexer.constants.AUTHORITY_NODES_PATH
+import org.vechain.indexer.constants.API_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
@@ -23,7 +23,7 @@ import org.vechain.indexer.validation.ValidAddress
 )
 @Validated
 @RestController
-@RequestMapping(AUTHORITY_NODES_PATH)
+@RequestMapping("$API_PATH/authority_endorsers", "$API_PATH/authority-endorsers")
 open class AmnController(private val amnApiEndorserService: AmnApiEndorserService) {
     @GetMapping("endorsers/{user}")
     @Operation(summary = "Check if a user is an endorser of any Authority Master Node.")

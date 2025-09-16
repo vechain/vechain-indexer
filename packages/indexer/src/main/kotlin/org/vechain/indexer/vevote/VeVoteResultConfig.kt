@@ -9,7 +9,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 open class VeVoteResultConfig {
     @Bean
     open fun vevoteResultIndexer(
