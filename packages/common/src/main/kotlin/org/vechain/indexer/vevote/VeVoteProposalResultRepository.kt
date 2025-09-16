@@ -9,16 +9,16 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 @Profile("vevote", "vevote-results")
 @Repository
 interface VeVoteProposalResultRepository :
-    BasePagingAndSortingIndexedRepository<VeVoteProposalResults, String> {
+    BasePagingAndSortingIndexedRepository<VeVoteProposalResult, String> {
     fun findByProposalIdAndSupport(
         proposalId: String,
         support: Support,
         pageable: Pageable,
-    ): Slice<VeVoteProposalResults>
+    ): Slice<VeVoteProposalResult>
 
     //  Get all aggregates for a proposal
-    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VeVoteProposalResults>
+    fun findAllByProposalId(proposalId: String, pageable: Pageable): Slice<VeVoteProposalResult>
 
     // Get all aggregates for a specific support across proposals
-    fun findAllBySupport(support: Support, pageable: Pageable): Slice<VeVoteProposalResults>
+    fun findAllBySupport(support: Support, pageable: Pageable): Slice<VeVoteProposalResult>
 }

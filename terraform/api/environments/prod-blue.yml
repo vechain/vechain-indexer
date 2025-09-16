@@ -96,7 +96,7 @@ enabled_nets:
         history:                    '2'
         nft-blacklist:              '2'
         vevote-comments:            '1'
-        vevote-results:             '1'
+        vevote-results:             '2'
         authority-node-endorser:    '5'
         stargate-vtho-claimed-by-block: '5'
         stargate-vtho-claimed-by-account: '6'
@@ -144,7 +144,7 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
         authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
         historic-proposals:
@@ -227,7 +227,7 @@ enabled_nets:
         history:                    '8'
         nft-blacklist:              '5'
         vevote-comments:            '1'
-        vevote-results:             '5'
+        vevote-results:             '6'
         authority-node-endorser:    '3'
         stargate-vtho-claimed-by-block: '3'
         stargate-vtho-claimed-by-account: '3'
@@ -260,7 +260,7 @@ enabled_nets:
           TREASURY_CONTRACT: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
           STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
           STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
-          VEVOTE_CONTRACT: '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
+          VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -274,8 +274,6 @@ enabled_nets:
         confidence:                 '0.9'
     veworld:
       contract:
-        vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
         historic-proposals:
