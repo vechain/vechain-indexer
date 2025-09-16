@@ -60,8 +60,6 @@ business-event:
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0x7d812e8e544bb0c7898ea656b70173e7ef426b4c}
 veworld:
   contract:
-    vevote:
-      address: ${VEVOTE_CONTRACT:0x7d812e8e544bb0c7898ea656b70173e7ef426b4c}
     authority-node:
       address: ${AUTHORITY_CONTRACT:0x0000000000000000000000417574686f72697479}
     historic-proposals:

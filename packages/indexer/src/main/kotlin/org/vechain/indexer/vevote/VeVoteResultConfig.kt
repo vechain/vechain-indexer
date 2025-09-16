@@ -47,7 +47,7 @@ open class VeVoteResultConfig {
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,
-        @Value("\${veworld.contract.vevote.address}") contractAddress: String,
+        @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
