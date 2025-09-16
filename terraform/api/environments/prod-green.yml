@@ -47,7 +47,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:

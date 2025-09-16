@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
