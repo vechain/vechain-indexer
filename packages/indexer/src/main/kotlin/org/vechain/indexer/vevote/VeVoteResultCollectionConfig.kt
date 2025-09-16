@@ -17,20 +17,29 @@ import org.vechain.indexer.version.IndexerVersionService
 open class VeVoteResultCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
+    @param:Value("\${indexer.version.vevote-results}") private val version: Int,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, VeVoteProposalResults::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        VeVoteProposalResult::class.java,
+        VeVoteProposalResultArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-
-    @Value("\${indexer.version.vevote-results}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            VeVoteProposalResults::class.java,
-            version,
-        )
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                VeVoteProposalResult::class.java,
+                version,
+            )
+
+        if (dropped)
+            indexerVersionService.dropArchiveCollection(VeVoteProposalResultArchive::class.java)
 
         this.ensureCollection()
 

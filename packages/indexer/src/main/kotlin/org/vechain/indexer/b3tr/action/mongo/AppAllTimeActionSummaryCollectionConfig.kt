@@ -21,7 +21,13 @@ open class AppAllTimeActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-app-all-time-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, AppAllTimeActionSummary::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        AppAllTimeActionSummary::class.java,
+        AppAllTimeActionSummaryArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

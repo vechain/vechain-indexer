@@ -19,7 +19,13 @@ open class GmNftCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, GmNft::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        GmNft::class.java,
+        GmNftArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-gm-nft}") private val version: Int = 1

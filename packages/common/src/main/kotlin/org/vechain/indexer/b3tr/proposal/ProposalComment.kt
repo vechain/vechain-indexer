@@ -2,11 +2,11 @@ package org.vechain.indexer.b3tr.proposal
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.thor.HexUtils
 
@@ -36,7 +36,7 @@ constructor(
         power: BigInteger,
         reason: String,
     ) : this(
-        id = generateId(proposalId, voter),
+        id = generateId(proposalId, HexUtils.normalise(voter)),
         blockId = blockId,
         blockNumber = blockNumber,
         blockTimestamp = blockTimestamp,
@@ -48,6 +48,3 @@ constructor(
         reason = reason,
     )
 }
-
-fun generateId(proposalId: String, voter: String): String =
-    DigestUtils.sha1Hex("$proposalId-${HexUtils.normalise(voter)}")

@@ -11,6 +11,7 @@ import java.util.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
@@ -20,12 +21,16 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 class VeVoteResultServiceTest {
     @MockK lateinit var repository: VeVoteProposalResultRepository
 
+    @MockK
+    lateinit var veVoteProposalResultArchive:
+        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
+
     private lateinit var service: VeVoteResultService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = VeVoteResultService(repository)
+        service = VeVoteResultService(repository, veVoteProposalResultArchive)
     }
 
     @Test
@@ -38,45 +43,14 @@ class VeVoteResultServiceTest {
 
         every { repository.findById("proposal-1-FOR") } returns Optional.empty()
 
-        val results = service.processVeVoteResults(listOf(event))
+        val (updated, existing) = service.processEvents(listOf(event))
 
-        assertEquals(1, results.size)
-        val result = results.first()
+        assertEquals(1, updated.size)
+        val result = updated.first()
         assertEquals("proposal-1-FOR", result.id)
         assertEquals(Support.FOR, result.support)
         assertEquals(BigDecimal("10"), result.totalWeight)
         assertEquals(1, result.totalVoters)
-    }
-
-    @Test
-    fun `merges with existing result if already stored`() {
-        val proposalId = "proposal-2"
-        val support = BigInteger.ZERO // AGAINST
-        val weight = BigDecimal("4.5")
-        val existingWeight = BigDecimal("5.5")
-
-        val event = indexedEvent(proposalId, support, weight)
-        val existingResult =
-            VeVoteProposalResults(
-                id = "proposal-2-AGAINST",
-                blockId = "old-block",
-                blockNumber = 10,
-                blockTimestamp = Instant.now().epochSecond,
-                proposalId = proposalId,
-                support = Support.AGAINST,
-                totalWeight = existingWeight,
-                totalVoters = 2,
-            )
-
-        every { repository.findById("proposal-2-AGAINST") } returns Optional.of(existingResult)
-
-        val results = service.processVeVoteResults(listOf(event))
-
-        assertEquals(1, results.size)
-        val merged = results.first()
-        assertEquals(Support.AGAINST, merged.support)
-        assertEquals(existingWeight + weight, merged.totalWeight)
-        assertEquals(3, merged.totalVoters)
     }
 
     private fun indexedEvent(

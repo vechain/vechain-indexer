@@ -19,7 +19,13 @@ open class ProposalResultCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-proposal-results}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, ProposalResult::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        ProposalResult::class.java,
+        ProposalResultArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

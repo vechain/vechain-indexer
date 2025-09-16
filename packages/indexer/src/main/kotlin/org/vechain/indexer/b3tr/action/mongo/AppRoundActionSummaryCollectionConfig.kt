@@ -21,7 +21,13 @@ open class AppRoundActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-app-round-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, AppRoundActionSummary::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        AppRoundActionSummary::class.java,
+        AppRoundActionSummaryArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
