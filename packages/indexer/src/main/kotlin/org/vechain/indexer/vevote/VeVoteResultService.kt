@@ -75,7 +75,7 @@ open class VeVoteResultService(
                     it.blockId == blockDetails.blockId
             }
         ) {
-            "All events must have the same proposalId and block number"
+            "All events must have the same proposalId and block"
         }
 
         // All events must have the same support, and the same as the existing record if present

@@ -206,7 +206,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should only create two archive record is multiple updates happen in the different blocks`() {
+    fun `processEvents should create two archive record is multiple updates happen in the different blocks`() {
         // Create two events for the same proposalId in different blocks
         val event1 =
             buildIndexedEvent(
