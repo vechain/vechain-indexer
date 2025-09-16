@@ -1,6 +1,6 @@
 package org.vechain.indexer.contracts.abi
 
-object HistoricalProposalABI {
+object HistoricProposalABI {
     val getBasicInfo: FunctionDefinition
         get() =
             FunctionDefinition(

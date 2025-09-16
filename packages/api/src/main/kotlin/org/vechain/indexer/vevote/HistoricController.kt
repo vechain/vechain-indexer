@@ -14,7 +14,7 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
 
-@Tag(name = "VeVote Historical Proposals", description = "Query VeVote Historical Proposals")
+@Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
 @RestController
 @Profile("vevote", "vevote-historic-proposals")
@@ -22,7 +22,7 @@ import org.vechain.indexer.utils.PaginationUtils
 open class HistoricController(private val historicApiService: HistoricApiService) {
 
     @GetMapping("/historic-proposals", "historical_proposals")
-    @Operation(summary = "Fetch all historical proposals")
+    @Operation(summary = "Fetch all historic proposals")
     @CommonApiResponses
     open fun getAllProposals(
         @RequestParam(required = false) page: Int?,

@@ -20,7 +20,7 @@ import strikt.assertions.hasSize
 import strikt.assertions.isNotNull
 
 @ExtendWith(MockKExtension::class)
-class HistoricalProposalsProcessorTest {
+class HistoricProposalsProcessorTest {
     @MockK lateinit var thorService: ThorService
     @MockK private lateinit var historicProposalsService: HistoricProposalsService
     private val repository = mockk<HistoricProposalsRepository>(relaxed = true)
