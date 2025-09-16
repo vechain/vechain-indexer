@@ -294,7 +294,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
+      name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
       value = each.value.indexer.start-block.historic-proposals
     },
     {
@@ -334,7 +334,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-logger-interval.b3tr
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS"
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
       value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
@@ -406,7 +406,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name = "VERSION_HISTORICAL_PROPOSALS"
+      name = "VERSION_HISTORIC_PROPOSALS"
       value = each.value.indexer.version.historic-proposals
     },
     {
@@ -526,7 +526,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-block-batch-size.vevote
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS"
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
       value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {

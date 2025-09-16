@@ -4,7 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 
-@Document(collection = "historic-proposals")
+@Document(collection = "historic_proposals")
 data class HistoricProposals(
     @Id val id: String,
     val proposalId: String,

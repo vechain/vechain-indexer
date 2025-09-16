@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.contracts.abi.HistoricalProposalABI
+import org.vechain.indexer.contracts.abi.HistoricProposalABI
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -38,7 +38,7 @@ open class HistoricProposalsService(
             val blockToCheck = currentBlockNumber ?: events.firstOrNull()?.blockNumber
             if (blockToCheck != null && blockToCheck >= bestBlockNumber) {
                 logger.info(
-                    "Historical proposals service reached current block $bestBlockNumber. Stopping processing."
+                    "Historic proposals service reached current block $bestBlockNumber. Stopping processing."
                 )
                 hasReachedCurrentBlock = true
                 return emptyList()
@@ -113,20 +113,20 @@ open class HistoricProposalsService(
             listOf(
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getBasicInfoSC
-                    else HistoricalProposalABI.getBasicInfo,
+                    if (isSteeringCommittee) HistoricProposalABI.getBasicInfoSC
+                    else HistoricProposalABI.getBasicInfo,
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getConditionSC
-                    else HistoricalProposalABI.getCondition,
+                    if (isSteeringCommittee) HistoricProposalABI.getConditionSC
+                    else HistoricProposalABI.getCondition,
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getTallySC
-                    else HistoricalProposalABI.getTally,
+                    if (isSteeringCommittee) HistoricProposalABI.getTallySC
+                    else HistoricProposalABI.getTally,
                     proposalId.toBigInteger(),
                 ),
             )

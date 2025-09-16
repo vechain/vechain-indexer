@@ -12,7 +12,7 @@ import org.vechain.indexer.thor.client.ThorClient
 @Profile("vevote", "vevote-historic-proposals")
 open class HistoricProposalsConfig {
     @Bean
-    open fun historicalProposalsIndexer(
+    open fun historicProposalsIndexer(
         thorClient: ThorClient,
         processor: HistoricProposalsProcessor,
         @Value("\${indexer.start-block.historic-proposals}") startBlock: Long,
@@ -23,7 +23,7 @@ open class HistoricProposalsConfig {
         @Value("\${veworld.contract.historic-proposals.all-stakeholders}") allStakeholders: String,
     ): Indexer =
         IndexerFactory()
-            .name("HistoricalProposalsIndexer")
+            .name("HistoricProposalsIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

@@ -81,7 +81,7 @@ indexer:
     b3tr-x-alloc-result: ${INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT:0}
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
-    historic-proposals: ${INDEXER_START_BLOCK_HISTORICAL_PROPOSALS:0}
+    historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
   start-round:
     b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval:
@@ -93,7 +93,7 @@ indexer:
     authority-nodes: ${INDEXER_SYNC_LOGGER_AUTHORITY_NODE:1000}
     stargate: ${INDEXER_SYNC_LOGGER_INTERVAL_STARGATE:1000}
     b3tr: ${INDEXER_SYNC_LOGGER_INTERVAL_B3TR:1000}
-    historic-proposals: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS:1000}
+    historic-proposals: ${INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS:1000}
   sync-block-batch-size:
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:500}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:500}
@@ -101,7 +101,7 @@ indexer:
     stargate: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE:500}
     authority-nodes: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES:500}
     b3tr: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR:500}
-    historic-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS:500}
+    historic-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS:500}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
     interval: ${PRUNER_INTERVAL:300000}
@@ -121,7 +121,7 @@ indexer:
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
     authority-node-endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
-    historic-proposals: ${VERSION_HISTORICAL_PROPOSALS:1}
+    historic-proposals: ${VERSION_HISTORIC_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
     b3tr-proposal-results: ${VERSION_B3TR_PROPOSAL_RESULTS:1}
     b3tr-user-all-time-action-summary: ${VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY:1}
