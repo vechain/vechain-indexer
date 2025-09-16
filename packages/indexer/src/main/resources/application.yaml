@@ -102,7 +102,7 @@ indexer:
     historic-proposals: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS:500}
   channel-batch-size: ${INDEXER_CHANNEL_BATCH_SIZE:10}
   pruner:
-    interval: ${PRUNER_INTERVAL:300000}
+    interval: ${PRUNER_INTERVAL:3000}
     removal-chunk-size: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}

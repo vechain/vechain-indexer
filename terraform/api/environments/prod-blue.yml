@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -85,8 +85,8 @@ enabled_nets:
         historic-proposals:       '500'
       channel-batch-size:           '2'
       pruner:
-        interval:                   '43200000'
-        removal-chunk-size:         '2000'
+        interval: '3000'
+        removal-chunk-size: '2000'
       blacklist:
         contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
       version:
@@ -216,8 +216,8 @@ enabled_nets:
         historic-proposals:       '100'
       channel-batch-size:           '2'
       pruner:
-        interval:                   '43200000'
-        removal-chunk-size:         '2000'
+        interval: '3000'
+        removal-chunk-size: '2000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
       version:
