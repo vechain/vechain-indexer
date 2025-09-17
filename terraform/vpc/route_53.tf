@@ -23,6 +23,8 @@ locals {
   green_mainnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_mainnet
   blue_testnet_lb  = data.terraform_remote_state.api-blue.outputs.load_balancer_domain_testnet
   green_testnet_lb = data.terraform_remote_state.api-green.outputs.load_balancer_domain_testnet
+  yellow_mainnet_lb = data.terraform_remote_state.api-yellow.outputs.load_balancer_domain_mainnet
+  yellow_testnet_lb = data.terraform_remote_state.api-yellow.outputs.load_balancer_domain_testnet
 
   # Desired records directly from the requested colours
   live_mainnet_lb = var.live_color_mainnet == "prod-blue" ? local.blue_mainnet_lb : local.green_mainnet_lb

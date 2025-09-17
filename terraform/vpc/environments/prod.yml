@@ -26,3 +26,4 @@ slack_alert_channel:             C05NA25LG78
 slack_alert_workspace:           T03L3PQD8GK
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 mongodb_secret_arn:              arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+yellow_env_hosted_zone_id:       Z07511592AUMA3GPYN856
