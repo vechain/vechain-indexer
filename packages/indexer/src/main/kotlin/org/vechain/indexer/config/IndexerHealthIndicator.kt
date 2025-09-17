@@ -4,6 +4,7 @@ import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.stereotype.Component
@@ -11,18 +12,25 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 
+enum class HealthStatus() {
+    UP,
+    DOWN,
+    UNKNOWN,
+}
+
 @Component
-class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndicator {
-    companion object {
-        private const val STATUS_UP = "UP"
-        private const val STATUS_DOWN = "DOWN"
-        private const val PROCESS_TIMEOUT = 60L
-        private const val SYNC_TIMEOUT = 300L
-    }
+class IndexerHealthIndicator(
+    private val indexers: List<Indexer>,
+    @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
+    private val inactiveThresholdSyncing: Long,
+    @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
+    private val inactiveThresholdNotSyncing: Long,
+) : HealthIndicator {
 
     data class IndexerHealth(
         val indexerName: String,
-        val status: String,
+        val status: HealthStatus,
+        val statusDetails: String,
         val syncStatus: Status,
         val currentBlock: String,
     )
@@ -32,9 +40,11 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
 
         val indexerHealths =
             indexers.map { indexer ->
+                val (status, statusDetails) = getIndexerHealth(indexer)
                 IndexerHealth(
                     indexerName = indexer.name,
-                    status = getIndexerHealth(indexer),
+                    status = status,
+                    statusDetails = statusDetails,
                     syncStatus = indexer.status,
                     currentBlock =
                         if (indexer is BlockIndexer) {
@@ -46,7 +56,7 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
                 )
             }
 
-        val badIndexers = indexerHealths.filter { it.status == STATUS_DOWN }
+        val badIndexers = indexerHealths.filter { it.status == HealthStatus.DOWN }
 
         return if (badIndexers.isNotEmpty()) {
             Health.down().withDetail(key, badIndexers).build()
@@ -60,25 +70,26 @@ class IndexerHealthIndicator(private val indexers: List<Indexer>) : HealthIndica
      * determine if it is down If the indexer is not syncing we use the PROCESS_TIMEOUT to determine
      * if it is down
      */
-    private fun getIndexerHealth(indexer: Indexer): String {
+    private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeout =
             if (indexer.status == Status.SYNCING) {
-                SYNC_TIMEOUT
+                inactiveThresholdSyncing
             } else {
-                PROCESS_TIMEOUT
+                inactiveThresholdNotSyncing
             }
 
         val timeLastProcessed = if (indexer is BlockIndexer) indexer.timeLastProcessed else null
         return if (timeLastProcessed != null) {
             if (timeNow.minusSeconds(timeout) > timeLastProcessed) {
-                STATUS_DOWN
+                HealthStatus.DOWN to
+                    "Last processed at $timeLastProcessed which is more than $timeout seconds ago"
             } else {
-                STATUS_UP
+                HealthStatus.UP to "Last processed at $timeLastProcessed"
             }
         } else {
-            STATUS_UP
+            HealthStatus.UNKNOWN to "No last processed time available"
         }
     }
 }
