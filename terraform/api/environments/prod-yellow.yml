@@ -188,18 +188,18 @@ enabled_nets:
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
-        nfts:                       '1042259'
-        nft-blacklist:              '21823565'
-        transactions:               '15034'
-        transfers:                  '15034'
-        history:                    '15034'
-        vevote:                     '22331866'
-        stargate:                   '22087000'
-        b3tr:                       '19661986'
-        b3tr-x-alloc-result:        '19661986'
-        b3tr-sustainable-actions:   '19661986'
-        b3tr-proposal:              '19661986'
-        historic-proposals:       '22087000'
+        nfts:                       '0'
+        nft-blacklist:              '0'
+        transactions:               '0'
+        transfers:                  '0'
+        history:                    '0'
+        vevote:                     '0'
+        stargate:                   '0'
+        b3tr:                       '0'
+        b3tr-x-alloc-result:        '0'
+        b3tr-sustainable-actions:   '0'
+        b3tr-proposal:              '0'
+        historic-proposals:       '0'
         validator:                   '0'
       start-round:
         b3tr-sustainable-actions:   '0'
@@ -224,7 +224,7 @@ enabled_nets:
         b3tr:                       '100'
       channel-batch-size:           '2'
       pruner:
-        interval:                   '43200000'
+        interval:                   '3000'
         removal-chunk-size:         '2000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
