@@ -169,7 +169,7 @@ enabled_nets:
       auto_scaling_compute_min_instance_size: M40
   test:
     image_version: yellow-latest
-    thor_url: https://hayabusa.live.yellow.node.vechain.org
+    thor_url: https://hayabusa.live.dev.node.vechain.org
     api:
       cpu: 512
       memory: 1024
