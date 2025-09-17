@@ -31,6 +31,13 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
         logger.info(
             "Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
         )
-        records.chunked(prunerRemovalChunkSize).forEach { chunk -> archiveService.removeAll(chunk) }
+        records.chunked(prunerRemovalChunkSize).forEachIndexed { index, chunk ->
+            logger.debug(
+                "Processing chunk ${index + 1}/${records.size / prunerRemovalChunkSize + 1} with ${chunk.size} records for $targetObjectName"
+            )
+            archiveService.removeAll(chunk)
+        }
+
+        logger.info("Pruning completed for $targetObjectName")
     }
 }
