@@ -79,3 +79,20 @@ resource "aws_route53_record" "testnet_dead" {
   ttl     = 300
   records = [local.dead_testnet_lb]
 }
+
+# Route53 records for yellow environment (in a separate, non-prod hosted zone)
+resource "aws_route53_record" "yellow_mainnet" {
+  zone_id = local.env.yellow_env_hosted_zone_id
+  name    = "mainnet.yellow.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [local.yellow_mainnet_lb]
+}
+
+resource "aws_route53_record" "yellow_testnet" {
+  zone_id = local.env.yellow_env_hosted_zone_id
+  name    = "testnet.yellow.${local.env.application}.${local.env.root_domain}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [local.yellow_testnet_lb]
+}

@@ -46,6 +46,15 @@ data "terraform_remote_state" "api-green" {
   }
 }
 
+data "terraform_remote_state" "api-yellow" {
+  backend = "s3"
+  config = {
+    bucket = "veworld-indexer-terraform-state-prod"
+    key    = "workspaces/prod-yellow/veworld-indexer-api.tfstate"
+    region = "eu-west-1"
+  }
+}
+
 provider "aws" {
   region = local.env.region
   default_tags {
