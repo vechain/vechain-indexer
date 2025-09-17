@@ -4,6 +4,7 @@ import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.transfer.TransferEventType
+import org.vechain.indexer.validator.ValidatorAction
 
 data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
 
@@ -47,6 +48,15 @@ object EventUtils {
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
             else -> null // Other events will not be labeled
+        }
+
+    fun determineValidatorEventType(params: AbiEventParameters): ValidatorAction? =
+        when (params.getEventType()) {
+            "DelegationAdded" -> ValidatorAction.DELEGATION_APPLIED
+            "DelegationInitiated" -> ValidatorAction.DELEGATION_INITIATED
+            "DelegationWithdrawn" -> ValidatorAction.DELEGATION_REMOVED
+            "DelegationExitRequested" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
+            else -> null
         }
 
     fun determineTransferType(genericParams: AbiEventParameters): TransferEventType? =

@@ -1,7 +1,7 @@
 package org.vechain.indexer.stargate
 
 enum class TokenLevel {
-    None,
+    All,
     Strength,
     Thunder,
     Mjolnir,
@@ -15,11 +15,10 @@ enum class TokenLevel {
 
     companion object {
         /**
-         * Parse a string to find the corresponding TokenLevel. None is not considered a valid
-         * level.
+         * Parse a string to find the corresponding TokenLevel. All is not considered a valid level.
          */
-        fun fromString(value: String?): TokenLevel? {
-            return when (value?.trim()?.lowercase()) {
+        fun fromString(value: String?): TokenLevel? =
+            when (value?.trim()?.lowercase()) {
                 "strength" -> Strength
                 "thunder" -> Thunder
                 "mjolnir" -> Mjolnir
@@ -30,20 +29,18 @@ enum class TokenLevel {
                 "dawn" -> Dawn
                 "lightning" -> Lightning
                 "flash" -> Flash
-                else -> null // None is not a valid level for parsing
+                else -> null // All is not a valid level for parsing
             }
-        }
 
         /**
          * Get the TokenLevel by its ordinal value. Returns null if the ordinal is out of bounds or
-         * 0 (None).
+         * 0 (All).
          */
-        fun fromOrdinal(ordinal: Int): TokenLevel? {
-            return if (ordinal in 1 until entries.size) {
+        fun fromOrdinal(ordinal: Int): TokenLevel? =
+            if (ordinal in 1 until entries.size) {
                 entries[ordinal]
             } else {
-                null // Returns null for None or out of bounds
+                null // Returns null for All or out of bounds
             }
-        }
     }
 }

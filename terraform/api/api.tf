@@ -298,6 +298,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.historic-proposals
     },
     {
+        name = "INDEXER_START_BLOCK_VALIDATOR"
+        value = each.value.indexer.start-block.validator
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -336,6 +340,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
       value = each.value.indexer.sync-logger-interval.historic-proposals
+    },
+    {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
+      value = each.value.indexer.sync-logger-interval.validator
     },
     {
       name  = "PRUNER_INTERVAL"
@@ -458,6 +466,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
+      name = "VERSION_VALIDATOR"
+      value = each.value.indexer.version.validator
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
@@ -510,8 +522,21 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
+<<<<<<< HEAD
       name  = "VEVOTE_CONTRACT"
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+=======
+      name  = "STARGATE_STAKER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
+    },
+    {
+      name  = "BUILTIN_STAKER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.BUILTIN_STAKER_CONTRACT
+    },
+    {
+      name  = "GET_ALL_VALIDATORS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
+>>>>>>> v.3.4.101
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
