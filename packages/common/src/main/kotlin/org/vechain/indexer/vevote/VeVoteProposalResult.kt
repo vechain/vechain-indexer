@@ -14,7 +14,7 @@ data class VeVoteProposalResult
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String,
-    override val version: Int,
+    @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -44,7 +44,7 @@ constructor(
         totalVoters = totalVoters,
     )
 
-    override fun getDocumentId(): String = id
+    @JsonIgnore override fun getDocumentId(): String = id
 }
 
 @Document(collection = "vevote_proposal_results_archives")
