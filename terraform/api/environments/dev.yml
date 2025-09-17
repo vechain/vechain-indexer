@@ -94,6 +94,9 @@ enabled_nets:
         removal-chunk-size:         '2000'
       blacklist:
         contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '3'
         transfers:                  '2'
@@ -226,6 +229,9 @@ enabled_nets:
         removal-chunk-size: 2000
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '3'
         transfers:                  '2'
