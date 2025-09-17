@@ -522,10 +522,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
-<<<<<<< HEAD
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
-=======
       name  = "STARGATE_STAKER_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
     },
@@ -536,7 +532,6 @@ module "ecs-backend-service" {
     {
       name  = "GET_ALL_VALIDATORS_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
->>>>>>> v.3.4.101
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
