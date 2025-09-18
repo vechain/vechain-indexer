@@ -346,6 +346,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.pruner.removal-chunk-size
     },
     {
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },

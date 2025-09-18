@@ -14,12 +14,14 @@ import org.vechain.indexer.config.BusinessEventProperties
 open class UserAllTimeActionSummaryConfig {
     @Bean
     open fun userAllTimeActionSummaryArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = UserAllTimeActionSummary::class.java,
             archiveClazz = UserAllTimeActionSummaryArchive::class.java,
+            queryLimit = recordLimit,
         )
     }
 

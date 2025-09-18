@@ -133,6 +133,7 @@ Some of the indexers are stateful indexers. This means that records are updated 
 
 - `PRUNER_INTERVAL` - How frequently to run the pruner (in blocks)
 - `PRUNER_REMOVAL_CHUNK_SIZE` - Sometimes the number of records to prune can be very large. To prevent mongoDB from blowing up we can set a chunk size for the delete operation
+- `PRUNER_RECORD_LIMIT` - You can set a limit on the number of records to prune in each run.
 
 ## Testing
 

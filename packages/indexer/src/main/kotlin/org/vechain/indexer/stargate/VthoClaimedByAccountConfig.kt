@@ -19,12 +19,14 @@ import org.vechain.indexer.thor.client.ThorClient
 open class VthoClaimedByAccountConfig {
     @Bean
     open fun vthoClaimByAccountArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
         ArchiveService(
             mongoTemplate,
             VthoClaimedByAccount::class.java,
             VthoClaimedByAccountArchive::class.java,
+            recordLimit,
         )
 
     @Bean

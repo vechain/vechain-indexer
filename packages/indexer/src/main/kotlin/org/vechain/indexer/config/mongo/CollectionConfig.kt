@@ -76,6 +76,14 @@ abstract class CollectionConfig(
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        ensureIndexes(listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC)))
+        ensureIndexes(
+            listOf(
+                "blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC),
+                "data._id_1_data.version_-1" to
+                    Index()
+                        .on("data._id", Sort.Direction.ASC)
+                        .on("data.version", Sort.Direction.DESC),
+            )
+        )
     }
 }
