@@ -18,12 +18,14 @@ import org.vechain.indexer.thor.client.ThorClient
 open class ProposalResultConfig {
     @Bean
     open fun proposalResultArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<ProposalResult, ProposalResultArchive> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = ProposalResult::class.java,
             archiveClazz = ProposalResultArchive::class.java,
+            queryLimit = recordLimit,
         )
 
     @Bean

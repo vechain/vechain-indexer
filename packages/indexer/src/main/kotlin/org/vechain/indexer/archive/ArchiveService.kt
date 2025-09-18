@@ -27,7 +27,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
-    private val queryLimit: Long = 200_000L,
+    private val queryLimit: Long,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

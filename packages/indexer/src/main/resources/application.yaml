@@ -104,6 +104,7 @@ indexer:
   pruner:
     interval: ${PRUNER_INTERVAL:3000}
     removal-chunk-size: ${PRUNER_REMOVAL_CHUNK_SIZE:10000}
+    record-limit: ${PRUNER_RECORD_LIMIT:200000}
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
   version:

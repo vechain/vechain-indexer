@@ -16,7 +16,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
-    @WithTiming("Pruner.run")
+    @WithTiming("Pruner")
     override fun run(currentBlockNumber: Long) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
