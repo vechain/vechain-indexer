@@ -1,12 +1,12 @@
 package org.vechain.indexer.pruner
 
 import kotlin.reflect.KClass
-import kotlin.time.measureTime
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.timing.WithTiming
 
 class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
@@ -16,37 +16,36 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
+    @WithTiming("Pruner.run")
     override fun run(currentBlockNumber: Long) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
             logger.info("Skipping pruner for $targetObjectName, as not enough blocks to prune")
             return
         }
-        val duration = measureTime {
-            val records = archiveService.findRecordsToPrune(prunerEndBlock)
-            if (records.isEmpty()) {
-                logger.info("No records to prune for $targetObjectName")
-                return
-            }
 
+        val records = archiveService.findRecordsToPrune(prunerEndBlock)
+        if (records.isEmpty()) {
+            logger.info("No records to prune for $targetObjectName")
+            return
+        }
+
+        logger.info(
+            "🧹 Pruning started for $targetObjectName. ${records.size} records will be removed in chunks of $prunerRemovalChunkSize"
+        )
+        records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
             logger.info(
-                "🧹 Pruning started for $targetObjectName. ${records.size} records will be removed in chunks of $prunerRemovalChunkSize"
-            )
-            records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
-                logger.info(
-                    "🧹 Pruning progress for $targetObjectName: ${
+                "🧹 Pruning progress for $targetObjectName: ${
                         progressPercentage(
                             (idx * prunerRemovalChunkSize) + chunk.size,
                             records.size,
                         )
                     }%"
-                )
-                archiveService.removeAll(chunk)
-            }
+            )
+            archiveService.removeAll(chunk)
         }
-        logger.info(
-            "✅ Pruning complete for $targetObjectName in ${duration.inWholeSeconds} seconds"
-        )
+
+        logger.info("✅ Pruning complete for $targetObjectName")
     }
 
     private fun progressPercentage(processed: Int, total: Int): Int =
