@@ -171,7 +171,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun removeAll(records: List<String>) {
-        logger.info("Removing {} archives for {}", records.size, clazz.simpleName)
+        logger.debug("Removing {} archives for {}", records.size, clazz.simpleName)
         mongoTemplate.remove(Query.query(Criteria.where("_id").`in`(records)), archiveClazz)
     }
 }

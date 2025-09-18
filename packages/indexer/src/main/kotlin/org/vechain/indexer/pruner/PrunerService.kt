@@ -32,10 +32,10 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
             "🧹 Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
         )
         records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
-            logger.debug(
+            logger.info(
                 "Pruning progress for $targetObjectName: ${
                     progressPercentage(
-                        (idx + 1) * prunerRemovalChunkSize,
+                        (idx * prunerRemovalChunkSize) + chunk.size,
                         records.size,
                     )
                 }%"
