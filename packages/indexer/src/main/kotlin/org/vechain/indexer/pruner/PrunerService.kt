@@ -8,7 +8,7 @@ import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.timing.WithTiming
 
-class PrunerService<T : VersionedDocument, S : Archive<T>>(
+open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
     private val archiveService: ArchiveService<T, S>,
     private val prunerRemovalChunkSize: Int,
@@ -24,15 +24,14 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
             return
         }
 
+        logger.info("🧹 Pruning started for $targetObjectName")
+
         val records = archiveService.findRecordsToPrune(prunerEndBlock)
         if (records.isEmpty()) {
             logger.info("No records to prune for $targetObjectName")
             return
         }
 
-        logger.info(
-            "🧹 Pruning started for $targetObjectName. ${records.size} records will be removed in chunks of $prunerRemovalChunkSize"
-        )
         records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
             logger.info(
                 "🧹 Pruning progress for $targetObjectName: ${
@@ -45,7 +44,7 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
             archiveService.removeAll(chunk)
         }
 
-        logger.info("✅ Pruning complete for $targetObjectName")
+        logger.info("✅ Pruning complete for $targetObjectName. Removed ${records.size} records")
     }
 
     private fun progressPercentage(processed: Int, total: Int): Int =
