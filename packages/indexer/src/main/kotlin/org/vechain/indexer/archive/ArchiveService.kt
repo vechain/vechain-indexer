@@ -149,7 +149,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                         Criteria.where("rn").gt(1).and("data.blockNumber").lt(endBlock)
                     ),
                     Aggregation.project("_id"),
-                    Aggregation.limit(50_000),
+                    Aggregation.limit(200_000),
                 )
                 .withOptions(AggregationOptions.builder().allowDiskUse(true).build())
 
