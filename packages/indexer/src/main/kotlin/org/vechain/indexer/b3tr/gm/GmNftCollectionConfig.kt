@@ -50,6 +50,7 @@ open class GmNftCollectionConfig(
             listOf(
                 "attachedNodeId_1" to Index().on("attachedNodeId", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

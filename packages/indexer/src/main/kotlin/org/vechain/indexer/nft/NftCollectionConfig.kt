@@ -80,7 +80,6 @@ open class NftCollectionConfig(
                         .on("blockNumber", Sort.Direction.DESC)
                         .on("txId", Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
-                "nft_contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),
             )
         )
     }
