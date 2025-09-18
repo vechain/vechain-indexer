@@ -29,7 +29,7 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
         }
 
         logger.info(
-            "🧹 Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
+            "🧹 Pruning started for targetObjectName. ${records.size} records will be removed in chunks of $prunerRemovalChunkSize"
         )
         records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
             logger.info(
