@@ -27,6 +27,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
+    private val queryLimit: Long = 200_000L,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -149,7 +150,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                         Criteria.where("rn").gt(1).and("data.blockNumber").lt(endBlock)
                     ),
                     Aggregation.project("_id"),
-                    Aggregation.limit(200_000),
+                    Aggregation.limit(queryLimit),
                 )
                 .withOptions(AggregationOptions.builder().allowDiskUse(true).build())
 
