@@ -29,8 +29,22 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
         }
 
         logger.info(
-            "Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
+            "🧹 Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
         )
-        records.chunked(prunerRemovalChunkSize).forEach { chunk -> archiveService.removeAll(chunk) }
+        records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
+            logger.debug(
+                "Pruning progress for $targetObjectName: ${
+                    progressPercentage(
+                        (idx + 1) * prunerRemovalChunkSize,
+                        records.size,
+                    )
+                }%"
+            )
+            archiveService.removeAll(chunk)
+        }
+        logger.info("✅ Pruning complete for $targetObjectName")
     }
+
+    private fun progressPercentage(processed: Int, total: Int): Int =
+        if (total == 0) 0 else (processed * 100) / total
 }
