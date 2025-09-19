@@ -47,6 +47,7 @@ internal class ArchiveServiceTest {
                 mongoTemplate,
                 TestVersionedDocument::class.java,
                 TestArchive::class.java,
+                queryLimit = 100,
             )
     }
 
