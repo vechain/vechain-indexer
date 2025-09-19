@@ -15,7 +15,7 @@ permissions:
   contents: read   # This is required for actions/checkout
 
 env:
-  latestTag:  'latest'
+  latestTag:  'dev-latest'
   versionTag:  'v.1.0.${{ github.run_number }}'
   commitHash: ${{ github.sha }}
   workingDirectory:  './' 
