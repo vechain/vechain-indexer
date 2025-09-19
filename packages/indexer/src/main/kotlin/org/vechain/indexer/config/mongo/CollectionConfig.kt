@@ -43,10 +43,10 @@ abstract class CollectionConfig(
                     logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
                     throw e
                 }
+            } else {
+                logger.debug("Collection ${archiveObj.simpleName} already exists.")
             }
             ensureArchiveIndexes()
-        } else if (archiveObj != null) {
-            logger.debug("Collection ${archiveObj.simpleName} already exists.")
         }
     }
 
@@ -81,8 +81,9 @@ abstract class CollectionConfig(
         ensureIndexes(
             listOf(
                 "blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.DESC),
-                "data._id_1_data.version_-1" to
+                "data.blockNumber_1_data._id_1_data.version_-1" to
                     Index()
+                        .on("data.blockNumber", Sort.Direction.ASC)
                         .on("data._id", Sort.Direction.ASC)
                         .on("data.version", Sort.Direction.DESC),
             ),

@@ -150,7 +150,13 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                     Aggregation.project("_id"),
                     Aggregation.limit(queryLimit),
                 )
-                .withOptions(AggregationOptions.builder().allowDiskUse(true).build())
+                .withOptions(
+                    AggregationOptions.builder()
+                        .allowDiskUse(true)
+                        .cursorBatchSize(5_000)
+                        .hint("data.blockNumber_1_data._id_1_data.version_-1")
+                        .build()
+                )
 
         // Execute the aggregation
         return mongoTemplate
