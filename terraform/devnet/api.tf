@@ -93,6 +93,7 @@ module "ecs-cluster" {
   cidr    = local.env.cidr
 }
 
+
 ################################################################################
 # Module For ECS Load Balanced Service API
 ################################################################################
@@ -100,7 +101,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.4.24"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-  -webservice?ref=v.1.4.24"
   ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
   vpc_id                    = local.env.vpc_id
