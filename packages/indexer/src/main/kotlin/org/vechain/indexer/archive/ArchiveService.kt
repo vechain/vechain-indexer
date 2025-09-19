@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationOperationCon
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
@@ -123,7 +124,8 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     }
 
     @WithTiming("Pruner - findRecordsToPrune")
-    open fun findRecordsToPrune(endBlock: Long): List<String> {
+    open fun findRecordsToPrune(endBlock: Long, batchSize: Int): CloseableIterator<String> {
+        require(batchSize > 0) { "Batch size must be greater than zero" }
         logger.info("Finding records to prune for {}", clazz.simpleName)
 
         // 1) Rank by recordId/version (desc)
@@ -153,20 +155,32 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 .withOptions(
                     AggregationOptions.builder()
                         .allowDiskUse(true)
-                        .cursorBatchSize(5_000)
+                        .cursorBatchSize(batchSize)
                         .hint("data.blockNumber_1_data._id_1_data.version_-1")
                         .build()
                 )
 
-        // Execute the aggregation
-        return mongoTemplate
-            .aggregate(
+        val stream =
+            mongoTemplate.aggregateStream(
                 pipeline,
                 mongoTemplate.getCollectionName(archiveClazz),
                 Document::class.java,
             )
-            .map { it.getString("_id") }
-            .toList()
+        val iterator = stream.iterator()
+
+        return object : CloseableIterator<String> {
+            override fun hasNext(): Boolean = iterator.hasNext()
+
+            override fun next(): String = iterator.next().getString("_id")
+
+            override fun remove() {
+                throw UnsupportedOperationException("remove is not supported")
+            }
+
+            override fun close() {
+                stream.close()
+            }
+        }
     }
 
     @Transactional(rollbackFor = [Exception::class])
