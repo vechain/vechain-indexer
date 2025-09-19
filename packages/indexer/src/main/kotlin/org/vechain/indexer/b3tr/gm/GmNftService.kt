@@ -34,7 +34,7 @@ open class GmNftService(
         val updatedNfts = mutableMapOf<String, GmNft>()
         val archiveNfts = mutableListOf<GmNft>()
 
-        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+        groupByBlock(events).forEach { (_, blockEvents) ->
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
                 val existing = resolveExistingNft(tokenId, updatedNfts)
                 val updated = processAllTokenEvents(existing, tokenEvents)

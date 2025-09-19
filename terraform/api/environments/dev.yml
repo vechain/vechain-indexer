@@ -125,7 +125,7 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
       business-event:
         substitutions:
@@ -260,7 +260,7 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
       business-event:
         substitutions:
