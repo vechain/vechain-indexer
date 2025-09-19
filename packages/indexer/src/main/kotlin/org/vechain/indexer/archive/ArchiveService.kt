@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.timing.WithTiming
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
@@ -121,6 +122,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
+    @WithTiming("Pruner - findRecordsToPrune")
     open fun findRecordsToPrune(endBlock: Long): List<String> {
         logger.info("Finding records to prune for {}", clazz.simpleName)
 
