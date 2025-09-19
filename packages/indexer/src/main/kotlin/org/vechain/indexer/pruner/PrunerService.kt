@@ -25,28 +25,41 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
         }
 
         logger.info("🧹 Pruning started for $targetObjectName")
+        archiveService.findRecordsToPrune(prunerEndBlock, prunerRemovalChunkSize).use { records ->
+            var processed = 0
+            var hasRecords = false
+            val chunk = ArrayList<String>(prunerRemovalChunkSize)
 
-        val records = archiveService.findRecordsToPrune(prunerEndBlock)
-        if (records.isEmpty()) {
-            logger.info("No records to prune for $targetObjectName")
-            return
+            while (records.hasNext()) {
+                hasRecords = true
+                chunk.add(records.next())
+
+                if (chunk.size == prunerRemovalChunkSize) {
+                    val removed = chunk.size
+                    archiveService.removeAll(chunk.toList())
+                    processed += removed
+                    logger.debug(
+                        "🧹 Pruning progress for $targetObjectName: processed $processed records"
+                    )
+                    chunk.clear()
+                }
+            }
+
+            if (!hasRecords) {
+                logger.info("No records to prune for $targetObjectName")
+                return
+            }
+
+            if (chunk.isNotEmpty()) {
+                val removed = chunk.size
+                archiveService.removeAll(chunk.toList())
+                processed += removed
+                logger.debug(
+                    "🧹 Pruning progress for $targetObjectName: processed $processed records"
+                )
+            }
+
+            logger.info("✅ Pruning complete for $targetObjectName. Removed $processed records")
         }
-
-        records.chunked(prunerRemovalChunkSize).withIndex().forEach { (idx, chunk) ->
-            logger.debug(
-                "🧹 Pruning progress for $targetObjectName: ${
-                        progressPercentage(
-                            (idx * prunerRemovalChunkSize) + chunk.size,
-                            records.size,
-                        )
-                    }%"
-            )
-            archiveService.removeAll(chunk)
-        }
-
-        logger.info("✅ Pruning complete for $targetObjectName. Removed ${records.size} records")
     }
-
-    private fun progressPercentage(processed: Int, total: Int): Int =
-        if (total == 0) 0 else (processed * 100) / total
 }
