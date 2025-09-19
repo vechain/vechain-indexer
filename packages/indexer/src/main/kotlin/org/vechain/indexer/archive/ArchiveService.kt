@@ -141,16 +141,12 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         // 2) Build pipeline
         val pipeline =
             Aggregation.newAggregation(
-                    // NOTE: rank globally first to truly "keep latest N" overall,
-                    // then apply the endBlock cutoff (so you don't miscount if newest are >=
-                    // endBlock)
+                    Aggregation.match(Criteria.where("data.blockNumber").lt(endBlock)),
                     Aggregation.sort(
                         Sort.by(Sort.Order.asc("data._id"), Sort.Order.desc("data.version"))
                     ),
                     setWindowFields,
-                    Aggregation.match(
-                        Criteria.where("rn").gt(1).and("data.blockNumber").lt(endBlock)
-                    ),
+                    Aggregation.match(Criteria.where("rn").gt(1)),
                     Aggregation.project("_id"),
                     Aggregation.limit(queryLimit),
                 )
