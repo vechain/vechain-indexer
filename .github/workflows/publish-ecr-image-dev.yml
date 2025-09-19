@@ -1,4 +1,4 @@
-name: Build & Publish Docker Image
+name: DEV Build & Publish Docker Image
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     paths:
       - terraform/devnet**
       - packages/**
-      - .github/workflow/publish-ecr-image-dev.yml
+      - .github/workflows/publish-ecr-image-dev.yml
 # Required for authentication through GitHub OIDC
 permissions:
   id-token: write  # This is required for requesting the JWT
