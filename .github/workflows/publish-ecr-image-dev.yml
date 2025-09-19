@@ -16,7 +16,7 @@ permissions:
 
 env:
   latestTag:  'latest'
-  versionTag: ${{ github.ref_name }}
+  versionTag:  'v.1.0.${{ github.run_number }}'
   commitHash: ${{ github.sha }}
   workingDirectory:  './' 
   projectName:  'veworld'
