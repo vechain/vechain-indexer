@@ -176,11 +176,19 @@ object ValidatorUtils {
                 BigDecimal.ZERO
             }
 
+        val validatorTvlRatio =
+            if (totalTvl > BigDecimal.ZERO) {
+                validatorTvl.divide(totalTvl, 12, RoundingMode.HALF_UP)
+            } else {
+                BigDecimal.ZERO
+            }
+
         val tvlBasedYield =
             if (validatorTvl > BigDecimal.ZERO) {
                 if (hasDelegations) {
                     annualIssuanceUsd
                         .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(validatorTvlRatio)
                         .multiply(BigDecimal(100))
                 } else {
                     annualIssuanceUsd
@@ -206,6 +214,4 @@ object ValidatorUtils {
 
     private fun BigInteger.toLongOrNull(): Long? =
         if (this == BigInteger.valueOf(Long.MAX_VALUE)) null else this.toLong()
-
-    private operator fun BigInteger.minus(other: BigInteger): BigInteger = this.subtract(other)
 }
