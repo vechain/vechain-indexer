@@ -124,6 +124,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             levelId = event.params.getAsString("levelId"),
             tokenIds = event.params.getReturnValues()["tokenIds"] as? List<String>,
             validator = event.params.getAsString("validator"),
+            delegationId = event.params.getAsString("delegationId"),
         )
     }
 
