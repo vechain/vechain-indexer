@@ -67,12 +67,8 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
-<<<<<<< HEAD
-        historic-proposals:       '4510483'
-=======
         historical-proposals:       '4510483'
         validator:                  '0'
->>>>>>> v.3.4.101
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
@@ -84,12 +80,8 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-<<<<<<< HEAD
-        historic-proposals:       '1000'
-=======
         historical-proposals:       '1000'
         validator:                  '1000'
->>>>>>> v.3.4.101
       sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
@@ -207,15 +199,15 @@ enabled_nets:
         nft-blacklist:              '21300000'
         transactions:               '21300000'
         transfers:                  '21300000'
-        history:                    '21300000'
+        history:                    '0'
         vevote:                     '22331866'
-        stargate:                   '22087000'
+        stargate:                   '0'
         historic-proposals:       '22087000'
         b3tr:                       '19661986'
         b3tr-x-alloc-result:        '19661986'
         b3tr-sustainable-actions:   '19661986'
         b3tr-proposal:              '19661986'
-        validator:                   '50000'
+        validator:                   '26040'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
@@ -227,12 +219,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-<<<<<<< HEAD
-        historic-proposals:       '100'
-=======
-        historical-proposals:       '1000'
         validator:                  '1000'
->>>>>>> v.3.4.101
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
@@ -240,7 +227,7 @@ enabled_nets:
         stargate:                   '100'
         authority-nodes:            '100'
         b3tr:                       '100'
-        historic-proposals:       '100'
+        historic-proposals:         '100'
       channel-batch-size:           '2'
       pruner:
         removal-chunk-size: 2000
@@ -285,18 +272,12 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x5f8f86b8d0fa93cdae20936d150175df0205fb38'
           VOTER_REWARDS_CONTRACT:    '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
           TREASURY_CONTRACT:         '0x039893ebe092a2d22b08e2b029735d211bff7f50'
-<<<<<<< HEAD
-          STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
-          STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
-          VEVOTE_CONTRACT:             '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
-=======
           STARGATE_DELEGATION_CONTRACT: '0xd9ee859de7b47c151619bd45f3e0d73cce68af60'
-          STARGATE_NFT_CONTRACT: '0xd9fda6a9afe7854835e7f0abcfe02c621792c28b'
+          STARGATE_NFT_CONTRACT: '0x820d17ec4882e65e42588d91ea9c7cb7225022a3'
           VEVOTE_CONTRACT:             '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
-          STARGATE_STAKER_CONTRACT: '0x97b3f18de4d9197af33ed623d93096b3b55dba20'
+          STARGATE_STAKER_CONTRACT: '0x54d7f2de232e59bfb95c6b2c2b9f678ab73e5a38'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
-          GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
->>>>>>> v.3.4.101
+          GET_ALL_VALIDATORS_CONTRACT: '0x089c66e64b45b4d532cfe0093eecef2f2d2ed2a7'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

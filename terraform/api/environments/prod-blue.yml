@@ -62,12 +62,8 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
-<<<<<<< HEAD
-        historic-proposals:       '4510483'
-=======
         historical-proposals:       '4510483'
         validator:                   '0'
->>>>>>> v.3.4.101
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
