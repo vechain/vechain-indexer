@@ -128,7 +128,7 @@ class ValidatorServiceTest {
                 raw = null,
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("validator" to "v1", "delegationId" to 5L),
+                        returnValues = mapOf("validator" to "v1", "delegationId" to 5L)
                     ),
                 address = "0xcontract",
                 eventType = "DelegationInitiated",
@@ -150,7 +150,7 @@ class ValidatorServiceTest {
                 raw = null,
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("delegationID" to 5L, "validator" to "v1"),
+                        returnValues = mapOf("delegationID" to 5L, "validator" to "v1")
                     ),
                 address = "0xcontract",
                 eventType = "DelegationAdded",
@@ -178,7 +178,9 @@ class ValidatorServiceTest {
             )
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
-        every { repository.findByIdsOrDelegations(any<List<String>>(), any<List<String>>()) } returns emptyList()
+        every {
+            repository.findByIdsOrDelegations(any<List<String>>(), any<List<String>>())
+        } returns emptyList()
 
         service.handleValidatorEvents(listOf(initiated, applied, withdrawn))
 
