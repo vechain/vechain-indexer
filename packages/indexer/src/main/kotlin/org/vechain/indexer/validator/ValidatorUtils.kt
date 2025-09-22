@@ -176,11 +176,19 @@ object ValidatorUtils {
                 BigDecimal.ZERO
             }
 
+        val validatorTvlRatio =
+            if (totalTvl > BigDecimal.ZERO) {
+                validatorTvl.divide(totalTvl, 12, RoundingMode.HALF_UP)
+            } else {
+                BigDecimal.ZERO
+            }
+
         val tvlBasedYield =
             if (validatorTvl > BigDecimal.ZERO) {
                 if (hasDelegations) {
                     annualIssuanceUsd
                         .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(validatorTvlRatio)
                         .multiply(BigDecimal(100))
                 } else {
                     annualIssuanceUsd
