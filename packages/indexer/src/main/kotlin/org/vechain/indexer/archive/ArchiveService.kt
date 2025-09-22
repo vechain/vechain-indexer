@@ -2,20 +2,34 @@ package org.vechain.indexer.archive
 
 import org.bson.Document
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperationContext
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.timing.WithTiming
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
+
+/** Helper to inject a raw aggregation stage (here: $setWindowFields). */
+class RawStage(private val stage: Document) : AggregationOperation {
+    @Deprecated("Deprecated in Java")
+    override fun toDocument(context: AggregationOperationContext): Document = stage
+}
 
 open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
+    private val queryLimit: Long,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -109,69 +123,68 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
-    open fun findRecordsToPrune(endBlock: Long): List<String> {
+    @WithTiming("Pruner - findRecordsToPrune")
+    open fun findRecordsToPrune(endBlock: Long, batchSize: Int): CloseableIterator<String> {
+        require(batchSize > 0) { "Batch size must be greater than zero" }
         logger.info("Finding records to prune for {}", clazz.simpleName)
 
-        // Construct the aggregation pipeline stages
-        val matchStage =
-            Document("\$match", Document("data.blockNumber", Document("\$lt", endBlock)))
-
-        val removeRedundantFieldsStage =
-            Document(
-                "\$project",
-                Document().append("recordId", "\$data._id").append("version", "\$data.version"),
-            )
-
-        val groupStage =
-            Document(
-                "\$group",
-                Document("_id", "\$recordId")
-                    .append("maxVersion", Document("\$max", "\$version"))
-                    .append("allDocs", Document("\$push", "\$\$ROOT")),
-            )
-
-        val unwindStage = Document("\$unwind", "\$allDocs")
-
-        val matchExprStage =
-            Document(
-                "\$match",
+        // 1) Rank by recordId/version (desc)
+        val setWindowFields =
+            RawStage(
                 Document(
-                    "\$expr",
-                    Document(
-                        "\$lt",
-                        listOf(
-                            "\$allDocs.version",
-                            Document("\$subtract", listOf("\$maxVersion", 4)),
-                        ),
-                    ),
-                ),
+                    "\$setWindowFields",
+                    Document()
+                        .append("partitionBy", "\$data._id")
+                        .append("sortBy", Document("data.version", -1))
+                        .append("output", Document("rn", Document("\$documentNumber", Document()))),
+                )
             )
 
-        val projectStage = Document("\$project", Document("_id", "\$allDocs._id"))
-
-        // Combine all stages into a pipeline
+        // 2) Build pipeline
         val pipeline =
-            listOf(
-                matchStage,
-                removeRedundantFieldsStage,
-                groupStage,
-                unwindStage,
-                matchExprStage,
-                projectStage,
-            )
+            Aggregation.newAggregation(
+                    Aggregation.match(Criteria.where("data.blockNumber").lt(endBlock)),
+                    Aggregation.sort(
+                        Sort.by(Sort.Order.asc("data._id"), Sort.Order.desc("data.version"))
+                    ),
+                    setWindowFields,
+                    Aggregation.match(Criteria.where("rn").gt(1)),
+                    Aggregation.project("_id"),
+                    Aggregation.limit(queryLimit),
+                )
+                .withOptions(
+                    AggregationOptions.builder()
+                        .allowDiskUse(true)
+                        .cursorBatchSize(batchSize)
+                        .build()
+                )
 
-        // Execute the aggregation
-        return mongoTemplate
-            .getCollection(mongoTemplate.getCollectionName(archiveClazz))
-            .aggregate(pipeline)
-            .allowDiskUse(true)
-            .map { it.getString("_id") }
-            .toList()
+        val stream =
+            mongoTemplate.aggregateStream(
+                pipeline,
+                mongoTemplate.getCollectionName(archiveClazz),
+                Document::class.java,
+            )
+        val iterator = stream.iterator()
+
+        return object : CloseableIterator<String> {
+            override fun hasNext(): Boolean = iterator.hasNext()
+
+            override fun next(): String = iterator.next().getString("_id")
+
+            override fun remove() {
+                throw UnsupportedOperationException("remove is not supported")
+            }
+
+            override fun close() {
+                stream.close()
+            }
+        }
     }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun removeAll(records: List<String>) {
-        logger.info("Removing {} archives for {}", records.size, clazz.simpleName)
+        logger.debug("Removing {} archives for {}", records.size, clazz.simpleName)
         mongoTemplate.remove(Query.query(Criteria.where("_id").`in`(records)), archiveClazz)
     }
 }

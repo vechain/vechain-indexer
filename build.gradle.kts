@@ -208,6 +208,7 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-aop:3.4.5")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
@@ -223,7 +224,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:5.0.2")
+        implementation("org.vechain:indexer-core:5.1.0")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")

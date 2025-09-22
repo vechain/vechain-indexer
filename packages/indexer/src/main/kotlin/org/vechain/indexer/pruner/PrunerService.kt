@@ -6,8 +6,9 @@ import org.vechain.indexer.Pruner
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.timing.WithTiming
 
-class PrunerService<T : VersionedDocument, S : Archive<T>>(
+open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
     private val archiveService: ArchiveService<T, S>,
     private val prunerRemovalChunkSize: Int,
@@ -15,6 +16,7 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
+    @WithTiming("Pruner")
     override fun run(currentBlockNumber: Long) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
@@ -22,15 +24,42 @@ class PrunerService<T : VersionedDocument, S : Archive<T>>(
             return
         }
 
-        val records = archiveService.findRecordsToPrune(prunerEndBlock)
-        if (records.isEmpty()) {
-            logger.info("No records to prune for $targetObjectName")
-            return
-        }
+        logger.info("🧹 Pruning started for $targetObjectName")
+        archiveService.findRecordsToPrune(prunerEndBlock, prunerRemovalChunkSize).use { records ->
+            var processed = 0
+            var hasRecords = false
+            val chunk = ArrayList<String>(prunerRemovalChunkSize)
 
-        logger.info(
-            "Pruning ${records.size} records for $targetObjectName (in chunks of $prunerRemovalChunkSize)"
-        )
-        records.chunked(prunerRemovalChunkSize).forEach { chunk -> archiveService.removeAll(chunk) }
+            while (records.hasNext()) {
+                hasRecords = true
+                chunk.add(records.next())
+
+                if (chunk.size == prunerRemovalChunkSize) {
+                    val removed = chunk.size
+                    archiveService.removeAll(chunk.toList())
+                    processed += removed
+                    logger.debug(
+                        "🧹 Pruning progress for $targetObjectName: processed $processed records"
+                    )
+                    chunk.clear()
+                }
+            }
+
+            if (!hasRecords) {
+                logger.info("No records to prune for $targetObjectName")
+                return
+            }
+
+            if (chunk.isNotEmpty()) {
+                val removed = chunk.size
+                archiveService.removeAll(chunk.toList())
+                processed += removed
+                logger.debug(
+                    "🧹 Pruning progress for $targetObjectName: processed $processed records"
+                )
+            }
+
+            logger.info("✅ Pruning complete for $targetObjectName. Removed $processed records")
+        }
     }
 }

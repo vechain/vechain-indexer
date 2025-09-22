@@ -33,18 +33,20 @@ abstract class CollectionConfig(
         }
 
         // Create the archive collection if it does not exist and an archive class is provided
-        if (archiveObj != null && !mongoTemplate.collectionExists(archiveObj)) {
-            try {
-                logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
-                mongoTemplate.createCollection(archiveObj)
-                logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
-            } catch (e: Exception) {
-                logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
-                throw e
+        if (archiveObj != null) {
+            if (!mongoTemplate.collectionExists(archiveObj)) {
+                try {
+                    logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
+                    mongoTemplate.createCollection(archiveObj)
+                    logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
+                } catch (e: Exception) {
+                    logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
+                    throw e
+                }
+            } else {
+                logger.debug("Collection ${archiveObj.simpleName} already exists.")
             }
             ensureArchiveIndexes()
-        } else if (archiveObj != null) {
-            logger.debug("Collection ${archiveObj.simpleName} already exists.")
         }
     }
 
@@ -54,20 +56,20 @@ abstract class CollectionConfig(
      * @param indexName The name of the index
      * @param index The index to create
      */
-    private fun ensureIndex(indexName: String, index: Index) {
+    private fun ensureIndex(indexName: String, index: Index, entityClass: Class<*> = modelObj) {
         try {
-            logger.info("⏱ Creating Index:    $indexName for ${modelObj.simpleName}️")
-            mongoTemplate.indexOps(modelObj).ensureIndex(index.named(indexName).background())
-            logger.info("✅ Creation Success: $indexName for ${modelObj.simpleName}.")
+            logger.info("⏱ Creating Index:    $indexName for ${entityClass.simpleName}️")
+            mongoTemplate.indexOps(entityClass).ensureIndex(index.named(indexName).background())
+            logger.info("✅ Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
-            logger.error("⛔ Creation Failed:  $indexName for ${modelObj.simpleName}️", e)
+            logger.error("⛔ Creation Failed:  $indexName for ${entityClass.simpleName}️", e)
         }
     }
 
-    fun ensureIndexes(indexes: Collection<Pair<String, Index>>) {
+    fun ensureIndexes(indexes: Collection<Pair<String, Index>>, entityClass: Class<*> = modelObj) {
         coroutineScope.launch {
             for ((indexName, index) in indexes) {
-                ensureIndex(indexName, index)
+                ensureIndex(indexName, index, entityClass)
             }
         }
     }
@@ -76,6 +78,16 @@ abstract class CollectionConfig(
         if (archiveObj == null) {
             throw RuntimeException("Archive object is null")
         }
-        ensureIndexes(listOf("blockNumber_1" to Index().on("data.blockNumber", Sort.Direction.ASC)))
+        ensureIndexes(
+            listOf(
+                "data.blockNumber_-1" to Index().on("data.blockNumber", Sort.Direction.DESC),
+                "data._id_1" to Index().on("data._id", Sort.Direction.ASC),
+                "data._id_1_data.version_-1" to
+                    Index()
+                        .on("data._id", Sort.Direction.ASC)
+                        .on("data.version", Sort.Direction.DESC),
+            ),
+            archiveObj,
+        )
     }
 }

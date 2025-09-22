@@ -19,12 +19,14 @@ open class GmNftConfig {
 
     @Bean
     open fun gmNftArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<GmNft, GmNftArchive> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = GmNft::class.java,
             archiveClazz = GmNftArchive::class.java,
+            queryLimit = recordLimit,
         )
 
     @Bean

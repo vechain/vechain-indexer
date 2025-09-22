@@ -354,6 +354,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.pruner.removal-chunk-size
     },
     {
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },
@@ -564,6 +568,14 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-syncing
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]
 }

@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr-gm-nft")
+@Profile("b3tr", "b3tr-gm-nft")
 @Configuration
 open class GmNftCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -50,6 +50,7 @@ open class GmNftCollectionConfig(
             listOf(
                 "attachedNodeId_1" to Index().on("attachedNodeId", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

@@ -17,9 +17,15 @@ import org.vechain.indexer.thor.client.ThorClient
 open class NftBlacklistConfig {
     @Bean
     open fun nftBlacklistArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<NftBlacklist, NftBlacklistArchive> =
-        ArchiveService(mongoTemplate, NftBlacklist::class.java, NftBlacklistArchive::class.java)
+        ArchiveService(
+            mongoTemplate,
+            NftBlacklist::class.java,
+            NftBlacklistArchive::class.java,
+            recordLimit,
+        )
 
     @Bean
     open fun nftBlacklistPruner(

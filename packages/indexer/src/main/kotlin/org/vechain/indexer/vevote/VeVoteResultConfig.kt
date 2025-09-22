@@ -18,12 +18,14 @@ open class VeVoteResultConfig {
 
     @Bean
     open fun veVoteResultArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = VeVoteProposalResult::class.java,
             archiveClazz = VeVoteProposalResultArchive::class.java,
+            queryLimit = recordLimit,
         )
     }
 

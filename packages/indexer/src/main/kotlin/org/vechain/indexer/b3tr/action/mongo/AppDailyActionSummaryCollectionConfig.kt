@@ -51,8 +51,6 @@ open class AppDailyActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "appId_-1_date_-1" to
-                    Index().on("appId", Sort.Direction.DESC).on("date", Sort.Direction.DESC),
                 "appId_-1_date_-1_totalRewardAmount_-1" to
                     Index()
                         .on("appId", Sort.Direction.DESC)

@@ -87,9 +87,13 @@ enabled_nets:
       channel-batch-size:           '2'
       pruner:
         interval: '3000'
-        removal-chunk-size: '2000'
+        removal-chunk-size: '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '4'
         transfers:                  '2'
@@ -114,7 +118,7 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
         historic-proposals: '1'
       business-event:
@@ -172,7 +176,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,validator
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -222,9 +226,13 @@ enabled_nets:
       channel-batch-size:           '2'
       pruner:
         interval: '3000'
-        removal-chunk-size: '2000'
+        removal-chunk-size: '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '5'
         transfers:                  '4'
@@ -251,7 +259,7 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
         historic-proposals:          '1'
       business-event:
