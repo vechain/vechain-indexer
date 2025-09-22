@@ -139,6 +139,9 @@ indexer:
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
     validator: ${VERSION_VALIDATOR:1}
+  healthcheck:
+    inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
+    inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
 comments:
   min-length: ${MIN_COMMENT_LEN:10}
   language:
