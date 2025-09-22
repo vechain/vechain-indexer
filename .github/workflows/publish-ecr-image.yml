@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - v.*
+    branches:
+      - yellow-env
   workflow_dispatch:
     inputs:
       latestTag:
