@@ -67,7 +67,7 @@ class ValidatorServiceTest {
 
         expectThat(updated.delegations[TokenLevel.All]).isEqualTo(2L)
         expectThat(updated.delegations[TokenLevel.Mjolnir]).isEqualTo(2L)
-        expectThat(updated.version).isEqualTo(2)
+        expectThat(updated.version).isEqualTo(1)
     }
 
     @Test
@@ -109,7 +109,7 @@ class ValidatorServiceTest {
         expectThat(updated.delegations[TokenLevel.All]).isEqualTo(1L)
         expectThat(updated.delegations[TokenLevel.Mjolnir]).isEqualTo(1L)
         expectThat(updated.delegationIds.containsKey("5")).isFalse()
-        expectThat(updated.version).isEqualTo(2)
+        expectThat(updated.version).isEqualTo(1)
     }
 
     @Test
