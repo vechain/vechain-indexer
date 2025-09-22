@@ -1,29 +1,27 @@
-package org.vechain.indexer.b3tr.proposal
+package org.vechain.indexer.vevote
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.math.BigInteger
+import java.math.BigDecimal
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
-import org.vechain.indexer.b3tr.voting.Support
 
-@Document(collection = "b3tr_proposal_results")
-data class ProposalResult
+@Document(collection = "vevote_proposal_results")
+data class VeVoteProposalResult
 @ConstructorBinding
 constructor(
     @JsonIgnore @Id val id: String,
     @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
-    @JsonIgnore override val blockNumber: Long,
-    @JsonIgnore override val blockTimestamp: Long,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val proposalId: String,
     val support: Support,
-    val voters: Long,
-    val totalWeight: BigInteger,
-    val totalPower: BigInteger,
+    val totalWeight: BigDecimal,
+    val totalVoters: Int,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -32,25 +30,25 @@ constructor(
         blockTimestamp: Long,
         proposalId: String,
         support: Support,
-        voters: Long,
-        totalWeight: BigInteger,
-        totalPower: BigInteger,
+        totalWeight: BigDecimal,
+        totalVoters: Int,
     ) : this(
+        id = generateId(proposalId, support.name),
         version = version,
-        id = generateId("$proposalId", support.name),
         blockId = blockId,
         blockNumber = blockNumber,
         blockTimestamp = blockTimestamp,
         proposalId = proposalId,
         support = support,
-        voters = voters,
         totalWeight = totalWeight,
-        totalPower = totalPower,
+        totalVoters = totalVoters,
     )
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
 
-@Document(collection = "b3tr_proposal_result_archives")
-data class ProposalResultArchive(@Id override val id: String, override val data: ProposalResult) :
-    Archive<ProposalResult>
+@Document(collection = "vevote_proposal_results_archives")
+data class VeVoteProposalResultArchive(
+    @Id override val id: String,
+    override val data: VeVoteProposalResult,
+) : Archive<VeVoteProposalResult>

@@ -8,13 +8,13 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getSupport
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
-import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -44,7 +44,7 @@ open class ProposalResultService(
         groupByBlock(events).forEach { (_, blockEvents) ->
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
                 groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
-                    val recordId = calculateId(proposalId, support)
+                    val recordId = generateId(proposalId, support.name)
                     val existing = resolveExisting(recordId, updatedResult)
                     val updated = createOrUpdateExisting(supportEvents, existing)
                     existing?.let { archiveResult.add(it) }

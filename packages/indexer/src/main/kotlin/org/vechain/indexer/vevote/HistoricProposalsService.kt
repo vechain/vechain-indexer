@@ -1,10 +1,10 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.contracts.abi.HistoricalProposalABI
+import org.vechain.indexer.contracts.abi.HistoricProposalABI
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -12,13 +12,13 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.utils.ContractUtils
 
-@Profile("historical-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Service
-open class HistoricalProposalsService(
+open class HistoricProposalsService(
     private val thorService: ThorService,
-    @Value("\${veworld.contract.historical-proposals.steering-committee}")
+    @Value("\${veworld.contract.historic-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
-    @Value("\${veworld.contract.historical-proposals.all-stakeholders}")
+    @Value("\${veworld.contract.historic-proposals.all-stakeholders}")
     private val allStakeholdersAddress: String,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -29,7 +29,7 @@ open class HistoricalProposalsService(
     fun processNewProposals(
         events: List<IndexedEvent>,
         currentBlockNumber: Long? = null,
-    ): List<HistoricalProposals> {
+    ): List<HistoricProposals> {
         if (!hasReachedCurrentBlock) {
             // Get the current best block number
             val bestBlock = thorService.getBestBlock()
@@ -38,7 +38,7 @@ open class HistoricalProposalsService(
             val blockToCheck = currentBlockNumber ?: events.firstOrNull()?.blockNumber
             if (blockToCheck != null && blockToCheck >= bestBlockNumber) {
                 logger.info(
-                    "Historical proposals service reached current block $bestBlockNumber. Stopping processing."
+                    "Historic proposals service reached current block $bestBlockNumber. Stopping processing."
                 )
                 hasReachedCurrentBlock = true
                 return emptyList()
@@ -51,7 +51,7 @@ open class HistoricalProposalsService(
         return events.mapNotNull { extractNewProposalEvent(it) }
     }
 
-    fun extractNewProposalEvent(event: IndexedEvent): HistoricalProposals? {
+    fun extractNewProposalEvent(event: IndexedEvent): HistoricProposals? {
         try {
             val contractAddress = event.address ?: return null
             if (!isValidContractAddress(contractAddress)) {
@@ -66,7 +66,7 @@ open class HistoricalProposalsService(
 
             val contractData = fetchContractData(contractAddress, proposalId, isSteeringCommittee)
 
-            return HistoricalProposals(
+            return HistoricProposals(
                 id = "$contractAddress-$proposalId",
                 proposalId = proposalId,
                 createdDate = event.blockTimestamp.toString(),
@@ -113,20 +113,20 @@ open class HistoricalProposalsService(
             listOf(
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getBasicInfoSC
-                    else HistoricalProposalABI.getBasicInfo,
+                    if (isSteeringCommittee) HistoricProposalABI.getBasicInfoSC
+                    else HistoricProposalABI.getBasicInfo,
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getConditionSC
-                    else HistoricalProposalABI.getCondition,
+                    if (isSteeringCommittee) HistoricProposalABI.getConditionSC
+                    else HistoricProposalABI.getCondition,
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricalProposalABI.getTallySC
-                    else HistoricalProposalABI.getTally,
+                    if (isSteeringCommittee) HistoricProposalABI.getTallySC
+                    else HistoricProposalABI.getTally,
                     proposalId.toBigInteger(),
                 ),
             )
@@ -155,7 +155,7 @@ open class HistoricalProposalsService(
     private fun getAbiFunction(name: String): AbiElement {
         return cachedAbi[name]
             ?: run {
-                val basePath = "abis/historical-proposals"
+                val basePath = "abis/historic-proposals"
                 val abis =
                     AbiLoader.loadFunctions(basePath = basePath, functionNames = listOf(name))
                 val abi =
@@ -170,7 +170,7 @@ open class HistoricalProposalsService(
         basicInfo: Map<String, Any?>?,
         contractAddress: String,
     ): List<String>? =
-        HistoricalUtils.extractChoices(
+        HistoricUtils.extractChoices(
             basicInfo,
             contractAddress,
             steeringCommitteeAddress,
@@ -181,7 +181,7 @@ open class HistoricalProposalsService(
         tally: Map<String, Any?>?,
         contractAddress: String,
     ): List<Long>? =
-        HistoricalUtils.extractVoteTallies(
+        HistoricUtils.extractVoteTallies(
             tally,
             contractAddress,
             steeringCommitteeAddress,
@@ -189,7 +189,7 @@ open class HistoricalProposalsService(
         )
 
     private fun calculateTotalVotes(tally: Map<String, Any?>?, contractAddress: String): Long =
-        HistoricalUtils.calculateTotalVotes(
+        HistoricUtils.calculateTotalVotes(
             tally,
             contractAddress,
             steeringCommitteeAddress,

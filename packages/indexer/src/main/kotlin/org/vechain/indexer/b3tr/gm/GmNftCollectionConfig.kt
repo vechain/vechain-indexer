@@ -13,13 +13,19 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("b3tr-gm-nft")
+@Profile("b3tr", "b3tr-gm-nft")
 @Configuration
 open class GmNftCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, GmNft::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        GmNft::class.java,
+        GmNftArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-gm-nft}") private val version: Int = 1
@@ -44,6 +50,7 @@ open class GmNftCollectionConfig(
             listOf(
                 "attachedNodeId_1" to Index().on("attachedNodeId", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

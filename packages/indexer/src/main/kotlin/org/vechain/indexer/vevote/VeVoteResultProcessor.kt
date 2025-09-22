@@ -2,29 +2,26 @@ package org.vechain.indexer.vevote
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     private val repository: VeVoteProposalResultRepository,
-) : BaseProcessor(repository = repository) {
+    veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+) : BaseStatefulProcessor(repository = repository, archiveService = veVoteResultArchiveService) {
+
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 
         // Process votes in the service
-        val results = service.processVeVoteResults(matchedEvents)
+        val (updated, archives) = service.processEvents(matchedEvents)
 
         // Save the results
-        if (results.isNotEmpty()) {
-            repository.saveAll(results)
-        }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        repository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        service.save(updated, archives)
     }
 }

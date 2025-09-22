@@ -9,7 +9,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 open class VeVoteCommentConfig {
     @Bean
     open fun vevoteCommentIndexer(
@@ -18,7 +18,7 @@ open class VeVoteCommentConfig {
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
-        @Value("\${veworld.contract.vevote.address}") contractAddress: String,
+        @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("VeVoteCommentIndexer")

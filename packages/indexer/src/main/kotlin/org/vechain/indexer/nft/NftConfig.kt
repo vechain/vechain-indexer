@@ -18,9 +18,10 @@ open class NftConfig() {
 
     @Bean
     open fun nftArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<IndexedNft, NftArchive> =
-        ArchiveService(mongoTemplate, IndexedNft::class.java, NftArchive::class.java)
+        ArchiveService(mongoTemplate, IndexedNft::class.java, NftArchive::class.java, recordLimit)
 
     @Bean
     open fun nftPruner(

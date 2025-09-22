@@ -2,7 +2,6 @@ package org.vechain.indexer.vevote
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -22,6 +21,3 @@ constructor(
     val weight: BigInteger,
     val reason: String,
 ) : IndexedDocument
-
-fun generateId(proposalId: String, reason: String): String =
-    DigestUtils.sha1Hex("$proposalId-${reason.trim().lowercase()}")

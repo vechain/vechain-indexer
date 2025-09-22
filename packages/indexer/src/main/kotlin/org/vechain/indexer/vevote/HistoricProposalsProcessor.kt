@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -6,20 +6,20 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("historical-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Component
-open class HistoricalProposalsProcessor(
-    private val repository: HistoricalProposalsRepository,
-    private val historicalProposalsService: HistoricalProposalsService,
+open class HistoricProposalsProcessor(
+    private val repository: HistoricProposalsRepository,
+    private val historicProposalsService: HistoricProposalsService,
 ) : BaseProcessor(repository = repository) {
 
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
-            historicalProposalsService.processNewProposals(emptyList(), block?.number)
+            historicProposalsService.processNewProposals(emptyList(), block?.number)
             return
         }
-        val proposals: List<HistoricalProposals> =
-            historicalProposalsService.processNewProposals(matchedEvents, block?.number)
+        val proposals: List<HistoricProposals> =
+            historicProposalsService.processNewProposals(matchedEvents, block?.number)
 
         if (proposals.isNotEmpty()) {
             repository.saveAll(proposals)

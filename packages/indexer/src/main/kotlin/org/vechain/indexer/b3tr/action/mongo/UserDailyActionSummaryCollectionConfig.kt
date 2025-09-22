@@ -21,7 +21,13 @@ open class UserDailyActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-user-daily-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, UserDailyActionSummary::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        UserDailyActionSummary::class.java,
+        UserDailyActionSummaryArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

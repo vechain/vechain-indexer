@@ -294,8 +294,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_START_BLOCK_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.start-block.historical-proposals
+      name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
+      value = each.value.indexer.start-block.historic-proposals
     },
     {
         name = "INDEXER_START_BLOCK_VALIDATOR"
@@ -338,13 +338,13 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-logger-interval.b3tr
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.sync-logger-interval.historical-proposals
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
+      value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
-      value = each.value.indexer.sync-logger-interval.validator
-    },
+          name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
+          value = each.value.indexer.sync-logger-interval.validator
+     },
     {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
@@ -354,12 +354,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.pruner.removal-chunk-size
     },
     {
-      name  = "BLACKLIST_CONTRACT_ADDRESS"
-      value = each.value.indexer.blacklist.contract-address
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
     },
     {
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.veworld.contract.vevote.address
+      name  = "BLACKLIST_CONTRACT_ADDRESS"
+      value = each.value.indexer.blacklist.contract-address
     },
     {
       name  = "AUTHORITY_CONTRACT"
@@ -367,11 +367,11 @@ module "ecs-backend-service" {
     },
     {
       name  = "STEERING_COMMITTEE_ADDRESS"
-      value = each.value.veworld.contract.historical-proposals.steering-committee
+      value = each.value.veworld.contract.historic-proposals.steering-committee
     },
     {
       name  = "ALL_STAKEHOLDERS_ADDRESS"
-      value = each.value.veworld.contract.historical-proposals.all-stakeholders
+      value = each.value.veworld.contract.historic-proposals.all-stakeholders
     },
     {
       name  = "VERSION_NFTS"
@@ -414,8 +414,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name = "VERSION_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.version.historical-proposals
+      name = "VERSION_HISTORIC_PROPOSALS"
+      value = each.value.indexer.version.historic-proposals
     },
     {
       name = "VERSION_B3TR_PROPOSAL_COMMENTS"
@@ -526,6 +526,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
       name  = "STARGATE_STAKER_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
     },
@@ -550,8 +554,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-block-batch-size.vevote
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORICAL_PROPOSALS"
-      value = each.value.indexer.sync-block-batch-size.historical-proposals
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
+      value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
@@ -568,6 +572,14 @@ module "ecs-backend-service" {
     {
       name = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-syncing
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]
 }

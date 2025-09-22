@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -13,30 +13,31 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.LogsFixtures
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.model.EventLog
 import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.hasSize
 import strikt.assertions.isNotNull
 
 @ExtendWith(MockKExtension::class)
-class HistoricalProposalsProcessorTest {
+class HistoricProposalsProcessorTest {
     @MockK lateinit var thorService: ThorService
-    @MockK private lateinit var historicalProposalsService: HistoricalProposalsService
-    private val repository = mockk<HistoricalProposalsRepository>(relaxed = true)
-    lateinit var processor: HistoricalProposalsProcessor
+    @MockK private lateinit var historicProposalsService: HistoricProposalsService
+    private val repository = mockk<HistoricProposalsRepository>(relaxed = true)
+    lateinit var processor: HistoricProposalsProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         every { thorService.getBestBlock() } returns mockk { every { number } returns 0L }
-        processor = HistoricalProposalsProcessor(repository, historicalProposalsService)
+        processor = HistoricProposalsProcessor(repository, historicProposalsService)
     }
 
     @Test
     fun `process with Steering committee NewProposal Event`() = runBlocking {
         val events = createIndexedEvents(LogsFixtures.LOG_STEERING_COMMITTEE.take(3))
 
-        val proposalsSlot = slot<List<HistoricalProposals>>()
+        val proposalsSlot = slot<List<HistoricProposals>>()
         every { repository.getLatestRecord() } returns null
         every { repository.saveAll(capture(proposalsSlot)) } returns emptyList()
 
@@ -49,10 +50,10 @@ class HistoricalProposalsProcessorTest {
             )
 
         every {
-            historicalProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
+            historicProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
         } returns
             events.map { event ->
-                mockk<HistoricalProposals> {
+                mockk<HistoricProposals> {
                     every { proposalType } returns 1
                     every { id } returns "${event.address}-1"
                 }
@@ -70,7 +71,7 @@ class HistoricalProposalsProcessorTest {
     fun `process with All Stakeholders NewProposal Event`() = runBlocking {
         val events = createIndexedEvents(LogsFixtures.LOG_ALL_STAKING_HOLDER.take(2))
 
-        val proposalsSlot = slot<List<HistoricalProposals>>()
+        val proposalsSlot = slot<List<HistoricProposals>>()
         every { repository.getLatestRecord() } returns null
         every { repository.saveAll(capture(proposalsSlot)) } returns emptyList()
 
@@ -83,13 +84,13 @@ class HistoricalProposalsProcessorTest {
 
         val mockProposals =
             events.map { event ->
-                mockk<HistoricalProposals> {
+                mockk<HistoricProposals> {
                     every { proposalType } returns 1
                     every { id } returns "${event.address}-1"
                 }
             }
         every {
-            historicalProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
+            historicProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
         } returns mockProposals
 
         processor.process(events, null)
@@ -101,9 +102,7 @@ class HistoricalProposalsProcessorTest {
         }
     }
 
-    private fun createIndexedEvents(
-        logs: List<org.vechain.indexer.thor.model.EventLog>
-    ): List<IndexedEvent> {
+    private fun createIndexedEvents(logs: List<EventLog>): List<IndexedEvent> {
         return logs.map { log ->
             // Extract values from topics
             val proposalId =

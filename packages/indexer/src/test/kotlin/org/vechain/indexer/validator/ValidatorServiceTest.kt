@@ -178,7 +178,9 @@ class ValidatorServiceTest {
             )
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
-        every { repository.findByDelegationIdListIn(any<List<String>>()) } returns emptyList()
+        every {
+            repository.findByIdsOrDelegations(any<List<String>>(), any<List<String>>())
+        } returns emptyList()
 
         service.handleValidatorEvents(listOf(initiated, applied, withdrawn))
 

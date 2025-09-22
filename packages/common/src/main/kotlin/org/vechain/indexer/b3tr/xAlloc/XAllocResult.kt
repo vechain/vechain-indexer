@@ -2,12 +2,12 @@ package org.vechain.indexer.b3tr.xAlloc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 
 @Document(collection = "b3tr_x_alloc_results")
 data class XAllocResult
@@ -34,7 +34,7 @@ constructor(
         totalVotes: BigInteger,
     ) : this(
         version = version,
-        id = calculateId(roundId, appId),
+        id = generateId("$roundId", appId),
         blockId = blockId,
         blockNumber = blockNumber,
         blockTimestamp = blockTimestamp,
@@ -45,11 +45,6 @@ constructor(
     )
 
     @JsonIgnore override fun getDocumentId(): String = id
-
-    companion object {
-        fun calculateId(roundId: Int, appId: String): String =
-            DigestUtils.sha1Hex("$roundId-$appId")
-    }
 }
 
 @Document(collection = "b3tr_x_alloc_result_archives")

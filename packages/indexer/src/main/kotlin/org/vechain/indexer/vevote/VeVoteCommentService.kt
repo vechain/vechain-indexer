@@ -7,11 +7,12 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Service
 class VeVoteCommentService(
     private val repository: VevoteCommentRepository,

@@ -19,7 +19,13 @@ open class XAllocResultCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, XAllocResult::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        XAllocResult::class.java,
+        XAllocResultArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.b3tr-x-alloc-result}") private val version: Int = 1

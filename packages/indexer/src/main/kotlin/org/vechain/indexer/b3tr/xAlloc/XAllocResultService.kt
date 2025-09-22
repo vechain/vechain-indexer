@@ -8,6 +8,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
@@ -31,7 +32,7 @@ open class XAllocResultService(
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
                 parseVotes(roundEvents).forEach { (appId, aggregatedVote) ->
-                    val recordId = XAllocResult.calculateId(roundId, appId)
+                    val recordId = generateId("$roundId", appId)
                     val existing = resolveExisting(recordId, updatedResult)
                     val updated =
                         createOrUpdateExisting(

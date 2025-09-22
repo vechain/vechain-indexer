@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Service
 open class VeVoteResultsService(
     private val vevoteProposalResultRepository: VeVoteProposalResultRepository
@@ -14,18 +14,18 @@ open class VeVoteResultsService(
         proposalId: String,
         support: Support,
         pageable: Pageable,
-    ): Slice<VeVoteProposalResults> =
+    ): Slice<VeVoteProposalResult> =
         vevoteProposalResultRepository.findByProposalIdAndSupport(proposalId, support, pageable)
 
     open fun getResultsByProposalId(
         proposalId: String,
         pageable: Pageable,
-    ): Slice<VeVoteProposalResults> =
+    ): Slice<VeVoteProposalResult> =
         vevoteProposalResultRepository.findAllByProposalId(proposalId, pageable)
 
     open fun getResultsBySupport(
         support: Support,
         pageable: Pageable,
-    ): Slice<VeVoteProposalResults> =
+    ): Slice<VeVoteProposalResult> =
         vevoteProposalResultRepository.findAllBySupport(support, pageable)
 }

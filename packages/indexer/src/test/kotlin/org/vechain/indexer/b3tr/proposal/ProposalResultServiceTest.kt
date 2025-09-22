@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.b3tr.proposal.ProposalResult.Companion.calculateId
+import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -119,7 +119,7 @@ internal class ProposalResultServiceTest {
                 support = Support.FOR,
             )
 
-        every { repository.findByIdOrNull(calculateId("proposal1", Support.FOR)) } returns
+        every { repository.findByIdOrNull(generateId("proposal1", Support.FOR.name)) } returns
             existingRecord
 
         val (updated, archived) = service.processEvents(listOf(event1))
@@ -206,7 +206,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should only create two archive record is multiple updates happen in the different blocks`() {
+    fun `processEvents should create two archive record is multiple updates happen in the different blocks`() {
         // Create two events for the same proposalId in different blocks
         val event1 =
             buildIndexedEvent(

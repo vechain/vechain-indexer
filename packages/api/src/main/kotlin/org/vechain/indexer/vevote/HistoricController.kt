@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -14,23 +14,23 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
 
-@Tag(name = "VeVote Historical Proposals", description = "Query VeVote Historical Proposals")
+@Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
 @RestController
-@Profile("historical-proposals")
-@RequestMapping("$VEVOTE_PATH/historical-proposals")
-open class HistoricalController(private val historicalApiService: HistoricalApiService) {
+@Profile("vevote", "vevote-historic-proposals")
+@RequestMapping(VEVOTE_PATH)
+open class HistoricController(private val historicApiService: HistoricApiService) {
 
-    @GetMapping
-    @Operation(summary = "Fetch all historical proposals")
+    @GetMapping("/historic-proposals", "historical_proposals")
+    @Operation(summary = "Fetch all historic proposals")
     @CommonApiResponses
     open fun getAllProposals(
         @RequestParam(required = false) page: Int?,
         @RequestParam(required = false) proposalId: String?,
         @RequestParam(required = false) size: Int?,
-    ): PaginatedResponse<HistoricalProposals> {
+    ): PaginatedResponse<HistoricProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
-        val result = historicalApiService.findAll(proposalId, pageable)
+        val result = historicApiService.findAll(proposalId, pageable)
         return paginatedResponse(result)
     }
 }

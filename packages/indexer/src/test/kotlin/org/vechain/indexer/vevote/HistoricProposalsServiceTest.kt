@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
@@ -12,17 +12,17 @@ import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
-internal class HistoricalProposalsServiceTest {
+internal class HistoricProposalsServiceTest {
 
     @MockK lateinit var thorService: ThorService
 
-    private lateinit var service: HistoricalProposalsService
+    private lateinit var service: HistoricProposalsService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         service =
-            HistoricalProposalsService(
+            HistoricProposalsService(
                 thorService = thorService,
                 steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
                 allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",

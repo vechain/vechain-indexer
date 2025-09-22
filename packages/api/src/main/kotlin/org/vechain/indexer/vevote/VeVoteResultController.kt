@@ -17,7 +17,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("vevote-results")
+@Profile("vevote", "vevote-results")
 @Tag(name = "VeVote", description = "Indexer API for VeVote.")
 @Validated
 @RestController
@@ -47,14 +47,14 @@ open class VeVoteResultController(private val resultService: VeVoteResultsServic
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<VeVoteProposalResults> {
+    ): PaginatedResponse<VeVoteProposalResult> {
         if (proposalId == null && support == null) {
             throw BadRequestException("Either a proposalId or support must be provided")
         }
 
-        val pageable = toPageable(page, size, direction, VeVoteProposalResults::blockNumber.name)
+        val pageable = toPageable(page, size, direction, VeVoteProposalResult::blockNumber.name)
 
-        val result: Slice<VeVoteProposalResults> =
+        val result: Slice<VeVoteProposalResult> =
             when {
                 proposalId != null && support != null ->
                     resultService.getResultsByProposalIdAndSupport(proposalId, support, pageable)

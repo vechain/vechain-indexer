@@ -21,7 +21,13 @@ open class AppDailyActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-app-daily-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, AppDailyActionSummary::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        AppDailyActionSummary::class.java,
+        AppDailyActionSummaryArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -45,8 +51,6 @@ open class AppDailyActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "appId_-1_date_-1" to
-                    Index().on("appId", Sort.Direction.DESC).on("date", Sort.Direction.DESC),
                 "appId_-1_date_-1_totalRewardAmount_-1" to
                     Index()
                         .on("appId", Sort.Direction.DESC)

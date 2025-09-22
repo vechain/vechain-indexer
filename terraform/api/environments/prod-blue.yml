@@ -37,7 +37,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals,b3tr
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -47,7 +47,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,historical-proposals,b3tr
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
@@ -62,7 +62,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
-        historical-proposals:       '4510483'
+        historic-proposals:         '4510483'
         validator:                   '0'
       start-round:
         b3tr-sustainable-actions:   '4'
@@ -75,7 +75,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historical-proposals:       '1000'
+        historic-proposals:         '1000'
         validator:                  '1000'
       sync-block-batch-size:
         nfts:                       '500'
@@ -84,13 +84,17 @@ enabled_nets:
         stargate:                   '500'
         authority-nodes:            '500'
         b3tr:                       '500'
-        historical-proposals:       '500'
+        historic-proposals:       '500'
       channel-batch-size:           '2'
       pruner:
-        interval:                   '43200000'
-        removal-chunk-size:         '2000'
+        interval: '3000'
+        removal-chunk-size: '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '4'
         transfers:                  '2'
@@ -98,12 +102,13 @@ enabled_nets:
         history:                    '2'
         nft-blacklist:              '2'
         vevote-comments:            '1'
-        vevote-results:             '1'
+        vevote-results:             '2'
         authority-node-endorser:    '5'
         stargate-vtho-claimed-by-block: '5'
         stargate-vtho-claimed-by-account: '6'
         stargate-nft-holders-by-block: '1'
         stargate-vet-staked-by-block: '1'
+        historic-proposals:          '1'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '1'
         b3tr-user-all-time-action-summary: '1'
@@ -115,9 +120,8 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
-        historical-proposals: '1'
         validator: '1'
       business-event:
         substitutions:
@@ -150,10 +154,10 @@ enabled_nets:
     veworld:
       contract:
         vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          address:                  '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
         authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
-        historical-proposals:
+        historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
@@ -174,7 +178,7 @@ enabled_nets:
       cpu:                          512
       memory:                       1024
       max_capacity:                 2
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,validator
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -184,7 +188,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,validator
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
@@ -199,7 +203,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '19661986'
         b3tr-sustainable-actions:   '19661986'
         b3tr-proposal:              '19661986'
-        historical-proposals:       '22087000'
+        historic-proposals:         '22087000'
         validator:                   '0'
       start-round:
         b3tr-sustainable-actions:   '4'
@@ -212,7 +216,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historical-proposals:       '1000'
+        historic-proposals:         '1000'
         validator:                  '1000'
       sync-block-batch-size:
         nfts:                       '100'
@@ -221,13 +225,17 @@ enabled_nets:
         stargate:                   '100'
         authority-nodes:            '100'
         b3tr:                       '100'
-        historical-proposals:       '100'
+        historic-proposals:       '100'
       channel-batch-size:           '2'
       pruner:
-        interval:                   '43200000'
-        removal-chunk-size:         '2000'
+        interval: '3000'
+        removal-chunk-size: '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
       version:
         nfts:                       '5'
         transfers:                  '4'
@@ -235,7 +243,7 @@ enabled_nets:
         history:                    '8'
         nft-blacklist:              '5'
         vevote-comments:            '1'
-        vevote-results:             '5'
+        vevote-results:             '6'
         authority-node-endorser:    '3'
         stargate-vtho-claimed-by-block: '3'
         stargate-vtho-claimed-by-account: '3'
@@ -252,9 +260,9 @@ enabled_nets:
         b3tr-sustainability-action: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '1'
+        b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
-        historical-proposals: '1'
+        historic-proposals: '1'
         validator: '1'
       business-event:
         substitutions:
@@ -269,7 +277,7 @@ enabled_nets:
           TREASURY_CONTRACT: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
           STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
           STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
-          VEVOTE_CONTRACT: '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
+          VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
           STARGATE_STAKER_CONTRACT: '0x97b3f18de4d9197af33ed623d93096b3b55dba20'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
@@ -286,11 +294,9 @@ enabled_nets:
         confidence:                 '0.9'
     veworld:
       contract:
-        vevote:
-          address:                  '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
         authority-node:
           address:                  '0x0000000000000000000000417574686f72697479'
-        historical-proposals:
+        historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:

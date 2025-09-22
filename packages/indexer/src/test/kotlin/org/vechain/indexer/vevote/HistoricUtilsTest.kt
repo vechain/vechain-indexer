@@ -1,10 +1,10 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.*
 
-internal class HistoricalUtilsTest {
+internal class HistoricUtilsTest {
 
     private val steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a"
     private val allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be"
@@ -13,7 +13,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices returns null for unknown contract address`() {
         val basicInfo = mapOf("options" to listOf("Yes", "No"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 "0xunknown",
                 steeringCommitteeAddress,
@@ -27,7 +27,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices returns choices for steering committee contract with list`() {
         val basicInfo = mapOf("options" to listOf("Yes", "No", "Abstain"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -45,7 +45,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices returns choices for steering committee contract with array`() {
         val basicInfo = mapOf("options" to arrayOf("Yes", "No"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -62,7 +62,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices returns choices for all stakeholders contract`() {
         val basicInfo = mapOf("options" to listOf("Option1", "Option2"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 allStakeholdersAddress,
                 steeringCommitteeAddress,
@@ -79,7 +79,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices returns null when options is not list or array`() {
         val basicInfo = mapOf("options" to "not a list")
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -92,7 +92,7 @@ internal class HistoricalUtilsTest {
     @Test
     fun `extractChoices returns null when basicInfo is null`() {
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 null,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -106,7 +106,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices handles null values in options list`() {
         val basicInfo = mapOf("options" to listOf("Yes", null, "No"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -124,7 +124,7 @@ internal class HistoricalUtilsTest {
     fun `extractChoices trims null characters from steering committee options`() {
         val basicInfo = mapOf("options" to listOf("Yes\u0000", "No\u0000"))
         val result =
-            HistoricalUtils.extractChoices(
+            HistoricUtils.extractChoices(
                 basicInfo,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -141,7 +141,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies returns null for unknown contract address`() {
         val tally = mapOf("tally" to listOf(100L, 200L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 "0xunknown",
                 steeringCommitteeAddress,
@@ -155,7 +155,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies returns tallies for steering committee contract with list`() {
         val tally = mapOf("tally" to listOf(100L, 200L, 300L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -173,7 +173,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies returns tallies for steering committee contract with array`() {
         val tally = mapOf("tally" to arrayOf(100L, 200L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -190,7 +190,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies returns tallies for all stakeholders contract`() {
         val tally = mapOf("tally" to listOf(150L, 250L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 allStakeholdersAddress,
                 steeringCommitteeAddress,
@@ -207,7 +207,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies returns null when tally is not list or array`() {
         val tally = mapOf("tally" to "not a list")
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -220,7 +220,7 @@ internal class HistoricalUtilsTest {
     @Test
     fun `extractVoteTallies returns null when tally is null`() {
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 null,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -234,7 +234,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies handles null values in tally list`() {
         val tally = mapOf("tally" to listOf(100L, null, 300L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -252,7 +252,7 @@ internal class HistoricalUtilsTest {
     fun `extractVoteTallies handles non-number values in tally list`() {
         val tally = mapOf("tally" to listOf(100L, "not a number", 300L))
         val result =
-            HistoricalUtils.extractVoteTallies(
+            HistoricUtils.extractVoteTallies(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -270,7 +270,7 @@ internal class HistoricalUtilsTest {
     fun `calculateTotalVotes returns sum of tallies for steering committee`() {
         val tally = mapOf("tally" to listOf(100L, 200L, 300L))
         val result =
-            HistoricalUtils.calculateTotalVotes(
+            HistoricUtils.calculateTotalVotes(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -284,7 +284,7 @@ internal class HistoricalUtilsTest {
     fun `calculateTotalVotes returns sum of tallies for all stakeholders`() {
         val tally = mapOf("tally" to listOf(150L, 250L))
         val result =
-            HistoricalUtils.calculateTotalVotes(
+            HistoricUtils.calculateTotalVotes(
                 tally,
                 allStakeholdersAddress,
                 steeringCommitteeAddress,
@@ -297,7 +297,7 @@ internal class HistoricalUtilsTest {
     @Test
     fun `calculateTotalVotes returns zero when no tallies available`() {
         val result =
-            HistoricalUtils.calculateTotalVotes(
+            HistoricUtils.calculateTotalVotes(
                 null,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,
@@ -311,7 +311,7 @@ internal class HistoricalUtilsTest {
     fun `calculateTotalVotes returns zero for empty tally list`() {
         val tally = mapOf("tally" to emptyList<Long>())
         val result =
-            HistoricalUtils.calculateTotalVotes(
+            HistoricUtils.calculateTotalVotes(
                 tally,
                 steeringCommitteeAddress,
                 steeringCommitteeAddress,

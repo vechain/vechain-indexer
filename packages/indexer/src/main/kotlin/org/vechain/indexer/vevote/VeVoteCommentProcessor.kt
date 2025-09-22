@@ -7,7 +7,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("vevote-comments")
+@Profile("vevote", "vevote-comments")
 @Component
 open class VeVoteCommentProcessor(
     private val vevoteCommentRepository: VevoteCommentRepository,

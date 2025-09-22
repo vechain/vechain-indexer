@@ -18,12 +18,14 @@ import org.vechain.indexer.thor.client.ThorClient
 open class AppRoundActionSummaryConfig {
     @Bean
     open fun appRoundActionSummaryArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = AppRoundActionSummary::class.java,
             archiveClazz = AppRoundActionSummaryArchive::class.java,
+            queryLimit = recordLimit,
         )
     }
 

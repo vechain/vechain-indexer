@@ -18,12 +18,14 @@ import org.vechain.indexer.thor.client.ThorClient
 open class XAllocResultConfig {
     @Bean
     open fun xAllocResultArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<XAllocResult, XAllocResultArchive> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = XAllocResult::class.java,
             archiveClazz = XAllocResultArchive::class.java,
+            queryLimit = recordLimit,
         )
 
     @Bean

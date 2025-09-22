@@ -21,7 +21,13 @@ open class AppRoundActionSummaryCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.version.b3tr-app-round-action-summary}") private val version: Int,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, AppRoundActionSummary::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        AppRoundActionSummary::class.java,
+        AppRoundActionSummaryArchive::class.java,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -45,7 +51,6 @@ open class AppRoundActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "roundId_-1" to Index().on("roundId", Sort.Direction.DESC),
                 "roundId_-1_actionsRewarded_-1" to
                     Index()
                         .on("roundId", Sort.Direction.DESC)
@@ -54,6 +59,8 @@ open class AppRoundActionSummaryCollectionConfig(
                     Index()
                         .on("roundId", Sort.Direction.DESC)
                         .on("totalRewardAmount", Sort.Direction.DESC),
+                "roundId_1_user_1" to
+                    Index().on("roundId", Sort.Direction.ASC).on("user", Sort.Direction.ASC),
                 "appId_-1_user_-1" to
                     Index().on("appId", Sort.Direction.DESC).on("user", Sort.Direction.DESC),
                 "appId_-1_roundId_-1_totalRewardAmount_-1" to

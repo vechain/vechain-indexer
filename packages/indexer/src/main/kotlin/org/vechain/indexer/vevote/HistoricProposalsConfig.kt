@@ -1,4 +1,4 @@
-package org.vechain.indexer.historical
+package org.vechain.indexer.vevote
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -9,27 +9,27 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("historical-proposals")
-open class HistoricalProposalsConfig {
+@Profile("vevote", "vevote-historic-proposals")
+open class HistoricProposalsConfig {
     @Bean
-    open fun historicalProposalsIndexer(
+    open fun historicProposalsIndexer(
         thorClient: ThorClient,
-        processor: HistoricalProposalsProcessor,
-        @Value("\${indexer.start-block.historical-proposals}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.historical-proposals}") syncLogInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.historical-proposals}") syncBlockBatchSize: Long,
-        @Value("\${veworld.contract.historical-proposals.steering-committee}")
+        processor: HistoricProposalsProcessor,
+        @Value("\${indexer.start-block.historic-proposals}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval.historic-proposals}") syncLogInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.historic-proposals}") syncBlockBatchSize: Long,
+        @Value("\${veworld.contract.historic-proposals.steering-committee}")
         steeringCommittee: String,
-        @Value("\${veworld.contract.historical-proposals.all-stakeholders}") allStakeholders: String,
+        @Value("\${veworld.contract.historic-proposals.all-stakeholders}") allStakeholders: String,
     ): Indexer =
         IndexerFactory()
-            .name("historicalProposalsIndexer")
+            .name("HistoricProposalsIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .abis("abis/historical-proposals")
+            .abis("abis/historic-proposals")
             .abiContracts(listOf(steeringCommittee, allStakeholders))
             .abiEventNames(listOf("NewProposal"))
             .excludeVetTransfers()
