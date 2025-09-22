@@ -35,7 +35,11 @@ open class VthoClaimedByBlockConfig {
             .syncLoggerInterval(logInterval)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(
-                listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
+                listOf(
+                    "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                    "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
+                    "STARGATE_CLAIM_REWARDS",
+                )
             )
             .businessEventContracts(
                 listOf(stargateNftContract, stargateDelegationContract, VTHO_CONTRACT)
