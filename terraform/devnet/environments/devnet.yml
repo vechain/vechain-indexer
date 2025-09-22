@@ -72,7 +72,7 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority-nodes:            '1000'
-        historic-proposals:       '1000'
+        historic-proposals:         '1000'
         b3tr:                       '1000'
         validator:                  '1000'
       sync-block-batch-size:
@@ -81,7 +81,7 @@ enabled_nets:
         vevote:                     '100'
         stargate:                   '100'
         authority-nodes:            '100'
-        historic-proposals:       '100'
+        historic-proposals:         '100'
         b3tr:                       '100'
       channel-batch-size:           '2'
       pruner:
