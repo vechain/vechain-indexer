@@ -342,9 +342,9 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
-      value = each.value.indexer.sync-logger-interval.validator
-    },
+          name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
+          value = each.value.indexer.sync-logger-interval.validator
+     },
     {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
@@ -524,6 +524,10 @@ module "ecs-backend-service" {
     {
       name  = "STARGATE_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
+    },
+    {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
     {
       name  = "STARGATE_STAKER_CONTRACT"
