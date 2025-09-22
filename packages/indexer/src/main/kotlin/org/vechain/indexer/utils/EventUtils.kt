@@ -49,6 +49,7 @@ object EventUtils {
             "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
             "STARGATE_DELEGATE_LEGACY" -> HistoryEventName.STARGATE_DELEGATE_LEGACY
             "STARGATE_DELEGATION_EXIT_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
+            "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
             else -> null // Other events will not be labeled
         }
 

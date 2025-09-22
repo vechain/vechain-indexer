@@ -11,6 +11,7 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
@@ -125,6 +126,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             tokenIds = event.params.getReturnValues()["tokenIds"] as? List<String>,
             validator = event.params.getAsString("validator"),
             delegationId = event.params.getAsString("delegationId"),
+            periodClaimed = event.params.getAsLong("periodClaimed"),
         )
     }
 
