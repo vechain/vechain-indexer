@@ -67,7 +67,7 @@ class ValidatorServiceTest {
 
         expectThat(updated.delegations[TokenLevel.All]).isEqualTo(2L)
         expectThat(updated.delegations[TokenLevel.Mjolnir]).isEqualTo(2L)
-        expectThat(updated.version).isEqualTo(2)
+        expectThat(updated.version).isEqualTo(1)
     }
 
     @Test
@@ -109,7 +109,7 @@ class ValidatorServiceTest {
         expectThat(updated.delegations[TokenLevel.All]).isEqualTo(1L)
         expectThat(updated.delegations[TokenLevel.Mjolnir]).isEqualTo(1L)
         expectThat(updated.delegationIds.containsKey("5")).isFalse()
-        expectThat(updated.version).isEqualTo(2)
+        expectThat(updated.version).isEqualTo(1)
     }
 
     @Test
@@ -128,7 +128,7 @@ class ValidatorServiceTest {
                 raw = null,
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("validator" to "v1", "delegationId" to 5L)
+                        returnValues = mapOf("validator" to "v1", "delegationId" to 5L),
                     ),
                 address = "0xcontract",
                 eventType = "DelegationInitiated",
@@ -150,7 +150,7 @@ class ValidatorServiceTest {
                 raw = null,
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("delegationID" to 5L, "validator" to "v1")
+                        returnValues = mapOf("delegationID" to 5L, "validator" to "v1"),
                     ),
                 address = "0xcontract",
                 eventType = "DelegationAdded",
@@ -178,7 +178,7 @@ class ValidatorServiceTest {
             )
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
-        every { repository.findByDelegationIdListIn(any<List<String>>()) } returns emptyList()
+        every { repository.findByIdsOrDelegations(any<List<String>>(), any<List<String>>()) } returns emptyList()
 
         service.handleValidatorEvents(listOf(initiated, applied, withdrawn))
 

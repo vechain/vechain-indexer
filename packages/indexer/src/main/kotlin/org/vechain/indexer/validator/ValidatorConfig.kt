@@ -17,16 +17,16 @@ import org.vechain.indexer.thor.client.ThorClient
 open class ValidatorConfig {
     @Bean
     open fun validatorArchiveService(
-        mongoTemplate: MongoTemplate
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
     ): ArchiveService<Validator, ValidatorArchive> =
-        ArchiveService(mongoTemplate, Validator::class.java, ValidatorArchive::class.java)
+        ArchiveService(mongoTemplate, Validator::class.java, ValidatorArchive::class.java, recordLimit)
 
     @Bean
     open fun validatorPruner(
         validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
-        PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
+    ): Pruner = PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun validatorIndexer(
