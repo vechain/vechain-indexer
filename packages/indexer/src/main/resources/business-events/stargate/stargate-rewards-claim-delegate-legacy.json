@@ -1,20 +1,13 @@
 {
-  "name": "STARGATE_CLAIM_REWARDS_BASE",
+  "name": "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
   "sameClause": true,
   "events": [
     {
-      "name": "BaseVTHORewardsClaimed",
-      "alias": "BaseVTHORewardsClaimed",
+      "name": "DelegationRewardsClaimed",
+      "alias": "DelegationRewardsClaimed",
       "conditions": [
         {
-          "firstOperand": "owner",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
-          "firstOperand": "amount",
+          "firstOperand": "rewards",
           "isFirstStatic": false,
           "secondOperand": 0,
           "isSecondStatic": true,
@@ -23,7 +16,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${STARGATE_NFT_CONTRACT}",
+          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -31,12 +24,12 @@
     },
     {
       "name": "Transfer",
-      "alias": "vthoTransferNFT",
+      "alias": "vthoTransferDelegation",
       "conditions": [
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "${STARGATE_NFT_CONTRACT}",
+          "secondOperand": "${STARGATE_DELEGATION_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
@@ -59,9 +52,9 @@
   ],
   "rules": [
     {
-      "firstEventName": "BaseVTHORewardsClaimed",
-      "firstEventProperty": "amount",
-      "secondEventName": "vthoTransferNFT",
+      "firstEventName": "DelegationRewardsClaimed",
+      "firstEventProperty": "rewards",
+      "secondEventName": "vthoTransferDelegation",
       "secondEventProperty": "value",
       "operator": "EQ"
     }
@@ -69,17 +62,17 @@
   "paramsDefinition": [
     {
       "name": "tokenId",
-      "eventName": "BaseVTHORewardsClaimed",
+      "eventName": "DelegationRewardsClaimed",
       "businessEventName": "tokenId"
     },
     {
-      "name": "amount",
-      "eventName": "BaseVTHORewardsClaimed",
+      "name": "rewards",
+      "eventName": "DelegationRewardsClaimed",
       "businessEventName": "value"
     },
     {
-      "name": "owner",
-      "eventName": "BaseVTHORewardsClaimed",
+      "name": "recipient",
+      "eventName": "DelegationRewardsClaimed",
       "businessEventName": "owner"
     }
   ]

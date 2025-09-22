@@ -52,6 +52,8 @@ constructor(
     val autorenew: Boolean? = null,
     val tokenIds: List<String>? = null,
     val validator: String? = null,
+    val delegationId: String? = null,
+    val periodClaimed: Long? = null,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
