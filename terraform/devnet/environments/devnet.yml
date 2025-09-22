@@ -143,6 +143,9 @@ enabled_nets:
         - name: "REORG"
           pattern: "REORG Detected"
           threshold: 1
+      healthcheck:
+        inactive-threshold-syncing: '120'
+        inactive-threshold-not-syncing: '600'
     comments:
       min-length: 10
       language:
