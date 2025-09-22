@@ -91,8 +91,8 @@ enabled_nets:
       channel-batch-size:           '2'
       pruner:
         interval:                   '3000'
-        removal-chunk-size:         '2000'
-        record-limit: '200000'
+        removal-chunk-size:         '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
       healthcheck:
@@ -228,8 +228,8 @@ enabled_nets:
       channel-batch-size:           '2'
       pruner:
         interval: '3000'
-        removal-chunk-size: '2000'
-        record-limit: '200000'
+        removal-chunk-size: '5000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
       healthcheck:

@@ -23,6 +23,7 @@ logging:
       vechain: ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
+#      mongodb.driver.protocol.command: DEBUG
 
 management:
   endpoints:

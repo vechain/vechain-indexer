@@ -156,7 +156,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                     AggregationOptions.builder()
                         .allowDiskUse(true)
                         .cursorBatchSize(batchSize)
-                        .hint("data.blockNumber_1_data._id_1_data.version_-1")
                         .build()
                 )
 
