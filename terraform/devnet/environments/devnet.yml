@@ -101,7 +101,7 @@ enabled_nets:
         stargate-vtho-claimed-by-block: '2'
         stargate-vtho-claimed-by-account: '4'
         stargate_nft_holders_by_account: '2'
-        stargate_vet_staked_by_account: '2
+        stargate_vet_staked_by_account: '2'
         stargate-nft-holders-by-block: '2'
         stargate-vet-staked-by-block: '2'
         b3tr-proposal-comments: '2'
