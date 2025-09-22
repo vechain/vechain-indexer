@@ -63,6 +63,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
+        validator:                   '0'
       start-round:
         b3tr-sustainable-actions:   '0'
       sync-logger-interval:
@@ -74,7 +75,8 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historic-proposals:       '1000'
+        historic-proposals:         '1000'
+        validator:                  '1000'
       sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
@@ -120,6 +122,7 @@ enabled_nets:
         b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
         historic-proposals: '1'
+        validator: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -134,6 +137,9 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
           STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
           VEVOTE_CONTRACT: '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
+          STARGATE_STAKER_CONTRACT: '0x97b3f18de4d9197af33ed623d93096b3b55dba20'
+          BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
+          GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -198,6 +204,7 @@ enabled_nets:
         b3tr-sustainable-actions:   '19661986'
         b3tr-proposal:              '19661986'
         historic-proposals:       '22087000'
+        validator:                   '0'
       start-round:
         b3tr-sustainable-actions:   '0'
       sync-logger-interval:
@@ -210,6 +217,7 @@ enabled_nets:
         authority-nodes:            '1000'
         historic-proposals:       '1000'
         b3tr:                       '1000'
+        validator:                  '1000'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
@@ -257,6 +265,7 @@ enabled_nets:
         b3tr-gm-nft: '2'
         b3tr-gm-nft-level-overview: '1'
         historic-proposals:          '1'
+        validator: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -271,6 +280,9 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
           STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
           VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          STARGATE_STAKER_CONTRACT: '0x97b3f18de4d9197af33ed623d93096b3b55dba20'
+          BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
+          GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
