@@ -18,7 +18,13 @@ open class ValidatorCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, Validator::class.java) {
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        Validator::class.java,
+        ValidatorArchive::class.java,
+    ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.validator}") private val version: Int = 1
@@ -27,10 +33,13 @@ open class ValidatorCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            Validator::class.java,
-            version,
-        )
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                Validator::class.java,
+                version,
+            )
+
+        if (dropped) indexerVersionService.dropArchiveCollection(ValidatorArchive::class.java)
 
         this.ensureCollection()
 

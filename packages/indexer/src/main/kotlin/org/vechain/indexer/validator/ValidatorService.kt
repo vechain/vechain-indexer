@@ -2,7 +2,6 @@ package org.vechain.indexer.validator
 
 import java.math.BigInteger
 import kotlin.collections.set
-import kotlin.random.Random
 import org.bson.types.Decimal128
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -95,7 +94,9 @@ class ValidatorService(
         }
 
         // 6. Archive
-        archiveService.saveAll(existingDocs.values.toList())
+        if (existingDocs.isNotEmpty()) {
+            archiveService.saveAll(existingDocs.values.toList())
+        }
     }
 
     fun buildClauses(): List<Clause> {
@@ -141,18 +142,17 @@ class ValidatorService(
                 }
                 .distinct()
 
-        val validatorsById =
-            repository.findAllById(validatorIds).associateBy { it.id }.toMutableMap()
-        val validatorsByDelegation = repository.findByDelegationIdListIn(delegationIds)
+        val validators = repository.findByIdsOrDelegations(validatorIds, delegationIds)
 
-        // merge delegation-sourced validators into the main map
-        validatorsByDelegation.forEach { v -> validatorsById.putIfAbsent(v.id, v) }
+        // main lookup by id
+        val validatorsById = validators.associateBy { it.id }.toMutableMap()
 
-        // also build delegation→validator lookup
+        // delegation → validator lookup
         val delegationToValidator = mutableMapOf<String, String>()
-        validatorsByDelegation.forEach { v ->
+        validators.forEach { v ->
             v.delegationIds.keys.forEach { dId -> delegationToValidator[dId] = v.id }
         }
+
         // walk once in order
         sorted.forEach { ev ->
             when (EventUtils.determineValidatorEventType(ev.params)) {
@@ -203,7 +203,13 @@ class ValidatorService(
             }
         }
 
-        repository.saveAll(validatorsById.values)
+        val toSave = validatorsById.values.map { v -> v.copy(version = v.version + 1) }
+
+        repository.saveAll(toSave)
+
+        if (validators.isNotEmpty()) {
+            archiveService.saveAll(validators)
+        }
     }
 
     fun applyDelegation(existing: Validator, event: IndexedEvent): Validator {
@@ -222,7 +228,6 @@ class ValidatorService(
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             delegations = updatedDelegations,
-            version = existing.version + 1,
         )
     }
 
@@ -231,7 +236,8 @@ class ValidatorService(
         val delegationId = event.params.getAsLong("delegationId")!!
 
         // For testing, assign a random level between 2 and 10
-        val tokenLevel = TokenLevel.fromOrdinal(Random.nextInt(2, 10))!!
+        val levelId = event.params.getAsLong("levelId")!!
+        val tokenLevel = TokenLevel.fromOrdinal(levelId.toInt())!!
 
         val base =
             existing
@@ -253,7 +259,6 @@ class ValidatorService(
             blockTimestamp = event.blockTimestamp,
             delegationIds = base.delegationIds + (delegationId.toString() to tokenLevel),
             delegationIdList = base.delegationIdList + delegationId.toString(),
-            version = base.version + 1,
         )
     }
 
@@ -279,7 +284,6 @@ class ValidatorService(
             blockTimestamp = event.blockTimestamp,
             delegations = updatedDelegations,
             delegationIds = updatedDelegationIds,
-            version = existing.version + 1,
         )
     }
 
