@@ -94,7 +94,7 @@ enabled_nets:
         nfts:                       '3'
         transfers:                  '3'
         transactions:               '3'
-        history:                    '3'
+        history:                    '4'
         nft-blacklist:              '3'
         vevote-comments:            '3'
         vevote-results:             '3'
