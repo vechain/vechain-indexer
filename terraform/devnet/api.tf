@@ -158,6 +158,14 @@ module "ecs-lb-service-api" {
     {
       name  = "APP_LOGGER"
       value = "CloudWatch"
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-syncing
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]
   log_metric_filters = [for filter in each.value.api.log_metric_filters : {
