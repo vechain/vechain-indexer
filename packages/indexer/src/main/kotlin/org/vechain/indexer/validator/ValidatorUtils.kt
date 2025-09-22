@@ -112,24 +112,24 @@ object ValidatorUtils {
                     stakingPeriodLength = stakingPeriodLengths[i].toLong(),
                     startBlock = startBlocks[i].toLong(),
                     completedPeriods = completedPeriods[i].toLong(),
-                    vetStaked = Decimal128(totalVET),
-                    validatorVetStaked = Decimal128(validatorVET),
-                    delegatorVetStaked = Decimal128(delegatorVET),
-                    totalWeight = Decimal128(NumberUtils.toVET(validatorLockedWeights[i])),
-                    blockProbability = Decimal128(blockProbability),
-                    blocksPerEpoch = Decimal128((blockProbability * BigDecimal(180))),
-                    blocksPerYear = Decimal128(blocksPerYear),
-                    validatorTvl = Decimal128(validatorTvl),
-                    delegatorTvl = Decimal128(delegatorTvl),
-                    totalTvl = Decimal128(totalTvl),
+                    vetStaked = toSafeDecimal128(totalVET),
+                    validatorVetStaked = toSafeDecimal128(validatorVET),
+                    delegatorVetStaked = toSafeDecimal128(delegatorVET),
+                    totalWeight = toSafeDecimal128(NumberUtils.toVET(validatorLockedWeights[i])),
+                    blockProbability = toSafeDecimal128(blockProbability),
+                    blocksPerEpoch = toSafeDecimal128((blockProbability * BigDecimal(180))),
+                    blocksPerYear = toSafeDecimal128(blocksPerYear),
+                    validatorTvl = toSafeDecimal128(validatorTvl),
+                    delegatorTvl = toSafeDecimal128(delegatorTvl),
+                    totalTvl = toSafeDecimal128(totalTvl),
                     delegations = existingDocs[masters[i]]?.delegations ?: emptyMap(),
                     delegationIds = existingDocs[masters[i]]?.delegationIds ?: emptyMap(),
                     delegationIdList = existingDocs[masters[i]]?.delegationIdList ?: emptyList(),
-                    validatorYield = Decimal128(validatorYield),
-                    tvlBasedYield = Decimal128(tvlBasedYield),
-                    avgDelegatorYield = Decimal128(avgDelegatorYield),
-                    totalVTHOSupply = Decimal128(vthoSupply),
-                    percentageOffline = Decimal128(percentageOffline),
+                    validatorYield = toSafeDecimal128(validatorYield),
+                    tvlBasedYield = toSafeDecimal128(tvlBasedYield),
+                    avgDelegatorYield = toSafeDecimal128(avgDelegatorYield),
+                    totalVTHOSupply = toSafeDecimal128(vthoSupply),
+                    percentageOffline = toSafeDecimal128(percentageOffline),
                     version = (existingDoc?.version ?: 0) + 1,
                 )
 
@@ -214,4 +214,10 @@ object ValidatorUtils {
 
     private fun BigInteger.toLongOrNull(): Long? =
         if (this == BigInteger.valueOf(Long.MAX_VALUE)) null else this.toLong()
+
+    private fun toSafeDecimal128(value: BigDecimal, scale: Int = 6): Decimal128 {
+        // Limit precision to avoid Decimal128 overflow
+        val scaled = value.setScale(scale, RoundingMode.HALF_UP)
+        return Decimal128(scaled)
+    }
 }
