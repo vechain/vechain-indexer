@@ -42,8 +42,9 @@ object EventUtils {
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
-            "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
-            "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
+            "STARGATE_CLAIM_REWARDS_BASE_LEGACY" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
+            "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY" ->
+                HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
             "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
