@@ -1,6 +1,7 @@
 region:                          eu-west-1
 project:                         veworld
 environment:                     dev
+zone_id:                         Z05105391UJS9OG5RVSOK
 certificate_arn:                 arn:aws:acm:eu-west-1:951789968977:certificate/f8fe9cba-316d-4d59-8709-e9a370b39982
 vpc_id:                          vpc-05130734a50cdfe0c
 azs:
