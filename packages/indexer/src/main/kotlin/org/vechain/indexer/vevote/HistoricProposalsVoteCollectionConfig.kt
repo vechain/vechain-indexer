@@ -14,11 +14,11 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote-historic-proposals")
 @Configuration
-open class HistoricProposalsCollectionConfig(
+open class HistoricProposalsVoteCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposals::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposalsVote::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.historic-proposals}") private val version: Int = 1
@@ -28,7 +28,7 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            HistoricProposals::class.java,
+            HistoricProposalsVote::class.java,
             version,
         )
 
@@ -39,6 +39,13 @@ open class HistoricProposalsCollectionConfig(
             listOf(
                 "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "proposalId_contract" to
+                    Index().on("proposalId", Sort.Direction.ASC).on("contract", Sort.Direction.ASC),
+                "proposalId_contract_blockNumber" to
+                    Index()
+                        .on("proposalId", Sort.Direction.ASC)
+                        .on("contract", Sort.Direction.ASC)
+                        .on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

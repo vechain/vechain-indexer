@@ -11,10 +11,9 @@ import org.vechain.indexer.thor.model.Block
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
-    private val repository: VeVoteProposalResultRepository,
+    val repository: VeVoteProposalResultRepository,
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) : BaseStatefulProcessor(repository = repository, archiveService = veVoteResultArchiveService) {
-
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 

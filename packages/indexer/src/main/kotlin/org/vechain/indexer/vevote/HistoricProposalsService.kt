@@ -12,7 +12,7 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.utils.ContractUtils
 
-@Profile("vevote", "vevote-historic-proposals")
+@Profile("vevote-historic-proposals")
 @Service
 open class HistoricProposalsService(
     private val thorService: ThorService,
@@ -113,20 +113,29 @@ open class HistoricProposalsService(
             listOf(
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricProposalABI.getBasicInfoSC
-                    else HistoricProposalABI.getBasicInfo,
+                    if (isSteeringCommittee) {
+                        HistoricProposalABI.getBasicInfoSC
+                    } else {
+                        HistoricProposalABI.getBasicInfo
+                    },
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricProposalABI.getConditionSC
-                    else HistoricProposalABI.getCondition,
+                    if (isSteeringCommittee) {
+                        HistoricProposalABI.getConditionSC
+                    } else {
+                        HistoricProposalABI.getCondition
+                    },
                     proposalId.toBigInteger(),
                 ),
                 ContractUtils.createClause(
                     contractAddress,
-                    if (isSteeringCommittee) HistoricProposalABI.getTallySC
-                    else HistoricProposalABI.getTally,
+                    if (isSteeringCommittee) {
+                        HistoricProposalABI.getTallySC
+                    } else {
+                        HistoricProposalABI.getTally
+                    },
                     proposalId.toBigInteger(),
                 ),
             )
@@ -152,8 +161,8 @@ open class HistoricProposalsService(
         }
     }
 
-    private fun getAbiFunction(name: String): AbiElement {
-        return cachedAbi[name]
+    private fun getAbiFunction(name: String): AbiElement =
+        cachedAbi[name]
             ?: run {
                 val basePath = "abis/historic-proposals"
                 val abis =
@@ -164,7 +173,6 @@ open class HistoricProposalsService(
                 cachedAbi[name] = abi
                 abi
             }
-    }
 
     private fun extractChoices(
         basicInfo: Map<String, Any?>?,
