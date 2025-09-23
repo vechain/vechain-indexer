@@ -446,20 +446,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
+      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-daily-action-summary
+    },
+    {
       name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
-      value = each.value.indexer.version.b3tr-sustainability-overview-all
-    },
-    {
       name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
-    },
-    {
-      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
-      value = each.value.indexer.version.b3tr-sustainability-action
     },
     {
       name = "VERSION_B3TR_USER_TRANSACTIONS"
