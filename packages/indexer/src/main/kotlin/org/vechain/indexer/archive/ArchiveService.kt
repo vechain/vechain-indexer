@@ -135,7 +135,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         // 1) Create the match stage. If ids are provided, filter by them as well.
         val matchCriteria = Criteria.where("data.blockNumber").lt(endBlock)
         if (idsToPrune != null && idsToPrune.isNotEmpty()) {
-            matchCriteria.and("_id").`in`(idsToPrune)
+            matchCriteria.and("data._id").`in`(idsToPrune)
         }
 
         // 2) Rank by recordId/version (desc)
