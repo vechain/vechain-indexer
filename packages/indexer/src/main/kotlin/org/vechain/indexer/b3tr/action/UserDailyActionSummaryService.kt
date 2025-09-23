@@ -17,6 +17,8 @@ import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -27,6 +29,8 @@ open class UserDailyActionSummaryService(
     private val repository: UserDailyActionSummaryRepository,
     private val userDailyActionSummaryArchiveService:
         ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+    private val userDailyActionSummaryPruner:
+        TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
 ) {
 
     open fun processEvents(
@@ -92,15 +96,13 @@ open class UserDailyActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<UserDailyActionSummary>, existing: List<UserDailyActionSummary>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            userDailyActionSummaryArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            userDailyActionSummaryArchiveService,
+            userDailyActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

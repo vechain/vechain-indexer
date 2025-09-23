@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -32,7 +32,7 @@ open class ProposalResultConfig {
     open fun proposalResultPruner(
         proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): TargetedPruner<ProposalResult, ProposalResultArchive> =
         PrunerService(
             klass = ProposalResultArchive::class,
             archiveService = proposalResultArchiveService,
@@ -43,7 +43,7 @@ open class ProposalResultConfig {
     open fun proposalResultIndexer(
         thorClient: ThorClient,
         processor: ProposalResultProcessor,
-        proposalResultPruner: Pruner,
+        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

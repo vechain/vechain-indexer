@@ -39,6 +39,10 @@ enabled_nets:
       max_capacity:                 4
       spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -49,6 +53,12 @@ enabled_nets:
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1304112'
@@ -65,7 +75,7 @@ enabled_nets:
         b3tr-proposal:              '19107910'
         validator:                   '0'
       start-round:
-        b3tr-sustainable-actions:   '0'
+        b3tr-sustainable-actions:   '4'
       sync-logger-interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -96,32 +106,31 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts:                       '4'
+        nfts:                       '5'
         transfers:                  '2'
         transactions:               '2'
         history:                    '2'
-        nft-blacklist:              '2'
+        nft-blacklist:              '3'
         vevote-comments:            '1'
-        vevote-results:             '2'
+        vevote-results:             '3'
         authority-node-endorser:    '5'
-        stargate-vtho-claimed-by-block: '5'
-        stargate-vtho-claimed-by-account: '6'
-        stargate-nft-holders-by-block: '1'
-        stargate-vet-staked-by-block: '1'
+        stargate-vtho-claimed-by-block: '6'
+        stargate-vtho-claimed-by-account: '7'
+        stargate-nft-holders-by-block: '2'
+        stargate-vet-staked-by-block: '2'
+        historic-proposals:          '1'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
-        b3tr-app-all-time-action-summary: '1'
-        b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
-        b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
-        b3tr-user-transactions: '1'
-        b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '2'
-        b3tr-gm-nft-level-overview: '1'
-        historic-proposals: '1'
+        b3tr-proposal-results: '2'
+        b3tr-app-all-time-action-summary: '2'
+        b3tr-app-round-action-summary: '2'
+        b3tr-app-daily-action-summary: '2'
+        b3tr-user-all-time-action-summary: '2'
+        b3tr-user-round-action-summary: '2'
+        b3tr-user-daily-action-summary: '2'
+        b3tr-user-transactions: '2'
+        b3tr-x-alloc-result: '2'
+        b3tr-gm-nft: '3'
+        b3tr-gm-nft-level-overview: '2'
         validator: '1'
       business-event:
         substitutions:
@@ -180,6 +189,10 @@ enabled_nets:
       max_capacity: 2
       spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -190,6 +203,12 @@ enabled_nets:
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1042259'
@@ -206,7 +225,7 @@ enabled_nets:
         historic-proposals:       '22087000'
         validator:                   '0'
       start-round:
-        b3tr-sustainable-actions:   '0'
+        b3tr-sustainable-actions:   '4'
       sync-logger-interval:
         nfts:                       '1000'
         transactions:               '1000'
@@ -215,56 +234,53 @@ enabled_nets:
         vevote:                     '1000'
         stargate:                   '1000'
         authority-nodes:            '1000'
-        historic-proposals:       '1000'
         b3tr:                       '1000'
         validator:                  '1000'
+        historic-proposals:         '1000'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
         stargate:                   '100'
         authority-nodes:            '100'
-        historic-proposals:       '100'
         b3tr:                       '100'
+        historic-proposals:         '100'
       channel-batch-size:           '2'
       pruner:
-        interval: '3000'
+        interval: '30000'
         removal-chunk-size: '5000'
-        record-limit: '1000000'
+        record-limit: '500000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
       healthcheck:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts:                       '5'
+        nfts:                       '6'
         transfers:                  '4'
         transactions:               '4'
         history:                    '8'
-        nft-blacklist:              '5'
+        nft-blacklist:              '6'
         vevote-comments:            '1'
-        vevote-results:             '6'
+        vevote-results:             '7'
         authority-node-endorser:    '3'
-        stargate-vtho-claimed-by-block: '3'
-        stargate-vtho-claimed-by-account: '3'
-        stargate_nft_holders_by_account: '4'
-        stargate_vet_staked_by_account: '3'
-        stargate-nft-holders-by-block: '1'
-        stargate-vet-staked-by-block: '1'
+        stargate-vtho-claimed-by-block: '4'
+        stargate-vtho-claimed-by-account: '4'
+        stargate-nft-holders-by-block: '5'
+        stargate-vet-staked-by-block: '2'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
-        b3tr-app-all-time-action-summary: '1'
-        b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
-        b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
-        b3tr-user-transactions: '1'
-        b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '2'
-        b3tr-gm-nft-level-overview: '1'
-        historic-proposals:          '1'
+        b3tr-proposal-results: '2'
+        b3tr-app-all-time-action-summary: '2'
+        b3tr-app-round-action-summary: '2'
+        b3tr-app-daily-action-summary: '2'
+        b3tr-user-all-time-action-summary: '2'
+        b3tr-user-round-action-summary: '2'
+        b3tr-user-daily-action-summary: '2'
+        b3tr-user-transactions: '2'
+        b3tr-x-alloc-result: '2'
+        b3tr-gm-nft: '3'
+        b3tr-gm-nft-level-overview: '2'
+        historic-proposals: '1'
         validator: '1'
       business-event:
         substitutions:

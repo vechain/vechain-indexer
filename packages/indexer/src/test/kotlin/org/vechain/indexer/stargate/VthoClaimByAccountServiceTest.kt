@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
@@ -21,12 +22,14 @@ internal class VthoClaimByAccountServiceTest {
     @MockK
     lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
 
+    @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>
+
     private lateinit var service: VthoClaimedByAccountService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = VthoClaimedByAccountService(repository, archiveService)
+        service = VthoClaimedByAccountService(repository, archiveService, pruner)
     }
 
     @Test
@@ -118,7 +121,7 @@ internal class VthoClaimByAccountServiceTest {
         every { repository.saveAll(update) } returns update
         every { archiveService.saveAll(existing) } just Runs
 
-        service.update(update, existing)
+        service.save(update, existing)
 
         verify(exactly = 1) { repository.saveAll(update) }
         verify(exactly = 1) { archiveService.saveAll(existing) }
@@ -131,7 +134,7 @@ internal class VthoClaimByAccountServiceTest {
         every { repository.saveAll(update) } returns update
         every { archiveService.saveAll(existing) } just Runs
 
-        service.update(update, existing)
+        service.save(update, existing)
 
         verify(exactly = 0) { repository.saveAll(update) }
         verify(exactly = 0) { archiveService.saveAll(existing) }

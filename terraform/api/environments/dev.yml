@@ -44,6 +44,10 @@ enabled_nets:
       max_capacity:                 1
       spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -54,6 +58,12 @@ enabled_nets:
       enabled:                      true
       spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       slack_webhook_url:            ""
       start-block:
         nfts:                       '21300000'
@@ -118,13 +128,12 @@ enabled_nets:
         historic-proposals:   '1'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
         b3tr-app-all-time-action-summary: '1'
         b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
+        b3tr-app-daily-action-summary: '1'
+        b3tr-user-all-time-action-summary: '1'
         b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
+        b3tr-user-daily-action-summary: ''
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
         b3tr-gm-nft: '2'
@@ -187,6 +196,10 @@ enabled_nets:
       max_capacity:                 1
       spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -198,6 +211,12 @@ enabled_nets:
       spring_profile:               "indexer,nfts,transactions,transfers,history,stargate,validator"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       start-block:
         nfts:                       '21300000'
         nft-blacklist:              '21300000'
@@ -258,13 +277,12 @@ enabled_nets:
         stargate-vet-staked-by-block: '1'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
         b3tr-app-all-time-action-summary: '1'
         b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
+        b3tr-app-daily-action-summary: '1'
+        b3tr-user-all-time-action-summary: '1'
         b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
+        b3tr-user-daily-action-summary: '1'
         b3tr-user-transactions: '1'
         b3tr-x-alloc-result: '1'
         b3tr-gm-nft: '2'

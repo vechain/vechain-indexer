@@ -3,11 +3,14 @@ package org.vechain.indexer.stargate
 import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
+import kotlin.collections.maxByOrNull
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -17,16 +20,18 @@ open class VthoClaimedByAccountService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
     private val vthoClaimedByAccountArchiveService:
         ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    private val vthoClaimByAccountPruner:
+        TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(update: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
-        if (update.isNotEmpty()) {
-            vthoClaimedByAccountRepository.saveAll(update)
-        }
-
-        if (existing.isNotEmpty()) {
-            vthoClaimedByAccountArchiveService.saveAll(existing)
-        }
+    open fun save(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
+        saveVersionedDocuments(
+            updated,
+            existing,
+            vthoClaimedByAccountRepository,
+            vthoClaimedByAccountArchiveService,
+            vthoClaimByAccountPruner,
+        )
     }
 
     open fun parseRecords(

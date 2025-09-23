@@ -12,6 +12,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRA
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
+import org.vechain.indexer.pruner.TargetedPruner
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -21,13 +22,14 @@ import strikt.assertions.isNotNull
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
     @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
+    @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
 
     private lateinit var nftService: NftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftService = NftService(repository, nftArchiveService)
+        nftService = NftService(repository, nftArchiveService, pruner)
     }
 
     // Update tests
@@ -66,7 +68,7 @@ internal class NftServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
-        nftService.update(updated, existing)
+        nftService.save(updated, existing)
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { nftArchiveService.saveAll(existing) }
@@ -93,7 +95,7 @@ internal class NftServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
-        nftService.update(updated, existing)
+        nftService.save(updated, existing)
 
         verify(exactly = 0) { repository.saveAll(updated) }
         verify(exactly = 1) { nftArchiveService.saveAll(existing) }
@@ -120,7 +122,7 @@ internal class NftServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
-        nftService.update(updated, existing)
+        nftService.save(updated, existing)
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 0) { nftArchiveService.saveAll(existing) }
@@ -134,7 +136,7 @@ internal class NftServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftArchiveService.saveAll(existing) } just Runs
 
-        nftService.update(updated, existing)
+        nftService.save(updated, existing)
 
         verify(exactly = 0) { repository.saveAll(updated) }
         verify(exactly = 0) { nftArchiveService.saveAll(existing) }
