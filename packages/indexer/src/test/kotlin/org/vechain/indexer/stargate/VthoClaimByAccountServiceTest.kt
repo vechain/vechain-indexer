@@ -7,9 +7,9 @@ import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
@@ -22,7 +22,7 @@ internal class VthoClaimByAccountServiceTest {
     @MockK
     lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK lateinit var pruner: PrunerService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
 
     private lateinit var service: VthoClaimedByAccountService
 

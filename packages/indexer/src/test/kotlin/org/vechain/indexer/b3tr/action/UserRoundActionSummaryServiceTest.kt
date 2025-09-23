@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
@@ -22,6 +21,7 @@ import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -32,7 +32,7 @@ internal class UserRoundActionSummaryServiceTest {
     lateinit var archiveService:
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK lateinit var pruner: PrunerService<UserRoundActionSummary, UserRoundActionSummaryArchive>
 
     private lateinit var service: TestableService
 
@@ -40,7 +40,7 @@ internal class UserRoundActionSummaryServiceTest {
     private class TestableService(
         repository: UserRoundActionSummaryRepository,
         archive: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-        pruner: Pruner,
+        pruner: PrunerService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
     ) : UserRoundActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserRoundActionSummary>) =
             resolveExisting(recordId, cache)

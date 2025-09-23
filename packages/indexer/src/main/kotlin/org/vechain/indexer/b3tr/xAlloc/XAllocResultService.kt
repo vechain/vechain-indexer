@@ -7,13 +7,13 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -23,7 +23,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class XAllocResultService(
     private val repository: XAllocResultRepository,
     private val xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-    private val xAllocResultPruner: Pruner,
+    private val xAllocResultPruner: PrunerService<XAllocResult, XAllocResultArchive>,
 ) {
 
     open fun processEvents(

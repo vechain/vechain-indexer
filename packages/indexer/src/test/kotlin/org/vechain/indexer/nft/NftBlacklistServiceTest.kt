@@ -7,12 +7,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_WHITELIST
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
 import strikt.assertions.isEqualTo
@@ -24,7 +24,7 @@ internal class NftBlacklistServiceTest {
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK lateinit var pruner: PrunerService<NftBlacklist, NftBlacklistArchive>
 
     private lateinit var nftBlacklistService: NftBlacklistService
 

@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
@@ -34,7 +33,7 @@ open class AppRoundActionSummaryConfig {
         appRoundActionSummaryArchiveService:
             ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): PrunerService<AppRoundActionSummary, AppRoundActionSummaryArchive> =
         PrunerService(
             klass = AppRoundActionSummaryArchive::class,
             archiveService = appRoundActionSummaryArchiveService,
@@ -45,7 +44,8 @@ open class AppRoundActionSummaryConfig {
     open fun appRoundActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppRoundActionSummaryProcessor,
-        appRoundActionSummaryPruner: Pruner,
+        appRoundActionSummaryPruner:
+            PrunerService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

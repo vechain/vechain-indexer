@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
@@ -18,6 +17,7 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -26,7 +26,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
     private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-    private val proposalResultPruner: Pruner,
+    private val proposalResultPruner: PrunerService<ProposalResult, ProposalResultArchive>,
 ) {
 
     /**

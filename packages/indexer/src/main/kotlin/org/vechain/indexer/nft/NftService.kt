@@ -3,9 +3,9 @@ package org.vechain.indexer.nft
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class NftService(
     private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-    private val nftPruner: Pruner,
+    private val nftPruner: PrunerService<IndexedNft, NftArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {

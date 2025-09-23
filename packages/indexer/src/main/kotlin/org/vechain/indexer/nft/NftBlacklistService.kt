@@ -3,9 +3,9 @@ package org.vechain.indexer.nft
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -14,7 +14,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class NftBlacklistService(
     private val repository: NftBlacklistRepository,
     private val nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>,
-    private val nftBlacklistPruner: Pruner,
+    private val nftBlacklistPruner: PrunerService<NftBlacklist, NftBlacklistArchive>,
 ) {
 
     @Transactional(rollbackFor = [Exception::class])

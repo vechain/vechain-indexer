@@ -3,6 +3,7 @@ package org.vechain.indexer
 import org.springframework.data.repository.CrudRepository
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.pruner.PrunerService
 
 /**
  * Shared persistence helper for versioned documents.
@@ -15,7 +16,7 @@ fun <T, S> saveVersionedDocuments(
     existing: List<T>,
     repository: CrudRepository<T, *>,
     archiveService: ArchiveService<T, S>,
-    pruner: Pruner,
+    pruner: PrunerService<T, S>,
 ) where T : VersionedDocument, S : Archive<T> {
     if (updated.isNotEmpty()) {
         repository.saveAll(updated)

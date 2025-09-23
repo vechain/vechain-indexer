@@ -10,13 +10,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 
 @ExtendWith(MockKExtension::class)
 internal class ProposalResultServiceTest {
@@ -25,7 +25,7 @@ internal class ProposalResultServiceTest {
     @MockK
     lateinit var proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK lateinit var pruner: PrunerService<ProposalResult, ProposalResultArchive>
 
     private lateinit var service: ProposalResultService
 

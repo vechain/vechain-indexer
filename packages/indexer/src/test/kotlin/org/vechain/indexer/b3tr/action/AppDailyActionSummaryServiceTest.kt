@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -30,7 +30,7 @@ internal class AppDailyActionSummaryServiceTest {
     @MockK
     lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK lateinit var pruner: PrunerService<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
     private lateinit var service: TestableService
 
@@ -38,7 +38,7 @@ internal class AppDailyActionSummaryServiceTest {
     private class TestableService(
         repository: AppDailyActionSummaryRepository,
         archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-        pruner: Pruner,
+        pruner: PrunerService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
     ) : AppDailyActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
             resolveExisting(recordId, cache)

@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
@@ -34,7 +33,7 @@ open class VeVoteResultConfig {
         veVoteResultArchiveService:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive> =
         PrunerService(
             klass = VeVoteProposalResultArchive::class,
             archiveService = veVoteResultArchiveService,
@@ -45,7 +44,7 @@ open class VeVoteResultConfig {
     open fun vevoteResultIndexer(
         thorClient: ThorClient,
         processor: VeVoteResultProcessor,
-        veVoteResultPruner: Pruner,
+        veVoteResultPruner: PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,

@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
@@ -32,7 +31,7 @@ open class XAllocResultConfig {
     open fun xAllocResultPruner(
         xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): PrunerService<XAllocResult, XAllocResultArchive> =
         PrunerService(
             klass = XAllocResultArchive::class,
             archiveService = xAllocResultArchiveService,
@@ -43,7 +42,7 @@ open class XAllocResultConfig {
     open fun xAllocResultIndexer(
         thorClient: ThorClient,
         processor: XAllocResultProcessor,
-        xAllocResultPruner: Pruner,
+        xAllocResultPruner: PrunerService<XAllocResult, XAllocResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-x-alloc-result}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

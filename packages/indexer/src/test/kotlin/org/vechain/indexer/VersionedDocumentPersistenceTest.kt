@@ -1,16 +1,14 @@
 package org.vechain.indexer
 
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.just
-import io.mockk.runs
-import io.mockk.verify
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.CrudRepository
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.pruner.PrunerService
 
 @ExtendWith(MockKExtension::class)
 internal class VersionedDocumentPersistenceTest {
@@ -19,7 +17,7 @@ internal class VersionedDocumentPersistenceTest {
 
     @MockK private lateinit var archiveService: ArchiveService<TestDocument, TestArchive>
 
-    @MockK private lateinit var pruner: Pruner
+    @MockK(relaxed = true) private lateinit var pruner: PrunerService<TestDocument, TestArchive>
 
     @Test
     fun `saves only updated documents when no existing records`() {
@@ -36,13 +34,11 @@ internal class VersionedDocumentPersistenceTest {
 
         every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(any()) } just runs
-        every { pruner.run(any(), any()) } just runs
-
         saveVersionedDocuments(updated, emptyList(), repository, archiveService, pruner)
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 0) { archiveService.saveAll(any()) }
-        verify(exactly = 0) { pruner.run(any(), any()) }
+        verify { pruner wasNot Called }
     }
 
     @Test
@@ -75,7 +71,7 @@ internal class VersionedDocumentPersistenceTest {
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { archiveService.saveAll(existing) }
-        verify(exactly = 0) { pruner.run(any(), any()) }
+        verify { pruner wasNot Called }
     }
 
     @Test
@@ -103,8 +99,6 @@ internal class VersionedDocumentPersistenceTest {
 
         every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(existing) } just runs
-        every { pruner.run(any(), any()) } just runs
-
         saveVersionedDocuments(updated, existing, repository, archiveService, pruner)
 
         verify(exactly = 1) { repository.saveAll(updated) }

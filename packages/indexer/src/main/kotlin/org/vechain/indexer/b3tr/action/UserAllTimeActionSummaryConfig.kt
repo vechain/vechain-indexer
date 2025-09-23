@@ -5,9 +5,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.Pruner
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
@@ -30,8 +33,8 @@ open class UserAllTimeActionSummaryConfig {
         userAllTimeActionSummaryArchiveService:
             ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
-        org.vechain.indexer.pruner.PrunerService(
+    ): PrunerService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive> =
+        PrunerService(
             klass = UserAllTimeActionSummaryArchive::class,
             archiveService = userAllTimeActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
@@ -39,9 +42,10 @@ open class UserAllTimeActionSummaryConfig {
 
     @Bean
     open fun userAllTimeActionSummaryIndexer(
-        thorClient: org.vechain.indexer.thor.client.ThorClient,
+        thorClient: ThorClient,
         processor: UserAllTimeActionSummaryProcessor,
-        userAllTimeActionSummaryPruner: Pruner,
+        userAllTimeActionSummaryPruner:
+            PrunerService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,
@@ -50,9 +54,8 @@ open class UserAllTimeActionSummaryConfig {
         @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
         x2earnRewardsPoolContract: String,
         bEProperties: BusinessEventProperties,
-    ): org.vechain.indexer.Indexer =
-        org.vechain.indexer
-            .IndexerFactory()
+    ): Indexer =
+        IndexerFactory()
             .name("UserAllTimeActionSummaryIndexer")
             .thorClient(thorClient)
             .processor(processor)

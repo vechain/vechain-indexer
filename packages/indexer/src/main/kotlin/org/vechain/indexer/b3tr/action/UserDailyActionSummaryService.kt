@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
@@ -18,6 +17,7 @@ import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
@@ -29,7 +29,8 @@ open class UserDailyActionSummaryService(
     private val repository: UserDailyActionSummaryRepository,
     private val userDailyActionSummaryArchiveService:
         ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-    private val userDailyActionSummaryPruner: Pruner,
+    private val userDailyActionSummaryPruner:
+        PrunerService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
 ) {
 
     open fun processEvents(

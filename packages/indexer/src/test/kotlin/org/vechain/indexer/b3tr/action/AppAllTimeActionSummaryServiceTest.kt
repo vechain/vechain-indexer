@@ -14,13 +14,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -31,7 +31,8 @@ internal class AppAllTimeActionSummaryServiceTest {
     lateinit var archiveService:
         ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
 
-    @MockK lateinit var pruner: Pruner
+    @MockK
+    lateinit var pruner: PrunerService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
 
     private lateinit var service: TestableService
 
@@ -39,7 +40,7 @@ internal class AppAllTimeActionSummaryServiceTest {
     private class TestableService(
         repository: AppAllTimeActionSummaryRepository,
         archive: ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-        pruner: Pruner,
+        pruner: PrunerService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
     ) : AppAllTimeActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
