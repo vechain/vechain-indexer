@@ -47,9 +47,9 @@ class ValidatorUtilsTest {
         assertThat(v.id).isEqualTo("0xVAL1")
         assertThat(v.endorser).isEqualTo("0xEND1")
         assertThat(v.status).isEqualTo(Status.Companion.fromCode(1))
-        assertThat(v.vetStaked).isEqualTo(Decimal128(BigDecimal("1.50")))
-        assertThat(v.delegatorVetStaked).isEqualTo(Decimal128(BigDecimal("0.50")))
-        assertThat(v.validatorVetStaked).isEqualTo(Decimal128(BigDecimal("1.00")))
+        assertThat(v.vetStaked).isEqualTo(Decimal128(BigDecimal("1.500000")))
+        assertThat(v.delegatorVetStaked).isEqualTo(Decimal128(BigDecimal("0.500000")))
+        assertThat(v.validatorVetStaked).isEqualTo(Decimal128(BigDecimal("1.000000")))
         assertThat(v.version).isEqualTo(1)
 
         // Nothing should be deleted

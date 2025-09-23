@@ -40,13 +40,20 @@ object EventUtils {
             "WOV_Custodial_WOV_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
-            "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE_ONLY
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
-            "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
-            "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
+            "STARGATE_CLAIM_REWARDS_BASE_LEGACY" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
+            "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY" ->
+                HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
             "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
+            "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
+            "STARGATE_DELEGATE_LEGACY" -> HistoryEventName.STARGATE_DELEGATE_LEGACY
+            "STARGATE_DELEGATION_EXIT_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
+            "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_BOOST" -> HistoryEventName.STARGATE_BOOST
+            "STARGATE_MANAGER_ADDED" -> HistoryEventName.STARGATE_MANAGER_ADDED
+            "STARGATE_MANAGER_REMOVED" -> HistoryEventName.STARGATE_MANAGER_REMOVED
             else -> null // Other events will not be labeled
         }
 
