@@ -16,8 +16,10 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
+    override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
+
     @WithTiming("Pruner")
-    override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
+    fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
             logger.info("Skipping pruner for $targetObjectName, as not enough blocks to prune")
