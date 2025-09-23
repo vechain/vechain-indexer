@@ -44,6 +44,8 @@ enabled_nets:
       max_capacity:                 1
       spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -54,6 +56,10 @@ enabled_nets:
       enabled:                      true
       spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,vevote-historic-proposals,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
       slack_webhook_url:            ""
       start-block:
         nfts:                       '21300000'
@@ -181,6 +187,8 @@ enabled_nets:
       max_capacity:                 1
       spring_profile:               nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo:              937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      logging:
+        app-log-level: 'INFO'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -192,6 +200,10 @@ enabled_nets:
       spring_profile:               "indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr"
       ecr_common_repo:              "937628727224.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer"
       slack_webhook_url:            ""
+      logging:
+        app-log-level: 'INFO'
+        timing-log-level: 'INFO'
+        pruner-log-level: 'INFO'
       start-block:
         nfts:                       '21300000'
         nft-blacklist:              '21300000'

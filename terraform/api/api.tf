@@ -141,7 +141,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.app-log-level
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -231,7 +231,15 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.pruner-log-level
     },
     {
       name  = "MONGO_URI"

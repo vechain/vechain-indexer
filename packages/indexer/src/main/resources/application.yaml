@@ -23,6 +23,7 @@ logging:
       vechain:
         timing: ${TIMING_LOG_LEVEL:INFO}
         '*': ${APP_LOG_LEVEL:INFO}
+        pruner: ${PRUNER_LOG_LEVEL:INFO}
       springframework:
         data: INFO
 #      mongodb.driver.protocol.command: DEBUG
