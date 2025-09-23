@@ -5,11 +5,12 @@ import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 @Aspect
 @Component
-class TimingAspect {
+class TimingAspect(@param:Value("\${timing.warn-threshold-ms}") private val warnThresholdMs: Long) {
     private val logger = LoggerFactory.getLogger(TimingAspect::class.java)
 
     @Around("@annotation(withTiming)")
@@ -17,7 +18,14 @@ class TimingAspect {
         val methodName = withTiming.value.ifEmpty { joinPoint.signature.toShortString() }
         var result: Any?
         val duration = measureTime { result = joinPoint.proceed() }
-        logger.debug("⏱️ $methodName took $duration")
+        val durationMs = duration.inWholeMilliseconds
+        if (warnThresholdMs > 0 && durationMs >= warnThresholdMs) {
+            logger.warn(
+                "⏱️ $methodName took ${duration.inWholeMilliseconds} ms (threshold $warnThresholdMs ms)"
+            )
+        } else {
+            logger.debug("⏱️ $methodName took $duration")
+        }
         return result
     }
 }

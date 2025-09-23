@@ -12,6 +12,9 @@ spring:
     ansi:
       enabled: always
 
+timing:
+  warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}
+
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL:#{null}}
