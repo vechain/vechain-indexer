@@ -66,7 +66,6 @@ class ValidatorService(
                 responses[4].data,
                 getValidatorsAbiFunctions("getVthoPriceUsd").outputs,
             )
-
         val vthoPriceUsd = decodedVthoPriceUsd["vthoPriceUsd"] as BigInteger
 
         // 2. Fetch existing DB docs

@@ -17,7 +17,6 @@ open class HistoryProcessor(
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        matchedEvents.forEach { event -> println(event.eventType) }
         // If no events or transactions, do nothing
         if (matchedEvents.isEmpty() && block.transactions.isEmpty()) {
             return

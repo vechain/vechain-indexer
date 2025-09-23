@@ -127,6 +127,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             validator = event.params.getAsString("validator"),
             delegationId = event.params.getAsString("delegationId"),
             periodClaimed = event.params.getAsLong("periodClaimed"),
+            boostedBlocks = event.params.getAsString("boostedBlocks"),
         )
     }
 
