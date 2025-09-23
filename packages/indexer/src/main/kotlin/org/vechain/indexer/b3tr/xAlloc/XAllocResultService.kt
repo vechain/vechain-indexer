@@ -14,6 +14,7 @@ import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -90,24 +91,13 @@ open class XAllocResultService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            xAllocResultArchiveService.saveAll(existing)
-
-            // Prune old archives
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-
-                xAllocResultPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            xAllocResultArchiveService,
+            xAllocResultPruner,
+        )
     }
 
     protected fun resolveExisting(

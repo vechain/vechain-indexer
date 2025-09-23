@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -18,22 +19,7 @@ open class NftService(
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        if (updated.isNotEmpty()) {
-            nftRepository.saveAll(updated)
-        }
-
-        if (existing.isNotEmpty()) {
-            nftArchiveService.saveAll(existing)
-
-            // Prune old archives
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-
-                nftPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
     }
 
     open fun parseRecords(data: List<IndexedEvent>, existing: List<IndexedNft>): List<IndexedNft> {

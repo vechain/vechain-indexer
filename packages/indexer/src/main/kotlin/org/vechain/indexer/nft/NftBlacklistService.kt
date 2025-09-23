@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("nfts", "history")
@@ -18,22 +19,13 @@ open class NftBlacklistService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<NftBlacklist>, existing: List<NftBlacklist>) {
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        if (existing.isNotEmpty()) {
-            nftBlacklistArchiveService.saveAll(existing)
-
-            // Prune old archives
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.contractAddress }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-
-                nftBlacklistPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            nftBlacklistArchiveService,
+            nftBlacklistPruner,
+        )
     }
 
     open fun parseRecords(

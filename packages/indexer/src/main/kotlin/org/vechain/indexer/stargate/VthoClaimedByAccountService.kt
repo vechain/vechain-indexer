@@ -4,13 +4,13 @@ import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.maxByOrNull
-import kotlin.collections.plus
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -24,22 +24,13 @@ open class VthoClaimedByAccountService(
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
-        if (updated.isNotEmpty()) {
-            vthoClaimedByAccountRepository.saveAll(updated)
-        }
-
-        if (existing.isNotEmpty()) {
-            vthoClaimedByAccountArchiveService.saveAll(existing)
-
-            // Prune old archives
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.account }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-
-                vthoClaimByAccountPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            vthoClaimedByAccountRepository,
+            vthoClaimedByAccountArchiveService,
+            vthoClaimByAccountPruner,
+        )
     }
 
     open fun parseRecords(

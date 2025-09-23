@@ -19,6 +19,7 @@ import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -94,23 +95,13 @@ open class UserAllTimeActionSummaryService(
         updated: List<UserAllTimeActionSummary>,
         existing: List<UserAllTimeActionSummary>,
     ) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            userAllTimeActionSummaryArchiveService.saveAll(existing)
-
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-
-                userAllTimeActionSummaryPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            userAllTimeActionSummaryArchiveService,
+            userAllTimeActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

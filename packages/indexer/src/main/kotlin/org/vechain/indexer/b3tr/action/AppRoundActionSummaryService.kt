@@ -2,7 +2,6 @@ package org.vechain.indexer.b3tr.action
 
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.plus
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
@@ -20,6 +19,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 
 @Configuration
@@ -71,22 +71,13 @@ open class AppRoundActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<AppRoundActionSummary>, existing: List<AppRoundActionSummary>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            appRoundActionSummaryArchiveService.saveAll(existing)
-
-            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
-            if (idsToPrune.isNotEmpty()) {
-                val latestBlock =
-                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
-                appRoundActionSummaryPruner.run(latestBlock, idsToPrune)
-            }
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            appRoundActionSummaryArchiveService,
+            appRoundActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(
