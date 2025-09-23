@@ -64,11 +64,11 @@ enabled_nets:
         history:                    '751'
         vevote:                     '22331866'
         stargate:                   '22044000'
+        historic-proposals:       '4510483'
         b3tr:                       '18868500'
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19107910'
-        historic-proposals:       '4510483'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-logger-interval:
@@ -100,32 +100,32 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts:                       '4'
+        nfts:                       '5'
         transfers:                  '2'
         transactions:               '2'
         history:                    '2'
-        nft-blacklist:              '2'
+        nft-blacklist:              '3'
         vevote-comments:            '1'
-        vevote-results:             '2'
+        vevote-results:             '3'
         authority-node-endorser:    '5'
-        stargate-vtho-claimed-by-block: '5'
-        stargate-vtho-claimed-by-account: '6'
-        stargate-nft-holders-by-block: '1'
-        stargate-vet-staked-by-block: '1'
+        stargate-vtho-claimed-by-block: '6'
+        stargate-vtho-claimed-by-account: '7'
+        stargate-nft-holders-by-block: '2'
+        stargate-vet-staked-by-block: '2'
         historic-proposals:          '1'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
-        b3tr-app-all-time-action-summary: '1'
-        b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
-        b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
-        b3tr-user-transactions: '1'
-        b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '2'
-        b3tr-gm-nft-level-overview: '1'
+        b3tr-proposal-results: '2'
+        b3tr-user-all-time-action-summary: '2'
+        b3tr-app-all-time-action-summary: '2'
+        b3tr-app-round-action-summary: '2'
+        b3tr-user-daily-action-summary: '2'
+        b3tr-sustainability-overview-all: '2'
+        b3tr-user-round-action-summary: '2'
+        b3tr-sustainability-action: '2'
+        b3tr-user-transactions: '2'
+        b3tr-x-alloc-result: '2'
+        b3tr-gm-nft: '3'
+        b3tr-gm-nft-level-overview: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -161,25 +161,25 @@ enabled_nets:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
-      type:                         atlas
-      fqdn:                         mainnet.rsmhw.mongodb.net
-      proto:                        mongodb+srv
-      opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M40
-      disk_size_gb:                 1000
-      iops:                         2000
-      secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+      type: atlas
+      fqdn: mainnet.rsmhw.mongodb.net
+      proto: mongodb+srv
+      opts: retryWrites=true&w=majority
+      cluster_tier: M40
+      disk_size_gb: 1000
+      iops: 2000
+      secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M50
       auto_scaling_compute_min_instance_size: M40
   test:
-    image_version:                  latest
-    thor_url:                       https://testnet.vechain.org
+    image_version: latest
+    thor_url: https://testnet.vechain.org
     api:
-      cpu:                          512
-      memory:                       1024
-      max_capacity:                 2
-      spring_profile:               nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
-      ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
+      cpu: 512
+      memory: 1024
+      max_capacity: 2
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
+      ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
       log_metric_filters:
@@ -221,7 +221,7 @@ enabled_nets:
         stargate:                   '1000'
         authority-nodes:            '1000'
         b3tr:                       '1000'
-        historic-proposals:       '1000'
+        historic-proposals:         '1000'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
@@ -229,7 +229,7 @@ enabled_nets:
         stargate:                   '100'
         authority-nodes:            '100'
         b3tr:                       '100'
-        historic-proposals:       '100'
+        historic-proposals:         '100'
       channel-batch-size:           '2'
       pruner:
         interval: '3000'
@@ -241,31 +241,31 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts:                       '5'
+        nfts:                       '6'
         transfers:                  '4'
         transactions:               '4'
         history:                    '8'
-        nft-blacklist:              '5'
+        nft-blacklist:              '6'
         vevote-comments:            '1'
-        vevote-results:             '6'
+        vevote-results:             '7'
         authority-node-endorser:    '3'
-        stargate-vtho-claimed-by-block: '3'
-        stargate-vtho-claimed-by-account: '3'
-        stargate-nft-holders-by-block: '4'
-        stargate-vet-staked-by-block: '1'
+        stargate-vtho-claimed-by-block: '4'
+        stargate-vtho-claimed-by-account: '4'
+        stargate-nft-holders-by-block: '5'
+        stargate-vet-staked-by-block: '2'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '1'
-        b3tr-user-all-time-action-summary: '1'
-        b3tr-app-all-time-action-summary: '1'
-        b3tr-app-round-action-summary: '1'
-        b3tr-user-daily-action-summary: '1'
-        b3tr-sustainability-overview-all: '1'
-        b3tr-user-round-action-summary: '1'
-        b3tr-sustainability-action: '1'
-        b3tr-user-transactions: '1'
-        b3tr-x-alloc-result: '1'
-        b3tr-gm-nft: '2'
-        b3tr-gm-nft-level-overview: '1'
+        b3tr-proposal-results: '2'
+        b3tr-user-all-time-action-summary: '2'
+        b3tr-app-all-time-action-summary: '2'
+        b3tr-app-round-action-summary: '2'
+        b3tr-user-daily-action-summary: '2'
+        b3tr-sustainability-overview-all: '2'
+        b3tr-user-round-action-summary: '2'
+        b3tr-sustainability-action: '2'
+        b3tr-user-transactions: '2'
+        b3tr-x-alloc-result: '2'
+        b3tr-gm-nft: '3'
+        b3tr-gm-nft-level-overview: '2'
         historic-proposals: '1'
       business-event:
         substitutions:
@@ -300,13 +300,13 @@ enabled_nets:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
     mongodb:
-      type:                         atlas
-      fqdn:                         testnet.rsmhw.mongodb.net
-      proto:                        mongodb+srv
-      opts:                         retryWrites=true&w=majority
-      cluster_tier:                 M20
-      disk_size_gb:                 250
-      iops:                         1000
-      secret_arn:                   arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
+      type: atlas
+      fqdn: testnet.rsmhw.mongodb.net
+      proto: mongodb+srv
+      opts: retryWrites=true&w=majority
+      cluster_tier: M20
+      disk_size_gb: 250
+      iops: 1000
+      secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M40
       auto_scaling_compute_min_instance_size: M20
