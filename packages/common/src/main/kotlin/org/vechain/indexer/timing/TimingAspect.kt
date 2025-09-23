@@ -21,7 +21,7 @@ class TimingAspect(@param:Value("\${timing.warn-threshold-ms}") private val warn
         val durationMs = duration.inWholeMilliseconds
         if (warnThresholdMs > 0 && durationMs >= warnThresholdMs) {
             logger.warn(
-                "⏱️ $methodName took ${duration.inWholeMilliseconds} ms (threshold $warnThresholdMs ms)"
+                "⏱ Slow function call: $methodName took ${duration.inWholeMilliseconds} ms (threshold $warnThresholdMs ms)"
             )
         } else {
             logger.debug("⏱️ $methodName took $duration")
