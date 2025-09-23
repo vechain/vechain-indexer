@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -34,7 +34,7 @@ open class AppDailyActionSummaryConfig {
         appDailyActionSummaryArchiveService:
             ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive> =
         PrunerService(
             klass = AppDailyActionSummaryArchive::class,
             archiveService = appDailyActionSummaryArchiveService,
@@ -45,7 +45,8 @@ open class AppDailyActionSummaryConfig {
     open fun appDailyActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppDailyActionSummaryProcessor,
-        appDailyActionSummaryPruner: Pruner,
+        appDailyActionSummaryPruner:
+            TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

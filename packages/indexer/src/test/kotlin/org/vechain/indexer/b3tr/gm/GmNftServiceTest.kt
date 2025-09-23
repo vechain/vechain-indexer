@@ -14,6 +14,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class GmNftServiceTest {
@@ -21,12 +22,14 @@ internal class GmNftServiceTest {
 
     @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>
 
+    @MockK lateinit var pruner: TargetedPruner<GmNft, GmNftArchive>
+
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = GmNftService(repository, gmNftArchiveService)
+        service = GmNftService(repository, gmNftArchiveService, pruner)
     }
 
     @Test

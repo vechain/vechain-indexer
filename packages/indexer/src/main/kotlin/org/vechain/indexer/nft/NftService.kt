@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -13,16 +15,11 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class NftService(
     private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
+    private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        if (updated.isNotEmpty()) {
-            nftRepository.saveAll(updated)
-        }
-
-        if (existing.isNotEmpty()) {
-            nftArchiveService.saveAll(existing)
-        }
+    open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
+        saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
     }
 
     open fun parseRecords(data: List<IndexedEvent>, existing: List<IndexedNft>): List<IndexedNft> {

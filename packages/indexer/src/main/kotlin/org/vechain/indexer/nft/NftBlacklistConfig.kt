@@ -7,9 +7,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -31,7 +31,7 @@ open class NftBlacklistConfig {
     open fun nftBlacklistPruner(
         nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): TargetedPruner<NftBlacklist, NftBlacklistArchive> =
         PrunerService(
             NftBlacklistArchive::class,
             nftBlacklistArchiveService,
@@ -42,7 +42,7 @@ open class NftBlacklistConfig {
     open fun nftBlacklistIndexer(
         thorClient: ThorClient,
         processor: NftBlacklistProcessor,
-        nftBlacklistPruner: Pruner,
+        nftBlacklistPruner: TargetedPruner<NftBlacklist, NftBlacklistArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nft-blacklist}") startBlock: Long,
         @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,

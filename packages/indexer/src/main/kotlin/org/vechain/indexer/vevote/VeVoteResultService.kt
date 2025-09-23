@@ -10,6 +10,8 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 import org.vechain.indexer.vevote.VeVoteEventUtils.getWeight
@@ -22,6 +24,8 @@ open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
     private val veVoteResultArchiveService:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val veVoteResultPruner:
+        TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>
@@ -46,16 +50,14 @@ open class VeVoteResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
-    open fun save(updated: List<VeVoteProposalResult>, archives: List<VeVoteProposalResult>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (archives.isNotEmpty()) {
-            veVoteResultArchiveService.saveAll(archives)
-        }
+    open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            veVoteResultArchiveService,
+            veVoteResultPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

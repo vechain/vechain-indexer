@@ -17,6 +17,8 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
@@ -24,6 +26,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
     private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+    private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
 ) {
 
     /**
@@ -67,15 +70,13 @@ open class ProposalResultService(
      */
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<ProposalResult>, existing: List<ProposalResult>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            proposalResultArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            proposalResultArchiveService,
+            proposalResultPruner,
+        )
     }
 
     /**

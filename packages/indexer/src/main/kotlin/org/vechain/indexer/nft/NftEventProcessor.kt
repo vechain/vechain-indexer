@@ -26,7 +26,7 @@ open class NftProcessor(
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            nftService.update(updated, existing)
+            nftService.save(updated, existing)
         }
     }
 

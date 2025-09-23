@@ -15,6 +15,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -27,13 +28,16 @@ class VeVoteResultServiceTest {
     lateinit var veVoteProposalResultArchive:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
 
+    @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>
+
     private lateinit var service: TestableService
 
     private class TestableService(
         repository: VeVoteProposalResultRepository,
         veVoteProposalResultArchive:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    ) : VeVoteResultService(repository, veVoteProposalResultArchive) {
+        pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
 
         fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
@@ -45,7 +49,7 @@ class VeVoteResultServiceTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, veVoteProposalResultArchive)
+        service = TestableService(repository, veVoteProposalResultArchive, pruner)
     }
 
     @Test

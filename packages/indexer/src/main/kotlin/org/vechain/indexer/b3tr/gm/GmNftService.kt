@@ -9,6 +9,8 @@ import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-gm-nft")
@@ -16,6 +18,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class GmNftService(
     private val repository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+    private val gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
 ) {
 
     /**
@@ -53,15 +56,7 @@ open class GmNftService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            gmNftArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(updated, existing, repository, gmNftArchiveService, gmNftPruner)
     }
 
     private fun resolveExistingNft(tokenId: String, cache: Map<String, GmNft>): GmNft? =
