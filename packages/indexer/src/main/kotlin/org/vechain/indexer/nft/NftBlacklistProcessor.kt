@@ -26,7 +26,7 @@ open class NftBlacklistProcessor(
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            nftBlacklistService.update(updated, existing)
+            nftBlacklistService.save(updated, existing)
         }
     }
 }

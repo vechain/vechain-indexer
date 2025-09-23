@@ -12,6 +12,9 @@ spring:
     ansi:
       enabled: always
 
+timing:
+  warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}
+
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL:#{null}}
@@ -20,7 +23,11 @@ logging:
   level:
     ROOT: INFO
     org:
-      vechain: ${APP_LOG_LEVEL:INFO}
+      vechain:
+        indexer:
+          timing: ${TIMING_LOG_LEVEL:INFO}
+          pruner: ${PRUNER_LOG_LEVEL:INFO}
+        '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
 #      mongodb.driver.protocol.command: DEBUG

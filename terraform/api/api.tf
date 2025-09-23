@@ -141,7 +141,11 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.logging.app-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.api.timing.warn-threshold-ms
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -231,7 +235,19 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.logging.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.logging.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.logging.pruner-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.indexer.timing.warn-threshold-ms
     },
     {
       name  = "MONGO_URI"

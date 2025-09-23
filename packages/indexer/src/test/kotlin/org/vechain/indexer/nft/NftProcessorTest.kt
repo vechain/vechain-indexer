@@ -38,11 +38,11 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns emptyList()
         every { nftService.parseRecords(any(), emptyList()) } returns emptyList()
-        every { nftService.update(any(), any()) } just Runs
+        every { nftService.save(any(), any()) } just Runs
 
         processor.process(events)
 
-        verify(exactly = 0) { nftService.update(any(), any()) }
+        verify(exactly = 0) { nftService.save(any(), any()) }
     }
 
     @Test
@@ -81,11 +81,11 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
         processor.process(events)
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 
     @Test
@@ -111,11 +111,11 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
         processor.process(events)
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 
     @Test
@@ -141,10 +141,10 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
         processor.process(events)
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 }

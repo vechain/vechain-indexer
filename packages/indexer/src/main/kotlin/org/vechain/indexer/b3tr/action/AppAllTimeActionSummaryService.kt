@@ -18,6 +18,8 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -27,6 +29,8 @@ open class AppAllTimeActionSummaryService(
     private val repository: AppAllTimeActionSummaryRepository,
     private val appAllTimeActionSummaryArchiveService:
         ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
+    private val appAllTimeActionSummaryPruner:
+        TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
 ) {
 
     open fun processEvents(
@@ -61,15 +65,13 @@ open class AppAllTimeActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<AppAllTimeActionSummary>, existing: List<AppAllTimeActionSummary>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            appAllTimeActionSummaryArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            appAllTimeActionSummaryArchiveService,
+            appAllTimeActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

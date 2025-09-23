@@ -38,7 +38,7 @@ internal class NftBlacklistProcessorTest {
         // Verify no records updated
         verify(exactly = 0) { nftBlacklistService.getExisting(any()) }
         verify(exactly = 0) { nftBlacklistService.parseRecords(any(), emptyList()) }
-        verify(exactly = 0) { nftBlacklistService.update(any(), any()) }
+        verify(exactly = 0) { nftBlacklistService.save(any(), any()) }
     }
 
     @Test
@@ -60,12 +60,12 @@ internal class NftBlacklistProcessorTest {
 
         every { nftBlacklistService.getExisting(any()) } returns existing
         every { nftBlacklistService.parseRecords(any(), existing) } returns parsedRecords
-        every { nftBlacklistService.update(parsedRecords, existing) } just Runs
+        every { nftBlacklistService.save(parsedRecords, existing) } just Runs
 
         processor.process(events)
 
         verify(exactly = 1) { nftBlacklistService.getExisting(any()) }
         verify(exactly = 1) { nftBlacklistService.parseRecords(any(), existing) }
-        verify(exactly = 1) { nftBlacklistService.update(parsedRecords, existing) }
+        verify(exactly = 1) { nftBlacklistService.save(parsedRecords, existing) }
     }
 }

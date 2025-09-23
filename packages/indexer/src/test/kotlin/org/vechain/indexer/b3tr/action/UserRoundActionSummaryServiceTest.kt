@@ -21,6 +21,7 @@ import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -31,13 +32,17 @@ internal class UserRoundActionSummaryServiceTest {
     lateinit var archiveService:
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>
 
+    @MockK
+    lateinit var pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserRoundActionSummaryRepository,
         archive: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    ) : UserRoundActionSummaryService(repository, archive) {
+        pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    ) : UserRoundActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserRoundActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -54,7 +59,7 @@ internal class UserRoundActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService)
+        service = TestableService(repository, archiveService, pruner)
     }
 
     @Test

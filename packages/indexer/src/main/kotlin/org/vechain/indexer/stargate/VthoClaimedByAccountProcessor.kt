@@ -33,7 +33,7 @@ open class VthoClaimedByAccountProcessor(
 
         // Finally save the updated records and archive the existing ones
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.update(updated, existing)
+            service.save(updated, existing)
         }
     }
 }
