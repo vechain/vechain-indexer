@@ -40,6 +40,8 @@ object BlockFixtures {
         buildBlockFixture("stargate_exit_delegation_request")
     val BLOCK_STARGATE_CLAIM_REWARDS = buildBlockFixture("stargate_claim_rewards")
     val BLOCK_STARGATE_BOOST = buildBlockFixture("stargate_boost")
+    val BLOCK_STARGATE_MANAGER_ADDED = buildBlockFixture("stargate_manager_added")
+    val BLOCK_STARGATE_MANAGER_REMOVED = buildBlockFixture("stargate_manager_removed")
 
     private fun buildBlockFixture(name: String): Block =
         objectMapper.readValue(
