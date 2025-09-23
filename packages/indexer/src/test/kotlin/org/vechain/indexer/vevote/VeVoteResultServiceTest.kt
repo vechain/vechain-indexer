@@ -15,7 +15,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ParamUtils.getAsBigDecimal
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -28,7 +28,7 @@ class VeVoteResultServiceTest {
     lateinit var veVoteProposalResultArchive:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
 
-    @MockK lateinit var pruner: PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>
 
     private lateinit var service: TestableService
 
@@ -36,7 +36,7 @@ class VeVoteResultServiceTest {
         repository: VeVoteProposalResultRepository,
         veVoteProposalResultArchive:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-        pruner: PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+        pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
     ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
 
         fun callCreateOrUpdateExisting(

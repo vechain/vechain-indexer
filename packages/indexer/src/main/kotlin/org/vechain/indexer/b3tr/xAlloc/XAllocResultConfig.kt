@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -31,7 +32,7 @@ open class XAllocResultConfig {
     open fun xAllocResultPruner(
         xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): PrunerService<XAllocResult, XAllocResultArchive> =
+    ): TargetedPruner<XAllocResult, XAllocResultArchive> =
         PrunerService(
             klass = XAllocResultArchive::class,
             archiveService = xAllocResultArchiveService,
@@ -42,7 +43,7 @@ open class XAllocResultConfig {
     open fun xAllocResultIndexer(
         thorClient: ThorClient,
         processor: XAllocResultProcessor,
-        xAllocResultPruner: PrunerService<XAllocResult, XAllocResultArchive>,
+        xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-x-alloc-result}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

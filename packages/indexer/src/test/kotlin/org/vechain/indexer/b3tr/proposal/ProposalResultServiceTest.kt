@@ -16,7 +16,7 @@ import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class ProposalResultServiceTest {
@@ -25,7 +25,7 @@ internal class ProposalResultServiceTest {
     @MockK
     lateinit var proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>
 
-    @MockK lateinit var pruner: PrunerService<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
 
     private lateinit var service: ProposalResultService
 

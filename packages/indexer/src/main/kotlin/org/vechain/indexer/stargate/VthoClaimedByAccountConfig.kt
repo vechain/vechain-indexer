@@ -11,6 +11,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -33,7 +34,7 @@ open class VthoClaimedByAccountConfig {
         vthoClaimByAccountArchiveService:
             ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): PrunerService<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
+    ): TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
         PrunerService(
             VthoClaimedByAccountArchive::class,
             vthoClaimByAccountArchiveService,
@@ -44,7 +45,7 @@ open class VthoClaimedByAccountConfig {
     open fun vthoClaimedByAccountIndexer(
         thorClient: ThorClient,
         processor: VthoClaimedByAccountProcessor,
-        vthoClaimByAccountPruner: PrunerService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+        vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.stargate}") syncLogInterval: Long,

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -21,7 +21,7 @@ open class VthoClaimedByAccountService(
     private val vthoClaimedByAccountArchiveService:
         ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     private val vthoClaimByAccountPruner:
-        PrunerService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+        TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {

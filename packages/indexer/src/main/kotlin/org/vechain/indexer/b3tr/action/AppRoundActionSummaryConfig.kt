@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -33,7 +34,7 @@ open class AppRoundActionSummaryConfig {
         appRoundActionSummaryArchiveService:
             ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): PrunerService<AppRoundActionSummary, AppRoundActionSummaryArchive> =
+    ): TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive> =
         PrunerService(
             klass = AppRoundActionSummaryArchive::class,
             archiveService = appRoundActionSummaryArchiveService,
@@ -45,7 +46,7 @@ open class AppRoundActionSummaryConfig {
         thorClient: ThorClient,
         processor: AppRoundActionSummaryProcessor,
         appRoundActionSummaryPruner:
-            PrunerService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+            TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,

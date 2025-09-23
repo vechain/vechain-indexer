@@ -17,7 +17,7 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -26,7 +26,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
     private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-    private val proposalResultPruner: PrunerService<ProposalResult, ProposalResultArchive>,
+    private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
 ) {
 
     /**

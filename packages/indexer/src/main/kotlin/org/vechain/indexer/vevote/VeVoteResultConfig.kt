@@ -9,6 +9,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -33,7 +34,7 @@ open class VeVoteResultConfig {
         veVoteResultArchiveService:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive> =
+    ): TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive> =
         PrunerService(
             klass = VeVoteProposalResultArchive::class,
             archiveService = veVoteResultArchiveService,
@@ -44,7 +45,7 @@ open class VeVoteResultConfig {
     open fun vevoteResultIndexer(
         thorClient: ThorClient,
         processor: VeVoteResultProcessor,
-        veVoteResultPruner: PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+        veVoteResultPruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,

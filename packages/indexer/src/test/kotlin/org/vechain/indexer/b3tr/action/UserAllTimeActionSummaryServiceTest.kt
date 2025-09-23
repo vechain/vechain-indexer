@@ -21,7 +21,7 @@ import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -33,7 +33,7 @@ internal class UserAllTimeActionSummaryServiceTest {
         ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
 
     @MockK
-    lateinit var pruner: PrunerService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
+    lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
 
     private lateinit var service: TestableService
 
@@ -41,7 +41,7 @@ internal class UserAllTimeActionSummaryServiceTest {
     private class TestableService(
         repository: UserAllTimeActionSummaryRepository,
         archive: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-        pruner: PrunerService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+        pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     ) : UserAllTimeActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserAllTimeActionSummary>) =
             resolveExisting(recordId, cache)

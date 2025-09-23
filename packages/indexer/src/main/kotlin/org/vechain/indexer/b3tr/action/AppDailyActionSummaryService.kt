@@ -18,7 +18,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
@@ -31,7 +31,7 @@ open class AppDailyActionSummaryService(
     private val appDailyActionSummaryArchiveService:
         ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
     private val appDailyActionSummaryPruner:
-        PrunerService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+        TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
 ) {
 
     open fun processEvents(

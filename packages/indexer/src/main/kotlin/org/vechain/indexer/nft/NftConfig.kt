@@ -9,6 +9,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -26,14 +27,14 @@ open class NftConfig() {
     open fun nftPruner(
         nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): PrunerService<IndexedNft, NftArchive> =
+    ): TargetedPruner<IndexedNft, NftArchive> =
         PrunerService(NftArchive::class, nftArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun nftIndexer(
         thorClient: ThorClient,
         processor: NftProcessor,
-        nftPruner: PrunerService<IndexedNft, NftArchive>,
+        nftPruner: TargetedPruner<IndexedNft, NftArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.nfts}") syncLogInterval: Long,

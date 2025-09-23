@@ -2,7 +2,6 @@ package org.vechain.indexer.pruner
 
 import kotlin.reflect.KClass
 import org.slf4j.LoggerFactory
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
@@ -12,14 +11,14 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
     private val archiveService: ArchiveService<T, S>,
     private val prunerRemovalChunkSize: Int,
-) : Pruner {
+) : TargetedPruner<T, S> {
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
     override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
 
     @WithTiming("Pruner")
-    fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
+    override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
             logger.info("Skipping pruner for $targetObjectName, as not enough blocks to prune")

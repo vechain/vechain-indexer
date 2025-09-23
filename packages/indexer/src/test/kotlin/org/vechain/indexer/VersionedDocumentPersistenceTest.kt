@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.CrudRepository
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class VersionedDocumentPersistenceTest {
@@ -17,7 +17,7 @@ internal class VersionedDocumentPersistenceTest {
 
     @MockK private lateinit var archiveService: ArchiveService<TestDocument, TestArchive>
 
-    @MockK(relaxed = true) private lateinit var pruner: PrunerService<TestDocument, TestArchive>
+    @MockK(relaxed = true) private lateinit var pruner: TargetedPruner<TestDocument, TestArchive>
 
     @Test
     fun `saves only updated documents when no existing records`() {

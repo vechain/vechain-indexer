@@ -15,7 +15,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class XAllocResultServiceTest {
@@ -23,7 +23,7 @@ internal class XAllocResultServiceTest {
 
     @MockK lateinit var archiveService: ArchiveService<XAllocResult, XAllocResultArchive>
 
-    @MockK lateinit var pruner: PrunerService<XAllocResult, XAllocResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
 
     private lateinit var service: XAllocResultService
 

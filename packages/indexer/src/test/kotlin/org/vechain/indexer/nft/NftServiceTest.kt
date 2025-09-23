@@ -12,7 +12,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRA
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -22,7 +22,7 @@ import strikt.assertions.isNotNull
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
     @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
-    @MockK lateinit var pruner: PrunerService<IndexedNft, NftArchive>
+    @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
 
     private lateinit var nftService: NftService
 

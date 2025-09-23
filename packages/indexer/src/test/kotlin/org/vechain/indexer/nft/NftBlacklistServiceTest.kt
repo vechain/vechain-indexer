@@ -12,7 +12,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_WHITELIST
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
 import strikt.assertions.isEqualTo
@@ -24,7 +24,7 @@ internal class NftBlacklistServiceTest {
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
 
-    @MockK lateinit var pruner: PrunerService<NftBlacklist, NftBlacklistArchive>
+    @MockK lateinit var pruner: TargetedPruner<NftBlacklist, NftBlacklistArchive>
 
     private lateinit var nftBlacklistService: NftBlacklistService
 

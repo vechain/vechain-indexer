@@ -10,7 +10,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -24,7 +24,8 @@ open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
     private val veVoteResultArchiveService:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    private val veVoteResultPruner: PrunerService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val veVoteResultPruner:
+        TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>

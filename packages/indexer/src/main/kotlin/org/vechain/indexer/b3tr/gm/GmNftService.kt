@@ -9,7 +9,7 @@ import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
@@ -18,7 +18,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 open class GmNftService(
     private val repository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
-    private val gmNftPruner: PrunerService<GmNft, GmNftArchive>,
+    private val gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
 ) {
 
     /**

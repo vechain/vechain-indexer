@@ -20,7 +20,7 @@ import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepositor
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -30,7 +30,7 @@ internal class AppDailyActionSummaryServiceTest {
     @MockK
     lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
-    @MockK lateinit var pruner: PrunerService<AppDailyActionSummary, AppDailyActionSummaryArchive>
+    @MockK lateinit var pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
     private lateinit var service: TestableService
 
@@ -38,7 +38,7 @@ internal class AppDailyActionSummaryServiceTest {
     private class TestableService(
         repository: AppDailyActionSummaryRepository,
         archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-        pruner: PrunerService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+        pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
     ) : AppDailyActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
             resolveExisting(recordId, cache)
