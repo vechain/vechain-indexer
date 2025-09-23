@@ -34,7 +34,7 @@ open class VeVoteResultConfig {
         veVoteResultArchiveService:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): Pruner =
         PrunerService(
             klass = VeVoteProposalResultArchive::class,
             archiveService = veVoteResultArchiveService,

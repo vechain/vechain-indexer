@@ -34,7 +34,7 @@ open class AppDailyActionSummaryConfig {
         appDailyActionSummaryArchiveService:
             ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): Pruner =
         PrunerService(
             klass = AppDailyActionSummaryArchive::class,
             archiveService = appDailyActionSummaryArchiveService,

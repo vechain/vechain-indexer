@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
@@ -29,13 +30,16 @@ internal class AppDailyActionSummaryServiceTest {
     @MockK
     lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
+    @MockK lateinit var pruner: Pruner
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppDailyActionSummaryRepository,
         archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-    ) : AppDailyActionSummaryService(repository, archive) {
+        pruner: Pruner,
+    ) : AppDailyActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -52,7 +56,7 @@ internal class AppDailyActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService)
+        service = TestableService(repository, archiveService, pruner)
     }
 
     @Test

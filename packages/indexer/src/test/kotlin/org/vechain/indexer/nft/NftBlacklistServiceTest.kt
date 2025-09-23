@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.fail
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
@@ -23,6 +24,8 @@ internal class NftBlacklistServiceTest {
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
 
+    @MockK lateinit var pruner: Pruner
+
     private lateinit var nftBlacklistService: NftBlacklistService
 
     @BeforeEach
@@ -32,6 +35,7 @@ internal class NftBlacklistServiceTest {
             NftBlacklistService(
                 repository = repository,
                 nftBlacklistArchiveService = nftBlacklistArchiveService,
+                nftBlacklistPruner = pruner,
             )
     }
 
@@ -45,7 +49,7 @@ internal class NftBlacklistServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftBlacklistArchiveService.saveAll(existing) } just Runs
 
-        nftBlacklistService.update(updated, existing)
+        nftBlacklistService.save(updated, existing)
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { nftBlacklistArchiveService.saveAll(existing) }
@@ -59,7 +63,7 @@ internal class NftBlacklistServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftBlacklistArchiveService.saveAll(existing) } just Runs
 
-        nftBlacklistService.update(updated, existing)
+        nftBlacklistService.save(updated, existing)
 
         verify(exactly = 0) { repository.saveAll(updated) }
         verify(exactly = 1) { nftBlacklistArchiveService.saveAll(existing) }
@@ -73,7 +77,7 @@ internal class NftBlacklistServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftBlacklistArchiveService.saveAll(existing) } just Runs
 
-        nftBlacklistService.update(updated, existing)
+        nftBlacklistService.save(updated, existing)
 
         verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 0) { nftBlacklistArchiveService.saveAll(existing) }
@@ -87,7 +91,7 @@ internal class NftBlacklistServiceTest {
         every { repository.saveAll(updated) } returns updated
         every { nftBlacklistArchiveService.saveAll(existing) } just Runs
 
-        nftBlacklistService.update(updated, existing)
+        nftBlacklistService.save(updated, existing)
 
         verify(exactly = 0) { repository.saveAll(updated) }
         verify(exactly = 0) { nftBlacklistArchiveService.saveAll(existing) }

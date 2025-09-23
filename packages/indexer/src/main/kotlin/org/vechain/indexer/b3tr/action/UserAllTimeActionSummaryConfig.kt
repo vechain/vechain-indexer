@@ -30,7 +30,7 @@ open class UserAllTimeActionSummaryConfig {
         userAllTimeActionSummaryArchiveService:
             ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): Pruner =
         org.vechain.indexer.pruner.PrunerService(
             klass = UserAllTimeActionSummaryArchive::class,
             archiveService = userAllTimeActionSummaryArchiveService,

@@ -11,6 +11,7 @@ import java.util.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -27,13 +28,16 @@ class VeVoteResultServiceTest {
     lateinit var veVoteProposalResultArchive:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
 
+    @MockK lateinit var pruner: Pruner
+
     private lateinit var service: TestableService
 
     private class TestableService(
         repository: VeVoteProposalResultRepository,
         veVoteProposalResultArchive:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    ) : VeVoteResultService(repository, veVoteProposalResultArchive) {
+        pruner: Pruner,
+    ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
 
         fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
@@ -45,7 +49,7 @@ class VeVoteResultServiceTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, veVoteProposalResultArchive)
+        service = TestableService(repository, veVoteProposalResultArchive, pruner)
     }
 
     @Test

@@ -17,15 +17,16 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     private val targetObjectName = klass.simpleName ?: "Unknown"
 
     @WithTiming("Pruner")
-    override fun run(currentBlockNumber: Long) {
+    override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
             logger.info("Skipping pruner for $targetObjectName, as not enough blocks to prune")
             return
         }
 
-        logger.info("🧹 Pruning started for $targetObjectName")
-        archiveService.findRecordsToPrune(prunerEndBlock, prunerRemovalChunkSize).use { records ->
+        logger.debug("🧹 Pruning started for $targetObjectName")
+        archiveService.findRecordsToPrune(prunerEndBlock, prunerRemovalChunkSize, idsToPrune).use {
+            records ->
             var processed = 0
             var hasRecords = false
             val chunk = ArrayList<String>(prunerRemovalChunkSize)
@@ -46,7 +47,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
             }
 
             if (!hasRecords) {
-                logger.info("No records to prune for $targetObjectName")
+                logger.debug("No records to prune for $targetObjectName")
                 return
             }
 

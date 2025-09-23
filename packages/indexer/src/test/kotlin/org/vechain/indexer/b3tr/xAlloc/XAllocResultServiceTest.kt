@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -22,12 +23,14 @@ internal class XAllocResultServiceTest {
 
     @MockK lateinit var archiveService: ArchiveService<XAllocResult, XAllocResultArchive>
 
+    @MockK lateinit var pruner: Pruner
+
     private lateinit var service: XAllocResultService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = XAllocResultService(repository, archiveService)
+        service = XAllocResultService(repository, archiveService, pruner)
     }
 
     @Test

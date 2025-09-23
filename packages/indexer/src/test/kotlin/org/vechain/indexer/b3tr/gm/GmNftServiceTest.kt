@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -21,12 +22,14 @@ internal class GmNftServiceTest {
 
     @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>
 
+    @MockK lateinit var pruner: Pruner
+
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = GmNftService(repository, gmNftArchiveService)
+        service = GmNftService(repository, gmNftArchiveService, pruner)
     }
 
     @Test

@@ -34,7 +34,7 @@ open class UserRoundActionSummaryConfig {
         userRoundActionSummaryArchiveService:
             ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): Pruner =
         PrunerService(
             klass = UserRoundActionSummaryArchive::class,
             archiveService = userRoundActionSummaryArchiveService,

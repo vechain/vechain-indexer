@@ -5,6 +5,7 @@ import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
@@ -22,6 +23,7 @@ open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
     private val veVoteResultArchiveService:
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val veVoteResultPruner: Pruner,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>
@@ -46,15 +48,24 @@ open class VeVoteResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
-    open fun save(updated: List<VeVoteProposalResult>, archives: List<VeVoteProposalResult>) {
+    open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
         // Apply updates
         if (updated.isNotEmpty()) {
             repository.saveAll(updated)
         }
 
         // Apply archives
-        if (archives.isNotEmpty()) {
-            veVoteResultArchiveService.saveAll(archives)
+        if (existing.isNotEmpty()) {
+            veVoteResultArchiveService.saveAll(existing)
+
+            // Prune old archives
+            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
+            if (idsToPrune.isNotEmpty()) {
+                val latestBlock =
+                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
+
+                veVoteResultPruner.run(latestBlock, idsToPrune)
+            }
         }
     }
 

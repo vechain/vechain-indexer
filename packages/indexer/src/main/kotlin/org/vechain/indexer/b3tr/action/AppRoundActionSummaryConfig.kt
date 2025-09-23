@@ -34,7 +34,7 @@ open class AppRoundActionSummaryConfig {
         appRoundActionSummaryArchiveService:
             ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): Pruner =
         PrunerService(
             klass = AppRoundActionSummaryArchive::class,
             archiveService = appRoundActionSummaryArchiveService,

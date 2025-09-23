@@ -20,7 +20,9 @@ logging:
   level:
     ROOT: INFO
     org:
-      vechain: ${APP_LOG_LEVEL:INFO}
+      vechain:
+        timing: ${TIMING_LOG_LEVEL:INFO}
+        '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
 #      mongodb.driver.protocol.command: DEBUG

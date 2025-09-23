@@ -17,7 +17,7 @@ class TimingAspect {
         val methodName = withTiming.value.ifEmpty { joinPoint.signature.toShortString() }
         var result: Any?
         val duration = measureTime { result = joinPoint.proceed() }
-        logger.info("⏱️ $methodName took $duration")
+        logger.debug("⏱️ $methodName took $duration")
         return result
     }
 }

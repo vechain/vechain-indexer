@@ -124,11 +124,21 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     }
 
     @WithTiming("Pruner - findRecordsToPrune")
-    open fun findRecordsToPrune(endBlock: Long, batchSize: Int): CloseableIterator<String> {
+    open fun findRecordsToPrune(
+        endBlock: Long,
+        batchSize: Int,
+        idsToPrune: List<String>? = null,
+    ): CloseableIterator<String> {
         require(batchSize > 0) { "Batch size must be greater than zero" }
-        logger.info("Finding records to prune for {}", clazz.simpleName)
+        logger.debug("Finding records to prune for {}", clazz.simpleName)
 
-        // 1) Rank by recordId/version (desc)
+        // 1) Create the match stage. If ids are provided, filter by them as well.
+        val matchCriteria = Criteria.where("data.blockNumber").lt(endBlock)
+        if (idsToPrune != null && idsToPrune.isNotEmpty()) {
+            matchCriteria.and("_id").`in`(idsToPrune)
+        }
+
+        // 2) Rank by recordId/version (desc)
         val setWindowFields =
             RawStage(
                 Document(
@@ -140,10 +150,10 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 )
             )
 
-        // 2) Build pipeline
+        // 3) Build pipeline
         val pipeline =
             Aggregation.newAggregation(
-                    Aggregation.match(Criteria.where("data.blockNumber").lt(endBlock)),
+                    Aggregation.match(matchCriteria),
                     Aggregation.sort(
                         Sort.by(Sort.Order.asc("data._id"), Sort.Order.desc("data.version"))
                     ),

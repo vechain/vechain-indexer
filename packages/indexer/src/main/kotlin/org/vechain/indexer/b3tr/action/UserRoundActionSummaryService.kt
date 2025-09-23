@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -27,6 +28,7 @@ open class UserRoundActionSummaryService(
     private val repository: UserRoundActionSummaryRepository,
     private val userRoundActionSummaryArchiveService:
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    private val userRoundActionSummaryPruner: Pruner,
 ) {
 
     open fun processEvents(
@@ -101,6 +103,15 @@ open class UserRoundActionSummaryService(
         // Apply archives
         if (existing.isNotEmpty()) {
             userRoundActionSummaryArchiveService.saveAll(existing)
+
+            // Prune old archives
+            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
+            if (idsToPrune.isNotEmpty()) {
+                val latestBlock =
+                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
+
+                userRoundActionSummaryPruner.run(latestBlock, idsToPrune)
+            }
         }
     }
 

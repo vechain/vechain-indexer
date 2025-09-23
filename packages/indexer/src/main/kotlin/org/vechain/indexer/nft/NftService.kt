@@ -3,6 +3,7 @@ package org.vechain.indexer.nft
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.IdUtils
@@ -13,15 +14,25 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class NftService(
     private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
+    private val nftPruner: Pruner,
 ) {
     @Transactional(rollbackFor = [Exception::class])
-    open fun update(updated: List<IndexedNft>, existing: List<IndexedNft>) {
+    open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
         if (updated.isNotEmpty()) {
             nftRepository.saveAll(updated)
         }
 
         if (existing.isNotEmpty()) {
             nftArchiveService.saveAll(existing)
+
+            // Prune old archives
+            val idsToPrune = existing.filter { it.version > 1 }.map { it.id }
+            if (idsToPrune.isNotEmpty()) {
+                val latestBlock =
+                    (updated + existing).maxByOrNull { it.blockNumber }?.blockNumber ?: 0L
+
+                nftPruner.run(latestBlock, idsToPrune)
+            }
         }
     }
 
