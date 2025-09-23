@@ -55,6 +55,8 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1304112'
@@ -196,6 +198,8 @@ enabled_nets:
         app-log-level: 'INFO'
         timing-log-level: 'INFO'
         pruner-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1042259'
