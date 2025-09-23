@@ -222,7 +222,128 @@ class HistoryIndexerTest {
     }
 
     @Test
-    fun `Process block - With Stargate TXs via Indexer`() = runBlocking {
+    fun `Process block - With Stargate TXs via Indexer (Hayabusa)`() = runBlocking {
+        val stargateBlocks =
+            listOf(
+                BlockFixtures.BLOCK_STARGATE_STAKER_DELEGATION,
+                BlockFixtures.BLOCK_STARGATE_CLAIM_REWARDS,
+                BlockFixtures.BLOCK_STARGATE_MANAGER_ADDED,
+                BlockFixtures.BLOCK_STARGATE_MANAGER_REMOVED,
+                BlockFixtures.BLOCK_STARGATE_DELEGATION_EXIT_REQUEST,
+            )
+
+        val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
+        every { repository.getLatestRecord() } returns null
+        every {
+            mongoTemplate.insert(any<List<IndexedHistoryEvent>>(), IndexedHistoryEvent::class.java)
+        } answers
+            {
+                val events = firstArg<List<IndexedHistoryEvent>>()
+                insertedEvents.add(events)
+                mutableListOf()
+            }
+
+        val blockMap = stargateBlocks.mapIndexed { i, block -> (i + 1L) to block }.toMap()
+
+        val indexer =
+            TestableBlockIndexer(
+                name = "TestHistoryIndexer",
+                thorClient = MockThorClient(blockMap),
+                processor = processor,
+                eventProcessor = buildEventProcessor(),
+                startBlock = 1L,
+            )
+
+        indexer.start(5)
+
+        val allEvents = insertedEvents.flatten()
+
+        fun assertTx(
+            idx: Int,
+            eventName: HistoryEventName,
+            tokenId: String,
+            value: String? = null,
+            levelId: String? = null,
+            owner: String? = null,
+            migrated: Boolean? = null,
+            autorenew: Boolean? = null,
+            validator: String? = null,
+            to: String? = null,
+            from: String? = null,
+        ) {
+            val tx = allEvents[idx]
+            expect {
+                that(tx.eventName).isEqualTo(eventName)
+                that(tx.tokenId).isEqualTo(tokenId)
+                value?.let { that(tx.value).isEqualTo(it) }
+                levelId?.let { that(tx.levelId).isEqualTo(it) }
+                owner?.let { that(tx.owner).isEqualTo(it) }
+                migrated?.let { that(tx.migrated).isEqualTo(it) }
+                autorenew?.let { that(tx.autorenew).isEqualTo(it) }
+                validator?.let { that(tx.validator).isEqualTo(it) }
+                to?.let { that(tx.to).isEqualTo(it) }
+                from?.let { that(tx.from).isEqualTo(it) }
+            }
+        }
+
+        assertTx(
+            idx = 0,
+            eventName = HistoryEventName.STARGATE_BOOST,
+            tokenId = "100002",
+            value = "12000000000000000000",
+        )
+
+        assertTx(
+            idx = 1,
+            eventName = HistoryEventName.STARGATE_DELEGATE,
+            tokenId = "100002",
+            value = "10000000000000000000000",
+            validator = "0xf02e0f5ef2b7dd2392ca91a0bdef4f59d4a3c5e2",
+        )
+
+        assertTx(
+            idx = 2,
+            eventName = HistoryEventName.STARGATE_STAKE,
+            tokenId = "100002",
+            owner = "0x070af16f59b867d6246af695a602d73a261f730d",
+            value = "10000000000000000000000",
+            levelId = "8",
+        )
+
+        assertTx(
+            idx = 3,
+            eventName = HistoryEventName.STARGATE_CLAIM_REWARDS,
+            tokenId = "100002",
+            owner = "0x070af16f59b867d6246af695a602d73a261f730d",
+            value = "1",
+        )
+
+        assertTx(
+            idx = 6,
+            eventName = HistoryEventName.STARGATE_MANAGER_ADDED,
+            tokenId = "100013",
+            to = "0x2f408f473e267e09b348007e0ff91ee60326bdaa",
+            from = "0xe705e3f310ab09fb9eb40b43cb1368289ef1f829",
+        )
+
+        assertTx(
+            idx = 7,
+            eventName = HistoryEventName.STARGATE_MANAGER_REMOVED,
+            tokenId = "100013",
+            to = "0x2f408f473e267e09b348007e0ff91ee60326bdaa",
+            from = "0xe705e3f310ab09fb9eb40b43cb1368289ef1f829",
+        )
+
+        assertTx(
+            idx = 8,
+            eventName = HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST,
+            tokenId = "100008",
+            owner = "0xe705e3f310ab09fb9eb40b43cb1368289ef1f829",
+        )
+    }
+
+    @Test
+    fun `Process block - With Stargate TXs via Indexer (Legacy)`() = runBlocking {
         val stargateBlocks =
             listOf(
                 BlockFixtures.BLOCK_STARGATE_STAKE,
@@ -286,7 +407,7 @@ class HistoryIndexerTest {
 
         assertTx(
             idx = 0,
-            eventName = HistoryEventName.STARGATE_DELEGATE_ONLY,
+            eventName = HistoryEventName.STARGATE_DELEGATE_LEGACY,
             tokenId = "16",
             autorenew = true,
         )
@@ -343,7 +464,7 @@ class HistoryIndexerTest {
 
         assertTx(
             idx = 9,
-            eventName = HistoryEventName.STARGATE_DELEGATE_ONLY,
+            eventName = HistoryEventName.STARGATE_DELEGATE_LEGACY,
             tokenId = "10",
             autorenew = true,
         )
@@ -425,6 +546,7 @@ class HistoryIndexerTest {
                     "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
                     "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
                     "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
+                    "STARGATE_STAKER_CONTRACT" to "0x54d7f2de232e59bfb95c6b2c2b9f678ab73e5a38",
                 ),
         )
 }
