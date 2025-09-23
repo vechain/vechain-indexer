@@ -2,9 +2,33 @@ name: Tests (Gradle)
 
 on:
   pull_request:
+    paths:
+      - '**/*.kt'
+      - '**/*.kts'
+      - '**/*.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - 'packages/**'
+      - 'Makefile'
+      - 'Dockerfile'
   push:
     branches:
       - 'main'
+    paths:
+      - '**/*.kt'
+      - '**/*.kts'
+      - '**/*.java'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'settings.gradle.kts'
+      - 'gradle/**'
+      - 'packages/**'
+      - 'Makefile'
+      - 'Dockerfile'
 
 permissions:
   contents: read
