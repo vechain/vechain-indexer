@@ -41,6 +41,8 @@ enabled_nets:
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -184,6 +186,8 @@ enabled_nets:
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
+      timing:
+        warn-threshold-ms: '1000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
