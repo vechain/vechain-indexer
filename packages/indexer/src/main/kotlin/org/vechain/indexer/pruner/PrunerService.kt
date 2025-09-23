@@ -21,7 +21,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {
-            logger.info("Skipping pruner for $targetObjectName, as not enough blocks to prune")
+            logger.debug("Skipping pruner for $targetObjectName, as not enough blocks to prune")
             return
         }
 
@@ -61,7 +61,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
                 )
             }
 
-            logger.info("✅ Pruning complete for $targetObjectName. Removed $processed records")
+            logger.debug("✅ Pruning complete for $targetObjectName. Removed $processed records")
         }
     }
 }
