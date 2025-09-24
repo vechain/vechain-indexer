@@ -76,6 +76,10 @@ class IndexerHealthIndicator(
             return HealthStatus.UP to "Indexer is pruning"
         }
 
+        if (indexer.status == Status.PENDING_DEPENDENCY) {
+            return HealthStatus.UNKNOWN to "Indexer is waiting for dependencies to sync"
+        }
+
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeout =
