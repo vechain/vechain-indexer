@@ -20,7 +20,7 @@ on:
           - prod
         default: dev
       version:
-        description: Version tag (for dev use v.X.Y.Z-dev)
+        description: Version tag (only relevant for dev. For prod, semver git ref tag is used)
         required: false
         type: string
         default: v.0.0.0-dev
