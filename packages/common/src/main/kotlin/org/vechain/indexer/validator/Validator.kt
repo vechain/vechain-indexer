@@ -3,6 +3,7 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
+import kotlin.collections.List
 import org.bson.types.Decimal128
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -24,10 +25,12 @@ data class Validator(
     val vetStaked: Decimal128? = null, // amount of VET staked
     val validatorVetStaked: Decimal128? = null,
     val delegatorVetStaked: Decimal128? = null,
+    val queuedVetStaked: Decimal128? = null,
+    val exitingVetStaked: Decimal128? = null,
     val delegations: Map<TokenLevel, Long> = emptyMap(), // number of delegations by level
-    @JsonIgnore
-    val delegationIds: Map<String, TokenLevel> = emptyMap(), // mapping of delegation ID to level
+    @JsonIgnore val delegationInfo: Map<String, Pair<TokenLevel, Status>> = emptyMap(),
     @JsonIgnore val delegationIdList: List<String> = emptyList(),
+    @JsonIgnore val delegationsToBeActioned: List<String> = emptyList(),
     val cycleEndBlock: Long? = null, // end block of the current cycle
     val totalRewards: Decimal128? = null, // total rewards earned
     val blockProbability: Decimal128? = null,
@@ -49,6 +52,7 @@ data class Validator(
     val offlineBlocks: Long? = null,
     @JsonIgnore val totalVTHOSupply: Decimal128,
     @JsonIgnore override val version: Int,
+    @JsonIgnore val nextCycleBlock: Long,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }
