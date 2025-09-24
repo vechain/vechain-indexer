@@ -12,7 +12,7 @@ on:
         type: string
         default: ./
       environment:
-        description: Environment (dev | prod)
+        description: Environment
         required: true
         type: choice
         options:
