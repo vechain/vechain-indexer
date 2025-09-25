@@ -3,6 +3,7 @@ package org.vechain.indexer.utils
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
+import org.bson.types.Decimal128
 
 object NumberUtils {
     // Commonly used scaling factors
@@ -36,4 +37,13 @@ object NumberUtils {
         } else {
             value.toBigDecimal().divide(total.toBigDecimal(), scale, RoundingMode.HALF_UP)
         }
+
+    fun BigInteger.toLongOrNull(): Long? =
+        if (this == BigInteger.valueOf(Long.MAX_VALUE)) null else this.toLong()
+
+    fun toSafeDecimal128(value: BigDecimal, scale: Int = 6): Decimal128 {
+        // Limit precision to avoid Decimal128 overflow
+        val scaled = value.setScale(scale, RoundingMode.HALF_UP)
+        return Decimal128(scaled)
+    }
 }
