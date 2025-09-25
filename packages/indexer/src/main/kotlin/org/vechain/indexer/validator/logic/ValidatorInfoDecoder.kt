@@ -163,7 +163,7 @@ object ValidatorInfoDecoder {
             status = Status.fromCode(status),
             online = row.online,
             offlineBlocks = blocksOffline,
-            stakingPeriodLength = row.stakingPeriodLength.toLong(),
+            cyclePeriodLength = row.stakingPeriodLength.toLong(),
             startBlock = row.startBlock.toLong(),
             completedPeriods = row.completedPeriods.toLong(),
             vetStaked = toSafeDecimal128(totalVET),
@@ -185,7 +185,7 @@ object ValidatorInfoDecoder {
             totalVTHOSupply = toSafeDecimal128(vthoSupply),
             percentageOffline = toSafeDecimal128(percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
-            nextCycleBlock =
+            cycleEndBlock =
                 ValidatorCalculations.calculateNextCycleBlock(
                     row.startBlock,
                     row.completedPeriods,

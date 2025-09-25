@@ -26,8 +26,11 @@ object DelegationEventMutations {
     private fun ValidatorCycleContext.getOrCreateValidator(
         validatorId: String,
         event: IndexedEvent,
-    ): Validator =
-        this.validators[validatorId]
+        context: ValidatorCycleContext,
+    ): Validator {
+        val (cycleLength, currentCycleEnd) =
+            context.resolveNextCycle(validatorId, context.blockNumber)
+        return this.validators[validatorId]
             ?: Validator(
                 id = validatorId,
                 blockId = event.blockId,
@@ -35,8 +38,10 @@ object DelegationEventMutations {
                 blockTimestamp = event.blockTimestamp,
                 totalVTHOSupply = Decimal128(1),
                 version = 0,
-                nextCycleBlock = 0L,
+                cycleEndBlock = currentCycleEnd,
+                cyclePeriodLength = cycleLength,
             )
+    }
 
     fun initiateDelegation(
         context: ValidatorCycleContext,
@@ -47,7 +52,7 @@ object DelegationEventMutations {
         val levelId = event.params.getAsLong("levelId")!!
         val tokenLevel = TokenLevel.fromOrdinal(levelId.toInt())!!
 
-        val base = context.getOrCreateValidator(validatorId, event)
+        val base = context.getOrCreateValidator(validatorId, event, context)
 
         val updated =
             base.copy(
@@ -58,6 +63,12 @@ object DelegationEventMutations {
                 delegationsToBeActioned = base.delegationsToBeActioned + delegationId,
                 delegationInfo =
                     base.delegationInfo + (delegationId to (tokenLevel to Status.QUEUED)),
+                cycleEndBlock =
+                    resolveNextCycleBlock(
+                        base.cycleEndBlock,
+                        base.cyclePeriodLength,
+                        context.blockNumber,
+                    ),
             )
 
         context.put(updated)
@@ -82,6 +93,12 @@ object DelegationEventMutations {
                 delegationsToBeActioned = validator.delegationsToBeActioned + delegationId,
                 delegationInfo =
                     validator.delegationInfo + (delegationId to (level to Status.EXITING)),
+                cycleEndBlock =
+                    resolveNextCycleBlock(
+                        validator.cycleEndBlock,
+                        validator.cyclePeriodLength,
+                        context.blockNumber,
+                    ),
             )
 
         context.put(updated)
@@ -95,13 +112,15 @@ object DelegationEventMutations {
     ): ValidatorCycleContext {
         val validator = context.requireValidator(validatorId)
         val delegationId = extractDelegationId(event)
-
-        val (level, _) = validator.delegationInfo[delegationId] ?: return context
-
+        val (level, state) = validator.delegationInfo[delegationId] ?: return context
         val updatedDelegations =
-            validator.delegations.toMutableMap().apply {
-                this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
-                this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
+            if (state != Status.QUEUED) {
+                validator.delegations.toMutableMap().apply {
+                    this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
+                    this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
+                }
+            } else {
+                validator.delegations // leave unchanged
             }
 
         val updated =
@@ -114,6 +133,7 @@ object DelegationEventMutations {
             )
 
         context.put(updated)
+        println(updated)
         return context
     }
 
@@ -131,28 +151,34 @@ object DelegationEventMutations {
 
         var ctx = context
         events.forEach { ev ->
+            println("HERE")
             ctx =
                 when (EventUtils.determineValidatorEventType(ev.params)) {
                     ValidatorAction.DELEGATION_INITIATED -> {
+                        println("HERE1")
                         val validatorId = ev.params.getAsString("validator")!!
                         val newCtx = initiateDelegation(ctx, validatorId, ev)
                         delegationToValidator[extractDelegationId(ev)] = validatorId
                         newCtx
                     }
                     ValidatorAction.DELEGATION_EXIT_REQUESTED -> {
+                        println("HERE2")
                         val validatorId = ev.params.getAsString("validator")!!
                         val newCtx = requestExitDelegation(ctx, validatorId, ev)
                         delegationToValidator[extractDelegationId(ev)] = validatorId
                         newCtx
                     }
                     ValidatorAction.DELEGATION_REMOVED -> {
+                        println("HERE2")
                         val dId = extractDelegationId(ev)
                         val validatorId =
                             delegationToValidator[dId]
                                 ?: throw IllegalStateException(
                                     "No validator mapping yet for delegation $dId"
                                 )
-                        removeDelegation(ctx, validatorId, ev)
+                        val newCtx = removeDelegation(ctx, validatorId, ev)
+                        println(newCtx)
+                        newCtx
                     }
                     else -> {
                         logger.debug("Skipping unsupported validator event type: ${ev.eventType}")
@@ -161,5 +187,14 @@ object DelegationEventMutations {
                 }
         }
         return ctx
+    }
+
+    fun resolveNextCycleBlock(lastCycleEnd: Long?, cycleLength: Long, currentBlock: Long): Long {
+        val base = lastCycleEnd ?: currentBlock
+        return if (base > currentBlock) {
+            base // already ahead
+        } else {
+            base + ((currentBlock - base) / cycleLength + 1) * cycleLength
+        }
     }
 }

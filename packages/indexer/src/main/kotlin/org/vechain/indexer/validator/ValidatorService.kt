@@ -10,6 +10,7 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
@@ -31,7 +32,10 @@ class ValidatorService(
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
-    fun processBlock(block: Block, matchedEvents: List<IndexedEvent>) {
+    fun processBlock(
+        block: Block,
+        matchedEvents: List<IndexedEvent>,
+    ): Triple<List<Validator>, List<Validator>, Set<String>> {
         // Load existing docs from DB once
         val existingDocs = repository.findAll().associateBy { it.id }
 
@@ -62,34 +66,60 @@ class ValidatorService(
                 )
             }
 
-        // Apply block-based updates (i.e Transitions that  will happen after a certain block such
+        // Apply block-based updates (i.e Transitions that will happen after a certain block such
         // as moving form queued state to active)
         context = DelegationStateTransitions.handleBlockUpdatesInContext(context)
 
         // Apply event-based mutations, these events all relate to delegations
         if (matchedEvents.isNotEmpty()) {
-            context = DelegationEventMutations.applyEvents(context, matchedEvents)
+            // Add callback to the function to context
+            val contextWithCallback =
+                ValidatorCycleContext(
+                    blockId = context.blockId,
+                    blockNumber = context.blockNumber,
+                    blockTimestamp = context.blockTimestamp,
+                    _validators = context.validators.toMutableMap(),
+                    nextCycleResolver = { validatorId, blockNumber ->
+                        getValidatorPeriodInfo(validatorId, blockNumber)
+                    },
+                )
+            context = DelegationEventMutations.applyEvents(contextWithCallback, matchedEvents)
         }
 
-        // Persist once
-        repository.saveAll(context.snapshot())
+        val newState = context.snapshot()
+        // Delete validators that have exited over X amount of time ago
+        val toDelete = existingDocs.keys.minus(newState.keys)
 
-        // Archive old state
-        if (existingDocs.isNotEmpty()) {
-            archiveService.saveAll(existingDocs.values.toList())
+        // Separate updated docs (new) and originals (for archive)
+        val updatedDocs = mutableListOf<Validator>()
+        val originalsForArchive = mutableListOf<Validator>()
+
+        for (newVal in newState.values) {
+            val oldVal = existingDocs[newVal.id]
+            if (oldVal == null || oldVal != newVal) {
+                updatedDocs += newVal.copy(version = (oldVal?.version ?: 0) + 1)
+                if (oldVal != null) {
+                    originalsForArchive += oldVal
+                }
+            }
         }
 
-        // 8. Delete missing validators
-        val toDelete = existingDocs.keys.minus(context.validators.keys)
-        if (toDelete.isNotEmpty()) {
-            repository.deleteAllById(toDelete)
-        }
+        return Triple(updatedDocs, originalsForArchive.toList(), toDelete)
     }
 
-    fun handleBlockUpdates(blockNumber: Long) {
-        val validators = repository.findByBlockNumberAndDelegationsToBeActionedNotEmpty(blockNumber)
+    fun saveAndDelete(updates: List<Validator>, archive: List<Validator>, delete: Set<String>) {
+        // Persist once
+        repository.saveAll(updates)
 
-        if (validators.isEmpty()) return
+        // Archive old state
+        if (archive.isNotEmpty()) {
+            archiveService.saveAll(archive)
+        }
+
+        // Delete ancient exited validators
+        if (delete.isNotEmpty()) {
+            repository.deleteAllById(delete)
+        }
     }
 
     fun buildClauses(): List<Clause> {
@@ -107,15 +137,15 @@ class ValidatorService(
         }
     }
 
-    private fun resolveNextCycleBlock(validatorId: String): Long {
+    private fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
         val clause =
             ContractUtils.createClause(
                 stakerSC,
                 getValidatorsAbiFunctions("getValidationPeriodDetails"),
-                validatorId.toBigInteger(), // if ABI expects validatorId as arg
+                AddressUtils.toBigInt(validatorId),
             )
-        val response = thorService.executeReadOnlyCode(listOf(clause))
 
+        val response = thorService.executeReadOnlyCode(listOf(clause))
         val decodedPeriodInfo =
             FunctionReturnDecoder.decode(
                 response[0].data,
@@ -124,9 +154,13 @@ class ValidatorService(
 
         val startBlock = (decodedPeriodInfo["startBlock"] as BigInteger).toLong()
         val periodLength = (decodedPeriodInfo["period"] as BigInteger).toLong()
-        val completedPeriods = (decodedPeriodInfo["completedPeriods"] as BigInteger).toLong()
 
-        return startBlock + (periodLength * (completedPeriods + 1L))
+        val offset = currentBlock - startBlock
+        val positionInCycle = offset % periodLength
+        val currentCycleStart = currentBlock - positionInCycle
+        val nextCycleStart = currentCycleStart + periodLength
+
+        return (periodLength to nextCycleStart)
     }
 
     private fun getValidatorsAbiFunctions(name: String): AbiElement =

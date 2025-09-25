@@ -8,7 +8,7 @@ object DelegationStateTransitions {
     fun handleBlockUpdatesInContext(context: ValidatorCycleContext): ValidatorCycleContext {
         val toUpdate =
             context.validators.values.filter {
-                it.delegationsToBeActioned.isNotEmpty() && it.nextCycleBlock == context.blockNumber
+                it.delegationsToBeActioned.isNotEmpty() && it.cycleEndBlock == context.blockNumber
             }
 
         if (toUpdate.isEmpty()) return context
@@ -17,8 +17,7 @@ object DelegationStateTransitions {
             var updated = validator
 
             validator.delegationsToBeActioned.forEach { delegationId ->
-                val (level, status) =
-                    validator.delegationInfo[delegationId] ?: (TokenLevel.All to Status.QUEUED)
+                val (level, status) = validator.delegationInfo[delegationId] ?: return@forEach
 
                 updated =
                     when (status) {
@@ -32,7 +31,7 @@ object DelegationStateTransitions {
             updated =
                 updated.copy(
                     delegationsToBeActioned = emptyList(),
-                    nextCycleBlock = context.blockNumber + updated.stakingPeriodLength,
+                    cycleEndBlock = context.blockNumber + updated.cyclePeriodLength,
                 )
             context.put(updated)
         }

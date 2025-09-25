@@ -14,6 +14,7 @@ class ValidatorCycleContext(
     val blockNumber: Long,
     val blockTimestamp: Long,
     private val _validators: MutableMap<String, Validator>,
+    private val nextCycleResolver: ((String, Long) -> Pair<Long, Long>)? = null,
 ) {
     val validators: Map<String, Validator>
         get() = _validators
@@ -33,5 +34,9 @@ class ValidatorCycleContext(
     }
 
     /** Get a snapshot of all validators for persistence. */
-    fun snapshot(): List<Validator> = _validators.values.toList()
+    fun snapshot(): Map<String, Validator> = validators.toMap()
+
+    fun resolveNextCycle(validatorId: String, currentBlock: Long): Pair<Long, Long> =
+        nextCycleResolver?.invoke(validatorId, currentBlock)
+            ?: throw IllegalStateException("No resolver configured for nextCycleBlock")
 }

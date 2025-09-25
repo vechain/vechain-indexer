@@ -15,6 +15,11 @@ open class ValidatorProcessor(
     private val service: ValidatorService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = archiveService) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        service.handleBlockUpdates(block!!.number)
+        println(block!!.number)
+        val (updated, existing, deleted) = service.processBlock(block!!, matchedEvents)
+
+        if (updated.isNotEmpty() || existing.isNotEmpty() || deleted.isNotEmpty()) {
+            service.saveAndDelete(updated, existing, deleted)
+        }
     }
 }
