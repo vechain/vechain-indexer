@@ -24,7 +24,7 @@ ENV PACKAGE_NAME=$PACKAGE_NAME
 ENV APP_VERSION=$APP_VERSION
 
 # Ensure the version is in the form v.X.Y.Z
-RUN echo "$APP_VERSION" | grep -Eq '^v\.[0-9]+\.[0-9]+\.[0-9]+$' || (echo "APP_VERSION $APP_VERSION is not of the form v.X.Y.Z" && exit 1)
+-RUN echo "$APP_VERSION" | grep -Eq '^v\.[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || (echo "APP_VERSION $APP_VERSION is not of the form v.X.Y.Z or v.X.Y.Z-dev" && exit 1)
 
 RUN ./gradlew packages:$PACKAGE_NAME:build -x test
 
