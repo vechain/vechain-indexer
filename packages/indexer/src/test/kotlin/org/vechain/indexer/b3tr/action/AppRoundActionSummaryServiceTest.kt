@@ -61,16 +61,14 @@ internal class AppRoundActionSummaryServiceTest {
 
     @Test
     fun `processEvents with empty events returns empty lists`() {
-        val blockDetails = BlockDetails("0xblock", 1L, 1000L)
-        val (updated, archived) = service.processEvents(blockDetails, emptyList(), roundId = 1)
+        val (updated, archived, updatedRoundId) = service.processEvents(emptyList(), roundId = 1)
         assertEquals(0, updated.size)
         assertEquals(0, archived.size)
+        assertEquals(1, updatedRoundId)
     }
 
     @Test
     fun `processEvents no existing record results in new record being created`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
-
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -92,7 +90,7 @@ internal class AppRoundActionSummaryServiceTest {
 
         every { repository.findByIdOrNull(generateId("app-1", "user-1", "1")) } returns null
 
-        val (updated, archived) = service.processEvents(blockDetails, listOf(event), roundId = 1)
+        val (updated, archived, updatedRoundId) = service.processEvents(listOf(event), roundId = 1)
 
         assertEquals(1, updated.size)
         assertEquals("app-1", updated.first().appId)
@@ -103,12 +101,11 @@ internal class AppRoundActionSummaryServiceTest {
         assertEquals(1, updated.first().roundId)
 
         assertEquals(0, archived.size)
+        assertEquals(1, updatedRoundId)
     }
 
     @Test
     fun `processEvents multiple events with same appId and user result in a single new record`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
-
         val event1 =
             buildIndexedEvent(
                 id = "e1",
@@ -149,8 +146,8 @@ internal class AppRoundActionSummaryServiceTest {
 
         every { repository.findByIdOrNull(generateId("app-1", "user-1", "1")) } returns null
 
-        val (updated, archived) =
-            service.processEvents(blockDetails, listOf(event1, event2), roundId = 1)
+        val (updated, archived, updatedRoundId) =
+            service.processEvents(listOf(event1, event2), roundId = 1)
 
         assertEquals(1, updated.size)
         assertEquals("app-1", updated.first().appId)
@@ -161,12 +158,11 @@ internal class AppRoundActionSummaryServiceTest {
         assertEquals(1, updated.first().roundId)
 
         assertEquals(0, archived.size)
+        assertEquals(1, updatedRoundId)
     }
 
     @Test
     fun `processEvents existing record results in record being updated`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
-
         val event =
             buildIndexedEvent(
                 id = "e2",
@@ -200,7 +196,7 @@ internal class AppRoundActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        val (updated, archived) = service.processEvents(blockDetails, listOf(event), roundId = 1)
+        val (updated, archived, updatedRoundId) = service.processEvents(listOf(event), roundId = 1)
 
         assertEquals(1, updated.size)
         assertEquals("app-1", updated.first().appId)
@@ -216,11 +212,11 @@ internal class AppRoundActionSummaryServiceTest {
         assertEquals(0L, archived.first().blockNumber)
         assertEquals(0, archived.first().totalRewardAmount.compareTo(BigDecimal(10)))
         assertEquals(1, archived.first().roundId)
+        assertEquals(1, updatedRoundId)
     }
 
     @Test
     fun `processEvents throws if all events are not of type B3TR_ActionReward`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
         val event1 =
             buildIndexedEvent(
                 id = "e1",
@@ -258,9 +254,7 @@ internal class AppRoundActionSummaryServiceTest {
                     ),
             )
 
-        assertThrows<IllegalStateException> {
-            service.processEvents(blockDetails, listOf(event1, event2), 1)
-        }
+        assertThrows<IllegalStateException> { service.processEvents(listOf(event1, event2), 1) }
     }
 
     @Test

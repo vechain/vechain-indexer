@@ -65,7 +65,7 @@ internal class AppRoundActionSummaryProcessorTest {
             verify(exactly = 0) { service.save(any(), any()) }
 
             // Verify that service.processEvents is not called
-            verify(exactly = 0) { service.processEvents(any(), any(), any()) }
+            verify(exactly = 0) { service.processEvents(any(), 1) }
         }
 
         @Test
@@ -112,14 +112,14 @@ internal class AppRoundActionSummaryProcessorTest {
 
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every { service.processEvents(blockDetailsEvent1, events, roundId = 1) } returns
-                (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 1) } returns
+                Triple(updatedRecords, archiveRecords, 1)
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
             processor.process(events, null)
 
-            verify(exactly = 1) { service.processEvents(blockDetailsEvent1, events, 1) }
+            verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
         }
 
@@ -183,18 +183,15 @@ internal class AppRoundActionSummaryProcessorTest {
 
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), roundId = 2)
-            } returns (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 1) } returns
+                Triple(updatedRecords, archiveRecords, 2)
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
             processor.process(events, null)
 
             assertEquals(2, processor.readRoundId())
-            verify(exactly = 1) {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), 2)
-            }
+            verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
         }
 
@@ -258,17 +255,14 @@ internal class AppRoundActionSummaryProcessorTest {
                 )
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), roundId = 2)
-            } returns (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 1) } returns
+                Triple(updatedRecords, archiveRecords, 2)
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
             processor.process(events, null)
             assertEquals(2, processor.readRoundId())
-            verify(exactly = 1) {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), 2)
-            }
+            verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
         }
 
@@ -296,11 +290,18 @@ internal class AppRoundActionSummaryProcessorTest {
 
             val events = listOf(roundChangeEvent)
 
-            // Verify save not called and roundId is updated
+            val updatedRecords = emptyList<AppRoundActionSummary>()
+            val archiveRecords = emptyList<AppRoundActionSummary>()
+
+            every { service.processEvents(events, roundId = 1) } returns
+                Triple(updatedRecords, archiveRecords, 2)
+            every { service.save(updatedRecords, archiveRecords) } just Runs
+
+            // Verify roundId is updated and empty results are saved
             processor.process(events, null)
             assertEquals(2, processor.readRoundId())
-            verify(exactly = 0) { service.save(any(), any()) }
-            verify(exactly = 0) { service.processEvents(any(), any(), any()) }
+            verify(exactly = 1) { service.processEvents(events, 1) }
+            verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
         }
     }
 
@@ -381,15 +382,15 @@ internal class AppRoundActionSummaryProcessorTest {
 
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every { service.processEvents(blockDetailsEvent1, events, roundId = 5) } returns
-                (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 5) } returns
+                Triple(updatedRecords, archiveRecords, 5)
 
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
             processor.process(events, null)
 
-            verify(exactly = 1) { service.processEvents(blockDetailsEvent1, events, 5) }
+            verify(exactly = 1) { service.processEvents(events, 5) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
         }
     }
