@@ -6,6 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("vevote", "vevote-results")
 @Component
@@ -15,6 +16,7 @@ open class VeVoteResultProcessor(
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) : BaseStatefulProcessor(repository = repository, archiveService = veVoteResultArchiveService) {
 
+    @WithTiming("VeVoteResultProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 

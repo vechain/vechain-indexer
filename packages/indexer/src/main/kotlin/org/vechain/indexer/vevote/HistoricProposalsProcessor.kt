@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("vevote", "vevote-historic-proposals")
 @Component
@@ -13,6 +14,7 @@ open class HistoricProposalsProcessor(
     private val historicProposalsService: HistoricProposalsService,
 ) : BaseProcessor(repository = repository) {
 
+    @WithTiming("HistoricProposalsProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             historicProposalsService.processNewProposals(emptyList(), block?.number)

@@ -7,6 +7,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Component
@@ -15,6 +16,7 @@ open class XAllocResultProcessor(
     xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
     private val service: XAllocResultService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = xAllocResultArchiveService) {
+    @WithTiming("XAllocResultProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

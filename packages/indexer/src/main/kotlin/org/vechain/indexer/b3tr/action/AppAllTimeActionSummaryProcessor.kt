@@ -7,6 +7,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
@@ -20,6 +21,7 @@ open class AppAllTimeActionSummaryProcessor(
         repository = repository,
         archiveService = appAllTimeActionSummaryArchiveService,
     ) {
+    @WithTiming("AppAllTimeActionSummaryProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

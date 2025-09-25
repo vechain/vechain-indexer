@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("history")
 @Component
@@ -13,6 +14,7 @@ open class HistoryProcessor(
     private val historyService: HistoryService,
 ) : BaseProcessor(repository) {
 
+    @WithTiming("HistoryProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (block == null) {
             throw IllegalArgumentException("Block cannot be null")

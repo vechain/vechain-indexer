@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("transactions")
 @Component
@@ -16,6 +17,7 @@ open class TransactionProcessor(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    @WithTiming("TransactionProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         // The block should never be null here, throw an error if it is.
         if (block == null) {
