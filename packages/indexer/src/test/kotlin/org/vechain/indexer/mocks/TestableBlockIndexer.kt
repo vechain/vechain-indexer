@@ -29,6 +29,7 @@ class TestableBlockIndexer(
         pruner = pruner,
         prunerInterval = prunerInterval,
         syncLoggerInterval = syncLoggerInterval,
+        dependsOn = emptySet(),
     ) {
     var iterations: Long? = null
 
