@@ -5,7 +5,8 @@ enum class Status {
     QUEUED, // Waiting to be activated
     ACTIVE, // Fully active and validating
     EXITED, // Exited and funds withdrawn
-    EXITING // Pending exit (exit signaled, waiting in exit queue)
+    EXITING, // Pending exit (exit signaled, waiting in exit queue)
+    LEAVING_QUE // Signalled to exit while in que
     ;
 
     companion object {
@@ -16,6 +17,7 @@ enum class Status {
                 2 -> ACTIVE
                 3 -> EXITED
                 4 -> EXITING
+                5 -> LEAVING_QUE
                 else -> UNKNOWN
             }
     }

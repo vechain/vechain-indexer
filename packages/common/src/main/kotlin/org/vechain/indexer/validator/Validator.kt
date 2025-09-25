@@ -29,6 +29,8 @@ data class Validator(
     val queuedVetStaked: Decimal128? = null,
     val exitingVetStaked: Decimal128? = null,
     val delegations: Map<TokenLevel, Long> = emptyMap(), // number of delegations by level
+    val incomingDelegations: Map<TokenLevel, Long> = emptyMap(),
+    val outgoingDelegations: Map<TokenLevel, Long> = emptyMap(),
     @JsonIgnore val delegationInfo: Map<String, Pair<TokenLevel, Status>> = emptyMap(),
     @JsonIgnore val delegationsToBeActioned: List<String> = emptyList(),
     val cycleEndBlock: Long, // end block of the current cycle

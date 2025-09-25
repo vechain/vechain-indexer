@@ -68,6 +68,8 @@ object DelegationEventMutations {
                         base.cyclePeriodLength,
                         context.blockNumber,
                     ),
+                incomingDelegations =
+                    EventUtils.incrementCounts(base.incomingDelegations, tokenLevel),
             )
 
         context.put(updated)
@@ -82,7 +84,20 @@ object DelegationEventMutations {
         val validator = context.requireValidator(validatorId)
         val delegationId = extractDelegationId(event)
 
-        val (level, _) = validator.delegationInfo[delegationId] ?: (TokenLevel.All to Status.QUEUED)
+        val (level, state) =
+            validator.delegationInfo[delegationId] ?: (TokenLevel.All to Status.QUEUED)
+
+        var status = Status.EXITING
+        val updatedIncomingDelegations =
+            when (state) {
+                Status.QUEUED -> {
+                    status = Status.LEAVING_QUE
+                    EventUtils.decrementCounts(validator.incomingDelegations, level)
+                }
+                else -> {
+                    validator.incomingDelegations
+                }
+            }
 
         val updated =
             validator.copy(
@@ -90,14 +105,16 @@ object DelegationEventMutations {
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
                 delegationsToBeActioned = validator.delegationsToBeActioned + delegationId,
-                delegationInfo =
-                    validator.delegationInfo + (delegationId to (level to Status.EXITING)),
+                delegationInfo = validator.delegationInfo + (delegationId to (level to status)),
                 cycleEndBlock =
                     resolveNextCycleBlock(
                         validator.cycleEndBlock,
                         validator.cyclePeriodLength,
                         context.blockNumber,
                     ),
+                incomingDelegations = updatedIncomingDelegations,
+                outgoingDelegations =
+                    EventUtils.incrementCounts(validator.outgoingDelegations, level),
             )
 
         context.put(updated)
@@ -112,18 +129,35 @@ object DelegationEventMutations {
         val validator = context.requireValidator(validatorId)
         val delegationId = extractDelegationId(event)
         val (level, state) = validator.delegationInfo[delegationId] ?: return context
-        val updatedDelegations =
-            when (state) {
-                Status.QUEUED -> {
-                    validator.delegations // leave unchanged
-                }
-                else -> {
-                    validator.delegations.toMutableMap().apply {
-                        this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
-                        this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
-                    }
-                }
+
+        val updatedDelegations: Map<TokenLevel, Long>
+        val updatedOutgoingDelegations: Map<TokenLevel, Long>
+        val updatedIncomingDelegations: Map<TokenLevel, Long>
+        when (state) {
+            Status.QUEUED -> {
+                updatedDelegations = validator.delegations
+                updatedOutgoingDelegations = validator.outgoingDelegations
+                updatedIncomingDelegations =
+                    EventUtils.decrementCounts(validator.incomingDelegations, level)
             }
+            Status.LEAVING_QUE -> {
+                updatedDelegations = validator.delegations
+                updatedOutgoingDelegations =
+                    EventUtils.decrementCounts(validator.outgoingDelegations, level)
+                updatedIncomingDelegations = validator.incomingDelegations
+            }
+            Status.EXITING -> {
+                updatedDelegations = EventUtils.decrementCounts(validator.delegations, level)
+                updatedOutgoingDelegations =
+                    EventUtils.decrementCounts(validator.outgoingDelegations, level)
+                updatedIncomingDelegations = validator.incomingDelegations
+            }
+            else -> {
+                updatedDelegations = EventUtils.decrementCounts(validator.delegations, level)
+                updatedOutgoingDelegations = validator.outgoingDelegations
+                updatedIncomingDelegations = validator.incomingDelegations
+            }
+        }
 
         val updated =
             validator.copy(
@@ -131,9 +165,29 @@ object DelegationEventMutations {
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
                 delegations = updatedDelegations,
+                outgoingDelegations = updatedOutgoingDelegations,
+                incomingDelegations = updatedIncomingDelegations,
                 delegationInfo = validator.delegationInfo - delegationId,
             )
 
+        context.put(updated)
+        return context
+    }
+
+    fun setBeneficiary(
+        context: ValidatorCycleContext,
+        validatorId: String,
+        event: IndexedEvent,
+    ): ValidatorCycleContext {
+        val beneficiary = event.params.getAsString("beneficiary")!!
+        val base = context.getOrCreateValidator(validatorId, event, context)
+        val updated =
+            base.copy(
+                blockId = event.blockId,
+                blockNumber = event.blockNumber,
+                blockTimestamp = event.blockTimestamp,
+                beneficiary = beneficiary,
+            )
         context.put(updated)
         return context
     }
@@ -187,6 +241,11 @@ object DelegationEventMutations {
                         val dId = extractDelegationId(ev)
                         val validatorId = delegationToValidator[dId] ?: return ctx
                         val newCtx = removeDelegation(ctx, validatorId, ev)
+                        newCtx
+                    }
+                    ValidatorAction.BENIFICIARY_SET -> {
+                        val validatorId = ev.params.getAsString("validator")!!
+                        val newCtx = setBeneficiary(ctx, validatorId, ev)
                         newCtx
                     }
                     else -> {

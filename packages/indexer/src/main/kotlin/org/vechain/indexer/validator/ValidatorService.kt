@@ -5,6 +5,7 @@ import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -22,7 +23,7 @@ import org.vechain.indexer.validator.logic.ValidatorInfoDecoder
 
 @Profile("validator")
 @Service
-class ValidatorService(
+open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
@@ -32,7 +33,7 @@ class ValidatorService(
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
-    fun processBlock(
+    open fun processBlock(
         block: Block,
         matchedEvents: List<IndexedEvent>,
     ): Triple<List<Validator>, List<Validator>, Set<String>> {
@@ -107,7 +108,12 @@ class ValidatorService(
         return Triple(updatedDocs, originalsForArchive.toList(), toDelete)
     }
 
-    fun saveAndDelete(updates: List<Validator>, archive: List<Validator>, delete: Set<String>) {
+    @Transactional(rollbackFor = [Exception::class])
+    open fun saveAndDelete(
+        updates: List<Validator>,
+        archive: List<Validator>,
+        delete: Set<String>,
+    ) {
         // Persist once
         repository.saveAll(updates)
 

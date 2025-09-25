@@ -57,7 +57,12 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress, stargateStakerAddress))
             .abiEventNames(
-                listOf("DelegationInitiated", "DelegationExitRequested", "DelegationWithdrawn")
+                listOf(
+                    "DelegationInitiated",
+                    "DelegationExitRequested",
+                    "DelegationWithdrawn",
+                    "BeneficiarySet",
+                )
             )
             .excludeVetTransfers()
             .build()
