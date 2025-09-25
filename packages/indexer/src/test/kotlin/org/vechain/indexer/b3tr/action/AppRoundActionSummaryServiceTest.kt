@@ -258,6 +258,155 @@ internal class AppRoundActionSummaryServiceTest {
     }
 
     @Test
+    fun `process EmissionDistributed event should result in a roundId change`() {
+        val blockDetails = BlockDetails("block-1", 1L, 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                eventType = "EmissionDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+        val rewardEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+
+        val events = listOf(roundChangeEvent, rewardEvent)
+
+        every { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) } returns null
+
+        val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
+
+        verify(exactly = 1) { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) }
+
+        assertEquals(1, updated.size)
+        val record = updated.first()
+        assertEquals("app-1", record.appId)
+        assertEquals("user-1", record.user)
+        assertEquals(1, record.version)
+        assertEquals(blockDetails.blockNumber, record.blockNumber)
+        assertEquals(0, record.totalRewardAmount.compareTo(BigDecimal(10)))
+        assertEquals(2, record.roundId)
+        assertEquals(emptyList<AppRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
+    }
+
+    @Test
+    fun `process EmissionDistributedV2 event should result in a roundId change`() {
+        val blockDetails = BlockDetails("block-1", 1L, 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                eventType = "EmissionDistributedV2",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+        val rewardEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+
+        val events = listOf(roundChangeEvent, rewardEvent)
+
+        every { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) } returns null
+
+        val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
+
+        verify(exactly = 1) { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) }
+
+        assertEquals(1, updated.size)
+        val record = updated.first()
+        assertEquals("app-1", record.appId)
+        assertEquals("user-1", record.user)
+        assertEquals(1, record.version)
+        assertEquals(blockDetails.blockNumber, record.blockNumber)
+        assertEquals(0, record.totalRewardAmount.compareTo(BigDecimal(10)))
+        assertEquals(2, record.roundId)
+        assertEquals(emptyList<AppRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
+    }
+
+    @Test
+    fun `process only round change events updates round but produces no summaries`() {
+        val blockDetails = BlockDetails("block-1", 1L, 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                eventType = "EmissionDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+
+        val (updated, archive, updatedRoundId) = service.processEvents(listOf(roundChangeEvent), 1)
+
+        verify(exactly = 0) { repository.findByIdOrNull(any()) }
+        assertEquals(emptyList<AppRoundActionSummary>(), updated)
+        assertEquals(emptyList<AppRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
+    }
+
+    @Test
     fun `save applies updates and archives when lists are non empty`() {
         val updated =
             listOf(
