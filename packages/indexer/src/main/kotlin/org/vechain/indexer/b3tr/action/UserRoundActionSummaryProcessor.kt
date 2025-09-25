@@ -11,6 +11,7 @@ import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryReposito
 import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Configuration
@@ -30,6 +31,7 @@ open class UserRoundActionSummaryProcessor(
     protected var roundId: Int =
         repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
 
+    @WithTiming("UserRoundActionSummaryProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

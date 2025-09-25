@@ -7,6 +7,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Component
@@ -15,6 +16,7 @@ open class ProposalResultProcessor(
     proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
     private val service: ProposalResultService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = proposalResultArchiveService) {
+    @WithTiming("ProposalResultProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

@@ -6,6 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("stargate", "vtho-claimed-by-account")
 @Component
@@ -20,6 +21,7 @@ open class VthoClaimedByAccountProcessor(
         archiveService = vthoClaimByAccountArchiveService,
     ) {
 
+    @WithTiming("VthoClaimedByAccountProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

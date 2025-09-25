@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.timing.WithTiming
 import org.vechain.indexer.utils.BlockUtils
 
 @Profile("transfers")
@@ -15,6 +16,7 @@ open class TransferProcessor(
     repository: TransferEventRepository,
 ) : BaseProcessor(repository) {
 
+    @WithTiming("TransferProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 
