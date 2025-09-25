@@ -9,6 +9,7 @@ import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -87,7 +88,7 @@ internal class UserRoundActionSummaryServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(blockDetails, listOf(event), roundId = 1)
+        val (updated, archived) = service.processEvents(listOf(event), roundId = 1)
 
         assertEquals(3, updated.size)
         assertEquals("user-1", updated.first().entity)
@@ -152,8 +153,7 @@ internal class UserRoundActionSummaryServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) =
-            service.processEvents(blockDetails, listOf(event1, event2), roundId = 1)
+        val (updated, archived) = service.processEvents(listOf(event1, event2), roundId = 1)
 
         assertEquals(3, updated.size)
         assertEquals("user-1", updated.first().entity)
@@ -215,7 +215,7 @@ internal class UserRoundActionSummaryServiceTest {
         every { repository.findByIdOrNull(generateId("app-1", "1")) } returns null
         every { repository.findByIdOrNull(generateId(EntityType.GLOBAL.name, "1")) } returns null
 
-        val (updated, archived) = service.processEvents(blockDetails, listOf(event), roundId = 1)
+        val (updated, archived) = service.processEvents(listOf(event), roundId = 1)
 
         assertEquals(3, updated.size)
         assertEquals("user-1", updated.first().entity)
@@ -276,9 +276,7 @@ internal class UserRoundActionSummaryServiceTest {
                     ),
             )
 
-        assertThrows<IllegalStateException> {
-            service.processEvents(blockDetails, listOf(event1, event2), 1)
-        }
+        assertThrows<IllegalStateException> { service.processEvents(listOf(event1, event2), 1) }
     }
 
     @Test
@@ -575,5 +573,265 @@ internal class UserRoundActionSummaryServiceTest {
         assertEquals(160, result.totalImpact?.carbon)
         assertEquals(350, result.totalImpact?.water)
         assertEquals(70, result.totalImpact?.energy)
+    }
+
+    @Test
+    fun `process EmissionDistributed event should result in a roundId change`() {
+        val blockDetailsEvent1 =
+            BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                eventType = "EmissionDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+        val rewardEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+        val events = listOf(roundChangeEvent, rewardEvent)
+
+        val expectedUserRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = "user-1",
+                entityType = EntityType.USER,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val expectedAppRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = "app-1",
+                entityType = EntityType.APP,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val expectedGlobalRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = EntityType.GLOBAL.name,
+                entityType = EntityType.GLOBAL,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val updatedRecordsExpected =
+            listOf(expectedUserRecord, expectedAppRecord, expectedGlobalRecord)
+
+        every { repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2")) } returns null
+        every { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) } returns null
+        every { repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2")) } returns
+            null
+
+        // Verify that service.save is called with the correct parameters
+        val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
+
+        verify(exactly = 1) {
+            repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2"))
+        }
+        verify(exactly = 1) { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) }
+        verify(exactly = 1) {
+            repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2"))
+        }
+
+        assertTrue(
+            updated.zip(updatedRecordsExpected).all { (actual, expected) ->
+                actual.copy(totalRewardAmount = BigDecimal.ZERO) ==
+                    expected.copy(totalRewardAmount = BigDecimal.ZERO) &&
+                    actual.totalRewardAmount.compareTo(expected.totalRewardAmount) == 0
+            }
+        )
+        assertEquals(emptyList<UserRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
+    }
+
+    @Test
+    fun `process EmissionDistributedV2 event should result in a roundId change`() {
+        val blockDetailsEvent1 =
+            BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                eventType = "EmissionDistributedV2",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+        val rewardEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+
+        val events = listOf(roundChangeEvent, rewardEvent)
+
+        val expectedUserRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = "user-1",
+                entityType = EntityType.USER,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val expectedAppRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = "app-1",
+                entityType = EntityType.APP,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val expectedGlobalRecord =
+            UserRoundActionSummary(
+                version = 1,
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                entity = EntityType.GLOBAL.name,
+                entityType = EntityType.GLOBAL,
+                roundId = 2,
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal(10),
+                totalImpact = null,
+            )
+
+        val updatedRecordsExpected =
+            listOf(expectedUserRecord, expectedAppRecord, expectedGlobalRecord)
+
+        every { repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2")) } returns null
+        every { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) } returns null
+        every { repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2")) } returns
+            null
+
+        // Verify that service.save is called with the correct parameters
+        val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
+
+        verify(exactly = 1) {
+            repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2"))
+        }
+        verify(exactly = 1) { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) }
+        verify(exactly = 1) {
+            repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2"))
+        }
+
+        assertTrue(
+            updated.zip(updatedRecordsExpected).all { (actual, expected) ->
+                actual.copy(totalRewardAmount = BigDecimal.ZERO) ==
+                    expected.copy(totalRewardAmount = BigDecimal.ZERO) &&
+                    actual.totalRewardAmount.compareTo(expected.totalRewardAmount) == 0
+            }
+        )
+        assertEquals(emptyList<UserRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
+    }
+
+    @Test
+    fun `only round change event should result in a roundId change`() {
+        val blockDetailsEvent1 =
+            BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
+        val roundChangeEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = blockDetailsEvent1.blockId,
+                blockNumber = blockDetailsEvent1.blockNumber,
+                blockTimestamp = blockDetailsEvent1.blockTimestamp,
+                eventType = "EmissionDistributedV2",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "cycle" to "2",
+                                "totalAmount" to "10000000000000000000",
+                                "distributor" to "0x0",
+                            )
+                    ),
+            )
+
+        val events = listOf(roundChangeEvent)
+
+        val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
+
+        assertEquals(emptyList<UserRoundActionSummary>(), updated)
+        assertEquals(emptyList<UserRoundActionSummary>(), archive)
+        assertEquals(2, updatedRoundId)
     }
 }
