@@ -3,6 +3,7 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
+import kotlin.collections.List
 import org.bson.types.Decimal128
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -20,15 +21,19 @@ data class Validator(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val endorser: String? = null, // address of the endorser
+    val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
     val vetStaked: Decimal128? = null, // amount of VET staked
     val validatorVetStaked: Decimal128? = null,
     val delegatorVetStaked: Decimal128? = null,
+    val queuedVetStaked: Decimal128? = null,
+    val exitingVetStaked: Decimal128? = null,
     val delegations: Map<TokenLevel, Long> = emptyMap(), // number of delegations by level
-    @JsonIgnore
-    val delegationIds: Map<String, TokenLevel> = emptyMap(), // mapping of delegation ID to level
-    @JsonIgnore val delegationIdList: List<String> = emptyList(),
-    val cycleEndBlock: Long? = null, // end block of the current cycle
+    val incomingDelegations: Map<TokenLevel, Long> = emptyMap(),
+    val outgoingDelegations: Map<TokenLevel, Long> = emptyMap(),
+    @JsonIgnore val delegationInfo: Map<String, Pair<TokenLevel, Status>> = emptyMap(),
+    @JsonIgnore val delegationsToBeActioned: List<String> = emptyList(),
+    val cycleEndBlock: Long, // end block of the current cycle
     val totalRewards: Decimal128? = null, // total rewards earned
     val blockProbability: Decimal128? = null,
     val blocksPerEpoch: Decimal128? = null,
@@ -43,7 +48,7 @@ data class Validator(
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
     val startBlock: Long? = null,
-    val stakingPeriodLength: Long? = null,
+    val cyclePeriodLength: Long,
     val blocksPerYear: Decimal128? = null,
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,

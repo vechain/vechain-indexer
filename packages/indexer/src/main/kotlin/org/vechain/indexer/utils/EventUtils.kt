@@ -3,6 +3,7 @@ package org.vechain.indexer.utils
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
+import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.transfer.TransferEventType
 import org.vechain.indexer.validator.ValidatorAction
 
@@ -63,6 +64,7 @@ object EventUtils {
             "DelegationInitiated" -> ValidatorAction.DELEGATION_INITIATED
             "DelegationWithdrawn" -> ValidatorAction.DELEGATION_REMOVED
             "DelegationExitRequested" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
+            "BeneficiarySet" -> ValidatorAction.BENIFICIARY_SET
             else -> null
         }
 
@@ -104,4 +106,16 @@ object EventUtils {
         // Sort by blockNumber and return as a LinkedHashMap to preserve order
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
+
+    fun incrementCounts(original: Map<TokenLevel, Long>, level: TokenLevel): Map<TokenLevel, Long> =
+        original.toMutableMap().apply {
+            this[level] = (this[level] ?: 0L) + 1
+            this[TokenLevel.All] = (this[TokenLevel.All] ?: 0L) + 1
+        }
+
+    fun decrementCounts(original: Map<TokenLevel, Long>, level: TokenLevel): Map<TokenLevel, Long> =
+        original.toMutableMap().apply {
+            this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
+            this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
+        }
 }

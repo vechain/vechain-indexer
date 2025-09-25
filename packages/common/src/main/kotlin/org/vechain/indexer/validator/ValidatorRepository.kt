@@ -16,5 +16,7 @@ interface ValidatorRepository : BasePagingAndSortingIndexedRepository<Validator,
         delegationIds: List<String>,
     ): List<Validator>
 
+    fun findByBlockNumberAndDelegationsToBeActionedNotEmpty(blockNumber: Long): List<Validator>
+
     fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator>
 }
