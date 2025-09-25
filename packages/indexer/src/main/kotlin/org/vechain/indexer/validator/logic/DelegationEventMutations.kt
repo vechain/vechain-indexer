@@ -59,7 +59,6 @@ object DelegationEventMutations {
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
-                delegationIdList = base.delegationIdList + delegationId,
                 delegationsToBeActioned = base.delegationsToBeActioned + delegationId,
                 delegationInfo =
                     base.delegationInfo + (delegationId to (tokenLevel to Status.QUEUED)),
@@ -114,13 +113,16 @@ object DelegationEventMutations {
         val delegationId = extractDelegationId(event)
         val (level, state) = validator.delegationInfo[delegationId] ?: return context
         val updatedDelegations =
-            if (state != Status.QUEUED) {
-                validator.delegations.toMutableMap().apply {
-                    this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
-                    this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
+            when (state) {
+                Status.QUEUED -> {
+                    validator.delegations // leave unchanged
                 }
-            } else {
-                validator.delegations // leave unchanged
+                else -> {
+                    validator.delegations.toMutableMap().apply {
+                        this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
+                        this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
+                    }
+                }
             }
 
         val updated =
@@ -133,7 +135,6 @@ object DelegationEventMutations {
             )
 
         context.put(updated)
-        println(updated)
         return context
     }
 
@@ -149,35 +150,43 @@ object DelegationEventMutations {
             v.delegationInfo.keys.forEach { dId -> delegationToValidator[dId] = validatorId }
         }
 
+        val sortedEvents =
+            events.sortedWith(
+                compareBy<IndexedEvent> {
+                    when (it.eventType) {
+                        "DelegationInitiated" -> 0
+                        "DelegationExitRequested" -> 1
+                        "DelegationWithdrawn" -> 2
+                        else -> 3
+                    }
+                }
+            )
+
         var ctx = context
-        events.forEach { ev ->
-            println("HERE")
+        sortedEvents.forEach { ev ->
             ctx =
                 when (EventUtils.determineValidatorEventType(ev.params)) {
                     ValidatorAction.DELEGATION_INITIATED -> {
-                        println("HERE1")
                         val validatorId = ev.params.getAsString("validator")!!
                         val newCtx = initiateDelegation(ctx, validatorId, ev)
                         delegationToValidator[extractDelegationId(ev)] = validatorId
                         newCtx
                     }
                     ValidatorAction.DELEGATION_EXIT_REQUESTED -> {
-                        println("HERE2")
-                        val validatorId = ev.params.getAsString("validator")!!
-                        val newCtx = requestExitDelegation(ctx, validatorId, ev)
-                        delegationToValidator[extractDelegationId(ev)] = validatorId
-                        newCtx
-                    }
-                    ValidatorAction.DELEGATION_REMOVED -> {
-                        println("HERE2")
                         val dId = extractDelegationId(ev)
                         val validatorId =
                             delegationToValidator[dId]
                                 ?: throw IllegalStateException(
                                     "No validator mapping yet for delegation $dId"
                                 )
+                        val newCtx = requestExitDelegation(ctx, validatorId, ev)
+                        delegationToValidator[extractDelegationId(ev)] = validatorId
+                        newCtx
+                    }
+                    ValidatorAction.DELEGATION_REMOVED -> {
+                        val dId = extractDelegationId(ev)
+                        val validatorId = delegationToValidator[dId] ?: return ctx
                         val newCtx = removeDelegation(ctx, validatorId, ev)
-                        println(newCtx)
                         newCtx
                     }
                     else -> {

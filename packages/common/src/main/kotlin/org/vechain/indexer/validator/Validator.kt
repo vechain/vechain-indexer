@@ -21,6 +21,7 @@ data class Validator(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val endorser: String? = null, // address of the endorser
+    val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
     val vetStaked: Decimal128? = null, // amount of VET staked
     val validatorVetStaked: Decimal128? = null,
@@ -29,9 +30,8 @@ data class Validator(
     val exitingVetStaked: Decimal128? = null,
     val delegations: Map<TokenLevel, Long> = emptyMap(), // number of delegations by level
     @JsonIgnore val delegationInfo: Map<String, Pair<TokenLevel, Status>> = emptyMap(),
-    @JsonIgnore val delegationIdList: List<String> = emptyList(),
     @JsonIgnore val delegationsToBeActioned: List<String> = emptyList(),
-    val cycleEndBlock: Long? = null, // end block of the current cycle
+    val cycleEndBlock: Long, // end block of the current cycle
     val totalRewards: Decimal128? = null, // total rewards earned
     val blockProbability: Decimal128? = null,
     val blocksPerEpoch: Decimal128? = null,
@@ -46,13 +46,12 @@ data class Validator(
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
     val startBlock: Long? = null,
-    val stakingPeriodLength: Long? = null,
+    val cyclePeriodLength: Long,
     val blocksPerYear: Decimal128? = null,
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
     @JsonIgnore val totalVTHOSupply: Decimal128,
     @JsonIgnore override val version: Int,
-    @JsonIgnore val nextCycleBlock: Long,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }
