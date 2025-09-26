@@ -13,4 +13,9 @@ class MockThorClient(private val blocks: Map<Long, Block>) : ThorClient {
     override suspend fun getEventLogs(req: EventLogsRequest): List<EventLog> = listOf()
 
     override suspend fun getVetTransfers(req: TransferLogsRequest): List<TransferLog> = listOf()
+
+    override suspend fun inspectClauses(
+        clauses: List<Clause>,
+        blockID: String,
+    ): List<InspectionResult> = listOf()
 }
