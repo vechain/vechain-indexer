@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
@@ -38,7 +39,13 @@ class VeVoteResultIndexerTest {
 
     @Test
     fun `process block with no vote events`() {
-        voteResultsIndexer.process(emptyList(), BLOCK_NO_CLAUSES)
+        voteResultsIndexer.process(
+            IndexingResult.Normal(
+                events = emptyList(),
+                block = BLOCK_NO_CLAUSES,
+                callResults = emptyList(),
+            )
+        )
 
         verify { mongoTemplate wasNot Called }
     }
