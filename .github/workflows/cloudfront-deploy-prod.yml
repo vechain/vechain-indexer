@@ -1,0 +1,308 @@
+name: 'CloudFront Deploy - Production'
+
+on:
+  push:
+    branches:
+      - cloudfront-changes-01
+    paths:
+      - 'terraform/cloudfront/prod/**'
+      - 'terraform/cloudfront/environments/prod.yml'
+
+  workflow_run:
+    workflows: ["Cloudfront-deploy-staging"]
+    types:
+      - completed
+
+env:
+  TF_VERSION: '1.5.7'
+  AWS_REGION: 'eu-west-1'
+
+jobs:
+  plan_pre_promotion:
+    name: 'Plan Pre-Promotion'
+    runs-on: ubuntu-latest
+    
+    # Only run if staging workflow completed successfully (for workflow_run trigger)
+    if: |
+      github.event_name != 'workflow_run' || 
+      github.event.workflow_run.conclusion == 'success'
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront/prod
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Terraform Plan
+        run: |
+          terraform plan -no-color -out=tfplan
+          terraform show -no-color tfplan
+        
+
+  promote_mainnet_staging_to_primary:
+    name: 'Promote Mainnet: Staging → Primary'
+    needs: plan_pre_promotion
+    runs-on: ubuntu-latest
+    
+    # Require manual approval for mainnet production promotion
+    environment: 
+      name: prod-mainnet-cloudfront-promotion-approval
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront/prod
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials (Production)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Terraform Init (Read State)
+        run: terraform init -input=false
+  
+        
+      - name: Read Mainnet Distribution IDs from Outputs
+        id: distribution_ids
+        run: |
+          set -e
+          PRIMARY_ID=$(terraform output -raw primary_mainnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          STAGING_ID=$(terraform output -raw staging_mainnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          
+          if [ -z "$PRIMARY_ID" ] || [ -z "$STAGING_ID" ]; then
+            echo "❌ Expected Terraform outputs 'primary_mainnet_cloudfront_distribution_id' and 'staging_mainnet_cloudfront_distribution_id' in the prod state."
+            echo "Available outputs:"
+            terraform output
+            exit 1
+          fi
+          
+          echo "PRIMARY_MAINNET_ID=$PRIMARY_ID" >> $GITHUB_ENV
+          echo "STAGING_MAINNET_ID=$STAGING_ID" >> $GITHUB_ENV
+          echo "✅ Primary Mainnet Distribution ID: $PRIMARY_ID"
+          echo "✅ Staging Mainnet Distribution ID: $STAGING_ID"
+      
+      - name: Get Mainnet Distribution ETags
+        id: etags
+        run: |
+          set -e
+          echo "🔍 Fetching mainnet distribution ETags..."
+          
+          P_ETAG=$(aws cloudfront get-distribution --id "$PRIMARY_MAINNET_ID" --query 'ETag' --output text)
+          S_ETAG=$(aws cloudfront get-distribution --id "$STAGING_MAINNET_ID" --query 'ETag' --output text)
+          
+          echo "P_MAINNET_ETAG=$P_ETAG" >> $GITHUB_ENV
+          echo "S_MAINNET_ETAG=$S_ETAG" >> $GITHUB_ENV
+          echo "✅ Primary Mainnet ETag: $P_ETAG"
+          echo "✅ Staging Mainnet ETag: $S_ETAG"
+
+      - name: Promote Mainnet Staging → Primary
+        run: |
+          set -e
+          echo "🚀 Starting promotion of mainnet staging configuration to primary distribution..."
+          echo "📋 Primary Mainnet ID: $PRIMARY_MAINNET_ID"
+          echo "📋 Staging Mainnet ID: $STAGING_MAINNET_ID" 
+          echo "📋 Primary Mainnet ETag: $P_MAINNET_ETAG"
+          echo "📋 Staging Mainnet ETag: $S_MAINNET_ETAG"
+          
+          aws cloudfront update-distribution-with-staging-config \
+            --id "$PRIMARY_MAINNET_ID" \
+            --staging-distribution-id "$STAGING_MAINNET_ID" \
+            --if-match "$P_MAINNET_ETAG,$S_MAINNET_ETAG"
+          
+          echo "✅ Mainnet promotion command submitted successfully!"
+          echo "🔄 CloudFront will copy staging config to primary and disable the continuous deployment policy."
+          echo "⏳ This process may take several minutes to complete."
+          
+      - name: Verify Mainnet Promotion Status
+        run: |
+          echo "🔍 Checking mainnet promotion status..."
+          
+          # Wait a moment for the promotion to start
+          sleep 30
+          
+          # Check the distribution status
+          STATUS=$(aws cloudfront get-distribution --id "$PRIMARY_MAINNET_ID" --query 'Distribution.Status' --output text)
+          echo "📊 Current mainnet distribution status: $STATUS"
+          
+          if [ "$STATUS" = "InProgress" ]; then
+            echo "⏳ Mainnet distribution update is in progress..."
+          elif [ "$STATUS" = "Deployed" ]; then
+            echo "✅ Mainnet distribution is fully deployed!"
+          else
+            echo "ℹ️ Mainnet distribution status: $STATUS"
+          fi
+
+      - name: Mainnet Success Notification
+        if: success()
+        run: |
+          echo "🎉 Mainnet production promotion completed successfully!"
+          echo ""
+          echo "📋 Summary:"
+          echo "  • Mainnet staging configuration promoted to primary distribution"
+          echo "  • Distribution ID: $PRIMARY_MAINNET_ID"
+          echo "  • Status: Promotion initiated"
+
+  promote_testnet_staging_to_primary:
+    name: 'Promote Testnet: Staging → Primary'
+    needs: plan_pre_promotion
+    runs-on: ubuntu-latest
+    
+    # Require manual approval for testnet production promotion
+    environment: 
+      name: prod-testnet-cloudfront-promotion-approval
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront/prod
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials (Production)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Terraform Init (Read State)
+        run: terraform init -input=false
+        
+      
+        
+      - name: Read Testnet Distribution IDs from Outputs
+        id: distribution_ids
+        run: |
+          set -e
+          PRIMARY_ID=$(terraform output -raw primary_testnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          STAGING_ID=$(terraform output -raw staging_testnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          
+          if [ -z "$PRIMARY_ID" ] || [ -z "$STAGING_ID" ]; then
+            echo "❌ Expected Terraform outputs 'primary_testnet_cloudfront_distribution_id' and 'staging_testnet_cloudfront_distribution_id' in the prod state."
+            echo "Available outputs:"
+            terraform output
+            exit 1
+          fi
+          
+          echo "PRIMARY_TESTNET_ID=$PRIMARY_ID" >> $GITHUB_ENV
+          echo "STAGING_TESTNET_ID=$STAGING_ID" >> $GITHUB_ENV
+          echo "✅ Primary Testnet Distribution ID: $PRIMARY_ID"
+          echo "✅ Staging Testnet Distribution ID: $STAGING_ID"
+      
+      - name: Get Testnet Distribution ETags
+        id: etags
+        run: |
+          set -e
+          echo "🔍 Fetching testnet distribution ETags..."
+          
+          P_ETAG=$(aws cloudfront get-distribution --id "$PRIMARY_TESTNET_ID" --query 'ETag' --output text)
+          S_ETAG=$(aws cloudfront get-distribution --id "$STAGING_TESTNET_ID" --query 'ETag' --output text)
+          
+          echo "P_TESTNET_ETAG=$P_ETAG" >> $GITHUB_ENV
+          echo "S_TESTNET_ETAG=$S_ETAG" >> $GITHUB_ENV
+          echo "✅ Primary Testnet ETag: $P_ETAG"
+          echo "✅ Staging Testnet ETag: $S_ETAG"
+
+      - name: Promote Testnet Staging → Primary
+        run: |
+          set -e
+          echo "🚀 Starting promotion of testnet staging configuration to primary distribution..."
+          echo "📋 Primary Testnet ID: $PRIMARY_TESTNET_ID"
+          echo "📋 Staging Testnet ID: $STAGING_TESTNET_ID" 
+          echo "📋 Primary Testnet ETag: $P_TESTNET_ETAG"
+          echo "📋 Staging Testnet ETag: $S_TESTNET_ETAG"
+          
+          aws cloudfront update-distribution-with-staging-config \
+            --id "$PRIMARY_TESTNET_ID" \
+            --staging-distribution-id "$STAGING_TESTNET_ID" \
+            --if-match "$P_TESTNET_ETAG,$S_TESTNET_ETAG"
+          
+          echo "✅ Testnet promotion command submitted successfully!"
+          echo "🔄 CloudFront will copy staging config to primary and disable the continuous deployment policy."
+          echo "⏳ This process may take several minutes to complete."
+          
+      - name: Verify Testnet Promotion Status
+        run: |
+          echo "🔍 Checking testnet promotion status..."
+          
+          # Wait a moment for the promotion to start
+          sleep 30
+          
+          # Check the distribution status
+          STATUS=$(aws cloudfront get-distribution --id "$PRIMARY_TESTNET_ID" --query 'Distribution.Status' --output text)
+          echo "📊 Current testnet distribution status: $STATUS"
+          
+          if [ "$STATUS" = "InProgress" ]; then
+            echo "⏳ Testnet distribution update is in progress..."
+          elif [ "$STATUS" = "Deployed" ]; then
+            echo "✅ Testnet distribution is fully deployed!"
+          else
+            echo "ℹ️ Testnet distribution status: $STATUS"
+          fi
+
+      - name: Testnet Success Notification
+        if: success()
+        run: |
+          echo "🎉 Testnet production promotion completed successfully!"
+          echo ""
+          echo "📋 Summary:"
+          echo "  • Testnet staging configuration promoted to primary distribution"
+          echo "  • Distribution ID: $PRIMARY_TESTNET_ID"
+          echo "  • Status: Promotion initiated"
+
+  deployment_summary:
+    name: 'Deployment Summary'
+    needs: [promote_mainnet_staging_to_primary, promote_testnet_staging_to_primary]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Final Deployment Summary
+        run: |
+          echo "🏁 Production Deployment Summary"
+          echo "================================"
+          echo ""
+          echo "📊 Job Results:"
+          echo "  • Mainnet Promotion: ${{ needs.promote_mainnet_staging_to_primary.result }}"
+          echo "  • Testnet Promotion: ${{ needs.promote_testnet_staging_to_primary.result }}"
+          echo ""
+          if [ "${{ needs.promote_mainnet_staging_to_primary.result }}" = "success" ] && [ "${{ needs.promote_testnet_staging_to_primary.result }}" = "success" ]; then
+            echo "🎉 All promotions completed successfully!"
+            echo ""
+            echo "🔗 Next steps:"
+            echo "  • Monitor CloudFront distribution status in AWS Console"
+            echo "  • Verify production traffic is working correctly"
+            echo "  • Check CloudFront logs for any issues"
+          else
+            echo "⚠️ Some promotions may have failed. Please check the job logs above."
+          fi

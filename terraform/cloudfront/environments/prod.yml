@@ -1,0 +1,97 @@
+# Production Environment Configuration for CloudFront
+# This file contains all variable inputs for the prod environment
+
+# Environment and Project Configuration
+environment: "prod"
+project_name: "veworld"
+region: "eu-west-1"
+
+# CloudFront Distribution Configuration
+enable_continuous_deployment: true  # Set to true to enable continuous deployment policies
+mainnet_origin_domain: "mainnet.live.prod.veworld.vechain.org"
+testnet_origin_domain: "testnet.live.prod.veworld.vechain.org"
+
+# Default Policy IDs - Applied to distributions directly
+default_headers_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+default_origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+
+mainnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/392c3bd4-5a0d-43b0-a204-1307fc140749"
+testnet_certificate_arn: "arn:aws:acm:us-east-1:905964754131:certificate/8b66d985-6d28-46fe-9a31-c4160c736fed"
+
+mainnet_cnames:
+  - "indexer.mainnet.vechain.org"
+
+testnet_cnames:
+  - "indexer.testnet.vechain.org"
+
+# Cache policies are now managed in shared.yml and referenced via remote state
+
+# Cache Behavior Configuration - Shared behaviors applied to both mainnet and testnet
+cache_behaviors:
+  - name: "1-hour"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-hour"
+    cache_policy_name: "hourly"
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+      - "PUT"
+      - "POST"
+      - "PATCH"
+      - "DELETE"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+  
+  - name: "1-day"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-day"
+    cache_policy_name: "day"
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+  
+  - name: "1-week"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-week"
+    cache_policy_name: "weekly"
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+  
+  - name: "1-month"
+    path_pattern: "/api/v1/stargate/nft-holders/historic/1-month"
+    cache_policy_name: "monthly"
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    origin_request_policy_id: 216adef6-5c7f-47e4-b989-5492eafa07d3
+    allowed_methods:
+      - "GET"
+      - "HEAD"
+      - "OPTIONS"
+    cached_methods:
+      - "GET"
+      - "HEAD"
+    viewer_protocol_policy: "redirect-to-https"
+
+# WAF configuration is now managed in shared.yml and referenced via remote state
+
+# Module Source Configuration
+module_sources:
+  cloudfront_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/non_s3_distribution?ref=cloudfront-changes"
+  policies_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//cloudfront/policies?ref=cloudfront-changes"
+  waf_module_source: "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=cloudfront-changes"

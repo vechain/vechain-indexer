@@ -1,0 +1,138 @@
+# Shared Configuration for CloudFront Cache Policies and WAF
+# This file contains configurations that are shared between all environments
+
+# Environment and Project Configuration
+environment: "shared"
+project_name: "veworld"
+region: "eu-west-1"
+
+# Cache Policy Configuration V1 - Used by staging and production
+cache_policies_v1:
+  - id: "default"
+    name: "veworld_default_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 0
+    max_ttl_seconds: 0
+    min_ttl_seconds: 0
+  
+  - id: "hourly"
+    name: "veworld_hourly_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 300
+    max_ttl_seconds: 300
+    min_ttl_seconds: 300
+  
+  - id: "day"
+    name: "veworld_day_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 300
+    max_ttl_seconds: 300
+    min_ttl_seconds: 300
+  
+  - id: "weekly"
+    name: "veworld_weekly_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 300
+    max_ttl_seconds: 300
+    min_ttl_seconds: 300
+  
+  - id: "monthly"
+    name: "veworld_monthly_cache_policy"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 300
+    max_ttl_seconds: 300
+    min_ttl_seconds: 300
+
+# Cache Policy Configuration V2 - Alternative configuration
+cache_policies_v2:
+  - id: "default"
+    name: "veworld_default_cache_policy_v2"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 0
+    max_ttl_seconds: 0
+    min_ttl_seconds: 0
+  
+  - id: "hourly"
+    name: "veworld_hourly_cache_policy_v2"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 600
+    max_ttl_seconds: 600
+    min_ttl_seconds: 600
+  
+  - id: "day"
+    name: "veworld_day_cache_policy_v2"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 3600
+    max_ttl_seconds: 3600
+    min_ttl_seconds: 3600
+  
+  - id: "weekly"
+    name: "veworld_weekly_cache_policy_v2"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 86400
+    max_ttl_seconds: 86400
+    min_ttl_seconds: 86400
+  
+  - id: "monthly"
+    name: "veworld_monthly_cache_policy_v2"
+    create_header_policy: false
+    header_policy_id: 67f7725c-6f97-4210-82d7-5512b31e9d03
+    default_ttl_seconds: 604800
+    max_ttl_seconds: 604800
+    min_ttl_seconds: 604800
+
+# WAF Configuration - Shared base configuration
+waf:
+  enable_waf: true
+  waf_cloudfront_enable: true
+  waf_logs_enable: false
+  waf_logs_s3_enable: false
+  waf_logs_retention: 30
+  waf_scope: "CLOUDFRONT"
+  waf_associate: true
+  waf_rate_limit: 5000
+  waf_rate_limit_exceptions: []
+
+# WAF Managed Rules Configuration
+waf_managed_rules:
+  - name: "AWS-AWSManagedRulesAmazonIpReputationList"
+    priority: 1
+    override_action: "none"
+    rule_group_name: "AWSManagedRulesAmazonIpReputationList"
+    vendor_name: "AWS"
+    excluded_rules: []
+  
+  - name: "AWS-AWSManagedRulesCommonRuleSet"
+    priority: 2
+    override_action: "none"
+    rule_group_name: "AWSManagedRulesCommonRuleSet"
+    vendor_name: "AWS"
+    excluded_rules: []
+    rule_action_override:
+      - name: "SizeRestrictions_QUERYSTRING"
+        action_to_use:
+          allow: true
+  
+  - name: "AWS-AWSManagedRulesKnownBadInputsRuleSet"
+    priority: 3
+    override_action: "none"
+    rule_group_name: "AWSManagedRulesKnownBadInputsRuleSet"
+    vendor_name: "AWS"
+    excluded_rules: []
+  
+  - name: "AWS-AWSManagedRulesSQLiRuleSet"
+    priority: 4
+    override_action: "none"
+    rule_group_name: "AWSManagedRulesSQLiRuleSet"
+    vendor_name: "AWS"
+    excluded_rules: []
+    
