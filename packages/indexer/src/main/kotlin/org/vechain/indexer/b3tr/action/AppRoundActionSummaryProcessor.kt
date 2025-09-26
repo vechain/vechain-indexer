@@ -4,10 +4,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.timing.WithTiming
 
 @Configuration
@@ -28,12 +27,12 @@ open class AppRoundActionSummaryProcessor(
         repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
 
     @WithTiming("AppRoundActionSummaryProcessor.process")
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (matchedEvents.isEmpty()) {
+    override fun process(entry: IndexingResult) {
+        if (entry.events().isEmpty()) {
             return
         }
 
-        val (updated, archives, updatedRoundId) = service.processEvents(matchedEvents, roundId)
+        val (updated, archives, updatedRoundId) = service.processEvents(entry.events(), roundId)
 
         roundId = updatedRoundId
 

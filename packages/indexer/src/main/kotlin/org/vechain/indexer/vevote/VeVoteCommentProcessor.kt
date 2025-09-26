@@ -4,8 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.timing.WithTiming
 
 @Profile("vevote", "vevote-comments")
@@ -16,11 +15,11 @@ open class VeVoteCommentProcessor(
     private val mongoTemplate: MongoTemplate,
 ) : BaseProcessor(repository = vevoteCommentRepository) {
     @WithTiming("VeVoteCommentProcessor.process")
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (matchedEvents.isEmpty()) return
+    override fun process(entry: IndexingResult) {
+        if (entry.events().isEmpty()) return
 
         // Filter events to only those related to VeVote comments
-        val allowedReason = veVoteCommentService.processComment(matchedEvents)
+        val allowedReason = veVoteCommentService.processComment(entry.events())
 
         // Save the results
         if (allowedReason.isNotEmpty()) {
