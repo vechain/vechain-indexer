@@ -4,7 +4,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +22,7 @@ import strikt.assertions.isEqualTo
 class HistoryIndexerTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    private val repository = mockk<HistoryRepository>(relaxed = true)
+    @MockK lateinit var repository: HistoryRepository
 
     lateinit var processor: HistoryProcessor
 
@@ -31,7 +30,7 @@ class HistoryIndexerTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        val historyService = HistoryService(mongoTemplate = mongoTemplate)
+        val historyService = HistoryService(repository)
 
         processor = HistoryProcessor(repository, historyService)
     }
@@ -42,9 +41,8 @@ class HistoryIndexerTest {
 
         val historyEventSlot = slot<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
-        } returns mutableListOf()
+        every { repository.deleteAllByBlockNumberBetween(20614873, 20614875) } returns Unit
+        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
 
         val eventProcessor = buildEventProcessor()
 
@@ -84,9 +82,8 @@ class HistoryIndexerTest {
 
         val historyEventSlot = slot<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
-        } returns mutableListOf()
+        every { repository.deleteAllByBlockNumberBetween(20056657, 20056659) } returns Unit
+        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
 
         val indexer =
             TestableBlockIndexer(
@@ -126,9 +123,8 @@ class HistoryIndexerTest {
 
         val historyEventSlot = slot<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
-        } returns mutableListOf()
+        every { repository.deleteAllByBlockNumberBetween(20849466, 20849468) } returns Unit
+        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
 
         val indexer =
             TestableBlockIndexer(
@@ -169,9 +165,8 @@ class HistoryIndexerTest {
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
 
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(any<List<IndexedHistoryEvent>>(), IndexedHistoryEvent::class.java)
-        } answers
+        every { repository.deleteAllByBlockNumberBetween(9, 11) } returns Unit
+        every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
                 insertedEvents.add(events)
@@ -236,9 +231,8 @@ class HistoryIndexerTest {
 
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(any<List<IndexedHistoryEvent>>(), IndexedHistoryEvent::class.java)
-        } answers
+        every { repository.deleteAllByBlockNumberBetween(0, 2) } returns Unit
+        every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
                 insertedEvents.add(events)
@@ -367,9 +361,8 @@ class HistoryIndexerTest {
 
         val historyEventSlot = slot<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(capture(historyEventSlot), IndexedHistoryEvent::class.java)
-        } returns mutableListOf()
+        every { repository.deleteAllByBlockNumberBetween(7, 9) } returns Unit
+        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
 
         val indexer =
             TestableBlockIndexer(

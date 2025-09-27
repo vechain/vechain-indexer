@@ -21,6 +21,10 @@ open class HistoryProcessor(
             return
         }
 
-        historyService.processBlockEvents(entry.events(), entry.block)
+        val records = historyService.processEvents(entry.events(), entry.block)
+
+        if (!records.isEmpty()) {
+            historyService.save(records)
+        }
     }
 }
