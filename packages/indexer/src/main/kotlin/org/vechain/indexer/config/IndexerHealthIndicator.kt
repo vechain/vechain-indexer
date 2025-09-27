@@ -71,7 +71,6 @@ class IndexerHealthIndicator(
      * if it is down
      */
     private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
-
         if (indexer.status == Status.PRUNING) {
             return HealthStatus.UP to "Indexer is pruning"
         }

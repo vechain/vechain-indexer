@@ -10,6 +10,7 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.ThorService
 
@@ -63,7 +64,7 @@ class AmnProcessorTest {
         every { amnService.syncEndorsersForAllNodes() } just Runs
         every { amnService.processCandidateEvents(any()) } just Runs
 
-        processor.process(emptyList())
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
         verify { amnService.syncEndorsersForAllNodes() }
         verify { amnService.processCandidateEvents(any()) }
@@ -75,8 +76,8 @@ class AmnProcessorTest {
         every { amnService.syncEndorsersForAllNodes() } just Runs
         every { amnService.processCandidateEvents(any()) } just Runs
 
-        processor.process(emptyList()) // should sync
-        processor.process(emptyList()) // should not sync again
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
         verify(exactly = 1) { amnService.syncEndorsersForAllNodes() }
     }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.LogsFixtures
 import org.vechain.indexer.thor.ThorService
@@ -58,7 +59,12 @@ class HistoricProposalsProcessorTest {
                     every { id } returns "${event.address}-1"
                 }
             }
-        processor.process(events, null)
+        processor.process(
+            IndexingResult.EventsOnly(
+                events = events,
+                endBlock = events.maxBy { it.blockNumber }.blockNumber,
+            )
+        )
         val proposals = proposalsSlot.captured
         expectThat(proposals).hasSize(3)
         proposals.forEach { proposal ->
@@ -93,7 +99,12 @@ class HistoricProposalsProcessorTest {
             historicProposalsService.processNewProposals(any<List<IndexedEvent>>(), any())
         } returns mockProposals
 
-        processor.process(events, null)
+        processor.process(
+            IndexingResult.EventsOnly(
+                events = events,
+                endBlock = events.maxBy { it.blockNumber }.blockNumber,
+            )
+        )
         val proposals = proposalsSlot.captured
         expectThat(proposals).hasSize(2)
         proposals.forEach { proposal ->
