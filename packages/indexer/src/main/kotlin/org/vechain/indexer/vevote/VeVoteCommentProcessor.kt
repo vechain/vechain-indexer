@@ -5,7 +5,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("vevote", "vevote-comments")
 @Component
@@ -14,7 +13,6 @@ open class VeVoteCommentProcessor(
     private val veVoteCommentService: VeVoteCommentService,
     private val mongoTemplate: MongoTemplate,
 ) : BaseProcessor(repository = vevoteCommentRepository) {
-    @WithTiming("VeVoteCommentProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 

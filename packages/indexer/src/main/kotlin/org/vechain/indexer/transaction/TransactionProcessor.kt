@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("transactions")
 @Component
@@ -16,7 +15,6 @@ open class TransactionProcessor(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @WithTiming("TransactionProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block must be a normal block.")

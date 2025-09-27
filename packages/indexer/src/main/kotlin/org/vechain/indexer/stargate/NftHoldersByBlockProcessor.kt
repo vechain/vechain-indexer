@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("stargate", "nft-holders-by-block")
 @Component
@@ -13,7 +12,6 @@ open class NftHoldersByBlockProcessor(
     repository: NftHoldersByBlockRepository,
 ) : BaseProcessor(repository) {
 
-    @WithTiming("NftHoldersByBlockProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return

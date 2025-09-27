@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("stargate", "vet-staked-by-block")
 @Component
@@ -13,7 +12,6 @@ open class VetStakedByBlockProcessor(
     repository: VetStakedByBlockRepository,
 ) : BaseProcessor(repository) {
 
-    @WithTiming("VetStakedByBlockProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
