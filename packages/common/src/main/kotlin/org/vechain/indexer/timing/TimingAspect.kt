@@ -10,7 +10,10 @@ import org.springframework.stereotype.Component
 
 @Aspect
 @Component
-class TimingAspect(@param:Value("\${timing.warn-threshold-ms}") private val warnThresholdMs: Long) {
+class TimingAspect(
+    @param:Value("\${timing.warn-threshold-ms}") private val warnThresholdMs: Long,
+    @param:Value("\${timing.very-slow-threshold-ms}") private val verySlowThresholdMs: Long,
+) {
     private val logger = LoggerFactory.getLogger(TimingAspect::class.java)
 
     @Around("@annotation(withTiming)")
@@ -19,12 +22,16 @@ class TimingAspect(@param:Value("\${timing.warn-threshold-ms}") private val warn
         var result: Any?
         val duration = measureTime { result = joinPoint.proceed() }
         val durationMs = duration.inWholeMilliseconds
-        if (warnThresholdMs > 0 && durationMs >= warnThresholdMs) {
-            logger.warn(
-                "⏱ Slow function call: $methodName took ${duration.inWholeMilliseconds} ms (threshold $warnThresholdMs ms)"
-            )
-        } else {
-            logger.debug("⏱️ $methodName took $duration")
+        when {
+            durationMs >= verySlowThresholdMs ->
+                logger.error(
+                    "⏱️ Very slow function call: $methodName took $durationMs ms (threshold $verySlowThresholdMs ms)"
+                )
+            durationMs >= warnThresholdMs ->
+                logger.warn(
+                    "⏱ Slow function call: $methodName took $durationMs ms (threshold $warnThresholdMs ms)"
+                )
+            else -> logger.debug("⏱️ $methodName took $duration")
         }
         return result
     }
