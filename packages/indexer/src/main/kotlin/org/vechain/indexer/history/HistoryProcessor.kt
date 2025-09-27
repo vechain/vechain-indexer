@@ -23,7 +23,7 @@ open class HistoryProcessor(
 
         val records = historyService.processEvents(entry.events(), entry.block)
 
-        if (!records.isEmpty()) {
+        if (records.isNotEmpty()) {
             historyService.save(records)
         }
     }
