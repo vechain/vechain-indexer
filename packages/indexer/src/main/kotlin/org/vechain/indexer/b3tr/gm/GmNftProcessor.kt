@@ -7,7 +7,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Component
@@ -17,7 +16,6 @@ open class GmNftProcessor(
     private val service: GmNftService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = gmNftArchiveService) {
 
-    @WithTiming("GmNftProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

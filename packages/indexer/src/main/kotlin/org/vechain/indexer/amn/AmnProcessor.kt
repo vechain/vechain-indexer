@@ -8,7 +8,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("authority-nodes")
 @Component
@@ -22,7 +21,6 @@ open class AmnProcessor(
 
     private var hasSynced = false
 
-    @WithTiming("AmnProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (!hasSynced && repository.count() == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")

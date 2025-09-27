@@ -7,7 +7,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.timing.WithTiming
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
@@ -21,7 +20,6 @@ open class UserDailyActionSummaryProcessor(
         repository = repository,
         archiveService = userDailyActionSummaryArchiveService,
     ) {
-    @WithTiming("UserDailyActionSummaryProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

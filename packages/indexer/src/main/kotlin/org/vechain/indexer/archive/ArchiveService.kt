@@ -15,7 +15,6 @@ import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.timing.WithTiming
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
@@ -123,7 +122,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
-    @WithTiming("Pruner - findRecordsToPrune")
     open fun findRecordsToPrune(
         endBlock: Long,
         batchSize: Int,

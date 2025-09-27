@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
 @Service
-class HistoryService(private val mongoTemplate: MongoTemplate) {
+open class HistoryService(private val mongoTemplate: MongoTemplate) {
     fun processBlockEvents(events: List<IndexedEvent>, block: Block) {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()

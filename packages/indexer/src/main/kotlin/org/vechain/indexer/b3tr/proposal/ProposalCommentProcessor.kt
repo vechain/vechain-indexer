@@ -6,7 +6,6 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
 @Component
@@ -14,7 +13,6 @@ open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
 ) : BaseProcessor(repository = repository) {
-    @WithTiming("ProposalCommentProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) {
             return

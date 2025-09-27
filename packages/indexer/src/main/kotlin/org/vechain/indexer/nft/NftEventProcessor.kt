@@ -6,7 +6,6 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("nfts")
 @Component
@@ -16,7 +15,6 @@ open class NftProcessor(
     repository: NftRepository,
 ) : BaseProcessor(repository) {
 
-    @WithTiming("NftProcessor.process")
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
         if (matchedEvents.isEmpty()) return
 
