@@ -20,7 +20,6 @@ class TimingAspect(
         "execution(* org.vechain.indexer..*.processEvents(..)) || " +
             "execution(* org.vechain.indexer..*.save(..)) || " +
             "execution(* org.vechain.indexer..*.rollback(..)) || " +
-            "execution(* org.vechain.indexer..*.processBlockEvents(..)) || " +
             "execution(* org.vechain.indexer..*.findRecordsToPrune(..))"
     )
     fun logExecutionTime(joinPoint: ProceedingJoinPoint): Any? {
