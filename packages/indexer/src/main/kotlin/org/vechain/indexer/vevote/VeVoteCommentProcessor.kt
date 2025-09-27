@@ -13,7 +13,6 @@ open class VeVoteCommentProcessor(
     private val veVoteCommentService: VeVoteCommentService,
     private val mongoTemplate: MongoTemplate,
 ) : BaseProcessor(repository = vevoteCommentRepository) {
-
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
