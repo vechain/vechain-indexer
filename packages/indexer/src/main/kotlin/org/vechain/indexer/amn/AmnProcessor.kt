@@ -4,10 +4,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.thor.ThorService
-import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.timing.WithTiming
 
 @Profile("authority-nodes")
 @Component
@@ -21,7 +21,8 @@ open class AmnProcessor(
 
     private var hasSynced = false
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+    @WithTiming("AmnProcessor.process")
+    override fun process(entry: IndexingResult) {
         if (!hasSynced && repository.count() == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")
             amnService.syncEndorsersForAllNodes()
@@ -30,7 +31,7 @@ open class AmnProcessor(
             hasSynced = true
         }
 
-        amnService.processCandidateEvents(matchedEvents)
+        amnService.processCandidateEvents(entry.events())
     }
 
     override fun getLastSyncedBlock(): BlockIdentifier? {

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.IndexingResult
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {
@@ -25,7 +26,7 @@ class TransferProcessorTest {
 
     @Test
     fun `process - if no events should not do anything`() {
-        transferProcessor.process(emptyList(), null)
+        transferProcessor.process(IndexingResult.EventsOnly(events = emptyList(), endBlock = 100))
 
         // Verify that no interactions with mongoTemplate occur
         verify { mongoTemplate wasNot Called }

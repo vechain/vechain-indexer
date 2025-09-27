@@ -9,6 +9,7 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
@@ -34,7 +35,9 @@ internal class HistoryProcessorTest {
 
     @Test
     fun `process - if no events or transaction ar present then historyService shouldn't be called`() {
-        processor.process(emptyList(), BlockFixtures.BLOCK_NO_CLAUSES)
+        processor.process(
+            IndexingResult.Normal(BlockFixtures.BLOCK_NO_CLAUSES, emptyList(), emptyList())
+        )
 
         verify { historyService wasNot Called }
     }
@@ -46,7 +49,7 @@ internal class HistoryProcessorTest {
 
         every { historyService.processBlockEvents(events, block) } returns Unit
 
-        processor.process(events, block)
+        processor.process(IndexingResult.Normal(block, events, emptyList()))
 
         verify { historyService.processBlockEvents(events, BlockFixtures.BLOCK_NO_CLAUSES) }
     }
@@ -58,7 +61,7 @@ internal class HistoryProcessorTest {
 
         every { historyService.processBlockEvents(events, block) } returns Unit
 
-        processor.process(events, block)
+        processor.process(IndexingResult.Normal(block, events, emptyList()))
 
         verify { historyService.processBlockEvents(events, block) }
     }
@@ -68,7 +71,9 @@ internal class HistoryProcessorTest {
         val events = INDEXED_EVENTS_BLACKLIST
 
         try {
-            processor.process(events, null)
+            processor.process(
+                IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+            )
         } catch (e: IllegalArgumentException) {
             expect { that(e.message).isEqualTo("Block cannot be null") }
         }
