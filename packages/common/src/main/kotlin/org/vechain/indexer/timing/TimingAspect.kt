@@ -31,11 +31,11 @@ class TimingAspect(
         val durationMs = duration.inWholeMilliseconds
         val callDescription = "$className.$methodName"
         when {
-            verySlowThresholdMs > 0 && durationMs >= verySlowThresholdMs ->
-                logger.error(
+            verySlowThresholdMs in 1..durationMs ->
+                logger.warn(
                     "⏱️ Very slow function call: $callDescription took $durationMs ms (threshold $verySlowThresholdMs ms)"
                 )
-            warnThresholdMs > 0 && durationMs >= warnThresholdMs ->
+            warnThresholdMs in 1..durationMs ->
                 logger.warn(
                     "⏱ Slow function call: $callDescription took $durationMs ms (threshold $warnThresholdMs ms)"
                 )
