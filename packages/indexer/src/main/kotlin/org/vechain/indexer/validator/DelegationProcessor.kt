@@ -1,4 +1,4 @@
-package org.vechain.indexer.delegation
+package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -14,14 +14,11 @@ open class DelegationProcessor(
     archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val service: DelegationService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = archiveService) {
-    override fun process(
-        matchedEvents: List<IndexedEvent>,
-        block: Block?,
-    ) {
-        val (updated, existing, deleted) = service.processBlock(block!!, matchedEvents)
+    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+        val (updated, existing) = service.processBlock(block!!, matchedEvents)
 
-        if (updated.isNotEmpty() || existing.isNotEmpty() || deleted.isNotEmpty()) {
-            service.saveAndDelete(updated, existing, deleted)
+        if (updated.isNotEmpty()) {
+            service.save(updated, existing)
         }
     }
 }

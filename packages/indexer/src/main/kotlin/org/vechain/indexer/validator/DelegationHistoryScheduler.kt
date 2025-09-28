@@ -4,49 +4,72 @@ import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import java.math.BigDecimal
+import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.history.HistoryRepository
+import org.vechain.indexer.history.IndexedHistoryEvent
+import org.vechain.indexer.utils.EventUtils
+import org.vechain.indexer.utils.IdUtils
+import org.vechain.indexer.validator.Delegation
+import org.vechain.indexer.validator.DelegationRepository
 
-@Profile("vtho-funds")
+@Profile("history-delegations")
 @EnableScheduling
 @Component
-open class VthoFundsMonitor {
+open class DelegationHistoryScheduler(
+    private val delegationRepository: DelegationRepository,
+    private val historyRepository: HistoryRepository,
+) {
     @Scheduled(
         initialDelayString = "\${monitor.vthoFunds.initialDelay}",
         fixedRateString = "\${monitor.vthoFunds.interval}",
     )
-    override fun run() {
-        // First, get the balance for each account
-        val balances = vthoService.getVTHOBalances(items.keys.toList())
+    open fun run() {
+        // Get each account that needs to be notified
+        val delegations = delegationRepository.findByNotify(true)
 
-        val lowBalances: MutableMap<String, BigDecimal> = HashMap()
+        if (delegations.isEmpty()) return
 
-        balances.forEach { (address, balance) ->
-            val tracker = vthoMessageTrackerRepo.getAccount(address)
-            val vthoThreshold =
-                items[address]?.vthoThreshold
-                    ?: throw IllegalArgumentException(
-                        "VTHO threshold not defined for address: $address",
+        val historyEvents = mutableListOf<IndexedHistoryEvent>()
+
+        val updatedDelegations =
+            delegations.mapNotNull { delegation ->
+                val eventName =
+                    EventUtils.determineDelegationEventType(delegation.status, delegation.force)
+                        ?: return@mapNotNull null
+
+                // Build history event
+                val historyEvent =
+                    IndexedHistoryEvent(
+                        id =
+                            IdUtils.buildHashedId(
+                                "${delegation.id}-$eventName-${delegation.blockNumber}"
+                            ),
+                        blockNumber = delegation.blockNumber,
+                        blockTimestamp = delegation.blockTimestamp,
+                        blockId = delegation.blockId,
+                        txId = delegation.txId,
+                        eventName = eventName,
+                        tokenId = delegation.tokenId,
+                        delegationId = delegation.id,
+                        validator = delegation.validator,
+                        owner = delegation.owner,
                     )
 
-            if (balance < BigDecimal(vthoThreshold) && (tracker?.notified != true)) {
-                // Set the notification status to true if the balance is below the threshold
-                vthoMessageTrackerRepo.updateAccount(address, true)
-                lowBalances.put(address, balance)
-            } else if (balance >= BigDecimal(vthoThreshold) && tracker?.notified == true) {
-                // Reset the notification status if the balance is above the threshold
-                vthoMessageTrackerRepo.updateAccount(address, false)
-            }
-        }
+                historyEvents.add(historyEvent)
 
-        if (lowBalances.isNotEmpty()) {
-            sendLowVTHOMessage(lowBalances)
-        } else {
-            logger.info("No low VTHO balances to notify about")
-        }
+                // Ensure user does not get notified for the same event twice
+                delegation.copy(notify = false, version = delegation.version + 1)
+            }
+
+        this.save(historyEvents, updatedDelegations)
     }
 
-    fun sendLowVTHOMessage(lowBalances: Map<String, BigDecimal>) {
-        val message = messageService.buildGroupedLowVTHOMessage(lowBalances)
-        slackService.sendMessage(message, env.vthoFunds.slackUrl)
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(historyEvents: List<IndexedHistoryEvent>, delegations: List<Delegation>) {
+        // save hsitory events
+        historyRepository.saveAll(historyEvents)
+
+        // save updated delegations
+        delegationRepository.saveAll(delegations)
     }
 }

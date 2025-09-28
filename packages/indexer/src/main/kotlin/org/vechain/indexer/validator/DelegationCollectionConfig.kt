@@ -1,4 +1,4 @@
-package org.vechain.indexer.delegation
+package org.vechain.indexer.validator
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -16,7 +16,8 @@ open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(
+) :
+    CollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         Delegation::class.java,
@@ -24,8 +25,7 @@ open class DelegationCollectionConfig(
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.validator}")
-    private val version: Int = 1
+    @Value("\${indexer.version.validator}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
@@ -43,8 +43,6 @@ open class DelegationCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(
-            listOf(),
-        )
+        ensureIndexes(listOf())
     }
 }

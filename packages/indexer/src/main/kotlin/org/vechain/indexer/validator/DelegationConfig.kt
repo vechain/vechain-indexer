@@ -1,4 +1,4 @@
-package org.vechain.indexer.delegation
+package org.vechain.indexer.validator
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -10,8 +10,6 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.stargate.Delegation
-import org.vechain.indexer.stargate.DelegationArchive
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -33,7 +31,8 @@ open class DelegationConfig {
     open fun delegationPruner(
         delegationArchiveService: ArchiveService<Delegation, DelegationArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner = PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
+    ): Pruner =
+        PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun delegationIndexer(
@@ -46,8 +45,7 @@ open class DelegationConfig {
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
         stargateStakerAddress: String,
-        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
-        stargateAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("DelegationIndexer")
@@ -67,7 +65,8 @@ open class DelegationConfig {
                     "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
                     "Transfer",
-                ),
-            ).excludeVetTransfers()
+                )
+            )
+            .excludeVetTransfers()
             .build()
 }
