@@ -3,8 +3,8 @@ package org.vechain.indexer.utils
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
-import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.transfer.TransferEventType
+import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorAction
 
 data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
@@ -46,9 +46,9 @@ object EventUtils {
             "STARGATE_CLAIM_REWARDS_BASE_LEGACY" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
             "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY" ->
                 HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
-            "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
+            "STARGATE_DELEGATION_REMOVED" -> HistoryEventName.STARGATE_DELEGATION_REMOVED
             "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
-            "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
+            "STARGATE_DELEGATE_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_REQUEST
             "STARGATE_DELEGATE_LEGACY" -> HistoryEventName.STARGATE_DELEGATE_LEGACY
             "STARGATE_DELEGATION_EXIT_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
             "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
@@ -58,13 +58,27 @@ object EventUtils {
             else -> null // Other events will not be labeled
         }
 
+    fun determineDelegationEventType(
+        delegationStatus: Status,
+        forcedExit: Boolean,
+    ): HistoryEventName? =
+        if (delegationStatus == Status.ACTIVE) {
+            HistoryEventName.STARGATE_DELEGATE_ACTIVE
+        } else if (forcedExit && delegationStatus == Status.EXITED) {
+            HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR
+        } else if (delegationStatus == Status.EXITED) {
+            HistoryEventName.STARGATE_DELEGATION_EXITED
+        } else {
+            null
+        }
+
     fun determineValidatorEventType(params: AbiEventParameters): ValidatorAction? =
         when (params.getEventType()) {
             "DelegationAdded" -> ValidatorAction.DELEGATION_APPLIED
             "DelegationInitiated" -> ValidatorAction.DELEGATION_INITIATED
             "DelegationWithdrawn" -> ValidatorAction.DELEGATION_REMOVED
             "DelegationExitRequested" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
-            "BeneficiarySet" -> ValidatorAction.BENIFICIARY_SET
+            "Transfer" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
             else -> null
         }
 
@@ -106,16 +120,4 @@ object EventUtils {
         // Sort by blockNumber and return as a LinkedHashMap to preserve order
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
-
-    fun incrementCounts(original: Map<TokenLevel, Long>, level: TokenLevel): Map<TokenLevel, Long> =
-        original.toMutableMap().apply {
-            this[level] = (this[level] ?: 0L) + 1
-            this[TokenLevel.All] = (this[TokenLevel.All] ?: 0L) + 1
-        }
-
-    fun decrementCounts(original: Map<TokenLevel, Long>, level: TokenLevel): Map<TokenLevel, Long> =
-        original.toMutableMap().apply {
-            this[level] = maxOf((this[level] ?: 1L) - 1, 0L)
-            this[TokenLevel.All] = maxOf((this[TokenLevel.All] ?: 1L) - 1, 0L)
-        }
 }

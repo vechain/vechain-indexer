@@ -19,30 +19,19 @@ object ValidatorInfoDecoder {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-    ): ValidatorCycleContext {
+    ): Pair<List<Validator>, List<String>> {
         val decodedInfo = decodeResponseInfo(responses, validatorsAbi)
 
-        val (validators, remove) =
-            unpackValidators(
-                decodedInfo.decodedValidators,
-                existingDocs,
-                decodedInfo.totalWeight,
-                decodedInfo.vthoTotalSupply,
-                decodedInfo.vetPriceUsd,
-                decodedInfo.vthoPriceUsd,
-                blockId,
-                blockNumber,
-                blockTimestamp,
-            )
-
-        val validatorMap = validators.associateBy { it.id }.toMutableMap()
-        remove.forEach { validatorMap.remove(it) }
-
-        return ValidatorCycleContext(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            _validators = validatorMap,
+        return unpackValidators(
+            decodedInfo.decodedValidators,
+            existingDocs,
+            decodedInfo.totalWeight,
+            decodedInfo.vthoTotalSupply,
+            decodedInfo.vetPriceUsd,
+            decodedInfo.vthoPriceUsd,
+            blockId,
+            blockNumber,
+            blockTimestamp,
         )
     }
 

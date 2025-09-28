@@ -295,7 +295,7 @@ class HistoryIndexerTest {
 
         assertTx(
             idx = 1,
-            eventName = HistoryEventName.STARGATE_DELEGATE,
+            eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
             tokenId = "100002",
             value = "10000000000000000000000",
             validator = "0xf02e0f5ef2b7dd2392ca91a0bdef4f59d4a3c5e2",
@@ -479,7 +479,7 @@ class HistoryIndexerTest {
             migrated = false,
         )
 
-        assertTx(idx = 11, eventName = HistoryEventName.STARGATE_UNDELEGATE, tokenId = "16")
+        assertTx(idx = 11, eventName = HistoryEventName.STARGATE_DELEGATION_REMOVED, tokenId = "16")
     }
 
     @Test
