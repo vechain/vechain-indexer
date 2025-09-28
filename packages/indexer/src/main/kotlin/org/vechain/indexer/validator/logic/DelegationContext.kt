@@ -1,4 +1,4 @@
-package org.vechain.indexer.validator.logic
+package org.vechain.indexer.delegation.logic
 
 import org.vechain.indexer.validator.Validator
 
@@ -20,8 +20,7 @@ class ValidatorCycleContext(
         get() = _validators
 
     /** Convenience accessor for getting a validator or throwing if missing. */
-    fun requireValidator(id: String): Validator =
-        _validators[id] ?: throw IllegalStateException("Validator $id not found in context")
+    fun requireValidator(id: String): Validator = _validators[id] ?: throw IllegalStateException("Validator $id not found in context")
 
     /** Add or update a validator in the state. */
     fun put(validator: Validator) {
@@ -36,7 +35,10 @@ class ValidatorCycleContext(
     /** Get a snapshot of all validators for persistence. */
     fun snapshot(): Map<String, Validator> = validators.toMap()
 
-    fun resolveNextCycle(validatorId: String, currentBlock: Long): Pair<Long, Long> =
+    fun resolveNextCycle(
+        validatorId: String,
+        currentBlock: Long,
+    ): Pair<Long, Long> =
         nextCycleResolver?.invoke(validatorId, currentBlock)
             ?: throw IllegalStateException("No resolver configured for nextCycleBlock")
 }
