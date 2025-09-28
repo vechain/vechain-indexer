@@ -23,19 +23,25 @@ class TimingAspect(
             "execution(* org.vechain.indexer..*.findRecordsToPrune(..))"
     )
     fun logExecutionTime(joinPoint: ProceedingJoinPoint): Any? {
-        val targetClass = joinPoint.target?.javaClass
+        val target = joinPoint.target
+        val targetClass = target?.javaClass
         val className = targetClass?.name ?: joinPoint.signature.declaringTypeName
         val methodName = joinPoint.signature.name
+        val contextSuffix =
+            when (target) {
+                is TimingContextAware -> " [${target.timingContext()}]"
+                else -> ""
+            }
         var result: Any?
         val duration = measureTime { result = joinPoint.proceed() }
         val durationMs = duration.inWholeMilliseconds
-        val callDescription = "$className.$methodName"
+        val callDescription = "$className.$methodName$contextSuffix"
         when {
-            verySlowThresholdMs > 0 && durationMs >= verySlowThresholdMs ->
-                logger.error(
+            verySlowThresholdMs in 1..durationMs ->
+                logger.warn(
                     "⏱️ Very slow function call: $callDescription took $durationMs ms (threshold $verySlowThresholdMs ms)"
                 )
-            warnThresholdMs > 0 && durationMs >= warnThresholdMs ->
+            warnThresholdMs in 1..durationMs ->
                 logger.warn(
                     "⏱ Slow function call: $callDescription took $durationMs ms (threshold $warnThresholdMs ms)"
                 )
