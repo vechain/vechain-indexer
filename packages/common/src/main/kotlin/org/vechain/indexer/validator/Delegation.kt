@@ -2,7 +2,7 @@ package org.vechain.indexer.validator
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
-import org.bson.types.Decimal128
+import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -23,7 +23,7 @@ constructor(
     val status: Status,
     val tokenLevel: TokenLevel,
     val stakedAmount: String,
-    val totalRewardsClaimed: Decimal128,
+    val totalRewardsClaimed: BigInteger,
     @JsonIgnore val notify: Boolean = false,
     @JsonIgnore val txId: String,
     @JsonIgnore val validatorNextCycle: Long,
