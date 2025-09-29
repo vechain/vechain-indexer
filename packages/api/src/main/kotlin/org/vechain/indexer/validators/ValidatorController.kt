@@ -123,7 +123,7 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
-    @GetMapping
+    @GetMapping("/delegations")
     @Operation(
         summary = "Get delegations with optional filters",
         description =

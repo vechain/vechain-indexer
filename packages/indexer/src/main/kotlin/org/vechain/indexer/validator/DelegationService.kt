@@ -51,8 +51,6 @@ open class DelegationService(
         events: List<IndexedEvent>,
         callResponses: List<InspectionResult>,
     ): Pair<List<Delegation>, List<Delegation>> {
-        println("Processing delegations for block ${block.number} with ${events.size} events")
-
         // 1. Collect delegations from different sources
         val due = findDueDelegations(block)
         val eventDelegations = findDelegationsFromEvents(events)
@@ -170,7 +168,7 @@ open class DelegationService(
         return removed
     }
 
-    private fun getExitBlock(validatorId: String): Long {
+    fun getExitBlock(validatorId: String): Long {
         val clause =
             ContractUtils.createClause(
                 stakerSC,
@@ -197,9 +195,6 @@ open class DelegationService(
         block: Block,
     ) {
         events.forEach { ev ->
-            println(
-                " - Applying event ${ev.eventType} for delegation ${getDelegationIdFromParams(ev.params)}"
-            )
             when (ev.eventType) {
                 "DelegationInitiated" -> handleDelegationInitiated(ev, delegations, block)
                 "DelegationExitRequested" ->
@@ -398,7 +393,7 @@ open class DelegationService(
         }
     }
 
-    private fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
+    fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
         val clause =
             ContractUtils.createClause(
                 stakerSC,
