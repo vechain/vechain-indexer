@@ -13,7 +13,7 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("validator")
+@Profile("validator", "validator-stats")
 open class ValidatorConfig {
     @Bean
     open fun validatorArchiveService(

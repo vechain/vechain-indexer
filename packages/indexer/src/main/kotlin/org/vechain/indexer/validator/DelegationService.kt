@@ -35,7 +35,7 @@ import org.vechain.indexer.validator.ValidatorUtils.listOf
  *
  * Returns updated delegations and those that must be archived.
  */
-@Profile("delegation")
+@Profile("validator", "delegation")
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
@@ -391,8 +391,11 @@ open class DelegationService(
         currentBlock: Long,
     ): Long {
         val base = lastCycleEnd ?: currentBlock
-        return if (base > currentBlock) base
-        else base + ((currentBlock - base) / cycleLength + 1) * cycleLength
+        return if (base > currentBlock) {
+            base
+        } else {
+            base + ((currentBlock - base) / cycleLength + 1) * cycleLength
+        }
     }
 
     private fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {

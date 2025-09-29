@@ -13,6 +13,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.vechain.indexer.constants.VALIDATORS_PATH
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.rest.PaginatedResponse
@@ -25,8 +26,11 @@ import org.vechain.indexer.validation.ValidPageSize
 @Tag(name = "Validator", description = "Query validator documents")
 @Validated
 @RestController
-@RequestMapping("/validators")
-open class ValidatorController(private val repository: ValidatorRepository) {
+@RequestMapping(VALIDATORS_PATH)
+open class ValidatorController(
+    private val validatorRepository: ValidatorRepository,
+    private val delegationRepository: DelegationRepository,
+) {
     @GetMapping
     @Operation(
         summary = "Get validators with optional filters",
@@ -105,15 +109,94 @@ open class ValidatorController(private val repository: ValidatorRepository) {
         val results: Slice<Validator> =
             when {
                 validatorId != null -> {
-                    val validatorOpt = repository.findById(validatorId)
+                    val validatorOpt = validatorRepository.findById(validatorId)
                     if (validatorOpt.isPresent) {
                         SliceImpl(listOf(validatorOpt.get()), pageable, false)
                     } else {
                         SliceImpl(emptyList(), pageable, false)
                     }
                 }
-                endorser != null -> repository.findByEndorser(endorser, pageable)
-                else -> repository.findAll(pageable)
+                endorser != null -> validatorRepository.findByEndorser(endorser, pageable)
+                else -> validatorRepository.findAll(pageable)
+            }
+
+        return paginatedResponse(results)
+    }
+
+    @GetMapping
+    @Operation(
+        summary = "Get delegations with optional filters",
+        description =
+            """
+            This endpoint retrieves delegation records.
+
+            You can filter by:
+            - `validator`: delegations for a specific validator
+            - `tokenId`: delegations for a specific NFT tokenId
+            - `statuses`: array of statuses of interest
+
+            You can also sort and paginate.
+            """,
+    )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "Validation errors occurred",
+                    content =
+                        [
+                            Content(
+                                mediaType = "application/json",
+                                schema = Schema(implementation = ExceptionResponse::class),
+                            )
+                        ],
+                ),
+            ]
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "validator",
+        schema = Schema(type = "string"),
+        description = "Filter by validator address",
+        required = false,
+        example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "tokenId",
+        schema = Schema(type = "string"),
+        description = "Filter by tokenId",
+        required = false,
+        example = "123456",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "statuses",
+        schema = Schema(type = "array", implementation = Status::class),
+        description = "Filter by one or more statuses",
+        required = false,
+    )
+    @PaginationParameters
+    open fun getDelegations(
+        @RequestParam(required = false) validator: String?,
+        @RequestParam(required = false) tokenId: String?,
+        @RequestParam(required = false) statuses: List<Status>?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<Delegation> {
+        val pageable = toPageable(page, size, direction, Delegation::blockNumber.name)
+
+        val results: Slice<Delegation> =
+            when {
+                validator != null && statuses != null ->
+                    delegationRepository.findByValidatorAndStatusIn(validator, statuses, pageable)
+                validator != null -> delegationRepository.findByValidator(validator, pageable)
+                tokenId != null -> delegationRepository.findByTokenId(tokenId, pageable)
+                statuses != null -> delegationRepository.findByStatusIn(statuses, pageable)
+                else -> delegationRepository.findAll(pageable)
             }
 
         return paginatedResponse(results)

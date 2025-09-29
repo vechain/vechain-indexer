@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 
-@Profile("delegation")
+@Profile("validator", "delegation")
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,

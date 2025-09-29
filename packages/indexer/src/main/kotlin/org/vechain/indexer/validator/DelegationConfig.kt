@@ -13,7 +13,7 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("delegation")
+@Profile("validator", "delegation")
 open class DelegationConfig {
     @Bean
     open fun delegationArchiveService(

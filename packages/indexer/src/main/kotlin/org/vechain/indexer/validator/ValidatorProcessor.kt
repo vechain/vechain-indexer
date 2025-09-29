@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 
-@Profile("validator")
+@Profile("validator", "validator-stats")
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,

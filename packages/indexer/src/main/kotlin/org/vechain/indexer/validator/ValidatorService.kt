@@ -14,7 +14,7 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("validator")
+@Profile("validator", "validator-stats")
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,

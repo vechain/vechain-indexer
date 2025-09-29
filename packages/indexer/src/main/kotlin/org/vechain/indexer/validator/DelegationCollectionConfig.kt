@@ -6,11 +6,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("delegation")
+@Profile("validator", "delegation")
 @Configuration
 open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -43,6 +45,16 @@ open class DelegationCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(listOf())
+        ensureIndexes(
+            listOf(
+                "validator_1_status_1" to
+                    Index().on("validator", Sort.Direction.ASC).on("status", Sort.Direction.ASC),
+                "status_1_validatorNextCycle_1" to
+                    Index()
+                        .on("status_", Sort.Direction.ASC)
+                        .on("validatorNextCycle", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+            )
+        )
     }
 }
