@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -29,7 +30,13 @@ class VeVoteCommentProcessorTest {
 
     @Test
     fun `process block with no comment events`() {
-        vevoteCommentProcessor.process(emptyList(), BLOCK_NO_CLAUSES)
+        vevoteCommentProcessor.process(
+            IndexingResult.Normal(
+                events = emptyList(),
+                block = BLOCK_NO_CLAUSES,
+                callResults = emptyList(),
+            )
+        )
 
         verify { mongoTemplate wasNot Called }
     }
