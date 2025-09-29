@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 
-@Profile("delegation")
+@Profile("validator", "delegation")
 @Repository
 interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegation, String> {
     fun findByNotify(notify: Boolean): List<Delegation>
