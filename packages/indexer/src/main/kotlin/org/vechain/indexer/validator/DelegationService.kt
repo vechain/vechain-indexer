@@ -9,17 +9,18 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.validator.logic.DelegationContext
-import org.vechain.indexer.validator.logic.DelegationEventMutations
-import org.vechain.indexer.validator.logic.DelegationStateTransitions
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("validator")
+@Profile("delegation")
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
@@ -31,52 +32,89 @@ open class DelegationService(
 
     open fun processBlock(
         block: Block,
-        matchedEvents: List<IndexedEvent>,
+        events: List<IndexedEvent>,
     ): Pair<List<Delegation>, List<Delegation>> {
-        // Load existing docs from DB once
-        val existingDocs = repository.findAll().associateBy { it.id }
+        val archive = mutableListOf<Delegation>()
 
-        var context =
-            DelegationContext(
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                _delegations = existingDocs.toMutableMap(),
+        // Delegations due this block
+        val due =
+            repository.findByValidatorNextCycleAndStatusIn(
+                block.number,
+                listOf(Status.QUEUED, Status.EXITING),
             )
 
-        // Apply block-based updates (i.e Transitions that will happen after a certain block such
-        // as moving form queued state to active)
-        context = DelegationStateTransitions.handleBlockUpdatesInContext(context)
+        // Delegations referenced by events
+        val eventDelegationIds = events.mapNotNull { getDelegationIdFromParams(it.params) }.toSet()
+        val eventDelegations =
+            if (eventDelegationIds.isNotEmpty()) {
+                repository.findAllById(eventDelegationIds).toList()
+            } else {
+                emptyList()
+            }
 
-        // Apply event-based mutations
-        if (matchedEvents.isNotEmpty()) {
-            // Add callback to the function to context
-            val contextWithCallback =
-                DelegationContext(
-                    blockId = context.blockId,
-                    blockNumber = context.blockNumber,
-                    blockTimestamp = context.blockTimestamp,
-                    _delegations = context.delegations.toMutableMap(),
-                    nextCycleResolver = { validatorId, blockNumber ->
-                        getValidatorPeriodInfo(validatorId, blockNumber)
-                    },
-                    validatorExitBlockResolver = { validatorId -> getExitBlock(validatorId) },
-                )
-            context = DelegationEventMutations.applyEvents(contextWithCallback, matchedEvents)
-        }
+        // Delegations for validators that requested exit
+        val exitValidators =
+            events
+                .filter { it.eventType == "ValidatorExitRequested" }
+                .mapNotNull { it.params.getAsString("validator") }
+                .toSet()
+        val validatorExitDelegations =
+            if (exitValidators.isNotEmpty()) {
+                repository.findByValidatorIn(exitValidators.toList())
+            } else {
+                emptyList()
+            }
 
-        return Pair(context.delegations.values.toMutableList(), existingDocs.values.toMutableList())
+        // Seed working set (deduped map)
+        val delegations =
+            (due + eventDelegations + validatorExitDelegations).associateBy { it.id }.toMutableMap()
+
+        val delegationsToArchive = delegations.values.toMutableList()
+
+        // Apply block transitions
+        delegations.values
+            .filter {
+                (it.status == Status.QUEUED || it.status == Status.EXITING) &&
+                    it.validatorNextCycle == block.number
+            }
+            .forEach { d ->
+                delegations[d.id] =
+                    d.copy(
+                        status = nextStatus(d.status),
+                        notify = true,
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
+                        version = d.version + 1,
+                    )
+            }
+
+        // Apply event mutations
+        applyEventMutations(events, delegations, block)
+
+        return delegations.values.toList() to delegationsToArchive
     }
 
-    @Transactional(rollbackFor = [Exception::class])
+    @Transactional
     open fun save(updates: List<Delegation>, archive: List<Delegation>) {
-        // Persist once
-        repository.saveAll(updates)
+        if (updates.isNotEmpty()) repository.saveAll(updates)
+        if (archive.isNotEmpty()) archiveService.saveAll(archive)
+    }
 
-        // Archive old state
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+    private fun getDelegationIdFromParams(params: AbiEventParameters): String? =
+        (params.getAsString("delegationId") ?: params.getAsString("delegationID")) as? String
+
+    private fun nextStatus(status: Status): Status =
+        if (status == Status.EXITING) Status.EXITED else Status.ACTIVE
+
+    private fun resolveNextCycleBlock(
+        lastCycleEnd: Long?,
+        cycleLength: Long,
+        currentBlock: Long,
+    ): Long {
+        val base = lastCycleEnd ?: currentBlock
+        return if (base > currentBlock) base
+        else base + ((currentBlock - base) / cycleLength + 1) * cycleLength
     }
 
     private fun getExitBlock(validatorId: String): Long {
@@ -86,15 +124,29 @@ open class DelegationService(
                 getDelegationsAbiFunctions("getValidationPeriodDetails"),
                 AddressUtils.toBigInt(validatorId),
             )
-
         val response = thorService.executeReadOnlyCode(listOf(clause))
-        val decodedPeriodInfo =
+        val decoded =
             FunctionReturnDecoder.decode(
                 response[0].data,
                 getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
             )
+        return (decoded["exitBlock"] as BigInteger).toLong()
+    }
 
-        return (decodedPeriodInfo["exitBlock"] as BigInteger).toLong()
+    private fun applyEventMutations(
+        events: List<IndexedEvent>,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        events.forEach { ev ->
+            when (ev.eventType) {
+                "DelegationInitiated" -> handleDelegationInitiated(ev, delegations, block)
+                "DelegationExitRequested" -> handleDelegationExitRequested(ev, delegations, block)
+                "DelegationWithdrawn" -> handleDelegationWithdrawn(ev, delegations, block)
+                "DelegationRewardsClaimed" -> handleDelegationRewardsClaimed(ev, delegations, block)
+                "ValidatorExitRequested" -> handleValidatorExitRequested(ev, delegations, block)
+            }
+        }
     }
 
     private fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
@@ -104,39 +156,145 @@ open class DelegationService(
                 getDelegationsAbiFunctions("getValidationPeriodDetails"),
                 AddressUtils.toBigInt(validatorId),
             )
-
         val response = thorService.executeReadOnlyCode(listOf(clause))
-        val decodedPeriodInfo =
+        val decoded =
             FunctionReturnDecoder.decode(
                 response[0].data,
                 getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
             )
-
-        val startBlock = (decodedPeriodInfo["startBlock"] as BigInteger).toLong()
-        val periodLength = (decodedPeriodInfo["period"] as BigInteger).toLong()
-
+        val startBlock = (decoded["startBlock"] as BigInteger).toLong()
+        val periodLength = (decoded["period"] as BigInteger).toLong()
         val offset = currentBlock - startBlock
         val positionInCycle = offset % periodLength
         val currentCycleStart = currentBlock - positionInCycle
         val nextCycleStart = currentCycleStart + periodLength
+        return periodLength to nextCycleStart
+    }
 
-        return (periodLength to nextCycleStart)
+    private fun handleDelegationInitiated(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        val delegationId = ev.params.getAsString("delegationId")!!
+        val validator = ev.params.getAsString("validator")!!
+        val (cycleLength, nextCycle) = getValidatorPeriodInfo(validator, block.number)
+
+        val newDelegation =
+            Delegation(
+                id = delegationId,
+                validator = validator,
+                tokenId = ev.params.getAsString("tokenId")!!,
+                tokenLevel = TokenLevel.fromOrdinal(ev.params.getAsString("levelId")!!.toInt())!!,
+                status = Status.QUEUED,
+                stakedAmount = ev.params.getAsString("amount")!!,
+                totalRewardsClaimed = BigInteger.ZERO,
+                owner = ev.origin!!,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                version = 0,
+                validatorNextCycle = nextCycle,
+                validatorCycleLength = cycleLength,
+                txId = ev.txId,
+            )
+
+        delegations[delegationId] = newDelegation
+    }
+
+    private fun handleDelegationExitRequested(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        val delegationId = ev.params.getAsString("delegationId")!!
+        delegations[delegationId]?.let { d ->
+            if (d.status == Status.EXITED) return@let
+            delegations[delegationId] =
+                d.copy(
+                    status = Status.EXITING,
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    validatorNextCycle =
+                        resolveNextCycleBlock(
+                            d.validatorNextCycle,
+                            d.validatorCycleLength,
+                            block.number,
+                        ),
+                    version = d.version + 1,
+                )
+        }
+    }
+
+    private fun handleDelegationWithdrawn(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        val delegationId = ev.params.getAsString("delegationID")!!
+        delegations[delegationId]?.let { d ->
+            delegations[delegationId] =
+                d.copy(
+                    status = Status.EXITED,
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    version = d.version + 1,
+                )
+        }
+    }
+
+    private fun handleDelegationRewardsClaimed(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        val delegationId = ev.params.getAsString("delegationId")!!
+        val amount = ev.params.getAsBigInteger("amount")!!
+        delegations[delegationId]?.let { d ->
+            delegations[delegationId] =
+                d.copy(
+                    totalRewardsClaimed = d.totalRewardsClaimed + amount,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
+                    blockId = block.id,
+                    version = d.version + 1,
+                )
+        }
+    }
+
+    private fun handleValidatorExitRequested(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        block: Block,
+    ) {
+        val validatorId = ev.params.getAsString("validator")!!
+        val exitAt = getExitBlock(validatorId)
+
+        delegations.values
+            .filter { it.validator == validatorId && it.status != Status.EXITED }
+            .forEach { d ->
+                if (d.status == Status.EXITING) return@forEach
+                delegations[d.id] =
+                    d.copy(
+                        status = Status.EXITING,
+                        validatorNextCycle = exitAt,
+                        blockId = block.id,
+                        blockNumber = block.number,
+                        blockTimestamp = block.timestamp,
+                        version = d.version + 1,
+                    )
+            }
     }
 
     private fun getDelegationsAbiFunctions(name: String): AbiElement =
         cachedGetDelegationAbi[name]
             ?: run {
-                val abis =
-                    AbiLoader.loadFunctions(
-                        basePath = "abis/stargate",
-                        functionNames = listOf(name),
-                    )
-
+                val abis = AbiLoader.loadFunctions("abis/stargate", listOf(name))
                 val abi =
                     abis.firstOrNull { it.name == name }
-                        ?: throw IllegalArgumentException(
-                            "Function '$name' not found in authority-node ABI"
-                        )
+                        ?: throw IllegalArgumentException("Function '$name' not found in ABI")
                 cachedGetDelegationAbi[name] = abi
                 abi
             }

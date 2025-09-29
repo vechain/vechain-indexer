@@ -1,16 +1,17 @@
-package org.vechain.indexer.validator.logic
+package org.vechain.indexer.validator
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.RoundingMode
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.utils.NumberUtils
-import org.vechain.indexer.utils.NumberUtils.toSafeDecimal128
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
 
-object ValidatorInfoDecoder {
+object ValidatorUtils {
+    private val SCALE = BigDecimal("1000000000000") // 1e12
+    private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
+
     /** Get the latest information and stats for each validator */
     fun getLatestValidatorInfo(
         responses: List<ExecuteCodeResponse>,
@@ -137,8 +138,8 @@ object ValidatorInfoDecoder {
         val exitBlock = row.exitBlock.toLong()
         if ((exitBlock + retentionPeriod) < blockNumber) return null
 
-        val vetPrice = ValidatorCalculations.toUsdPrice(vetPriceUsd)
-        val vthoPrice = ValidatorCalculations.toUsdPrice(vthoPriceUsd)
+        val vetPrice = toUsdPrice(vetPriceUsd)
+        val vthoPrice = toUsdPrice(vthoPriceUsd)
 
         val validatorVET = NumberUtils.toVET(row.validatorLockedVET)
         val delegatorVET = NumberUtils.toVET(row.delegatorsStake)
@@ -154,7 +155,7 @@ object ValidatorInfoDecoder {
         val vthoSupply = NumberUtils.toVET(totalVTHOSupply)
 
         val blocksOffline =
-            ValidatorCalculations.calculateOfflineBlocks(
+            calculateOfflineBlocks(
                 existingDoc?.offlineBlocks,
                 row.online,
                 row.offlineBlock.toLong(),
@@ -162,18 +163,14 @@ object ValidatorInfoDecoder {
             )
 
         val percentageOffline =
-            ValidatorCalculations.calculatePercentageOffline(
-                blocksOffline,
-                row.startBlock.toLong(),
-                blockNumber,
-            )
+            calculatePercentageOffline(blocksOffline, row.startBlock.toLong(), blockNumber)
 
         val prevTotalVTHOSupply = existingDoc?.totalVTHOSupply?.bigDecimalValue() ?: vthoSupply
         val blockProbability = NumberUtils.toProbabilityOf(row.validatorLockedWeight, totalWeight)
-        val blocksPerYear = ValidatorCalculations.blocksPerYear(blockProbability)
+        val blocksPerYear = blocksPerYear(blockProbability)
 
         val (validatorYield, tvlBasedYield, avgDelegatorYield) =
-            ValidatorCalculations.calculateValidatorYield(
+            calculateValidatorYield(
                 validatorTvl,
                 delegatorTvl,
                 row.delegatorsStake > BigInteger.ZERO,
@@ -183,7 +180,7 @@ object ValidatorInfoDecoder {
                 vthoPrice,
             )
 
-        val status = ValidatorCalculations.resolveStatus(row.exitBlock, row.status)
+        val status = resolveStatus(row.exitBlock, row.status)
 
         return Validator(
             id = row.id,
@@ -198,31 +195,27 @@ object ValidatorInfoDecoder {
             cyclePeriodLength = row.stakingPeriodLength.toLong(),
             startBlock = row.startBlock.toLong(),
             completedPeriods = row.completedPeriods.toLong(),
-            vetStaked = toSafeDecimal128(totalVET),
-            validatorVetStaked = toSafeDecimal128(validatorVET),
-            delegatorVetStaked = toSafeDecimal128(delegatorVET),
-            queuedVetStaked = toSafeDecimal128(queuedStake),
-            exitingVetStaked = toSafeDecimal128(exitingStake),
-            totalWeight = toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),
-            blockProbability = toSafeDecimal128(blockProbability),
-            blocksPerEpoch = toSafeDecimal128(blockProbability * BigDecimal(180)),
-            blocksPerYear = toSafeDecimal128(blocksPerYear),
-            validatorTvl = toSafeDecimal128(validatorTvl),
-            delegatorTvl = toSafeDecimal128(delegatorTvl),
-            totalTvl = toSafeDecimal128(totalTvl),
-            delegations = existingDoc?.delegations ?: emptyMap(),
-            incomingDelegations = existingDoc?.incomingDelegations ?: emptyMap(),
-            outgoingDelegations = existingDoc?.outgoingDelegations ?: emptyMap(),
-            delegationInfo = existingDoc?.delegationInfo ?: emptyMap(),
-            delegationsToBeActioned = existingDoc?.delegationsToBeActioned ?: emptyList(),
-            validatorYield = toSafeDecimal128(validatorYield),
-            tvlBasedYield = toSafeDecimal128(tvlBasedYield),
-            avgDelegatorYield = toSafeDecimal128(avgDelegatorYield),
-            totalVTHOSupply = toSafeDecimal128(vthoSupply),
-            percentageOffline = toSafeDecimal128(percentageOffline),
+            vetStaked = NumberUtils.toSafeDecimal128(totalVET),
+            validatorVetStaked = NumberUtils.toSafeDecimal128(validatorVET),
+            delegatorVetStaked = NumberUtils.toSafeDecimal128(delegatorVET),
+            queuedVetStaked = NumberUtils.toSafeDecimal128(queuedStake),
+            exitingVetStaked = NumberUtils.toSafeDecimal128(exitingStake),
+            totalWeight =
+                NumberUtils.toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),
+            blockProbability = NumberUtils.toSafeDecimal128(blockProbability),
+            blocksPerEpoch = NumberUtils.toSafeDecimal128(blockProbability * BigDecimal(180)),
+            blocksPerYear = NumberUtils.toSafeDecimal128(blocksPerYear),
+            validatorTvl = NumberUtils.toSafeDecimal128(validatorTvl),
+            delegatorTvl = NumberUtils.toSafeDecimal128(delegatorTvl),
+            totalTvl = NumberUtils.toSafeDecimal128(totalTvl),
+            validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
+            tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
+            avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
+            totalVTHOSupply = NumberUtils.toSafeDecimal128(vthoSupply),
+            percentageOffline = NumberUtils.toSafeDecimal128(percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
             cycleEndBlock =
-                ValidatorCalculations.calculateNextCycleBlock(
+                calculateNextCycleBlock(
                     row.startBlock,
                     row.completedPeriods,
                     row.stakingPeriodLength,
@@ -272,6 +265,136 @@ object ValidatorInfoDecoder {
             vetPriceUsd,
             vthoPriceUsd,
         )
+    }
+
+    /** Convert oracle price (BigInteger) into USD BigDecimal */
+    fun toUsdPrice(value: BigInteger): BigDecimal =
+        BigDecimal(value).divide(SCALE, 12, RoundingMode.HALF_UP)
+
+    /** Work out how many blocks a validator has been offline */
+    fun calculateOfflineBlocks(
+        previousOffline: Long?,
+        online: Boolean,
+        offlineStart: Long,
+        currentBlock: Long,
+    ): Long {
+        if (online) return previousOffline ?: 0L
+
+        return if ((previousOffline ?: 0L) == 0L) {
+            currentBlock - offlineStart
+        } else {
+            (previousOffline ?: 0L) + 1
+        }
+    }
+
+    /** Percentage offline across total blocks */
+    fun calculatePercentageOffline(
+        blocksOffline: Long,
+        startBlock: Long,
+        currentBlock: Long,
+    ): BigDecimal {
+        val totalBlocks = currentBlock - startBlock
+        if (totalBlocks <= 0) return BigDecimal.ZERO
+
+        return BigDecimal(blocksOffline)
+            .divide(BigDecimal(totalBlocks), 6, RoundingMode.HALF_UP)
+            .multiply(BigDecimal(100))
+    }
+
+    /** Expected blocks per year given block probability */
+    fun blocksPerYear(blockProbability: BigDecimal): BigDecimal {
+        // 360 * 24 * 365.25 is average blocks per year on VeChain
+        return BigDecimal.valueOf(360 * 24 * 365.25).multiply(blockProbability)
+    }
+
+    /** Determine validator status (normal vs exiting) */
+    fun resolveStatus(exitBlock: BigInteger, rawStatus: BigInteger): Int {
+        return if (exitBlock == MAX_UINT32) rawStatus.toInt() else 4 // 4 = Exiting
+    }
+
+    /** Calculate next cycle start block */
+    fun calculateNextCycleBlock(
+        startBlock: BigInteger,
+        completedPeriods: BigInteger,
+        stakingPeriodLength: Int,
+    ): Long =
+        startBlock.toLong() + ((completedPeriods.toLong() + 1L) * stakingPeriodLength.toLong())
+
+    /**
+     * Calculate validator yields:
+     * - validatorYield: yield going to the validator
+     * - tvlBasedYield: yield relative to TVL
+     * - avgDelegatorYield: yield going to delegators
+     */
+    fun calculateValidatorYield(
+        validatorTvl: BigDecimal,
+        delegatorTvl: BigDecimal,
+        hasDelegations: Boolean,
+        blocksPerYear: BigDecimal,
+        totalVTHOSupply: BigDecimal,
+        prevTotalVTHOSupply: BigDecimal,
+        vthoPrice: BigDecimal,
+    ): Triple<BigDecimal, BigDecimal, BigDecimal> {
+        // Issuance in USD
+        val issuance = totalVTHOSupply.subtract(prevTotalVTHOSupply).max(BigDecimal.ZERO)
+        val issuanceUsd = issuance.multiply(vthoPrice)
+        val annualIssuanceUsd = blocksPerYear.multiply(issuanceUsd)
+
+        val totalTvl = validatorTvl.add(delegatorTvl)
+        if (totalTvl.compareTo(BigDecimal.ZERO) == 0) {
+            return Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+        }
+
+        val validatorYield =
+            if (validatorTvl > BigDecimal.ZERO) {
+                if (hasDelegations) {
+                    annualIssuanceUsd
+                        .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal("0.3"))
+                        .multiply(BigDecimal(100))
+                } else {
+                    annualIssuanceUsd
+                        .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
+                }
+            } else {
+                BigDecimal.ZERO
+            }
+
+        val validatorTvlRatio =
+            if (totalTvl > BigDecimal.ZERO) {
+                validatorTvl.divide(totalTvl, 12, RoundingMode.HALF_UP)
+            } else {
+                BigDecimal.ZERO
+            }
+
+        val tvlBasedYield =
+            if (validatorTvl > BigDecimal.ZERO) {
+                if (hasDelegations) {
+                    annualIssuanceUsd
+                        .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(validatorTvlRatio)
+                        .multiply(BigDecimal(100))
+                } else {
+                    annualIssuanceUsd
+                        .divide(validatorTvl, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
+                }
+            } else {
+                BigDecimal.ZERO
+            }
+
+        val avgDelegatorYield =
+            if (hasDelegations && delegatorTvl > BigDecimal.ZERO) {
+                annualIssuanceUsd
+                    .divide(delegatorTvl, 12, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal("0.7"))
+                    .multiply(BigDecimal(100))
+            } else {
+                BigDecimal.ZERO
+            }
+
+        return Triple(validatorYield, tvlBasedYield, avgDelegatorYield)
     }
 
     data class DecodedValidatorInfo(

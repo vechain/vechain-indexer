@@ -64,7 +64,6 @@ open class DelegationConfig {
                     "DelegationWithdrawn",
                     "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
-                    "Transfer",
                 )
             )
             .excludeVetTransfers()

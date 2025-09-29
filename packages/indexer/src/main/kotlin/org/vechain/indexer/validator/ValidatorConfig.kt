@@ -43,8 +43,6 @@ open class ValidatorConfig {
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
-        @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
-        stargateStakerAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("ValidatorIndexer")
@@ -55,15 +53,8 @@ open class ValidatorConfig {
             .channelBatchSize(channelBatchSize)
             .includeFullBlock()
             .abis("abis/stargate")
-            .abiContracts(listOf(builtinStakerAddress, stargateStakerAddress))
-            .abiEventNames(
-                listOf(
-                    "DelegationInitiated",
-                    "DelegationExitRequested",
-                    "DelegationWithdrawn",
-                    "BeneficiarySet",
-                )
-            )
+            .abiContracts(listOf(builtinStakerAddress))
+            .abiEventNames(listOf("BeneficiarySet"))
             .excludeVetTransfers()
             .build()
 }

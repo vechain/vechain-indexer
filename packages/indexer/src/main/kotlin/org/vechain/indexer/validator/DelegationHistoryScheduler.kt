@@ -20,8 +20,8 @@ open class DelegationHistoryScheduler(
     private val historyRepository: HistoryRepository,
 ) {
     @Scheduled(
-        initialDelayString = "\${monitor.vthoFunds.initialDelay}",
-        fixedRateString = "\${monitor.vthoFunds.interval}",
+        initialDelayString = "\${scheduler.delegationHistory.initial-delay}",
+        fixedRateString = "\${scheduler.delegationHistory.interval}",
     )
     open fun run() {
         // Get each account that needs to be notified

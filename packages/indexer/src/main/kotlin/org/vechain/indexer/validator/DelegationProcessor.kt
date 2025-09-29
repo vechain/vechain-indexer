@@ -7,11 +7,11 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.model.Block
 
-@Profile("validator")
+@Profile("delegation")
 @Component
 open class DelegationProcessor(
-    repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
+    repository: DelegationRepository,
+    archiveService: ArchiveService<Delegation, DelegationArchive>,
     private val service: DelegationService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = archiveService) {
     override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
