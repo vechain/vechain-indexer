@@ -2,7 +2,6 @@ package org.vechain.indexer.validator
 
 import kotlin.collections.set
 import org.bson.types.Decimal128
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -12,8 +11,7 @@ import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.Clause
-import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("validator")
@@ -22,14 +20,13 @@ open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
-    @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
-    private val getAllValidatorInfoSC: String,
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
     open fun processBlock(
         block: Block,
         matchedEvents: List<IndexedEvent>,
+        callResponses: List<InspectionResult>,
     ): Triple<List<Validator>, List<Validator>, List<String>> {
         val threshold = getThreshold()
 
@@ -50,8 +47,27 @@ open class ValidatorService(
             return Triple(working.values.toList(), emptyList(), emptyList())
         }
 
-        // For recent blocks → also fetch chain state
-        val (chainUpdates, toDelete) = fetchAndDecodeValidators(block, working)
+        // Fetch ABIs for decoding
+        loadAllValidatorAbiFunctions(
+            listOf(
+                "getValidators",
+                "totalStake",
+                "vthoTotalSupply",
+                "getVetPriceUsd",
+                "getVthoPriceUsd",
+            )
+        )
+
+        // Decode into validators + delete list
+        val (chainUpdates, toDelete) =
+            ValidatorUtils.getLatestValidatorInfo(
+                responses = callResponses,
+                validatorsAbi = cachedGetValidatorsAbi,
+                existingDocs = existingDocs,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+            )
         applyChainUpdates(chainUpdates, working)
 
         // Archive everything that existed before but is not deleted
@@ -80,27 +96,6 @@ open class ValidatorService(
         }
     }
 
-    private fun fetchAndDecodeValidators(
-        block: Block,
-        existingDocs: Map<String, Validator>,
-    ): Pair<List<Validator>, List<String>> {
-        // Build the batch of contract calls
-        val clauses = buildClauses()
-
-        // Execute all calls in one read-only request
-        val responses = thorService.executeReadOnlyCode(clauses)
-
-        // Decode into validators + delete list
-        return ValidatorUtils.getLatestValidatorInfo(
-            responses = responses,
-            validatorsAbi = cachedGetValidatorsAbi,
-            existingDocs = existingDocs,
-            blockId = block.id,
-            blockNumber = block.number,
-            blockTimestamp = block.timestamp,
-        )
-    }
-
     private fun applyChainUpdates(
         chainUpdates: List<Validator>,
         working: MutableMap<String, Validator>,
@@ -113,21 +108,6 @@ open class ValidatorService(
                 } else {
                     v
                 }
-        }
-    }
-
-    fun buildClauses(): List<Clause> {
-        val functionNames =
-            listOf(
-                "getValidators",
-                "totalStake",
-                "vthoTotalSupply",
-                "getVetPriceUsd",
-                "getVthoPriceUsd",
-            )
-
-        return functionNames.map { fnName ->
-            ContractUtils.createClause(getAllValidatorInfoSC, getValidatorsAbiFunctions(fnName))
         }
     }
 
@@ -185,21 +165,11 @@ open class ValidatorService(
         return bestBlock.number - 25
     }
 
-    private fun getValidatorsAbiFunctions(name: String): AbiElement =
-        cachedGetValidatorsAbi[name]
-            ?: run {
-                val abis =
-                    AbiLoader.loadFunctions(
-                        basePath = "abis/stargate",
-                        functionNames = listOf(name),
-                    )
+    private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
+        if (cachedGetValidatorsAbi.isNotEmpty()) return // already loaded
 
-                val abi =
-                    abis.firstOrNull { it.name == name }
-                        ?: throw IllegalArgumentException(
-                            "Function '$name' not found in authority-node ABI"
-                        )
-                cachedGetValidatorsAbi[name] = abi
-                abi
-            }
+        val abis = AbiLoader.load(basePath = "abis/stargate", names = functionNames)
+
+        abis.forEach { abi -> cachedGetValidatorsAbi[abi.name!!] = abi }
+    }
 }

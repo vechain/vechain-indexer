@@ -46,6 +46,8 @@ open class DelegationConfig {
         @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
         stargateStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateAddress: String,
+        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
+        getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("DelegationIndexer")
@@ -66,6 +68,7 @@ open class DelegationConfig {
                     "DelegationRewardsClaimed",
                 )
             )
+            .callDataClauses(listOf(ValidatorUtils.buildClauses(getAllValidatorsAddress)[0]))
             .excludeVetTransfers()
             .build()
 }

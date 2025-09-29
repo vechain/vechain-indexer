@@ -38,11 +38,14 @@ open class ValidatorConfig {
     open fun validatorIndexer(
         thorClient: ThorClient,
         processor: ValidatorProcessor,
+        service: ValidatorService,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.validator}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
+        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
+        getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
             .name("ValidatorIndexer")
@@ -55,6 +58,7 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(listOf("BeneficiarySet"))
+            .callDataClauses(ValidatorUtils.buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
             .build()
 }

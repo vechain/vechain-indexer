@@ -3,9 +3,13 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
+import org.vechain.indexer.contracts.abi.FunctionDefinition
+import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.rest.ExecuteCodeResponse
+import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.NumberUtils
 
 object ValidatorUtils {
@@ -14,7 +18,7 @@ object ValidatorUtils {
 
     /** Get the latest information and stats for each validator */
     fun getLatestValidatorInfo(
-        responses: List<ExecuteCodeResponse>,
+        responses: List<InspectionResult>,
         validatorsAbi: MutableMap<String, AbiElement>,
         existingDocs: Map<String, Validator>,
         blockId: String,
@@ -225,7 +229,7 @@ object ValidatorUtils {
 
     /** Decode function call response */
     private fun decodeSingle(
-        responses: List<ExecuteCodeResponse>,
+        responses: List<InspectionResult>,
         abi: Map<String, AbiElement>,
         index: Int,
         functionName: String,
@@ -242,7 +246,7 @@ object ValidatorUtils {
     }
 
     fun decodeResponseInfo(
-        responses: List<ExecuteCodeResponse>,
+        responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
     ): DecodedValidatorInfo {
         val decodedValidators =
@@ -266,6 +270,11 @@ object ValidatorUtils {
             vthoPriceUsd,
         )
     }
+
+    fun decodeValidators(
+        responses: List<InspectionResult>,
+        validatorsAbi: AbiElement,
+    ): Map<String, Any?> = FunctionReturnDecoder.decode(responses[0].data, validatorsAbi.outputs)
 
     /** Convert oracle price (BigInteger) into USD BigDecimal */
     fun toUsdPrice(value: BigInteger): BigDecimal =
@@ -397,6 +406,71 @@ object ValidatorUtils {
         return Triple(validatorYield, tvlBasedYield, avgDelegatorYield)
     }
 
+    fun buildClauses(getAllValidatorInfoSC: String): List<Clause> {
+        val abiFunctions =
+            listOf(
+                // getValidators
+                FunctionDefinition(
+                    name = "getValidators",
+                    inputs = emptyList(),
+                    outputs =
+                        listOf(
+                            FunctionParameter("masters", "address[]"),
+                            FunctionParameter("endorsors", "address[]"),
+                            FunctionParameter("statuses", "uint8[]"),
+                            FunctionParameter("onlines", "bool[]"),
+                            FunctionParameter("offlineBlocks", "uint32[]"),
+                            FunctionParameter("stakingPeriodLengths", "uint32[]"),
+                            FunctionParameter("startBlocks", "uint32[]"),
+                            FunctionParameter("exitBlocks", "uint32[]"),
+                            FunctionParameter("completedPeriods", "uint32[]"),
+                            FunctionParameter("validatorLockedStakes", "uint256[]"),
+                            FunctionParameter("validatorLockedWeights", "uint256[]"),
+                            FunctionParameter("delegatorsStake", "uint256[]"),
+                            FunctionParameter("validatorQueuedStakes", "uint256[]"),
+                            FunctionParameter("totalQueuedStakes", "uint256[]"),
+                            FunctionParameter("totalExitingStakes", "uint256[]"),
+                            FunctionParameter("totalNextPeriodWeights", "uint256[]"),
+                        ),
+                    stateMutability = "view",
+                ),
+                // totalStake
+                FunctionDefinition(
+                    name = "totalStake",
+                    inputs = emptyList(),
+                    outputs =
+                        listOf(
+                            FunctionParameter("totalStake", "uint256"),
+                            FunctionParameter("totalWeight", "uint256"),
+                        ),
+                    stateMutability = "view",
+                ),
+                // vthoTotalSupply
+                FunctionDefinition(
+                    name = "vthoTotalSupply",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("vthoTotalSupply", "uint256")),
+                    stateMutability = "view",
+                ),
+                // getVetPriceUsd
+                FunctionDefinition(
+                    name = "getVetPriceUsd",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("vetPriceUsd", "uint128")),
+                    stateMutability = "view",
+                ),
+                // getVthoPriceUsd
+                FunctionDefinition(
+                    name = "getVthoPriceUsd",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("vthoPriceUsd", "uint128")),
+                    stateMutability = "view",
+                ),
+            )
+
+        return abiFunctions.map { fn -> ContractUtils.createClause(getAllValidatorInfoSC, fn) }
+    }
+
     data class DecodedValidatorInfo(
         val decodedValidators: Map<String, Any?>,
         val totalWeight: BigInteger,
@@ -423,7 +497,7 @@ object ValidatorUtils {
     )
 
     @Suppress("UNCHECKED_CAST")
-    private inline fun <reified T> Map<String, Any?>.listOf(key: String): List<T> =
+    inline fun <reified T> Map<String, Any?>.listOf(key: String): List<T> =
         this[key] as? List<T>
             ?: throw IllegalArgumentException(
                 "Expected List<${T::class.simpleName}> for key '$key'"
