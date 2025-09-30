@@ -1,5 +1,5 @@
 {
-  "name": "STARGATE_UNDELEGATE",
+  "name": "STARGATE_DELEGATION_REMOVED_LEGACY",
   "sameClause": true,
   "events": [
     {

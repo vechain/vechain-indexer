@@ -13,42 +13,44 @@ import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("validator", "validator-stats")
-open class ValidatorConfig {
+@Profile("validator", "delegation")
+open class DelegationConfig {
     @Bean
-    open fun validatorArchiveService(
+    open fun delegationArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<Validator, ValidatorArchive> =
+    ): ArchiveService<Delegation, DelegationArchive> =
         ArchiveService(
             mongoTemplate,
-            Validator::class.java,
-            ValidatorArchive::class.java,
+            Delegation::class.java,
+            DelegationArchive::class.java,
             recordLimit,
         )
 
     @Bean
-    open fun validatorPruner(
-        validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
+    open fun delegationPruner(
+        delegationArchiveService: ArchiveService<Delegation, DelegationArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): Pruner =
-        PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
+        PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
 
     @Bean
-    open fun validatorIndexer(
+    open fun delegationIndexer(
         thorClient: ThorClient,
-        processor: ValidatorProcessor,
-        service: ValidatorService,
+        processor: DelegationProcessor,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval.validator}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
+        stargateStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateAddress: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name("ValidatorIndexer")
+            .name("DelegationIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -56,9 +58,17 @@ open class ValidatorConfig {
             .channelBatchSize(channelBatchSize)
             .includeFullBlock()
             .abis("abis/stargate")
-            .abiContracts(listOf(builtinStakerAddress))
-            .abiEventNames(listOf("BeneficiarySet"))
-            .callDataClauses(ValidatorUtils.buildClauses(getAllValidatorsAddress))
+            .abiContracts(listOf(builtinStakerAddress, stargateStakerAddress, stargateAddress))
+            .abiEventNames(
+                listOf(
+                    "DelegationInitiated",
+                    "DelegationExitRequested",
+                    "DelegationWithdrawn",
+                    "ValidationSignaledExit",
+                    "DelegationRewardsClaimed",
+                )
+            )
+            .callDataClauses(listOf(ValidatorUtils.buildClauses(getAllValidatorsAddress)[0]))
             .excludeVetTransfers()
             .build()
 }

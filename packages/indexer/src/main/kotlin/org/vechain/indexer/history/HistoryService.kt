@@ -84,7 +84,7 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
         val value =
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
-                HistoryEventName.STARGATE_DELEGATE ->
+                HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
                 else -> event.params.getAsString("value")
             }

@@ -12,9 +12,9 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("validator", "validator-stats")
+@Profile("validator", "delegation")
 @Configuration
-open class ValidatorCollectionConfig(
+open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
@@ -22,8 +22,8 @@ open class ValidatorCollectionConfig(
     CollectionConfig(
         mongoTemplate,
         appCoroutineScope,
-        Validator::class.java,
-        ValidatorArchive::class.java,
+        Delegation::class.java,
+        DelegationArchive::class.java,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -35,11 +35,11 @@ open class ValidatorCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                Validator::class.java,
+                Delegation::class.java,
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(ValidatorArchive::class.java)
+        if (dropped) indexerVersionService.dropArchiveCollection(DelegationArchive::class.java)
 
         this.ensureCollection()
 
@@ -47,12 +47,13 @@ open class ValidatorCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "endorser_1" to Index().on("endorser", Sort.Direction.ASC),
-                "delegationIdList_1" to Index().on("delegationIdList", Sort.Direction.ASC),
-                "validatorTvl_-1" to Index().on("validatorTvl", Sort.Direction.DESC),
-                "delegatorTvl_-1" to Index().on("delegatorTvl", Sort.Direction.DESC),
-                "totalTvl_-1" to Index().on("totalTvl", Sort.Direction.DESC),
-                "blockProbability" to Index().on("blockProbability", Sort.Direction.DESC),
+                "validator_1_status_1" to
+                    Index().on("validator", Sort.Direction.ASC).on("status", Sort.Direction.ASC),
+                "status_1_validatorNextCycle_1" to
+                    Index()
+                        .on("status_", Sort.Direction.ASC)
+                        .on("validatorNextCycle", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

@@ -23,6 +23,8 @@ class ValidatorUtilsTest {
                 listOf(BigInteger.valueOf(1000_000_000_000_000_000)), // 1 VET
             "validatorLockedWeights" to listOf(BigInteger.valueOf(100)),
             "delegatorsStake" to listOf(BigInteger.valueOf(500_000_000_000_000_000)), // 0.5 VET
+            "totalQueuedStakes" to listOf(BigInteger.ZERO),
+            "totalExitingStakes" to listOf(BigInteger.ZERO),
         )
 
     @Test
@@ -47,9 +49,11 @@ class ValidatorUtilsTest {
         assertThat(v.id).isEqualTo("0xVAL1")
         assertThat(v.endorser).isEqualTo("0xEND1")
         assertThat(v.status).isEqualTo(Status.Companion.fromCode(1))
-        assertThat(v.vetStaked).isEqualTo(Decimal128(BigDecimal("1.500000")))
-        assertThat(v.delegatorVetStaked).isEqualTo(Decimal128(BigDecimal("0.500000")))
-        assertThat(v.validatorVetStaked).isEqualTo(Decimal128(BigDecimal("1.000000")))
+        assertThat(v.vetStaked!!.bigDecimalValue().setScale(6)).isEqualTo(BigDecimal("1.500000"))
+        assertThat(v.delegatorVetStaked!!.bigDecimalValue().setScale(6))
+            .isEqualTo(BigDecimal("0.500000"))
+        assertThat(v.validatorVetStaked!!.bigDecimalValue().setScale(6))
+            .isEqualTo(BigDecimal("1.000000"))
         assertThat(v.version).isEqualTo(1)
 
         // Nothing should be deleted
@@ -117,7 +121,7 @@ class ValidatorUtilsTest {
     }
 
     @Test
-    fun `toDelete should include missing validators`() {
+    fun `disappeared validator should be marked as exited`() {
         val decoded = buildDecoded()
         val existing =
             Validator(
@@ -130,7 +134,7 @@ class ValidatorUtilsTest {
                 version = 1,
             )
 
-        val (_, toDelete) =
+        val (validators, toDelete) =
             ValidatorUtils.unpackValidators(
                 decoded,
                 existingDocs = mapOf("0xOLD" to existing),
@@ -143,7 +147,12 @@ class ValidatorUtilsTest {
                 blockTimestamp = 1234567890,
             )
 
-        assertThat(toDelete).containsExactly("0xOLD")
+        val disappeared = validators.firstOrNull { it.id == "0xOLD" }
+        assertThat(disappeared).isNotNull
+        assertThat(disappeared!!.status).isEqualTo(Status.EXITED)
+
+        // No deletions yet (retention not reached)
+        assertThat(toDelete).isEmpty()
     }
 
     @Test

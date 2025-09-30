@@ -229,15 +229,13 @@ class HistoryIndexerTest {
 
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every {
-            mongoTemplate.insert(any<List<IndexedHistoryEvent>>(), IndexedHistoryEvent::class.java)
-        } answers
+        every { repository.deleteAllByBlockNumberBetween(any(), any()) } returns Unit
+        every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
                 insertedEvents.add(events)
                 mutableListOf()
             }
-
         val blockMap = stargateBlocks.mapIndexed { i, block -> (i + 1L) to block }.toMap()
 
         val indexer =
@@ -290,7 +288,7 @@ class HistoryIndexerTest {
 
         assertTx(
             idx = 1,
-            eventName = HistoryEventName.STARGATE_DELEGATE,
+            eventName = HistoryEventName.STARGATE_DELEGATE_REQUEST,
             tokenId = "100002",
             value = "10000000000000000000000",
             validator = "0xf02e0f5ef2b7dd2392ca91a0bdef4f59d4a3c5e2",
@@ -352,7 +350,7 @@ class HistoryIndexerTest {
 
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
         every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberBetween(0, 2) } returns Unit
+        every { repository.deleteAllByBlockNumberBetween(any(), any()) } returns Unit
         every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
@@ -473,7 +471,11 @@ class HistoryIndexerTest {
             migrated = false,
         )
 
-        assertTx(idx = 11, eventName = HistoryEventName.STARGATE_UNDELEGATE, tokenId = "16")
+        assertTx(
+            idx = 11,
+            eventName = HistoryEventName.STARGATE_DELEGATION_REMOVED_LEGACY,
+            tokenId = "16",
+        )
     }
 
     @Test

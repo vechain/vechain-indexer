@@ -6,23 +6,23 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 
-@Profile("validator", "validator-stats")
+@Profile("validator", "delegation")
 @Component
-open class ValidatorProcessor(
-    repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
-    private val service: ValidatorService,
+open class DelegationProcessor(
+    repository: DelegationRepository,
+    archiveService: ArchiveService<Delegation, DelegationArchive>,
+    private val service: DelegationService,
 ) : BaseStatefulProcessor(repository = repository, archiveService = archiveService) {
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        val (updated, existing, deleted) =
+        val (updated, existing) =
             service.processBlock(entry.block, entry.events(), entry.callResults)
 
-        if (updated.isNotEmpty() || existing.isNotEmpty() || deleted.isNotEmpty()) {
-            service.saveAndDelete(updated, existing, deleted)
+        if (updated.isNotEmpty()) {
+            service.save(updated, existing)
         }
     }
 }
