@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("nfts")
 @Component
@@ -15,7 +14,6 @@ open class NftProcessor(
     repository: NftRepository,
 ) : BaseProcessor(repository) {
 
-    @WithTiming("NftProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 

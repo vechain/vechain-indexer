@@ -81,7 +81,6 @@ abstract class CollectionConfig(
         ensureIndexes(
             listOf(
                 "data.blockNumber_-1" to Index().on("data.blockNumber", Sort.Direction.DESC),
-                "data._id_1" to Index().on("data._id", Sort.Direction.ASC),
                 "data._id_1_data.version_-1" to
                     Index()
                         .on("data._id", Sort.Direction.ASC)

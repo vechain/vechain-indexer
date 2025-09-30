@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.timing.WithTiming
 
 open class PrunerService<T : VersionedDocument, S : Archive<T>>(
     klass: KClass<S>,
@@ -17,7 +16,6 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
 
     override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
 
-    @WithTiming("Pruner")
     override fun run(currentBlockNumber: Long, idsToPrune: List<String>?) {
         val prunerEndBlock = currentBlockNumber - 10_000
         if (prunerEndBlock <= 0) {

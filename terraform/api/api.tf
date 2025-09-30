@@ -147,6 +147,10 @@ module "ecs-lb-service-api" {
       name = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.api.timing.warn-threshold-ms
     },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.api.timing.very-slow-threshold-ms
+    },
     { name  = "THOR_URL"
       value = each.value.thor_url
     },
@@ -248,6 +252,10 @@ module "ecs-backend-service" {
     {
       name = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.indexer.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
       name  = "MONGO_URI"

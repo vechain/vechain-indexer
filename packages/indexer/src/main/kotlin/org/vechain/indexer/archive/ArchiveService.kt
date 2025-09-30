@@ -15,7 +15,7 @@ import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.timing.WithTiming
+import org.vechain.indexer.timing.TimingContextAware
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
@@ -30,9 +30,16 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
     private val queryLimit: Long,
-) {
+) : TimingContextAware {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val timingContextDescription: String by lazy {
+        val documentType = clazz.simpleName ?: clazz.name
+        val archiveType = archiveClazz.simpleName ?: archiveClazz.name
+        "document=$documentType, archive=$archiveType"
+    }
+
+    override fun timingContext(): String = timingContextDescription
 
     open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
@@ -123,7 +130,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
-    @WithTiming("Pruner - findRecordsToPrune")
     open fun findRecordsToPrune(
         endBlock: Long,
         batchSize: Int,

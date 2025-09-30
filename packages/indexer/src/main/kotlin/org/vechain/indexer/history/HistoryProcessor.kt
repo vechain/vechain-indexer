@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.timing.WithTiming
 
 @Profile("history")
 @Component
@@ -13,7 +12,6 @@ open class HistoryProcessor(
     private val historyService: HistoryService,
 ) : BaseProcessor(repository) {
 
-    @WithTiming("HistoryProcessor.process")
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
@@ -23,6 +21,10 @@ open class HistoryProcessor(
             return
         }
 
-        historyService.processBlockEvents(entry.events(), entry.block)
+        val records = historyService.processEvents(entry.events(), entry.block)
+
+        if (records.isNotEmpty()) {
+            historyService.save(records)
+        }
     }
 }
