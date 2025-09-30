@@ -1,4 +1,4 @@
-name: Devnet Terraform Apply
+name: Deploy devnet
 
 on:
   workflow_dispatch:
