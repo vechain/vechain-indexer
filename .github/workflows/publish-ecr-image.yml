@@ -32,7 +32,7 @@ permissions:
 
 env:
   latestTag: 'latest'
-  versionTag: ${{ github.event_name == 'push' || inputs.environment == 'prod' && github.ref_name || inputs.version }}
+  versionTag: ${{ (github.event_name == 'push' || inputs.environment == 'prod') && github.ref_name || inputs.version }}
   commitHash: ${{ github.sha }}
   workingDirectory: './'
   projectName: 'veworld'
