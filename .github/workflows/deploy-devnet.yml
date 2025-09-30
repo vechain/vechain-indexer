@@ -1,0 +1,76 @@
+name: Devnet Terraform Apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to deploy (format v.X.Y.Z-dev)
+        required: true
+        type: string
+        default: v.0.0.0-dev
+
+# Required for authentication through GitHub OIDC
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ENVIRONMENT: devnet
+
+jobs:
+  apply-devnet:
+    name: Apply Terraform - Devnet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/devnet
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate version input
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^v\.[0-9]+\.[0-9]+\.[0-9]+-dev$ ]]; then
+            echo "Version must match v.X.Y.Z-dev"
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.DEV_AWS_ACC_ROLE }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+          terraform_wrapper: true
+
+      - name: Terraform Initialize
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}.config"
+
+      - name: Terraform Workspace
+        run: terraform workspace select ${{ env.ENVIRONMENT }}
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Update image_version
+        run: |
+          sed -i '/dev:/,/image_version:/s/image_version:.*/image_version: ${{ inputs.version }}/' environments/${{ env.ENVIRONMENT }}.yml
+          cat environments/${{ env.ENVIRONMENT }}.yml
+
+      - name: Terraform Plan
+        run: terraform plan -out "apply.plan"
+
+      - name: Terraform Apply
+        run: terraform apply "apply.plan"
+

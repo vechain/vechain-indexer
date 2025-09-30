@@ -30,7 +30,7 @@ datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:951789968977:secret:dev/datadog_keys-4CywdI
 enabled_nets:
   dev:
-    image_version: dev-latest
+    image_version: latest
     thor_url: https://hayabusa.live.dev.node.vechain.org
     api:
       cpu: 512
