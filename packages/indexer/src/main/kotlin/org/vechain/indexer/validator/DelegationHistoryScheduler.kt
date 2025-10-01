@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
@@ -17,11 +18,15 @@ open class DelegationHistoryScheduler(
     private val delegationRepository: DelegationRepository,
     private val historyRepository: HistoryRepository,
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Scheduled(
         initialDelayString = "\${scheduler.delegationHistory.initial-delay}",
         fixedRateString = "\${scheduler.delegationHistory.interval}",
     )
     open fun run() {
+        logger.info("Checking delegations that need to be added to history")
+
         // Get each account that needs to be notified
         val delegations = delegationRepository.findByNotify(true)
 
@@ -51,6 +56,7 @@ open class DelegationHistoryScheduler(
                         delegationId = delegation.id,
                         validator = delegation.validator,
                         owner = delegation.owner,
+                        origin = delegation.owner,
                     )
 
                 historyEvents.add(historyEvent)
@@ -59,6 +65,7 @@ open class DelegationHistoryScheduler(
                 delegation.copy(notify = false, version = delegation.version + 1)
             }
 
+        logger.info("Saving ${historyEvents.size} delegations updates to history")
         this.save(historyEvents, updatedDelegations)
     }
 

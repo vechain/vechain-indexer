@@ -26,6 +26,7 @@ import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
+// TODO: See if there is a better way to handle these to endpoints that makes sense indexes wise
 @Profile("history")
 @Tag(name = "History", description = "Query on-chain event history")
 @Validated
@@ -138,4 +139,135 @@ open class HistoryController(private val historyService: HistoryService) {
             )
         )
     }
+
+    @GetMapping("/token/{tokenId}")
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "tokenId",
+        schema = Schema(type = "string"),
+        description = "A valid account tokenId",
+        required = true,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "eventName",
+        array =
+            ArraySchema(
+                schema =
+                    Schema(
+                        type = "string",
+                        allowableValues =
+                            [
+                                "STARGATE_DELEGATE_LEGACY",
+                                "STARGATE_STAKE",
+                                "STARGATE_CLAIM_REWARDS_BASE",
+                                "STARGATE_CLAIM_REWARDS_DELEGATE",
+                                "STARGATE_UNSTAKE",
+                                "STARGATE_DELEGATE_REQUEST",
+                                "STARGATE_DELEGATE_ACTIVE",
+                                "STARGATE_DELEGATION_REMOVED_LEGACY",
+                                "STARGATE_DELEGATE_EXIT_REQUEST",
+                                "STARGATE_DELEGATION_EXITED_VALIDATOR",
+                                "STARGATE_DELEGATION_EXITED",
+                                "STARGATE_CLAIM_REWARDS",
+                                "STARGATE_BOOST",
+                                "STARGATE_MANAGER_ADDED",
+                                "STARGATE_MANAGER_REMOVED",
+                                "VEVOTE_VOTE_CAST",
+                                "NFT_SALE",
+                                "TRANSFER_NFT",
+                                "B3TR_UPGRADE_GM",
+                            ],
+                    )
+            ),
+        description = "Filter by specific transaction names.",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "contractAddress",
+        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+        description = "The contract address",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "after",
+        schema = Schema(type = "long"),
+        description =
+            "Return transactions after and including this timestamp (Unix time in seconds).",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "before",
+        schema = Schema(type = "long"),
+        description =
+            "Return transactions before and including this timestamp (Unix time in seconds).",
+        required = false,
+    )
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getTokenHistory(
+        @PathVariable(required = true) tokenId: String,
+        @RequestParam(required = false) eventName: List<String>?,
+        @ValidAddress @RequestParam(required = false) contractAddress: Address?,
+        @RequestParam(required = false) after: Long?,
+        @RequestParam(required = false) before: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<IndexedHistoryEvent> {
+        // Validate query parameters
+        val validatedEventNames =
+            ArrayValidationUtils.validateArray(
+                input = eventName,
+                allowedValues = allowedTokenNames,
+                fieldName = "eventName",
+            )
+
+        TimeValidationUtils.validateTimestamps(after, before)
+
+        val pageable =
+            PaginationUtils.toPageable(
+                page,
+                size?.plus(1),
+                direction,
+                IndexedHistoryEvent::blockTimestamp.name,
+            )
+
+        return paginatedResponse(
+            historyService.findTokenIdHistoryByFilters(
+                tokenId = tokenId,
+                eventNames = validatedEventNames,
+                contractAddress = contractAddress,
+                before = before,
+                after = after,
+                pageable = pageable,
+            )
+        )
+    }
+
+    private val allowedTokenNames: Set<String> =
+        setOf(
+            "STARGATE_DELEGATE_LEGACY",
+            "STARGATE_STAKE",
+            "STARGATE_CLAIM_REWARDS_BASE",
+            "STARGATE_CLAIM_REWARDS_DELEGATE",
+            "STARGATE_UNSTAKE",
+            "STARGATE_DELEGATE_REQUEST",
+            "STARGATE_DELEGATE_ACTIVE",
+            "STARGATE_DELEGATION_REMOVED_LEGACY",
+            "STARGATE_DELEGATE_EXIT_REQUEST",
+            "STARGATE_DELEGATION_EXITED_VALIDATOR",
+            "STARGATE_DELEGATION_EXITED",
+            "STARGATE_CLAIM_REWARDS",
+            "STARGATE_BOOST",
+            "STARGATE_MANAGER_ADDED",
+            "STARGATE_MANAGER_REMOVED",
+            "VEVOTE_VOTE_CAST",
+            "NFT_SALE",
+            "TRANSFER_NFT",
+            "B3TR_UPGRADE_GM",
+        )
 }

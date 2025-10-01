@@ -79,8 +79,8 @@ veworld:
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
 scheduler:
   delegationHistory:
-    initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:1}
-    interval: ${DELEGATION_HISTORY_INTERVAL:10}
+    initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
+    interval: ${DELEGATION_HISTORY_INTERVAL:30s}
 
 indexer:
   start-block:

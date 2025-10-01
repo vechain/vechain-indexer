@@ -18,6 +18,7 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidPageSize
@@ -109,14 +110,15 @@ open class ValidatorController(
         val results: Slice<Validator> =
             when {
                 validatorId != null -> {
-                    val validatorOpt = validatorRepository.findById(validatorId)
+                    val validatorOpt = validatorRepository.findById(HexUtils.normalise(validatorId))
                     if (validatorOpt.isPresent) {
                         SliceImpl(listOf(validatorOpt.get()), pageable, false)
                     } else {
                         SliceImpl(emptyList(), pageable, false)
                     }
                 }
-                endorser != null -> validatorRepository.findByEndorser(endorser, pageable)
+                endorser != null ->
+                    validatorRepository.findByEndorser(HexUtils.normalise(endorser), pageable)
                 else -> validatorRepository.findAll(pageable)
             }
 
@@ -192,8 +194,13 @@ open class ValidatorController(
         val results: Slice<Delegation> =
             when {
                 validator != null && statuses != null ->
-                    delegationRepository.findByValidatorAndStatusIn(validator, statuses, pageable)
-                validator != null -> delegationRepository.findByValidator(validator, pageable)
+                    delegationRepository.findByValidatorAndStatusIn(
+                        HexUtils.normalise(validator),
+                        statuses,
+                        pageable,
+                    )
+                validator != null ->
+                    delegationRepository.findByValidator(HexUtils.normalise(validator), pageable)
                 tokenId != null -> delegationRepository.findByTokenId(tokenId, pageable)
                 statuses != null -> delegationRepository.findByStatusIn(statuses, pageable)
                 else -> delegationRepository.findAll(pageable)
