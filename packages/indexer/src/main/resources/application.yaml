@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,delegation}
   output:
     ansi:
       enabled: always
@@ -48,7 +48,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:http://localhost:8669}
+  url: ${THOR_URL:https://hayabusa.live.dev.node.vechain.org}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -65,11 +65,11 @@ business-event:
     VOTER_REWARDS_CONTRACT: ${VOTER_REWARDS_CONTRACT:0x838a33af756a6366f93e201423e1425f67ec0fa7}
     TREASURY_CONTRACT: ${TREASURY_CONTRACT:0xd5903bcc66e439c753e525f8af2fec7be2429593}
     STARGATE_DELEGATION_CONTRACT: ${STARGATE_DELEGATION_CONTRACT:0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e}
-    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7}
+    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x820d17ec4882e65e42588d91ea9c7cb7225022a3}
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0xe1ecc51fc02c29e54b428279c0456010fda5c4f2}
-    STARGATE_STAKER_CONTRACT: ${STARGATE_STAKER_CONTRACT:0x97b3f18de4d9197af33ed623d93096b3b55dba20}
+    STARGATE_STAKER_CONTRACT: ${STARGATE_STAKER_CONTRACT:0x54d7f2de232e59bfb95c6b2c2b9f678ab73e5a38}
     BUILTIN_STAKER_CONTRACT: ${BUILTIN_STAKER_CONTRACT:0x00000000000000000000000000005374616B6572}
-    GET_ALL_VALIDATORS_CONTRACT: ${GET_ALL_VALIDATORS_CONTRACT:0x1fb856dc120b0333c864615869a02521fe9c06a7}
+    GET_ALL_VALIDATORS_CONTRACT: ${GET_ALL_VALIDATORS_CONTRACT:0x089c66e64b45b4d532cfe0093eecef2f2d2ed2a7}
 veworld:
   contract:
     authority-node:
@@ -77,6 +77,10 @@ veworld:
     historic-proposals:
       steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
+scheduler:
+  delegationHistory:
+    initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:1}
+    interval: ${DELEGATION_HISTORY_INTERVAL:10}
 
 indexer:
   start-block:
@@ -84,7 +88,7 @@ indexer:
     nft-blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
-    history: ${INDEXER_START_BLOCK_HISTORY:0}
+    history: ${INDEXER_START_BLOCK_HISTORY:26040}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
     stargate: ${INDEXER_START_BLOCK_STARGATE:0}
     b3tr: ${INDEXER_START_BLOCK_B3TR:0}
@@ -92,7 +96,7 @@ indexer:
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
-    validator: ${INDEXER_START_BLOCK_VALIDATOR:0}
+    validator: ${INDEXER_START_BLOCK_VALIDATOR:87526}
   start-round:
     b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval:

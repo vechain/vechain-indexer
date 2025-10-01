@@ -12,7 +12,7 @@ import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationRepository
 
-@Profile("history-delegations")
+@Profile("history-delegations", "validator")
 @EnableScheduling
 @Component
 open class DelegationHistoryScheduler(
