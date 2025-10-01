@@ -6,8 +6,10 @@ import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 
-@Profile("validator")
+@Profile("validator", "validator-stats")
 @Repository
 interface ValidatorRepository : BasePagingAndSortingIndexedRepository<Validator, String> {
     fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator>
+
+    fun findByStatusNot(status: Status): List<Validator>
 }

@@ -27,12 +27,12 @@ open class ValidatorService(
         block: Block,
         matchedEvents: List<IndexedEvent>,
         callResponses: List<InspectionResult>,
-    ): Triple<List<Validator>, List<Validator>, List<String>> {
+    ): Pair<List<Validator>, List<Validator>> {
         val threshold = getThreshold()
 
         // Skip old irrelevant blocks
         if (matchedEvents.isEmpty() && block.number < threshold) {
-            return Triple(emptyList(), emptyList(), emptyList())
+            return Pair(emptyList(), emptyList())
         }
 
         // Load docs once
@@ -44,7 +44,7 @@ open class ValidatorService(
 
         // For old blocks → only beneficiary changes matter
         if (block.number < threshold) {
-            return Triple(working.values.toList(), emptyList(), emptyList())
+            return working.values.toList() to emptyList()
         }
 
         // Fetch ABIs for decoding
@@ -59,7 +59,7 @@ open class ValidatorService(
         )
 
         // Decode into validators + delete list
-        val (chainUpdates, toDelete) =
+        val chainUpdates =
             ValidatorUtils.getLatestValidatorInfo(
                 responses = callResponses,
                 validatorsAbi = cachedGetValidatorsAbi,
@@ -70,29 +70,17 @@ open class ValidatorService(
             )
         applyChainUpdates(chainUpdates, working)
 
-        // Archive everything that existed before but is not deleted
-        val archive = existingDocs.filterKeys { it !in toDelete }.values.toList()
-
-        return Triple(working.values.toList(), archive, toDelete)
+        return working.values.toList() to existingDocs.values.toList()
     }
 
     @Transactional(rollbackFor = [Exception::class])
-    open fun saveAndDelete(
-        updates: List<Validator>,
-        archive: List<Validator>,
-        delete: List<String>,
-    ) {
+    open fun save(updates: List<Validator>, archive: List<Validator>) {
         // Persist once
         repository.saveAll(updates)
 
         // Archive old state
         if (archive.isNotEmpty()) {
             archiveService.saveAll(archive)
-        }
-
-        // Delete ancient exited validators
-        if (delete.isNotEmpty()) {
-            repository.deleteAllById(delete)
         }
     }
 
@@ -127,7 +115,7 @@ open class ValidatorService(
             }
         } else {
             // For recent blocks → load all validators once
-            repository.findAll().associateBy { it.id }
+            repository.findByStatusNot(Status.EXITED).associateBy { it.id }
         }
 
     private fun applyBeneficiaryChanges(

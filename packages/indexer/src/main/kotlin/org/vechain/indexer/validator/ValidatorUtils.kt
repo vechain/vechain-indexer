@@ -3,7 +3,6 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
-import kotlin.rem
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -25,7 +24,7 @@ object ValidatorUtils {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-    ): Pair<List<Validator>, List<String>> {
+    ): List<Validator> {
         val decodedInfo = decodeResponseInfo(responses, validatorsAbi)
 
         return unpackValidators(
@@ -53,7 +52,7 @@ object ValidatorUtils {
         blockNumber: Long,
         blockTimestamp: Long,
         retentionPeriod: Long = 777_600,
-    ): Pair<List<Validator>, List<String>> {
+    ): List<Validator> {
         val ids = decoded.listOf<String>("masters")
         val endorsers = decoded.listOf<String>("endorsors")
         val statuses = decoded.listOf<BigInteger>("statuses")
@@ -119,12 +118,7 @@ object ValidatorUtils {
                 }
             }
 
-        val toDelete =
-            existingDocs.values
-                .filter { v -> (v.blockNumber + retentionPeriod) < blockNumber }
-                .map { it.id }
-
-        return active + disappeared to toDelete
+        return active + disappeared
     }
 
     /** Create Validator using latest on chain info and calculations */

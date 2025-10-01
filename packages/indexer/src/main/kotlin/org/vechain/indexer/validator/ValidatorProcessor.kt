@@ -18,11 +18,11 @@ open class ValidatorProcessor(
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        val (updated, existing, deleted) =
+        val (updated, existing) =
             service.processBlock(entry.block, entry.events(), entry.callResults)
 
-        if (updated.isNotEmpty() || existing.isNotEmpty() || deleted.isNotEmpty()) {
-            service.saveAndDelete(updated, existing, deleted)
+        if (updated.isNotEmpty()) {
+            service.save(updated, existing)
         }
     }
 }

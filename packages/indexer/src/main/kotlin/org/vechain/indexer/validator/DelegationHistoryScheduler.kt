@@ -1,4 +1,4 @@
-package org.vechain.monitor.vtho
+package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.EnableScheduling
@@ -9,8 +9,6 @@ import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.IdUtils
-import org.vechain.indexer.validator.Delegation
-import org.vechain.indexer.validator.DelegationRepository
 
 @Profile("history-delegations", "validator")
 @EnableScheduling
