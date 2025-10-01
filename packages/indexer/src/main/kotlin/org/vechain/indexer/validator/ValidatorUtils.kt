@@ -3,6 +3,7 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
+import kotlin.rem
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -470,6 +471,16 @@ object ValidatorUtils {
 
         return abiFunctions.map { fn -> ContractUtils.createClause(getAllValidatorInfoSC, fn) }
     }
+
+    fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
+        val offset = currentBlock - snapshot.startBlock
+        val positionInCycle = offset % snapshot.stakingPeriodLength
+        val currentCycleStart = currentBlock - positionInCycle
+        return currentCycleStart + snapshot.stakingPeriodLength
+    }
+
+    fun InspectionResult.hasAbiData(): Boolean =
+        this.data != null && this.data.isNotBlank() && this.data != "0x"
 
     data class DecodedValidatorInfo(
         val decodedValidators: Map<String, Any?>,
