@@ -467,6 +467,7 @@ object ValidatorUtils {
     }
 
     fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
+        if (snapshot.startBlock == 0L) return 0L
         val offset = currentBlock - snapshot.startBlock
         val positionInCycle = offset % snapshot.stakingPeriodLength
         val currentCycleStart = currentBlock - positionInCycle
