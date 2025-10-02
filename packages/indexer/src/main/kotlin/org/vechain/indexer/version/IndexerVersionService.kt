@@ -3,11 +3,14 @@ package org.vechain.indexer.version
 import org.slf4j.LoggerFactory
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.thor.model.BlockIdentifier
 
 @Service
 open class IndexerVersionService(
     private val mongoTemplate: MongoTemplate,
+    private val repo: IndexerVersionRepository,
     private val mappingContext: MongoMappingContext,
 ) {
     private val logger = LoggerFactory.getLogger(IndexerVersionService::class.java)
@@ -17,18 +20,23 @@ open class IndexerVersionService(
      * version is lower than the new version, the corresponding MongoDB collection will be dropped
      * and the version will be updated.
      *
-     * @param clazz The model class annotated with @Document.
+     * @param indexerName The name of the indexer.
+     * @param clazz The model class annotated with @Document representing the collection.
      * @param newVersion The new version number of the indexer.
      * @return True if the collection was dropped and version updated, false otherwise.
      */
-    fun checkAndResetCollectionIfVersionChanged(clazz: Class<*>, newVersion: Int): Boolean {
-        val collectionName = getCollectionName(clazz)
+    fun checkAndResetCollectionIfVersionChanged(
+        indexerName: String,
+        clazz: Class<*>,
+        newVersion: Int,
+    ): Boolean {
         try {
+            val collectionName = getCollectionName(clazz)
             val storedVersion = getStoredIndexerVersion(collectionName)
 
-            if (storedVersion == -1) {
+            if (storedVersion == null) {
                 logger.info("No version document found for $collectionName. No action taken.")
-                updateIndexerVersion(collectionName, newVersion)
+                updateIndexerVersion(indexerName, collectionName, newVersion)
                 return true
             }
 
@@ -38,13 +46,13 @@ open class IndexerVersionService(
                 )
                 mongoTemplate.dropCollection(collectionName)
 
-                updateIndexerVersion(collectionName, newVersion)
+                updateIndexerVersion(indexerName, collectionName, newVersion)
                 return true
             }
 
             return false
         } catch (e: Exception) {
-            logger.error("Error checking or resetting collection version for $collectionName", e)
+            logger.error("Error checking or resetting collection version for $indexerName", e)
             return false
         }
     }
@@ -70,13 +78,16 @@ open class IndexerVersionService(
     /**
      * Retrieves the current version of the indexer.
      *
-     * @param indexerName The name of the indexer to fetch the version for.
+     * @param collectionName The name of the indexer to fetch the version for.
      * @return The stored version number for the indexer. Returns `-1` if no versioned document is
      *   found.
      */
-    private fun getStoredIndexerVersion(indexerName: String): Int {
-        val indexer = mongoTemplate.findById(indexerName, IndexerVersion::class.java)
-        return indexer?.version ?: -1
+    fun getStoredIndexerVersion(collectionName: String): Int? =
+        repo.findByCollectionName(collectionName)?.version
+
+    fun getLastProcessedBlock(collectionName: String): BlockIdentifier? {
+        val indexer = repo.findByCollectionName(collectionName)
+        return indexer?.lastProcessedBlock
     }
 
     /**
@@ -85,9 +96,27 @@ open class IndexerVersionService(
      * @param indexerName The name of the indexer to update.
      * @param newVersion The new version number to set for the indexer.
      */
-    private fun updateIndexerVersion(indexerName: String, newVersion: Int) {
-        val metadata = IndexerVersion(id = indexerName, version = newVersion)
-        mongoTemplate.save(metadata)
+    private fun updateIndexerVersion(indexerName: String, collectionName: String, newVersion: Int) {
+        val updated =
+            repo.findByIdOrNull(indexerName)?.copy(version = newVersion)
+                ?: IndexerVersion(
+                    indexerName = indexerName,
+                    collectionName = collectionName,
+                    version = newVersion,
+                )
+        mongoTemplate.save(updated)
+    }
+
+    fun updateLastSafeSyncedBlock(indexerName: String, block: BlockIdentifier?) {
+        val indexer = repo.findByIdOrNull(indexerName)
+        if (indexer != null) {
+            val updatedIndexer = indexer.copy(lastProcessedBlock = block)
+            mongoTemplate.save(updatedIndexer)
+        } else {
+            logger.warn(
+                "No indexer version document found for $indexerName to update lastProcessedBlock."
+            )
+        }
     }
 
     /**

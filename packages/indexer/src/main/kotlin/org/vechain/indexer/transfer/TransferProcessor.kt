@@ -6,13 +6,20 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.utils.BlockUtils
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("transfers")
 @Component
 open class TransferProcessor(
     private val mongoTemplate: MongoTemplate,
     repository: TransferEventRepository,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = "TransferIndexer",
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

@@ -7,6 +7,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("authority-nodes")
 @Component
@@ -14,7 +15,8 @@ open class AmnProcessor(
     private val repository: AmnRepository,
     private val amnService: AmnService,
     private val thorService: ThorService,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) : BaseProcessor(repository, indexerVersionService, "AuthorityNodeIndexer") {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

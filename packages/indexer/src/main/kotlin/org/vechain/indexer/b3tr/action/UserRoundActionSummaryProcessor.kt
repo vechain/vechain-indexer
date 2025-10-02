@@ -7,6 +7,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
@@ -16,10 +17,13 @@ open class UserRoundActionSummaryProcessor(
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
     private val service: UserRoundActionSummaryService,
     @param:Value("\${indexer.start-round.b3tr-sustainable-actions}") private val startRound: Int,
+    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = userRoundActionSummaryArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = "UserRoundActionSummaryIndexer",
     ) {
 
     protected var roundId: Int =

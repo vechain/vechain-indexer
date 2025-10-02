@@ -4,13 +4,20 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("history")
 @Component
 open class HistoryProcessor(
     repository: HistoryRepository,
     private val historyService: HistoryService,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = "HistoryIndexer",
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

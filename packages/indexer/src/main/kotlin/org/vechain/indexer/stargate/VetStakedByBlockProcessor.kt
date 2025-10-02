@@ -4,13 +4,20 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vet-staked-by-block")
 @Component
 open class VetStakedByBlockProcessor(
     private val service: VetStakedByBlockService,
     repository: VetStakedByBlockRepository,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = "VetStakedByBlockIndexer",
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

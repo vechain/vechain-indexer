@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-account")
 @Component
@@ -13,10 +14,13 @@ open class VthoClaimedByAccountProcessor(
     vthoClaimByAccountArchiveService:
         ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     repository: VthoClaimedByAccountRepository,
+    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = vthoClaimByAccountArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = "VthoClaimedByAccountIndexer",
     ) {
 
     override fun process(entry: IndexingResult) {

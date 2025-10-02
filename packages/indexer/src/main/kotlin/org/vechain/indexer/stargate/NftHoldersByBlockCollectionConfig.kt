@@ -29,6 +29,7 @@ open class NftHoldersByBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = "StargateNftHoldersByBlockIndexer",
             NftHoldersByBlock::class.java,
             version,
         )

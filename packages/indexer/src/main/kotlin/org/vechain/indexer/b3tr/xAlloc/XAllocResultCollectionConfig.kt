@@ -36,6 +36,7 @@ open class XAllocResultCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "B3trXAllocResultIndexer",
                 XAllocResult::class.java,
                 version,
             )

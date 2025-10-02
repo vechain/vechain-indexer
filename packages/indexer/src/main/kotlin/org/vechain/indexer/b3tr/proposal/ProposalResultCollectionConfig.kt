@@ -35,6 +35,7 @@ open class ProposalResultCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "B3trProposalResultIndexer",
                 ProposalResult::class.java,
                 version,
             )

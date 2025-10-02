@@ -35,6 +35,7 @@ open class NftBlacklistCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "NftBlacklistIndexer",
                 NftBlacklist::class.java,
                 version,
             )

@@ -27,6 +27,7 @@ open class ProposalCommentCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = "B3trProposalCommentIndexer",
             ProposalComment::class.java,
             version,
         )

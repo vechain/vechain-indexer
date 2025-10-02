@@ -33,6 +33,7 @@ open class VthoClaimedByAccountCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "StargateVthoClaimedByAccountIndexer",
                 VthoClaimedByAccount::class.java,
                 version,
             )

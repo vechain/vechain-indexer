@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts", "history")
 @Component
@@ -12,7 +13,14 @@ open class NftBlacklistProcessor(
     private val nftBlacklistService: NftBlacklistService,
     nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>,
     repository: NftBlacklistRepository,
-) : BaseStatefulProcessor(repository = repository, archiveService = nftBlacklistArchiveService) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseStatefulProcessor(
+        repository = repository,
+        archiveService = nftBlacklistArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = "NftBlacklistIndexer",
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

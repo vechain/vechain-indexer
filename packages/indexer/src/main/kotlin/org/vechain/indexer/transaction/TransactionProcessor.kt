@@ -5,13 +5,20 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("transactions")
 @Component
 open class TransactionProcessor(
     private val transactionService: TransactionService,
     repository: TransactionRepository,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = "TransactionIndexer",
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

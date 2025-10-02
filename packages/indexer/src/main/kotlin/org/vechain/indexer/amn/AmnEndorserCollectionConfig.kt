@@ -28,8 +28,9 @@ open class AmnEndorserCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            AmnEndorser::class.java,
-            version,
+            indexerName = "AuthorityNodeEndorserIndexer",
+            clazz = AmnEndorser::class.java,
+            newVersion = version,
         )
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")

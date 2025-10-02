@@ -28,6 +28,7 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = "VeVoteHistoricProposalsIndexer",
             HistoricProposals::class.java,
             version,
         )

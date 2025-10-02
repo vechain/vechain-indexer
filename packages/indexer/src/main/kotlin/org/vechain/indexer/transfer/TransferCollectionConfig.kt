@@ -28,6 +28,7 @@ open class TransferCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = "TransferEventIndexer",
             IndexedTransferEvent::class.java,
             version,
         )

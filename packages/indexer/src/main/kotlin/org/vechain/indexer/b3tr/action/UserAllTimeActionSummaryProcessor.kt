@@ -6,6 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
@@ -14,10 +15,13 @@ open class UserAllTimeActionSummaryProcessor(
     userAllTimeActionSummaryArchiveService:
         ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     private val service: UserAllTimeActionSummaryService,
+    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = userAllTimeActionSummaryArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = "UserAllTimeActionSummaryIndexer",
     ) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

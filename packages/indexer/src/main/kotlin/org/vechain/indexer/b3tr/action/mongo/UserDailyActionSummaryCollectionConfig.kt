@@ -37,6 +37,7 @@ open class UserDailyActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = "UserDailyActionSummaryIndexer",
                 UserDailyActionSummary::class.java,
                 version,
             )
