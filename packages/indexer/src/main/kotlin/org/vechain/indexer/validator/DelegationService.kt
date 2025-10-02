@@ -12,6 +12,7 @@ import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
@@ -56,20 +57,31 @@ open class DelegationService(
         val disappeared = checkMissingValidators(validatorSnapshots)
 
         // 1. Collect delegations from different sources
-        val due = findDueDelegations(block)
+        val (unknownStart, due) = findDueDelegations(block)
         val eventDelegations = findDelegationsFromEvents(events)
         val validatorExitDelegations = findDelegationsFromExits(events, disappeared)
 
         // 2. Build working set (deduped by delegation ID)
         val delegations =
-            (due + eventDelegations + validatorExitDelegations).associateBy { it.id }.toMutableMap()
+            (unknownStart + due + eventDelegations + validatorExitDelegations)
+                .associateBy { it.id }
+                .toMutableMap()
         val delegationsToArchive = mutableListOf<Delegation>()
 
-        // 3. Apply lifecycle transitions + event mutations
+        // 3. Check status on delegations with unknown start blocks
+        checkForUpdatesOnUnknown(
+            unknownStart,
+            block,
+            delegations,
+            delegationsToArchive,
+            validatorSnapshots,
+        )
+
+        // 4. Apply lifecycle transitions + event mutations
         applyScheduledTransitions(block, delegations, delegationsToArchive)
         applyEventMutations(events, delegations, delegationsToArchive, block, validatorSnapshots)
 
-        // 4. Handle validators that disappeared entirely
+        // 5. Handle validators that disappeared entirely
         disappeared.forEach {
             handleValidatorDisappeared(it, delegations, delegationsToArchive, block)
         }
@@ -87,11 +99,18 @@ open class DelegationService(
     // Step 1 helpers
     // ------------------------------
 
-    private fun findDueDelegations(block: Block): List<Delegation> =
-        repository.findByValidatorNextCycleAndStatusIn(
-            block.number,
-            listOf(Status.QUEUED, Status.EXITING),
-        )
+    private fun findDueDelegations(block: Block): Pair<List<Delegation>, List<Delegation>> {
+        val delegations =
+            repository.findByValidatorNextCycleInAndStatusIn(
+                listOf(block.number, 0L),
+                listOf(Status.QUEUED, Status.EXITING),
+            )
+
+        val zeroCycle = delegations.filter { it.validatorNextCycle == 0L }
+        val nonZeroCycle = delegations - zeroCycle // everything else
+
+        return zeroCycle to nonZeroCycle
+    }
 
     private fun findDelegationsFromEvents(events: List<IndexedEvent>): List<Delegation> {
         val ids = events.mapNotNull { getDelegationIdFromParams(it.params) }.toSet()
@@ -115,7 +134,7 @@ open class DelegationService(
     }
 
     // ------------------------------
-    // Step 2 transitions
+    // Transitions
     // ------------------------------
 
     private fun applyScheduledTransitions(
@@ -140,6 +159,61 @@ open class DelegationService(
                         version = d.version + 1,
                     )
             }
+    }
+
+    /**
+     * Resolves delegations with unknown start blocks.
+     *
+     * Uses validator snapshots if available, otherwise queries the chain
+     * (`getValidationPeriodDetails`). When a non-zero start block is found, the delegation is
+     * archived and updated with the new cycle info.
+     */
+    private fun checkForUpdatesOnUnknown(
+        unknown: List<Delegation>,
+        block: Block,
+        delegations: MutableMap<String, Delegation>,
+        archive: MutableList<Delegation>,
+        validatorsSnapshots: Map<String, ValidatorSnapshot>,
+    ) {
+        if (unknown.isEmpty()) return
+
+        val validators = unknown.groupBy { it.validator }
+
+        val snapshotEmpty = validatorsSnapshots.isEmpty()
+        val responses: List<ExecuteCodeResponse> =
+            (if (snapshotEmpty) {
+                val clauses =
+                    validators.keys.map { validatorId ->
+                        ContractUtils.createClause(
+                            stakerSC,
+                            getDelegationsAbiFunctions("getValidationPeriodDetails"),
+                            AddressUtils.toBigInt(validatorId),
+                        )
+                    }
+                thorService.executeReadOnlyCode(clauses)
+            } else {
+                emptyList()
+            })
+
+        validators.keys.forEachIndexed { index, validatorId ->
+            val startBlock =
+                if (snapshotEmpty) determineStartBlock(responses[index])
+                else validatorsSnapshots[validatorId]!!.startBlock
+
+            if (startBlock != 0L) {
+                validators[validatorId]?.forEach { existing ->
+                    archive.add(existing)
+                    delegations[existing.id] =
+                        existing.copy(
+                            validatorNextCycle = startBlock,
+                            blockId = block.id,
+                            blockNumber = block.number,
+                            blockTimestamp = block.timestamp,
+                            version = existing.version + 1,
+                        )
+                }
+            }
+        }
     }
 
     // ------------------------------
@@ -394,6 +468,23 @@ open class DelegationService(
         }
     }
 
+    /** Decodes `getValidationPeriodDetails` response. */
+    private fun decodeValidationPeriodDetails(data: String): Pair<Long, Long> {
+        val decoded =
+            FunctionReturnDecoder.decode(
+                data,
+                getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
+            )
+        val startBlock = (decoded["startBlock"] as BigInteger).toLong()
+        val periodLength = (decoded["period"] as BigInteger).toLong()
+        return startBlock to periodLength
+    }
+
+    /**
+     * Fetches validator period info directly from chain.
+     *
+     * @return Pair(periodLength, nextCycleStart) or (periodLength, 0) if not started
+     */
     fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
         val clause =
             ContractUtils.createClause(
@@ -402,19 +493,21 @@ open class DelegationService(
                 AddressUtils.toBigInt(validatorId),
             )
         val response = thorService.executeReadOnlyCode(listOf(clause))
-        val decoded =
-            FunctionReturnDecoder.decode(
-                response[0].data,
-                getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
-            )
-        val startBlock = (decoded["startBlock"] as BigInteger).toLong()
-        val periodLength = (decoded["period"] as BigInteger).toLong()
+        val (startBlock, periodLength) = decodeValidationPeriodDetails(response[0].data)
+
+        if (startBlock == 0L) return periodLength to 0L
+
         val offset = currentBlock - startBlock
         val positionInCycle = offset % periodLength
         val currentCycleStart = currentBlock - positionInCycle
         val nextCycleStart = currentCycleStart + periodLength
+
         return periodLength to nextCycleStart
     }
+
+    /** Convenience helper if you only care about startBlock from an already-fetched response. */
+    fun determineStartBlock(response: ExecuteCodeResponse): Long =
+        decodeValidationPeriodDetails(response.data).first
 
     /**
      * Resolve a validator's exit block. Uses cached snapshot if available, otherwise falls back to
