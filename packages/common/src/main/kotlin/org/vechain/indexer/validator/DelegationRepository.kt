@@ -12,8 +12,8 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegation, String> {
     fun findByNotify(notify: Boolean): List<Delegation>
 
-    fun findByValidatorNextCycleAndStatusIn(
-        blockNumber: Long,
+    fun findByValidatorNextCycleInAndStatusIn(
+        blockNumber: List<Long>,
         statuses: List<Status>,
     ): List<Delegation>
 
