@@ -13,6 +13,7 @@ plugins {
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_21
+java.targetCompatibility = JavaVersion.VERSION_21
 
 allprojects {
     apply {
@@ -74,6 +75,7 @@ allprojects {
 
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
+        sourceCompatibility = "21"
         dependsOn("installGitHooks")
     }
 

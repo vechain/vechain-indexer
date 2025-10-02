@@ -22,6 +22,7 @@ open class ValidatorService(
     private val thorService: ThorService,
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedValidators = LRUCache<String, List<Validator>>(100)
 
     open fun processBlock(
         block: Block,
@@ -30,22 +31,12 @@ open class ValidatorService(
     ): Pair<List<Validator>, List<Validator>> {
         val threshold = getThreshold()
 
-        // Skip old irrelevant blocks
-        if (matchedEvents.isEmpty() && block.number < threshold) {
-            return Pair(emptyList(), emptyList())
-        }
-
         // Load docs once
         val existingDocs = loadExistingDocs(block, matchedEvents, threshold)
         val working = existingDocs.toMutableMap()
 
         // Apply beneficiary changes directly into the working map
         applyBeneficiaryChanges(matchedEvents, working)
-
-        // For old blocks → only beneficiary changes matter
-        if (block.number < threshold) {
-            return working.values.toList() to emptyList()
-        }
 
         // Fetch ABIs for decoding
         loadAllValidatorAbiFunctions(
@@ -68,6 +59,19 @@ open class ValidatorService(
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
             )
+
+        cachedValidators[block.id] = chainUpdates
+        val parentValidators = cachedValidators[block.parentID]
+
+        // TODO: If parentValidators is null, fetch from chain
+
+        // If no changes detected, skip
+        val updates = chainUpdates.updated(parentValidators)
+        for (u in updates) {
+            // TODO: validator state updated, save to DB
+            println(u.id)
+        }
+
         applyChainUpdates(chainUpdates, working)
 
         return working.values.toList() to existingDocs.values.toList()
@@ -160,4 +164,44 @@ open class ValidatorService(
 
         abis.forEach { abi -> cachedGetValidatorsAbi[abi.name!!] = abi }
     }
+}
+
+class LRUCache<K, V>(private val maxSize: Int) : LinkedHashMap<K, V>(16, 0.75f, true) {
+    override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>?): Boolean {
+        return size > maxSize
+    }
+}
+
+// TODO: this always returns the full list even when. Some `equals` function is not working as
+// expected
+fun List<Validator>.updated(other: List<Validator>?): List<Validator> {
+    if (other == null) return this
+
+    val updates = mutableListOf<Validator>()
+    val mapA = this.associateBy { it.id }
+    val mapB = other.associateBy { it.id }
+
+    mapA.forEach { (id, vA) ->
+        val vB =
+            mapB[id]
+                ?: run {
+                    updates.add(vA)
+                    return@forEach
+                }
+
+        if (!vA.equals(vB)) {
+            vA.printChanges(vB)
+            updates.add(vA)
+        }
+    }
+
+    mapB.forEach { (id, vB) ->
+        if (!mapA.containsKey(id)) {
+            // vB was removed in vA
+            val exited = vB.copy(status = Status.EXITED)
+            updates.add(exited)
+        }
+    }
+
+    return updates
 }

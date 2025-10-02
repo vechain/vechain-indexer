@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,delegation}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,delegation,validator,validator-stats,history-delegations,history}
   output:
     ansi:
       enabled: always
