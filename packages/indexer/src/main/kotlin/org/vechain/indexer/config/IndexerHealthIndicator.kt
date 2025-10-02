@@ -75,18 +75,18 @@ class IndexerHealthIndicator(
             return HealthStatus.UP to "Indexer is pruning"
         }
 
-        if (indexer.status == Status.PENDING_DEPENDENCY) {
-            return HealthStatus.UP to "Indexer is waiting for dependencies to sync"
+        if (indexer.status == Status.NOT_INITIALISED) {
+            return HealthStatus.UNKNOWN to "Indexer is not initialised"
+        }
+
+        if (indexer.status == Status.INITIALISED) {
+            return HealthStatus.UNKNOWN to "Indexer is initialised but not started"
         }
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
-        val timeout =
-            if (indexer.status == Status.SYNCING) {
-                inactiveThresholdSyncing
-            } else {
-                inactiveThresholdNotSyncing
-            }
+        // TODO: Needs to be cleaned up
+        val timeout = inactiveThresholdSyncing
 
         val timeLastProcessed = if (indexer is BlockIndexer) indexer.timeLastProcessed else null
         return if (timeLastProcessed != null) {

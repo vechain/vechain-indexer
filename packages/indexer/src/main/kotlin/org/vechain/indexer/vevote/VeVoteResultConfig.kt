@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
@@ -48,10 +48,9 @@ open class VeVoteResultConfig {
         veVoteResultPruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.vevote}") syncLogInterval: Long,
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
-    ): Indexer =
+    ): BlockIndexer =
         IndexerFactory()
             .name("VeVoteResultIndexer")
             .thorClient(thorClient)
@@ -59,7 +58,6 @@ open class VeVoteResultConfig {
             .pruner(veVoteResultPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
-            .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/vevote")
             .abiContracts(listOf(contractAddress))

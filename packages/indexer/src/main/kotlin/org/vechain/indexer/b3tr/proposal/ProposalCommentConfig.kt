@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
@@ -18,18 +18,16 @@ open class ProposalCommentConfig {
         processor: ProposalCommentProcessor,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
         b3trGovernorContract: String,
         bEProperties: BusinessEventProperties,
-    ): Indexer =
+    ): BlockIndexer =
         IndexerFactory()
             .name("ProposalCommentIndexer")
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
-            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(listOf("B3TR_ProposalVote"))
