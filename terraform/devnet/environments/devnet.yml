@@ -94,7 +94,7 @@ enabled_nets:
         nfts:                       '3'
         transfers:                  '3'
         transactions:               '3'
-        history:                    '8'
+        history:                    '9'
         nft-blacklist:              '3'
         vevote-comments:            '3'
         vevote-results:             '3'
@@ -119,7 +119,7 @@ enabled_nets:
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '3'
         historic-proposals:          '3'
-        validator: '8'
+        validator: '9'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
