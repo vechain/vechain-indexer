@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
 import org.vechain.indexer.thor.client.ThorClient
@@ -27,7 +28,7 @@ open class VthoClaimedByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
-            .name("VthoClaimedByBlockIndexer")
+            .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

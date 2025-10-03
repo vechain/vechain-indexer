@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.proposal
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 import org.vechain.indexer.version.IndexerVersionService
@@ -13,7 +14,7 @@ open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
     indexerVersionService: IndexerVersionService,
-) : BaseProcessor(repository = repository, indexerVersionService, "ProposalCommentIndexer") {
+) : BaseProcessor(repository = repository, indexerVersionService, IndexerNames.PROPOSAL_COMMENT) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return

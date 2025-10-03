@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -20,7 +21,7 @@ open class AmnConfig {
         @Value("\${veworld.contract.authority-node.address}") contractAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name("AuthorityNodeIndexer")
+            .name(IndexerNames.AUTHORITY_NODE)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(syncLoggerInterval)

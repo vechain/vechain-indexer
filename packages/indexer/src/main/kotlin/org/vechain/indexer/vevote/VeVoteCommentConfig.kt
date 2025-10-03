@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -21,7 +22,7 @@ open class VeVoteCommentConfig {
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name("VeVoteCommentIndexer")
+            .name(IndexerNames.VE_VOTE_COMMENT)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

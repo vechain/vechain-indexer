@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
@@ -25,7 +26,7 @@ open class ProposalCommentConfig {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
-            .name("ProposalCommentIndexer")
+            .name(IndexerNames.PROPOSAL_COMMENT)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

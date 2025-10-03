@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.xAlloc
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
@@ -20,7 +21,7 @@ open class XAllocResultProcessor(
         repository = repository,
         archiveService = xAllocResultArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = "XAllocResultIndexer",
+        indexerName = IndexerNames.X_ALLOC_RESULT,
     ) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

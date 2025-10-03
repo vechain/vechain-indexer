@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
@@ -22,7 +23,7 @@ open class HistoryConfig() {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer {
         return IndexerFactory()
-            .name("HistoryIndexer")
+            .name(IndexerNames.HISTORY)
             .thorClient(thorClient)
             .syncLoggerInterval(syncLoggerInterval)
             .processor(processor)

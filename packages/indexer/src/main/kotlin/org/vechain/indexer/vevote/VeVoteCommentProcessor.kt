@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -18,7 +19,7 @@ open class VeVoteCommentProcessor(
     BaseProcessor(
         repository = vevoteCommentRepository,
         indexerVersionService = indexerVersionService,
-        indexerName = "VeVoteCommentIndexer",
+        indexerName = IndexerNames.VE_VOTE_COMMENT,
     ) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

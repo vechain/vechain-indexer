@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
@@ -20,7 +21,7 @@ open class VthoClaimedByAccountProcessor(
         repository = repository,
         archiveService = vthoClaimByAccountArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = "VthoClaimedByAccountIndexer",
+        indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
     ) {
 
     override fun process(entry: IndexingResult) {

@@ -3,6 +3,7 @@ package org.vechain.indexer.nft
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
@@ -19,7 +20,7 @@ open class NftBlacklistProcessor(
         repository = repository,
         archiveService = nftBlacklistArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = "NftBlacklistIndexer",
+        indexerName = IndexerNames.NFT_BLACKLIST,
     ) {
 
     override fun process(entry: IndexingResult) {

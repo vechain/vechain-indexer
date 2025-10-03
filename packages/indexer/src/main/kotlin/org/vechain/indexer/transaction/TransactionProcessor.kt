@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -17,7 +18,7 @@ open class TransactionProcessor(
     BaseProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
-        indexerName = "TransactionIndexer",
+        indexerName = IndexerNames.TRANSACTION,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

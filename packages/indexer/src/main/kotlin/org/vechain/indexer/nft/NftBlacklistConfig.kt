@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
@@ -50,7 +51,7 @@ open class NftBlacklistConfig {
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name("NftBlacklistIndexer")
+            .name(IndexerNames.NFT_BLACKLIST)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftBlacklistPruner)

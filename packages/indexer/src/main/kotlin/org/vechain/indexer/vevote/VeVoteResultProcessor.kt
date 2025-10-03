@@ -3,6 +3,7 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
@@ -19,7 +20,7 @@ open class VeVoteResultProcessor(
         repository = repository,
         archiveService = veVoteResultArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = "VeVoteResultIndexer",
+        indexerName = IndexerNames.VE_VOTE_RESULT,
     ) {
 
     override fun process(entry: IndexingResult) {

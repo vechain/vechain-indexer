@@ -3,6 +3,7 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -16,7 +17,7 @@ open class HistoricProposalsProcessor(
     BaseProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
-        indexerName = "HistoricProposalsIndexer",
+        indexerName = IndexerNames.HISTORIC_PROPOSALS,
     ) {
 
     override fun process(entry: IndexingResult) {

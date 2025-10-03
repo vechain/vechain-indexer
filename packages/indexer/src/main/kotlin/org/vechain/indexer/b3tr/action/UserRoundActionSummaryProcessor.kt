@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
@@ -23,7 +24,7 @@ open class UserRoundActionSummaryProcessor(
         repository = repository,
         archiveService = userRoundActionSummaryArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = "UserRoundActionSummaryIndexer",
+        indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY,
     ) {
 
     protected var roundId: Int =

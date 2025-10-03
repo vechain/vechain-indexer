@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -20,7 +21,7 @@ open class TransferConfig {
         @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name("TransferIndexer")
+            .name(IndexerNames.TRANSFER)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis/tokens")

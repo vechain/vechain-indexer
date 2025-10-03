@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -19,7 +20,7 @@ open class TransactionConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name("TransactionIndexer")
+            .name(IndexerNames.TRANSACTION)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis")

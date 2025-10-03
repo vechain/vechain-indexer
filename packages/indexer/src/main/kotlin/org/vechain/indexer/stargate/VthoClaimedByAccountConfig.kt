@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
@@ -57,7 +58,7 @@ open class VthoClaimedByAccountConfig {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
-            .name("VthoClaimedByAccountIndexer")
+            .name(IndexerNames.VTHO_CLAIMED_BY_ACCOUNT)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(vthoClaimByAccountPruner)

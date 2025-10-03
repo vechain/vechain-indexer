@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
@@ -26,7 +27,7 @@ open class VetStakedByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
-            .name("VetStakedByBlockIndexer")
+            .name(IndexerNames.VET_STAKED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
@@ -58,7 +59,7 @@ open class UserRoundActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
-            .name("UserRoundActionSummaryIndexer")
+            .name(IndexerNames.USER_ROUND_ACTION_SUMMARY)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(userRoundActionSummaryPruner)
