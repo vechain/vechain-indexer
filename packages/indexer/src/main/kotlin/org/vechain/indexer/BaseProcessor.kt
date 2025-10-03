@@ -33,5 +33,5 @@ abstract class BaseProcessor(
     }
 
     override fun rollback(blockNumber: Long) =
-        repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber - 1)
+        repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
 }

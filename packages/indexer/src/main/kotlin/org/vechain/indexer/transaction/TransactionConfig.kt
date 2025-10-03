@@ -16,6 +16,7 @@ open class TransactionConfig {
         thorClient: ThorClient,
         processor: TransactionProcessor,
         @Value("\${indexer.start-block.transactions}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name("TransactionIndexer")
@@ -23,6 +24,7 @@ open class TransactionConfig {
             .processor(processor)
             .abis("abis")
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .excludeVetTransfers()
             .includeFullBlock()
             .build()

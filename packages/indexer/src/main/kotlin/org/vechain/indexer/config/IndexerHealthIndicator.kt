@@ -85,8 +85,12 @@ class IndexerHealthIndicator(
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
-        // TODO: Needs to be cleaned up
-        val timeout = inactiveThresholdSyncing
+        val timeout =
+            if (indexer.status == Status.SYNCING || indexer.status == Status.FAST_SYNCING) {
+                inactiveThresholdSyncing
+            } else {
+                inactiveThresholdNotSyncing
+            }
 
         val timeLastProcessed = if (indexer is BlockIndexer) indexer.timeLastProcessed else null
         return if (timeLastProcessed != null) {

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class AmnProcessorTest {
@@ -21,6 +22,8 @@ class AmnProcessorTest {
     @MockK lateinit var amnService: AmnService
 
     @MockK lateinit var thorService: ThorService
+
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var processor: AmnProcessor
 
@@ -33,6 +36,7 @@ class AmnProcessorTest {
                 repository = amnRepository,
                 amnService = amnService,
                 thorService = thorService,
+                indexerVersionService = indexerVersionService,
             )
     }
 

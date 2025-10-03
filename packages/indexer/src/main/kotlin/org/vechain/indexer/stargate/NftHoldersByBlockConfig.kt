@@ -17,6 +17,7 @@ open class NftHoldersByBlockConfig {
         thorClient: ThorClient,
         processor: NftHoldersByBlockProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
@@ -29,6 +30,7 @@ open class NftHoldersByBlockConfig {
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))

@@ -1,10 +1,15 @@
-package org.vechain.indexer.thor.client
+package org.vechain.indexer.mocks
 
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.*
 
 class MockThorClient(private val blocks: Map<Long, Block>) : ThorClient {
     override suspend fun getBlock(blockNumber: Long): Block =
         blocks[blockNumber] ?: error("No block for number $blockNumber")
+
+    override suspend fun waitForBlock(blockNumber: Long): Block {
+        return getBlock(blockNumber)
+    }
 
     override suspend fun getBestBlock(): Block = blocks.values.maxBy { it.number }
 

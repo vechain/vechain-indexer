@@ -18,11 +18,13 @@ open class HistoryConfig() {
         thorClient: ThorClient,
         processor: HistoryProcessor,
         @Value("\${indexer.start-block.history}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         bEProperties: BusinessEventProperties,
     ): BlockIndexer {
         return IndexerFactory()
             .name("HistoryIndexer")
             .thorClient(thorClient)
+            .syncLoggerInterval(syncLoggerInterval)
             .processor(processor)
             .abis("abis")
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))

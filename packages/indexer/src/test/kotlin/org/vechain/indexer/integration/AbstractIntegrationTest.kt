@@ -27,9 +27,10 @@ abstract class AbstractIntegrationTest {
 
     fun waitForFullySynced() {
         for (i in 0..120) {
+            // TODO: Need a solution for finding when indexers are fully synced
             if (
-                allIndexers.all { it.status == Status.FULLY_SYNCED } &&
-                    allIndexers.all { it.status == Status.FULLY_SYNCED }
+                allIndexers.all { it.status == Status.SYNCING } &&
+                    allIndexers.all { it.status == Status.SYNCING }
             ) {
                 return
             }

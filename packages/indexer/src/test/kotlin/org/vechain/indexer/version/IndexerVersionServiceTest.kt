@@ -1,6 +1,7 @@
 package org.vechain.indexer.version
 
 import io.mockk.*
+import io.mockk.impl.annotations.MockK
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -14,6 +15,7 @@ import strikt.assertions.isEqualTo
 class IndexerVersionServiceTest {
     private lateinit var mongoTemplate: MongoTemplate
     private lateinit var mongoMappingContext: MongoMappingContext
+    @MockK lateinit var indexerVersionRepository: IndexerVersionRepository
     private lateinit var indexerVersionService: IndexerVersionService
 
     @BeforeEach
@@ -25,19 +27,24 @@ class IndexerVersionServiceTest {
             mongoMappingContext.getPersistentEntity(DummyModel::class.java)?.collection
         } returns "testCollection"
 
-        indexerVersionService = IndexerVersionService(mongoTemplate, mongoMappingContext)
+        indexerVersionService =
+            IndexerVersionService(mongoTemplate, indexerVersionRepository, mongoMappingContext)
     }
 
     @Test
     fun `should drop collection and update version if version has changed`() {
         every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
-            IndexerVersion("testCollection", 1)
+            IndexerVersion("testCollection", "test_collection", 1)
         every { mongoTemplate.dropCollection("testCollection") } just Runs
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
-            IndexerVersion("testCollection", 2)
+            IndexerVersion("testCollection", "test_collection", 2)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 2)
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                "testCollection",
+                DummyModel::class.java,
+                2,
+            )
 
         verify { mongoTemplate.dropCollection("testCollection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
@@ -48,10 +55,14 @@ class IndexerVersionServiceTest {
     @Test
     fun `should not drop collection if version is not changed`() {
         every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
-            IndexerVersion("testCollection", 1)
+            IndexerVersion("testCollection", "test_collection", 1)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 1)
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                "testCollection",
+                DummyModel::class.java,
+                1,
+            )
 
         verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
         verify(exactly = 0) { mongoTemplate.save(any<IndexerVersion>()) }
@@ -63,10 +74,14 @@ class IndexerVersionServiceTest {
     fun `should create version document if no version document found`() {
         every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns null
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
-            IndexerVersion("testCollection", 1)
+            IndexerVersion("testCollection", "test_collection", 1)
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 1)
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                "testCollection",
+                DummyModel::class.java,
+                1,
+            )
 
         verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
@@ -80,7 +95,11 @@ class IndexerVersionServiceTest {
             RuntimeException("Error")
 
         val result =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(DummyModel::class.java, 2)
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                "testCollection",
+                DummyModel::class.java,
+                2,
+            )
 
         expect { that(result).isEqualTo(false) }
     }

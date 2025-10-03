@@ -87,6 +87,7 @@ enabled_nets:
         authority-nodes:            '1000'
         b3tr:                       '1000'
         historic-proposals:       '1000'
+      sync-log-interval: '100'
       sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
@@ -233,6 +234,7 @@ enabled_nets:
         authority-nodes:            '1000'
         b3tr:                       '1000'
         historic-proposals:         '1000'
+      sync-log-interval: '100'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'

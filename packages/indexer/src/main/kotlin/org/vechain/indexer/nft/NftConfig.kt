@@ -37,6 +37,7 @@ open class NftConfig() {
         nftPruner: TargetedPruner<IndexedNft, NftArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
@@ -46,6 +47,7 @@ open class NftConfig() {
             .pruner(nftPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/nft")
             .abiEventNames(listOf("Transfer"))

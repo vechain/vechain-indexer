@@ -49,6 +49,7 @@ open class UserAllTimeActionSummaryConfig {
             TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
         @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
@@ -62,6 +63,7 @@ open class UserAllTimeActionSummaryConfig {
             .pruner(userAllTimeActionSummaryPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
             .businessEventNames(listOf("B3TR_ActionReward"))

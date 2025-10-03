@@ -16,6 +16,7 @@ open class TransferConfig {
         thorClient: ThorClient,
         processor: TransferProcessor,
         @Value("\${indexer.start-block.transfers}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
@@ -25,6 +26,7 @@ open class TransferConfig {
             .abis("abis/tokens")
             .abiEventNames(listOf("Transfer", "TransferSingle", "TransferBatch"))
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .build()
 }

@@ -6,7 +6,6 @@ import org.vechain.indexer.Pruner
 import org.vechain.indexer.Status
 import org.vechain.indexer.event.CombinedEventProcessor
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 class TestableBlockIndexer(
@@ -18,7 +17,6 @@ class TestableBlockIndexer(
     startBlock: Long = 0L,
     pruner: Pruner? = null,
     prunerInterval: Long = 1L,
-    syncLoggerInterval: Long = 100L,
 ) :
     BlockIndexer(
         name = name,
@@ -28,24 +26,10 @@ class TestableBlockIndexer(
         startBlock = startBlock,
         pruner = pruner,
         prunerInterval = prunerInterval,
-        syncLoggerInterval = syncLoggerInterval,
-        dependsOn = emptySet(),
+        inspectionClauses = null,
+        dependsOn = null,
     ) {
     var iterations: Long? = null
-
-    suspend fun start(iterations: Long) {
-        this.iterations = iterations
-        super.start()
-    }
-
-    override suspend fun run() {
-        val max = iterations
-        var count = 0L
-        while (max == null || count < max) {
-            runOnce()
-            count++
-        }
-    }
 
     fun publicRunPruner() {
         super.runPruner()
@@ -53,10 +37,6 @@ class TestableBlockIndexer(
 
     fun incrementBlockNumber() {
         currentBlockNumber += 1
-    }
-
-    fun publicInitialise(blockNumber: Long? = null) {
-        super.initialise(blockNumber)
     }
 
     fun readPreviousBlock(): BlockIdentifier? = previousBlock
@@ -67,13 +47,5 @@ class TestableBlockIndexer(
 
     fun overwriteCurrentBlockNumber(value: Long) {
         currentBlockNumber = value
-    }
-
-    suspend fun publicPostProcessBlock(block: Block) {
-        super.postProcessBlock(block)
-    }
-
-    suspend fun publicEnsureFullySynced() {
-        super.ensureFullySynced()
     }
 }

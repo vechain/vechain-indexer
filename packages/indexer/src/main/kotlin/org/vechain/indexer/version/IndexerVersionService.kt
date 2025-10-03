@@ -85,8 +85,8 @@ open class IndexerVersionService(
     fun getStoredIndexerVersion(collectionName: String): Int? =
         repo.findByCollectionName(collectionName)?.version
 
-    fun getLastProcessedBlock(collectionName: String): BlockIdentifier? {
-        val indexer = repo.findByCollectionName(collectionName)
+    fun getLastProcessedBlock(indexerName: String): BlockIdentifier? {
+        val indexer = repo.findByIdOrNull(indexerName)
         return indexer?.lastProcessedBlock
     }
 

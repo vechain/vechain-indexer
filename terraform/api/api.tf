@@ -502,6 +502,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
     {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
+    },
+    {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
       value = each.value.indexer.sync-block-batch-size.nfts
     },

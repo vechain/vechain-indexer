@@ -45,6 +45,7 @@ open class NftBlacklistConfig {
         nftBlacklistPruner: TargetedPruner<NftBlacklist, NftBlacklistArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nft-blacklist}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
     ): BlockIndexer =
@@ -55,6 +56,7 @@ open class NftBlacklistConfig {
             .pruner(nftBlacklistPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .abis("abis/nft")
             .abiEventNames(listOf("NFTBlacklisted", "NFTWhitelisted"))
             .abiContracts(listOf(blacklistContract))

@@ -17,6 +17,7 @@ open class VeVoteCommentConfig {
         processor: VeVoteCommentProcessor,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): BlockIndexer =
         IndexerFactory()
@@ -24,6 +25,7 @@ open class VeVoteCommentConfig {
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/vevote")
             .abiContracts(listOf(contractAddress))

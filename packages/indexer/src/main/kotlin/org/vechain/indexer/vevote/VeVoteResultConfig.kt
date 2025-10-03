@@ -48,6 +48,7 @@ open class VeVoteResultConfig {
         veVoteResultPruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
     ): BlockIndexer =
@@ -58,6 +59,7 @@ open class VeVoteResultConfig {
             .pruner(veVoteResultPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/vevote")
             .abiContracts(listOf(contractAddress))

@@ -15,6 +15,7 @@ open class AmnConfig {
     open fun amnIndexer(
         thorClient: ThorClient,
         processor: AmnProcessor,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.authority-nodes}") syncBlockBatchSize: Long,
         @Value("\${veworld.contract.authority-node.address}") contractAddress: String,
     ): BlockIndexer =
@@ -22,6 +23,7 @@ open class AmnConfig {
             .name("AuthorityNodeIndexer")
             .thorClient(thorClient)
             .processor(processor)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/amn")
             .abiContracts(listOf(contractAddress))

@@ -49,6 +49,7 @@ open class UserRoundActionSummaryConfig {
             TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
         @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
@@ -63,6 +64,7 @@ open class UserRoundActionSummaryConfig {
             .pruner(userRoundActionSummaryPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/b3tr")
             .abiEventNames(listOf("EmissionDistributed", "EmissionDistributedV2"))

@@ -16,6 +16,7 @@ open class HistoricProposalsConfig {
         thorClient: ThorClient,
         processor: HistoricProposalsProcessor,
         @Value("\${indexer.start-block.historic-proposals}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.historic-proposals}") syncBlockBatchSize: Long,
         @Value("\${veworld.contract.historic-proposals.steering-committee}")
         steeringCommittee: String,
@@ -26,6 +27,7 @@ open class HistoricProposalsConfig {
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/historic-proposals")
             .abiContracts(listOf(steeringCommittee, allStakeholders))

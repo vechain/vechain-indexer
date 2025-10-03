@@ -48,6 +48,7 @@ open class VthoClaimedByAccountConfig {
         vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
@@ -62,6 +63,7 @@ open class VthoClaimedByAccountConfig {
             .pruner(vthoClaimByAccountPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(
