@@ -9,112 +9,123 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.event.CombinedEventProcessor
+import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.SimpleBlockIndexerCoordinator
+import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.fixtures.BlockFixtures
-import org.vechain.indexer.mocks.MockThorClient
-import org.vechain.indexer.mocks.TestableBlockIndexer
-import org.vechain.indexer.version.IndexerVersionService
+import org.vechain.indexer.fixtures.BusinessEventParamFixtures.BUSINESS_EVENT_PARAMS
+import org.vechain.indexer.thor.client.ThorClient
 import strikt.api.expect
+import strikt.api.expectThat
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import strikt.assertions.isTrue
 
 @ExtendWith(MockKExtension::class)
 class HistoryIndexerTest {
-    @MockK lateinit var mongoTemplate: MongoTemplate
-
     @MockK lateinit var repository: HistoryRepository
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
+    @MockK lateinit var processor: HistoryProcessor
 
-    lateinit var processor: HistoryProcessor
+    @MockK lateinit var thorClient: ThorClient
+
+    @MockK lateinit var businessEventProperties: BusinessEventProperties
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-
-        val historyService = HistoryService(repository)
-
-        processor = HistoryProcessor(repository, historyService, indexerVersionService)
+        every { businessEventProperties.substitutions } returns BUSINESS_EVENT_PARAMS
     }
 
     @Test
-    fun `Process - With B3TR Action TXs`() = runBlocking {
-        val b3trBlock = BlockFixtures.BLOCK_B3TR_ACTION
+    fun `Indexer with B3TR Block`() {
+        runBlocking {
+            expectThat(true).isTrue()
+            val b3trBlock = BlockFixtures.BLOCK_B3TR_ACTION
 
-        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(20614873) } returns Unit
-        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
+            every { processor.getLastSyncedBlock() } returns null
 
-        val eventProcessor = buildEventProcessor()
+            val indexingResult = slot<IndexingResult>()
+            every { processor.rollback(20614874) } returns Unit
+            every { processor.process(capture(indexingResult)) } returns Unit
 
-        val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient = MockThorClient(mapOf(b3trBlock.number to b3trBlock)),
-                processor = processor,
-                eventProcessor = eventProcessor,
-                startBlock = b3trBlock.number,
-            )
-
-        //        indexer.start(1)
-
-        val txs = historyEventSlot.captured
-
-        txs.forEach { tx -> println(tx.eventName) }
-        expect { that(txs).hasSize(5) }
-        val eventNames = txs.map { it.eventName }
-        expect {
-            that(eventNames)
-                .isEqualTo(
-                    listOf(
-                        HistoryEventName.TRANSFER_FT,
-                        HistoryEventName.TRANSFER_VET,
-                        HistoryEventName.TRANSFER_VET,
-                        HistoryEventName.B3TR_ACTION,
-                        HistoryEventName.B3TR_ACTION,
+            val indexer =
+                HistoryConfig()
+                    .historyIndexer(
+                        thorClient = thorClient,
+                        processor = processor,
+                        startBlock = b3trBlock.number,
+                        syncLoggerInterval = 1L,
+                        bEProperties = businessEventProperties,
                     )
-                )
+
+            // Create a coordinator to run the indexer
+            SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(b3trBlock))
+
+            val result = indexingResult.captured
+
+            expectThat(result is IndexingResult.Normal).isTrue()
+
+            val normalResult = result as IndexingResult.Normal
+
+            expectThat(normalResult.block.number).isEqualTo(20614874L)
+            expect { that(normalResult.events()).hasSize(5) }
+            val eventTypes = normalResult.events().map { it.eventType }
+            expect {
+                that(eventTypes)
+                    .isEqualTo(
+                        listOf(
+                            "Transfer",
+                            "VET_TRANSFER",
+                            "VET_TRANSFER",
+                            "B3TR_ActionReward",
+                            "B3TR_ActionReward",
+                        )
+                    )
+            }
+            expectThat(indexer.getCurrentBlockNumber()).isEqualTo(b3trBlock.number + 1L)
         }
     }
 
     @Test
     fun `Process - With DEX TXs`() = runBlocking {
         val dexBlock = BlockFixtures.BLOCK_DEX
+        every { processor.getLastSyncedBlock() } returns null
 
-        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(20056657) } returns Unit
-        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
+        val indexingResult = slot<IndexingResult>()
+        every { processor.rollback(20056658) } returns Unit
+        every { processor.process(capture(indexingResult)) } returns Unit
 
         val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient = MockThorClient(mapOf(dexBlock.number to dexBlock)),
-                processor = processor,
-                eventProcessor = buildEventProcessor(),
-                startBlock = dexBlock.number,
-            )
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = dexBlock.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
 
-        //        indexer.start(1)
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(dexBlock))
 
-        val txs = historyEventSlot.captured
+        val result = indexingResult.captured
+        expectThat(result is IndexingResult.Normal).isTrue()
+        val normalResult = result as IndexingResult.Normal
 
-        txs.forEach { tx -> println(tx.eventName) }
-        expect { that(txs).hasSize(7) }
-        val eventNames = txs.map { it.eventName }
+        expect { that(normalResult.events).hasSize(7) }
+        val eventTypes = normalResult.events.map { it.eventType }
         expect {
-            that(eventNames)
+            that(eventTypes)
                 .isEqualTo(
                     listOf(
-                        HistoryEventName.B3TR_ACTION,
-                        HistoryEventName.SWAP_FT_TO_VET,
-                        HistoryEventName.B3TR_ACTION,
-                        HistoryEventName.SWAP_FT_TO_FT,
-                        HistoryEventName.SWAP_VET_TO_FT,
-                        HistoryEventName.SWAP_VET_TO_FT,
-                        HistoryEventName.SWAP_FT_TO_VET,
+                        HistoryEventName.B3TR_ACTION.name,
+                        HistoryEventName.SWAP_FT_TO_VET.name,
+                        HistoryEventName.B3TR_ACTION.name,
+                        HistoryEventName.SWAP_FT_TO_FT.name,
+                        HistoryEventName.SWAP_VET_TO_FT.name,
+                        HistoryEventName.SWAP_VET_TO_FT.name,
+                        HistoryEventName.SWAP_FT_TO_VET.name,
                     )
                 )
         }
@@ -124,37 +135,41 @@ class HistoryIndexerTest {
     fun `Process - With MaaS sale`() = runBlocking {
         val mpSales = BlockFixtures.BLOCK_MP_SALES
 
-        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(20849466) } returns Unit
-        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
+        every { processor.getLastSyncedBlock() } returns null
+
+        val indexingResult = slot<IndexingResult>()
+        every { processor.rollback(20849466) } returns Unit
+        every { processor.process(capture(indexingResult)) } returns Unit
 
         val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient = MockThorClient(mapOf(mpSales.number to mpSales)),
-                processor = processor,
-                eventProcessor = buildEventProcessor(),
-                startBlock = mpSales.number,
-            )
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = mpSales.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
 
-        //        indexer.start(1)
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(mpSales))
 
-        val txs = historyEventSlot.captured
+        val result = indexingResult.captured
+        expectThat(result is IndexingResult.Normal).isTrue()
+        val normalResult = result as IndexingResult.Normal
 
-        txs.forEach { tx -> println(tx.eventName) }
-        expect { that(txs).hasSize(6) }
-        val eventNames = txs.map { it.eventName }
+        expect { that(normalResult.events).hasSize(6) }
+        val eventTypes = normalResult.events.map { it.eventType }
         expect {
-            that(eventNames)
+            that(eventTypes)
                 .isEqualTo(
                     listOf(
-                        HistoryEventName.NFT_SALE,
-                        HistoryEventName.NFT_SALE,
-                        HistoryEventName.NFT_SALE,
-                        HistoryEventName.NFT_SALE,
-                        HistoryEventName.NFT_SALE,
-                        HistoryEventName.NFT_SALE,
+                        HistoryEventName.NFT_SALE.name,
+                        HistoryEventName.NFT_SALE.name,
+                        HistoryEventName.NFT_SALE.name,
+                        HistoryEventName.NFT_SALE.name,
+                        HistoryEventName.NFT_SALE.name,
+                        HistoryEventName.NFT_SALE.name,
                     )
                 )
         }
@@ -165,10 +180,11 @@ class HistoryIndexerTest {
         val blockSF = BlockFixtures.BLOCK_SEMI_FUNGIBLE_TOKENS
         val blockSF2 = BlockFixtures.BLOCK_SEMI_FUNGIBLE_TOKENS_2
 
+        every { processor.getLastSyncedBlock() } returns null
+
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
 
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(9) } returns Unit
+        every { processor.rollback(10) } returns Unit
         every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
@@ -177,16 +193,17 @@ class HistoryIndexerTest {
             }
 
         val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient =
-                    MockThorClient(mapOf(blockSF.number to blockSF, blockSF2.number to blockSF2)),
-                processor = processor,
-                eventProcessor = buildEventProcessor(),
-                startBlock = blockSF.number,
-            )
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = blockSF.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
 
-        //        indexer.start(2)
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(blockSF, blockSF2))
 
         // Flatten all captured events
         val allTxs = insertedEvents.flatten()
@@ -231,10 +248,10 @@ class HistoryIndexerTest {
                 BlockFixtures.BLOCK_STARGATE_UNDELEGATE,
                 BlockFixtures.BLOCK_STARGATE_DELEGATION,
             )
+        every { processor.getLastSyncedBlock() } returns null
 
         val insertedEvents = mutableListOf<List<IndexedHistoryEvent>>()
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(0) } returns Unit
+        every { processor.rollback(0) } returns Unit
         every { repository.saveAll(any<List<IndexedHistoryEvent>>()) } answers
             {
                 val events = firstArg<List<IndexedHistoryEvent>>()
@@ -242,18 +259,18 @@ class HistoryIndexerTest {
                 mutableListOf()
             }
 
-        val blockMap = stargateBlocks.mapIndexed { i, block -> (i + 1L) to block }.toMap()
-
         val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient = MockThorClient(blockMap),
-                processor = processor,
-                eventProcessor = buildEventProcessor(),
-                startBlock = 1L,
-            )
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = 1L,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
 
-        //        indexer.start(7)
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = stargateBlocks)
 
         val allEvents = insertedEvents.flatten()
 
@@ -362,65 +379,43 @@ class HistoryIndexerTest {
     fun `Process block - Stargate VTHO refund`() = runBlocking {
         val block = BlockFixtures.BLOCK_STARGATE_VTHO_REFUND
 
-        val historyEventSlot = slot<List<IndexedHistoryEvent>>()
-        every { repository.getLatestRecord() } returns null
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(7) } returns Unit
-        every { repository.saveAll(capture(historyEventSlot)) } returns mutableListOf()
+        every { processor.getLastSyncedBlock() } returns null
+
+        val indexingResult = slot<IndexingResult>()
+        every { processor.rollback(7) } returns Unit
+        every { processor.process(capture(indexingResult)) } returns Unit
 
         val indexer =
-            TestableBlockIndexer(
-                name = "TestHistoryIndexer",
-                thorClient = MockThorClient(mapOf(block.number to block)),
-                processor = processor,
-                eventProcessor = buildEventProcessor(),
-                startBlock = block.number,
-            )
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = block.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
 
-        //        indexer.start(1)
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = listOf(block))
 
-        val txs = historyEventSlot.captured
+        val result = indexingResult.captured
+        expectThat(result is IndexingResult.Normal).isTrue()
+        val normalResult = result as IndexingResult.Normal
 
-        txs.forEach { tx -> println(tx.eventName) }
-        expect { that(txs).hasSize(6) }
-        val eventNames = txs.map { it.eventName }
+        expect { that(result.events).hasSize(6) }
+        val eventTypes = result.events().map { it.eventType }
         expect {
-            that(eventNames)
+            that(eventTypes)
                 .isEqualTo(
                     listOf(
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
-                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
+                        HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE.name,
                     )
                 )
         }
     }
-
-    fun buildEventProcessor(): CombinedEventProcessor =
-        CombinedEventProcessor.create(
-            abiBasePath = "abis",
-            abiEventNames = listOf("Transfer", "TransferSingle", "TransferBatch"),
-            abiContracts = emptyList(),
-            includeVetTransfers = true,
-            businessEventPath = "business-events",
-            businessEventAbiBasePath = "abis",
-            businessEventContracts = emptyList(),
-            businessEventNames = emptyList(),
-            substitutionParams =
-                mapOf(
-                    "B3TR_CONTRACT" to "0x5ef79995fe8a89e0812330e4378eb2660cede699",
-                    "VOT3_CONTRACT" to "0x76ca782b59c74d088c7d2cce2f211bc00836c602",
-                    "B3TR_GOVERNOR_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
-                    "GM_NFT_CONTRACT" to "0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f",
-                    "X_ALLOC_VOTING_CONTRACT" to "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
-                    "X2EARN_REWARDS_POOL_CONTRACT" to "0x6bee7ddab6c99d5b2af0554eaea484ce18f52631",
-                    "VOTER_REWARDS_CONTRACT" to "0x838a33af756a6366f93e201423e1425f67ec0fa7",
-                    "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",
-                    "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
-                    "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
-                    "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
-                ),
-        )
 }

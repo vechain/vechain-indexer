@@ -33,11 +33,11 @@ class BaseProcessorTest {
 
     @Test
     fun `rollback - deletes blocks starting from requested height`() {
-        every { repository.deleteAllByBlockNumberGreaterThanEqual(9) } just Runs
+        every { repository.deleteAllByBlockNumberGreaterThanEqual(10) } just Runs
 
         processor.rollback(10)
 
-        verify { repository.deleteAllByBlockNumberGreaterThanEqual(9) }
+        verify { repository.deleteAllByBlockNumberGreaterThanEqual(10) }
     }
 
     @Test
