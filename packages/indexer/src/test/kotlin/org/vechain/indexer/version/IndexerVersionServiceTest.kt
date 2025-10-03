@@ -2,19 +2,23 @@ package org.vechain.indexer.version
 
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext
+import org.springframework.data.repository.findByIdOrNull
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
-@Document("testCollection") class DummyModel
+@Document("test_collection") class DummyModel
 
+@ExtendWith(MockKExtension::class)
 class IndexerVersionServiceTest {
     private lateinit var mongoTemplate: MongoTemplate
-    private lateinit var mongoMappingContext: MongoMappingContext
+    @MockK private lateinit var mongoMappingContext: MongoMappingContext
     @MockK lateinit var indexerVersionRepository: IndexerVersionRepository
     private lateinit var indexerVersionService: IndexerVersionService
 
@@ -25,7 +29,7 @@ class IndexerVersionServiceTest {
 
         every {
             mongoMappingContext.getPersistentEntity(DummyModel::class.java)?.collection
-        } returns "testCollection"
+        } returns "test_collection"
 
         indexerVersionService =
             IndexerVersionService(mongoTemplate, indexerVersionRepository, mongoMappingContext)
@@ -33,9 +37,10 @@ class IndexerVersionServiceTest {
 
     @Test
     fun `should drop collection and update version if version has changed`() {
-        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
+        every { indexerVersionRepository.findByIdOrNull("testCollection") } returns null
+        every { indexerVersionRepository.findByCollectionName("test_collection") } returns
             IndexerVersion("testCollection", "test_collection", 1)
-        every { mongoTemplate.dropCollection("testCollection") } just Runs
+        every { mongoTemplate.dropCollection("test_collection") } just Runs
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
             IndexerVersion("testCollection", "test_collection", 2)
 
@@ -46,7 +51,7 @@ class IndexerVersionServiceTest {
                 2,
             )
 
-        verify { mongoTemplate.dropCollection("testCollection") }
+        verify { mongoTemplate.dropCollection("test_collection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(true) }
@@ -54,7 +59,7 @@ class IndexerVersionServiceTest {
 
     @Test
     fun `should not drop collection if version is not changed`() {
-        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns
+        every { indexerVersionRepository.findByCollectionName("test_collection") } returns
             IndexerVersion("testCollection", "test_collection", 1)
 
         val result =
@@ -64,7 +69,7 @@ class IndexerVersionServiceTest {
                 1,
             )
 
-        verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
+        verify(exactly = 0) { mongoTemplate.dropCollection("test_collection") }
         verify(exactly = 0) { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(false) }
@@ -72,7 +77,8 @@ class IndexerVersionServiceTest {
 
     @Test
     fun `should create version document if no version document found`() {
-        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } returns null
+        every { indexerVersionRepository.findByIdOrNull("testCollection") } returns null
+        every { indexerVersionRepository.findByCollectionName("test_collection") } returns null
         every { mongoTemplate.save(any<IndexerVersion>()) } returns
             IndexerVersion("testCollection", "test_collection", 1)
 
@@ -83,7 +89,7 @@ class IndexerVersionServiceTest {
                 1,
             )
 
-        verify(exactly = 0) { mongoTemplate.dropCollection("testCollection") }
+        verify(exactly = 0) { mongoTemplate.dropCollection("test_collection") }
         verify { mongoTemplate.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(true) }
@@ -91,7 +97,7 @@ class IndexerVersionServiceTest {
 
     @Test
     fun `should handle error when exception is thrown`() {
-        every { mongoTemplate.findById("testCollection", IndexerVersion::class.java) } throws
+        every { indexerVersionRepository.findByCollectionName("test_collection") } throws
             RuntimeException("Error")
 
         val result =

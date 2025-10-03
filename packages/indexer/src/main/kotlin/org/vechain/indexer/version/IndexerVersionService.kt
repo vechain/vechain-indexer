@@ -124,5 +124,8 @@ open class IndexerVersionService(
      * no @Document mapping is found.
      */
     private fun getCollectionName(clazz: Class<*>): String =
-        mappingContext.getPersistentEntity(clazz)?.collection ?: clazz.simpleName
+        mappingContext.getPersistentEntity(clazz)?.collection
+            ?: throw IllegalStateException(
+                "Could not determine collection name for class ${clazz.name}"
+            )
 }
