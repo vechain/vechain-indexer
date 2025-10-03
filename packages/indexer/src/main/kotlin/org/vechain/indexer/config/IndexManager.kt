@@ -10,14 +10,14 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerCoordinator
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.version.IndexerVersionService
 
 @Component
 open class IndexManager(
-    private val indexers: List<BlockIndexer>,
+    private val indexers: List<Indexer>,
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
     private val applicationContext: ApplicationContext,
@@ -56,7 +56,7 @@ open class IndexManager(
             try {
                 indexerVersionService.updateLastSafeSyncedBlock(
                     indexerName = indexer.name,
-                    block = indexer.previousBlock,
+                    block = indexer.getPreviousBlock(),
                 )
             } catch (e: Exception) {
                 logger.error("Failed to store last safe indexed block for ${indexer.name}", e)
