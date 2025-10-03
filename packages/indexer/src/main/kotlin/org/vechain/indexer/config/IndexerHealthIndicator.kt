@@ -76,11 +76,11 @@ class IndexerHealthIndicator(
         }
 
         if (indexer.getStatus() == Status.NOT_INITIALISED) {
-            return HealthStatus.UNKNOWN to "Indexer is not initialised"
+            return HealthStatus.UP to "Indexer is not initialised"
         }
 
         if (indexer.getStatus() == Status.INITIALISED) {
-            return HealthStatus.UNKNOWN to "Indexer is initialised but not started"
+            return HealthStatus.UP to "Indexer is initialised but not started"
         }
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
