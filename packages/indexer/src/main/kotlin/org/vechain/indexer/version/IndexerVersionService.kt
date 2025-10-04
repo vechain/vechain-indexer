@@ -106,18 +106,15 @@ open class IndexerVersionService(
                     collectionName = collectionName,
                     version = newVersion,
                 )
-        mongoTemplate.save(updated)
+        repo.save(updated)
     }
 
     fun updateLastSafeSyncedBlock(indexerName: String, block: BlockIdentifier?) {
+        if (block == null) return
         val indexer = repo.findByIdOrNull(indexerName)
         if (indexer != null) {
             val updatedIndexer = indexer.copy(lastProcessedBlock = block)
-            mongoTemplate.save(updatedIndexer)
-        } else {
-            logger.warn(
-                "No indexer version document found for $indexerName to update lastProcessedBlock."
-            )
+            repo.save(updatedIndexer)
         }
     }
 
