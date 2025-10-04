@@ -12,7 +12,7 @@ import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
-import org.vechain.indexer.IndexerCoordinator
+import org.vechain.indexer.orchestration.IndexerOrchestrator
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -31,7 +31,7 @@ open class IndexManager(
     open fun start() {
         logger.info("Starting indexers")
 
-        IndexerCoordinator.launch(
+        IndexerOrchestrator.launch(
                 scope = appCoroutineScope,
                 thorClient = thorClient,
                 indexers = indexers,
