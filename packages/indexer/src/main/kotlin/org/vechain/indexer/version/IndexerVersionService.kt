@@ -79,8 +79,7 @@ open class IndexerVersionService(
      * Retrieves the current version of the indexer.
      *
      * @param collectionName The name of the indexer to fetch the version for.
-     * @return The stored version number for the indexer. Returns `-1` if no versioned document is
-     *   found.
+     * @return The stored version number for the indexer, or `null` if no versioned document is found.
      */
     fun getStoredIndexerVersion(collectionName: String): Int? =
         repo.findByCollectionName(collectionName)?.version
