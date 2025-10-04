@@ -20,7 +20,7 @@ open class VeVoteResultProcessor(
         repository = repository,
         archiveService = veVoteResultArchiveService,
         indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.VE_VOTE_RESULT,
+        indexerName = IndexerNames.VEVOTE_RESULT,
     ) {
 
     override fun process(entry: IndexingResult) {

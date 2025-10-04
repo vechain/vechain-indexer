@@ -54,7 +54,7 @@ open class VeVoteResultConfig {
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.VE_VOTE_RESULT)
+            .name(IndexerNames.VEVOTE_RESULT)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(veVoteResultPruner)

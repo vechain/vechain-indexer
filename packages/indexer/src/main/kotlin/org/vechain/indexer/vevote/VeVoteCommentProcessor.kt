@@ -19,7 +19,7 @@ open class VeVoteCommentProcessor(
     BaseProcessor(
         repository = vevoteCommentRepository,
         indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.VE_VOTE_COMMENT,
+        indexerName = IndexerNames.VEVOTE_COMMENT,
     ) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

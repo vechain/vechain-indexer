@@ -35,7 +35,7 @@ open class VeVoteResultCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.VE_VOTE_RESULT,
+                indexerName = IndexerNames.VEVOTE_RESULT,
                 VeVoteProposalResult::class.java,
                 version,
             )

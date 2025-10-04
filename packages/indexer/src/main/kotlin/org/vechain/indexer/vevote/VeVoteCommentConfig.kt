@@ -22,7 +22,7 @@ open class VeVoteCommentConfig {
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.VE_VOTE_COMMENT)
+            .name(IndexerNames.VEVOTE_COMMENT)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
