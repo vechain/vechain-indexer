@@ -35,7 +35,7 @@ open class IndexerVersionService(
             val storedVersion = getStoredIndexerVersion(collectionName)
 
             if (storedVersion == null) {
-                logger.info("No version document found for $collectionName. No action taken.")
+                logger.info("No version document found for $collectionName. Creating new version document.")
                 updateIndexerVersion(indexerName, collectionName, newVersion)
                 return true
             }
