@@ -35,7 +35,9 @@ open class IndexerVersionService(
             val storedVersion = getStoredIndexerVersion(collectionName)
 
             if (storedVersion == null) {
-                logger.info("No version document found for $collectionName. Creating new version document.")
+                logger.info(
+                    "No version document found for $collectionName. Creating new version document."
+                )
                 updateIndexerVersion(indexerName, collectionName, newVersion)
                 return true
             }
@@ -79,7 +81,8 @@ open class IndexerVersionService(
      * Retrieves the current version of the indexer.
      *
      * @param collectionName The name of the indexer to fetch the version for.
-     * @return The stored version number for the indexer, or `null` if no versioned document is found.
+     * @return The stored version number for the indexer, or `null` if no versioned document is
+     *   found.
      */
     fun getStoredIndexerVersion(collectionName: String): Int? =
         repo.findByCollectionName(collectionName)?.version
