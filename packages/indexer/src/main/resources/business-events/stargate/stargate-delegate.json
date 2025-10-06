@@ -23,7 +23,7 @@
         {
           "firstOperand": "address",
           "isFirstStatic": false,
-          "secondOperand": "${STARGATE_STAKER_CONTRACT}",
+          "secondOperand": "${STARGATE_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         }
@@ -56,7 +56,7 @@
         {
           "firstOperand": "from",
           "isFirstStatic": false,
-          "secondOperand": "${STARGATE_STAKER_CONTRACT}",
+          "secondOperand": "${STARGATE_CONTRACT}",
           "isSecondStatic": true,
           "operator": "EQ"
         },
