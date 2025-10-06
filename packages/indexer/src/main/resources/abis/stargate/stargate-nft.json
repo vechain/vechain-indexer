@@ -384,31 +384,6 @@
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "address",
-                "name": "oldContractAddress",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "newContractAddress",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "contractName",
-                "type": "string"
-            }
-        ],
-        "name": "ContractAddressUpdated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
                 "internalType": "uint64",
                 "name": "version",
                 "type": "uint64"
@@ -508,37 +483,6 @@
             }
         ],
         "name": "LevelUpdated",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "tokenId",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "paidBy",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "paidAmount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "boostedBlocks",
-                "type": "uint256"
-            }
-        ],
-        "name": "MaturityPeriodBoosted",
         "type": "event"
     },
     {
@@ -803,31 +747,6 @@
             }
         ],
         "name": "VthoGenerationEndTimestampSet",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "tokenId",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint8",
-                "name": "levelId",
-                "type": "uint8"
-            }
-        ],
-        "name": "WhitelistEntryAdded",
         "type": "event"
     },
     {
@@ -1834,7 +1753,7 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "stargateStaker",
+                "name": "stargate",
                 "type": "address"
             }
         ],

@@ -541,7 +541,7 @@ class HistoryIndexerTest {
                     "STARGATE_DELEGATION_CONTRACT" to "0x7240e3bc0d26431512d5b67dbd26d199205bffe8",
                     "STARGATE_NFT_CONTRACT" to "0x1ec1d168574603ec35b9d229843b7c2b44bcb770",
                     "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
-                    "STARGATE_STAKER_CONTRACT" to "0x54d7f2de232e59bfb95c6b2c2b9f678ab73e5a38",
+                    "STARGATE_CONTRACT" to "0xce604a62d767271fb9c2e6d08a001acefa53dc3e",
                 ),
         )
 }

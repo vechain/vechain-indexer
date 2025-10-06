@@ -43,8 +43,7 @@ open class DelegationConfig {
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
-        @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
-        stargateStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateAddress: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,

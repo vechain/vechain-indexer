@@ -54,8 +54,7 @@ open class VthoClaimedByAccountConfig {
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
-        @Value("\${business-event.substitutions.STARGATE_STAKER_CONTRACT}")
-        stargateStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()

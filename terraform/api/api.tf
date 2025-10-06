@@ -550,8 +550,8 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
     {
-      name  = "STARGATE_STAKER_CONTRACT"
-      value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
+      name  = "STARGATE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_CONTRACT
     },
     {
       name  = "BUILTIN_STAKER_CONTRACT"
