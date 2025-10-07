@@ -142,7 +142,15 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.logging.app-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.api.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.api.timing.very-slow-threshold-ms
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -232,7 +240,23 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.logging.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.logging.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.logging.pruner-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.indexer.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
       name  = "MONGO_URI"
@@ -315,6 +339,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.pruner.removal-chunk-size
     },
     {
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
+    },
+    {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
       value = each.value.indexer.blacklist.contract-address
     },
@@ -395,20 +423,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
+      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-daily-action-summary
+    },
+    {
       name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
-      value = each.value.indexer.version.b3tr-sustainability-overview-all
-    },
-    {
       name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
-    },
-    {
-      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
-      value = each.value.indexer.version.b3tr-sustainability-action
     },
     {
       name = "VERSION_B3TR_USER_TRANSACTIONS"
@@ -483,6 +507,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
       name  = "STARGATE_STAKER_CONTRACT"
       value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
     },
@@ -493,6 +521,10 @@ module "ecs-backend-service" {
     {
       name  = "GET_ALL_VALIDATORS_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"

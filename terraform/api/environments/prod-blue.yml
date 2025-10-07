@@ -224,16 +224,6 @@ enabled_nets:
         historic-proposals:       '22087000'
       start-round:
         b3tr-sustainable-actions:   '4'
-      sync-logger-interval:
-        nfts:                       '1000'
-        transactions:               '1000'
-        transfers:                  '1000'
-        history:                    '1000'
-        vevote:                     '1000'
-        stargate:                   '1000'
-        authority-nodes:            '1000'
-        b3tr:                       '1000'
-        historic-proposals:         '1000'
       sync-log-interval: '100'
       sync-block-batch-size:
         nfts:                       '100'
