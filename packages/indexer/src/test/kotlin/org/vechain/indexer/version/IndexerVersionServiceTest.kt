@@ -43,7 +43,7 @@ class IndexerVersionServiceTest {
         every { indexerVersionRepository.findByCollectionName("test_collection") } returns
             IndexerVersion("testCollection", "test_collection", 1)
         every { mongoTemplate.dropCollection("test_collection") } just Runs
-        every { mongoTemplate.save(any<IndexerVersion>()) } returns
+        every { indexerVersionRepository.save(any<IndexerVersion>()) } returns
             IndexerVersion("testCollection", "test_collection", 2)
 
         val result =
@@ -54,7 +54,7 @@ class IndexerVersionServiceTest {
             )
 
         verify { mongoTemplate.dropCollection("test_collection") }
-        verify { mongoTemplate.save(any<IndexerVersion>()) }
+        verify { indexerVersionRepository.save(any<IndexerVersion>()) }
 
         expect { that(result).isEqualTo(true) }
     }
@@ -81,8 +81,9 @@ class IndexerVersionServiceTest {
     fun `should create version document if no version document found`() {
         every { indexerVersionRepository.findByIdOrNull("testCollection") } returns null
         every { indexerVersionRepository.findByCollectionName("test_collection") } returns null
-        every { mongoTemplate.save(any<IndexerVersion>()) } returns
-            IndexerVersion("testCollection", "test_collection", 1)
+        every {
+            indexerVersionRepository.save(IndexerVersion("testCollection", "test_collection", 1))
+        } returns IndexerVersion("testCollection", "test_collection", 1)
 
         val result =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
@@ -92,7 +93,9 @@ class IndexerVersionServiceTest {
             )
 
         verify(exactly = 0) { mongoTemplate.dropCollection("test_collection") }
-        verify { mongoTemplate.save(any<IndexerVersion>()) }
+        verify(exactly = 1) {
+            indexerVersionRepository.save(IndexerVersion("testCollection", "test_collection", 1))
+        }
 
         expect { that(result).isEqualTo(true) }
     }
