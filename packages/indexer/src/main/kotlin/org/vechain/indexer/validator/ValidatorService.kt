@@ -13,6 +13,7 @@ import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.validator.ValidatorUtils.hasAbiData
 
 @Profile("validator", "validator-stats")
 @Service
@@ -42,8 +43,8 @@ open class ValidatorService(
         // Apply beneficiary changes directly into the working map
         applyBeneficiaryChanges(matchedEvents, working)
 
-        // For old blocks → only beneficiary changes matter
-        if (block.number < threshold) {
+        // For old blocks → only beneficiary changes matter or if responses have no ABI data
+        if (block.number < threshold || callResponses.none { it.hasAbiData() }) {
             return working.values.toList() to emptyList()
         }
 
