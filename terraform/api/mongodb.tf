@@ -34,9 +34,11 @@ variable "mongo_credential_trigger" {
 ############################################################################################################
 resource "aws_security_group" "mongodb_sg" {
   # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
-  for_each = local.env.environment == "dev"
-    ? local.env.enabled_nets
-    : { for k, v in local.env.enabled_nets : k => v if false }
+  for_each = (
+    local.env.environment == "dev"
+      ? local.env.enabled_nets
+      : { for k, v in local.env.enabled_nets : k => v if false }
+  )
   name        = "${local.env.environment}-mongodb-${each.key}-sg"
   description = "Allow required ingress and egress for the mongodb"
   vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
