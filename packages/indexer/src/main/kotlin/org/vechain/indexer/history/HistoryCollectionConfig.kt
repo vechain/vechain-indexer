@@ -42,7 +42,6 @@ open class HistoryCollectionConfig(
                     Index()
                         .on("appId", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC),
-                "eventName_1" to Index().on("eventName", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
                 "contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),
                 "to_1_contractAddress_1_blockTimestamp_-1" to
@@ -98,6 +97,11 @@ open class HistoryCollectionConfig(
                         .on("gasPayer", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC),
+                "eventName_1_to_1_blockTimestamp_-1" to
+                    Index()
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("to", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
             )
         )
     }

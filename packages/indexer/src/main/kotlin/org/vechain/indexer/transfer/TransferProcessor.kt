@@ -4,8 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.utils.BlockUtils
 
 @Profile("transfers")
@@ -15,10 +14,10 @@ open class TransferProcessor(
     repository: TransferEventRepository,
 ) : BaseProcessor(repository) {
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (matchedEvents.isEmpty()) return
+    override fun process(entry: IndexingResult) {
+        if (entry.events().isEmpty()) return
 
-        val transferEvents = BlockUtils.getAllTransferEvents(matchedEvents)
+        val transferEvents = BlockUtils.getAllTransferEvents(entry.events())
 
         if (transferEvents.isNotEmpty()) {
             mongoTemplate.insert(transferEvents, IndexedTransferEvent::class.java)

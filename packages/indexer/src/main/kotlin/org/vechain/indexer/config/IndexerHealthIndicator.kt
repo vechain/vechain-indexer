@@ -71,9 +71,12 @@ class IndexerHealthIndicator(
      * if it is down
      */
     private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
-
         if (indexer.status == Status.PRUNING) {
             return HealthStatus.UP to "Indexer is pruning"
+        }
+
+        if (indexer.status == Status.PENDING_DEPENDENCY) {
+            return HealthStatus.UP to "Indexer is waiting for dependencies to sync"
         }
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)

@@ -10,21 +10,42 @@ import org.springframework.stereotype.Component
 
 @Aspect
 @Component
-class TimingAspect(@param:Value("\${timing.warn-threshold-ms}") private val warnThresholdMs: Long) {
+class TimingAspect(
+    @param:Value("\${timing.warn-threshold-ms}") private val warnThresholdMs: Long,
+    @param:Value("\${timing.very-slow-threshold-ms}") private val verySlowThresholdMs: Long,
+) {
     private val logger = LoggerFactory.getLogger(TimingAspect::class.java)
 
-    @Around("@annotation(withTiming)")
-    fun logExecutionTime(joinPoint: ProceedingJoinPoint, withTiming: WithTiming): Any? {
-        val methodName = withTiming.value.ifEmpty { joinPoint.signature.toShortString() }
+    @Around(
+        "execution(* org.vechain.indexer..*.processEvents(..)) || " +
+            "execution(* org.vechain.indexer..*.save(..)) || " +
+            "execution(* org.vechain.indexer..*.rollback(..)) || " +
+            "execution(* org.vechain.indexer..*.findRecordsToPrune(..))"
+    )
+    fun logExecutionTime(joinPoint: ProceedingJoinPoint): Any? {
+        val target = joinPoint.target
+        val targetClass = target?.javaClass
+        val className = targetClass?.name ?: joinPoint.signature.declaringTypeName
+        val methodName = joinPoint.signature.name
+        val contextSuffix =
+            when (target) {
+                is TimingContextAware -> " [${target.timingContext()}]"
+                else -> ""
+            }
         var result: Any?
         val duration = measureTime { result = joinPoint.proceed() }
         val durationMs = duration.inWholeMilliseconds
-        if (warnThresholdMs > 0 && durationMs >= warnThresholdMs) {
-            logger.warn(
-                "⏱ Slow function call: $methodName took ${duration.inWholeMilliseconds} ms (threshold $warnThresholdMs ms)"
-            )
-        } else {
-            logger.debug("⏱️ $methodName took $duration")
+        val callDescription = "$className.$methodName$contextSuffix"
+        when {
+            verySlowThresholdMs in 1..durationMs ->
+                logger.warn(
+                    "⏱️ Very slow function call: $callDescription took $durationMs ms (threshold $verySlowThresholdMs ms)"
+                )
+            warnThresholdMs in 1..durationMs ->
+                logger.warn(
+                    "⏱ Slow function call: $callDescription took $durationMs ms (threshold $warnThresholdMs ms)"
+                )
+            else -> logger.debug("⏱️ $callDescription took $duration")
         }
         return result
     }

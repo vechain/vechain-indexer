@@ -43,6 +43,7 @@ enabled_nets:
         app-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
+        very-slow-threshold-ms: '10000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -59,6 +60,7 @@ enabled_nets:
         pruner-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
+        very-slow-threshold-ms: '10000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1304112'
@@ -187,6 +189,7 @@ enabled_nets:
         app-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
+        very-slow-threshold-ms: '10000'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -203,6 +206,7 @@ enabled_nets:
         pruner-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
+        very-slow-threshold-ms: '10000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
         nfts:                       '1042259'

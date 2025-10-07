@@ -2,8 +2,8 @@ package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -15,8 +15,9 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
 @Service
-class HistoryService(private val mongoTemplate: MongoTemplate) {
-    fun processBlockEvents(events: List<IndexedEvent>, block: Block) {
+open class HistoryService(private val historyRepository: HistoryRepository) {
+
+    open fun processEvents(events: List<IndexedEvent>, block: Block): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
@@ -33,7 +34,12 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
 
         historyEvents.addAll(getMissingTransactions(block, processedTxs))
 
-        mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
+        return historyEvents
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(events: List<IndexedHistoryEvent>) {
+        historyRepository.saveAll(events)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {

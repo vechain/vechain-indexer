@@ -8,7 +8,7 @@ variable "app_name" {
 
 resource "aws_service_discovery_private_dns_namespace" "ns" {
   name = "${local.env.environment}.${var.project}"
-  vpc  = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc  = local.env.vpc_id
 }
 
 ######################
@@ -50,7 +50,7 @@ resource "aws_security_group" "alb-sg" {
     Environment = local.env.environment
     Name        = "${local.env.environment}-${var.project}-sg-alb"
   }
-  vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc_id = local.env.vpc_id
 }
 
 ######################
@@ -78,7 +78,7 @@ resource "aws_security_group" "ecs_service_sg" {
     Name        = "${local.env.environment}-${var.project}-${var.app_name}-sg-service"
   }
 
-  vpc_id = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc_id = local.env.vpc_id
 }
 
 ################################################################################
@@ -89,9 +89,10 @@ module "ecs-cluster" {
   source  = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs_cluster?ref=v.3.1.8"
   env     = local.env.environment
   project = var.project
-  vpc_id  = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc_id  = "local.env.environment.vpc_id"
   cidr    = local.env.cidr
 }
+
 
 ################################################################################
 # Module For ECS Load Balanced Service API
@@ -103,11 +104,11 @@ module "ecs-lb-service-api" {
   source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.4.24"
   ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
-  vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc_id                    = local.env.vpc_id
   cluster_name              = module.ecs-cluster.name
   autoscale_cluster_name    = module.ecs-cluster.name
-  lb_subnets                = data.terraform_remote_state.vpc.outputs.public_subnets
-  app_subnets               = data.terraform_remote_state.vpc.outputs.private_subnets
+  lb_subnets                = local.env.public_subnets
+  app_subnets               = local.env.private_subnets
   env                       = local.env.environment
   is_create_repo            = false
   secrets_enable            = false
@@ -141,15 +142,7 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = each.value.api.logging.app-log-level
-    },
-    {
-      name = "TIMING_WARN_THRESHOLD_MS"
-      value = each.value.api.timing.warn-threshold-ms
-    },
-    {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
-      value = each.value.api.timing.very-slow-threshold-ms
+      value = "INFO"
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -192,10 +185,10 @@ module "ecs-backend-service" {
   depends_on                         = [module.ecs-cluster]
   for_each                           = local.env.enabled_nets
   source                             = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-backend-service?ref=v.3.0.3"
-  vpc_id                             = data.terraform_remote_state.vpc.outputs.vpc_id
+  vpc_id                             = local.env.vpc_id
   region                             = local.env.region
   cluster                            = module.ecs-cluster.name
-  subnets                            = concat(data.terraform_remote_state.vpc.outputs.private_subnets)
+  subnets                            = local.env.private_subnets
   env                                = local.env.environment
   is_create_repo                     = false
   secrets_enable                     = false
@@ -239,23 +232,7 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = each.value.indexer.logging.app-log-level
-    },
-    {
-      name  = "TIMING_LOG_LEVEL"
-      value = each.value.indexer.logging.timing-log-level
-    },
-    {
-      name  = "PRUNER_LOG_LEVEL"
-      value = each.value.indexer.logging.pruner-log-level
-    },
-    {
-      name = "TIMING_WARN_THRESHOLD_MS"
-      value = each.value.indexer.timing.warn-threshold-ms
-    },
-    {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
-      value = each.value.indexer.timing.very-slow-threshold-ms
+      value = "INFO"
     },
     {
       name  = "MONGO_URI"
@@ -322,6 +299,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.historic-proposals
     },
     {
+        name = "INDEXER_START_BLOCK_VALIDATOR"
+        value = each.value.indexer.start-block.validator
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -362,16 +343,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
+      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
+      value = each.value.indexer.sync-logger-interval.validator
+    },
+    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
       value = each.value.indexer.pruner.removal-chunk-size
-    },
-    {
-      name  = "PRUNER_RECORD_LIMIT"
-      value = each.value.indexer.pruner.record-limit
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -454,16 +435,20 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
-      value = each.value.indexer.version.b3tr-app-daily-action-summary
-    },
-    {
       name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
+      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
+      value = each.value.indexer.version.b3tr-sustainability-overview-all
+    },
+    {
       name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
+    },
+    {
+      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
+      value = each.value.indexer.version.b3tr-sustainability-action
     },
     {
       name = "VERSION_B3TR_USER_TRANSACTIONS"
@@ -480,6 +465,10 @@ module "ecs-backend-service" {
     {
       name = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
+    },
+    {
+      name = "VERSION_VALIDATOR"
+      value = each.value.indexer.version.validator
     },
     {
       name  = "MIN_COMMENT_LEN"
@@ -534,8 +523,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+      name  = "STARGATE_STAKER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
+    },
+    {
+      name  = "BUILTIN_STAKER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.BUILTIN_STAKER_CONTRACT
+    },
+    {
+      name  = "GET_ALL_VALIDATORS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
@@ -578,96 +575,4 @@ module "ecs-backend-service" {
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]
-}
-
-data "aws_security_groups" "ecs_sg_list" {
-  filter {
-    name   = "vpc-id"
-    values = [data.terraform_remote_state.vpc.outputs.vpc_id]
-  }
-  filter {
-    name   = "group-name"
-    values = ["${local.env.environment}-${var.project}-*-sg-service", "${local.env.environment}-${var.project}-*-sg-alb"]
-  }
-}
-
-module "vpc-endpoints" {
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//vpcendpoint?ref=v.1.0.19"
-  vpcendpoints_interfaces = local.env.environment == "dev" ? [
-    {
-      id                  = "ec2"
-      vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
-      security_group_ids  = data.aws_security_groups.ecs_sg_list.ids
-      subnet_ids          = data.terraform_remote_state.vpc.outputs.private_subnets
-      private_dns_enabled = true
-      allowed_cidr_blocks = [local.env.cidr]
-      inbound_ports       = [80, 443]
-      tags = {
-        Name        = "com.amazonaws.eu-west-1.ec2"
-        Project     = var.project
-        Environment = local.env.environment
-      }
-    },
-    {
-      id                  = "ec2messages"
-      vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
-      security_group_ids  = data.aws_security_groups.ecs_sg_list.ids
-      subnet_ids          = data.terraform_remote_state.vpc.outputs.private_subnets
-      private_dns_enabled = true
-      allowed_cidr_blocks = [local.env.cidr]
-      inbound_ports       = [80, 443]
-      tags = {
-        Name        = "com.amazonaws.eu-west-1.ec2"
-        Project     = var.project
-        Environment = local.env.environment
-      }
-    },
-    {
-      id                  = "ssm"
-      vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
-      security_group_ids  = data.aws_security_groups.ecs_sg_list.ids
-      subnet_ids          = data.terraform_remote_state.vpc.outputs.private_subnets
-      private_dns_enabled = true
-      allowed_cidr_blocks = [local.env.cidr]
-      inbound_ports       = [80, 443]
-      tags = {
-        Name        = "com.amazonaws.eu-west-1.ec2"
-        Project     = var.project
-        Environment = local.env.environment
-      }
-    },
-    {
-      id                  = "ssmmessages"
-      vpc_id              = data.terraform_remote_state.vpc.outputs.vpc_id
-      security_group_ids  = data.aws_security_groups.ecs_sg_list.ids
-      subnet_ids          = data.terraform_remote_state.vpc.outputs.private_subnets
-      private_dns_enabled = true
-      allowed_cidr_blocks = [local.env.cidr]
-      inbound_ports       = [80, 443]
-      tags = {
-        Name        = "com.amazonaws.eu-west-1.ec2"
-        Project     = var.project
-        Environment = local.env.environment
-      }
-    }
-  ] : []
-}
-
-# waf
-module "waf" {
-  count                              = startswith(local.env.environment, "prod") ? 1 : 0
-  source                             = "git::git@github.com:/vechain/devops.git//waf?ref=release/node-hosting/v6"
-  env                                = local.env.environment
-  project_name                       = var.project
-  waf_cloudfront_enable              = false
-  waf_regional_enable                = true
-  logs_enable                        = true
-  logs_s3_enable                     = false
-  logs_retension                     = 30
-  regional_rule                      = "${local.env.environment}-${var.project}-ip-set"
-  scope                              = "REGIONAL"
-  associate_waf                      = true
-  rate_limit                         = local.env.rate_limit
-  rate_limit_exception_list          = local.env.rate_limit_exception_list
-  managed_rule_group_statement_rules = null
 }

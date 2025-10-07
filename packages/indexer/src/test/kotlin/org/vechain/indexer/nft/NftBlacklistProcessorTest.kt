@@ -6,6 +6,7 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
 
@@ -33,7 +34,7 @@ internal class NftBlacklistProcessorTest {
 
     @Test
     fun `processLogs - empty data`() {
-        processor.process(emptyList())
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
         // Verify no records updated
         verify(exactly = 0) { nftBlacklistService.getExisting(any()) }
@@ -62,7 +63,9 @@ internal class NftBlacklistProcessorTest {
         every { nftBlacklistService.parseRecords(any(), existing) } returns parsedRecords
         every { nftBlacklistService.save(parsedRecords, existing) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
         verify(exactly = 1) { nftBlacklistService.getExisting(any()) }
         verify(exactly = 1) { nftBlacklistService.parseRecords(any(), existing) }
