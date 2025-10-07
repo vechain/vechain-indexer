@@ -16,8 +16,6 @@ abstract class BaseProcessor(
             }
         val lastProcessedBlock = indexerVersionService.getLastProcessedBlock(indexerName)
 
-        // Return the minimum of the two blocks if both are available, or the one that is available,
-        // or null if neither is available
         return when {
             latestRecords != null && lastProcessedBlock != null -> {
                 if (latestRecords.number <= lastProcessedBlock.number) {
