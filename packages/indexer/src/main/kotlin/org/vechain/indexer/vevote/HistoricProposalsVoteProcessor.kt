@@ -3,8 +3,7 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.IndexingResult
 
 @Component
 @Profile("vevote-historic-proposals")
@@ -14,12 +13,12 @@ open class HistoricProposalsVoteProcessor(
     private val historicProposalTallyService: HistoricProposalTallyService,
 ) : BaseProcessor(repository = repository) {
     private var aggregationRan: Boolean = false
-    private val stopBlock: Long = 21051206
+    private val stopBlock: Long = 22933000
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
+    override fun process(entry: IndexingResult) {
         if (aggregationRan) return
 
-        val blockNumber = block?.number ?: 0
+        val blockNumber = entry.latestBlockNumber()
 
         if (blockNumber > stopBlock) {
             historicProposalTallyService.aggregateAllTallies()
@@ -27,7 +26,7 @@ open class HistoricProposalsVoteProcessor(
             return
         }
 
-        val votes = historicProposalsResultsService.processVotes(matchedEvents)
+        val votes = historicProposalsResultsService.processVotes(entry.events())
         if (votes.isNotEmpty()) {
             repository.saveAll(votes)
         }

@@ -21,6 +21,8 @@ open class HistoricProposalsConfig {
         @Value("\${veworld.contract.historic-proposals.steering-committee}")
         steeringCommittee: String,
         @Value("\${veworld.contract.historic-proposals.all-stakeholders}") allStakeholders: String,
+        @Value("\${veworld.contract.historic-proposals.legacy-descriptions}")
+        legacyDescriptions: String,
     ): Indexer =
         IndexerFactory()
             .name("HistoricProposalsIndexer")
@@ -30,8 +32,8 @@ open class HistoricProposalsConfig {
             .syncLoggerInterval(syncLogInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/historic-proposals")
-            .abiContracts(listOf(steeringCommittee, allStakeholders))
-            .abiEventNames(listOf("NewProposal"))
+            .abiContracts(listOf(steeringCommittee, allStakeholders, legacyDescriptions))
+            .abiEventNames(listOf("NewProposal", "LegacyVeVoteDescription"))
             .excludeVetTransfers()
             .build()
 }

@@ -74,6 +74,7 @@ veworld:
     historic-proposals:
       steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
+      legacy-descriptions: ${LEGACY_DESCRIPTIONS_ADDRESS:0x6957f76d0749EbF4d098F5EDba1F657635F0D483}
 
 indexer:
   start-block:

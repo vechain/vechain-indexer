@@ -11,6 +11,7 @@ data class HistoricProposals(
     val createdDate: String,
     val proposer: String?,
     val title: String?,
+    val description: String?,
     val proposalType: Int?,
     val choices: List<String>?,
     val createTime: Long?,

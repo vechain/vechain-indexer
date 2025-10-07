@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.contracts.abi.HistoricProposalABI
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -11,11 +12,13 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-historic-proposals")
 @Service
 open class HistoricProposalsService(
     private val thorService: ThorService,
+    private val repository: HistoricProposalsRepository,
     @Value("\${veworld.contract.historic-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
     @Value("\${veworld.contract.historic-proposals.all-stakeholders}")
@@ -23,32 +26,50 @@ open class HistoricProposalsService(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     private val cachedAbi: MutableMap<String, AbiElement> = mutableMapOf()
-    private var hasReachedCurrentBlock = false
-    private var bestBlockNumber: Long = 0
 
-    fun processNewProposals(
-        events: List<IndexedEvent>,
-        currentBlockNumber: Long? = null,
-    ): List<HistoricProposals> {
-        if (!hasReachedCurrentBlock) {
-            // Get the current best block number
-            val bestBlock = thorService.getBestBlock()
-            bestBlockNumber = bestBlock.number
+    open fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
+        if (events.isEmpty()) return emptyList()
 
-            val blockToCheck = currentBlockNumber ?: events.firstOrNull()?.blockNumber
-            if (blockToCheck != null && blockToCheck >= bestBlockNumber) {
-                logger.info(
-                    "Historic proposals service reached current block $bestBlockNumber. Stopping processing."
-                )
-                hasReachedCurrentBlock = true
-                return emptyList()
-            }
-        }
+        val updates = events.filter { it.eventType == "LegacyVeVoteDescription" }
+        val creations = events.filter { it.eventType != "LegacyVeVoteDescription" }
 
-        if (hasReachedCurrentBlock) {
-            return emptyList()
-        }
+        val updatedProposals = processProposalDescription(updates)
+        val newProposals = processNewProposals(creations)
+
+        return updatedProposals + newProposals
+    }
+
+    fun processNewProposals(events: List<IndexedEvent>): List<HistoricProposals> {
+        if (events.isEmpty()) return emptyList()
+
         return events.mapNotNull { extractNewProposalEvent(it) }
+    }
+
+    fun processProposalDescription(events: List<IndexedEvent>): List<HistoricProposals> {
+        if (events.isEmpty()) return emptyList()
+
+        val ids = events.mapNotNull { it.params.getAsString("id") }.distinct()
+
+        val proposals = repository.findAllById(ids).associateBy { it.id }
+        val updatedDocs = mutableListOf<HistoricProposals>()
+
+        for (event in events) {
+            val proposalId = event.params.getAsString("id") ?: continue
+            val existing = proposals[proposalId] ?: continue
+
+            val newDesc = event.params.getAsString("ipfsHash")
+
+            val updated = existing.copy(description = newDesc ?: existing.description)
+
+            updatedDocs.add(updated)
+        }
+
+        return updatedDocs
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(events: List<HistoricProposals>) {
+        repository.saveAll(events)
     }
 
     fun extractNewProposalEvent(event: IndexedEvent): HistoricProposals? {
@@ -83,6 +104,7 @@ open class HistoricProposalsService(
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
+                description = "",
             )
         } catch (e: Exception) {
             logger.error("Error processing proposal event: ${e.message}", e)
