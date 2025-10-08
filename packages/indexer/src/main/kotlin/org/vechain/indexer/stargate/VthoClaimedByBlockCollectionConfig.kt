@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -29,6 +30,7 @@ open class VthoClaimedByBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK,
             VthoClaimedByBlock::class.java,
             version,
         )

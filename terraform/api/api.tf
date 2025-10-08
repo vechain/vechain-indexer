@@ -326,42 +326,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
-      value = each.value.indexer.sync-logger-interval.nfts
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
-      value = each.value.indexer.sync-logger-interval.transactions
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
-      value = each.value.indexer.sync-logger-interval.transfers
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
-      value = each.value.indexer.sync-logger-interval.history
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
-      value = each.value.indexer.sync-logger-interval.vevote
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync-logger-interval.authority-nodes
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-        value = each.value.indexer.sync-logger-interval.stargate
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_B3TR"
-      value = each.value.indexer.sync-logger-interval.b3tr
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
-      value = each.value.indexer.sync-logger-interval.historic-proposals
-    },
-    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
@@ -536,6 +500,10 @@ module "ecs-backend-service" {
     {
       name  = "VEVOTE_CONTRACT"
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"

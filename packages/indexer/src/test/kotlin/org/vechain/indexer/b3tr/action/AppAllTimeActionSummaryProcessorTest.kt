@@ -16,6 +16,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class AppAllTimeActionSummaryProcessorTest {
@@ -27,12 +28,20 @@ internal class AppAllTimeActionSummaryProcessorTest {
 
     @MockK lateinit var service: AppAllTimeActionSummaryService
 
+    @MockK lateinit var indexerVersionService: IndexerVersionService
+
     private lateinit var processor: AppAllTimeActionSummaryProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        processor = AppAllTimeActionSummaryProcessor(repository, archiveService, service = service)
+        processor =
+            AppAllTimeActionSummaryProcessor(
+                repository = repository,
+                appAllTimeActionSummaryArchiveService = archiveService,
+                service = service,
+                indexerVersionService = indexerVersionService,
+            )
     }
 
     @Test

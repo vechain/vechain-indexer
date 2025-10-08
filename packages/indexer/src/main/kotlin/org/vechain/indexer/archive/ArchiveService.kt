@@ -92,10 +92,10 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         )
     }
 
-    /** Get all documents for a given block number from the collection of the given class */
+    /** Get all documents greater than or equal to the block number */
     open fun getCurrentDocuments(blockNumber: Long): List<T> {
         val query =
-            Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).`is`(blockNumber))
+            Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).gte(blockNumber))
 
         return mongoTemplate.find(query, clazz)
     }

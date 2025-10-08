@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {
@@ -15,13 +16,16 @@ class TransferProcessorTest {
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
+    @MockK lateinit var indexerVersionService: IndexerVersionService
+
     private lateinit var transferProcessor: TransferProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
 
-        transferProcessor = TransferProcessor(mongoTemplate, transferEventRepository)
+        transferProcessor =
+            TransferProcessor(mongoTemplate, transferEventRepository, indexerVersionService)
     }
 
     @Test

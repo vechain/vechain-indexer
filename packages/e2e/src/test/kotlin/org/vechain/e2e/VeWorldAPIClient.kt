@@ -91,7 +91,7 @@ object VeWorldAPIClient {
                     throw Exception("Health failed with status $syncStatus")
 
                 return
-            } catch (ex: Exception) {
+            } catch (_: Exception) {
                 Thread.sleep(1_000)
             }
         }
