@@ -30,48 +30,6 @@ variable "mongo_credential_trigger" {
 }
 
 ############################################################################################################
-# MongoDB security group
-############################################################################################################
-resource "aws_security_group" "mongodb_sg" {
-  # Temporary measure to avoid deployment of new blue/green services from affecting existing prod resources
-  for_each = local.env.environment == "dev" ? local.env.enabled_nets : tomap({})
-  name        = "${local.env.environment}-mongodb-${each.key}-sg"
-  description = "Allow required ingress and egress for the mongodb"
-  vpc_id      = data.terraform_remote_state.vpc.outputs.vpc_id
-  ingress {
-    from_port   = 8
-    to_port     = 0
-    protocol    = "icmp"
-    cidr_blocks = [local.env.cidr]
-    description = "ping service"
-  }
-
-  ingress {
-    from_port       = 27017
-    to_port         = 27017
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb-sg.id, aws_security_group.ecs_service_sg.id]
-
-    description = "mongodb service"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "allow all outbound traffic"
-  }
-
-  tags = {
-    Name        = "${local.env.environment}-mongodb-sg"
-    Environment = local.env.environment
-    Application = "mongodb"
-    Terraform   = "true"
-  }
-}
-
-############################################################################################################
 # MongoDB credentials
 ############################################################################################################
 
@@ -130,70 +88,6 @@ resource "aws_cloudwatch_log_group" "mongo_log_group" {
   retention_in_days = 30
   lifecycle {
     prevent_destroy = false
-  }
-}
-
-resource "aws_instance" "mongodb_cluster" {
-  for_each                    = { for i, v in local.env.enabled_nets : i => v.mongodb if v.mongodb.type == "ec2" }
-  associate_public_ip_address = var.mongodb_enable_public_ip
-  #ami                        = data.aws_ami.AwsFilteredImage.id
-  #ami                        = each.value.mongodb.ami
-  ami = "ami-0c4c1d9ab1e204bd7"
-  /*  instance_type           = each.value.mongodb.instance_type
-*/
-  instance_type           = each.value.instance_type
-  iam_instance_profile    = aws_iam_instance_profile.ssm_instance_profile.name
-  vpc_security_group_ids  = [aws_security_group.mongodb_sg[each.key].id]
-  subnet_id               = data.terraform_remote_state.vpc.outputs.database_subnets[0]
-  disable_api_termination = true
-  user_data = base64encode(
-    templatefile("${path.module}/templates/user-data.sh", {
-      admin_username   = "admin",
-      admin_password   = "${aws_ssm_parameter.mongo_admin_password[0].value}",
-      indexer_username = "indexer",
-      indexer_password = "${aws_secretsmanager_secret_version.indexer_db_user_secret_version.secret_string}",
-      api_username     = "api",
-      api_password     = "${aws_secretsmanager_secret_version.api_db_user_secret_version.secret_string}",
-      awsregion        = "${local.env.region}",
-      hostname         = "mongodb-${each.key}"
-      log_group        = aws_cloudwatch_log_group.mongo_log_group[each.key].name
-  }))
-
-
-  ### root volume for instances ###
-  root_block_device {
-    volume_size           = 20
-    volume_type           = "gp2"
-    encrypted             = false
-    delete_on_termination = true
-  }
-
-  ebs_block_device {
-    device_name = "/dev/sdg"
-    /*    volume_size           = each.value.mongodb.data_volume_size
-    volume_type           = each.value.mongodb.data_volume_type
-    iops                  = each.value.mongodb.data_volume_iops
-*/
-    volume_size           = each.value.data_volume_size
-    volume_type           = each.value.data_volume_type
-    iops                  = each.value.data_volume_iops
-    encrypted             = false
-    delete_on_termination = true
-  }
-
-  # Enable SSM
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_put_response_hop_limit = 1
-    http_tokens                 = "required"
-  }
-
-  tags = {
-    Name        = "${local.env.environment}-mongodb-${each.key}"
-    Environment = local.env.environment
-    Application = "mongodb"
-    Terraform   = "true"
-    backup      = "Backup-dev"
   }
 }
 
@@ -348,17 +242,4 @@ resource "aws_iam_role_policy_attachment" "mongo_ssm_policy_attachment" {
 resource "aws_iam_instance_profile" "ssm_instance_profile" {
   name = "${local.env.environment}-ssm-instance-profile"
   role = aws_iam_role.ssm_role.name
-}
-
-############################################################################################################
-# Local R53 entry for mongodb node
-############################################################################################################
-
-resource "aws_route53_record" "mongodb_node" {
-  for_each = { for i, v in local.env.enabled_nets : i => v.mongodb if v.mongodb.type == "ec2" }
-  zone_id  = each.value.zoneid
-  name     = each.value.fqdn
-  type     = "A"
-  records  = [aws_instance.mongodb_cluster[each.key].private_ip]
-  ttl      = "300"
 }
