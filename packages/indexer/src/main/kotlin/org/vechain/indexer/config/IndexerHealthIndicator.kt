@@ -71,16 +71,14 @@ class IndexerHealthIndicator(
      * if it is down
      */
     private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
-        if (indexer.getStatus() == Status.PRUNING) {
-            return HealthStatus.UP to "Indexer is pruning"
-        }
-
-        if (indexer.getStatus() == Status.NOT_INITIALISED) {
-            return HealthStatus.UP to "Indexer is not initialised"
-        }
-
-        if (indexer.getStatus() == Status.INITIALISED) {
-            return HealthStatus.UP to "Indexer is initialised but not started"
+        when (indexer.getStatus()) {
+            Status.PRUNING -> return HealthStatus.UP to "Indexer is pruning"
+            Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
+            Status.INITIALISED -> return HealthStatus.UP to "Indexer is initialised but not started"
+            Status.SHUT_DOWN -> return HealthStatus.DOWN to "Indexer is shut down"
+            else -> {
+                // continue to check last processed time
+            }
         }
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
