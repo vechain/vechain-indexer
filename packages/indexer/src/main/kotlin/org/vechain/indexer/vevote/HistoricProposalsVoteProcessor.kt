@@ -13,7 +13,7 @@ open class HistoricProposalsVoteProcessor(
     private val historicProposalTallyService: HistoricProposalTallyService,
 ) : BaseProcessor(repository = repository) {
     private var aggregationRan: Boolean = false
-    private val stopBlock: Long = 22933000
+    private val stopBlock: Long = 22940000
 
     override fun process(entry: IndexingResult) {
         if (aggregationRan) return
