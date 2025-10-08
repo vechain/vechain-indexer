@@ -1,6 +1,7 @@
 package org.vechain.indexer.config
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ExitCodeGenerator
@@ -68,6 +69,8 @@ open class IndexManager(
     @EventListener(ContextClosedEvent::class)
     open fun onShutdown() {
         logger.info("Shutting down indexers")
+        // Update the last synced block for all indexers one final time
+        trackLastSyncedBlock()
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()
@@ -75,10 +78,9 @@ open class IndexManager(
                 logger.error("Failed to close indexer ${indexer.name}", e)
             }
         }
-        // Track last synced block one last time
-        trackLastSyncedBlock()
-        // Wait 5 seconds to allow indexers to shut down gracefully
-        Thread.sleep(5000)
+        // Cancel the coroutine scope to stop all running indexers
+        appCoroutineScope.cancel()
+
         logger.info("Indexers shut down complete")
     }
 }
