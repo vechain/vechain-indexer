@@ -40,11 +40,11 @@ open class IndexManager(
             .apply {
                 invokeOnCompletion { throwable ->
                     if (throwable != null) {
-                        logger.error("IndexerCoordinator terminated with error: ", throwable)
+                        logger.error("IndexerRunner terminated with error: ", throwable)
                         // Exit the application if the coordinator fails
                         SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
                     } else {
-                        logger.info("IndexerCoordinator terminated normally")
+                        logger.info("IndexerRunner terminated normally")
                     }
                 }
             }
