@@ -19,7 +19,7 @@ open class HistoricProposalsCollectionConfig(
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposals::class.java) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private val logger = LoggerFactory.getLogger(HistoricProposalsCollectionConfig::class.java)
 
     @Value("\${indexer.version.historic-proposals}") private val version: Int = 1
 

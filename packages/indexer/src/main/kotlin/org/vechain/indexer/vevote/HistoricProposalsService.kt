@@ -1,6 +1,5 @@
 package org.vechain.indexer.vevote
 
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -24,7 +23,6 @@ open class HistoricProposalsService(
     @Value("\${veworld.contract.historic-proposals.all-stakeholders}")
     private val allStakeholdersAddress: String,
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
     private val cachedAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
     open fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
@@ -35,7 +33,6 @@ open class HistoricProposalsService(
 
         val updatedProposals = processProposalDescription(updates)
         val newProposals = processNewProposals(creations)
-
         return updatedProposals + newProposals
     }
 
@@ -76,7 +73,6 @@ open class HistoricProposalsService(
         try {
             val contractAddress = event.address ?: return null
             if (!isValidContractAddress(contractAddress)) {
-                logger.warn("Event from unknown contract address: $contractAddress")
                 return null
             }
 
@@ -107,7 +103,6 @@ open class HistoricProposalsService(
                 description = "",
             )
         } catch (e: Exception) {
-            logger.error("Error processing proposal event: ${e.message}", e)
             return null
         }
     }
@@ -178,7 +173,6 @@ open class HistoricProposalsService(
             val abi = getAbiFunction(functionName)
             FunctionReturnDecoder.decode(data, abi.outputs)
         } catch (ex: Exception) {
-            logger.error("Failed to decode $functionName response: ${ex.message}")
             null
         }
     }

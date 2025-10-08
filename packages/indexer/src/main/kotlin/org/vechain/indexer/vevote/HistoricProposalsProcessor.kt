@@ -17,7 +17,7 @@ open class HistoricProposalsProcessor(
 
         // Process new proposals or events with their descriptions
         val proposals: List<HistoricProposals> =
-            historicProposalsService.processNewProposals(entry.events())
+            historicProposalsService.processEvents(entry.events())
 
         // Save the results
         if (proposals.isNotEmpty()) {
