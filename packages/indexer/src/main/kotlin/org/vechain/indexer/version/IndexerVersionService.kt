@@ -122,7 +122,7 @@ open class IndexerVersionService(
      * Returns the MongoDB collection name for the given class. Falls back to the class name if
      * no @Document mapping is found.
      */
-    private fun getCollectionName(clazz: Class<*>): String =
+    fun getCollectionName(clazz: Class<*>): String =
         mappingContext.getPersistentEntity(clazz)?.collection
             ?: throw IllegalStateException(
                 "Could not determine collection name for class ${clazz.name}"

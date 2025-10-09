@@ -77,6 +77,7 @@ veworld:
     historic-proposals:
       steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
+      legacy-descriptions: ${LEGACY_DESCRIPTIONS_ADDRESS:0x6957f76d0749EbF4d098F5EDba1F657635F0D483}
 scheduler:
   delegationHistory:
     initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
@@ -97,6 +98,8 @@ indexer:
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
     validator: ${INDEXER_START_BLOCK_VALIDATOR:114010}
+  stop-block:
+    historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
   start-round:
     b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:100}

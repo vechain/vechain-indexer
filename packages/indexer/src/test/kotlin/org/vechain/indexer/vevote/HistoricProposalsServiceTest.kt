@@ -13,7 +13,6 @@ import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 internal class HistoricProposalsServiceTest {
-
     @MockK lateinit var thorService: ThorService
 
     private lateinit var service: HistoricProposalsService
@@ -24,6 +23,7 @@ internal class HistoricProposalsServiceTest {
         service =
             HistoricProposalsService(
                 thorService = thorService,
+                repository = mockk(relaxed = true),
                 steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
                 allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
             )
