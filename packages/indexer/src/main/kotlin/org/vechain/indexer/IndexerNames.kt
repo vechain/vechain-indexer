@@ -8,6 +8,7 @@ object IndexerNames {
     const val AUTHORITY_NODE = "AuthorityNodeIndexer"
     const val GM_NFT = "GmNftIndexer"
     const val HISTORIC_PROPOSALS = "HistoricProposalsIndexer"
+    const val HISTORIC_PROPOSALS_VOTE = "HistoricProposalsVoteIndexer"
     const val HISTORY = "HistoryIndexer"
     const val NFT = "NftIndexer"
     const val NFT_BLACKLIST = "NftBlacklistIndexer"

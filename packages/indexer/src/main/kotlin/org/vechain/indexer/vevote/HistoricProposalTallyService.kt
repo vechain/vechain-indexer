@@ -10,13 +10,13 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 
-@Profile("vevote-historic-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Service
 open class HistoricProposalTallyService(
     private val mongoTemplate: MongoTemplate,
     private val repository: HistoricProposalsRepository,
 ) {
-    fun aggregateAllTallies() {
+    fun aggregateAllTallies(collectionName: String) {
         val aggregation =
             newAggregation(
                 unwind("choices"),
@@ -29,9 +29,7 @@ open class HistoricProposalTallyService(
             )
 
         val results =
-            mongoTemplate
-                .aggregate(aggregation, "historic_proposals_votes", Document::class.java)
-                .mappedResults
+            mongoTemplate.aggregate(aggregation, collectionName, Document::class.java).mappedResults
 
         results.forEach { doc ->
             val idDoc = doc.get("_id") as Document

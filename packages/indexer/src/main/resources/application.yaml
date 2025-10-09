@@ -48,7 +48,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:http://localhost:8669}
+  url: ${THOR_URL:https://mainnet.vechain.org}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -90,6 +90,8 @@ indexer:
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
+  stop-block:
+    historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
   start-round:
     b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:100}

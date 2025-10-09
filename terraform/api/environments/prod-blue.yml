@@ -52,7 +52,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,b3tr
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -184,7 +184,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
+      spring_profile: nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
