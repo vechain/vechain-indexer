@@ -65,6 +65,7 @@ open class DelegationConfig {
                     "DelegationWithdrawn",
                     "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
+                    "Transfer",
                 )
             )
             .callDataClauses(listOf(ValidatorUtils.buildClauses(getAllValidatorsAddress)[0]))

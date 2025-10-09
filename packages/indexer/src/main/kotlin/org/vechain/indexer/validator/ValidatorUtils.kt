@@ -6,6 +6,7 @@ import java.math.RoundingMode
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
@@ -465,6 +466,21 @@ object ValidatorUtils {
 
         return abiFunctions.map { fn -> ContractUtils.createClause(getAllValidatorInfoSC, fn) }
     }
+
+    fun shouldProcessEvent(ev: IndexedEvent, stakerSC: String): Boolean =
+        when (ev.eventType) {
+            // must come from stakerSC
+            "ValidatorExitRequested" -> ev.address.equals(stakerSC, ignoreCase = true)
+
+            // must NOT come from stakerSC
+            "DelegationInitiated",
+            "DelegationExitRequested",
+            "DelegationWithdrawn",
+            "DelegationRewardsClaimed",
+            "Transfer" -> !ev.address.equals(stakerSC, ignoreCase = true)
+
+            else -> false
+        }
 
     fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
         if (snapshot.startBlock == 0L) return 0L

@@ -32,5 +32,7 @@ interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegatio
 
     fun findByTokenId(tokenId: String, pageable: Pageable): Slice<Delegation>
 
+    fun findByTokenIdIn(tokenIds: List<String>): List<Delegation>
+
     fun findByStatusIn(statuses: Collection<Status>, pageable: Pageable): Slice<Delegation>
 }

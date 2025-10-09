@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.rest.ExecuteCodeResponse
@@ -113,8 +112,8 @@ open class DelegationService(
     }
 
     private fun findDelegationsFromEvents(events: List<IndexedEvent>): List<Delegation> {
-        val ids = events.mapNotNull { getDelegationIdFromParams(it.params) }.toSet()
-        return if (ids.isNotEmpty()) repository.findAllById(ids).toList() else emptyList()
+        val ids = events.mapNotNull { event -> event.params.getAsString("tokenId") }.distinct()
+        return if (ids.isNotEmpty()) repository.findByTokenIdIn(ids).toList() else emptyList()
     }
 
     private fun findDelegationsFromExits(
@@ -197,8 +196,11 @@ open class DelegationService(
 
         validators.keys.forEachIndexed { index, validatorId ->
             val startBlock =
-                if (snapshotEmpty) determineStartBlock(responses[index])
-                else validatorsSnapshots[validatorId]!!.startBlock
+                if (snapshotEmpty) {
+                    determineStartBlock(responses[index])
+                } else {
+                    validatorsSnapshots[validatorId]!!.startBlock
+                }
 
             if (startBlock != 0L) {
                 validators[validatorId]?.forEach { existing ->
@@ -260,26 +262,29 @@ open class DelegationService(
         block: Block,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ) {
-        events.forEach { ev ->
-            when (ev.eventType) {
-                "DelegationInitiated" ->
-                    handleDelegationInitiated(ev, delegations, block, validatorSnapshots)
-                "DelegationExitRequested" ->
-                    handleDelegationExitRequested(ev, delegations, delegationsToArchive, block)
-                "DelegationWithdrawn" ->
-                    handleDelegationWithdrawn(ev, delegations, delegationsToArchive, block)
-                "DelegationRewardsClaimed" ->
-                    handleDelegationRewardsClaimed(ev, delegations, delegationsToArchive, block)
-                "ValidatorExitRequested" ->
-                    handleValidatorExitRequested(
-                        ev,
-                        delegations,
-                        delegationsToArchive,
-                        block,
-                        validatorSnapshots,
-                    )
+        events
+            .filter { ValidatorUtils.shouldProcessEvent(it, stakerSC) }
+            .forEach { ev ->
+                when (ev.eventType) {
+                    "DelegationInitiated" ->
+                        handleDelegationInitiated(ev, delegations, block, validatorSnapshots)
+                    "DelegationExitRequested" ->
+                        handleDelegationExitRequested(ev, delegations, delegationsToArchive, block)
+                    "DelegationWithdrawn" ->
+                        handleDelegationWithdrawn(ev, delegations, delegationsToArchive, block)
+                    "DelegationRewardsClaimed" ->
+                        handleDelegationRewardsClaimed(ev, delegations, delegationsToArchive, block)
+                    "Transfer" -> handleTransfer(ev, delegations, delegationsToArchive, block)
+                    "ValidatorExitRequested" ->
+                        handleValidatorExitRequested(
+                            ev,
+                            delegations,
+                            delegationsToArchive,
+                            block,
+                            validatorSnapshots,
+                        )
+                }
             }
-        }
     }
 
     // ------------------------------
@@ -355,7 +360,7 @@ open class DelegationService(
         delegationsToArchive: MutableList<Delegation>,
         block: Block,
     ) {
-        val delegationId = ev.params.getAsString("delegationID")!! // note: uppercase ID here
+        val delegationId = ev.params.getAsString("delegationId")!! // note: uppercase ID here
         delegations[delegationId]?.let { existing ->
             delegationsToArchive.add(existing)
             delegations[delegationId] =
@@ -391,6 +396,35 @@ open class DelegationService(
         }
     }
 
+    /** Handles a token transfer */
+    private fun handleTransfer(
+        ev: IndexedEvent,
+        delegations: MutableMap<String, Delegation>,
+        delegationsToArchive: MutableList<Delegation>,
+        block: Block,
+    ) {
+        val tokenId = ev.params.getAsString("tokenId") ?: return
+        val to = ev.params.getAsString("to") ?: return
+
+        // Find the active delegation for this token
+        val existing =
+            delegations.values.find { it.tokenId == tokenId && it.status != Status.EXITED }
+                ?: return
+
+        // Archive the old state
+        delegationsToArchive.add(existing)
+
+        // Create updated copy with new owner
+        delegations[existing.id] =
+            existing.copy(
+                owner = to,
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                version = existing.version + 1,
+            )
+    }
+
     /** Handles a validator requesting exit → updates all of its delegations. */
     private fun handleValidatorExitRequested(
         ev: IndexedEvent,
@@ -416,6 +450,7 @@ open class DelegationService(
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,
                         version = existing.version + 1,
+                        force = true,
                     )
             }
     }
@@ -448,9 +483,6 @@ open class DelegationService(
     // ------------------------------
     // Utility methods
     // ------------------------------
-
-    private fun getDelegationIdFromParams(params: AbiEventParameters): String? =
-        params.getAsString("delegationId") ?: params.getAsString("delegationID")
 
     private fun nextStatus(status: Status): Status =
         if (status == Status.EXITING) Status.EXITED else Status.ACTIVE
@@ -513,7 +545,7 @@ open class DelegationService(
      * Resolve a validator's exit block. Uses cached snapshot if available, otherwise falls back to
      * chain call.
      */
-    private fun getValidatorExitBlock(
+    fun getValidatorExitBlock(
         validatorId: String,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ): Long =
