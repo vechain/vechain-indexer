@@ -249,7 +249,7 @@ enabled_nets:
         history:                    '8'
         nft-blacklist:              '6'
         vevote-comments:            '1'
-        vevote-results:             '7'
+        vevote-results:             '8'
         authority-node-endorser:    '3'
         stargate-vtho-claimed-by-block: '4'
         stargate-vtho-claimed-by-account: '4'
