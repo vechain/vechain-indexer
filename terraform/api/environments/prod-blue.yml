@@ -113,14 +113,14 @@ enabled_nets:
         history:                    '2'
         nft-blacklist:              '3'
         vevote-comments:            '1'
-        vevote-results:             '3'
+        vevote-results:             '4'
         authority-node-endorser:    '5'
         stargate-vtho-claimed-by-block: '6'
         stargate-vtho-claimed-by-account: '7'
         stargate-nft-holders-by-block: '2'
         stargate-vet-staked-by-block: '2'
         historic-proposals:          '2'
-        b3tr-proposal-comments: '1'
+        b3tr-proposal-comments: '2'
         b3tr-proposal-results: '2'
         b3tr-app-all-time-action-summary: '2'
         b3tr-app-round-action-summary: '2'
@@ -184,7 +184,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -264,7 +264,6 @@ enabled_nets:
         b3tr-user-all-time-action-summary: '2'
         b3tr-user-round-action-summary: '2'
         b3tr-user-daily-action-summary: '2'
-        b3tr-user-transactions: '2'
         b3tr-x-alloc-result: '2'
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '2'
