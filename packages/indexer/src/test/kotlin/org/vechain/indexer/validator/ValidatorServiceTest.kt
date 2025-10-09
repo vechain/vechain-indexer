@@ -87,7 +87,6 @@ class ValidatorServiceTest {
 
         assertThat(result.first).isEmpty()
         assertThat(result.second).isEmpty()
-        assertThat(result.third).isEmpty()
     }
 
     @Test
@@ -105,13 +104,12 @@ class ValidatorServiceTest {
         assertThat(updated.id).isEqualTo("0xVAL1")
         assertThat(updated.beneficiary).isEqualTo("0xBEN")
         assertThat(result.second).isEmpty()
-        assertThat(result.third).isEmpty()
     }
 
     @Test
     fun `recent blocks load ABIs and update chain state`() {
         every { thorService.getBestBlock() } returns block(200)
-        every { repository.findAll() } returns emptyList()
+        every { repository.findByStatusNot(any()) } returns emptyList()
 
         // Fake ABI + responses
         val abi = AbiElement(name = "getValidators", type = "function")
@@ -119,19 +117,16 @@ class ValidatorServiceTest {
         every {
             ValidatorUtils.getLatestValidatorInfo(any(), any(), any(), any(), any(), any())
         } returns
-            Pair(
-                listOf(
-                    Validator(
-                        id = "0xVAL1",
-                        blockId = "0xBLOCK",
-                        blockNumber = 190,
-                        blockTimestamp = 111,
-                        beneficiary = "0xBEN",
-                        totalVTHOSupply = Decimal128(0),
-                        version = 1,
-                    )
-                ),
-                emptyList(),
+            listOf(
+                Validator(
+                    id = "0xVAL1",
+                    blockId = "0xBLOCK",
+                    blockNumber = 190,
+                    blockTimestamp = 111,
+                    beneficiary = "0xBEN",
+                    totalVTHOSupply = Decimal128(0),
+                    version = 1,
+                )
             )
 
         // FIX: InspectionResult must get a List<TxEvent>, not a BigInteger
@@ -169,12 +164,11 @@ class ValidatorServiceTest {
         every { repository.deleteAllById(any<List<String>>()) } just Runs
         every { archiveService.saveAll(any<List<Validator>>()) } just Runs
 
-        service.saveAndDelete(listOf(v1), listOf(v1), listOf("0xVAL1"))
+        service.save(listOf(v1), listOf(v1))
 
         verify {
             repository.saveAll(withArg<List<Validator>> { list -> assertThat(list).contains(v1) })
         }
         verify { archiveService.saveAll(match { it.isNotEmpty() }) }
-        verify { repository.deleteAllById(match { it.contains("0xVAL1") }) }
     }
 }

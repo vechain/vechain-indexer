@@ -6,6 +6,7 @@ import java.math.RoundingMode
 import org.assertj.core.api.Assertions.assertThat
 import org.bson.types.Decimal128
 import org.junit.jupiter.api.Test
+import strikt.assertions.isEqualTo
 
 class ValidatorUtilsTest {
     private fun buildDecoded(): Map<String, Any?> =
@@ -31,7 +32,7 @@ class ValidatorUtilsTest {
     fun `unpackValidators should return validator with correct basic fields`() {
         val decoded = buildDecoded()
 
-        val (validators, toDelete) =
+        val validators =
             ValidatorUtils.unpackValidators(
                 decoded = decoded,
                 existingDocs = emptyMap(),
@@ -55,9 +56,6 @@ class ValidatorUtilsTest {
         assertThat(v.validatorVetStaked!!.bigDecimalValue().setScale(6))
             .isEqualTo(BigDecimal("1.000000"))
         assertThat(v.version).isEqualTo(1)
-
-        // Nothing should be deleted
-        assertThat(toDelete).isEmpty()
     }
 
     @Test
@@ -80,7 +78,7 @@ class ValidatorUtilsTest {
                 version = 1,
             )
 
-        val (validators, _) =
+        val validators =
             ValidatorUtils.unpackValidators(
                 decoded = decoded,
                 existingDocs = mapOf("0xVAL1" to existing),
@@ -104,7 +102,7 @@ class ValidatorUtilsTest {
                 put("exitBlocks", listOf(BigInteger.valueOf(1000))) // not MAX_UINT32
             }
 
-        val (validators, _) =
+        val validators =
             ValidatorUtils.unpackValidators(
                 decoded,
                 emptyMap(),
@@ -134,7 +132,7 @@ class ValidatorUtilsTest {
                 version = 1,
             )
 
-        val (validators, toDelete) =
+        val validators =
             ValidatorUtils.unpackValidators(
                 decoded,
                 existingDocs = mapOf("0xOLD" to existing),
@@ -150,9 +148,6 @@ class ValidatorUtilsTest {
         val disappeared = validators.firstOrNull { it.id == "0xOLD" }
         assertThat(disappeared).isNotNull
         assertThat(disappeared!!.status).isEqualTo(Status.EXITED)
-
-        // No deletions yet (retention not reached)
-        assertThat(toDelete).isEmpty()
     }
 
     @Test

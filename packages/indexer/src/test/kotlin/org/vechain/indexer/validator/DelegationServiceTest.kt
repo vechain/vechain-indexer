@@ -30,10 +30,10 @@ class DelegationServiceTest {
         service =
             spyk(DelegationService(repository, archiveService, thorService, stakerSC = "0xSTAKER"))
 
-        every { repository.findByValidatorNextCycleAndStatusIn(any(), any()) } returns emptyList()
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { repository.findByValidatorIn(any()) } returns emptyList()
         every { repository.findValidatorIdsByStatusNot(any()) } returns emptyList()
+        every { repository.findByValidatorIn(any()) } returns emptyList()
+        every { repository.findByTokenIdIn(any()) } returns emptyList()
+        every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
         mockkObject(ValidatorUtils)
         every { ValidatorUtils.decodeValidators(any(), any()) } returns
             mapOf("masters" to listOf("0xSAFE"))
@@ -62,7 +62,7 @@ class DelegationServiceTest {
             transactions = emptyList(),
         )
 
-    private fun event(type: String, params: Map<String, Any>) =
+    private fun event(type: String, params: Map<String, Any>, address: String = "0xcontract") =
         IndexedEvent(
             id = "evt1",
             blockId = "b1",
@@ -75,7 +75,7 @@ class DelegationServiceTest {
             gasPayer = null,
             raw = null,
             params = AbiEventParameters(returnValues = params),
-            address = "0xcontract",
+            address = address,
             eventType = type,
             clauseIndex = 0,
             signature = null,
@@ -106,7 +106,7 @@ class DelegationServiceTest {
                 validatorCycleLength = 0,
             )
 
-        every { repository.findByValidatorNextCycleAndStatusIn(any(), any()) } returns listOf(due)
+        every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns listOf(due)
         every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
         mockkObject(ValidatorUtils)
@@ -182,14 +182,14 @@ class DelegationServiceTest {
                 force = false,
             )
 
-        every { repository.findByValidatorNextCycleAndStatusIn(any(), any()) } returns emptyList()
-        every { repository.findAllById(any<Iterable<String>>()) } returns listOf(existing)
+        every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
+        every { repository.findByTokenIdIn(any<List<String>>()) } returns listOf(existing)
         every { repository.findByValidatorIn(any()) } returns emptyList()
         mockkObject(ValidatorUtils)
         every { ValidatorUtils.decodeValidators(any(), any()) } returns
             mapOf("masters" to listOf("v1"))
 
-        val ev = event("DelegationExitRequested", mapOf("delegationId" to "d2"))
+        val ev = event("DelegationExitRequested", mapOf("delegationId" to "d2", "tokenId" to "t"))
 
         val (updates, archive) =
             service.processBlock(
@@ -224,10 +224,10 @@ class DelegationServiceTest {
                 txId = "tx0",
             )
 
-        every { repository.findAllById(any()) } returns listOf(existing)
+        every { repository.findByTokenIdIn(any()) } returns listOf(existing)
 
         // note: uppercase ID
-        val ev = event("DelegationWithdrawn", mapOf("delegationID" to "d3"))
+        val ev = event("DelegationWithdrawn", mapOf("delegationId" to "d3", "tokenId" to "t1"))
 
         val (updates, archive) = service.processBlock(block(2), listOf(ev), emptyList())
 
@@ -256,9 +256,13 @@ class DelegationServiceTest {
                 txId = "tx0",
             )
 
-        every { repository.findAllById(any()) } returns listOf(existing)
+        every { repository.findByTokenIdIn(any()) } returns listOf(existing)
 
-        val ev = event("DelegationRewardsClaimed", mapOf("delegationId" to "d4", "amount" to "25"))
+        val ev =
+            event(
+                "DelegationRewardsClaimed",
+                mapOf("delegationId" to "d4", "amount" to "25", "tokenId" to "t1"),
+            )
 
         val (updates, archive) = service.processBlock(block(2), listOf(ev), emptyList())
 
@@ -287,15 +291,16 @@ class DelegationServiceTest {
                 txId = "tx0",
             )
 
-        every { repository.findByValidatorIn(listOf("0xVEXIT")) } returns listOf(existing)
+        every { repository.findByValidatorIn(any()) } returns listOf(existing)
 
         mockkObject(ValidatorUtils)
         every { ValidatorUtils.decodeValidators(any(), any()) } returns
             mapOf("masters" to listOf("0xVEXIT"))
 
-        every { service.getExitBlock("0xVEXIT") } returns 20L
+        every { service.getValidatorExitBlock("0xVEXIT", any()) } returns 20L
 
-        val ev = event("ValidatorExitRequested", mapOf("validator" to "0xVEXIT"))
+        val ev =
+            event("ValidatorExitRequested", mapOf("validator" to "0xVEXIT"), address = "0xSTAKER")
 
         val (updates, archive) = service.processBlock(block(2), listOf(ev), emptyList())
 
