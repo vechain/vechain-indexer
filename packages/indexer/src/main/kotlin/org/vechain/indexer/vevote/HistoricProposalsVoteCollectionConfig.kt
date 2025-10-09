@@ -9,18 +9,18 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
-import org.vechain.indexer.IndexerNames.HISTORIC_PROPOSALS
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("vevote-historic-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Configuration
-open class HistoricProposalsCollectionConfig(
+open class HistoricProposalsVoteCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposals::class.java) {
-    private val logger = LoggerFactory.getLogger(HistoricProposalsCollectionConfig::class.java)
+) : CollectionConfig(mongoTemplate, appCoroutineScope, HistoricProposalsVote::class.java) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.historic-proposals}") private val version: Int = 1
 
@@ -29,8 +29,8 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = HISTORIC_PROPOSALS,
-            HistoricProposals::class.java,
+            indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE,
+            HistoricProposalsVote::class.java,
             version,
         )
 
@@ -41,6 +41,13 @@ open class HistoricProposalsCollectionConfig(
             listOf(
                 "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "proposalId_contract" to
+                    Index().on("proposalId", Sort.Direction.ASC).on("contract", Sort.Direction.ASC),
+                "proposalId_contract_blockNumber" to
+                    Index()
+                        .on("proposalId", Sort.Direction.ASC)
+                        .on("contract", Sort.Direction.ASC)
+                        .on("blockNumber", Sort.Direction.DESC),
             )
         )
     }

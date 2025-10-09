@@ -21,15 +21,16 @@ open class HistoricProposalsProcessor(
     ) {
 
     override fun process(entry: IndexingResult) {
-        if (entry.events().isEmpty()) {
-            historicProposalsService.processNewProposals(emptyList(), entry.latestBlockNumber())
-            return
-        }
-        val proposals: List<HistoricProposals> =
-            historicProposalsService.processNewProposals(entry.events(), entry.latestBlockNumber())
+        // No events to process
+        if (entry.events().isEmpty()) return
 
+        // Process new proposals or events with their descriptions
+        val proposals: List<HistoricProposals> =
+            historicProposalsService.processEvents(entry.events())
+
+        // Save the results
         if (proposals.isNotEmpty()) {
-            repository.saveAll(proposals)
+            historicProposalsService.save(proposals)
         }
     }
 }

@@ -23,7 +23,7 @@ import org.vechain.indexer.validation.ValidAddress
 )
 @Validated
 @RestController
-@RequestMapping("$API_PATH/authority_endorsers", "$API_PATH/authority-endorsers")
+@RequestMapping("$API_PATH/authority-endorsers")
 open class AmnController(private val amnApiEndorserService: AmnApiEndorserService) {
     @GetMapping("endorsers/{user}")
     @Operation(summary = "Check if a user is an endorser of any Authority Master Node.")
