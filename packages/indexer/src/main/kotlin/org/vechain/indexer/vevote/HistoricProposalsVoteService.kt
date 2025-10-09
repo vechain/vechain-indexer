@@ -6,7 +6,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
-@Profile("vevote-historic-proposals")
+@Profile("vevote", "vevote-historic-proposals")
 @Service
 open class HistoricProposalsVoteService {
     fun processVotes(events: List<IndexedEvent>): List<HistoricProposalsVote> {
