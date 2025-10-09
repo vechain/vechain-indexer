@@ -120,7 +120,7 @@ enabled_nets:
         stargate-nft-holders-by-block: '2'
         stargate-vet-staked-by-block: '2'
         historic-proposals:          '1'
-        b3tr-proposal-comments: '1'
+        b3tr-proposal-comments: '2'
         b3tr-proposal-results: '2'
         b3tr-app-all-time-action-summary: '2'
         b3tr-app-round-action-summary: '2'
