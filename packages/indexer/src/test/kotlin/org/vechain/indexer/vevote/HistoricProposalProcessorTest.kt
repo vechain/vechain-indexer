@@ -15,6 +15,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.LogsFixtures
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.EventLog
+import org.vechain.indexer.version.IndexerVersionService
 import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.hasSize
@@ -24,6 +25,7 @@ import strikt.assertions.isNotNull
 class HistoricProposalsProcessorTest {
     @MockK lateinit var thorService: ThorService
     @MockK private lateinit var historicProposalsService: HistoricProposalsService
+    @MockK lateinit var indexerVersionService: IndexerVersionService
     private val repository = mockk<HistoricProposalsRepository>(relaxed = true)
     lateinit var processor: HistoricProposalsProcessor
 
@@ -31,7 +33,8 @@ class HistoricProposalsProcessorTest {
     fun setUp() {
         MockKAnnotations.init(this)
         every { thorService.getBestBlock() } returns mockk { every { number } returns 0L }
-        processor = HistoricProposalsProcessor(repository, historicProposalsService)
+        processor =
+            HistoricProposalsProcessor(repository, historicProposalsService, indexerVersionService)
     }
 
     @Test

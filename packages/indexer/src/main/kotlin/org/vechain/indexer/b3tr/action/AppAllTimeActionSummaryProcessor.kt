@@ -3,9 +3,11 @@ package org.vechain.indexer.b3tr.action
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
@@ -14,10 +16,13 @@ open class AppAllTimeActionSummaryProcessor(
     appAllTimeActionSummaryArchiveService:
         ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
     private val service: AppAllTimeActionSummaryService,
+    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = appAllTimeActionSummaryArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY,
     ) {
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

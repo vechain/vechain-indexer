@@ -5,8 +5,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
@@ -48,7 +49,7 @@ open class VthoClaimedByAccountConfig {
         vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.stargate}") syncLogInterval: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,
@@ -56,15 +57,15 @@ open class VthoClaimedByAccountConfig {
         stargateDelegationContract: String,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
         bEProperties: BusinessEventProperties,
-    ): Indexer =
+    ): BlockIndexer =
         IndexerFactory()
-            .name("VthoClaimedByAccountIndexer")
+            .name(IndexerNames.VTHO_CLAIMED_BY_ACCOUNT)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(vthoClaimByAccountPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
-            .syncLoggerInterval(syncLogInterval)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(

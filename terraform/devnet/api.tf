@@ -142,7 +142,15 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.logging.app-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.api.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.api.timing.very-slow-threshold-ms
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -232,7 +240,23 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.logging.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.logging.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.logging.pruner-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.indexer.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
       name  = "MONGO_URI"
@@ -307,52 +331,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
-      value = each.value.indexer.sync-logger-interval.nfts
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
-      value = each.value.indexer.sync-logger-interval.transactions
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
-      value = each.value.indexer.sync-logger-interval.transfers
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
-      value = each.value.indexer.sync-logger-interval.history
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
-      value = each.value.indexer.sync-logger-interval.vevote
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync-logger-interval.authority-nodes
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-        value = each.value.indexer.sync-logger-interval.stargate
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_B3TR"
-      value = each.value.indexer.sync-logger-interval.b3tr
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
-      value = each.value.indexer.sync-logger-interval.historic-proposals
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VALIDATOR"
-      value = each.value.indexer.sync-logger-interval.validator
-    },
-    {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
     {
       name  = "PRUNER_REMOVAL_CHUNK_SIZE"
       value = each.value.indexer.pruner.removal-chunk-size
+    },
+    {
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
@@ -435,20 +423,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
+      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-daily-action-summary
+    },
+    {
       name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
-      value = each.value.indexer.version.b3tr-sustainability-overview-all
-    },
-    {
       name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
-    },
-    {
-      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
-      value = each.value.indexer.version.b3tr-sustainability-action
     },
     {
       name = "VERSION_B3TR_USER_TRANSACTIONS"
@@ -527,12 +511,20 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_CONTRACT
     },
     {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
       name  = "BUILTIN_STAKER_CONTRACT"
       value = each.value.indexer.business-event.substitutions.BUILTIN_STAKER_CONTRACT
     },
     {
       name  = "GET_ALL_VALIDATORS_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
