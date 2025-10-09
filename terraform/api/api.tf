@@ -430,10 +430,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-user-round-action-summary
     },
     {
-      name = "VERSION_B3TR_USER_TRANSACTIONS"
-      value = each.value.indexer.version.b3tr-user-transactions
-    },
-    {
       name = "VERSION_B3TR_X_ALLOC_RESULT"
       value = each.value.indexer.version.b3tr-x-alloc-result
     },
