@@ -20,8 +20,7 @@ import org.vechain.indexer.utils.PaginationUtils
 @Profile("vevote", "vevote-historic-proposals")
 @RequestMapping(VEVOTE_PATH)
 open class HistoricController(private val historicApiService: HistoricApiService) {
-
-    @GetMapping("/historic-proposals", "historical_proposals")
+    @GetMapping("/historic-proposals")
     @Operation(summary = "Fetch all historic proposals")
     @CommonApiResponses
     open fun getAllProposals(
