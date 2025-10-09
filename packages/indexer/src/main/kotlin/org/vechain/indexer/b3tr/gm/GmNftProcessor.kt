@@ -3,9 +3,11 @@ package org.vechain.indexer.b3tr.gm
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Component
@@ -13,7 +15,14 @@ open class GmNftProcessor(
     repository: GmNftRepository,
     gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
     private val service: GmNftService,
-) : BaseStatefulProcessor(repository = repository, archiveService = gmNftArchiveService) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseStatefulProcessor(
+        repository = repository,
+        archiveService = gmNftArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.GM_NFT,
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

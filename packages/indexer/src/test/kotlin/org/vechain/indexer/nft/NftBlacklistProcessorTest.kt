@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class NftBlacklistProcessorTest {
@@ -18,6 +19,7 @@ internal class NftBlacklistProcessorTest {
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
     @MockK lateinit var nftBlacklistRepository: NftBlacklistRepository
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var processor: NftBlacklistProcessor
 
@@ -29,6 +31,7 @@ internal class NftBlacklistProcessorTest {
                 nftBlacklistService = nftBlacklistService,
                 nftBlacklistArchiveService = nftBlacklistArchiveService,
                 repository = nftBlacklistRepository,
+                indexerVersionService = indexerVersionService,
             )
     }
 

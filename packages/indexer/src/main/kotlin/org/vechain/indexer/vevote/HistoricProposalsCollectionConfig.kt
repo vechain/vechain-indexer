@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames.HISTORIC_PROPOSALS
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -28,6 +29,7 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = HISTORIC_PROPOSALS,
             HistoricProposals::class.java,
             version,
         )

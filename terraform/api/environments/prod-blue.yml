@@ -87,6 +87,7 @@ enabled_nets:
         authority-nodes:            '1000'
         b3tr:                       '1000'
         historic-proposals:       '1000'
+      sync-log-interval: '100'
       sync-block-batch-size:
         nfts:                       '500'
         transfers:                  '500'
@@ -97,7 +98,7 @@ enabled_nets:
         historic-proposals:       '500'
       channel-batch-size:           '2'
       pruner:
-        interval: '3000'
+        interval: '60480'
         removal-chunk-size: '5000'
         record-limit: '1000000'
       blacklist:
@@ -223,16 +224,7 @@ enabled_nets:
         historic-proposals:       '22087000'
       start-round:
         b3tr-sustainable-actions:   '4'
-      sync-logger-interval:
-        nfts:                       '1000'
-        transactions:               '1000'
-        transfers:                  '1000'
-        history:                    '1000'
-        vevote:                     '1000'
-        stargate:                   '1000'
-        authority-nodes:            '1000'
-        b3tr:                       '1000'
-        historic-proposals:         '1000'
+      sync-log-interval: '100'
       sync-block-batch-size:
         nfts:                       '100'
         transfers:                  '100'
@@ -243,9 +235,9 @@ enabled_nets:
         historic-proposals:         '100'
       channel-batch-size:           '2'
       pruner:
-        interval: '30000'
+        interval: '60480'
         removal-chunk-size: '5000'
-        record-limit: '500000'
+        record-limit: '1000000'
       blacklist:
         contract-address:           '0x9405c18c384dd448f82c11136e188a147186ea3a'
       healthcheck:

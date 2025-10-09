@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -28,8 +29,9 @@ open class AmnEndorserCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            AmnEndorser::class.java,
-            version,
+            indexerName = IndexerNames.AUTHORITY_NODE,
+            clazz = AmnEndorser::class.java,
+            newVersion = version,
         )
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -37,6 +38,7 @@ open class UserAllTimeActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY,
                 UserAllTimeActionSummary::class.java,
                 version,
             )

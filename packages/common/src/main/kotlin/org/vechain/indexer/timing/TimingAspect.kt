@@ -16,11 +16,14 @@ class TimingAspect(
 ) {
     private val logger = LoggerFactory.getLogger(TimingAspect::class.java)
 
+    // TODO: Fix this. Excluding Indexer due to null pointer error on the logger
     @Around(
-        "execution(* org.vechain.indexer..*.processEvents(..)) || " +
+        "(" +
+            "execution(* org.vechain.indexer..*.processEvents(..)) || " +
             "execution(* org.vechain.indexer..*.save(..)) || " +
             "execution(* org.vechain.indexer..*.rollback(..)) || " +
-            "execution(* org.vechain.indexer..*.findRecordsToPrune(..))"
+            "execution(* org.vechain.indexer..*.findRecordsToPrune(..))" +
+            ") && !target(org.vechain.indexer.Indexer)"
     )
     fun logExecutionTime(joinPoint: ProceedingJoinPoint): Any? {
         val target = joinPoint.target

@@ -8,5 +8,5 @@ interface BaseIndexedRepository<T : IndexedDocument, ID> : CrudRepository<T, ID>
     @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
     fun getLatestRecord(): T?
 
-    fun deleteAllByBlockNumberBetween(start: Long, end: Long)
+    fun deleteAllByBlockNumberGreaterThanEqual(start: Long)
 }

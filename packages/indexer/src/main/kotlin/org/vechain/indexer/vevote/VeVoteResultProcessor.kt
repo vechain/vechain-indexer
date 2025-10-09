@@ -3,16 +3,25 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-results")
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
-    val repository: VeVoteProposalResultRepository,
+    repository: VeVoteProposalResultRepository,
+    indexerVersionService: IndexerVersionService,
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-) : BaseStatefulProcessor(repository = repository, archiveService = veVoteResultArchiveService) {
+) :
+    BaseStatefulProcessor(
+        repository = repository,
+        archiveService = veVoteResultArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.VEVOTE_RESULT,
+    ) {
 
     override fun process(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
