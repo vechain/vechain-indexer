@@ -5,8 +5,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.Indexer
+import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
@@ -37,17 +38,17 @@ open class NftConfig() {
         nftPruner: TargetedPruner<IndexedNft, NftArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.nfts}") syncLogInterval: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
-    ): Indexer =
+    ): BlockIndexer =
         IndexerFactory()
-            .name("NftIndexer")
+            .name(IndexerNames.NFT)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftPruner)
             .prunerInterval(prunerInterval)
             .startBlock(startBlock)
-            .syncLoggerInterval(syncLogInterval)
+            .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/nft")
             .abiEventNames(listOf("Transfer"))

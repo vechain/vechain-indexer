@@ -4,9 +4,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("authority-nodes")
 @Component
@@ -14,7 +16,8 @@ open class AmnProcessor(
     private val repository: AmnRepository,
     private val amnService: AmnService,
     private val thorService: ThorService,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) : BaseProcessor(repository, indexerVersionService, IndexerNames.AUTHORITY_NODE) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

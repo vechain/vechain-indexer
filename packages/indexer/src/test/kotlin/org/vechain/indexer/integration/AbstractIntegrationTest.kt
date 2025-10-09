@@ -27,10 +27,7 @@ abstract class AbstractIntegrationTest {
 
     fun waitForFullySynced() {
         for (i in 0..120) {
-            if (
-                allIndexers.all { it.status == Status.FULLY_SYNCED } &&
-                    allIndexers.all { it.status == Status.FULLY_SYNCED }
-            ) {
+            if (allIndexers.all { it.getStatus() == Status.FULLY_SYNCED }) {
                 return
             }
             Thread.sleep(500)

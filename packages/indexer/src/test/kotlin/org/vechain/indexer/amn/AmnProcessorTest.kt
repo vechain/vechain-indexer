@@ -10,9 +10,11 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class AmnProcessorTest {
@@ -21,6 +23,8 @@ class AmnProcessorTest {
     @MockK lateinit var amnService: AmnService
 
     @MockK lateinit var thorService: ThorService
+
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var processor: AmnProcessor
 
@@ -33,6 +37,7 @@ class AmnProcessorTest {
                 repository = amnRepository,
                 amnService = amnService,
                 thorService = thorService,
+                indexerVersionService = indexerVersionService,
             )
     }
 
@@ -52,6 +57,8 @@ class AmnProcessorTest {
         every { amnRepository.count() } returns 5L
         val superResult = AmnEndorser("0xabc", 50, blockTimestamp = 123L, blockId = "a")
         every { amnRepository.getLatestRecord() } returns superResult
+        every { indexerVersionService.getLastProcessedBlock(IndexerNames.AUTHORITY_NODE) } returns
+            null
 
         val result = processor.getLastSyncedBlock()
 

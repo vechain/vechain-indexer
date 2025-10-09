@@ -1,21 +1,35 @@
 package org.vechain.indexer
 
-import org.slf4j.LoggerFactory
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.version.IndexerVersionService
 
-abstract class BaseProcessor(private val repository: BaseIndexedRepository<*, *>) :
-    IndexerProcessor {
-
-    private val logger = LoggerFactory.getLogger(this::class.java)
+abstract class BaseProcessor(
+    private val repository: BaseIndexedRepository<*, *>,
+    private val indexerVersionService: IndexerVersionService,
+    private val indexerName: String,
+) : IndexerProcessor {
 
     override fun getLastSyncedBlock(): BlockIdentifier? {
-        repository.getLatestRecord()?.let {
-            return BlockIdentifier(number = it.blockNumber, id = it.blockId)
+        val latestRecords =
+            repository.getLatestRecord()?.let {
+                BlockIdentifier(number = it.blockNumber, id = it.blockId)
+            }
+        val lastProcessedBlock = indexerVersionService.getLastProcessedBlock(indexerName)
+
+        return when {
+            latestRecords != null && lastProcessedBlock != null -> {
+                if (latestRecords.number <= lastProcessedBlock.number) {
+                    lastProcessedBlock
+                } else {
+                    latestRecords
+                }
+            }
+            latestRecords != null -> latestRecords
+            lastProcessedBlock != null -> lastProcessedBlock
+            else -> null
         }
-        logger.info("No records found in repository, returning null")
-        return null
     }
 
     override fun rollback(blockNumber: Long) =
-        repository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
+        repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
 }

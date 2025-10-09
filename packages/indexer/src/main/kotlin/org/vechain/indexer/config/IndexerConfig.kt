@@ -7,8 +7,8 @@ import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-open class IndexerConfig(@Value("\${thor.url}") private val thorUrl: String) {
+open class IndexerConfig {
     @Bean
-    open fun thorClient(): ThorClient =
+    open fun thorClient(@Value("\${thor.url}") thorUrl: String): ThorClient =
         DefaultThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
 }

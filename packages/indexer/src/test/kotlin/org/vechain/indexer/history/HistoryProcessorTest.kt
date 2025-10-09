@@ -15,6 +15,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
+import org.vechain.indexer.version.IndexerVersionService
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
@@ -24,6 +25,8 @@ internal class HistoryProcessorTest {
 
     @MockK lateinit var historyService: HistoryService
 
+    @MockK lateinit var indexerVersionService: IndexerVersionService
+
     private lateinit var processor: HistoryProcessor
 
     @BeforeEach
@@ -31,7 +34,11 @@ internal class HistoryProcessorTest {
         MockKAnnotations.init(this)
 
         processor =
-            HistoryProcessor(repository = historyRepository, historyService = historyService)
+            HistoryProcessor(
+                repository = historyRepository,
+                historyService = historyService,
+                indexerVersionService = indexerVersionService,
+            )
     }
 
     @Test
