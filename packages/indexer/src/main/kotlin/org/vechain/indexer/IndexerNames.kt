@@ -25,4 +25,6 @@ object IndexerNames {
     const val VTHO_CLAIMED_BY_ACCOUNT = "VthoClaimedByAccountIndexer"
     const val VTHO_CLAIMED_BY_BLOCK = "VthoClaimedByBlockIndexer"
     const val X_ALLOC_RESULT = "XAllocResultIndexer"
+    const val VALIDATOR = "ValidatorIndexer"
+    const val DELEGATION = "DelegationIndexer"
 }
