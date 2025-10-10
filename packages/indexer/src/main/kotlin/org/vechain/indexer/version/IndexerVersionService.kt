@@ -100,11 +100,12 @@ open class IndexerVersionService(
      */
     private fun updateIndexerVersion(indexerName: String, collectionName: String, newVersion: Int) {
         val updated =
-            repo.findByIdOrNull(indexerName)?.copy(version = newVersion)
+            repo.findByIdOrNull(indexerName)?.copy(version = newVersion, lastProcessedBlock = null)
                 ?: IndexerVersion(
                     indexerName = indexerName,
                     collectionName = collectionName,
                     version = newVersion,
+                    lastProcessedBlock = null,
                 )
         repo.save(updated)
     }
