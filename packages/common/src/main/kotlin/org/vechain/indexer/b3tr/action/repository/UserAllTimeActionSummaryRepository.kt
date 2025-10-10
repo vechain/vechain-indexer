@@ -16,6 +16,10 @@ interface UserAllTimeActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserAllTimeActionSummary, String> {
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type
+    @Cacheable(
+        value = ["user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType"],
+        key = "#totalRewardAmount + '-' + #entityType",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityType(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
@@ -23,6 +27,10 @@ interface UserAllTimeActionSummaryRepository :
 
     // Count entries where actionsRewarded is greater than a specific value, filtering by entity
     // type
+    @Cacheable(
+        value = ["user_all_time_action_countByActionsRewardedGreaterThanAndEntityType"],
+        key = "#actionsRewarded + '-' + #entityType",
+    )
     fun countByActionsRewardedGreaterThanAndEntityType(
         actionsRewarded: Long,
         entityType: EntityType,

@@ -8,8 +8,6 @@ import org.springframework.cache.caffeine.CaffeineCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
-const val CACHE_USER_ALL_TIME_ACTION_COUNT_BY_ENTITY_TYPE = "user_all_time_action_countByEntityType"
-
 @Configuration
 @EnableCaching
 open class CacheConfig {
@@ -27,7 +25,22 @@ open class CacheConfig {
 
         // Configure individual caches with specific settings
         cacheManager.registerCustomCache(
-            CACHE_USER_ALL_TIME_ACTION_COUNT_BY_ENTITY_TYPE,
+            "user_all_time_action_countByEntityType",
+            Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.HOURS).build(),
+        )
+
+        cacheManager.registerCustomCache(
+            "user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType",
+            Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.HOURS).build(),
+        )
+
+        cacheManager.registerCustomCache(
+            "user_all_time_action_countByActionsRewardedGreaterThanAndEntityType",
+            Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.HOURS).build(),
+        )
+
+        cacheManager.registerCustomCache(
+            "app_all_time_action_countByAppId",
             Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.HOURS).build(),
         )
 
