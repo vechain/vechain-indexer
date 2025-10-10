@@ -106,7 +106,7 @@ enabled_nets:
         vevote-results: '2'
         authority-node-endorser: '2'
         stargate-vtho-claimed-by-block: '2'
-        stargate-vtho-generated-by-block": '2'
+        stargate-vtho-generated-by-block: '2'
         stargate-vtho-claimed-by-account: '2'
         stargate-nft-holders-by-block: '2'
         stargate-vet-staked-by-block: '2'
