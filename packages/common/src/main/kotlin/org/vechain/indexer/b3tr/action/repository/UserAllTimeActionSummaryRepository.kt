@@ -42,7 +42,5 @@ interface UserAllTimeActionSummaryRepository :
 
     fun findByEntity(entity: String): UserAllTimeActionSummary?
 
-    fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserAllTimeActionSummary>
-
     fun findAllByEntityType(type: EntityType, pageable: Pageable): Slice<UserAllTimeActionSummary>
 }

@@ -44,6 +44,51 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
+      cache:
+        max-size: '1000'
+        ttl-seconds: '300'
+        user-all-time-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-app-id:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        official-token-addresses:
+          max-size: '10'
+          ttl-seconds: '3600'
+        gm-nft-count:
+          max-size: '1000'
+          ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -190,6 +235,51 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
+      cache:
+        max-size: '1000'
+        ttl-seconds: '300'
+        user-all-time-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-app-id:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        official-token-addresses:
+          max-size: '10'
+          ttl-seconds: '3600'
+        gm-nft-count:
+          max-size: '1000'
+          ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
