@@ -28,4 +28,5 @@ object IndexerNames {
     const val X_ALLOC_RESULT = "XAllocResultIndexer"
     const val VALIDATOR = "ValidatorIndexer"
     const val DELEGATION = "DelegationIndexer"
+    const val VTHO_GENERATED_BY_BLOCK = "VthoGeneratedByBlockIndexer"
 }
