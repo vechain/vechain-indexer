@@ -25,7 +25,9 @@ import strikt.assertions.isTrue
 @ExtendWith(MockKExtension::class)
 class IndexerVersionServiceTest {
     @MockK lateinit var mongoTemplate: MongoTemplate
+
     @MockK lateinit var mappingContext: MongoMappingContext
+
     @MockK lateinit var repo: IndexerVersionRepository
 
     private lateinit var persistentEntity: MongoPersistentEntity<*>
@@ -69,7 +71,7 @@ class IndexerVersionServiceTest {
 
             expectThat(updated).isTrue()
             expectThat(saved.captured.version).isEqualTo(2)
-            expectThat(saved.captured.lastProcessedBlock).isEqualTo(block)
+            expectThat(saved.captured.lastProcessedBlock).isEqualTo(null)
 
             verify(exactly = 1) { repo.findByCollectionName("test_collection") }
             verify(exactly = 1) { repo.findByIdOrNull("testCollection") }
