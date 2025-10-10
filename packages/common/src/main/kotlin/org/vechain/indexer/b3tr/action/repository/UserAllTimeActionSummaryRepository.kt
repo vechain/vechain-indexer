@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.action.repository
 
 import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -28,6 +29,7 @@ interface UserAllTimeActionSummaryRepository :
     ): Long
 
     // Count entries where entity is equal to a specific value
+    @Cacheable(value = ["user_all_time_action_countByEntityType"], key = "#entityType")
     fun countByEntityType(entityType: EntityType): Long
 
     fun findByEntity(entity: String): UserAllTimeActionSummary?
