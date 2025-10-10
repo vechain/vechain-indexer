@@ -49,7 +49,7 @@ enabled_nets:
         ttl-seconds: '300'
         user-all-time-count-by-entity-type:
           max-size: '1000'
-          ttl-seconds: '300'
+          ttl-seconds: '1200'
         user-all-time-count-by-reward:
           max-size: '1000'
           ttl-seconds: '300'
@@ -240,7 +240,7 @@ enabled_nets:
         ttl-seconds: '300'
         user-all-time-count-by-entity-type:
           max-size: '1000'
-          ttl-seconds: '300'
+          ttl-seconds: '1200'
         user-all-time-count-by-reward:
           max-size: '1000'
           ttl-seconds: '300'
