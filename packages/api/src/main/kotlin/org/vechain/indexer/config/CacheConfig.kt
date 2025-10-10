@@ -44,6 +44,11 @@ open class CacheConfig {
             Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.HOURS).build(),
         )
 
+        cacheManager.registerCustomCache(
+            "official_token_addresses",
+            Caffeine.newBuilder().maximumSize(10).expireAfterWrite(1, TimeUnit.HOURS).build(),
+        )
+
         return cacheManager
     }
 }

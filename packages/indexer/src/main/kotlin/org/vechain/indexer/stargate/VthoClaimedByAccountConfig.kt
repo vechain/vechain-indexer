@@ -10,9 +10,9 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.contracts.Contants.VTHO_CONTRACT
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -71,7 +71,7 @@ open class VthoClaimedByAccountConfig {
                 listOf("STARGATE_CLAIM_REWARDS_BASE", "STARGATE_CLAIM_REWARDS_DELEGATE")
             )
             .businessEventContracts(
-                listOf(stargateNftContract, stargateDelegationContract, VTHO_CONTRACT)
+                listOf(stargateNftContract, stargateDelegationContract, VTHO_CONTRACT_ADDRESS)
             )
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
