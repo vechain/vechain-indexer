@@ -34,9 +34,9 @@ enabled_nets:
     image_version:                  latest
     thor_url:                       https://mainnet.vechain.org
     api:
-      cpu:                          512
-      memory:                       1024
-      max_capacity:                 4
+      cpu:                          1024
+      memory:                       2048
+      max_capacity:                 8
       spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
