@@ -394,6 +394,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
+      name = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vtho-generated-by-block
+    },
+    {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },

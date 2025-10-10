@@ -14,7 +14,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vtho-claimed-by-block")
+@Profile("stargate", "vtho-generated-by-block")
 @Configuration
 open class VthoGeneratedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
@@ -23,7 +23,7 @@ open class VthoGeneratedByBlockCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VthoGeneratedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate-vtho-claimed-by-block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vtho-generated-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
