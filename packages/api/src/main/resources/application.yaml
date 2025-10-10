@@ -56,47 +56,47 @@ thor:
 
 cache:
   max-size: ${CACHE_MAX_SIZE:1000}
-  ttl-seconds: ${CACHE_TTL_SECONDS:3600}
+  ttl-seconds: ${CACHE_TTL_SECONDS:300}
   caches:
     user_all_time_action_countByEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
     user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS:300}
     user_all_time_action_countByActionsRewardedGreaterThanAndEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS:300}
     app_all_time_action_countByAppId:
       max-size: ${CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_TTL_SECONDS:300}
     app_daily_action_countByAppIdAndDate:
       max-size: ${CACHE_APP_DAILY_COUNT_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_APP_DAILY_COUNT_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_APP_DAILY_COUNT_TTL_SECONDS:300}
     app_round_countByAppIdAndRoundId:
       max-size: ${CACHE_APP_ROUND_COUNT_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_APP_ROUND_COUNT_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_APP_ROUND_COUNT_TTL_SECONDS:300}
     user_daily_action_countByAppIdAndDate:
       max-size: ${CACHE_USER_DAILY_COUNT_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_DAILY_COUNT_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_DAILY_COUNT_TTL_SECONDS:300}
     user_daily_action_countByActionsRewardedGreaterThanAndEntityTypeAndDate:
       max-size: ${CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS:300}
     user_daily_action_countByEntityTypeAndDate:
       max-size: ${CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
     user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId:
       max-size: ${CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS:300}
     user_round_countByActionsRewardedGreaterThanAndEntityTypeAndRoundId:
       max-size: ${CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS:300}
     user_round_countByEntityTypeAndRoundId:
       max-size: ${CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
     official_token_addresses:
       max-size: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE:10}
       ttl-seconds: ${CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS:3600}
     gmNft_countByLevelAndOwnerNot:
       max-size: ${CACHE_GM_NFT_COUNT_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_GM_NFT_COUNT_TTL_SECONDS:3600}
+      ttl-seconds: ${CACHE_GM_NFT_COUNT_TTL_SECONDS:300}
