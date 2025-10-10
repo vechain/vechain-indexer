@@ -276,4 +276,35 @@ open class StargateController(private val stargateService: StargateService) {
     @CommonApiResponses
     open fun getTotalVthoGenerated(@RequestParam(required = false) blockNumber: Long?): BigInteger =
         stargateService.getTotalVthoGenerated(blockNumber)
+
+    @GetMapping("/total-vtho-generated/historic/{range}")
+    @Operation(
+        summary = "Get historic data for total VTHO generated",
+        description =
+            "This endpoint returns a time series of total VTHO claimed by all Stargate users.",
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "range",
+        schema =
+            Schema(
+                type = "string",
+                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
+            ),
+        description = "Time range preset to use for the query.",
+        required = true,
+        example = "1-day",
+    )
+    @CommonApiResponses
+    open fun getTotalVthoGenerated(
+        @ValidTimeRangePreset @PathVariable("range") rangeStr: String
+    ): List<TimeSeriesRecord<BigInteger>> {
+        val now = Instant.now()
+        val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
+
+        val after = range.computeAfterTimestamp(now)
+        val before = now.epochSecond
+
+        return stargateService.getTotalVthoGeneratedHistoric(after, before)
+    }
 }

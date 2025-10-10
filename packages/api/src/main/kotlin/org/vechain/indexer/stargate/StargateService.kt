@@ -88,6 +88,28 @@ open class StargateService(
         }
 
     /**
+     * Retrieves time series records of total VTHO generated between two timestamps. The time series
+     * is sparsely populated, so it may not contain consistent gaps between records.
+     *
+     * @param after The starting timestamp.
+     * @param before The ending timestamp.
+     * @return A list of TimeSeriesRecord containing the total VTHO generated at each block
+     *   timestamp.
+     */
+    open fun getTotalVthoGeneratedHistoric(
+        after: Long,
+        before: Long,
+    ): List<TimeSeriesRecord<BigInteger>> =
+        TimeSeriesUtils.getHistoricTimeSeries(
+            after,
+            before,
+            vthoGeneratedByBlockRepository::findByBlockTimestampBetween,
+            vthoGeneratedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
+        ) {
+            it.total
+        }
+
+    /**
      * Retrieves the total number of NFT holders in Stargate at a specific block number. If no block
      * number is provided, it retrieves the latest total number of NFT holders.
      *

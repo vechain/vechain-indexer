@@ -33,7 +33,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         block: Block,
         callResponses: List<InspectionResult>,
     ): VthoGeneratedByBlock? {
-        if (events.isEmpty() && callResponses.none { !it.hasAbiData() }) return null
+        if (events.isEmpty() && !callResponses[0].hasAbiData()) return null
 
         val latestRecord = repository.getLatestRecord()
         val lastPersistedBlockNumber = latestRecord?.blockNumber
@@ -57,6 +57,8 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
             runningTotalRewardsClaimed += value
         }
 
+        if (runningTotal == BigInteger.ZERO) return null
+
         return VthoGeneratedByBlock(
             blockId = block.id,
             blockNumber = block.number,
@@ -69,26 +71,27 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     open fun save(record: VthoGeneratedByBlock) {
         repository.save(record)
     }
-}
 
-/** Resolve the balance of VTHO from the first call response (if any). */
-fun getBalanceOf(responses: List<InspectionResult>): BigInteger {
-    if (responses.isEmpty() || !responses[0].hasAbiData()) {
-        return BigInteger.ZERO
+    /** Resolve the balance of VTHO from the first call response (if any). */
+    fun getBalanceOf(responses: List<InspectionResult>): BigInteger {
+        if (responses.isEmpty() || !responses[0].hasAbiData()) {
+            return BigInteger.ZERO
+        }
+        val decoded =
+            FunctionReturnDecoder.decode(
+                responses[0].data,
+                listOf(InputOutput("uint256", "balance", "uint256")),
+            )
+        return decoded["balance"] as BigInteger
     }
-    val decoded =
-        FunctionReturnDecoder.decode(
-            responses[0].data,
-            listOf(InputOutput("uint256", "balance", "uint256")),
-        )
-    return decoded["balance"] as BigInteger
-}
 
-/**
- * Helper that enforces presence of the required "value" param and throws with context if missing.
- */
-private fun IndexedEvent.requireValue(): BigInteger =
-    this.params.getAsBigInteger("value")
-        ?: throw IllegalStateException(
-            "Event for block $blockNumber (blockId=$blockId) is missing required 'value' parameter"
-        )
+    /**
+     * Helper that enforces presence of the required "value" param and throws with context if
+     * missing.
+     */
+    private fun IndexedEvent.requireValue(): BigInteger =
+        this.params.getAsBigInteger("value")
+            ?: throw IllegalStateException(
+                "Event for block $blockNumber (blockId=$blockId) is missing required 'value' parameter"
+            )
+}
