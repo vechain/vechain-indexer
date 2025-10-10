@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.action.repository
 
 import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -15,6 +16,10 @@ interface UserAllTimeActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserAllTimeActionSummary, String> {
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type
+    @Cacheable(
+        value = ["user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType"],
+        key = "#totalRewardAmount + '-' + #entityType",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityType(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
@@ -22,17 +27,20 @@ interface UserAllTimeActionSummaryRepository :
 
     // Count entries where actionsRewarded is greater than a specific value, filtering by entity
     // type
+    @Cacheable(
+        value = ["user_all_time_action_countByActionsRewardedGreaterThanAndEntityType"],
+        key = "#actionsRewarded + '-' + #entityType",
+    )
     fun countByActionsRewardedGreaterThanAndEntityType(
         actionsRewarded: Long,
         entityType: EntityType,
     ): Long
 
     // Count entries where entity is equal to a specific value
+    @Cacheable(value = ["user_all_time_action_countByEntityType"], key = "#entityType")
     fun countByEntityType(entityType: EntityType): Long
 
     fun findByEntity(entity: String): UserAllTimeActionSummary?
-
-    fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserAllTimeActionSummary>
 
     fun findAllByEntityType(type: EntityType, pageable: Pageable): Slice<UserAllTimeActionSummary>
 }

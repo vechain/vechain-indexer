@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.action.repository
 
 import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -23,24 +24,12 @@ interface UserRoundActionSummaryRepository :
 
     fun findByEntityAndRoundId(entity: String, roundId: Int): UserRoundActionSummary?
 
-    fun findAllByEntityAndRoundId(
-        entity: String,
-        roundId: Int,
-        pageable: Pageable,
-    ): Slice<UserRoundActionSummary>
-
-    fun findAllByEntityOrderByRoundIdDesc(entity: String): List<UserRoundActionSummary>
-
-    fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserRoundActionSummary>
-
-    fun findAllByRoundIdAndEntityType(
-        roundId: Int,
-        type: EntityType,
-        pageable: Pageable,
-    ): Slice<UserRoundActionSummary>
-
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type and round ID
+    @Cacheable(
+        value = ["user_round_countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId"],
+        key = "#totalRewardAmount + '-' + #entityType + '-' + #roundId",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndRoundId(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
@@ -49,11 +38,20 @@ interface UserRoundActionSummaryRepository :
 
     // Count entries where actionsRewarded is greater than a specific value, filtering by entity
     // type and round ID
+    @Cacheable(
+        value = ["user_round_countByActionsRewardedGreaterThanAndEntityTypeAndRoundId"],
+        key = "#actionsRewarded + '-' + #entityType + '-' + #roundId",
+    )
     fun countByActionsRewardedGreaterThanAndEntityTypeAndRoundId(
         actionsRewarded: Long,
         entityType: EntityType,
         roundId: Int,
     ): Long
 
+    // Count entries filtering by entity type and round ID
+    @Cacheable(
+        value = ["user_round_countByEntityTypeAndRoundId"],
+        key = "#entityType + '-' + #roundId",
+    )
     fun countByEntityTypeAndRoundId(entityType: EntityType, roundId: Int): Long
 }

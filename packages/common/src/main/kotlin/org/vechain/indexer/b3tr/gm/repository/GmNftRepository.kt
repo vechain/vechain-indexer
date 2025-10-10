@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.gm.repository
 
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.stereotype.Repository
@@ -12,6 +13,7 @@ import org.vechain.indexer.thor.Address
 @Profile("b3tr", "b3tr-gm-nft")
 @Repository
 interface GmNftRepository : BasePagingAndSortingIndexedRepository<GmNft, String> {
+    @Cacheable(value = ["gmNft_countByLevelAndOwnerNot"], key = "#level + '-' + #owner")
     fun countByLevelAndOwnerNot(level: GmLevelName, owner: String = Address.ZERO_ADDRESS): Long
 
     @Aggregation(

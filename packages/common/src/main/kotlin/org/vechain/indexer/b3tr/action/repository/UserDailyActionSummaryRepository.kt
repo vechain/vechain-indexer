@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.action.repository
 
 import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -22,20 +23,6 @@ interface UserDailyActionSummaryRepository :
         pageable: Pageable,
     ): Slice<UserDailyActionSummary>
 
-    fun findAllByEntityAndDateGreaterThanEqual(
-        entity: String,
-        startDate: String,
-        pageable: Pageable,
-    ): Slice<UserDailyActionSummary>
-
-    fun findAllByEntityAndDateLessThanEqual(
-        entity: String,
-        endDate: String,
-        pageable: Pageable,
-    ): Slice<UserDailyActionSummary>
-
-    fun findAllByEntity(entity: String, pageable: Pageable): Slice<UserDailyActionSummary>
-
     fun findAllByEntityTypeAndDate(
         entityType: EntityType,
         date: String,
@@ -44,17 +31,29 @@ interface UserDailyActionSummaryRepository :
 
     fun findByEntityAndDate(entity: String, date: String): UserDailyActionSummary?
 
+    @Cacheable(
+        value = ["user_daily_action_countByAppIdAndDate"],
+        key = "#totalRewardAmount + '-' + #entityType + '-' + #date",
+    )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
         date: String,
     ): Long
 
+    @Cacheable(
+        value = ["user_daily_action_countByActionsRewardedGreaterThanAndEntityTypeAndDate"],
+        key = "#actionsRewarded + '-' + #entityType + '-' + #date",
+    )
     fun countByActionsRewardedGreaterThanAndEntityTypeAndDate(
         actionsRewarded: Long,
         entityType: EntityType,
         date: String,
     ): Long
 
+    @Cacheable(
+        value = ["user_daily_action_countByEntityTypeAndDate"],
+        key = "#entityType + '-' + #date",
+    )
     fun countByEntityTypeAndDate(entityType: EntityType, date: String): Long
 }

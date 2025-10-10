@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -21,5 +22,6 @@ interface AppDailyActionSummaryRepository :
 
     fun findAppIdsByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
 
+    @Cacheable(value = ["app_daily_action_countByAppIdAndDate"], key = "#appId + '-' + #date")
     fun countByAppIdAndDate(appId: String, date: String): Long
 }

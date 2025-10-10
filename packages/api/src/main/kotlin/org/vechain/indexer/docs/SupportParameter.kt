@@ -3,6 +3,7 @@ package org.vechain.indexer.docs
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
+import org.springframework.core.annotation.AliasFor
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
@@ -12,6 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema
     description = "Filter by support.",
 )
 annotation class SupportParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
+    @get:AliasFor(annotation = Parameter::class, attribute = "required")
     val required: Boolean = false,
 )
