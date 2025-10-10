@@ -14,8 +14,8 @@ open class StargateService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
+    private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
 ) {
-
     /**
      * Retrieves the total VTHO claimed up to a specific block number. If no block number is
      * provided, it retrieves the latest total VTHO claimed.
@@ -46,6 +46,27 @@ open class StargateService(
             .orElse(BigInteger.ZERO)
 
     /**
+     * Retrieves the cumulative total of VTHO generated (claimed + balance) up to the given block.
+     *
+     * Behavior:
+     * - If [blockNumber] is provided, returns the latest total at or before that block.
+     * - If [blockNumber] is null, returns the total from the latest persisted record.
+     * - If no record is found, returns [BigInteger.ZERO].
+     *
+     * @param blockNumber the block number to query, or null to use the latest record
+     * @return the total VTHO generated as a [BigInteger]
+     */
+    open fun getTotalVthoGenerated(blockNumber: Long?): BigInteger {
+        val record =
+            if (blockNumber != null) {
+                vthoGeneratedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+            } else {
+                vthoGeneratedByBlockRepository.getLatestRecord()
+            }
+        return record?.total ?: BigInteger.ZERO
+    }
+
+    /**
      * Retrieves time series records of total VTHO claimed between two timestamps. The time series
      * is sparsely populated, so it may not contain consistent gaps between records.
      *
@@ -74,13 +95,12 @@ open class StargateService(
      * @return The total number of NFT holders as an instance of NftHoldersByBlock or null if no
      *   data is found.
      */
-    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlock? {
-        return if (blockNumber != null) {
+    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlock? =
+        if (blockNumber != null) {
             nftHoldersByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
         } else {
             nftHoldersByBlockRepository.getLatestRecord()
         }
-    }
 
     open fun getNftHoldersHistoric(
         after: Long,
@@ -103,13 +123,12 @@ open class StargateService(
      * @param blockNumber The block number to retrieve the total VET staked for.
      * @return The total VET staked as an instance of VetStakedByBlock or null if no data is found.
      */
-    open fun getTotalVetStaked(blockNumber: Long?): VetStakedByBlock? {
-        return if (blockNumber != null) {
+    open fun getTotalVetStaked(blockNumber: Long?): VetStakedByBlock? =
+        if (blockNumber != null) {
             vetStakedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
         } else {
             vetStakedByBlockRepository.getLatestRecord()
         }
-    }
 
     /**
      * Retrieves time series records of total VET staked between two timestamps. The time series is

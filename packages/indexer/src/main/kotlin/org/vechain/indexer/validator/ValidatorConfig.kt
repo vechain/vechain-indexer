@@ -41,7 +41,7 @@ open class ValidatorConfig {
         processor: ValidatorProcessor,
         service: ValidatorService,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.validator}") syncLogInterval: Long,
+        @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
