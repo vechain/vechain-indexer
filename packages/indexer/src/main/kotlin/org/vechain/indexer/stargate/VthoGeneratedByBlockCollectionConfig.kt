@@ -31,7 +31,7 @@ open class VthoGeneratedByBlockCollectionConfig(
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
             indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
-            VthoClaimedByBlock::class.java,
+            VthoGeneratedByBlock::class.java,
             version,
         )
 
