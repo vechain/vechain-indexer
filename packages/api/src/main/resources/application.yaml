@@ -60,7 +60,7 @@ cache:
   caches:
     user_all_time_action_countByEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE:1000}
-      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:300}
+      ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS:1200}
     user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType:
       max-size: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE:1000}
       ttl-seconds: ${CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS:300}
