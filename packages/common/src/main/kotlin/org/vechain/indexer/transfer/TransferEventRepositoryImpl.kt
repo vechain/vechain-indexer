@@ -22,47 +22,61 @@ open class TransferEventRepositoryImpl(private val mongoTemplate: MongoTemplate)
         pageable: Pageable,
     ): Slice<String> {
 
-        // Build the match criteria
-        val matchCriteria =
-            Criteria()
-                .and(EVENT_TYPE)
-                .`is`(TransferEventType.FUNGIBLE_TOKEN)
-                .orOperator(Criteria.where(TO).`is`(address), Criteria.where(FROM).`is`(address))
+        val notVthoMatchOperation =
+            Aggregation.match(Criteria.where(TOKEN_ADDRESS).ne(VTHO_CONTRACT_ADDRESS))
+        val eventTypeMatchOperation =
+            Aggregation.match(Criteria.where(EVENT_TYPE).`is`(TransferEventType.FUNGIBLE_TOKEN))
+        val addressMatchOperation =
+            Aggregation.match(
+                Criteria.where("")
+                    .orOperator(
+                        Criteria.where(TO).`is`(address),
+                        Criteria.where(FROM).`is`(address),
+                    )
+            )
+        val tokenWhitelistOperation =
+            Aggregation.match(Criteria.where(TOKEN_ADDRESS).`in`(tokenWhitelist))
 
-        // Handle tokenAddress filters: combine $ne and $in if whitelist is provided
+        val groupOperation =
+            Aggregation.group(TOKEN_ADDRESS)
+                .first(BLOCK_NUMBER)
+                .`as`(BLOCK_NUMBER)
+                .first(TX_ID)
+                .`as`(TX_ID)
+                .first(TRANSFER_EVENT_ID)
+                .`as`(TRANSFER_EVENT_ID_ALIAS)
+
+        // Constructing the basic operations list
+        val matchOperations =
+            mutableListOf(notVthoMatchOperation, eventTypeMatchOperation, addressMatchOperation)
+
+        // Only add tokenWhitelistOperation if tokenWhitelist is not empty
         if (tokenWhitelist.isNotEmpty()) {
-            // Filter by whitelist (which implicitly excludes VTHO if not in the list)
-            matchCriteria.and(TOKEN_ADDRESS).`in`(tokenWhitelist)
-        } else {
-            // No whitelist, just exclude VTHO
-            matchCriteria.and(TOKEN_ADDRESS).ne(VTHO_CONTRACT_ADDRESS)
+            matchOperations.add(tokenWhitelistOperation)
         }
 
-        val sortDirection = pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction
-
-        // Optimized pipeline: sort BEFORE grouping to use $first/$last meaningfully
+        // find distinct fungible token contract addresses
         val fungibleTokensContractsAggregation =
             Aggregation.newAggregation(
-                // Single combined match operation
-                Aggregation.match(matchCriteria),
-                // Sort BEFORE grouping so $first gives us the earliest/latest based on sort
-                // direction
-                Aggregation.sort(Sort.by(sortDirection, BLOCK_NUMBER, TX_ID, TRANSFER_EVENT_ID)),
-                // Group by token address and keep the first occurrence (respects sort order)
-                Aggregation.group(TOKEN_ADDRESS)
-                    .first(BLOCK_NUMBER)
-                    .`as`(BLOCK_NUMBER)
-                    .first(TX_ID)
-                    .`as`(TX_ID)
-                    .first(TRANSFER_EVENT_ID)
-                    .`as`(TRANSFER_EVENT_ID_ALIAS),
-                // Sort again by the grouped fields for consistent pagination
-                Aggregation.sort(
-                    Sort.by(sortDirection, BLOCK_NUMBER, TX_ID, TRANSFER_EVENT_ID_ALIAS)
-                ),
-                Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
-                // Retrieve an additional element to detect remaining pages
-                Aggregation.limit(pageable.pageSize.toLong() + 1),
+                matchOperations +
+                    listOf(
+                        groupOperation,
+                        // Re-sorting is required here because the group stage does not preserve
+                        // order, and
+                        // post-group aliases should be used
+                        Aggregation.sort(
+                            Sort.by(
+                                pageable.sort.getOrderFor(BLOCK_NUMBER)!!.direction,
+                                BLOCK_NUMBER,
+                                TX_ID,
+                                TRANSFER_EVENT_ID_ALIAS,
+                            )
+                        ),
+                        Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                        // We retrieve an additional element on purpose to detect remaining elements
+                        // in the next page
+                        Aggregation.limit(pageable.pageSize.toLong() + 1),
+                    )
             )
 
         val distinctFungibleTokensContracts =
@@ -74,7 +88,6 @@ open class TransferEventRepositoryImpl(private val mongoTemplate: MongoTemplate)
                 )
                 .mappedResults
                 .map { it["_id"] as String }
-
         return SliceBuilder.buildResultsSlice(distinctFungibleTokensContracts, pageable)
     }
 
