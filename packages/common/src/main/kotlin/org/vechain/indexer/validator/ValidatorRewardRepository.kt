@@ -1,6 +1,8 @@
 package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.TimeSeriesRepo
@@ -28,15 +30,9 @@ interface ValidatorRewardRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorReward?
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'validator': ?0 } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
-    fun findLatestByValidator(validator: String): ValidatorReward?
+    fun findByValidator(validator: String, pageable: Pageable): Slice<ValidatorReward>
+
+    fun findAllByOrderByBlockNumberDesc(pageable: Pageable): Slice<ValidatorReward>
 
     @Aggregation(
         pipeline =
@@ -49,7 +45,8 @@ interface ValidatorRewardRepository :
     fun findLatestByValidatorBeforeOrAtBlockNumber(
         validator: String,
         blockNumber: Long,
-    ): ValidatorReward?
+        pageable: Pageable,
+    ): Slice<ValidatorReward>
 
     @Aggregation(
         pipeline =
@@ -76,4 +73,6 @@ interface ValidatorRewardRepository :
         validator: String,
         blockTimestamp: Long,
     ): ValidatorReward?
+
+    fun findByBlockNumber(blockNumber: Long, pageable: Pageable): Slice<ValidatorReward>
 }
