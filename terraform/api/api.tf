@@ -454,6 +454,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.validator
     },
     {
+      name = "VERSION_VALIDATOR_REWARDS"
+      value = each.value.indexer.version.validator-rewards
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },

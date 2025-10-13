@@ -23,14 +23,14 @@ open class ValidatorRewardCollectionConfig(
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, ValidatorReward::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate-vtho-generated-by-block}") private val version: Int = 1
+    @Value("\${indexer.version.validator-rewards}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
+            indexerName = IndexerNames.VALIDATOR_REWARD,
             ValidatorReward::class.java,
             version,
         )
@@ -40,8 +40,19 @@ open class ValidatorRewardCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
-                "blockTimestamp_1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC)
+                // For global queries (all validators, sorted by timestamp)
+                "blockTimestamp_-1" to
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                // For per-validator queries sorted by timestamp
+                "validator_1_blockTimestamp_-1" to
+                    Index()
+                        .on(ValidatorReward::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                // For per-validator queries sorted by blockNumber
+                "validator_1_blockNumber_-1" to
+                    Index()
+                        .on(ValidatorReward::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }
