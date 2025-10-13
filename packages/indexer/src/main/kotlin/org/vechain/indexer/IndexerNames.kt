@@ -29,4 +29,5 @@ object IndexerNames {
     const val VALIDATOR = "ValidatorIndexer"
     const val DELEGATION = "DelegationIndexer"
     const val VTHO_GENERATED_BY_BLOCK = "VthoGeneratedByBlockIndexer"
+    const val VALIDATOR_REWARD = "ValidatorRewardIndexer"
 }
