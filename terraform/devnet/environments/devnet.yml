@@ -74,7 +74,7 @@ enabled_nets:
         b3tr-sustainable-actions:   '0'
         b3tr-proposal:              '0'
         historic-proposals:         '0'
-        validator:                  '0'
+        validator:                  '5'
       start-round:
         b3tr-sustainable-actions:   '0'
       sync-log-interval: '100'

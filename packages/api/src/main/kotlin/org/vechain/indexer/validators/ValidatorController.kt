@@ -218,11 +218,11 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
-    @GetMapping("/total-rewards")
+    @GetMapping("/block-rewards")
     @Operation(
-        summary = "Get total VTHO rewards",
+        summary = "Get VTHO rewards for a validator for a given block",
         description =
-            "Returns the cumulative VTHO rewards generated up to the specified block number or for the latest block. " +
+            "Returns the block VTHO rewards generated for the specified block number or up to the latest block. " +
                 "You can optionally filter by a specific validator.",
     )
     @Parameter(
@@ -230,8 +230,7 @@ open class ValidatorController(
         name = "blockNumber",
         schema = Schema(type = "long"),
         description =
-            "Optional block number. If provided, returns the total VTHO rewards as of this block. " +
-                "If omitted, returns the latest available total.",
+            "Optional block number. If provided, returns the total VTHO rewards as of this block. ",
         required = false,
         example = "12345678",
     )
@@ -240,18 +239,23 @@ open class ValidatorController(
         name = "validator",
         schema = Schema(type = "string"),
         description =
-            "Optional validator address. If provided, returns the VTHO rewards for this validator. " +
-                "If omitted, returns the rewards for specified block",
+            "Optional validator address. If provided, returns the block VTHO rewards for this validator. ",
         required = false,
         example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
     @CommonApiResponses
-    open fun getTotalRewards(
+    open fun getValidatorRewards(
         @RequestParam(required = false) blockNumber: Long?,
         @ValidAddress @RequestParam(required = false) validator: Address?,
-    ): ValidatorReward? = service.getValidatorRewards(validator, blockNumber)
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<ValidatorReward> {
+        val pageable = toPageable(page, size, direction, ValidatorReward::blockNumber.name)
+        return service.getValidatorRewards(validator, blockNumber, pageable)
+    }
 
-    @GetMapping("/total-rewards/historic/{range}")
+    @GetMapping("/block-rewards/historic/{range}")
     @Operation(
         summary = "Get historic VTHO rewards",
         description =
@@ -275,15 +279,14 @@ open class ValidatorController(
         name = "validator",
         schema = Schema(type = "string"),
         description =
-            "Optional validator address. If provided, returns historic rewards for this validator only. " +
-                "If omitted, returns block rewards for all validators.",
-        required = false,
+            "Validator address. If provided, returns historic rewards for this validator only.",
+        required = true,
         example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
     @CommonApiResponses
-    open fun getTotalTotalRewardsHistoric(
+    open fun getBlockRewardsHistoric(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
-        @ValidAddress @RequestParam(required = false) validator: Address?,
+        @ValidAddress @RequestParam(required = true) validator: Address,
     ): List<TimeSeriesRecord<RewardValues>> {
         val now = Instant.now()
         val range = TimeRangePreset.fromPathValue(rangeStr)
