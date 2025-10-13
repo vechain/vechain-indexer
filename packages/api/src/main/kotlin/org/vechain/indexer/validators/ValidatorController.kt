@@ -8,20 +8,28 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import java.time.Instant
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
+import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.timeseries.TimeRangePreset
+import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
+import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTimeRangePreset
+import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
 @Tag(name = "Validator", description = "Query validator documents")
@@ -31,6 +39,7 @@ import org.vechain.indexer.validation.ValidPageSize
 open class ValidatorController(
     private val validatorRepository: ValidatorRepository,
     private val delegationRepository: DelegationRepository,
+    private val service: ValidatorService,
 ) {
     @GetMapping
     @Operation(
@@ -207,5 +216,81 @@ open class ValidatorController(
             }
 
         return paginatedResponse(results)
+    }
+
+    @GetMapping("/total-rewards")
+    @Operation(
+        summary = "Get total VTHO rewards",
+        description =
+            "Returns the cumulative VTHO rewards generated up to the specified block number or for the latest block. " +
+                "You can optionally filter by a specific validator.",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "blockNumber",
+        schema = Schema(type = "long"),
+        description =
+            "Optional block number. If provided, returns the total VTHO rewards as of this block. " +
+                "If omitted, returns the latest available total.",
+        required = false,
+        example = "12345678",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "validator",
+        schema = Schema(type = "string"),
+        description =
+            "Optional validator address. If provided, returns the VTHO rewards for this validator. " +
+                "If omitted, returns the rewards for specified block",
+        required = false,
+        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
+    )
+    @CommonApiResponses
+    open fun getTotalRewards(
+        @RequestParam(required = false) blockNumber: Long?,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+    ): ValidatorReward? = service.getValidatorRewards(validator, blockNumber)
+
+    @GetMapping("/total-rewards/historic/{range}")
+    @Operation(
+        summary = "Get historic VTHO rewards",
+        description =
+            "Returns a time series of  VTHO rewards over the specified time range. " +
+                "You can optionally filter by validator to see only that validator’s rewards.",
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "range",
+        schema =
+            Schema(
+                type = "string",
+                allowableValues = ["1-hour", "1-day", "1-week", "1-month", "1-year", "all"],
+            ),
+        description = "Time range preset to query (e.g. last 1-day, last 1-week, etc.).",
+        required = true,
+        example = "1-day",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "validator",
+        schema = Schema(type = "string"),
+        description =
+            "Optional validator address. If provided, returns historic rewards for this validator only. " +
+                "If omitted, returns block rewards for all validators.",
+        required = false,
+        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
+    )
+    @CommonApiResponses
+    open fun getTotalTotalRewardsHistoric(
+        @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+    ): List<TimeSeriesRecord<RewardValues>> {
+        val now = Instant.now()
+        val range = TimeRangePreset.fromPathValue(rangeStr)
+
+        val after = range.computeAfterTimestamp(now)
+        val before = now.epochSecond
+
+        return service.getValidatorRewardsHistoric(after, before, validator)
     }
 }

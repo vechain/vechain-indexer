@@ -123,6 +123,7 @@ enabled_nets:
         b3tr-gm-nft-level-overview: '2'
         historic-proposals: '2'
         validator: '2'
+        validator-rewards: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'

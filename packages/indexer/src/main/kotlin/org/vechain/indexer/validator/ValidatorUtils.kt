@@ -16,6 +16,7 @@ import org.vechain.indexer.utils.NumberUtils
 object ValidatorUtils {
     private val SCALE = BigDecimal("1000000000000") // 1e12
     private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
+    private val VTHO_ADDRESS = "0x0000000000000000000000000000456e65726779"
 
     /** Get the latest information and stats for each validator */
     fun getLatestValidatorInfo(
@@ -481,6 +482,28 @@ object ValidatorUtils {
 
             else -> false
         }
+
+    fun buildVTHOTotalsClauses(): List<Clause> =
+        listOf(
+            ContractUtils.createClause(
+                VTHO_ADDRESS,
+                FunctionDefinition(
+                    name = "totalSupply",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("vthoTotalSupply", "uint256")),
+                    stateMutability = "view",
+                ),
+            ),
+            ContractUtils.createClause(
+                VTHO_ADDRESS,
+                FunctionDefinition(
+                    name = "totalBurned",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("vthoBurned", "uint256")),
+                    stateMutability = "view",
+                ),
+            ),
+        )
 
     fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
         if (snapshot.startBlock == 0L) return 0L
