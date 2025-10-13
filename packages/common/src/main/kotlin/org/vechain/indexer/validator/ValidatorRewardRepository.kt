@@ -37,4 +37,43 @@ interface ValidatorRewardRepository :
             ]
     )
     fun findLatestByValidator(validator: String): ValidatorReward?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'blockNumber': { '\$lte': ?1 } } }",
+                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    fun findLatestByValidatorBeforeOrAtBlockNumber(
+        validator: String,
+        blockNumber: Long,
+    ): ValidatorReward?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'blockTimestamp': { '\$gte': ?1, '\$lte': ?2 } } }",
+                "{ '\$sort': { 'blockTimestamp': 1 } }",
+            ]
+    )
+    fun findByValidatorAndBlockTimestampBetween(
+        validator: String,
+        after: Long,
+        before: Long,
+    ): List<ValidatorReward>
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'blockTimestamp': { '\$lte': ?1 } } }",
+                "{ '\$sort': { 'blockTimestamp': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    fun findLatestByValidatorBeforeOrAtBlockTimestamp(
+        validator: String,
+        blockTimestamp: Long,
+    ): ValidatorReward?
 }
