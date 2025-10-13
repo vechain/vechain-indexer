@@ -176,6 +176,7 @@ enabled_nets:
         b3tr-x-alloc-result: '2'
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '2'
+        block-usage: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -356,6 +357,7 @@ enabled_nets:
         b3tr-x-alloc-result: '2'
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '2'
+        block-usage: '1'
         historic-proposals: '1'
       business-event:
         substitutions:
