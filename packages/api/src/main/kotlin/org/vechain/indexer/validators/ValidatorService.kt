@@ -9,36 +9,36 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.TimeSeriesUtils
 import org.vechain.indexer.validator.RewardValues
-import org.vechain.indexer.validator.ValidatorReward
-import org.vechain.indexer.validator.ValidatorRewardRepository
+import org.vechain.indexer.validator.ValidatorBlock
+import org.vechain.indexer.validator.ValidatorBlockRepository
 
 @Profile("validator")
 @Service
-open class ValidatorService(private val validatorRewardRepository: ValidatorRewardRepository) {
-    open fun getValidatorRewards(
+open class ValidatorService(private val validatorBlockRepository: ValidatorBlockRepository) {
+    open fun getValidatorBlocks(
         validator: Address?,
         blockNumber: Long?,
         pageable: Pageable,
-    ): PaginatedResponse<ValidatorReward> {
+    ): PaginatedResponse<ValidatorBlock> {
         val result =
             if (blockNumber != null && validator != null) {
-                validatorRewardRepository.findLatestByValidatorBeforeOrAtBlockNumber(
+                validatorBlockRepository.findLatestByValidatorBeforeOrAtBlockNumber(
                     validator.value.lowercase(),
                     blockNumber,
                     pageable,
                 )
             } else if (validator != null) {
-                validatorRewardRepository.findByValidator(validator.value.lowercase(), pageable)
+                validatorBlockRepository.findByValidator(validator.value.lowercase(), pageable)
             } else if (blockNumber != null) {
-                validatorRewardRepository.findByBlockNumber(blockNumber, pageable)
+                validatorBlockRepository.findByBlockNumber(blockNumber, pageable)
             } else {
-                validatorRewardRepository.findAllByOrderByBlockNumberDesc(pageable)
+                validatorBlockRepository.findAllByOrderByBlockNumberDesc(pageable)
             }
 
         return paginatedResponse(result)
     }
 
-    open fun getValidatorRewardsHistoric(
+    open fun getValidatorBlocksHistoric(
         after: Long,
         before: Long,
         validator: Address,
@@ -48,14 +48,14 @@ open class ValidatorService(private val validatorRewardRepository: ValidatorRewa
             after,
             before,
             { a, b ->
-                validatorRewardRepository.findByValidatorAndBlockTimestampBetween(
+                validatorBlockRepository.findByValidatorAndBlockTimestampBetween(
                     normalizeValidator,
                     a,
                     b,
                 )
             },
             { ts ->
-                validatorRewardRepository.findLatestByValidatorBeforeOrAtBlockTimestamp(
+                validatorBlockRepository.findLatestByValidatorBeforeOrAtBlockTimestamp(
                     normalizeValidator,
                     ts,
                 )
