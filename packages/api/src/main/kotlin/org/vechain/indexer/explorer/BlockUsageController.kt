@@ -35,17 +35,18 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
             - Range ≤ 6,307,200 blocks (~2 years): Returns weekly values (~104 data points)
             - Range > 6,307,200 blocks: Returns monthly values
 
-            Values are represented as a monotonic cumulative counter which means the values increase over time. This is
-            a semantic used my Grafana for example. It requires some processing on the client side to convert to value
-            for a given block. For example to get the gasUsed at block n you would need to do:
-            ```
-            gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)
-            ```
+            Values are represented as a monotonic cumulative counter** which means the values increase over time. This is
+            a semantic used by Grafana for example. It requires some processing on the client side to convert to a value
+            for a given block.
+
+            For example to get the gasUsed at block n you would need to do:
+
+                gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)
+
             In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the
-            block range by doing. If the first record in the returned data is at block n and the next record is at block n + k:
-            ```
-            averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
-            ```
+            block range. If the first record in the returned data is at block n and the next record is at block n + k:
+
+                averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
         """,
     )
     @Parameter(
