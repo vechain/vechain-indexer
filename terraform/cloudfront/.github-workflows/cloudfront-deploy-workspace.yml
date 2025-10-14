@@ -1,0 +1,453 @@
+name: 'CloudFront Deploy - Workspace Based'
+
+on:
+  push:
+    branches:
+      - cloudfront-changes-01
+    paths:
+      - 'terraform/cloudfront-workspace/**'
+  pull_request:
+    branches:
+      - cloudfront-changes-01
+    paths:
+      - 'terraform/cloudfront-workspace/**'
+  workflow_dispatch:
+    inputs:
+      workspace:
+        description: 'Terraform workspace to deploy'
+        required: true
+        default: 'shared'
+        type: choice
+        options:
+          - shared
+          - staging
+          - prod
+      action:
+        description: 'Terraform action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  TF_VERSION: '1.5.7'
+  AWS_REGION: 'eu-west-1'
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read
+
+jobs:
+  detect-changes:
+    name: 'Detect Workspace Changes'
+    runs-on: ubuntu-latest
+    outputs:
+      shared-changed: ${{ steps.changes.outputs.shared-changed }}
+      staging-changed: ${{ steps.changes.outputs.staging-changed }}
+      prod-changed: ${{ steps.changes.outputs.prod-changed }}
+      deploy-shared: ${{ steps.changes.outputs.deploy-shared }}
+      deploy-staging: ${{ steps.changes.outputs.deploy-staging }}
+      deploy-prod: ${{ steps.changes.outputs.deploy-prod }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          
+      - name: Detect Changes and Set Deployment Strategy
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual workflow dispatch
+            case "${{ inputs.workspace }}" in
+              shared)
+                echo "shared-changed=true" >> $GITHUB_OUTPUT
+                echo "deploy-shared=true" >> $GITHUB_OUTPUT
+                echo "deploy-staging=false" >> $GITHUB_OUTPUT
+                echo "deploy-prod=false" >> $GITHUB_OUTPUT
+                ;;
+              staging)
+                echo "staging-changed=true" >> $GITHUB_OUTPUT
+                echo "deploy-shared=false" >> $GITHUB_OUTPUT
+                echo "deploy-staging=true" >> $GITHUB_OUTPUT
+                echo "deploy-prod=false" >> $GITHUB_OUTPUT
+                ;;
+              prod)
+                echo "prod-changed=true" >> $GITHUB_OUTPUT
+                echo "deploy-shared=false" >> $GITHUB_OUTPUT
+                echo "deploy-staging=false" >> $GITHUB_OUTPUT
+                echo "deploy-prod=true" >> $GITHUB_OUTPUT
+                ;;
+            esac
+          else
+            # Automatic detection based on file changes
+            if git diff --name-only HEAD^ HEAD | grep -E "(terraform/cloudfront-workspace/shared\.tf|terraform/cloudfront-workspace/environments/shared\.yml)" > /dev/null; then
+              echo "shared-changed=true" >> $GITHUB_OUTPUT
+              echo "deploy-shared=true" >> $GITHUB_OUTPUT
+              echo "deploy-staging=true" >> $GITHUB_OUTPUT  # Staging depends on shared
+              echo "deploy-prod=true" >> $GITHUB_OUTPUT     # Prod depends on shared
+            else
+              echo "shared-changed=false" >> $GITHUB_OUTPUT
+              echo "deploy-shared=false" >> $GITHUB_OUTPUT
+            fi
+            
+            if git diff --name-only HEAD^ HEAD | grep -E "(terraform/cloudfront-workspace/cloudfront\.tf|terraform/cloudfront-workspace/environments/staging\.yml)" > /dev/null; then
+              echo "staging-changed=true" >> $GITHUB_OUTPUT
+              if [ "${{ steps.changes.outputs.deploy-staging }}" != "true" ]; then
+                echo "deploy-staging=true" >> $GITHUB_OUTPUT
+              fi
+              echo "deploy-prod=true" >> $GITHUB_OUTPUT     # Prod depends on staging for CD
+            else
+              echo "staging-changed=false" >> $GITHUB_OUTPUT
+              if [ "${{ steps.changes.outputs.deploy-staging }}" != "true" ]; then
+                echo "deploy-staging=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+            
+            if git diff --name-only HEAD^ HEAD | grep -E "(terraform/cloudfront-workspace/cloudfront\.tf|terraform/cloudfront-workspace/environments/prod\.yml)" > /dev/null; then
+              echo "prod-changed=true" >> $GITHUB_OUTPUT
+              if [ "${{ steps.changes.outputs.deploy-prod }}" != "true" ]; then
+                echo "deploy-prod=true" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "prod-changed=false" >> $GITHUB_OUTPUT
+              if [ "${{ steps.changes.outputs.deploy-prod }}" != "true" ]; then
+                echo "deploy-prod=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          fi
+
+  deploy-shared:
+    name: 'Deploy Shared Resources'
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.deploy-shared == 'true'
+    
+    environment: 
+      name: shared
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront-workspace
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Create/Select Shared Workspace
+        run: |
+          terraform workspace new shared 2>/dev/null || terraform workspace select shared
+          echo "Selected workspace: $(terraform workspace show)"
+        
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -out=shared.tfplan
+          terraform show -no-color shared.tfplan
+        
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/cloudfront-changes-01' && github.event_name == 'push' || inputs.action == 'apply'
+        run: terraform apply -auto-approve shared.tfplan
+        
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### Terraform Shared Infrastructure (Workspace: shared)
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            
+            <details><summary>Show Plan</summary>
+            
+            \`\`\`terraform
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+            
+            </details>
+            
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  deploy-staging:
+    name: 'Deploy Staging Environment'
+    runs-on: ubuntu-latest
+    needs: [detect-changes, deploy-shared]
+    if: |
+      always() && 
+      needs.detect-changes.outputs.deploy-staging == 'true' &&
+      (needs.deploy-shared.result == 'success' || needs.deploy-shared.result == 'skipped')
+    
+    environment: 
+      name: staging
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront-workspace
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Create/Select Staging Workspace
+        run: |
+          terraform workspace new staging 2>/dev/null || terraform workspace select staging
+          echo "Selected workspace: $(terraform workspace show)"
+        
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -out=staging.tfplan
+          terraform show -no-color staging.tfplan
+        
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/cloudfront-changes-01' && github.event_name == 'push' || inputs.action == 'apply'
+        run: terraform apply -auto-approve staging.tfplan
+
+  deploy-prod-plan:
+    name: 'Production Plan'
+    runs-on: ubuntu-latest
+    needs: [detect-changes, deploy-staging]
+    if: |
+      always() && 
+      needs.detect-changes.outputs.deploy-prod == 'true' &&
+      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront-workspace
+        
+    outputs:
+      plan-exists: ${{ steps.plan.outputs.plan-exists }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Create/Select Production Workspace
+        run: |
+          terraform workspace new prod 2>/dev/null || terraform workspace select prod
+          echo "Selected workspace: $(terraform workspace show)"
+        
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color -out=prod.tfplan
+          terraform show -no-color prod.tfplan
+          echo "plan-exists=true" >> $GITHUB_OUTPUT
+        
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-prod-workspace
+          path: terraform/cloudfront-workspace/prod.tfplan
+          retention-days: 7
+
+  promote-mainnet:
+    name: 'Promote Mainnet: Staging → Primary'
+    needs: [deploy-prod-plan]
+    runs-on: ubuntu-latest
+    if: needs.deploy-prod-plan.outputs.plan-exists == 'true'
+    
+    environment: 
+      name: prod-mainnet-cloudfront-promotion-approval
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront-workspace
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Select Production Workspace
+        run: |
+          terraform workspace select prod
+          echo "Selected workspace: $(terraform workspace show)"
+        
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-prod-workspace
+          path: terraform/cloudfront-workspace/
+        
+      - name: Terraform Apply
+        run: terraform apply -auto-approve prod.tfplan
+        
+      - name: Read Mainnet Distribution IDs
+        id: distribution_ids
+        run: |
+          set -e
+          PRIMARY_ID=$(terraform output -raw primary_mainnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          STAGING_ID=$(terraform output -raw staging_mainnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          
+          if [ -z "$PRIMARY_ID" ] || [ -z "$STAGING_ID" ]; then
+            echo "❌ Expected outputs not found. Available outputs:"
+            terraform output
+            exit 1
+          fi
+          
+          echo "PRIMARY_MAINNET_ID=$PRIMARY_ID" >> $GITHUB_ENV
+          echo "STAGING_MAINNET_ID=$STAGING_ID" >> $GITHUB_ENV
+          echo "✅ Primary Mainnet: $PRIMARY_ID"
+          echo "✅ Staging Mainnet: $STAGING_ID"
+      
+      - name: Get ETags and Promote
+        run: |
+          set -e
+          echo "🔍 Fetching ETags..."
+          P_ETAG=$(aws cloudfront get-distribution --id "$PRIMARY_MAINNET_ID" --query 'ETag' --output text)
+          S_ETAG=$(aws cloudfront get-distribution --id "$STAGING_MAINNET_ID" --query 'ETag' --output text)
+          
+          echo "🚀 Promoting mainnet staging to primary..."
+          aws cloudfront update-distribution-with-staging-config \
+            --id "$PRIMARY_MAINNET_ID" \
+            --staging-distribution-id "$STAGING_MAINNET_ID" \
+            --if-match "$P_ETAG,$S_ETAG"
+          
+          echo "✅ Mainnet promotion completed!"
+
+  promote-testnet:
+    name: 'Promote Testnet: Staging → Primary'
+    needs: [deploy-prod-plan]
+    runs-on: ubuntu-latest
+    if: needs.deploy-prod-plan.outputs.plan-exists == 'true'
+    
+    environment: 
+      name: prod-testnet-cloudfront-promotion-approval
+      
+    defaults:
+      run:
+        working-directory: terraform/cloudfront-workspace
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+          
+      - name: Terraform Init
+        run: terraform init
+        
+      - name: Select Production Workspace
+        run: |
+          terraform workspace select prod
+          echo "Selected workspace: $(terraform workspace show)"
+        
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-prod-workspace
+          path: terraform/cloudfront-workspace/
+        
+      - name: Terraform Apply
+        run: terraform apply -auto-approve prod.tfplan
+        
+      - name: Read Testnet Distribution IDs
+        id: distribution_ids
+        run: |
+          set -e
+          PRIMARY_ID=$(terraform output -raw primary_testnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          STAGING_ID=$(terraform output -raw staging_testnet_cloudfront_distribution_id 2>/dev/null || echo "")
+          
+          if [ -z "$PRIMARY_ID" ] || [ -z "$STAGING_ID" ]; then
+            echo "❌ Expected outputs not found. Available outputs:"
+            terraform output
+            exit 1
+          fi
+          
+          echo "PRIMARY_TESTNET_ID=$PRIMARY_ID" >> $GITHUB_ENV
+          echo "STAGING_TESTNET_ID=$STAGING_ID" >> $GITHUB_ENV
+          echo "✅ Primary Testnet: $PRIMARY_ID"
+          echo "✅ Staging Testnet: $STAGING_ID"
+      
+      - name: Get ETags and Promote
+        run: |
+          set -e
+          echo "🔍 Fetching ETags..."
+          P_ETAG=$(aws cloudfront get-distribution --id "$PRIMARY_TESTNET_ID" --query 'ETag' --output text)
+          S_ETAG=$(aws cloudfront get-distribution --id "$STAGING_TESTNET_ID" --query 'ETag' --output text)
+          
+          echo "🚀 Promoting testnet staging to primary..."
+          aws cloudfront update-distribution-with-staging-config \
+            --id "$PRIMARY_TESTNET_ID" \
+            --staging-distribution-id "$STAGING_TESTNET_ID" \
+            --if-match "$P_ETAG,$S_ETAG"
+          
+          echo "✅ Testnet promotion completed!"
+
