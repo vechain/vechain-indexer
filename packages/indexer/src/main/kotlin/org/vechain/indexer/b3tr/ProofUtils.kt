@@ -72,7 +72,7 @@ object ProofUtils {
     }
 
     private fun isEmptyProof(proof: ProofV2?): Boolean {
-        if (proof == null) return false
+        if (proof == null) return true
         return proof.image == null &&
             proof.link == null &&
             proof.text == null &&
