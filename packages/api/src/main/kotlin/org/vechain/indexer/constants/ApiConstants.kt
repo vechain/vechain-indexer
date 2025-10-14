@@ -16,6 +16,7 @@ const val STARGATE_PATH = "$API_PATH/stargate"
 const val B3TR_PATH = "$API_PATH/b3tr"
 const val GM_NFT_PATH = "$B3TR_PATH/galaxy-members"
 const val X_ALLOC_PATH = "$B3TR_PATH/xallocations"
+const val EXPLORER_PATH = "$API_PATH/explorer"
 
 // PAGINATION DEFAULTS
 const val DEFAULT_PAGE_NUMBER = 0

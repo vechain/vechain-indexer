@@ -168,6 +168,7 @@ enabled_nets:
         b3tr-x-alloc-result: '3'
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '3'
+        block-usage: '1'
         historic-proposals:          '3'
         validator: '3'
       business-event:

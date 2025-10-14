@@ -562,6 +562,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
+      name = "VERSION_BLOCK_USAGE"
+      value = each.value.indexer.version.block-usage
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },

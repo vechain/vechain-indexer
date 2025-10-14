@@ -12,8 +12,8 @@ logging:
     ROOT: INFO
     org:
       vechain: ${APP_LOG_LEVEL:INFO}
-#      springframework:
-#        data: DEBUG
+      springframework:
+        data: INFO
 
 timing:
   warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}
