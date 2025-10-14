@@ -34,25 +34,70 @@ enabled_nets:
     image_version:                  latest
     thor_url:                       https://mainnet.vechain.org
     api:
-      cpu:                          512
-      memory:                       1024
-      max_capacity:                 4
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
+      cpu:                          1024
+      memory:                       2048
+      max_capacity:                 8
+      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr,explorer
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
+      cache:
+        max-size: '1000'
+        ttl-seconds: '300'
+        user-all-time-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '1200'
+        user-all-time-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-app-id:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        official-token-addresses:
+          max-size: '10'
+          ttl-seconds: '3600'
+        gm-nft-count:
+          max-size: '1000'
+          ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 8192
-      memory: 16384
+      cpu: 4096
+      memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr
+      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr,explorer
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -125,6 +170,7 @@ enabled_nets:
         b3tr-gm-nft-level-overview: '2'
         validator: '1'
         validator-rewards: '1'
+        block-usage: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -180,22 +226,67 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
+      cache:
+        max-size: '1000'
+        ttl-seconds: '300'
+        user-all-time-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '1200'
+        user-all-time-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-app-id:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        official-token-addresses:
+          max-size: '10'
+          ttl-seconds: '3600'
+        gm-nft-count:
+          max-size: '1000'
+          ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 4096
-      memory: 8192
+      cpu: 2048
+      memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -247,7 +338,7 @@ enabled_nets:
         history:                    '8'
         nft-blacklist:              '6'
         vevote-comments:            '1'
-        vevote-results:             '7'
+        vevote-results:             '8'
         authority-node-endorser:    '3'
         stargate-vtho-claimed-by-block: '4'
         stargate-vtho-generated-by-block": '1'
@@ -265,6 +356,7 @@ enabled_nets:
         b3tr-x-alloc-result: '2'
         b3tr-gm-nft: '3'
         b3tr-gm-nft-level-overview: '2'
+        block-usage: '1'
         historic-proposals: '1'
         validator: '1'
         validator-rewards: '1'

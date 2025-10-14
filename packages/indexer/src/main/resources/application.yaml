@@ -144,6 +144,7 @@ indexer:
     b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:1}
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
+    block-usage: ${VERSION_BLOCK_USAGE:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
   healthcheck:

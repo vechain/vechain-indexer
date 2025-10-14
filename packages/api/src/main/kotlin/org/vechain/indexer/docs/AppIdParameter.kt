@@ -3,6 +3,7 @@ package org.vechain.indexer.docs
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
+import org.springframework.core.annotation.AliasFor
 import org.vechain.indexer.b3tr.AppId
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
@@ -13,6 +14,8 @@ import org.vechain.indexer.b3tr.AppId
     schema = Schema(type = "string", pattern = AppId.REGEX),
 )
 annotation class AppIdParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "required")
     val required: Boolean = false,
+    @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
 )

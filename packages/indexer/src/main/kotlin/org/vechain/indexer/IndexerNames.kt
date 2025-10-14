@@ -6,6 +6,7 @@ object IndexerNames {
     const val APP_DAILY_ACTION_SUMMARY = "AppDailyActionSummaryIndexer"
     const val APP_ROUND_ACTION_SUMMARY = "AppRoundActionSummaryIndexer"
     const val AUTHORITY_NODE = "AuthorityNodeIndexer"
+    const val BLOCK_USAGE = "BlockUsageIndexer"
     const val GM_NFT = "GmNftIndexer"
     const val HISTORIC_PROPOSALS = "HistoricProposalsIndexer"
     const val HISTORIC_PROPOSALS_VOTE = "HistoricProposalsVoteIndexer"
