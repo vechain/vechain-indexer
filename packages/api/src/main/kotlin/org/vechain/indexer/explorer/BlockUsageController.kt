@@ -35,7 +35,7 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
             - Range ≤ 6,307,200 blocks (~2 years): Returns weekly values (~104 data points)
             - Range > 6,307,200 blocks: Returns monthly values
 
-            Values are represented as a monotonic cumulative counter** which means the values increase over time. This is
+            Values are represented as a monotonic cumulative counter which means the values increase over time. This is
             a semantic used by Grafana for example. It requires some processing on the client side to convert to a value
             for a given block.
 
