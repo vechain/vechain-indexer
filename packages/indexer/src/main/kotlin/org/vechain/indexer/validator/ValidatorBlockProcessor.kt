@@ -9,25 +9,25 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("validator", "validator-reward")
 @Component
-open class ValidatorRewardProcessor(
-    private val service: ValidatorRewardService,
-    repository: ValidatorRewardRepository,
+open class ValidatorBlockProcessor(
+    private val service: ValidatorBlockService,
+    repository: ValidatorBlockRepository,
     indexerVersionService: IndexerVersionService,
 ) :
     BaseProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.VALIDATOR_REWARD,
+        indexerName = IndexerNames.VALIDATOR_BLOCK,
     ) {
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        val newRecord = service.processBlock(entry.block, entry.callResults())
+        val newRecords = service.processBlock(entry.block, entry.callResults())
 
-        if (newRecord != null) {
-            service.save(newRecord)
+        if (newRecords.isNotEmpty()) {
+            service.save(newRecords)
         }
     }
 }

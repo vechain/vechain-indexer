@@ -8,8 +8,8 @@ import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.TimeSeriesRepo
 
 @Profile("validator", "validator-reward")
-interface ValidatorRewardRepository :
-    BaseIndexedRepository<ValidatorReward, Long>, TimeSeriesRepo<ValidatorReward> {
+interface ValidatorBlockRepository :
+    BaseIndexedRepository<ValidatorBlock, Long>, TimeSeriesRepo<ValidatorBlock> {
     @Aggregation(
         pipeline =
             [
@@ -18,7 +18,7 @@ interface ValidatorRewardRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): ValidatorReward?
+    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): ValidatorBlock?
 
     @Aggregation(
         pipeline =
@@ -28,11 +28,11 @@ interface ValidatorRewardRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorReward?
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorBlock?
 
-    fun findByValidator(validator: String, pageable: Pageable): Slice<ValidatorReward>
+    fun findByValidator(validator: String, pageable: Pageable): Slice<ValidatorBlock>
 
-    fun findAllByOrderByBlockNumberDesc(pageable: Pageable): Slice<ValidatorReward>
+    fun findAllByOrderByBlockNumberDesc(pageable: Pageable): Slice<ValidatorBlock>
 
     @Aggregation(
         pipeline =
@@ -46,7 +46,7 @@ interface ValidatorRewardRepository :
         validator: String,
         blockNumber: Long,
         pageable: Pageable,
-    ): Slice<ValidatorReward>
+    ): Slice<ValidatorBlock>
 
     @Aggregation(
         pipeline =
@@ -59,7 +59,7 @@ interface ValidatorRewardRepository :
         validator: String,
         after: Long,
         before: Long,
-    ): List<ValidatorReward>
+    ): List<ValidatorBlock>
 
     @Aggregation(
         pipeline =
@@ -72,7 +72,7 @@ interface ValidatorRewardRepository :
     fun findLatestByValidatorBeforeOrAtBlockTimestamp(
         validator: String,
         blockTimestamp: Long,
-    ): ValidatorReward?
+    ): ValidatorBlock?
 
-    fun findByBlockNumber(blockNumber: Long, pageable: Pageable): Slice<ValidatorReward>
+    fun findByBlockNumber(blockNumber: Long, pageable: Pageable): Slice<ValidatorBlock>
 }

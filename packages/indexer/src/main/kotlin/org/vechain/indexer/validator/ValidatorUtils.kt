@@ -6,6 +6,7 @@ import java.math.RoundingMode
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.model.Clause
@@ -18,6 +19,8 @@ object ValidatorUtils {
     private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
     private val VTHO_ADDRESS = "0x0000000000000000000000000000456e65726779"
 
+    private var totalVTHOIssued: BigInteger = BigInteger.ZERO
+
     /** Get the latest information and stats for each validator */
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
@@ -29,11 +32,16 @@ object ValidatorUtils {
     ): List<Validator> {
         val decodedInfo = decodeResponseInfo(responses, validatorsAbi)
 
+        if (decodedInfo == null) {
+            return emptyList()
+        }
+
         return unpackValidators(
             decodedInfo.decodedValidators,
             existingDocs,
             decodedInfo.totalWeight,
             decodedInfo.vthoTotalSupply,
+            decodedInfo.vthoBurned,
             decodedInfo.vetPriceUsd,
             decodedInfo.vthoPriceUsd,
             blockId,
@@ -48,6 +56,7 @@ object ValidatorUtils {
         existingDocs: Map<String, Validator>,
         totalWeight: BigInteger,
         totalVTHOSupply: BigInteger,
+        totalVTHOBurned: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
         blockId: String,
@@ -90,13 +99,17 @@ object ValidatorUtils {
                 )
             }
 
+        val totalVTHOIssuedAtBlock = totalVTHOSupply.add(totalVTHOBurned)
+        val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
+        totalVTHOIssued = totalVTHOIssuedAtBlock
+
         val active =
             rows.mapNotNull { row ->
                 buildValidator(
                     row,
                     existingDocs[row.id],
                     totalWeight,
-                    totalVTHOSupply,
+                    vthoIssuedBlock,
                     vetPriceUsd,
                     vthoPriceUsd,
                     blockId,
@@ -128,7 +141,7 @@ object ValidatorUtils {
         row: DecodedValidatorRow,
         existingDoc: Validator?,
         totalWeight: BigInteger,
-        totalVTHOSupply: BigInteger,
+        vthoIssued: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
         blockId: String,
@@ -153,7 +166,7 @@ object ValidatorUtils {
         val delegatorTvl = delegatorVET * vetPrice
         val totalTvl = validatorTvl + delegatorTvl
 
-        val vthoSupply = NumberUtils.toVET(totalVTHOSupply)
+        val vthoIssued = NumberUtils.toVET(vthoIssued)
 
         val blocksOffline =
             calculateOfflineBlocks(
@@ -166,7 +179,6 @@ object ValidatorUtils {
         val percentageOffline =
             calculatePercentageOffline(blocksOffline, row.startBlock.toLong(), blockNumber)
 
-        val prevTotalVTHOSupply = existingDoc?.totalVTHOSupply?.bigDecimalValue() ?: vthoSupply
         val blockProbability = NumberUtils.toProbabilityOf(row.validatorLockedWeight, totalWeight)
         val blocksPerYear = blocksPerYear(blockProbability)
 
@@ -176,8 +188,7 @@ object ValidatorUtils {
                 delegatorTvl,
                 row.delegatorsStake > BigInteger.ZERO,
                 blocksPerYear,
-                vthoSupply,
-                prevTotalVTHOSupply,
+                vthoIssued,
                 vthoPrice,
             )
 
@@ -212,7 +223,6 @@ object ValidatorUtils {
             validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
             tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
             avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
-            totalVTHOSupply = NumberUtils.toSafeDecimal128(vthoSupply),
             percentageOffline = NumberUtils.toSafeDecimal128(percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
             cycleEndBlock =
@@ -245,7 +255,11 @@ object ValidatorUtils {
     fun decodeResponseInfo(
         responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
-    ): DecodedValidatorInfo {
+    ): DecodedValidatorInfo? {
+        if (responses.size < 2 || !responses[0].hasAbiData() || !responses[1].hasAbiData()) {
+            return null
+        }
+
         val decodedValidators =
             FunctionReturnDecoder.decode(
                 responses[0].data,
@@ -258,6 +272,7 @@ object ValidatorUtils {
         val vetPriceUsd = decodeSingle(responses, validatorsAbi, 3, "getVetPriceUsd", "vetPriceUsd")
         val vthoPriceUsd =
             decodeSingle(responses, validatorsAbi, 4, "getVthoPriceUsd", "vthoPriceUsd")
+        val vthoBurned = decodeSingle(responses, validatorsAbi, 5, "totalBurned", "totalBurned")
 
         return DecodedValidatorInfo(
             decodedValidators,
@@ -265,6 +280,7 @@ object ValidatorUtils {
             vthoTotalSupply,
             vetPriceUsd,
             vthoPriceUsd,
+            vthoBurned,
         )
     }
 
@@ -337,13 +353,10 @@ object ValidatorUtils {
         delegatorTvl: BigDecimal,
         hasDelegations: Boolean,
         blocksPerYear: BigDecimal,
-        totalVTHOSupply: BigDecimal,
-        prevTotalVTHOSupply: BigDecimal,
+        vthoIssued: BigDecimal,
         vthoPrice: BigDecimal,
     ): Triple<BigDecimal, BigDecimal, BigDecimal> {
-        // Issuance in USD
-        val issuance = totalVTHOSupply.subtract(prevTotalVTHOSupply).max(BigDecimal.ZERO)
-        val issuanceUsd = issuance.multiply(vthoPrice)
+        val issuanceUsd = vthoIssued.multiply(vthoPrice)
         val annualIssuanceUsd = blocksPerYear.multiply(issuanceUsd)
 
         val totalTvl = validatorTvl.add(delegatorTvl)
@@ -463,6 +476,12 @@ object ValidatorUtils {
                     outputs = listOf(FunctionParameter("vthoPriceUsd", "uint128")),
                     stateMutability = "view",
                 ),
+                FunctionDefinition(
+                    name = "totalBurned",
+                    inputs = emptyList(),
+                    outputs = listOf(FunctionParameter("totalBurned", "uint256")),
+                    stateMutability = "view",
+                ),
             )
 
         return abiFunctions.map { fn -> ContractUtils.createClause(getAllValidatorInfoSC, fn) }
@@ -482,6 +501,14 @@ object ValidatorUtils {
 
             else -> false
         }
+
+    fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
+        if (snapshot.startBlock == 0L) return 0L
+        val offset = currentBlock - snapshot.startBlock
+        val positionInCycle = offset % snapshot.stakingPeriodLength
+        val currentCycleStart = currentBlock - positionInCycle
+        return currentCycleStart + snapshot.stakingPeriodLength
+    }
 
     fun buildVTHOTotalsClauses(): List<Clause> =
         listOf(
@@ -505,12 +532,27 @@ object ValidatorUtils {
             ),
         )
 
-    fun computeNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
-        if (snapshot.startBlock == 0L) return 0L
-        val offset = currentBlock - snapshot.startBlock
-        val positionInCycle = offset % snapshot.stakingPeriodLength
-        val currentCycleStart = currentBlock - positionInCycle
-        return currentCycleStart + snapshot.stakingPeriodLength
+    /** Resolve total VTHO issued = totalSupply + burned */
+    fun decodeVTHOIssued(responses: List<InspectionResult>): BigInteger {
+        if (responses.size < 2 || !responses[0].hasAbiData() || !responses[1].hasAbiData()) {
+            return BigInteger.ZERO
+        }
+
+        val decodedTotalSupply =
+            FunctionReturnDecoder.decode(
+                responses[0].data,
+                listOf(InputOutput("uint256", "vthoTotalSupply", "uint256")),
+            )
+        val decodedBurned =
+            FunctionReturnDecoder.decode(
+                responses[1].data,
+                listOf(InputOutput("uint256", "vthoBurned", "uint256")),
+            )
+
+        val totalSupply = decodedTotalSupply["vthoTotalSupply"] as? BigInteger ?: BigInteger.ZERO
+        val burned = decodedBurned["vthoBurned"] as? BigInteger ?: BigInteger.ZERO
+
+        return totalSupply.add(burned)
     }
 
     fun InspectionResult.hasAbiData(): Boolean =
@@ -522,6 +564,7 @@ object ValidatorUtils {
         val vthoTotalSupply: BigInteger,
         val vetPriceUsd: BigInteger,
         val vthoPriceUsd: BigInteger,
+        val vthoBurned: BigInteger,
     )
 
     data class DecodedValidatorRow(

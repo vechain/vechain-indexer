@@ -454,7 +454,7 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.validator
     },
     {
-      name = "VERSION_VALIDATOR_REWARDS"
+      name = "VERSION_VALIDATOR_BLOCKS"
       value = each.value.indexer.version.validator-rewards
     },
     {

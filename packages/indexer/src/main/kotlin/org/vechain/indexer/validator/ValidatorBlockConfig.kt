@@ -12,24 +12,26 @@ import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
 @Profile("validator", "validator-reward")
-open class ValidatorRewardConfig {
+open class ValidatorBlockConfig {
     @Bean
-    open fun validatorRewardIndexer(
+    open fun validatorBlockIndexer(
         thorClient: ThorClient,
-        processor: ValidatorRewardProcessor,
+        processor: ValidatorBlockProcessor,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         bEProperties: BusinessEventProperties,
+        @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
+        getAllValidatorsAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.VALIDATOR_REWARD)
+            .name(IndexerNames.VALIDATOR_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(ValidatorUtils.buildVTHOTotalsClauses())
+            .callDataClauses(ValidatorUtils.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .build()
 }

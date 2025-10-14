@@ -16,11 +16,11 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("validator", "validator-reward")
 @Configuration
-open class ValidatorRewardCollectionConfig(
+open class ValidatorBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, ValidatorReward::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, ValidatorBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.validator-rewards}") private val version: Int = 1
@@ -30,8 +30,8 @@ open class ValidatorRewardCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VALIDATOR_REWARD,
-            ValidatorReward::class.java,
+            indexerName = IndexerNames.VALIDATOR_BLOCK,
+            ValidatorBlock::class.java,
             version,
         )
 
@@ -46,12 +46,12 @@ open class ValidatorRewardCollectionConfig(
                 // For per-validator queries sorted by timestamp
                 "validator_1_blockTimestamp_-1" to
                     Index()
-                        .on(ValidatorReward::validator.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
                         .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
                 // For per-validator queries sorted by blockNumber
                 "validator_1_blockNumber_-1" to
                     Index()
-                        .on(ValidatorReward::validator.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
                         .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
             )
         )

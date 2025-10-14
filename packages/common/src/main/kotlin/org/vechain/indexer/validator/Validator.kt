@@ -45,7 +45,6 @@ data class Validator(
     val blocksPerYear: Decimal128? = null,
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
-    @JsonIgnore val totalVTHOSupply: Decimal128,
     @JsonIgnore override val version: Int,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
