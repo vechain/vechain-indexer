@@ -30,12 +30,22 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
 
             The API automatically determines the appropriate data granularity based on the size of the block range:
             - Range ≤ 2,160 blocks (~6 hours): Returns all blocks (~2.2k data points)
-            - Range ≤ 259,200 blocks (~1 month): Returns hourly aggregates (~720 data points)
-            - Range ≤ 1,555,200 blocks (~6 months): Returns daily aggregates (~180 data points)
-            - Range ≤ 6,307,200 blocks (~2 years): Returns weekly aggregates (~104 data points)
-            - Range > 6,307,200 blocks: Returns monthly aggregates
+            - Range ≤ 259,200 blocks (~1 month): Returns hourly values (~720 data points)
+            - Range ≤ 1,555,200 blocks (~6 months): Returns daily values (~180 data points)
+            - Range ≤ 6,307,200 blocks (~2 years): Returns weekly values (~104 data points)
+            - Range > 6,307,200 blocks: Returns monthly values
 
-            This ensures optimal performance and reasonable data point counts for visualization.
+            Values are represented as a monotonic cumulative counter which means the values increase over time. This is
+            a semantic used my Grafana for example. It requires some processing on the client side to convert to value
+            for a given block. For example to get the gasUsed at block n you would need to do:
+            ```
+            gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)
+            ```
+            In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the
+            block range by doing. If the first record in the returned data is at block n and the next record is at block n + k:
+            ```
+            averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
+            ```
         """,
     )
     @Parameter(
