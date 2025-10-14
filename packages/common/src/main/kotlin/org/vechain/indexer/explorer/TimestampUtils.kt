@@ -20,7 +20,7 @@ object TimestampUtils {
 
         // Check each step in between previous and current timestamp
         var stepTimestamp = previousTimestamp + SLOT_STEP
-        while (stepTimestamp < currentTimestamp) {
+        while (stepTimestamp <= currentTimestamp) {
             if (stepTimestamp % multiple == 0L) {
                 return true
             }

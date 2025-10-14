@@ -40,24 +40,18 @@ open class BlockUsageCollectionConfig(
 
         ensureIndexes(
             listOf(
-                // Index for findByBlockNumberBetweenAndIsHourlyTrueOrderByBlockNumberAsc
-                "isHourly_1_blockNumber_1" to
-                    Index()
-                        .on("isHourly", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.ASC),
-                // Index for findByBlockNumberBetweenAndIsDailyTrueOrderByBlockNumberAsc
-                "isDaily_1_blockNumber_1" to
-                    Index().on("isDaily", Sort.Direction.ASC).on("blockNumber", Sort.Direction.ASC),
-                // Index for findByBlockNumberBetweenAndIsWeeklyTrueOrderByBlockNumberAsc
-                "isWeekly_1_blockNumber_1" to
-                    Index()
-                        .on("isWeekly", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.ASC),
-                // Index for findByBlockNumberBetweenAndIsMonthlyTrueOrderByBlockNumberAsc
-                "isMonthly_1_blockNumber_1" to
-                    Index()
-                        .on("isMonthly", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.ASC),
+                // Index for findHourlyInBlockRange - filter by isHourly, then range by _id
+                "isHourly_1__id_1" to
+                    Index().on("isHourly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
+                // Index for findDailyInBlockRange - filter by isDaily, then range by _id
+                "isDaily_1__id_1" to
+                    Index().on("isDaily", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
+                // Index for findWeeklyInBlockRange - filter by isWeekly, then range by _id
+                "isWeekly_1__id_1" to
+                    Index().on("isWeekly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
+                // Index for findMonthlyInBlockRange - filter by isMonthly, then range by _id
+                "isMonthly_1__id_1" to
+                    Index().on("isMonthly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
             )
         )
     }
