@@ -15,6 +15,7 @@ open class StargateService(
     private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
+    private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
 ) {
     /**
      * Retrieves the total VTHO claimed up to a specific block number. If no block number is
@@ -150,6 +151,21 @@ open class StargateService(
             vetStakedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
         } else {
             vetStakedByBlockRepository.getLatestRecord()
+        }
+
+    /**
+     * Retrieves the total VET delegated in Stargate at a specific block number. If no block number
+     * is provided, it retrieves the latest total VET delegated.
+     *
+     * @param blockNumber The block number to retrieve the total VET delegated for.
+     * @return The total VET delegated as an instance of VetDelegatedByBlock or null if no data is
+     *   found.
+     */
+    open fun getTotalVetDelegated(blockNumber: Long?): VetDelegatedByBlock? =
+        if (blockNumber != null) {
+            vetDelegatedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+        } else {
+            vetDelegatedByBlockRepository.getLatestRecord()
         }
 
     /**

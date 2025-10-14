@@ -642,6 +642,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
+      name = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vet-delegated-by-block
+    },
+    {
       name = "VERSION_HISTORIC_PROPOSALS"
       value = each.value.indexer.version.historic-proposals
     },

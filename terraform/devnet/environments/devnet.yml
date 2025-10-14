@@ -157,6 +157,7 @@ enabled_nets:
         stargate_vet_staked_by_account: '3'
         stargate-nft-holders-by-block: '3'
         stargate-vet-staked-by-block: '3'
+        stargate-vet-delegated-by-block: '1'
         b3tr-proposal-comments: '3'
         b3tr-proposal-results: '3'
         b3tr-user-all-time-action-summary: '3'
