@@ -80,10 +80,10 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
             cumulativeBaseFeePerGas = parseBaseFeePerGas(block.baseFeePerGas),
             cumulativeNumTransactions = block.transactions.size.toBigInteger(),
             cumulativeNumClauses = calculateTotalClauses(block),
-            isHourly = calculateTimeBoundary(block.timestamp - 10L, block.timestamp, ::isHourly),
-            isDaily = calculateTimeBoundary(block.timestamp - 10L, block.timestamp, ::isDaily),
-            isWeekly = calculateTimeBoundary(block.timestamp - 10L, block.timestamp, ::isWeekly),
-            isMonthly = calculateTimeBoundary(block.timestamp - 10L, block.timestamp, ::isMonthly),
+            isHourly = calculateTimeBoundary(maxOf(0L, block.timestamp - 10L), block.timestamp, ::isHourly),
+            isDaily = calculateTimeBoundary(maxOf(0L, block.timestamp - 10L), block.timestamp, ::isDaily),
+            isWeekly = calculateTimeBoundary(maxOf(0L, block.timestamp - 10L), block.timestamp, ::isWeekly),
+            isMonthly = calculateTimeBoundary(maxOf(0L, block.timestamp - 10L), block.timestamp, ::isMonthly),
         )
     }
 
