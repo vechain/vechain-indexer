@@ -243,16 +243,24 @@ open class ValidatorController(
         required = false,
         example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "status",
+        schema = Schema(implementation = BlockStatus::class),
+        description = "Filter by block status - either VALIDATED or MISSED.",
+        required = false,
+    )
     @CommonApiResponses
     open fun getValidatorBlocks(
         @RequestParam(required = false) blockNumber: Long?,
         @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) status: BlockStatus?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ValidatorBlock> {
         val pageable = toPageable(page, size, direction, ValidatorBlock::blockNumber.name)
-        return service.getValidatorBlocks(validator, blockNumber, pageable)
+        return service.getValidatorBlocks(validator, status, blockNumber, pageable)
     }
 
     @GetMapping("/block-rewards/historic/{range}")

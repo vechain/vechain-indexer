@@ -1,8 +1,6 @@
 package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.TimeSeriesRepo
@@ -30,33 +28,16 @@ interface ValidatorBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorBlock?
 
-    fun findByValidator(validator: String, pageable: Pageable): Slice<ValidatorBlock>
-
-    fun findAllByOrderByBlockNumberDesc(pageable: Pageable): Slice<ValidatorBlock>
-
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'validator': ?0, 'blockNumber': { '\$lte': ?1 } } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
-    fun findLatestByValidatorBeforeOrAtBlockNumber(
-        validator: String,
-        blockNumber: Long,
-        pageable: Pageable,
-    ): Slice<ValidatorBlock>
-
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'validator': ?0, 'blockTimestamp': { '\$gte': ?1, '\$lte': ?2 } } }",
+                "{ '\$match': { 'validator': ?0, 'status': ?1, 'blockTimestamp': { '\$gte': ?2, '\$lte': ?3 } } }",
                 "{ '\$sort': { 'blockTimestamp': 1 } }",
             ]
     )
-    fun findByValidatorAndBlockTimestampBetween(
+    fun findByValidatorAndStatusAndBlockTimestampBetween(
         validator: String,
+        status: BlockStatus,
         after: Long,
         before: Long,
     ): List<ValidatorBlock>
@@ -64,15 +45,14 @@ interface ValidatorBlockRepository :
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'validator': ?0, 'blockTimestamp': { '\$lte': ?1 } } }",
+                "{ '\$match': { 'validator': ?0,  'status': ?1, 'blockTimestamp': { '\$lte': ?2 }, } }",
                 "{ '\$sort': { 'blockTimestamp': -1 } }",
                 "{ '\$limit': 1 }",
             ]
     )
-    fun findLatestByValidatorBeforeOrAtBlockTimestamp(
+    fun findLatestByValidatorAndStatusBeforeOrAtBlockTimestamp(
         validator: String,
+        status: BlockStatus,
         blockTimestamp: Long,
     ): ValidatorBlock?
-
-    fun findByBlockNumber(blockNumber: Long, pageable: Pageable): Slice<ValidatorBlock>
 }
