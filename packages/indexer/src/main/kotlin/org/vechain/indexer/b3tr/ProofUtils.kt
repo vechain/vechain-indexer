@@ -80,7 +80,7 @@ object ProofUtils {
     }
 
     private fun isEmptyImpact(impact: Impact?): Boolean {
-        if (impact == null) return false
+        if (impact == null) return true
         return impact.carbon == null &&
             impact.water == null &&
             impact.energy == null &&
