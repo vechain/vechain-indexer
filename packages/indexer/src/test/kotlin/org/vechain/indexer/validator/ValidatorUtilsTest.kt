@@ -4,7 +4,6 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
 import org.assertj.core.api.Assertions.assertThat
-import org.bson.types.Decimal128
 import org.junit.jupiter.api.Test
 import strikt.assertions.isEqualTo
 
@@ -38,6 +37,7 @@ class ValidatorUtilsTest {
                 existingDocs = emptyMap(),
                 totalWeight = BigInteger.valueOf(100),
                 totalVTHOSupply = BigInteger.valueOf(1_000_000_000_000),
+                totalVTHOBurned = BigInteger.valueOf(1_000_000_000_000),
                 vetPriceUsd = BigInteger.valueOf(1_000_000_000_000), // 1 USD
                 vthoPriceUsd = BigInteger.valueOf(1_000_000_000_000), // 1 USD
                 blockId = "0xBLOCK",
@@ -74,7 +74,6 @@ class ValidatorUtilsTest {
                 blockTimestamp = 123,
                 offlineBlocks = 1L,
                 status = Status.ACTIVE,
-                totalVTHOSupply = Decimal128(BigDecimal.ONE),
                 version = 1,
             )
 
@@ -84,6 +83,7 @@ class ValidatorUtilsTest {
                 existingDocs = mapOf("0xVAL1" to existing),
                 totalWeight = BigInteger.valueOf(100),
                 totalVTHOSupply = BigInteger.valueOf(2000),
+                totalVTHOBurned = BigInteger.valueOf(100),
                 vetPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 vthoPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 blockId = "0xBLOCK",
@@ -108,6 +108,7 @@ class ValidatorUtilsTest {
                 emptyMap(),
                 totalWeight = BigInteger.TEN,
                 totalVTHOSupply = BigInteger.TEN,
+                totalVTHOBurned = BigInteger.ZERO,
                 vetPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 vthoPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 blockId = "0xBLOCK",
@@ -128,7 +129,6 @@ class ValidatorUtilsTest {
                 blockNumber = 19,
                 blockTimestamp = 123,
                 status = Status.ACTIVE,
-                totalVTHOSupply = Decimal128(BigDecimal.ONE),
                 version = 1,
             )
 
@@ -138,6 +138,7 @@ class ValidatorUtilsTest {
                 existingDocs = mapOf("0xOLD" to existing),
                 totalWeight = BigInteger.ONE,
                 totalVTHOSupply = BigInteger.ONE,
+                totalVTHOBurned = BigInteger.ZERO,
                 vetPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 vthoPriceUsd = BigInteger.valueOf(1_000_000_000_000),
                 blockId = "0xBLOCK",
@@ -158,8 +159,7 @@ class ValidatorUtilsTest {
                 delegatorTvl = BigDecimal.ZERO,
                 hasDelegations = false,
                 blocksPerYear = BigDecimal.TEN,
-                totalVTHOSupply = BigDecimal.ONE,
-                prevTotalVTHOSupply = BigDecimal.ONE,
+                vthoIssued = BigDecimal("100"),
                 vthoPrice = BigDecimal.ONE,
             )
 
@@ -176,8 +176,7 @@ class ValidatorUtilsTest {
                 delegatorTvl = BigDecimal.ZERO,
                 hasDelegations = false,
                 blocksPerYear = BigDecimal("100"),
-                totalVTHOSupply = BigDecimal("200"),
-                prevTotalVTHOSupply = BigDecimal("100"),
+                vthoIssued = BigDecimal("100"),
                 vthoPrice = BigDecimal.ONE,
             )
 
@@ -197,8 +196,7 @@ class ValidatorUtilsTest {
                 delegatorTvl = BigDecimal("100"),
                 hasDelegations = true,
                 blocksPerYear = BigDecimal("10"),
-                totalVTHOSupply = BigDecimal("200"),
-                prevTotalVTHOSupply = BigDecimal("100"),
+                vthoIssued = BigDecimal("100"),
                 vthoPrice = BigDecimal.ONE,
             )
 

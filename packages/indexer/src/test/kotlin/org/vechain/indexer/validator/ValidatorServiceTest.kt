@@ -2,7 +2,6 @@ package org.vechain.indexer.validator
 
 import io.mockk.*
 import org.assertj.core.api.Assertions.assertThat
-import org.bson.types.Decimal128
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
@@ -124,7 +123,6 @@ class ValidatorServiceTest {
                     blockNumber = 190,
                     blockTimestamp = 111,
                     beneficiary = "0xBEN",
-                    totalVTHOSupply = Decimal128(0),
                     version = 1,
                 )
             )
@@ -156,7 +154,6 @@ class ValidatorServiceTest {
                 blockId = "b",
                 blockNumber = 1,
                 blockTimestamp = 1,
-                totalVTHOSupply = Decimal128(0),
                 version = 1,
             )
 
