@@ -29,11 +29,11 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
             Returns cumulative block usage statistics (gas usage, transaction counts, etc.) for a given block range.
 
             The API automatically determines the appropriate data granularity based on the size of the block range:
-            - Range ≤ 2,160 blocks (~6 hours): Returns all blocks (~2.2k data points)
-            - Range ≤ 259,200 blocks (~1 month): Returns hourly values (~720 data points)
-            - Range ≤ 1,555,200 blocks (~6 months): Returns daily values (~180 data points)
-            - Range ≤ 6,307,200 blocks (~2 years): Returns weekly values (~104 data points)
-            - Range > 6,307,200 blocks: Returns monthly values
+            - Range ≤ 360 blocks (~1 hour): Returns all blocks (~360 data points)
+            - Range ≤ 60,480 blocks (~1 week): Returns hourly values (~168 data points)
+            - Range ≤ 259,200 blocks (~1 month): Returns daily values (~30 data points)
+            - Range ≤ 3,153,600 blocks (~1 year): Returns weekly values (~52 data points)
+            - Range > 3,153,600 blocks: Returns monthly values
 
             Values are represented as a monotonic cumulative counter which means the values increase over time. This is
             a semantic used by Grafana for example. It requires some processing on the client side to convert to a value

@@ -10,16 +10,16 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
     companion object {
         // VeChain produces ~1 block every 10 seconds = 6 blocks/minute = 360 blocks/hour
         // Thresholds based on typical data points for visualization:
-        // - Up to 6 hours (2,160 blocks): return all blocks (~2.2k data points)
-        // - Up to 1 month (259,200 blocks): return hourly aggregates (~720 data points)
-        // - Up to 6 months (1,555,200 blocks): return daily aggregates (~180 data points)
-        // - Up to 2 years (6,307,200 blocks): return weekly aggregates (~104 data points)
-        // - Beyond 2 years: return monthly aggregates
+        // - Up to 1 hour (360 blocks): return all blocks (~360 data points)
+        // - Up to 1 week (60,480 blocks): return hourly aggregates (~168 data points)
+        // - Up to 1 month (259,200 blocks): return daily aggregates (~30 data points)
+        // - Up to 1 year (3,153,600 blocks): return weekly aggregates (~52 data points)
+        // - Beyond 1 year: return monthly aggregates
 
-        private const val HOURLY_THRESHOLD = 2_160L // ~6 hours
-        private const val DAILY_THRESHOLD = 259_200L // ~1 month
-        private const val WEEKLY_THRESHOLD = 1_555_200L // ~6 months
-        private const val MONTHLY_THRESHOLD = 6_307_200L // ~2 years
+        private const val HOURLY_THRESHOLD = 360L // ~1 hour
+        private const val DAILY_THRESHOLD = 60_480L // ~1 week
+        private const val WEEKLY_THRESHOLD = 259_200L // ~1 month
+        private const val MONTHLY_THRESHOLD = 3_153_600L // ~1 year
     }
 
     /**
@@ -28,11 +28,11 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
      * point counts.
      *
      * Granularity rules:
-     * - Range <= 2,160 blocks (~6 hours): All blocks (~2.2k data points)
-     * - Range <= 259,200 blocks (~1 month): Hourly aggregates (~720 data points)
-     * - Range <= 1,555,200 blocks (~6 months): Daily aggregates (~180 data points)
-     * - Range <= 6,307,200 blocks (~2 years): Weekly aggregates (~104 data points)
-     * - Range > 6,307,200 blocks: Monthly aggregates
+     * - Range <= 360 blocks (~1 hour): All blocks (~360 data points)
+     * - Range <= 60,480 blocks (~1 week): Hourly aggregates (~168 data points)
+     * - Range <= 259,200 blocks (~1 month): Daily aggregates (~30 data points)
+     * - Range <= 3,153,600 blocks (~1 year): Weekly aggregates (~52 data points)
+     * - Range > 3,153,600 blocks: Monthly aggregates
      *
      * @param startBlock The starting block number (inclusive)
      * @param endBlock The ending block number (inclusive)
