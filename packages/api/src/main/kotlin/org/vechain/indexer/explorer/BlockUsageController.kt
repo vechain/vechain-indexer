@@ -37,16 +37,16 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
 
             Values are represented as a monotonic cumulative counter which means the values increase over time. This is
             a semantic used by Grafana for example. It requires some processing on the client side to convert to a value
-            for a given timestamp.
-
-            For example to get the gasUsed at timestamp t you would need to do:
-
-                gasUsedAtTimestampT = gasUsedAtTimestampT - gasUsedAtTimestamp(t-1)
-
+            for a given block.
+            
+            For example to get the gasUsed at block n you would need to do:
+            
+                gasUsedAtBlockN = gasUsedAtBlockN - gasUsedAtBlock(n-1)
+                
             In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the
-            time range. If the first record in the returned data is at timestamp t1 and the next record is at timestamp t2:
-
-                averageGasUsedPerSecond = (gasUsedAtT2 - gasUsedAtT1) / (t2 - t1)
+            block range. If the first record in the returned data is at block n and the next record is at block n + k:
+            
+                averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
         """,
     )
     @Parameter(
