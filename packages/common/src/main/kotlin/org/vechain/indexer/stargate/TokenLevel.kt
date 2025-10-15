@@ -1,17 +1,19 @@
 package org.vechain.indexer.stargate
 
-enum class TokenLevel {
-    All,
-    Strength,
-    Thunder,
-    Mjolnir,
-    VeThorX,
-    StrengthX,
-    ThunderX,
-    MjolnirX,
-    Dawn,
-    Lightning,
-    Flash;
+import java.math.BigDecimal
+
+enum class TokenLevel(val vetRequired: BigDecimal?) {
+    All(null),
+    Strength(BigDecimal("1000000")),
+    Thunder(BigDecimal("5000000")),
+    Mjolnir(BigDecimal("15000000")),
+    VeThorX(BigDecimal("600000")),
+    StrengthX(BigDecimal("1600000")),
+    ThunderX(BigDecimal("5600000")),
+    MjolnirX(BigDecimal("15600000")),
+    Dawn(BigDecimal("25000")),
+    Lightning(BigDecimal("50000")),
+    Flash(BigDecimal("200000"));
 
     companion object {
         /**

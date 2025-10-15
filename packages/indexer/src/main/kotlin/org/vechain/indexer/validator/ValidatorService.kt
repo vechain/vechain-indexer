@@ -11,6 +11,7 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.ValidatorUtils.hasAbiData
 
@@ -30,20 +31,14 @@ open class ValidatorService(
     ): Pair<List<Validator>, List<Validator>> {
         val threshold = getThreshold()
 
-        // Skip old irrelevant blocks
-        if (matchedEvents.isEmpty() && block.number < threshold) {
-            return Pair(emptyList(), emptyList())
-        }
-
         // Load docs once
         val existingDocs = loadExistingDocs(block, matchedEvents, threshold)
         val working = existingDocs.toMutableMap()
 
-        // Apply beneficiary changes directly into the working map
-        applyBeneficiaryChanges(matchedEvents, working)
+        // Apply event changes directly into the working map
+        applyEventChanges(matchedEvents, working)
 
-        // For old blocks → only beneficiary changes matter or if responses have no ABI data
-        if (block.number < threshold || callResponses.none { it.hasAbiData() }) {
+        if (callResponses.none { it.hasAbiData() }) {
             return working.values.toList() to emptyList()
         }
 
@@ -119,31 +114,31 @@ open class ValidatorService(
             repository.findByStatusNot(Status.EXITED).associateBy { it.id }
         }
 
-    private fun applyBeneficiaryChanges(
+    private fun applyEventChanges(
         events: List<IndexedEvent>,
         working: MutableMap<String, Validator>,
     ) {
         events.forEach { ev ->
             val validatorId = ev.params.getAsString("validator")!!
-            val beneficiary = ev.params.getAsString("beneficiary")!!
 
-            val base =
-                working[validatorId]
-                    ?: Validator(
-                        id = validatorId,
-                        blockId = ev.blockId,
-                        blockNumber = ev.blockNumber,
-                        blockTimestamp = ev.blockTimestamp,
-                        beneficiary = beneficiary,
-                        version = 0,
-                    )
+            val base = working[validatorId] ?: return
 
             working[validatorId] =
                 base.copy(
                     blockId = ev.blockId,
                     blockNumber = ev.blockNumber,
                     blockTimestamp = ev.blockTimestamp,
-                    beneficiary = beneficiary,
+                    beneficiary = ev.params.getAsString("beneficiary") ?: base.beneficiary,
+                    queuedValidatorVetStaked =
+                        ValidatorUtils.updatePendingValidatorVET(
+                            ev.params.getAsBigInteger("added"),
+                            base.queuedValidatorVetStaked,
+                        ),
+                    exitingValidatorVetStaked =
+                        ValidatorUtils.updatePendingValidatorVET(
+                            ev.params.getAsBigInteger("removed"),
+                            base.exitingValidatorVetStaked,
+                        ),
                 )
         }
     }

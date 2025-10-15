@@ -3,12 +3,15 @@ package org.vechain.indexer.validator
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
+import org.bson.types.Decimal128
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
@@ -17,14 +20,13 @@ import org.vechain.indexer.utils.NumberUtils
 object ValidatorUtils {
     private val SCALE = BigDecimal("1000000000000") // 1e12
     private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
-    private val VTHO_ADDRESS = "0x0000000000000000000000000000456e65726779"
 
     private var totalVTHOIssued: BigInteger = BigInteger.ZERO
 
     /** Get the latest information and stats for each validator */
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
-        validatorsAbi: MutableMap<String, AbiElement>,
+        validatorsAbi: Map<String, AbiElement>,
         existingDocs: Map<String, Validator>,
         blockId: String,
         blockNumber: Long,
@@ -62,7 +64,6 @@ object ValidatorUtils {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        retentionPeriod: Long = 777_600,
     ): List<Validator> {
         val ids = decoded.listOf<String>("masters")
         val endorsers = decoded.listOf<String>("endorsors")
@@ -78,6 +79,7 @@ object ValidatorUtils {
         val delegatorsStake = decoded.listOf<BigInteger>("delegatorsStake")
         val queuedStake = decoded.listOf<BigInteger>("totalQueuedStakes")
         val exitingStake = decoded.listOf<BigInteger>("totalExitingStakes")
+        val totalNextPeriodWeights = decoded.listOf<BigInteger>("totalNextPeriodWeights")
 
         val rows =
             ids.indices.map { i ->
@@ -96,12 +98,15 @@ object ValidatorUtils {
                     delegatorsStake = delegatorsStake[i],
                     totalQueuedStake = queuedStake[i],
                     totalExitingStake = exitingStake[i],
+                    totalNextPeriodWeight = totalNextPeriodWeights[i],
                 )
             }
 
         val totalVTHOIssuedAtBlock = totalVTHOSupply.add(totalVTHOBurned)
         val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
         totalVTHOIssued = totalVTHOIssuedAtBlock
+
+        val nextPeriodTotalWeight = nextPeriodTotalWeight(totalNextPeriodWeights)
 
         val active =
             rows.mapNotNull { row ->
@@ -115,7 +120,7 @@ object ValidatorUtils {
                     blockId,
                     blockNumber,
                     blockTimestamp,
-                    retentionPeriod,
+                    nextPeriodTotalWeight,
                 )
             }
 
@@ -147,11 +152,8 @@ object ValidatorUtils {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        retentionPeriod: Long = 777600, // 3 Months
+        nextPeriodTotalWeight: BigInteger,
     ): Validator? {
-        val exitBlock = row.exitBlock.toLong()
-        if ((exitBlock + retentionPeriod) < blockNumber) return null
-
         val vetPrice = toUsdPrice(vetPriceUsd)
         val vthoPrice = toUsdPrice(vthoPriceUsd)
 
@@ -161,6 +163,24 @@ object ValidatorUtils {
 
         val queuedStake = NumberUtils.toVET(row.totalQueuedStake)
         val exitingStake = NumberUtils.toVET(row.totalExitingStake)
+        val nextCycleStake = queuedStake + totalVET - exitingStake
+        val nextPeriodWeight = NumberUtils.toVET(row.totalNextPeriodWeight)
+        val hasDelegationsNextCycle = nextPeriodWeight > nextCycleStake
+        val queuedValidatorVetStaked =
+            if (existingDoc?.cycleEndBlock == blockNumber) {
+                BigDecimal.ZERO
+            } else {
+                existingDoc?.queuedValidatorVetStaked ?: BigDecimal.ZERO
+            }
+        val exitingValidatorVetStaked =
+            if (existingDoc?.cycleEndBlock == blockNumber) {
+                BigDecimal.ZERO
+            } else {
+                existingDoc?.exitingValidatorVetStaked ?: BigDecimal.ZERO
+            }
+        val nextCycleValidatorStake =
+            validatorVET + queuedValidatorVetStaked - exitingValidatorVetStaked
+        val nextCycleDelegationStake = nextCycleStake - nextCycleValidatorStake
 
         val validatorTvl = validatorVET * vetPrice
         val delegatorTvl = delegatorVET * vetPrice
@@ -180,6 +200,9 @@ object ValidatorUtils {
             calculatePercentageOffline(blocksOffline, row.startBlock.toLong(), blockNumber)
 
         val blockProbability = NumberUtils.toProbabilityOf(row.validatorLockedWeight, totalWeight)
+        val blockProbabilityNextCycle =
+            NumberUtils.toProbabilityOf(row.totalNextPeriodWeight, nextPeriodTotalWeight)
+
         val blocksPerYear = blocksPerYear(blockProbability)
 
         val (validatorYield, tvlBasedYield, avgDelegatorYield) =
@@ -188,6 +211,16 @@ object ValidatorUtils {
                 delegatorTvl,
                 row.delegatorsStake > BigInteger.ZERO,
                 blocksPerYear,
+                vthoIssued,
+                vthoPrice,
+            )
+
+        val (nextCycleValidatorYield, nextCycleTvlBasedYield, nextCycleAvgDelegatorYield) =
+            calculateValidatorYield(
+                nextCycleValidatorStake * vetPrice,
+                nextCycleDelegationStake * vetPrice,
+                hasDelegationsNextCycle,
+                blocksPerYear(blockProbabilityNextCycle),
                 vthoIssued,
                 vthoPrice,
             )
@@ -223,6 +256,18 @@ object ValidatorUtils {
             validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
             tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
             avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
+            nextCycleValidatorYield = NumberUtils.toSafeDecimal128(nextCycleValidatorYield),
+            nextCycleTvlBasedYield = NumberUtils.toSafeDecimal128(nextCycleTvlBasedYield),
+            nextCycleAvgDelegatorYield = NumberUtils.toSafeDecimal128(nextCycleAvgDelegatorYield),
+            nftYieldsNextCycle =
+                calculateNftLevelYields(
+                    nextPeriodWeight,
+                    nextCycleDelegationStake,
+                    NumberUtils.toVET(nextPeriodTotalWeight),
+                    vthoIssued,
+                    vthoPrice,
+                    vetPrice,
+                ),
             percentageOffline = NumberUtils.toSafeDecimal128(percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
             cycleEndBlock =
@@ -251,6 +296,9 @@ object ValidatorUtils {
         return decoded[key] as? BigInteger
             ?: throw IllegalStateException("Expected BigInteger for $functionName.$key")
     }
+
+    fun nextPeriodTotalWeight(weights: List<BigInteger>): BigInteger =
+        weights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
     fun decodeResponseInfo(
         responses: List<InspectionResult>,
@@ -292,6 +340,61 @@ object ValidatorUtils {
     /** Convert oracle price (BigInteger) into USD BigDecimal */
     fun toUsdPrice(value: BigInteger): BigDecimal =
         BigDecimal(value).divide(SCALE, 12, RoundingMode.HALF_UP)
+
+    fun calculateNftLevelYields(
+        nextPeriodWeight: BigDecimal,
+        nextCycleDelegationStake: BigDecimal,
+        totalNextPeriodWeight: BigDecimal,
+        vthoIssued: BigDecimal,
+        vthoPriceUsd: BigDecimal,
+        vetPriceUsd: BigDecimal,
+    ): Map<TokenLevel, Decimal128> {
+        return TokenLevel.entries
+            .filter { it != TokenLevel.All } // skip All
+            .mapNotNull { level ->
+                val required = level.vetRequired ?: return@mapNotNull null
+                val requiredUSD = required * vetPriceUsd
+                val nftWeight = required * BigDecimal(2)
+                val adjustedTotalNextPeriodWeight = totalNextPeriodWeight + nftWeight
+                val adjustedValidatorNextPeriodWeight =
+                    if (nextCycleDelegationStake > BigDecimal.ZERO) {
+                        nextPeriodWeight + nftWeight
+                    } else {
+                        nextPeriodWeight * BigDecimal(2) + nftWeight
+                    }
+
+                val blockProbabilityNextCycle =
+                    adjustedValidatorNextPeriodWeight.divide(
+                        adjustedTotalNextPeriodWeight,
+                        6,
+                        RoundingMode.HALF_UP,
+                    )
+
+                val blocksPerYear = blocksPerYear(blockProbabilityNextCycle)
+
+                val issuanceUsd = vthoIssued.multiply(vthoPriceUsd)
+                val annualIssuanceUsd = blocksPerYear.multiply(issuanceUsd)
+                val nftDelegationShare = required / (nextCycleDelegationStake + required)
+
+                val yield =
+                    annualIssuanceUsd
+                        .multiply(nftDelegationShare)
+                        .multiply(BigDecimal("0.7"))
+                        .multiply(BigDecimal(100))
+                        .divide(requiredUSD)
+
+                level to NumberUtils.toSafeDecimal128(yield)
+            }
+            .toMap()
+    }
+
+    fun updatePendingValidatorVET(pendingVET: BigInteger?, existing: BigDecimal): BigDecimal {
+        if (pendingVET == null) return existing
+
+        val pendingBD = NumberUtils.toVET(pendingVET)
+
+        return existing.add(pendingBD)
+    }
 
     /** Work out how many blocks a validator has been offline */
     fun calculateOfflineBlocks(
@@ -513,7 +616,7 @@ object ValidatorUtils {
     fun buildVTHOTotalsClauses(): List<Clause> =
         listOf(
             ContractUtils.createClause(
-                VTHO_ADDRESS,
+                VTHO_CONTRACT_ADDRESS,
                 FunctionDefinition(
                     name = "totalSupply",
                     inputs = emptyList(),
@@ -522,7 +625,7 @@ object ValidatorUtils {
                 ),
             ),
             ContractUtils.createClause(
-                VTHO_ADDRESS,
+                VTHO_CONTRACT_ADDRESS,
                 FunctionDefinition(
                     name = "totalBurned",
                     inputs = emptyList(),
@@ -582,6 +685,7 @@ object ValidatorUtils {
         val delegatorsStake: BigInteger,
         val totalQueuedStake: BigInteger,
         val totalExitingStake: BigInteger,
+        val totalNextPeriodWeight: BigInteger,
     )
 
     @Suppress("UNCHECKED_CAST")
