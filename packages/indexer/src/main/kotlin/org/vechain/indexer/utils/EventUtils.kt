@@ -121,4 +121,20 @@ object EventUtils {
         // Sort by blockNumber and return as a LinkedHashMap to preserve order
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
+
+    /** Determine if a delegation-related event should be processed based on its type and source. */
+    fun shouldProcessDelegationEvent(ev: IndexedEvent, stakerSC: String): Boolean =
+        when (ev.eventType) {
+            // must come from stakerSC
+            "ValidatorExitRequested" -> ev.address.equals(stakerSC, ignoreCase = true)
+
+            // must NOT come from stakerSC
+            "DelegationInitiated",
+            "DelegationExitRequested",
+            "DelegationWithdrawn",
+            "DelegationRewardsClaimed",
+            "Transfer" -> !ev.address.equals(stakerSC, ignoreCase = true)
+
+            else -> false
+        }
 }

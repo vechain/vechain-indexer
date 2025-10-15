@@ -10,9 +10,11 @@ import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.validator.ValidatorUtils.decodeResponseInfo
-import org.vechain.indexer.validator.ValidatorUtils.decodeVTHOIssued
-import org.vechain.indexer.validator.ValidatorUtils.listOf
+import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
+import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
+import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
+import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
+import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 @Profile("validator", "validator-reward")
 @Service
@@ -55,10 +57,7 @@ open class ValidatorBlockService(
         repository.saveAll(records)
     }
 
-    fun getValidationInfo(
-        block: Block,
-        decodedInfo: ValidatorUtils.DecodedValidatorInfo?,
-    ): ValidatorBlock? {
+    fun getValidationInfo(block: Block, decodedInfo: DecodedValidatorInfo?): ValidatorBlock? {
         // Get total VTHO issued at this block
         val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
 
@@ -91,7 +90,7 @@ open class ValidatorBlockService(
     }
 
     fun getValidatorsWithMissedSlots(
-        decodedInfo: ValidatorUtils.DecodedValidatorInfo?,
+        decodedInfo: DecodedValidatorInfo?,
         block: Block,
     ): List<ValidatorBlock> {
         if (decodedInfo == null) {
@@ -121,10 +120,7 @@ open class ValidatorBlockService(
     }
 
     /** Resolve total VTHO issued = totalSupply + burned */
-    fun getTotalVTHOIssued(
-        decodedInfo: ValidatorUtils.DecodedValidatorInfo?,
-        blockId: String,
-    ): BigInteger {
+    fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
         }
@@ -132,8 +128,7 @@ open class ValidatorBlockService(
     }
 
     fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response =
-            thorService.inspectClausesAtBlock(ValidatorUtils.buildVTHOTotalsClauses(), blockId)
+        val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
 
         if (response.size < 2) {
             return BigInteger.ZERO

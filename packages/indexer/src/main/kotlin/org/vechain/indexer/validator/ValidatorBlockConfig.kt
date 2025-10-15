@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
 @Profile("validator", "validator-reward")
@@ -31,7 +32,7 @@ open class ValidatorBlockConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(ValidatorUtils.buildClauses(getAllValidatorsAddress))
+            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .build()
 }

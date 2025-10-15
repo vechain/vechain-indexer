@@ -12,6 +12,7 @@ import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.validator.domain.ValidatorDecoder.buildClauses
 
 @Configuration
 @Profile("validator", "validator-stats")
@@ -58,7 +59,7 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(listOf("BeneficiarySet", "StakeIncreased", "StakeDecreased"))
-            .callDataClauses(ValidatorUtils.buildClauses(getAllValidatorsAddress))
+            .callDataClauses(buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
             .build()
 }
