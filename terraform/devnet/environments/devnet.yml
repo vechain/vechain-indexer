@@ -173,7 +173,7 @@ enabled_nets:
         block-usage: '1'
         historic-proposals:          '3'
         validator: '2'
-        validator-rewards: '1'
+        validator-rewards: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
