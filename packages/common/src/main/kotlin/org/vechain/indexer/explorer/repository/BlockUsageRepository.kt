@@ -31,7 +31,8 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      *   ascending
      */
     @Query(
-        value = "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'isHourly': true }",
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isHourly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findHourlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -45,7 +46,8 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @return List of daily BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value = "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'isDaily': true }",
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isDaily': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findDailyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -59,7 +61,8 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @return List of weekly BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value = "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'isWeekly': true }",
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isWeekly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }}",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findWeeklyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
@@ -73,7 +76,8 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @return List of monthly BlockUsage records in the range, ordered by timestamp ascending
      */
     @Query(
-        value = "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'isMonthly': true }",
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isMonthly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
         sort = "{ 'blockTimestamp': 1 }",
     )
     fun findMonthlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
