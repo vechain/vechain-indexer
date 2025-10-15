@@ -43,6 +43,51 @@ enabled_nets:
       timing:
         warn-threshold-ms: '1000'
         very-slow-threshold-ms: '10000'
+      cache:
+        max-size: '1000'
+        ttl-seconds: '300'
+        user-all-time-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '1200'
+        user-all-time-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-all-time-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-all-time-count-by-app-id:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        app-round-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-daily-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-reward:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-actions:
+          max-size: '1000'
+          ttl-seconds: '300'
+        user-round-count-by-entity-type:
+          max-size: '1000'
+          ttl-seconds: '300'
+        official-token-addresses:
+          max-size: '10'
+          ttl-seconds: '3600'
+        gm-nft-count:
+          max-size: '1000'
+          ttl-seconds: '300'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -97,31 +142,36 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts: '2'
-        transfers: '2'
-        transactions: '2'
-        history: '2'
-        nft-blacklist: '2'
-        vevote-comments: '2'
-        vevote-results: '2'
-        authority-node-endorser: '2'
-        stargate-vtho-claimed-by-block: '2'
+        nfts:                       '3'
+        transfers:                  '3'
+        transactions:               '3'
+        history:                    '4'
+        nft-blacklist:              '3'
+        vevote-comments:            '3'
+        vevote-results:             '3'
+        authority-node-endorser:    '3'
+        stargate-vtho-claimed-by-block: '4'
         stargate-vtho-generated-by-block: '2'
-        stargate-vtho-claimed-by-account: '2'
-        stargate-nft-holders-by-block: '2'
-        stargate-vet-staked-by-block: '2'
-        b3tr-proposal-comments: '2'
-        b3tr-proposal-results: '2'
-        b3tr-app-all-time-action-summary: '2'
-        b3tr-app-round-action-summary: '2'
-        b3tr-app-daily-action-summary: '2'
-        b3tr-user-all-time-action-summary: '2'
-        b3tr-user-round-action-summary: '2'
-        b3tr-user-daily-action-summary: '2'
-        b3tr-x-alloc-result: '2'
-        b3tr-gm-nft: '2'
-        b3tr-gm-nft-level-overview: '2'
-        historic-proposals: '2'
+        stargate-vtho-claimed-by-account: '4'
+        stargate_nft_holders_by_account: '3'
+        stargate_vet_staked_by_account: '3'
+        stargate-nft-holders-by-block: '3'
+        stargate-vet-staked-by-block: '3'
+        stargate-vet-delegated-by-block: '1'
+        b3tr-proposal-comments: '3'
+        b3tr-proposal-results: '3'
+        b3tr-user-all-time-action-summary: '3'
+        b3tr-app-all-time-action-summary: '3'
+        b3tr-app-round-action-summary: '3'
+        b3tr-user-daily-action-summary: '3'
+        b3tr-sustainability-overview-all: '3'
+        b3tr-user-round-action-summary: '3'
+        b3tr-sustainability-action: '3'
+        b3tr-x-alloc-result: '3'
+        b3tr-gm-nft: '3'
+        b3tr-gm-nft-level-overview: '3'
+        block-usage: '1'
+        historic-proposals:          '3'
         validator: '2'
         validator-rewards: '1'
       business-event:

@@ -82,6 +82,15 @@ open class TransferCollectionConfig(
                         .on("blockNumber", Sort.Direction.DESC)
                         .on("txId", Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
+                "transfer_eventType_1_to_1_from_1_tokenAddress_1_blockNumber_1_txId_1__id_1" to
+                    Index()
+                        .on("eventType", Sort.Direction.ASC)
+                        .on("to", Sort.Direction.ASC)
+                        .on("from", Sort.Direction.ASC)
+                        .on("tokenAddress", Sort.Direction.ASC)
+                        .on("blockNumber", Sort.Direction.ASC)
+                        .on("txId", Sort.Direction.ASC)
+                        .on("_id", Sort.Direction.ASC),
             )
         )
     }

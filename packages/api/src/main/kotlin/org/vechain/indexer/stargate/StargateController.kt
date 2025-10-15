@@ -307,4 +307,28 @@ open class StargateController(private val stargateService: StargateService) {
 
         return stargateService.getTotalVthoGeneratedHistoric(after, before)
     }
+
+    @GetMapping("/total-vet-delegated")
+    @Operation(summary = "Get total VET delegated in Stargate")
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "blockNumber",
+        schema = Schema(type = "long"),
+        description =
+            "Optional query parameter to get the total VET delegated at a specific block number. If not provided, the" +
+                " latest value will be returned.",
+        required = false,
+        example = "12345678",
+    )
+    @CommonApiResponses
+    open fun getTotalVetDelegated(
+        @RequestParam(required = false) blockNumber: Long?
+    ): VetDelegatedByBlock =
+        stargateService.getTotalVetDelegated(blockNumber)
+            ?: VetDelegatedByBlock(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = BigInteger.ZERO,
+            )
 }

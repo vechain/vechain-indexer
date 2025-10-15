@@ -1,0 +1,3 @@
+package org.vechain.indexer.thor
+
+const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"

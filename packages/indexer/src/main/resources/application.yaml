@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,validator-reward}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,vet-delegated-by-block}
   output:
     ansi:
       enabled: always
@@ -131,6 +131,7 @@ indexer:
     stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
+    stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}
     authority-node-endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
     historic-proposals: ${VERSION_HISTORIC_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
@@ -144,8 +145,9 @@ indexer:
     b3tr-x-alloc-result: ${VERSION_B3TR_X_ALLOC_RESULT:1}
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
+    block-usage: ${VERSION_BLOCK_USAGE:1}
     validator: ${VERSION_VALIDATOR:1}
-    validator-rewards: ${VERSION_VALIDATOR_REWARDS:1}
+    validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}

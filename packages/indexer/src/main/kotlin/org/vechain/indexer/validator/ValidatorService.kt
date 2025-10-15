@@ -1,7 +1,6 @@
 package org.vechain.indexer.validator
 
 import kotlin.collections.set
-import org.bson.types.Decimal128
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -56,6 +55,7 @@ open class ValidatorService(
                 "vthoTotalSupply",
                 "getVetPriceUsd",
                 "getVthoPriceUsd",
+                "totalBurned",
             )
         )
 
@@ -135,7 +135,6 @@ open class ValidatorService(
                         blockNumber = ev.blockNumber,
                         blockTimestamp = ev.blockTimestamp,
                         beneficiary = beneficiary,
-                        totalVTHOSupply = Decimal128(0),
                         version = 0,
                     )
 
