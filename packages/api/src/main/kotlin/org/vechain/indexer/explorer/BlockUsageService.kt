@@ -8,62 +8,64 @@ import org.vechain.indexer.explorer.repository.BlockUsageRepository
 @Service
 open class BlockUsageService(private val blockUsageRepository: BlockUsageRepository) {
     companion object {
-        // VeChain produces ~1 block every 10 seconds = 6 blocks/minute = 360 blocks/hour
-        // Thresholds based on typical data points for visualization:
-        // - Up to 6 hours (2,160 blocks): return all blocks (~2.2k data points)
-        // - Up to 1 month (259,200 blocks): return hourly aggregates (~720 data points)
-        // - Up to 6 months (1,555,200 blocks): return daily aggregates (~180 data points)
-        // - Up to 2 years (6,307,200 blocks): return weekly aggregates (~104 data points)
-        // - Beyond 2 years: return monthly aggregates
+        // Time-based thresholds for determining data granularity
+        // Thresholds are in seconds based on typical data points for visualization:
+        // - Up to 1 hour (3,600 seconds): return all blocks (~360 data points at 10s/block)
+        // - Up to 1 week (604,800 seconds): return hourly aggregates (~168 data points)
+        // - Up to 1 month (2,592,000 seconds): return daily aggregates (~30 data points)
+        // - Up to 1 year (31,536,000 seconds): return weekly aggregates (~52 data points)
+        // - Beyond 1 year: return monthly aggregates
 
-        private const val HOURLY_THRESHOLD = 2_160L // ~6 hours
-        private const val DAILY_THRESHOLD = 259_200L // ~1 month
-        private const val WEEKLY_THRESHOLD = 1_555_200L // ~6 months
-        private const val MONTHLY_THRESHOLD = 6_307_200L // ~2 years
+        private const val HOURLY_THRESHOLD = 4_000L
+        private const val DAILY_THRESHOLD = 700_000L
+        private const val WEEKLY_THRESHOLD = 3_000_000L
+        private const val MONTHLY_THRESHOLD = 35_000_000L
     }
 
     /**
-     * Retrieves block usage data for a given block range. The granularity of the data is
-     * automatically determined based on the size of the block range to optimize for reasonable data
+     * Retrieves block usage data for a given timestamp range. The granularity of the data is
+     * automatically determined based on the size of the time range to optimize for reasonable data
      * point counts.
      *
      * Granularity rules:
-     * - Range <= 2,160 blocks (~6 hours): All blocks (~2.2k data points)
-     * - Range <= 259,200 blocks (~1 month): Hourly aggregates (~720 data points)
-     * - Range <= 1,555,200 blocks (~6 months): Daily aggregates (~180 data points)
-     * - Range <= 6,307,200 blocks (~2 years): Weekly aggregates (~104 data points)
-     * - Range > 6,307,200 blocks: Monthly aggregates
+     * - Range <= 1 hour: All blocks (~360 data points)
+     * - Range <= 1 week: Hourly aggregates (~168 data points)
+     * - Range <= 1 month: Daily aggregates (~30 data points)
+     * - Range <= 1 year: Weekly aggregates (~52 data points)
+     * - Range > 1 year: Monthly aggregates
      *
-     * @param startBlock The starting block number (inclusive)
-     * @param endBlock The ending block number (inclusive)
+     * @param startTimestamp The starting timestamp in seconds (inclusive)
+     * @param endTimestamp The ending timestamp in seconds (inclusive)
      * @return List of BlockUsage records matching the criteria
      */
-    open fun getBlockUsage(startBlock: Long, endBlock: Long): List<BlockUsage> {
-        require(startBlock >= 0) { "startBlock must be non-negative" }
-        require(endBlock >= startBlock) { "endBlock must be greater than or equal to startBlock" }
+    open fun getBlockUsage(startTimestamp: Long, endTimestamp: Long): List<BlockUsage> {
+        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
+        require(endTimestamp >= startTimestamp) {
+            "endTimestamp must be greater than or equal to startTimestamp"
+        }
 
-        val blockRange = endBlock - startBlock
+        val timeRange = endTimestamp - startTimestamp
 
         return when {
-            blockRange <= HOURLY_THRESHOLD -> {
+            timeRange <= HOURLY_THRESHOLD -> {
                 // Return all blocks for small ranges
-                blockUsageRepository.findAllInBlockRange(startBlock, endBlock)
+                blockUsageRepository.findAllInTimestampRange(startTimestamp, endTimestamp)
             }
-            blockRange <= DAILY_THRESHOLD -> {
+            timeRange <= DAILY_THRESHOLD -> {
                 // Return hourly aggregates
-                blockUsageRepository.findHourlyInBlockRange(startBlock, endBlock)
+                blockUsageRepository.findHourlyInTimestampRange(startTimestamp, endTimestamp)
             }
-            blockRange <= WEEKLY_THRESHOLD -> {
+            timeRange <= WEEKLY_THRESHOLD -> {
                 // Return daily aggregates
-                blockUsageRepository.findDailyInBlockRange(startBlock, endBlock)
+                blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
             }
-            blockRange <= MONTHLY_THRESHOLD -> {
+            timeRange <= MONTHLY_THRESHOLD -> {
                 // Return weekly aggregates
-                blockUsageRepository.findWeeklyInBlockRange(startBlock, endBlock)
+                blockUsageRepository.findWeeklyInTimestampRange(startTimestamp, endTimestamp)
             }
             else -> {
                 // Return monthly aggregates
-                blockUsageRepository.findMonthlyInBlockRange(startBlock, endBlock)
+                blockUsageRepository.findMonthlyInTimestampRange(startTimestamp, endTimestamp)
             }
         }
     }

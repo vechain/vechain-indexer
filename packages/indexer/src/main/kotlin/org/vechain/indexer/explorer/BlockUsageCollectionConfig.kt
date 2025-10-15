@@ -40,18 +40,32 @@ open class BlockUsageCollectionConfig(
 
         ensureIndexes(
             listOf(
-                // Index for findHourlyInBlockRange - filter by isHourly, then range by _id
-                "isHourly_1__id_1" to
-                    Index().on("isHourly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
-                // Index for findDailyInBlockRange - filter by isDaily, then range by _id
-                "isDaily_1__id_1" to
-                    Index().on("isDaily", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
-                // Index for findWeeklyInBlockRange - filter by isWeekly, then range by _id
-                "isWeekly_1__id_1" to
-                    Index().on("isWeekly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
-                // Index for findMonthlyInBlockRange - filter by isMonthly, then range by _id
-                "isMonthly_1__id_1" to
-                    Index().on("isMonthly", Sort.Direction.ASC).on("_id", Sort.Direction.ASC),
+                // Index for findAllInTimestampRange - range queries on blockTimestamp
+                "blockTimestamp_1" to Index().on("blockTimestamp", Sort.Direction.ASC),
+                // Index for findHourlyInTimestampRange - filter by isHourly, then range by
+                // blockTimestamp
+                "isHourly_1_blockTimestamp_1" to
+                    Index()
+                        .on("isHourly", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.ASC),
+                // Index for findDailyInTimestampRange - filter by isDaily, then range by
+                // blockTimestamp
+                "isDaily_1_blockTimestamp_1" to
+                    Index()
+                        .on("isDaily", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.ASC),
+                // Index for findWeeklyInTimestampRange - filter by isWeekly, then range by
+                // blockTimestamp
+                "isWeekly_1_blockTimestamp_1" to
+                    Index()
+                        .on("isWeekly", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.ASC),
+                // Index for findMonthlyInTimestampRange - filter by isMonthly, then range by
+                // blockTimestamp
+                "isMonthly_1_blockTimestamp_1" to
+                    Index()
+                        .on("isMonthly", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.ASC),
             )
         )
     }
