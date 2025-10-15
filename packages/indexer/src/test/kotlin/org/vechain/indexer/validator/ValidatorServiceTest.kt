@@ -11,6 +11,8 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.validator.logic.ValidatorAssembler
+import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidatorInfo
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
@@ -95,7 +97,17 @@ class ValidatorServiceTest {
         val ev = makeEvent(7, "0xVAL1", "0xBEN")
 
         every { repository.findAllById(any<List<String>>()) } returns
-            listOf<Validator>().toMutableList()
+            listOf(
+                Validator(
+                    id = "0xVAL1",
+                    blockId = "oldBlock",
+                    blockNumber = 5,
+                    blockTimestamp = 123,
+                    beneficiary = "0xOLD",
+                    status = Status.ACTIVE,
+                    version = 1,
+                )
+            )
 
         val result = service.processBlock(block(7), listOf(ev), emptyList())
 
@@ -112,10 +124,8 @@ class ValidatorServiceTest {
 
         // Fake ABI + responses
         val abi = AbiElement(name = "getValidators", type = "function")
-        mockkObject(ValidatorUtils)
-        every {
-            ValidatorUtils.getLatestValidatorInfo(any(), any(), any(), any(), any(), any())
-        } returns
+        mockkObject(ValidatorAssembler)
+        every { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) } returns
             listOf(
                 Validator(
                     id = "0xVAL1",
@@ -141,7 +151,7 @@ class ValidatorServiceTest {
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
-        verify { ValidatorUtils.getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
+        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
     }
 
     // --- saveAndDelete tests ---
