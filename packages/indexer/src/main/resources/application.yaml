@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,vet-delegated-by-block}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,transactions}
   output:
     ansi:
       enabled: always
@@ -89,7 +89,7 @@ indexer:
     nft-blacklist: ${INDEXER_START_BLOCK_NFT_BLACKLIST:0}
     transactions: ${INDEXER_START_BLOCK_TRANSACTIONS:0}
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
-    history: ${INDEXER_START_BLOCK_HISTORY:26040}
+    history: ${INDEXER_START_BLOCK_HISTORY:0}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
     stargate: ${INDEXER_START_BLOCK_STARGATE:0}
     b3tr: ${INDEXER_START_BLOCK_B3TR:0}
