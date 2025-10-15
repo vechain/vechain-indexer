@@ -16,10 +16,10 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
         // - Up to 1 year (31,536,000 seconds): return weekly aggregates (~52 data points)
         // - Beyond 1 year: return monthly aggregates
 
-        private const val HOURLY_THRESHOLD = 3_600L // 1 hour in seconds
-        private const val DAILY_THRESHOLD = 604_800L // 1 week in seconds
-        private const val WEEKLY_THRESHOLD = 2_592_000L // 1 month in seconds (30 days)
-        private const val MONTHLY_THRESHOLD = 31_536_000L // 1 year in seconds (365 days)
+        private const val HOURLY_THRESHOLD = 4_000L
+        private const val DAILY_THRESHOLD = 700_000L
+        private const val WEEKLY_THRESHOLD = 3_000_000L
+        private const val MONTHLY_THRESHOLD = 35_000_000L
     }
 
     /**
