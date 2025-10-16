@@ -10,6 +10,8 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 object ValidatorAssembler {
+    private var totalVTHOIssued: BigInteger = BigInteger.ZERO
+
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
@@ -21,12 +23,15 @@ object ValidatorAssembler {
         val decodedInfo: DecodedValidatorInfo =
             ValidatorDecoder.decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
 
+        val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
+        val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
+        totalVTHOIssued = totalVTHOIssuedAtBlock
+
         return unpackValidators(
             decodedInfo.decodedValidators,
             existingDocs,
             decodedInfo.totalWeight,
-            decodedInfo.vthoTotalSupply,
-            decodedInfo.vthoBurned,
+            vthoIssuedBlock,
             decodedInfo.vetPriceUsd,
             decodedInfo.vthoPriceUsd,
             blockId,
@@ -39,8 +44,7 @@ object ValidatorAssembler {
         decoded: Map<String, Any?>,
         existingDocs: Map<String, Validator>,
         totalWeight: BigInteger,
-        totalVTHOSupply: BigInteger,
-        totalVTHOBurned: BigInteger,
+        vthoIssuedBlock: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
         blockId: String,
@@ -84,14 +88,11 @@ object ValidatorAssembler {
                 )
             }
 
-        val totalVTHOIssuedAtBlock = totalVTHOSupply.add(totalVTHOBurned)
-        val vthoIssuedBlock = totalVTHOIssuedAtBlock
-
         val nextPeriodTotalWeight =
             totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
         val active =
-            rows.mapNotNull { row ->
+            rows.map { row ->
                 ValidatorCalculator.buildValidator(
                     row,
                     existingDocs[row.id],

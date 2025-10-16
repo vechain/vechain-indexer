@@ -13,9 +13,9 @@ import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 /** Performs all validator-related calculations (TVL, yields, offline %, next cycle, etc.) */
 object ValidatorCalculator {
-    private val SCALE = BigDecimal("1000000000000") // 1e12
     private val BLOCKS_PER_YEAR = BigDecimal("3155760") // 360 * 24 * 365.25
     private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
+    private val MIN_VALIDATOR_STAKE = BigDecimal("25000000")
 
     /** Create Validator using latest on-chain info and calculations */
     fun buildValidator(
@@ -30,8 +30,8 @@ object ValidatorCalculator {
         blockTimestamp: Long,
         nextPeriodTotalWeight: BigInteger,
     ): Validator {
-        val vetPrice = toUsdPrice(vetPriceUsd)
-        val vthoPrice = toUsdPrice(vthoPriceUsd)
+        val vetPrice = NumberUtils.toVET(vetPriceUsd)
+        val vthoPrice = NumberUtils.toVET(vthoPriceUsd)
         val vthoIssuedBD = NumberUtils.toVET(vthoIssued)
 
         val stakes = computeStakes(row, existingDoc, blockNumber)
@@ -102,6 +102,7 @@ object ValidatorCalculator {
                     vthoIssuedBD,
                     vthoPrice,
                     vetPrice,
+                    Status.fromCode(status),
                 ),
             percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
@@ -159,6 +160,8 @@ object ValidatorCalculator {
         val queuedValidatorVetStaked =
             if (existingDoc?.cycleEndBlock == blockNumber) {
                 BigDecimal.ZERO
+            } else if (resolveStatus(row.exitBlock, row.status) == 1) {
+                MIN_VALIDATOR_STAKE
             } else {
                 existingDoc?.queuedValidatorVetStaked ?: BigDecimal.ZERO
             }
@@ -226,9 +229,6 @@ object ValidatorCalculator {
     // ------------------------------
     // Utility functions (same as before)
     // ------------------------------
-
-    fun toUsdPrice(value: BigInteger): BigDecimal =
-        BigDecimal(value).divide(SCALE, 12, RoundingMode.HALF_UP)
 
     fun calculateOfflineBlocks(
         previousOffline: Long?,
@@ -352,12 +352,15 @@ object ValidatorCalculator {
         vthoIssued: BigDecimal,
         vthoPriceUsd: BigDecimal,
         vetPriceUsd: BigDecimal,
+        status: Status,
     ): Map<TokenLevel, Decimal128> {
+        if (status == Status.EXITING) return emptyMap()
         return TokenLevel.entries
             .filter { it != TokenLevel.All }
             .mapNotNull { level ->
                 val required = level.vetRequired ?: return@mapNotNull null
                 val requiredUSD = required * vetPriceUsd
+
                 if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) return@mapNotNull null
 
                 val nftWeight = required * BigDecimal(2)
@@ -385,11 +388,11 @@ object ValidatorCalculator {
                     }
 
                 val yieldPct =
-                    annualIssuanceUsd
-                        .multiply(nftDelegationShare)
-                        .multiply(BigDecimal("0.7"))
-                        .multiply(BigDecimal(100))
-                        .divide(requiredUSD, 12, RoundingMode.HALF_UP)
+                    annualIssuanceUsd // total rewards pool (USD/year)
+                        .multiply(nftDelegationShare) // share for this NFT
+                        .multiply(BigDecimal("0.7")) // delegator split
+                        .divide(requiredUSD, 12, RoundingMode.HALF_UP) // normalize per USD staked
+                        .multiply(BigDecimal(100)) // convert to %
 
                 level to NumberUtils.toSafeDecimal128(yieldPct)
             }
