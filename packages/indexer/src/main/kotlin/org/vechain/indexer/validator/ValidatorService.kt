@@ -90,6 +90,12 @@ open class ValidatorService(
             working[v.id] =
                 if (existing != null) {
                     v.copy(beneficiary = existing.beneficiary) // keep latest beneficiary
+                    v.copy(
+                        queuedValidatorVetStaked = existing.queuedValidatorVetStaked
+                    ) // keep pending stake
+                    v.copy(
+                        exitingValidatorVetStaked = existing.exitingValidatorVetStaked
+                    ) // keep pending stake
                 } else {
                     v
                 }

@@ -130,6 +130,7 @@ object ValidatorAssembler {
                         exitingVetStaked = Decimal128(0),
                         blockProbability = Decimal128(0),
                         blocksPerYear = Decimal128(0),
+                        version = oldVal.version + 1,
                     )
                 } else {
                     null
