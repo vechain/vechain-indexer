@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import java.time.Instant
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
@@ -95,19 +94,43 @@ open class ValidatorController(
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
+        name = "status",
+        schema = Schema(implementation = Status::class),
+        description = "Filter by validator status",
+        required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
         name = "sortBy",
         description = "The sort by field",
         required = false,
         schema =
             Schema(
                 type = "string",
-                allowableValues = ["validatorTvl", "totalTvl", "blockProbability", "delegatorTvl"],
+                allowableValues =
+                    [
+                        "validatorTvl",
+                        "totalTvl",
+                        "blockProbability",
+                        "delegatorTvl",
+                        "nft:Strength",
+                        "nft:Thunder",
+                        "nft:Mjolnir",
+                        "nft:VeThorX",
+                        "nft:StrengthX",
+                        "nft:ThunderX",
+                        "nft:MjolnirX",
+                        "nft:Dawn",
+                        "nft:Lightning",
+                        "nft:Flash",
+                    ],
             ),
     )
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
+        @RequestParam(required = false) status: Status?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -116,20 +139,15 @@ open class ValidatorController(
         val sortField = SortFieldUtils.getSortFieldValidator(sortBy)
         val pageable = toPageable(page, size, direction, sortField)
 
-        val results: Slice<Validator> =
-            when {
-                validatorId != null -> {
-                    val validatorOpt = validatorRepository.findById(HexUtils.normalise(validatorId))
-                    if (validatorOpt.isPresent) {
-                        SliceImpl(listOf(validatorOpt.get()), pageable, false)
-                    } else {
-                        SliceImpl(emptyList(), pageable, false)
-                    }
-                }
-                endorser != null ->
-                    validatorRepository.findByEndorser(HexUtils.normalise(endorser), pageable)
-                else -> validatorRepository.findAll(pageable)
-            }
+        val results =
+            service.getValidators(
+                validatorId = validatorId?.let { HexUtils.normalise(it) },
+                endorser = endorser?.let { HexUtils.normalise(it) },
+                status = status,
+                pageable = pageable,
+                sortField = sortField,
+                direction = direction,
+            )
 
         return paginatedResponse(results)
     }

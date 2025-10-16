@@ -446,6 +446,10 @@ module "ecs-backend-service" {
         value = each.value.indexer.start-block.validator
     },
     {
+        name = "INDEXER_START_BLOCK_DELEGATION"
+        value = each.value.indexer.start-block.delegation
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },

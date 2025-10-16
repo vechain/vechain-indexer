@@ -40,7 +40,7 @@ open class DelegationConfig {
     open fun delegationIndexer(
         thorClient: ThorClient,
         processor: DelegationProcessor,
-        @Value("\${indexer.start-block.validator}") startBlock: Long,
+        @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
