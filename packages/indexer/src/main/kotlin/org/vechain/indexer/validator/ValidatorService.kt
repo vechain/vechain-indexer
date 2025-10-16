@@ -69,9 +69,6 @@ open class ValidatorService(
         // Merge into working set
         applyChainUpdates(chainUpdates, working)
 
-        println(
-            "ValidatorService: Block ${block.number} - ${chainUpdates.size} chain existingDocs, ${existingDocs.size} event updates, total ${working.size} validators"
-        )
         return working.values.toList() to existingDocs.values.toList()
     }
 
