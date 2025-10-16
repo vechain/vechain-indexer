@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator.logic
 
 import java.math.BigInteger
+import org.bson.types.Decimal128
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
@@ -115,6 +116,20 @@ object ValidatorAssembler {
                         status = Status.EXITED,
                         blockNumber = blockNumber,
                         blockTimestamp = blockTimestamp,
+                        validatorYield = Decimal128(0),
+                        tvlBasedYield = Decimal128(0),
+                        avgDelegatorYield = Decimal128(0),
+                        nftYieldsNextCycle = emptyMap(),
+                        nextCycleValidatorYield = Decimal128(0),
+                        nextCycleTvlBasedYield = Decimal128(0),
+                        nextCycleAvgDelegatorYield = Decimal128(0),
+                        totalTvl = Decimal128(0),
+                        delegatorTvl = Decimal128(0),
+                        validatorTvl = Decimal128(0),
+                        queuedVetStaked = Decimal128(0),
+                        exitingVetStaked = Decimal128(0),
+                        blockProbability = Decimal128(0),
+                        blocksPerYear = Decimal128(0),
                     )
                 } else {
                     null
