@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
@@ -56,7 +56,7 @@ open class UserAllTimeActionSummaryConfig {
         @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
         x2earnRewardsPoolContract: String,
         bEProperties: BusinessEventProperties,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.USER_ALL_TIME_ACTION_SUMMARY)
             .thorClient(thorClient)

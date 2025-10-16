@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
@@ -56,7 +56,7 @@ open class VthoClaimedByAccountConfig {
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
         bEProperties: BusinessEventProperties,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.VTHO_CLAIMED_BY_ACCOUNT)
             .thorClient(thorClient)

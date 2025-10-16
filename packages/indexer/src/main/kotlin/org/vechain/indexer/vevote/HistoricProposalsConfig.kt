@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
@@ -24,7 +24,7 @@ open class HistoricProposalsConfig {
         @Value("\${veworld.contract.historic-proposals.all-stakeholders}") allStakeholders: String,
         @Value("\${veworld.contract.historic-proposals.legacy-descriptions}")
         legacyDescriptions: String,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.HISTORIC_PROPOSALS)
             .thorClient(thorClient)
