@@ -9,7 +9,7 @@ import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
-import org.vechain.indexer.validator.ValidatorUtils.hasAbiData
+import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
 @Profile("stargate", "vtho-generated-by-block")
 @Service

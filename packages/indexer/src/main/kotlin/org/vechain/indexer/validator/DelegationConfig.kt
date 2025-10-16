@@ -12,6 +12,7 @@ import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
 @Profile("validator", "delegation")
@@ -39,7 +40,7 @@ open class DelegationConfig {
     open fun delegationIndexer(
         thorClient: ThorClient,
         processor: DelegationProcessor,
-        @Value("\${indexer.start-block.validator}") startBlock: Long,
+        @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -68,7 +69,7 @@ open class DelegationConfig {
                     "Transfer",
                 )
             )
-            .callDataClauses(listOf(ValidatorUtils.buildClauses(getAllValidatorsAddress)[0]))
+            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsAddress)[0]))
             .excludeVetTransfers()
             .build()
 }

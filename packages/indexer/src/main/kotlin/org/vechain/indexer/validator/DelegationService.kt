@@ -18,10 +18,13 @@ import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.EventUtils.shouldProcessDelegationEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.ValidatorUtils.hasAbiData
-import org.vechain.indexer.validator.ValidatorUtils.listOf
+import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
+import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
+import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleStart
 
 /**
  * DelegationService is responsible for managing the lifecycle of delegations.
@@ -235,22 +238,6 @@ open class DelegationService(
         return removed
     }
 
-    fun getExitBlock(validatorId: String): Long {
-        val clause =
-            ContractUtils.createClause(
-                stakerSC,
-                getDelegationsAbiFunctions("getValidationPeriodDetails"),
-                AddressUtils.toBigInt(validatorId),
-            )
-        val response = thorService.executeReadOnlyCode(listOf(clause))
-        val decoded =
-            FunctionReturnDecoder.decode(
-                response[0].data,
-                getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
-            )
-        return (decoded["exitBlock"] as BigInteger).toLong()
-    }
-
     // ------------------------------
     // Event mutations
     // ------------------------------
@@ -263,7 +250,7 @@ open class DelegationService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ) {
         events
-            .filter { ValidatorUtils.shouldProcessEvent(it, stakerSC) }
+            .filter { shouldProcessDelegationEvent(it, stakerSC) }
             .forEach { ev ->
                 when (ev.eventType) {
                     "DelegationInitiated" ->
@@ -576,11 +563,7 @@ open class DelegationService(
             return emptyMap()
         }
 
-        val decoded =
-            ValidatorUtils.decodeValidators(
-                callResponses,
-                getDelegationsAbiFunctions("getValidators"),
-            )
+        val decoded = decodeValidators(callResponses, getDelegationsAbiFunctions("getValidators"))
         val masters = decoded.listOf<String>("masters")
         val periods = decoded.listOf<BigInteger>("stakingPeriodLengths")
         val starts = decoded.listOf<BigInteger>("startBlocks")
@@ -606,8 +589,7 @@ open class DelegationService(
     ): Pair<Long, Long> {
         val snapshot = validatorSnapshots[validatorId]
         return if (snapshot != null) {
-            snapshot.stakingPeriodLength to
-                ValidatorUtils.computeNextCycleStart(snapshot, blockNumber)
+            snapshot.stakingPeriodLength to calculateNextCycleStart(snapshot, blockNumber)
         } else {
             getValidatorPeriodInfo(validatorId, blockNumber)
         }

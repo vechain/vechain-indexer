@@ -3,12 +3,14 @@ package org.vechain.indexer.validator
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
+import java.math.BigDecimal
 import org.bson.types.Decimal128
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
+import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = "validators")
@@ -25,7 +27,11 @@ data class Validator(
     val validatorVetStaked: Decimal128? = null,
     val delegatorVetStaked: Decimal128? = null,
     val queuedVetStaked: Decimal128? = null,
+    @JsonIgnore val queuedValidatorVetStaked: BigDecimal = BigDecimal.ZERO,
     val exitingVetStaked: Decimal128? = null,
+    @JsonIgnore
+    val exitingValidatorVetStaked: BigDecimal =
+        BigDecimal.ZERO, // amount of VET in the process of exiting
     val cycleEndBlock: Long? = null, // end block of the current cycle
     val totalRewards: Decimal128? = null, // total rewards earned
     val blockProbability: Decimal128? = null,
@@ -37,6 +43,10 @@ data class Validator(
     val tvlBasedYield: Decimal128? = null,
     val validatorYield: Decimal128? = null,
     val avgDelegatorYield: Decimal128? = null,
+    val nextCycleTvlBasedYield: Decimal128? = null,
+    val nextCycleValidatorYield: Decimal128? = null,
+    val nextCycleAvgDelegatorYield: Decimal128? = null,
+    val nftYieldsNextCycle: Map<TokenLevel, Decimal128>? = null,
     val totalWeight: Decimal128? = null,
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
