@@ -33,7 +33,7 @@ open class ValidatorService(
         val threshold = getThreshold()
 
         // Load docs once
-        val existingDocs = loadExistingDocs(block, matchedEvents, threshold)
+        val existingDocs = repository.findByStatusNot(Status.EXITED).associateBy { it.id }
         val working = existingDocs.toMutableMap()
 
         // Apply event changes from blockchain logs
@@ -69,6 +69,9 @@ open class ValidatorService(
         // Merge into working set
         applyChainUpdates(chainUpdates, working)
 
+        println(
+            "ValidatorService: Block ${block.number} - ${chainUpdates.size} chain existingDocs, ${existingDocs.size} event updates, total ${working.size} validators"
+        )
         return working.values.toList() to existingDocs.values.toList()
     }
 
@@ -89,32 +92,16 @@ open class ValidatorService(
             val existing = working[v.id]
             working[v.id] =
                 if (existing != null) {
-                    v.copy(beneficiary = existing.beneficiary) // keep latest beneficiary
                     v.copy(
-                        queuedValidatorVetStaked = existing.queuedValidatorVetStaked
-                    ) // keep pending stake
-                    v.copy(
-                        exitingValidatorVetStaked = existing.exitingValidatorVetStaked
-                    ) // keep pending stake
+                        beneficiary = existing.beneficiary,
+                        queuedValidatorVetStaked = existing.queuedValidatorVetStaked,
+                        exitingValidatorVetStaked = existing.exitingValidatorVetStaked,
+                    )
                 } else {
                     v
                 }
         }
     }
-
-    private fun loadExistingDocs(
-        block: Block,
-        matchedEvents: List<IndexedEvent>,
-        threshold: Long,
-    ): Map<String, Validator> =
-        if (block.number < threshold) {
-            // Old blocks → only fetch validators referenced in events
-            val ids = matchedEvents.mapNotNull { it.params.getAsString("validator") }.distinct()
-            if (ids.isEmpty()) emptyMap() else repository.findAllById(ids).associateBy { it.id }
-        } else {
-            // Recent blocks → load all non-exited validators
-            repository.findByStatusNot(Status.EXITED).associateBy { it.id }
-        }
 
     private fun applyEventChanges(
         events: List<IndexedEvent>,
