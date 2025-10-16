@@ -1,11 +1,10 @@
-package org.vechain.indexer.validator.logic
+package org.vechain.indexer.validator
 
 import java.math.BigDecimal
 import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.Validator
+import org.vechain.indexer.validator.logic.ValidatorAssembler
 
 class ValidatorAssemblerTest {
     private fun buildDecoded(): Map<String, Any?> =
@@ -36,8 +35,7 @@ class ValidatorAssemblerTest {
                 decoded = decoded,
                 existingDocs = emptyMap(),
                 totalWeight = BigInteger.valueOf(100),
-                totalVTHOSupply = BigInteger.valueOf(1_000),
-                totalVTHOBurned = BigInteger.valueOf(1_000),
+                vthoIssuedBlock = BigInteger.valueOf(1_000),
                 vetPriceUsd = BigInteger("1000000000000"),
                 vthoPriceUsd = BigInteger("1000000000000"),
                 blockId = "0xBLOCK",
@@ -80,7 +78,6 @@ class ValidatorAssemblerTest {
                 BigInteger.valueOf(2000),
                 BigInteger.valueOf(100),
                 BigInteger("1000000000000"),
-                BigInteger("1000000000000"),
                 "0xBLOCK",
                 20,
                 1234567890,
@@ -101,10 +98,9 @@ class ValidatorAssemblerTest {
                 decoded,
                 emptyMap(),
                 BigInteger.TEN,
+                BigInteger("1000000000000"),
                 BigInteger.TEN,
                 BigInteger.ZERO,
-                BigInteger("1000000000000"),
-                BigInteger("1000000000000"),
                 "0xBLOCK",
                 20,
                 1234567890,
@@ -131,10 +127,9 @@ class ValidatorAssemblerTest {
                 decoded,
                 mapOf("0xOLD" to existing),
                 BigInteger.ONE,
+                BigInteger("1000000000000"),
                 BigInteger.ONE,
                 BigInteger.ZERO,
-                BigInteger("1000000000000"),
-                BigInteger("1000000000000"),
                 "0xBLOCK",
                 20,
                 1234567890,
