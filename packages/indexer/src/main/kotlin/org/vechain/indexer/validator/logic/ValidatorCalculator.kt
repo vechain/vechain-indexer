@@ -49,17 +49,24 @@ object ValidatorCalculator {
                 vthoPrice,
             )
 
-        val (nextCycleValidatorYield, nextCycleTvlBasedYield, nextCycleAvgDelegatorYield) =
-            calculateValidatorYield(
-                stakes.nextCycleValidatorStake * vetPrice,
-                stakes.nextCycleDelegationStake * vetPrice,
-                stakes.nextCycleDelegationStake > BigDecimal.ZERO,
-                blocksPerYear(probabilities.blockProbabilityNextCycle),
-                vthoIssuedBD,
-                vthoPrice,
-            )
+        val status = Status.fromCode(resolveStatus(row.exitBlock, row.status))
 
-        val status = resolveStatus(row.exitBlock, row.status)
+        val cycleEndBlock =
+            calculateNextCycleBlock(row.startBlock, row.completedPeriods, row.stakingPeriodLength)
+
+        val (nextCycleValidatorYield, nextCycleTvlBasedYield, nextCycleAvgDelegatorYield) =
+            if (status == Status.EXITING && cycleEndBlock >= row.exitBlock.toLong()) {
+                Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+            } else {
+                calculateValidatorYield(
+                    stakes.nextCycleValidatorStake * vetPrice,
+                    stakes.nextCycleDelegationStake * vetPrice,
+                    stakes.nextCycleDelegationStake > BigDecimal.ZERO,
+                    blocksPerYear(probabilities.blockProbabilityNextCycle),
+                    vthoIssuedBD,
+                    vthoPrice,
+                )
+            }
 
         return Validator(
             id = row.id,
@@ -68,7 +75,7 @@ object ValidatorCalculator {
             blockTimestamp = blockTimestamp,
             endorser = row.endorser,
             beneficiary = existingDoc?.beneficiary,
-            status = Status.fromCode(status),
+            status = status,
             online = row.online,
             offlineBlocks = offline.blocksOffline,
             cyclePeriodLength = row.stakingPeriodLength.toLong(),
@@ -102,16 +109,11 @@ object ValidatorCalculator {
                     vthoIssuedBD,
                     vthoPrice,
                     vetPrice,
-                    Status.fromCode(status),
+                    status,
                 ),
             percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
-            cycleEndBlock =
-                calculateNextCycleBlock(
-                    row.startBlock,
-                    row.completedPeriods,
-                    row.stakingPeriodLength,
-                ),
+            cycleEndBlock = cycleEndBlock,
         )
     }
 
