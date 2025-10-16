@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
@@ -24,7 +24,7 @@ open class ProposalCommentConfig {
         @Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
         b3trGovernorContract: String,
         bEProperties: BusinessEventProperties,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.PROPOSAL_COMMENT)
             .thorClient(thorClient)
