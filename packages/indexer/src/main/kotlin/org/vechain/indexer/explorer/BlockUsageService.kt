@@ -16,6 +16,9 @@ import org.vechain.indexer.thor.model.Block
 @Service
 open class BlockUsageService(private val repository: BlockUsageRepository) {
 
+    // Cache to store the last processed block usage to avoid DB lookups for sequential processing
+    @Volatile private var lastProcessedBlockUsage: BlockUsage? = null
+
     /**
      * Process a block and create a BlockUsage record with cumulative statistics.
      *
@@ -27,25 +30,40 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
         val previousBlockUsage = getPreviousBlockUsage(block.number)
         validatePreviousBlockUsage(previousBlockUsage, block.number)
 
-        return if (previousBlockUsage == null) {
-            createGenesisBlockUsage(block)
-        } else {
-            createBlockUsage(block, previousBlockUsage)
-        }
+        val blockUsage =
+            if (previousBlockUsage == null) {
+                createGenesisBlockUsage(block)
+            } else {
+                createBlockUsage(block, previousBlockUsage)
+            }
+
+        // Cache the result for the next sequential block
+        lastProcessedBlockUsage = blockUsage
+
+        return blockUsage
     }
 
     /**
-     * Get the previous block usage record from the repository.
+     * Get the previous block usage record from cache or repository. For sequential block
+     * processing, this will use the cached value from the last processed block, avoiding a database
+     * lookup.
      *
      * @param blockNumber The current block number
      * @return Previous BlockUsage record or null if genesis block
      */
     internal fun getPreviousBlockUsage(blockNumber: Long): BlockUsage? {
-        return if (blockNumber > 0) {
-            repository.findByIdOrNull(blockNumber - 1)
-        } else {
-            null
+        if (blockNumber == 0L) {
+            return null
         }
+
+        // Check if we have the previous block cached
+        val cached = lastProcessedBlockUsage
+        if (cached != null && cached.blockNumber == blockNumber - 1) {
+            return cached
+        }
+
+        // Cache miss - fall back to database lookup
+        return repository.findByIdOrNull(blockNumber - 1)
     }
 
     /**

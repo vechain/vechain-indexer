@@ -1,7 +1,7 @@
 region:                          eu-west-1
 project:                         veworld
 environment:                     prod-blue
-certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/695573a6-698a-4309-a427-28dd94fe7633
+certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/579f8060-4a4c-42c8-8de3-891469199f7d
 azs:
   -                              eu-west-1a
   -                              eu-west-1b
@@ -133,7 +133,7 @@ enabled_nets:
         authority-nodes:            '500'
         b3tr:                       '500'
         historic-proposals:       '500'
-      channel-batch-size:           '2'
+      channel-batch-size:           '100'
       pruner:
         interval: '60480'
         removal-chunk-size: '5000'
@@ -324,7 +324,7 @@ enabled_nets:
         authority-nodes:            '100'
         b3tr:                       '100'
         historic-proposals:         '100'
-      channel-batch-size:           '2'
+      channel-batch-size:           '100'
       pruner:
         interval: '60480'
         removal-chunk-size: '5000'

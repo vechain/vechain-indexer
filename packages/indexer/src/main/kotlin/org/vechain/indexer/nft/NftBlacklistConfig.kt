@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
@@ -49,7 +49,7 @@ open class NftBlacklistConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.NFT_BLACKLIST)
             .thorClient(thorClient)

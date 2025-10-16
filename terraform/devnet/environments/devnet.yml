@@ -132,7 +132,7 @@ enabled_nets:
         authority-nodes:            '100'
         historic-proposals:         '100'
         b3tr:                       '100'
-      channel-batch-size:           '2'
+      channel-batch-size:           '100'
       pruner:
         interval:                   '3000'
         removal-chunk-size:         '2000'

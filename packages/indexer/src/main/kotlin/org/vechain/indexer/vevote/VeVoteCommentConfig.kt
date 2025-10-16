@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BlockIndexer
+import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
@@ -20,7 +20,7 @@ open class VeVoteCommentConfig {
         @Value("\${indexer.sync-block-batch-size.vevote}") syncBlockBatchSize: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${business-event.substitutions.VEVOTE_CONTRACT}") contractAddress: String,
-    ): BlockIndexer =
+    ): Indexer =
         IndexerFactory()
             .name(IndexerNames.VEVOTE_COMMENT)
             .thorClient(thorClient)

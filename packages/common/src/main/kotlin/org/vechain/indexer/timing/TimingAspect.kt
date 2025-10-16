@@ -5,6 +5,7 @@ import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.slf4j.LoggerFactory
+import org.springframework.aop.framework.AopProxyUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
@@ -27,8 +28,14 @@ class TimingAspect(
     )
     fun logExecutionTime(joinPoint: ProceedingJoinPoint): Any? {
         val target = joinPoint.target
-        val targetClass = target?.javaClass
-        val className = targetClass?.name ?: joinPoint.signature.declaringTypeName
+        // Unwrap the proxy to get the actual target class
+        val actualClass =
+            if (target != null) {
+                AopProxyUtils.ultimateTargetClass(target)
+            } else {
+                null
+            }
+        val className = actualClass?.name ?: joinPoint.signature.declaringTypeName
         val methodName = joinPoint.signature.name
         val contextSuffix =
             when (target) {
