@@ -30,6 +30,42 @@ jobs:
       id-token: write
     secrets: inherit
 
+  fetch-lb-dns-names:
+    name: Fetch load balancer DNS names
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      - name: Get load balancer DNS names
+        id: get-lb-dns-names
+        run: |
+          blue_main_dns=$(aws elbv2 describe-load-balancers --names prod-blue-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          { echo "Error: Failed to fetch blue mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
+          blue_test_dns=$(aws elbv2 describe-load-balancers --names prod-blue-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          { echo "Error: Failed to fetch blue testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
+          green_main_dns=$(aws elbv2 describe-load-balancers --names prod-green-main-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          { echo "Error: Failed to fetch green mainnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
+          green_test_dns=$(aws elbv2 describe-load-balancers --names prod-green-test-api-veworld-alb --query 'LoadBalancers[0].DNSName' --output text) ||
+          { echo "Error: Failed to fetch green testnet load balancer dns. Please ensure the dead environment is deployed and ready to receive traffic"; exit 1; }
+
+          echo "blue_main_dns=$blue_main_dns" >> $GITHUB_OUTPUT
+          echo "blue_test_dns=$blue_test_dns" >> $GITHUB_OUTPUT
+          echo "green_main_dns=$green_main_dns" >> $GITHUB_OUTPUT
+          echo "green_test_dns=$green_test_dns" >> $GITHUB_OUTPUT
+
+    outputs:
+      blue_main_dns: ${{ steps.get-lb-dns-names.outputs.blue_main_dns }}
+      blue_test_dns: ${{ steps.get-lb-dns-names.outputs.blue_test_dns }}
+      green_main_dns: ${{ steps.get-lb-dns-names.outputs.green_main_dns }}
+      green_test_dns: ${{ steps.get-lb-dns-names.outputs.green_test_dns }}
+
   deploy-vpc-stack:
     name: Deploy VPC stack & switch DNS
     runs-on: ubuntu-latest
@@ -38,7 +74,7 @@ jobs:
       run:
         working-directory: terraform/vpc
 
-    needs: [identify-live-color]
+    needs: [fetch-lb-dns-names, identify-live-color]
     env:
       environment: prod
 
@@ -46,98 +82,91 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Write chosen network to github output
-        run: |
-          echo "Switching DNS for network: ${{ github.event.inputs.network }}"
-          if [ "${{ github.event.inputs.network }}" == "mainnet" ]; then
-            echo "Current mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
-            echo "New mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-          elif [ "${{ github.event.inputs.network }}" == "testnet" ]; then
-            echo "Current testnet live colour: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
-            echo "New testnet live colour: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
-          else
-            echo "Current mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
-            echo "New mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
-            echo "Current testnet live colour: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
-            echo "New testnet live colour: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
-          fi
-
-      - name: Determine colours to pass to Terraform
+      # The live_color_mainnet and live_color_testnet variables define the desired colour of each network (ie after worklfow completion), not necessarily the current colour.
+      - name: Determine and log colours to pass to Terraform
         id: set-colours
         run: |
+          echo "Switching DNS for network: ${{ github.event.inputs.network }}"
           case "${{ github.event.inputs.network }}" in
             mainnet)
+              echo "Current mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
+              echo "New mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
               echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
               echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
-              echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
               ;;
             testnet)
+              echo "Current testnet live colour: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
+              echo "New testnet live colour: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
               echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
               echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
-              echo "backend_colour=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
               ;;
             all)
-              echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
-              echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
+              echo "Current mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_live_color }}"
+              echo "New mainnet live colour: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}"
+              echo "Current testnet live colour: ${{ needs.identify-live-color.outputs.testnet_live_color }}"
+              echo "New testnet live colour: ${{ needs.identify-live-color.outputs.testnet_dead_color }}"
               if [ "${{ needs.identify-live-color.outputs.mainnet_dead_color }}" == "${{ needs.identify-live-color.outputs.testnet_dead_color }}" ]; then
-                echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+                echo "live_color_mainnet=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
+                echo "live_color_testnet=${{ needs.identify-live-color.outputs.testnet_dead_color }}" >> $GITHUB_OUTPUT
               else
-                echo "backend_colour=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
-                echo "::warning::Mainnet and Testnet are moving to different colours. Terraform state will be initialised to ${ { needs.identify-live-color.outputs.mainnet_dead_color }}. Ensure this is acceptable." >> $GITHUB_OUTPUT
+                echo "::warning::Mainnet and Testnet are currently misaligned. Switching 'all' is only allowed if both networks are live on the same colour."
+                exit 1
               fi
+              ;;
+            *)
+              echo "::error::Unknown network: ${{ github.event.inputs.network }}"
+              exit 1
               ;;
           esac
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Check Dead ENV is Ready
         id: check-dead-env-is-ready
         run: |
-          if [ "${{ github.event.inputs.network }}" == "testnet" ]; then
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 3 )); then
-                echo "env_ready=true" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
-              else
-                echo "env_ready=false" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
-                exit 0
-              fi
-          elif [ "${{ github.event.inputs.network }}" == "mainnet" ]; then
+          mainnet_ready=false
+          testnet_ready=false
+
+          # Check mainnet readiness
+          if [ "${{ github.event.inputs.network }}" == "mainnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
               cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 3 )); then
-                echo "env_ready=true" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
+              if (( $cluster_services > 0 )); then
+                mainnet_ready=true
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} mainnet ECS services are ready, proceeding with deployment"
               else
-                echo "env_ready=false" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
-                exit 0
-              fi
-          else
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.mainnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 3 )); then
-                echo "env_ready=true" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster is ready, proceeding with deployment"
-              else
-                echo "env_ready=false" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
-                exit 0
-              fi
-              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
-              if (( $cluster_services > 3 )); then
-                echo "env_ready=true" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster is ready, proceeding with deployment"
-              else
-                echo "env_ready=false" >> $GITHUB_OUTPUT
-                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} cluster has no services running. Please ensure the environment is ready for traffic"
-                exit 0
+                echo "The ${{ needs.identify-live-color.outputs.mainnet_dead_color }} mainnet services don't seem to be running"
               fi
           fi
 
+          # Check testnet readiness
+          if [ "${{ github.event.inputs.network }}" == "testnet" ] || [ "${{ github.event.inputs.network }}" == "all" ]; then
+              cluster_services=$(aws ecs list-services --cluster ${{ needs.identify-live-color.outputs.testnet_dead_color }}-veworld-cluster --query 'length(serviceArns)' --output text)
+              if (( $cluster_services > 0 )); then
+                testnet_ready=true
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} testnet ECS services are ready, proceeding with deployment"
+              else
+                echo "The ${{ needs.identify-live-color.outputs.testnet_dead_color }} testnet services don't seem to be running"
+              fi
+          fi
+
+          # Determine final readiness
+          if [ "${{ github.event.inputs.network }}" == "mainnet" ] && [ "$mainnet_ready" == "true" ]; then
+              echo "env_ready=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.network }}" == "testnet" ] && [ "$testnet_ready" == "true" ]; then
+              echo "env_ready=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.network }}" == "all" ] && [ "$mainnet_ready" == "true" ] && [ "$testnet_ready" == "true" ]; then
+              echo "env_ready=true" >> $GITHUB_OUTPUT
+          else
+              echo "env_ready=false" >> $GITHUB_OUTPUT
+              echo "Environment(s) not ready. Please ensure the required environment(s) are ready for traffic before switching"
+              exit 1
+          fi
+
+      # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
@@ -151,11 +180,11 @@ jobs:
 
       - name: Terraform Initialize
         id: init
-        run: terraform init -reconfigure -backend-config="../api/environments/${{ steps.set-colours.outputs.backend_colour }}.config"
+        run: terraform init -reconfigure -backend-config="environments/${{ env.environment }}.config"
 
       - name: Terraform Workspace
         id: workspace
-        run: terraform workspace select $(echo ${{ env.environment }} | awk -F- '{print $1}')
+        run: terraform workspace select ${{ env.environment }}
 
       - name: Terraform Validate
         id: validate

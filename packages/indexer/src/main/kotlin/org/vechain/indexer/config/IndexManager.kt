@@ -1,46 +1,86 @@
 package org.vechain.indexer.config
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ExitCodeGenerator
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationContext
+import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseIndexer
-import org.vechain.indexer.BaseLogIndexer
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.IndexerRunner
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionService
 
 @Component
-class IndexManager(
-    private val blockIndexers: List<BaseIndexer>,
-    private val logIndexers: List<BaseLogIndexer>,
+open class IndexManager(
+    private val indexers: List<Indexer>,
+    private val appCoroutineScope: CoroutineScope,
+    private val thorClient: ThorClient,
     private val applicationContext: ApplicationContext,
+    private val indexerVersionService: IndexerVersionService,
+    @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @EventListener(ApplicationReadyEvent::class)
-    fun start() {
-        logger.info("Starting ${blockIndexers.size} block indexers")
-        logger.info("Starting ${logIndexers.size} log indexers")
+    open fun start() {
+        logger.info("Starting indexers")
 
-        blockIndexers.forEach { indexer ->
+        IndexerRunner.launch(
+                scope = appCoroutineScope,
+                thorClient = thorClient,
+                indexers = indexers,
+                blockBatchSize = channelBatchSize,
+            )
+            .apply {
+                invokeOnCompletion { throwable ->
+                    if (throwable != null) {
+                        logger.error("IndexerRunner terminated with error: ", throwable)
+                        // Exit the application if the coordinator fails
+                        SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
+                    } else {
+                        logger.info("IndexerRunner terminated normally")
+                    }
+                }
+            }
+    }
+
+    @Scheduled(fixedDelay = 60 * 1000)
+    open fun trackLastSyncedBlock() {
+        logger.info("Storing last processed block for indexers")
+        indexers.forEach { indexer ->
             try {
-                indexer.startInCoroutine()
+                indexerVersionService.updateLastSafeSyncedBlock(
+                    indexerName = indexer.name,
+                    block = indexer.getPreviousBlock(),
+                )
             } catch (e: Exception) {
-                logger.error("Error starting indexer ${indexer.javaClass.simpleName}: ", e)
-                // Exit the application if one of the indexers fails to start
-                SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
+                logger.error("Failed to store last safe indexed block for ${indexer.name}", e)
             }
         }
+    }
 
-        logIndexers.forEach { indexer ->
+    @EventListener(ContextClosedEvent::class)
+    open fun onShutdown() {
+        logger.info("Shutting down indexers")
+        // Update the last synced block for all indexers one final time
+        trackLastSyncedBlock()
+        indexers.forEach { indexer ->
             try {
-                indexer.startInCoroutine()
+                indexer.shutDown()
             } catch (e: Exception) {
-                logger.error("Error starting indexer ${indexer.javaClass.simpleName}: ", e)
-                // Exit the application if one of the indexers fails to start
-                SpringApplication.exit(applicationContext, ExitCodeGenerator { 1 })
+                logger.error("Failed to close indexer ${indexer.name}", e)
             }
         }
+        // Cancel the coroutine scope to stop all running indexers
+        appCoroutineScope.cancel()
+
+        logger.info("Indexers shut down complete")
     }
 }

@@ -2,7 +2,7 @@ package org.vechain.e2e
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.IndexedTransferEvent
+import org.vechain.indexer.transfer.IndexedTransferEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -11,7 +11,7 @@ class TransferEventTest {
 
     @BeforeEach
     fun `perform healthcheck`() {
-        VeWorldAPIClient.performIndexerHealthCheck("TransferEventIndexer")
+        VeWorldAPIClient.performIndexerHealthCheck("TransferIndexer")
     }
 
     @Test

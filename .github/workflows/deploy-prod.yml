@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
       - name: Get current version
         id: get-current-version
         run: |
@@ -91,13 +91,13 @@ jobs:
       - name: Set environment
         id: set-environment
         run: |
-          if [[ '${{ inputs.network }}' == 'main' || '${{ inputs.network }}' == 'both' ]]; then
+          if [[ '${{ inputs.network }}' == 'mainnet' || '${{ inputs.network }}' == 'both' ]]; then
             if [[ '${{ inputs.environment }}' == 'live' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_live_color }}" >> $GITHUB_OUTPUT
             elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.mainnet_dead_color }}" >> $GITHUB_OUTPUT
             fi
-          elif [[ '${{ inputs.network }}' == 'test' ]]; then
+          elif [[ '${{ inputs.network }}' == 'testnet' ]]; then
             if [[ '${{ inputs.environment }}' == 'live' ]]; then
               echo "DEPLOYMENT_COLOR=${{ needs.identify-live-color.outputs.testnet_live_color }}" >> $GITHUB_OUTPUT
             elif [[ '${{ inputs.environment }}' == 'dead' ]]; then
@@ -127,7 +127,7 @@ jobs:
   deploy-env:
     needs: [define-env-vars]
     name: Run Deployment - ${{ inputs.network}}
-    uses: ./.github/workflows/plan-or-deploy-environment.yml
+    uses: ./.github/workflows/plan-or-apply-terraform.yml
     with:
       environment: ${{ needs.define-env-vars.outputs.DEPLOYMENT_COLOR }}
       mainnet_version: ${{ needs.define-env-vars.outputs.MAINNET_VERSION }}

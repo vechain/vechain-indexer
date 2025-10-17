@@ -79,7 +79,7 @@ jobs:
         id: account
         run: |
           if [ "${{ inputs.environment }}" == "dead-prod" ]; then
-            echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+            echo "role_arn=${{ secrets.AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           else
             echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
           fi

@@ -1,13 +1,14 @@
 package org.vechain.indexer.utils
 
-import org.vechain.indexer.event.model.generic.GenericEventParameters
-import org.vechain.indexer.model.TransferEventType
-import org.vechain.indexer.model.history.HistoryEventName
-import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
-import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.history.HistoryEventName
+import org.vechain.indexer.transfer.TransferEventType
+
+data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
 
 object EventUtils {
-    fun determineEventType(params: GenericEventParameters): HistoryEventName? =
+    fun determineEventType(params: AbiEventParameters): HistoryEventName? =
         when (params.getEventType()) {
             "B3TR_Vot3ToB3trSwap" -> HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR
             "B3TR_B3trToVot3Swap" -> HistoryEventName.B3TR_SWAP_B3TR_TO_VOT3
@@ -39,16 +40,16 @@ object EventUtils {
             "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
             "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE_ONLY
-            "STARGATE_STAKE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
             "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
             "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
             "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
+            "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
             else -> null // Other events will not be labeled
         }
 
-    fun determineTransferType(genericParams: GenericEventParameters): TransferEventType? =
+    fun determineTransferType(genericParams: AbiEventParameters): TransferEventType? =
         when (genericParams.getEventType()) {
             "Transfer" -> {
                 when {
@@ -63,21 +64,27 @@ object EventUtils {
             else -> null // Other events will not be labeled
         }
 
-    fun getChoice(choiceValue: Long): List<Int> {
-        if (choiceValue < 0) {
-            return emptyList()
-        }
-        return choiceValue.toString(2).reversed().mapIndexedNotNull { index, bit ->
-            if (bit == '1') index + 1 else null
-        }
-    }
+    /**
+     * Groups events by blockId, then sorts the groups by blockNumber (ascending). The returned Map
+     * preserves the sorted order of blocks via insertion order.
+     *
+     * @param events List of IndexedEvent to group.
+     * @return Map where keys are BlockDetails (blockId, blockNumber, blockTimestamp) and values are
+     *   lists of events in that block.
+     */
+    fun groupByBlock(events: List<IndexedEvent>): Map<BlockDetails, List<IndexedEvent>> {
+        // First group by blockId so the canonical key is the blockId
+        val byId: Map<String, List<IndexedEvent>> = events.groupBy { it.blockId }
 
-    fun getStargateRewards(genericParams: GenericEventParameters): String {
-        if (genericParams.getAsString("value") != null) return genericParams.getAsString("value")!!
+        // Build (BlockDetails -> events) pairs. We derive number/timestamp from the first event in
+        // each block.
+        val entries: List<Pair<BlockDetails, List<IndexedEvent>>> =
+            byId.map { (id, evs) ->
+                val first = evs.first()
+                BlockDetails(id, first.blockNumber, first.blockTimestamp) to evs
+            }
 
-        val totalRewards =
-            genericParams.getAsBigInteger("vetGeneratedVthoRewards")!! +
-                genericParams.getAsBigInteger("delegationRewards")!!
-        return totalRewards.toString()
+        // Sort by blockNumber and return as a LinkedHashMap to preserve order
+        return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
 }

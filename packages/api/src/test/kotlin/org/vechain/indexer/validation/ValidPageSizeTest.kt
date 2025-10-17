@@ -1,7 +1,7 @@
 package org.vechain.indexer.validation
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
 import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue

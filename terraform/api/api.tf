@@ -141,7 +141,135 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.logging.app-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.api.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.api.timing.very-slow-threshold-ms
+    },
+    {
+      name  = "CACHE_MAX_SIZE"
+      value = each.value.api.cache.max-size
+    },
+    {
+      name  = "CACHE_TTL_SECONDS"
+      value = each.value.api.cache.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-app-id.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-round-count.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE"
+      value = each.value.api.cache.official-token-addresses.max-size
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS"
+      value = each.value.api.cache.official-token-addresses.ttl-seconds
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_MAX_SIZE"
+      value = each.value.api.cache.gm-nft-count.max-size
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.gm-nft-count.ttl-seconds
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -231,7 +359,23 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.logging.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.logging.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.logging.pruner-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.indexer.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
       name  = "MONGO_URI"
@@ -251,87 +395,83 @@ module "ecs-backend-service" {
     },
     {
       name  = "INDEXER_START_BLOCK_NFTS"
-      value = each.value.indexer.start_block.nfts
+      value = each.value.indexer.start-block.nfts
     },
     {
       name  = "INDEXER_START_BLOCK_NFT_BLACKLIST",
-      value = each.value.indexer.start_block.nft_blacklist
+      value = each.value.indexer.start-block.nft-blacklist
     },
     {
       name  = "INDEXER_START_BLOCK_TRANSACTIONS"
-      value = each.value.indexer.start_block.transactions
+      value = each.value.indexer.start-block.transactions
     },
     {
       name  = "INDEXER_START_BLOCK_TRANSFERS"
-      value = each.value.indexer.start_block.transfers
+      value = each.value.indexer.start-block.transfers
     },
     {
       name  = "INDEXER_START_BLOCK_HISTORY"
-      value = each.value.indexer.start_block.history
+      value = each.value.indexer.start-block.history
     },
     {
       name  = "INDEXER_START_BLOCK_VEVOTE"
-      value = each.value.indexer.start_block.vevote
+      value = each.value.indexer.start-block.vevote
     },
     {
-      name  = "INDEXER_START_BLOCK_STARGATE"
-      value = each.value.indexer.start_block.stargate
+      name = "INDEXER_START_BLOCK_STARGATE"
+      value = each.value.indexer.start-block.stargate
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
-      value = each.value.indexer.sync_logger_interval.nfts
+      name = "INDEXER_START_BLOCK_B3TR"
+      value = each.value.indexer.start-block.b3tr
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
-      value = each.value.indexer.sync_logger_interval.transactions
+      name = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
+      value = each.value.indexer.start-block.b3tr-proposal
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
-      value = each.value.indexer.sync_logger_interval.transfers
+      name = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
+      value = each.value.indexer.start-block.b3tr-x-alloc-result
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
-      value = each.value.indexer.sync_logger_interval.history
+      name = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
+      value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
-      value = each.value.indexer.sync_logger_interval.vevote
+      name  = "INDEXER_START_BLOCK_HISTORIC_PROPOSALS"
+      value = each.value.indexer.start-block.historic-proposals
     },
     {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-      value = each.value.indexer.sync_logger_interval.stargate
-    },
-    {
-      name  = "PRUNER_ENABLED"
-      value = each.value.indexer.pruner.enabled
+      name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
+      value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
       name  = "PRUNER_INTERVAL"
       value = each.value.indexer.pruner.interval
     },
     {
-      name  = "PRUNER_INITIAL_DELAY"
-      value = each.value.indexer.pruner.initial_delay
+      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
+      value = each.value.indexer.pruner.removal-chunk-size
     },
     {
-      name  = "PRUNER_REMOVAL_CHUNK_SIZE"
-      value = each.value.indexer.pruner.removal_chunk_size
+      name  = "PRUNER_RECORD_LIMIT"
+      value = each.value.indexer.pruner.record-limit
     },
     {
       name  = "BLACKLIST_CONTRACT_ADDRESS"
-      value = each.value.indexer.blacklist.contract_address
+      value = each.value.indexer.blacklist.contract-address
     },
     {
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.veworld.contract.vevote.address
+      name  = "AUTHORITY_CONTRACT"
+      value = each.value.veworld.contract.authority-node.address
     },
     {
-      name  = "BLACKLIST_INTERVAL"
-      value = each.value.indexer.blacklist.interval
+      name  = "STEERING_COMMITTEE_ADDRESS"
+      value = each.value.veworld.contract.historic-proposals.steering-committee
     },
     {
-      name  = "BLACKLIST_INITIAL_DELAY"
-      value = each.value.indexer.blacklist.initial_delay
+      name  = "ALL_STAKEHOLDERS_ADDRESS"
+      value = each.value.veworld.contract.historic-proposals.all-stakeholders
     },
     {
       name  = "VERSION_NFTS"
@@ -351,35 +491,83 @@ module "ecs-backend-service" {
     },
     {
       name  = "VERSION_NFT_BLACKLIST"
-      value = each.value.indexer.version.nft_blacklist
+      value = each.value.indexer.version.nft-blacklist
     },
     {
       name  = "VERSION_VEVOTE_COMMENTS"
-      value = each.value.indexer.version.vevote_comments
+      value = each.value.indexer.version.vevote-comments
     },
     {
       name  = "VERSION_VEVOTE_RESULTS"
-      value = each.value.indexer.version.vevote_results
+      value = each.value.indexer.version.vevote-results
     },
     {
-      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
-      value = each.value.indexer.version.stargate_vtho_claimed_by_block
+      name = "VERSION_AUTHORITY_NODE_ENDORSER"
+      value = each.value.indexer.version.authority-node-endorser
     },
     {
-      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
-      value = each.value.indexer.version.stargate_vtho_claimed_by_account
+      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
-      name  = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
-      value = each.value.indexer.version.stargate_nft_holders_by_account
+      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
+      value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name  = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
-      value = each.value.indexer.version.stargate_vet_staked_by_account
+      name = "VERSION_HISTORIC_PROPOSALS"
+      value = each.value.indexer.version.historic-proposals
+    },
+    {
+      name = "VERSION_B3TR_PROPOSAL_COMMENTS"
+      value = each.value.indexer.version.b3tr-proposal-comments
+    },
+    {
+      name = "VERSION_B3TR_PROPOSAL_RESULTS"
+      value = each.value.indexer.version.b3tr-proposal-results
+    },
+    {
+      name = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-all-time-action-summary
+    },
+    {
+      name = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-all-time-action-summary
+    },
+    {
+      name = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-round-action-summary
+    },
+    {
+      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-daily-action-summary
+    },
+    {
+      name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-daily-action-summary
+    },
+    {
+      name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-user-round-action-summary
+    },
+    {
+      name = "VERSION_B3TR_X_ALLOC_RESULT"
+      value = each.value.indexer.version.b3tr-x-alloc-result
+    },
+    {
+      name = "VERSION_B3TR_GM_NFT"
+      value = each.value.indexer.version.b3tr-gm-nft
+    },
+    {
+      name = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
+      value = each.value.indexer.version.b3tr-gm-nft-level-overview
+    },
+    {
+      name = "VERSION_BLOCK_USAGE"
+      value = each.value.indexer.version.block-usage
     },
     {
       name  = "MIN_COMMENT_LEN"
-      value = each.value.comments.minLength
+      value = each.value.comments.min-length
     },
     {
       name  = "LANGUAGE_CONFIDENCE"
@@ -388,6 +576,10 @@ module "ecs-backend-service" {
     {
       name  = "B3TR_CONTRACT"
       value = each.value.indexer.business-event.substitutions.B3TR_CONTRACT
+    },
+    {
+      name  = "EMISSIONS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.EMISSIONS_CONTRACT
     },
     {
       name  = "VOT3_CONTRACT"
@@ -402,11 +594,11 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
-      name  = "X_ALLOC_VOTING_CONTRACT"
+      name = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
-      name  = "X2EARN_REWARDS_POOL_CONTRACT"
+      name = "X2EARN_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
     },
     {
@@ -426,20 +618,52 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
+    },
+    {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
-      value = each.value.indexer.sync_block_batch_size.nfts
+      value = each.value.indexer.sync-block-batch-size.nfts
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
-      value = each.value.indexer.sync_block_batch_size.transfers
+      value = each.value.indexer.sync-block-batch-size.transfers
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
-      value = each.value.indexer.sync_block_batch_size.vevote
+      value = each.value.indexer.sync-block-batch-size.vevote
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
+      value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
-      value = each.value.indexer.sync_block_batch_size.stargate
+      value = each.value.indexer.sync-block-batch-size.stargate
+    },
+    {
+      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
+      value = each.value.indexer.sync-block-batch-size.authority-nodes
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"
+      value = each.value.indexer.sync-block-batch-size.b3tr
+    },
+    {
+      name = "INDEXER_CHANNEL_BATCH_SIZE"
+      value = each.value.indexer.channel-batch-size
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-syncing
+    },
+    {
+      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]
 }

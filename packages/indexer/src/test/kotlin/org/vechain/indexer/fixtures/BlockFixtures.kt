@@ -6,6 +6,7 @@ import org.vechain.indexer.utils.JsonUtils
 object BlockFixtures {
     private val objectMapper = JsonUtils.mapper
 
+    val BLOCK_TRANSFERS = buildBlockFixture("transfers")
     val BLOCK_NO_CLAUSES = buildBlockFixture("no_clauses")
     val BLOCK_SINGLE_CLAUSE = buildBlockFixture("single_clause")
     val BLOCK_VIP180_CONTRACTS = buildBlockFixture("vip180_contracts")
@@ -33,6 +34,7 @@ object BlockFixtures {
     val BLOCK_STARGATE_STAKE_DELEGATE = buildBlockFixture("stargate_stake_delegate")
     val BLOCK_STARGATE_UNDELEGATE = buildBlockFixture("stargate_undelegate")
     val BLOCK_STARGATE_DELEGATION = buildBlockFixture("stargate_delegation")
+    val BLOCK_STARGATE_VTHO_REFUND = buildBlockFixture("stargate_vtho_refund")
 
     private fun buildBlockFixture(name: String): Block =
         objectMapper.readValue(

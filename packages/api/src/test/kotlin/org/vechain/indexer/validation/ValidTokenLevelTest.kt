@@ -1,7 +1,7 @@
 package org.vechain.indexer.validation
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.model.stargate.TokenLevel
+import org.vechain.indexer.stargate.TokenLevel
 import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue

@@ -9,8 +9,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
-import org.vechain.indexer.model.*
-import org.vechain.indexer.repository.*
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.nft.NftRepository
+import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transaction.TransactionRepository
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventRepository
 import org.vechain.indexer.utils.JsonUtils
 
 /**
@@ -27,14 +31,14 @@ import org.vechain.indexer.utils.JsonUtils
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class FastAbstractIntegrationTest {
     protected val TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
-    protected val NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
+    protected val NFT_TYPE = object : TypeReference<List<IndexedNft>>() {}
     protected val TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NftRepository
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 
@@ -43,7 +47,7 @@ abstract class FastAbstractIntegrationTest {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", TX_TYPE)
-        val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", NFT_TYPE)
+        val nfts: List<IndexedNft> = loadDataFromResources("/nfts.json", NFT_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", TRANSFER_EVENT_TYPE)
 

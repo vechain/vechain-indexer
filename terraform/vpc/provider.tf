@@ -11,8 +11,7 @@ terraform {
   }
   backend "s3" {
     # The states of DEV and PROD environments are stored in separate S3 buckets in their
-    # respective AWS accounts. The {{{ENV}}} placeholder is replaced manually (dev/prod)
-    bucket               = "veworld-indexer-terraform-state-{{{ENV}}}"
+    # respective AWS accounts. i.e for dev - replace prod in bucket name with dev
     key                  = "veworld-indexer-vpc.tfstate"
     region               = "eu-west-1"
     workspace_key_prefix = "workspaces"
@@ -20,7 +19,7 @@ terraform {
 }
 
 data "aws_secretsmanager_secret_version" "atlas_api_keys" {
-  secret_id = local.env.enabled_nets.main.mongodb.secret_arn
+  secret_id = local.env.mongodb_secret_arn
 }
 provider "mongodbatlas" {
   public_key  = jsondecode(data.aws_secretsmanager_secret_version.atlas_api_keys.secret_string)["public_key"]

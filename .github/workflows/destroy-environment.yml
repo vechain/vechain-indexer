@@ -1,17 +1,7 @@
-name: Cluster Destroy
+name: Destroy Dead Environment
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "The environment to destroy"
-        required: true
-        default: dev
-        type: choice
-        options:
-          - dev
-          - prod-blue
-          - prod-green
 
 # Prevent parallel deploy/destroy of the node cluster infrastructure in the same workspace
 concurrency: 1
@@ -34,40 +24,26 @@ jobs:
       id-token: write
     secrets: inherit
 
-  check-selected-color:
-    name: "Check color selected for destruction is not live"
-    runs-on: ubuntu-latest
-    needs: [identify-live-color]
-    steps:
-      - name: Check selected color is not live
-        run: |
-          if [ "${{ inputs.environment }}" == "${{ needs.identify-live-color.outputs.mainnet_live_color }}" ]; then
-            echo "Selected color is live, aborting destruction."
-            exit 1
-          fi
-
   destroy-lingering-resources:
     name: Destroy Lingering Resources
-    needs: [identify-live-color, check-selected-color]
+    needs: [identify-live-color]
     runs-on: ubuntu-latest
     env:
       dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
-      account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
     steps:
-      - name: Determine AWS account ID and role
-        id: account
+      - name: Check mainnet and testnet on same colour
+        id: check-net-color
         run: |
-            if [ "${{ env.account }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
+          if [ "${{ needs.identify-live-color.outputs.mainnet_dead_color }}" != "${{ needs.identify-live-color.outputs.testnet_dead_color }}" ]; then
+            echo "Mainnet and Testnet colours are not the same, aborting destruction."
+            exit 1
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-west-1
-          role-to-assume: ${{ steps.account.outputs.role_arn }}
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       - name: Destroy Lingering Secrets
         run: |
@@ -75,76 +51,70 @@ jobs:
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_api_password --force-delete-without-recovery || true
           aws secretsmanager delete-secret --secret-id /${{ env.dead_color }}/veworld/mongo_indexer_password --force-delete-without-recovery || true
 
-      - name: "Destroy mainnet LB Logs S3 Buckets"
+      - name: "Destroy LB Logs S3 Buckets"
         run: |
-          aws s3 rb s3://${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket --force || true
-
-      - name: "Destroy testnet LB logs S3 Buckets"
-        run: |
-          aws s3 rb s3://${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket --force || true
+          echo "Deleting LB logs S3 buckets..."
+          buckets=("${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket" "${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket")
+          for bucket in "${buckets[@]}"; do
+            if aws s3 ls "s3://${bucket}" 2>&1 | grep -q 'NoSuchBucket'; then
+              echo "Bucket $bucket not found, skipping."
+              aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
+            else
+              echo "Bucket $bucket found, deleting..."
+              aws s3api delete-bucket-lifecycle --bucket "$bucket" || true
+              aws s3 rb "s3://$bucket" --force || true
+            fi
+          done
 
       - name: "Destroy Load Balancers"
         run: |
           echo "Fetching load balancer ARNs..."
-          dead_main_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text) || true
-          dead_test_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text) || true
+          dead_main_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-main-api-veworld-alb')].LoadBalancerArn" --output text) || true
+          dead_test_api_lb_arn=$(aws elbv2 describe-load-balancers --query "LoadBalancers[?contains(LoadBalancerName, '${{ env.dead_color }}-test-api-veworld-alb')].LoadBalancerArn" --output text) || true
 
-          if [ ! -z "$dead_main_lb_arn" ]; then
-            echo "Disabling deletion protection for main load balancer..."
-            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_main_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
-            echo "Destroying main load balancer..."
-            aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_lb_arn || true
+          if [ ! -z "$dead_main_api_lb_arn" ]; then
+            echo "Disabling deletion protection for main API load balancer..."
+            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_main_api_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
+            echo "Destroying main API load balancer..."
+            aws elbv2 delete-load-balancer --load-balancer-arn $dead_main_api_lb_arn || true
           fi
 
-          if [ ! -z "$dead_test_lb_arn" ]; then
-            echo "Disabling deletion protection for test load balancer..."
-            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_test_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
-            echo "Destroying test load balancer..."
-            aws elbv2 delete-load-balancer --load-balancer-arn $dead_test_lb_arn || true
+          if [ ! -z "$dead_test_api_lb_arn" ]; then
+            echo "Disabling deletion protection for test API load balancer..."
+            aws elbv2 modify-load-balancer-attributes --load-balancer-arn $dead_test_api_lb_arn --attributes Key=deletion_protection.enabled,Value=false || true
+            echo "Destroying test API load balancer..."
+            aws elbv2 delete-load-balancer --load-balancer-arn $dead_test_api_lb_arn || true
           fi
 
   destroy-environment:
-    name: "Destroy ${{ inputs.environment }} Infrastructure"
+    name: "Destroy Terraform Infrastructure"
     runs-on: ubuntu-latest
-    needs: [identify-live-color, check-selected-color, destroy-lingering-resources]
-    if: ${{ inputs.environment }} == ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+    needs: [identify-live-color, destroy-lingering-resources]
+    env:
+      dead_color: ${{ needs.identify-live-color.outputs.mainnet_dead_color }}
+
     defaults:
       run:
         working-directory: terraform/api
-
-    env:
-      account: ${{ startsWith(inputs.environment, 'prod-') && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Determine AWS account ID and role
-        id: account
-        run: |
-            if [ "${{ env.account }}" == "prod" ]; then
-              echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            else
-              echo "role_arn=${{ secrets.DEV_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
-            fi
+      - name: Show dead color
+        run: echo "destroying dead environment - ${{ env.dead_color }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-west-1
-          role-to-assume: ${{ steps.account.outputs.role_arn }}
+            aws-region: eu-west-1
+            role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
 
       # Required for Terraform to source modules from other vechain repositories
       - name: Set up SSH agent
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
-
-      - name: Point backend to correct environment
-        id: specify-backend
-        run: |
-          sed -i "s/{{{ENV}}}/${{ env.account }}/g" provider.tf
-        continue-on-error: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -154,11 +124,25 @@ jobs:
 
       - name: Terraform initialize
         id: init
-        run: terraform init -backend-config="environments/${{ inputs.environment }}.config" -reconfigure
+        run: terraform init -backend-config="environments/${{ env.dead_color }}.config" -reconfigure
 
       - name: Terraform workspace
         id: workspace
-        run: terraform workspace select ${{ inputs.environment }}
+        run: terraform workspace select ${{ env.dead_color }}
+
+      - name: Clear s3 lifecycle configs via cli
+        run: |
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-veworld-main-api-ecs-lb-bucket" || true
+          aws s3api delete-bucket-lifecycle --bucket "${{ env.dead_color }}-veworld-test-api-ecs-lb-bucket" || true
+
+      - name: Remove S3 lifecycle configs from Terraform state
+        run: |
+          echo "Removing S3 lifecycle configurations from Terraform state..."
+          terraform state rm 'module.ecs-lb-service-api["main"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
+          terraform state rm 'module.ecs-lb-service-api["test"].aws_s3_bucket_lifecycle_configuration.lb_logs' || true
+
+      - name: Show resources to be destroyed
+        run: terraform state list
 
       - name: Plan terraform destroy
         id: plan

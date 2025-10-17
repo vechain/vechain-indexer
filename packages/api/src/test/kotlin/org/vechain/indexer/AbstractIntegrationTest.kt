@@ -13,9 +13,13 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.GenericContainer
-import org.vechain.indexer.model.*
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.repository.*
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.nft.NftRepository
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transaction.TransactionRepository
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventRepository
 import org.vechain.indexer.utils.JsonUtils
 
 @RunWith(SpringRunner::class)
@@ -32,8 +36,8 @@ abstract class AbstractIntegrationTest {
     protected val LIST_TX_TYPE = object : TypeReference<List<IndexedTransaction>>() {}
     protected val PAGINATED_TXS_TYPE =
         object : TypeReference<PaginatedResponse<IndexedTransaction>>() {}
-    protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNFT>>() {}
-    protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNFT>>() {}
+    protected val LIST_NFT_TYPE = object : TypeReference<List<IndexedNft>>() {}
+    protected val PAGINATED_NFTS_TYPES = object : TypeReference<PaginatedResponse<IndexedNft>>() {}
     protected val PAGINATED_NFT_CONTRACTS_TYPE =
         object : TypeReference<PaginatedResponse<String>>() {}
     protected val LIST_TRANSFER_EVENT_TYPE = object : TypeReference<List<IndexedTransferEvent>>() {}
@@ -46,7 +50,7 @@ abstract class AbstractIntegrationTest {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
 
-    @Autowired lateinit var nftRepository: NFTRepository
+    @Autowired lateinit var nftRepository: NftRepository
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 
@@ -55,7 +59,7 @@ abstract class AbstractIntegrationTest {
 
         val transactions: List<IndexedTransaction> =
             loadDataFromResources("/transactions.json", LIST_TX_TYPE)
-        val nfts: List<IndexedNFT> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
+        val nfts: List<IndexedNft> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
 

@@ -1,0 +1,58 @@
+{
+  "name": "B3TR_GmTransfer",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Transfer",
+      "alias": "transferEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${GM_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GE"
+        },
+        {
+          "firstOperand": "to",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000000000000000",
+          "isSecondStatic": true,
+          "operator": "NE"
+        },
+        {
+          "firstOperand": "from",
+          "isFirstStatic": false,
+          "secondOperand": "0x0000000000000000000000000000000000000000",
+          "isSecondStatic": true,
+          "operator": "NE"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "transferEvent",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "to",
+      "eventName": "transferEvent",
+      "businessEventName": "to"
+    },
+    {
+      "name": "from",
+      "eventName": "transferEvent",
+      "businessEventName": "from"
+    }
+  ]
+}

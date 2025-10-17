@@ -1,4 +1,4 @@
-name: Tests
+name: Tests (Gradle)
 
 on:
   pull_request:
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [api, common, indexer]
+        package: [ api, common, indexer ]
     steps:
       - uses: actions/checkout@v4
 

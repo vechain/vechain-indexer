@@ -6,26 +6,24 @@ on:
       - v.*
   workflow_dispatch:
     inputs:
-      latestTag:
-        description: Tag to identify most recently built image
-        required: true
-        type: string
-        default: latest
       workingDirectory:
         description: Working directory for the build context
         required: true
         type: string
         default: ./
-      projectName:
-        description: Name of the project
+      environment:
+        description: Environment
         required: true
-        type: string
-        default: veworld
-      imagePlatform:
-        description: Platform for the Docker image
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+      version:
+        description: Version tag (only relevant for dev. For prod, semver git ref tag is used)
         required: false
         type: string
-        default: linux/arm64
+        default: v.0.0.0-dev
 
 # Required for authentication through GitHub OIDC
 permissions:
@@ -33,12 +31,13 @@ permissions:
   contents: read   # This is required for actions/checkout
 
 env:
-  latestTag: ${{ inputs.latestTag || 'latest' }}
-  versionTag: ${{ github.ref_name }}
+  latestTag: 'latest'
+  versionTag: ${{ (github.event_name == 'push' || inputs.environment == 'prod') && github.ref_name || inputs.version }}
   commitHash: ${{ github.sha }}
-  workingDirectory: ${{ inputs.workingDirectory || './' }}
-  projectName: ${{ inputs.projectName || 'veworld' }}
-  imagePlatform: ${{ inputs.imagePlatform || 'linux/arm64' }}
+  workingDirectory: './'
+  projectName: 'veworld'
+  imagePlatform: 'linux/arm64'
+  environment: ${{ inputs.environment || 'prod' }}
 
 jobs:
   build-and-publish:
@@ -60,7 +59,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.PROD_AWS_ACC_ROLE }}
+          role-to-assume: ${{ env.environment == 'dev' && secrets.DEV_AWS_ACC_ROLE || secrets.AWS_ACC_ROLE }}
 
       - name: Login To Amazon ECR
         id: login-ecr

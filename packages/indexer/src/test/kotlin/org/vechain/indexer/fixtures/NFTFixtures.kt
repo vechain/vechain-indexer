@@ -1,11 +1,11 @@
 package org.vechain.indexer.fixtures
 
-import org.vechain.indexer.model.IndexedNFT
+import org.vechain.indexer.nft.IndexedNft
 
 object NFTFixtures {
 
     val NFT_VIP181 =
-        IndexedNFT(
+        IndexedNft(
             id = "3eeba42d5c9cce7224250c2e5f153f87e787f134",
             version = 1,
             tokenId = "vip181token",
@@ -18,7 +18,7 @@ object NFTFixtures {
         )
 
     val NFT_ROLLBACK_TEST_VERSION1 =
-        IndexedNFT(
+        IndexedNft(
             id = "64fc91a89710a9365f88261f06b7321f6394fa32",
             version = 1,
             tokenId = "token1",
@@ -31,7 +31,7 @@ object NFTFixtures {
         )
 
     val NFT_ROLLBACK_TEST_VERSION2 =
-        IndexedNFT(
+        IndexedNft(
             id = "64fc91a89710a9365f88261f06b7321f6394fa32",
             version = 2,
             tokenId = "token1",

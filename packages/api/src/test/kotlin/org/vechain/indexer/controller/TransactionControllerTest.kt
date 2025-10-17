@@ -8,9 +8,9 @@ import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
-import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedTransaction
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.transaction.IndexedTransaction
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*

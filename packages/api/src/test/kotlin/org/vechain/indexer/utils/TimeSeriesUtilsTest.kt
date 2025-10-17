@@ -2,8 +2,8 @@ package org.vechain.indexer.utils
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.vechain.indexer.model.IndexedDocument
-import org.vechain.indexer.model.TimeSeriesRecord
+import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.timeseries.TimeSeriesRecord
 import strikt.api.expect
 import strikt.assertions.*
 

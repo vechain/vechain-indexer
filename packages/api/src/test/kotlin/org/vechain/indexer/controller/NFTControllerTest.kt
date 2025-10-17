@@ -8,11 +8,11 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.NFTS_PATH
-import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedNFT
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
-import org.vechain.indexer.model.rest.PaginatedResponse
-import org.vechain.indexer.utils.HexUtils
+import org.vechain.indexer.nft.IndexedNft
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.HexUtils
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -286,9 +286,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
             expectThat(nfts.data)
                 .hasSize(51)
                 .isSorted(
-                    compareByDescending<IndexedNFT> { it.blockNumber }
+                    compareByDescending<IndexedNft> { it.blockNumber }
                         .then(
-                            compareByDescending<IndexedNFT> { it.txId }
+                            compareByDescending<IndexedNft> { it.txId }
                                 .then(compareByDescending { it.id })
                         )
                 )
@@ -329,9 +329,9 @@ class NFTControllerTest : AbstractIntegrationTest() {
                 that(nfts.data)
                     .hasSize(20)
                     .isSorted(
-                        compareByDescending<IndexedNFT> { it.blockNumber }
+                        compareByDescending<IndexedNft> { it.blockNumber }
                             .then(
-                                compareByDescending<IndexedNFT> { it.txId }
+                                compareByDescending<IndexedNft> { it.txId }
                                     .then(compareByDescending { it.id })
                             )
                     )
@@ -412,12 +412,12 @@ class NFTControllerTest : AbstractIntegrationTest() {
                     .andReturn()
             val nfts = objectMapper.readValue(res.response.contentAsString, PAGINATED_NFTS_TYPES)
 
-            expectThat(nfts.data).hasSize(2).map(IndexedNFT::owner).all { isEqualTo(owner) }
+            expectThat(nfts.data).hasSize(2).map(IndexedNft::owner).all { isEqualTo(owner) }
         }
     }
 
     @Nested
-    inner class GetContractsByNFTOwner {
+    inner class GetContractsByNftOwner {
 
         @Test
         fun `get contracts by NFT owner - bad owner address`() {

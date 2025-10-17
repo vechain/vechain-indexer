@@ -67,7 +67,7 @@ jobs:
 
       - name: Set AWS IAM role variable
         id: account
-        run: echo "role_arn=${{ secrets.PROD_AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
+        run: echo "role_arn=${{ secrets.AWS_ACC_ROLE }}" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

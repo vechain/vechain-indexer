@@ -9,16 +9,7 @@ plugins {
     kotlin("plugin.spring") version "2.1.21"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "7.0.3"
-    id("org.sonarqube") version "6.0.1.5171"
     jacoco
-}
-
-sonar {
-    properties {
-        property("sonar.projectKey", "vechain_veworld-indexer")
-        property("sonar.organization", "vechain")
-        property("sonar.host.url", "https://sonarcloud.io")
-    }
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_21
@@ -208,6 +199,7 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-aop:3.4.5")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
@@ -223,13 +215,13 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:4.3.2")
+        implementation("org.vechain:indexer-core:6.0.1")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")
-        testImplementation("org.testcontainers:testcontainers:1.21.0")
-        testImplementation("org.testcontainers:junit-jupiter:1.21.0")
-        testImplementation("org.testcontainers:mongodb:1.21.0")
+        testImplementation("org.testcontainers:testcontainers:1.21.3")
+        testImplementation("org.testcontainers:junit-jupiter:1.21.3")
+        testImplementation("org.testcontainers:mongodb:1.21.3")
         testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
         testImplementation("io.mockk:mockk:1.13.14")
         testImplementation("io.strikt:strikt-core:0.35.1")

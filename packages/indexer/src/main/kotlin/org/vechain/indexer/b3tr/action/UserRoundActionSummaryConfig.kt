@@ -1,0 +1,79 @@
+package org.vechain.indexer.b3tr.action
+
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.Indexer
+import org.vechain.indexer.IndexerFactory
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.thor.client.ThorClient
+
+@Configuration
+@Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
+open class UserRoundActionSummaryConfig {
+    @Bean
+    open fun userRoundActionSummaryArchiveService(
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
+    ): ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive> {
+        return ArchiveService(
+            mongoTemplate = mongoTemplate,
+            clazz = UserRoundActionSummary::class.java,
+            archiveClazz = UserRoundActionSummaryArchive::class.java,
+            queryLimit = recordLimit,
+        )
+    }
+
+    @Bean
+    open fun userRoundActionSummaryPruner(
+        userRoundActionSummaryArchiveService:
+            ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+    ): TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive> =
+        PrunerService(
+            klass = UserRoundActionSummaryArchive::class,
+            archiveService = userRoundActionSummaryArchiveService,
+            prunerRemovalChunkSize = prunerRemovalChunkSize,
+        )
+
+    @Bean
+    open fun userRoundActionSummaryIndexer(
+        thorClient: ThorClient,
+        processor: UserRoundActionSummaryProcessor,
+        userRoundActionSummaryPruner:
+            TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
+        @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
+        @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
+        @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
+        @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
+        x2earnRewardsPoolContract: String,
+        @Value("\${business-event.substitutions.EMISSIONS}") emissionsContract: String,
+        bEProperties: BusinessEventProperties,
+    ): Indexer =
+        IndexerFactory()
+            .name(IndexerNames.USER_ROUND_ACTION_SUMMARY)
+            .thorClient(thorClient)
+            .processor(processor)
+            .pruner(userRoundActionSummaryPruner)
+            .prunerInterval(prunerInterval)
+            .startBlock(startBlock)
+            .syncLoggerInterval(syncLoggerInterval)
+            .blockBatchSize(syncBlockBatchSize)
+            .abis("abis/b3tr")
+            .abiEventNames(listOf("EmissionDistributed", "EmissionDistributedV2"))
+            .abiContracts(listOf(emissionsContract))
+            .businessEvents("business-events/b3tr", "abis/b3tr")
+            .businessEventNames(listOf("B3TR_ActionReward"))
+            .businessEventContracts(listOf(b3trContract, x2earnRewardsPoolContract))
+            .businessEventSubstitutionParams(bEProperties.substitutions)
+            .excludeVetTransfers()
+            .build()
+}

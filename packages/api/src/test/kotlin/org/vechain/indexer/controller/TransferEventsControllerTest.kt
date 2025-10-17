@@ -7,9 +7,10 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.vechain.indexer.AbstractIntegrationTest
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
-import org.vechain.indexer.model.Address
-import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
+import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
+import org.vechain.indexer.transfer.IndexedTransferEvent
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -18,7 +19,6 @@ internal class TransferEventsControllerTest : AbstractIntegrationTest() {
 
     companion object {
         const val baseEndpoint = TRANSFER_EVENTS_PATH
-        const val VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779"
     }
 
     @Autowired lateinit var mockMvc: MockMvc

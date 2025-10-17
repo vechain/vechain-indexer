@@ -1,10 +1,12 @@
 package org.vechain.indexer.utils
 
+import java.time.Instant
+import java.time.ZoneId
 import org.apache.commons.codec.digest.DigestUtils
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.model.IndexedTransferEvent
-import org.vechain.indexer.model.TransferEventType
 import org.vechain.indexer.thor.model.*
+import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventType
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 object BlockUtils {
@@ -94,4 +96,13 @@ object BlockUtils {
             eventType = transferEventType,
         )
     }
+
+    /**
+     * Converts a given timestamp (in seconds) to a `LocalDate` string in the UTC time zone
+     *
+     * @param timestamp The timestamp in seconds
+     * @return A string representing the `LocalDate` in the format `YYYY-MM-DD`
+     */
+    fun getDateAtUTC(timestamp: Long): String =
+        Instant.ofEpochSecond(timestamp).atZone(ZoneId.of("UTC")).toLocalDate().toString()
 }
