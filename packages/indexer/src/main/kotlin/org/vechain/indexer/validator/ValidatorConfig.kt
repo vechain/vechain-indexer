@@ -58,7 +58,7 @@ open class ValidatorConfig {
             .includeFullBlock()
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
-            .abiEventNames(listOf("BeneficiarySet", "StakeIncreased", "StakeDecreased"))
+            .abiEventNames(listOf("BeneficiarySet", "StakeDecreased"))
             .callDataClauses(buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
             .build()
