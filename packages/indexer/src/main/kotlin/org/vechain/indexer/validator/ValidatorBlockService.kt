@@ -9,13 +9,9 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
-import org.vechain.indexer.explorer.TimestampUtils.isDaily
 import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
-import org.vechain.indexer.explorer.TimestampUtils.isHourly
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
-import org.vechain.indexer.explorer.TimestampUtils.isMonthly
 import org.vechain.indexer.explorer.TimestampUtils.isMonthlyChange
-import org.vechain.indexer.explorer.TimestampUtils.isWeekly
 import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
