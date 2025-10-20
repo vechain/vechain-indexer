@@ -10,6 +10,7 @@ import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 /**
@@ -107,6 +108,7 @@ object ValidatorDecoder {
                             FunctionParameter("totalQueuedStakes", "uint256[]"),
                             FunctionParameter("totalExitingStakes", "uint256[]"),
                             FunctionParameter("totalNextPeriodWeights", "uint256[]"),
+                            FunctionParameter("nextPeriodDelegationStakes", "uint256[]"),
                         ),
                     stateMutability = "view",
                 ),
@@ -176,6 +178,30 @@ object ValidatorDecoder {
                 ),
             ),
         )
+
+    fun getValidatorPeriodDetails(
+        validatorIds: List<String>,
+        responses: List<InspectionResult>,
+        validatorsAbi: Map<String, AbiElement>,
+    ): Map<String, Pair<Long, Long>>? {
+        val decodedResponse = decodeResponseInfo(responses, validatorsAbi) ?: return null
+
+        val ids = decodedResponse.decodedValidators.listOf<String>("masters")
+        val stakingPeriodLengths =
+            decodedResponse.decodedValidators.listOf<BigInteger>("stakingPeriodLengths")
+        val startBlocks = decodedResponse.decodedValidators.listOf<BigInteger>("startBlocks")
+
+        val periodDetails = mutableMapOf<String, Pair<Long, Long>>()
+        ids.forEachIndexed { index, id ->
+            if (validatorIds.contains(id)) {
+                val startBlock = startBlocks[index].toLong()
+                val stakingPeriodLength = stakingPeriodLengths[index].toLong()
+                periodDetails[id] = Pair(startBlock, stakingPeriodLength)
+            }
+        }
+
+        return periodDetails
+    }
 
     // --- Private helpers ---
 

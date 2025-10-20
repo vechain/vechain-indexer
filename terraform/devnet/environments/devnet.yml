@@ -36,7 +36,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: transactions,transfers,history,stargate,validator
+      spring_profile: transactions,transfers,history,stargate,validator,nfts
       ecr_common_repo: 951789968977.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -96,7 +96,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,transactions,transfers,history,stargate,validator
+      spring_profile: indexer,transactions,transfers,history,stargate,validator,nfts
       ecr_common_repo: 951789968977.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -192,7 +192,7 @@ enabled_nets:
           VEVOTE_CONTRACT: '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
           STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
-          GET_ALL_VALIDATORS_CONTRACT: '0x6a5984079cD55966D16cfA1A391D7aB665a316A8'
+          GET_ALL_VALIDATORS_CONTRACT: '0xceafcbd80aea95b41fc9cc90b9bbf892f6b06f6a'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

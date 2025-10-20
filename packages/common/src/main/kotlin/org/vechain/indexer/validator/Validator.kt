@@ -27,7 +27,6 @@ data class Validator(
     val validatorVetStaked: Decimal128? = null,
     val delegatorVetStaked: Decimal128? = null,
     val queuedVetStaked: Decimal128? = null,
-    @JsonIgnore val queuedValidatorVetStaked: BigDecimal = BigDecimal.ZERO,
     val exitingVetStaked: Decimal128? = null,
     @JsonIgnore
     val exitingValidatorVetStaked: BigDecimal =
@@ -55,7 +54,7 @@ data class Validator(
     val blocksPerYear: Decimal128? = null,
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
-    @JsonIgnore override val version: Int,
+    @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }

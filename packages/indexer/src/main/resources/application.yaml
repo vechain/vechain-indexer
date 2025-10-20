@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,transactions}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,validator-stats}
   output:
     ansi:
       enabled: always
@@ -69,7 +69,7 @@ business-event:
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0xe1ecc51fc02c29e54b428279c0456010fda5c4f2}
     STARGATE_CONTRACT: ${STARGATE_CONTRACT:0x35ce14062457ef7817e10bbc3815317f5a07d695}
     BUILTIN_STAKER_CONTRACT: ${BUILTIN_STAKER_CONTRACT:0x00000000000000000000000000005374616B6572}
-    GET_ALL_VALIDATORS_CONTRACT: ${GET_ALL_VALIDATORS_CONTRACT:0x6a5984079cD55966D16cfA1A391D7aB665a316A8}
+    GET_ALL_VALIDATORS_CONTRACT: ${GET_ALL_VALIDATORS_CONTRACT:0xceafcbd80aea95b41fc9cc90b9bbf892f6b06f6a}
 veworld:
   contract:
     authority-node:
@@ -97,7 +97,7 @@ indexer:
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
-    validator: ${INDEXER_START_BLOCK_VALIDATOR:55000}
+    validator: ${INDEXER_START_BLOCK_VALIDATOR:112400}
     delegation: ${INDEXER_START_BLOCK_DELEGATION:0}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
