@@ -12,10 +12,11 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.timeseries.TimeSeriesRecord
-import org.vechain.indexer.utils.TimeSeriesUtils
+import org.vechain.indexer.utils.TimeSeriesUtils.DAILY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.HOURLY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.MONTHLY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.WEEKLY_THRESHOLD
 import org.vechain.indexer.validator.BlockStatus
-import org.vechain.indexer.validator.RewardValues
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
@@ -61,36 +62,75 @@ open class ValidatorService(
         return paginatedResponse(slice)
     }
 
-    open fun getValidatorBlocksHistoric(
-        after: Long,
-        before: Long,
-        validator: Address,
-    ): List<TimeSeriesRecord<RewardValues>> {
-        val normalizeValidator = validator.value.lowercase()
-        return TimeSeriesUtils.getHistoricTimeSeries(
-            after,
-            before,
-            { a, b ->
-                validatorBlockRepository.findByValidatorAndStatusAndBlockTimestampBetween(
-                    normalizeValidator,
-                    BlockStatus.VALIDATED,
-                    a,
-                    b,
+    /**
+     * Retrieves block rewards data for a given timestamp range. The granularity of the data is
+     * automatically determined based on the size of the time range to optimize for reasonable data
+     * point counts.
+     *
+     * Granularity rules:
+     * - Range <= 1 hour: All blocks (~360 data points)
+     * - Range <= 1 week: Hourly aggregates (~168 data points)
+     * - Range <= 1 month: Daily aggregates (~30 data points)
+     * - Range <= 1 year: Weekly aggregates (~52 data points)
+     * - Range > 1 year: Monthly aggregates
+     *
+     * @param startTimestamp The starting timestamp in seconds (inclusive)
+     * @param endTimestamp The ending timestamp in seconds (inclusive)
+     * @return List of Valid records matching the criteria
+     */
+    open fun getValidatorHistoricBlocks(
+        startTimestamp: Long,
+        endTimestamp: Long,
+        validator: String,
+    ): List<ValidatorBlock> {
+        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
+        require(endTimestamp >= startTimestamp) {
+            "endTimestamp must be greater than or equal to startTimestamp"
+        }
+
+        val timeRange = endTimestamp - startTimestamp
+
+        return when {
+            timeRange <= HOURLY_THRESHOLD -> {
+                // Return all blocks for small ranges
+                validatorBlockRepository.findAllInTimestampRange(
+                    startTimestamp,
+                    endTimestamp,
+                    validator,
                 )
-            },
-            { ts ->
-                validatorBlockRepository.findLatestByValidatorAndStatusBeforeOrAtBlockTimestamp(
-                    normalizeValidator,
-                    BlockStatus.VALIDATED,
-                    ts,
+            }
+            timeRange <= DAILY_THRESHOLD -> {
+                // Return hourly aggregates
+                validatorBlockRepository.findHourlyInTimestampRange(
+                    startTimestamp,
+                    endTimestamp,
+                    validator,
                 )
-            },
-        ) {
-            RewardValues(
-                blockReward = it.blockReward!!,
-                priorityReward = it.priorityReward!!,
-                total = it.total!!,
-            )
+            }
+            timeRange <= WEEKLY_THRESHOLD -> {
+                // Return daily aggregates
+                validatorBlockRepository.findDailyInTimestampRange(
+                    startTimestamp,
+                    endTimestamp,
+                    validator,
+                )
+            }
+            timeRange <= MONTHLY_THRESHOLD -> {
+                // Return weekly aggregates
+                validatorBlockRepository.findWeeklyInTimestampRange(
+                    startTimestamp,
+                    endTimestamp,
+                    validator,
+                )
+            }
+            else -> {
+                // Return monthly aggregates
+                validatorBlockRepository.findMonthlyInTimestampRange(
+                    startTimestamp,
+                    endTimestamp,
+                    validator,
+                )
+            }
         }
     }
 
