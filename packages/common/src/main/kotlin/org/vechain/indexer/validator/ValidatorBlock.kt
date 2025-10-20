@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
@@ -11,7 +12,7 @@ import org.vechain.indexer.IndexedDocument
 data class ValidatorBlock
 @ConstructorBinding
 constructor(
-    val id: String,
+    @JsonIgnore val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,
@@ -20,4 +21,8 @@ constructor(
     val priorityReward: BigInteger? = null,
     val total: BigInteger? = null,
     val status: BlockStatus,
+    @JsonIgnore val isHourly: Boolean? = null,
+    @JsonIgnore val isDaily: Boolean? = null,
+    @JsonIgnore val isWeekly: Boolean? = null,
+    @JsonIgnore val isMonthly: Boolean? = null,
 ) : IndexedDocument

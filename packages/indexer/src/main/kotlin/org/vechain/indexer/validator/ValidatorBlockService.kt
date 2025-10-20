@@ -1,12 +1,22 @@
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
+import org.vechain.indexer.explorer.TimestampUtils.isDaily
+import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
+import org.vechain.indexer.explorer.TimestampUtils.isHourly
+import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
+import org.vechain.indexer.explorer.TimestampUtils.isMonthly
+import org.vechain.indexer.explorer.TimestampUtils.isMonthlyChange
+import org.vechain.indexer.explorer.TimestampUtils.isWeekly
+import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -24,8 +34,17 @@ open class ValidatorBlockService(
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
+    private val hourlyCache = ConcurrentHashMap<String, Long>()
+    private val dailyCache = ConcurrentHashMap<String, Long>()
+    private val weeklyCache = ConcurrentHashMap<String, Long>()
+    private val monthlyCache = ConcurrentHashMap<String, Long>()
+
     /** Cached VTHO total supply from the previous block to calculate deltas. */
     private var vthoTotalSupply: BigInteger = BigInteger.ZERO
+
+    init {
+        preloadLatestAggregates()
+    }
 
     open fun processBlock(
         block: Block,
@@ -55,6 +74,13 @@ open class ValidatorBlockService(
     @Transactional
     open fun save(records: List<ValidatorBlock>) {
         repository.saveAll(records)
+
+        records.forEach {
+            if (it.isHourly == true) hourlyCache[it.validator] = it.blockTimestamp
+            if (it.isDaily == true) dailyCache[it.validator] = it.blockTimestamp
+            if (it.isWeekly == true) weeklyCache[it.validator] = it.blockTimestamp
+            if (it.isMonthly == true) monthlyCache[it.validator] = it.blockTimestamp
+        }
     }
 
     fun getValidationInfo(block: Block, decodedInfo: DecodedValidatorInfo?): ValidatorBlock? {
@@ -86,6 +112,30 @@ open class ValidatorBlockService(
             priorityReward = priorityRewards,
             total = blockReward.add(priorityRewards),
             status = BlockStatus.VALIDATED,
+            isHourly =
+                calculateTimeBoundary(
+                    hourlyCache[block.signer] ?: 0L,
+                    block.timestamp,
+                    ::isHourlyChange,
+                ),
+            isDaily =
+                calculateTimeBoundary(
+                    dailyCache[block.signer] ?: 0L,
+                    block.timestamp,
+                    ::isDailyChange,
+                ),
+            isWeekly =
+                calculateTimeBoundary(
+                    weeklyCache[block.signer] ?: 0L,
+                    block.timestamp,
+                    ::isWeeklyChange,
+                ),
+            isMonthly =
+                calculateTimeBoundary(
+                    monthlyCache[block.signer] ?: 0L,
+                    block.timestamp,
+                    ::isMonthlyChange,
+                ),
         )
     }
 
@@ -141,6 +191,15 @@ open class ValidatorBlockService(
             )
 
         return decodeVTHOIssued(inspectionResults)
+    }
+
+    private fun preloadLatestAggregates() {
+        repository.findLatestHourly().forEach { hourlyCache[it._id.validator] = it.blockTimestamp }
+        repository.findLatestDaily().forEach { dailyCache[it._id.validator] = it.blockTimestamp }
+        repository.findLatestWeekly().forEach { weeklyCache[it._id.validator] = it.blockTimestamp }
+        repository.findLatestMonthly().forEach {
+            monthlyCache[it._id.validator] = it.blockTimestamp
+        }
     }
 
     /** Convert hex string (with optional "0x" prefix) into BigInteger. */
