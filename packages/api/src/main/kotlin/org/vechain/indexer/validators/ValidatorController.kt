@@ -320,4 +320,40 @@ open class ValidatorController(
             endTimestamp,
             validator.value.lowercase(),
         )
+
+    @GetMapping("/blocks/missed/{validator}")
+    @Operation(
+        summary = "Get percentage of missed blocks",
+        description =
+            "Calculates percentage of missed blocks for a validator in a block range. " +
+                "startBlock must be provided. " +
+                "If no endBlock is provided, endBlock defaults to best/latest block.",
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "validator",
+        schema = Schema(type = "string"),
+        description = "Validator address",
+        required = true,
+        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "startBlock",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "Start block (inclusive)",
+        required = true,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "endBlock",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "End block (inclusive) defaults to best/latest block if not provided",
+        required = false,
+    )
+    open fun getMissedBlocksPercentage(
+        @PathVariable @ValidAddress validator: Address,
+        @RequestParam(required = true) startBlock: Long,
+        @RequestParam(required = false) endBlock: Long?,
+    ): Double = service.getMissedBlocksPercentage(validator.value.lowercase(), startBlock, endBlock)
 }

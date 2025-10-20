@@ -9,6 +9,8 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.client.ThorClient
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -21,12 +23,16 @@ import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validators.ErrorMessages.ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME
+import org.vechain.indexer.validators.ErrorMessages.ERROR_INVALID_START_AND_END_BLOCK_NUMBERS
+import org.vechain.indexer.validators.ErrorMessages.ERROR_START_TIME_CANNOT_BE_NEGATIVE
 
 @Profile("validator")
 @Service
 open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
     private val mongoTemplate: MongoTemplate,
+    private val thorClient: ThorClient,
 ) {
     open fun getValidatorBlocks(
         validator: Address?,
@@ -83,9 +89,11 @@ open class ValidatorService(
         endTimestamp: Long,
         validator: String,
     ): List<ValidatorBlock> {
-        require(startTimestamp >= 0) { "startTimestamp must be non-negative" }
-        require(endTimestamp >= startTimestamp) {
-            "endTimestamp must be greater than or equal to startTimestamp"
+        if (startTimestamp < 0) {
+            throw BadRequestException(ERROR_START_TIME_CANNOT_BE_NEGATIVE)
+        }
+        if (endTimestamp <= startTimestamp) {
+            throw BadRequestException(ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME)
         }
 
         val timeRange = endTimestamp - startTimestamp
@@ -165,5 +173,29 @@ open class ValidatorService(
         val slice = SliceImpl(results, pageable, results.size == pageable.pageSize)
 
         return slice
+    }
+
+    open fun getMissedBlocksPercentage(
+        validator: String,
+        startBlock: Long,
+        endBlock: Long?,
+    ): Double {
+        val actualEnd = endBlock ?: thorClient.getBestBlock().number
+
+        if (actualEnd <= startBlock) {
+            throw BadRequestException(ERROR_INVALID_START_AND_END_BLOCK_NUMBERS)
+        }
+
+        val criteria = mutableListOf<Criteria>()
+        criteria.add(Criteria.where("validator").`is`(validator))
+        criteria.add(Criteria.where("status").`is`(BlockStatus.MISSED))
+        criteria.add(Criteria.where("blockNumber").gte(startBlock))
+        criteria.add(Criteria.where("blockNumber").lte(actualEnd))
+
+        val query = Query(Criteria().andOperator(*criteria.toTypedArray()))
+        val missedCount = mongoTemplate.count(query, ValidatorBlock::class.java)
+
+        val totalBlocks = (actualEnd - startBlock + 1).toDouble()
+        return if (totalBlocks > 0) (missedCount.toDouble() / totalBlocks) * 100.0 else 0.0
     }
 }
