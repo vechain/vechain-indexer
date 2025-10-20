@@ -15,7 +15,9 @@ data class DecodedValidatorRow(
     val validatorLockedVET: BigInteger,
     val validatorLockedWeight: BigInteger,
     val delegatorsStake: BigInteger,
+    val validatorQueuedStake: BigInteger,
     val totalQueuedStake: BigInteger,
     val totalExitingStake: BigInteger,
     val totalNextPeriodWeight: BigInteger,
+    val nextPeriodDelegationStake: BigInteger,
 )

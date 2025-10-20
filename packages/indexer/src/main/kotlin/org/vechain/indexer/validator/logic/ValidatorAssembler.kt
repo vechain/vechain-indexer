@@ -6,7 +6,7 @@ import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
@@ -22,7 +22,7 @@ object ValidatorAssembler {
         blockTimestamp: Long,
     ): List<Validator> {
         val decodedInfo: DecodedValidatorInfo =
-            ValidatorDecoder.decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
+            decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
 
         val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
         val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
@@ -65,8 +65,10 @@ object ValidatorAssembler {
         val lockedWeight = decoded.listOf<BigInteger>("validatorLockedWeights")
         val delegatorsStake = decoded.listOf<BigInteger>("delegatorsStake")
         val queuedStake = decoded.listOf<BigInteger>("totalQueuedStakes")
+        val validatorQueuedStakes = decoded.listOf<BigInteger>("validatorQueuedStakes")
         val exitingStake = decoded.listOf<BigInteger>("totalExitingStakes")
         val totalNextPeriodWeights = decoded.listOf<BigInteger>("totalNextPeriodWeights")
+        val nextPeriodDelegationStakes = decoded.listOf<BigInteger>("nextPeriodDelegationStakes")
 
         val rows =
             ids.indices.map { i ->
@@ -83,9 +85,11 @@ object ValidatorAssembler {
                     validatorLockedVET = lockedVET[i],
                     validatorLockedWeight = lockedWeight[i],
                     delegatorsStake = delegatorsStake[i],
+                    validatorQueuedStake = validatorQueuedStakes[i],
                     totalQueuedStake = queuedStake[i],
                     totalExitingStake = exitingStake[i],
                     totalNextPeriodWeight = totalNextPeriodWeights[i],
+                    nextPeriodDelegationStake = nextPeriodDelegationStakes[i],
                 )
             }
 

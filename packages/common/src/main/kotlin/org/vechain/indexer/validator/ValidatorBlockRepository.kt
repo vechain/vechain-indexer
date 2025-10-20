@@ -55,4 +55,27 @@ interface ValidatorBlockRepository :
         status: BlockStatus,
         blockTimestamp: Long,
     ): ValidatorBlock?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': { '\$in': ?0 }, 'status': ?1 } }",
+                "{ '\$sort': { 'validator': 1, 'blockNumber': -1 } }",
+                "{ '\$group': { '_id': '\$validator', 'latest': { '\$first': '\$\$ROOT' } } }",
+            ]
+    )
+    fun findLatestByValidatorsAndStatus(
+        validators: List<String>,
+        status: BlockStatus,
+    ): List<ValidatorBlock>
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'status': ?1 } }",
+                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    fun findLatestByValidatorAndStatus(validator: String, status: BlockStatus): ValidatorBlock?
 }

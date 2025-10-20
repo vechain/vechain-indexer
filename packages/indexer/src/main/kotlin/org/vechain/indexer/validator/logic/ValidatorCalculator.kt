@@ -104,7 +104,7 @@ object ValidatorCalculator {
             nftYieldsNextCycle =
                 calculateNftLevelYields(
                     stakes.totalVET,
-                    stakes.nextCycleDelegationStake,
+                    NumberUtils.toVET(row.nextPeriodDelegationStake),
                     NumberUtils.toVET(nextPeriodTotalWeight),
                     vthoIssuedBD,
                     vthoPrice,
@@ -158,15 +158,8 @@ object ValidatorCalculator {
         val queuedStake = NumberUtils.toVET(row.totalQueuedStake)
         val exitingStake = NumberUtils.toVET(row.totalExitingStake)
         val nextCycleStake = (queuedStake + totalVET - exitingStake).max(BigDecimal.ZERO)
-
-        val queuedValidatorVetStaked =
-            if (existingDoc?.cycleEndBlock == blockNumber) {
-                BigDecimal.ZERO
-            } else if (resolveStatus(row.exitBlock, row.status) == 1) {
-                MIN_VALIDATOR_STAKE
-            } else {
-                existingDoc?.queuedValidatorVetStaked ?: BigDecimal.ZERO
-            }
+        val queuedValidatorVetStaked = NumberUtils.toVET(row.validatorQueuedStake)
+        val queuedDelegationVetStaked = queuedStake - queuedValidatorVetStaked
 
         val exitingValidatorVetStaked =
             if (existingDoc?.cycleEndBlock == blockNumber) {
@@ -174,11 +167,12 @@ object ValidatorCalculator {
             } else {
                 existingDoc?.exitingValidatorVetStaked ?: BigDecimal.ZERO
             }
+        val exitingDelegationVetStaked = exitingStake - exitingValidatorVetStaked
 
         val nextCycleValidatorStake =
             validatorVET + queuedValidatorVetStaked - exitingValidatorVetStaked
         val nextCycleDelegationStake =
-            (nextCycleStake - nextCycleValidatorStake).max(BigDecimal.ZERO)
+            delegatorVET + queuedDelegationVetStaked - exitingDelegationVetStaked
 
         return Stakes(
             validatorVET,
@@ -349,7 +343,7 @@ object ValidatorCalculator {
 
     fun calculateNftLevelYields(
         nextPeriodWeight: BigDecimal,
-        nextCycleDelegationStake: BigDecimal,
+        nextCycleEffectiveDelegationStake: BigDecimal,
         totalNextPeriodWeight: BigDecimal,
         vthoIssued: BigDecimal,
         vthoPriceUsd: BigDecimal,
@@ -360,15 +354,14 @@ object ValidatorCalculator {
         return TokenLevel.entries
             .filter { it != TokenLevel.All }
             .mapNotNull { level ->
-                val required = level.vetRequired ?: return@mapNotNull null
-                val requiredUSD = required * vetPriceUsd
+                val requiredUSD = level.staked * vetPriceUsd
 
                 if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) return@mapNotNull null
 
-                val nftWeight = required * BigDecimal(2)
+                val nftWeight = level.staked * BigDecimal(2)
                 val adjustedTotal = totalNextPeriodWeight + nftWeight
                 val adjustedValidator =
-                    if (nextCycleDelegationStake > BigDecimal.ZERO) {
+                    if (nextCycleEffectiveDelegationStake > BigDecimal.ZERO) {
                         nextPeriodWeight + nftWeight
                     } else {
                         nextPeriodWeight * BigDecimal(2) + nftWeight
@@ -381,12 +374,12 @@ object ValidatorCalculator {
                 val issuanceUsd = vthoIssued.multiply(vthoPriceUsd)
                 val annualIssuanceUsd = bpy.multiply(issuanceUsd)
 
-                val denom = nextCycleDelegationStake + required
+                val denom = nextCycleEffectiveDelegationStake + level.effectiveStake
                 val nftDelegationShare =
                     if (denom.compareTo(BigDecimal.ZERO) == 0) {
                         BigDecimal.ZERO
                     } else {
-                        required.divide(denom, 12, RoundingMode.HALF_UP)
+                        level.effectiveStake.divide(denom, 12, RoundingMode.HALF_UP)
                     }
 
                 val yieldPct =
@@ -401,9 +394,32 @@ object ValidatorCalculator {
             .toMap()
     }
 
-    fun updatePendingValidatorVET(pendingVET: BigInteger?, existing: BigDecimal): BigDecimal {
+    fun updatePendingValidatorVET(
+        pendingVET: BigInteger?,
+        existing: BigDecimal,
+        lastBlock: Long,
+        currentBlock: Long,
+        startBlock: Long?,
+        cyclePeriodLength: Long?,
+    ): BigDecimal {
         if (pendingVET == null) return existing
-        val pendingBD = NumberUtils.toVET(pendingVET)
-        return existing.add(pendingBD)
+
+        val pending = NumberUtils.toVET(pendingVET)
+
+        // If config is missing or invalid, default to accumulation
+        if (
+            startBlock == null ||
+                cyclePeriodLength == null ||
+                startBlock == 0L ||
+                cyclePeriodLength == 0L
+        ) {
+            return existing + pending
+        }
+
+        val isNewCycle =
+            ((currentBlock - startBlock) / cyclePeriodLength) >
+                ((lastBlock - startBlock) / cyclePeriodLength)
+
+        return if (isNewCycle) pending else existing + pending
     }
 }

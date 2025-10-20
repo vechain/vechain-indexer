@@ -82,6 +82,11 @@
         "internalType": "uint256[]",
         "name": "totalNextPeriodWeights",
         "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "nextPeriodDelegationStakes",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
