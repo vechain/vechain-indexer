@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
-import java.time.Instant
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
@@ -21,13 +20,10 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.timeseries.TimeRangePreset
-import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
-import org.vechain.indexer.validation.ValidTimeRangePreset
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -236,7 +232,7 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
-    @GetMapping("/block-rewards")
+    @GetMapping("/blocks")
     @Operation(
         summary = "Get VTHO rewards for a validator for a given block",
         description =
@@ -281,45 +277,83 @@ open class ValidatorController(
         return service.getValidatorBlocks(validator, status, blockNumber, pageable)
     }
 
-    @GetMapping("/block-rewards/historic/{range}")
+    @GetMapping("/blocks/historic/{validator}")
     @Operation(
-        summary = "Get historic VTHO rewards",
+        summary = "Get historic VTHO rewards in a custom time range",
         description =
-            "Returns a time series of  VTHO rewards over the specified time range. " +
-                "You can optionally filter by validator to see only that validator’s rewards.",
+            "Returns a time series of VTHO rewards between the given timestamps. " +
+                "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
+                "You can filter by validator address.",
     )
     @Parameter(
         `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = ["1-hour", "1-day", "1-week", "1-month", "1-year", "all"],
-            ),
-        description = "Time range preset to query (e.g. last 1-day, last 1-week, etc.).",
-        required = true,
-        example = "1-day",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
         name = "validator",
         schema = Schema(type = "string"),
-        description =
-            "Validator address. If provided, returns historic rewards for this validator only.",
+        description = "Validator address",
         required = true,
         example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "startTimestamp",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "Start timestamp (inclusive)",
+        required = true,
+        example = "1704067200",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "endTimestamp",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "End timestamp (inclusive)",
+        required = true,
+        example = "1704153600",
+    )
     @CommonApiResponses
-    open fun getBlockRewardsHistoric(
-        @ValidTimeRangePreset @PathVariable("range") rangeStr: String,
-        @ValidAddress @RequestParam(required = true) validator: Address,
-    ): List<TimeSeriesRecord<RewardValues>> {
-        val now = Instant.now()
-        val range = TimeRangePreset.fromPathValue(rangeStr)
+    open fun getHistoricValidatorRewardsRange(
+        @PathVariable @ValidAddress validator: Address,
+        @RequestParam startTimestamp: Long,
+        @RequestParam endTimestamp: Long,
+    ): List<ValidatorBlock> =
+        service.getValidatorHistoricBlocks(
+            startTimestamp,
+            endTimestamp,
+            validator.value.lowercase(),
+        )
 
-        val after = range.computeAfterTimestamp(now)
-        val before = now.epochSecond
-
-        return service.getValidatorBlocksHistoric(after, before, validator)
-    }
+    @GetMapping("/blocks/missed/{validator}")
+    @Operation(
+        summary = "Get percentage of missed blocks",
+        description =
+            "Calculates percentage of missed blocks for a validator in a block range. " +
+                "startBlock must be provided. " +
+                "If no endBlock is provided, endBlock defaults to best/latest block.",
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "validator",
+        schema = Schema(type = "string"),
+        description = "Validator address",
+        required = true,
+        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "startBlock",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "Start block (inclusive)",
+        required = true,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "endBlock",
+        schema = Schema(type = "integer", format = "int64", minimum = "0"),
+        description = "End block (inclusive) defaults to best/latest block if not provided",
+        required = false,
+    )
+    open fun getMissedBlocksPercentage(
+        @PathVariable @ValidAddress validator: Address,
+        @RequestParam(required = true) startBlock: Long,
+        @RequestParam(required = false) endBlock: Long?,
+    ): Double = service.getMissedBlocksPercentage(validator.value.lowercase(), startBlock, endBlock)
 }

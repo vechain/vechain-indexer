@@ -4,6 +4,19 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 
 object TimeSeriesUtils {
+    // Time-based thresholds for determining data granularity
+    // Thresholds are in seconds based on typical data points for visualization:
+    // - Up to 1 hour (3,600 seconds): return all blocks (~360 data points at 10s/block)
+    // - Up to 1 week (604,800 seconds): return hourly aggregates (~168 data points)
+    // - Up to 1 month (2,592,000 seconds): return daily aggregates (~30 data points)
+    // - Up to 1 year (31,536,000 seconds): return weekly aggregates (~52 data points)
+    // - Beyond 1 year: return monthly aggregates
+
+    const val HOURLY_THRESHOLD = 4_000L
+    const val DAILY_THRESHOLD = 700_000L
+    const val WEEKLY_THRESHOLD = 3_000_000L
+    const val MONTHLY_THRESHOLD = 35_000_000L
+
     /**
      * Retrieve historic time series data for a given range of timestamps. This method fetches data
      * from the repository based on the provided `after` and `before` timestamps, extracts the
@@ -34,13 +47,17 @@ object TimeSeriesUtils {
                 findLatestBeforeOrAtBlockTimestamp(after)?.let {
                     TimeSeriesRecord(after, valueExtractor(it))
                 }
-            } else null
+            } else {
+                null
+            }
 
         val lastRecord = data.last()
         val endBookend =
             if (lastRecord.blockTimestamp < before) {
                 TimeSeriesRecord(before, valueExtractor(lastRecord))
-            } else null
+            } else {
+                null
+            }
 
         val records = mutableListOf<TimeSeriesRecord<R>>()
         startBookend?.let { records.add(it) }

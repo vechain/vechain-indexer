@@ -17,7 +17,6 @@ import org.vechain.indexer.fixtures.BlockFixtures
 
 @ExtendWith(MockKExtension::class)
 class BlockUsageServiceTest {
-
     @MockK lateinit var repository: BlockUsageRepository
 
     private lateinit var service: BlockUsageService
@@ -183,13 +182,13 @@ class BlockUsageServiceTest {
     // Test calculateTimeBoundary
     @Test
     fun `calculateTimeBoundary returns true when boundary is crossed`() {
-        val result = service.calculateTimeBoundary(3590L, 3610L) { prev, curr -> true }
+        val result = TimestampUtils.calculateTimeBoundary(3590L, 3610L) { prev, curr -> true }
         assertEquals(true, result)
     }
 
     @Test
     fun `calculateTimeBoundary returns null when boundary is not crossed`() {
-        val result = service.calculateTimeBoundary(3610L, 3620L) { prev, curr -> false }
+        val result = TimestampUtils.calculateTimeBoundary(3610L, 3620L) { prev, curr -> false }
         assertNull(result)
     }
 
@@ -342,8 +341,8 @@ class BlockUsageServiceTest {
         isDaily: Boolean? = null,
         isWeekly: Boolean? = null,
         isMonthly: Boolean? = null,
-    ): BlockUsage {
-        return BlockUsage(
+    ): BlockUsage =
+        BlockUsage(
             blockId = blockId,
             blockNumber = blockNumber,
             blockTimestamp = blockTimestamp,
@@ -357,5 +356,4 @@ class BlockUsageServiceTest {
             isWeekly = isWeekly,
             isMonthly = isMonthly,
         )
-    }
 }

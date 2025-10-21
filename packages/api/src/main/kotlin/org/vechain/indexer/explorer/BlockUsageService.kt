@@ -3,25 +3,14 @@ package org.vechain.indexer.explorer
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
+import org.vechain.indexer.utils.TimeSeriesUtils.DAILY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.HOURLY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.MONTHLY_THRESHOLD
+import org.vechain.indexer.utils.TimeSeriesUtils.WEEKLY_THRESHOLD
 
 @Profile("explorer", "block-usage")
 @Service
 open class BlockUsageService(private val blockUsageRepository: BlockUsageRepository) {
-    companion object {
-        // Time-based thresholds for determining data granularity
-        // Thresholds are in seconds based on typical data points for visualization:
-        // - Up to 1 hour (3,600 seconds): return all blocks (~360 data points at 10s/block)
-        // - Up to 1 week (604,800 seconds): return hourly aggregates (~168 data points)
-        // - Up to 1 month (2,592,000 seconds): return daily aggregates (~30 data points)
-        // - Up to 1 year (31,536,000 seconds): return weekly aggregates (~52 data points)
-        // - Beyond 1 year: return monthly aggregates
-
-        private const val HOURLY_THRESHOLD = 4_000L
-        private const val DAILY_THRESHOLD = 700_000L
-        private const val WEEKLY_THRESHOLD = 3_000_000L
-        private const val MONTHLY_THRESHOLD = 35_000_000L
-    }
-
     /**
      * Retrieves block usage data for a given timestamp range. The granularity of the data is
      * automatically determined based on the size of the time range to optimize for reasonable data

@@ -2,6 +2,7 @@ package org.vechain.indexer.validator
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
+import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.TimeSeriesRepo
 
@@ -28,54 +29,102 @@ interface ValidatorBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorBlock?
 
+    // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'validator': ?0, 'status': ?1, 'blockTimestamp': { '\$gte': ?2, '\$lte': ?3 } } }",
-                "{ '\$sort': { 'blockTimestamp': 1 } }",
+                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$sort': { validator: 1, blockNumber: -1 } }",
+                "{ '\$group': { _id: { validator: '\$validator'}, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
             ]
     )
-    fun findByValidatorAndStatusAndBlockTimestampBetween(
+    fun findLatestHourly(): List<ValidatorLatestBlockResult>
+
+    // Finds latest daily blocks per validator and status -> VALIDATED only
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$sort': { validator: 1, blockNumber: -1 } }",
+                "{ '\$group': { _id: { validator: '\$validator' }, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
+            ]
+    )
+    fun findLatestDaily(): List<ValidatorLatestBlockResult>
+
+    // Finds latest weekly blocks per validator and status -> VALIDATED only
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$sort': { validator: 1,blockNumber: -1 } }",
+                "{ '\$group': { _id: { validator: '\$validator'}, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
+            ]
+    )
+    fun findLatestWeekly(): List<ValidatorLatestBlockResult>
+
+    // Finds latest monthly blocks per validator and status -> VALIDATED only
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { isDaily: true, status: 'VALIDATED' } }",
+                "{ '\$sort': { validator: 1, blockNumber: -1 } }",
+                "{ '\$group': { _id: { validator: '\$validator' }, blockTimestamp: { '\$first': '\$blockTimestamp' } } }",
+            ]
+    )
+    fun findLatestMonthly(): List<ValidatorLatestBlockResult>
+
+    @Query(
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2 }",
+        sort = "{ 'blockTimestamp': 1 }",
+    )
+    fun findAllInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
         validator: String,
-        status: BlockStatus,
-        after: Long,
-        before: Long,
     ): List<ValidatorBlock>
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'validator': ?0,  'status': ?1, 'blockTimestamp': { '\$lte': ?2 }, } }",
-                "{ '\$sort': { 'blockTimestamp': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
+    @Query(
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isHourly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        sort = "{ 'blockTimestamp': 1 }",
     )
-    fun findLatestByValidatorAndStatusBeforeOrAtBlockTimestamp(
+    fun findHourlyInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
         validator: String,
-        status: BlockStatus,
-        blockTimestamp: Long,
-    ): ValidatorBlock?
-
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'validator': { '\$in': ?0 }, 'status': ?1 } }",
-                "{ '\$sort': { 'validator': 1, 'blockNumber': -1 } }",
-                "{ '\$group': { '_id': '\$validator', 'latest': { '\$first': '\$\$ROOT' } } }",
-            ]
-    )
-    fun findLatestByValidatorsAndStatus(
-        validators: List<String>,
-        status: BlockStatus,
     ): List<ValidatorBlock>
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'validator': ?0, 'status': ?1 } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
+    @Query(
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isDaily': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        sort = "{ 'blockTimestamp': 1 }",
     )
-    fun findLatestByValidatorAndStatus(validator: String, status: BlockStatus): ValidatorBlock?
+    fun findDailyInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
+        validator: String,
+    ): List<ValidatorBlock>
+
+    @Query(
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isWeekly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        sort = "{ 'blockTimestamp': 1 }",
+    )
+    fun findWeeklyInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
+        validator: String,
+    ): List<ValidatorBlock>
+
+    @Query(
+        value =
+            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, 'status': 'VALIDATED', 'validator': ?2, \$or: [{ 'isMonthly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
+        sort = "{ 'blockTimestamp': 1 }",
+    )
+    fun findMonthlyInTimestampRange(
+        startTimestamp: Long,
+        endTimestamp: Long,
+        validator: String,
+    ): List<ValidatorBlock>
 }
