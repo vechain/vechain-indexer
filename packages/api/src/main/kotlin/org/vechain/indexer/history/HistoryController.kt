@@ -160,8 +160,8 @@ open class HistoryController(private val historyService: HistoryService) {
                             [
                                 "STARGATE_DELEGATE_LEGACY",
                                 "STARGATE_STAKE",
-                                "STARGATE_CLAIM_REWARDS_BASE",
-                                "STARGATE_CLAIM_REWARDS_DELEGATE",
+                                "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                                "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
                                 "STARGATE_UNSTAKE",
                                 "STARGATE_DELEGATE_REQUEST",
                                 "STARGATE_DELEGATE_ACTIVE",
@@ -252,8 +252,8 @@ open class HistoryController(private val historyService: HistoryService) {
         setOf(
             "STARGATE_DELEGATE_LEGACY",
             "STARGATE_STAKE",
-            "STARGATE_CLAIM_REWARDS_BASE",
-            "STARGATE_CLAIM_REWARDS_DELEGATE",
+            "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+            "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
             "STARGATE_UNSTAKE",
             "STARGATE_DELEGATE_REQUEST",
             "STARGATE_DELEGATE_ACTIVE",

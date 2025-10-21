@@ -2,7 +2,12 @@ package org.vechain.indexer.stargate
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
 import org.springframework.stereotype.Service
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.TimeSeriesUtils
@@ -16,6 +21,7 @@ open class StargateService(
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
+    private val stargateTokenRepository: StargateTokenRepository,
 ) {
     /**
      * Retrieves the total VTHO claimed up to a specific block number. If no block number is
@@ -189,4 +195,47 @@ open class StargateService(
         ) {
             it.valueForLevel(level)
         }
+
+    /**
+     * Retrieves Stargate tokens with optional filtering by tokenId, manager, or owner.
+     *
+     * Behavior:
+     * - If [tokenId] is provided, returns that single token (or empty slice if not found).
+     * - If both [manager] and [owner] are provided, returns tokens matching either.
+     * - If only [manager] is provided, returns tokens by that manager.
+     * - If only [owner] is provided, returns tokens by that owner.
+     * - If no filters are provided, returns all tokens (paginated).
+     *
+     * @param tokenId Optional token ID to filter by.
+     * @param manager Optional manager address to filter by.
+     * @param owner Optional owner address to filter by.
+     * @param pageable Pagination information.
+     * @return A [Slice] of [StargateToken] results.
+     */
+    open fun getStargateTokens(
+        tokenId: String?,
+        manager: String?,
+        owner: String?,
+        pageable: Pageable,
+    ): PaginatedResponse<StargateToken> {
+        val slice =
+            when {
+                tokenId != null -> {
+                    stargateTokenRepository
+                        .findById(tokenId)
+                        .map { SliceImpl(listOf(it), pageable, false) }
+                        .orElseGet { SliceImpl(emptyList(), pageable, false) }
+                }
+                manager != null && owner != null ->
+                    stargateTokenRepository.findByOwnerOrManager(owner, manager, pageable)
+
+                manager != null -> stargateTokenRepository.findByManager(manager, pageable)
+
+                owner != null -> stargateTokenRepository.findByOwner(owner, pageable)
+
+                else -> stargateTokenRepository.findAll(pageable)
+            }
+
+        return paginatedResponse(slice)
+    }
 }

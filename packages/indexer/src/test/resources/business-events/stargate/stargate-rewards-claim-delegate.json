@@ -1,5 +1,5 @@
 {
-  "name": "STARGATE_CLAIM_REWARDS_DELEGATE",
+  "name": "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
   "sameClause": true,
   "events": [
     {

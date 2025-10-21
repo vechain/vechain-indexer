@@ -16,10 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
+import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTimeRangePreset
 import org.vechain.indexer.validation.ValidTokenLevel
 
@@ -331,4 +334,53 @@ open class StargateController(private val stargateService: StargateService) {
                 blockTimestamp = 0,
                 total = BigInteger.ZERO,
             )
+
+    @GetMapping("/tokens")
+    @Operation(
+        summary = "Get Stargate Tokens",
+        description =
+            "Retrieve Stargate Token snapshots. You can filter results by tokenId, manager, owner, or any " +
+                "combination of these parameters. If no filters are provided, all tokens will be returned.",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "tokenId",
+        schema = Schema(type = "string"),
+        description = "Optional query parameter to filter by token ID",
+        required = false,
+        example = "100001",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "manager",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "Optional query parameter to filter by manager address",
+        required = false,
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "owner",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "Optional query parameter to filter by owner address",
+        required = false,
+        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
+    )
+    @CommonApiResponses
+    open fun getStargateTokens(
+        @RequestParam(required = false) tokenId: String?,
+        @ValidAddress @RequestParam(required = false) manager: Address?,
+        @ValidAddress @RequestParam(required = false) owner: Address?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<StargateToken> {
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+        return stargateService.getStargateTokens(
+            tokenId,
+            manager?.value?.lowercase(),
+            owner?.value?.lowercase(),
+            pageable,
+        )
+    }
 }
