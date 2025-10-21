@@ -1,6 +1,7 @@
 package org.vechain.indexer.stargate
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
@@ -12,6 +13,7 @@ import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.validator.Status
 
 @Document("stargate_tokens")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonView(Views.Public::class)
 data class StargateToken(
     @Id val tokenId: String,

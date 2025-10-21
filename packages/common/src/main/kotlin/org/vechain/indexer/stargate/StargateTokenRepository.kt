@@ -3,11 +3,12 @@ package org.vechain.indexer.stargate
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.repository.Aggregation
+import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
-import org.vechain.indexer.validator.Status
 
-@Profile("stargate")
+@Profile("stargate", "stargate-token")
 @Repository
 interface StargateTokenRepository : BasePagingAndSortingIndexedRepository<StargateToken, String> {
     fun findByOwner(owner: String, pageable: Pageable): Slice<StargateToken>
@@ -22,10 +23,12 @@ interface StargateTokenRepository : BasePagingAndSortingIndexedRepository<Starga
 
     fun findByValidatorIdIn(validatorIds: Set<String>): List<StargateToken>
 
+    @Query("{ 'delegationNextPeriod': { \$in: ?0 }, 'delegationStatus': { \$in: ?1 } }")
     fun findByDelegationNextPeriodAndDelegationStatusIn(
         blockNumbers: List<Long>,
-        statuses: List<Status>,
+        statuses: List<String>,
     ): List<StargateToken>
 
-    fun findAllDistinctValidatorIds(): List<String>
+    @Aggregation("{ '\$group': { '_id': '\$validatorId' } }")
+    fun findAllDistinctValidatorIds(): List<String?>
 }

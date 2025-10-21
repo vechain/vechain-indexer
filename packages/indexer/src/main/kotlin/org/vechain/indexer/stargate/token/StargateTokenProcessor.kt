@@ -32,6 +32,6 @@ open class StargateTokenProcessor(
 
         val updates = service.processBlock(entry.block, entry.callResults, entry.events())
 
-        service.save(updates)
+        service.save(updates.first, updates.second)
     }
 }

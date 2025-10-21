@@ -4,9 +4,11 @@ import kotlin.collections.plus
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.StargateToken
+import org.vechain.indexer.stargate.StargateTokenArchive
 import org.vechain.indexer.stargate.StargateTokenRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
@@ -32,6 +34,7 @@ open class StargateTokenService(
     private val stargateTokenRepository: StargateTokenRepository,
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
+    private val archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
 ) {
     private var cachedValidators: Set<String> = emptySet()
 
@@ -40,7 +43,7 @@ open class StargateTokenService(
         block: Block,
         callResponses: List<InspectionResult>,
         events: List<IndexedEvent>,
-    ): Collection<StargateToken> {
+    ): Pair<Collection<StargateToken>, List<StargateToken>> {
         val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
         val removedValidators = checkMissingValidators(validatorSnapshots)
 
@@ -56,19 +59,35 @@ open class StargateTokenService(
                 validatorSnapshots,
             )
 
-        // Mutations
-        processDelegationStatusTransitions(block, latestTokenSnapshots)
-        handleValidatorsDisappearedSnapshots(removedValidators, block, latestTokenSnapshots)
-        eventService.handleStargateEvents(events, latestTokenSnapshots, validatorSnapshots)
+        val tokensToArchive = mutableListOf<StargateToken>()
 
-        return latestTokenSnapshots.values
+        // Mutations
+        processDelegationStatusTransitions(block, latestTokenSnapshots, tokensToArchive)
+        handleValidatorsDisappearedSnapshots(
+            removedValidators,
+            block,
+            latestTokenSnapshots,
+            tokensToArchive,
+        )
+        eventService.handleStargateEvents(
+            events,
+            latestTokenSnapshots,
+            validatorSnapshots,
+            tokensToArchive,
+        )
+
+        return latestTokenSnapshots.values to tokensToArchive
     }
 
     /** Persist updated token snapshots. */
     @Transactional
-    open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken> = emptyList()) {
+    open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
         if (tokens.isEmpty()) return
         stargateTokenRepository.saveAll(tokens)
+
+        if (archive.isNotEmpty()) {
+            archiveService.saveAll(archive)
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -100,7 +119,7 @@ open class StargateTokenService(
         val dueSnapshots =
             stargateTokenRepository.findByDelegationNextPeriodAndDelegationStatusIn(
                 listOf(0L, block.number),
-                listOf(Status.QUEUED, Status.EXITING),
+                listOf(Status.QUEUED.name, Status.EXITING.name),
             )
 
         // 2. Split due snapshots into unknown vs transitioning
@@ -126,6 +145,7 @@ open class StargateTokenService(
     fun processDelegationStatusTransitions(
         block: Block,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
+        archive: MutableList<StargateToken>,
     ) {
         latestTokenSnapshots.values
             .filter {
@@ -133,6 +153,7 @@ open class StargateTokenService(
                     it.delegationNextPeriod == block.number
             }
             .forEach { token ->
+                archive.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
                         version = token.version + 1,
@@ -213,10 +234,12 @@ open class StargateTokenService(
         validatorIds: Set<String>,
         block: Block,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
+        tokensToArchive: MutableList<StargateToken>,
     ) {
         latestTokenSnapshots.values
             .filter { it.validatorId in validatorIds }
             .forEach { token ->
+                tokensToArchive.add(token)
                 latestTokenSnapshots[token.tokenId] =
                     token.copy(
                         version = token.version + 1,
@@ -234,12 +257,15 @@ open class StargateTokenService(
         validatorsSnapshots: Map<String, ValidatorSnapshot>
     ): Set<String> {
         val currentValidators = validatorsSnapshots.keys
+        if (currentValidators.isEmpty()) return emptySet()
 
         if (cachedValidators.isEmpty()) {
-            cachedValidators = stargateTokenRepository.findAllDistinctValidatorIds().toSet()
+            cachedValidators =
+                stargateTokenRepository.findAllDistinctValidatorIds().filterNotNull().toSet()
         }
 
         val removed = cachedValidators.minus(currentValidators)
+
         cachedValidators = currentValidators
         return removed
     }

@@ -46,8 +46,8 @@ open class StargateTokenConfig {
     open fun stargateIndexer(
         thorClient: ThorClient,
         processor: StargateTokenProcessor,
-        @Value("\${indexer.startBlock.stargate:0}") startBlock: Long,
-        @Value("\${indexer.syncLogInterval}") syncLogInterval: Long,
+        @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         stargateTokenPruner: TargetedPruner<StargateToken, StargateTokenArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
@@ -80,7 +80,6 @@ open class StargateTokenConfig {
                     "TokenManagerRemoved",
                     "MaturityPeriodBoosted",
                     "ValidationSignaledExit",
-                    "Base",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
                 )

@@ -53,7 +53,6 @@ open class StargateTokenCollectionConfig(
             listOf(
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "owner_1" to Index().on("owner", Sort.Direction.ASC),
-                "tokenId_1" to Index().on("tokenId", Sort.Direction.ASC).unique(),
                 "manager_1" to Index().on("manager", Sort.Direction.ASC),
                 "owner_1_manager_1" to
                     Index().on("owner", Sort.Direction.ASC).on("manager", Sort.Direction.ASC),
