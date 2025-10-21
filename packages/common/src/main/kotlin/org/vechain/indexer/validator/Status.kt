@@ -1,7 +1,7 @@
 package org.vechain.indexer.validator
 
 enum class Status {
-    UNKNOWN, // Initial state, should not be used
+    NONE, // Initial state
     QUEUED, // Waiting to be activated
     ACTIVE, // Fully active and validating
     EXITED, // Exited and funds withdrawn
@@ -11,12 +11,12 @@ enum class Status {
     companion object {
         fun fromCode(code: Int): Status =
             when (code) {
-                0 -> UNKNOWN
+                0 -> NONE
                 1 -> QUEUED
                 2 -> ACTIVE
                 3 -> EXITED
                 4 -> EXITING
-                else -> UNKNOWN
+                else -> NONE
             }
     }
 }
