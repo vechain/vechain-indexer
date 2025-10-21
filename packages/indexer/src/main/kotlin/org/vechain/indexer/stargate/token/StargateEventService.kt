@@ -11,7 +11,6 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsString
-import org.vechain.indexer.validator.DelegationUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorDelegationService
 import org.vechain.indexer.validator.ValidatorSnapshot

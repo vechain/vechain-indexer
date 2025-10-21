@@ -1,7 +1,6 @@
 package org.vechain.indexer.stargate.token
 
 import kotlin.collections.plus
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -34,7 +33,7 @@ open class StargateTokenService(
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
 ) {
-    private val logger = LoggerFactory.getLogger(this::class.java)
+    private var cachedValidators: Set<String> = emptySet()
 
     /** Main entry point for processing a block. */
     open fun processBlock(
@@ -43,10 +42,7 @@ open class StargateTokenService(
         events: List<IndexedEvent>,
     ): Collection<StargateToken> {
         val validatorSnapshots = validatorDelegationService.decodeValidatorSnapshots(callResponses)
-        val removedValidators =
-            validatorDelegationService.checkMissingValidators(validatorSnapshots) {
-                stargateTokenRepository.findAllDistinctValidatorIds().toSet()
-            }
+        val removedValidators = checkMissingValidators(validatorSnapshots)
 
         val exitingValidators = findDelegationsFromExits(events)
 
@@ -141,14 +137,20 @@ open class StargateTokenService(
                     token.copy(
                         version = token.version + 1,
                         delegationStatus =
-                            if (token.delegationStatus == Status.EXITING) Status.NONE
-                            else Status.ACTIVE,
+                            if (token.delegationStatus == Status.EXITING) {
+                                Status.NONE
+                            } else {
+                                Status.ACTIVE
+                            },
                         blockId = block.id,
                         blockNumber = block.number,
                         blockTimestamp = block.timestamp,
                         validatorId =
-                            if (token.delegationStatus == Status.EXITING) Address.ZERO_ADDRESS
-                            else token.validatorId,
+                            if (token.delegationStatus == Status.EXITING) {
+                                Address.ZERO_ADDRESS
+                            } else {
+                                token.validatorId
+                            },
                     )
             }
     }
@@ -225,6 +227,21 @@ open class StargateTokenService(
                         validatorId = null,
                     )
             }
+    }
+
+    /** Detect validators that disappeared compared to previous state. */
+    private fun checkMissingValidators(
+        validatorsSnapshots: Map<String, ValidatorSnapshot>
+    ): Set<String> {
+        val currentValidators = validatorsSnapshots.keys
+
+        if (cachedValidators.isEmpty()) {
+            cachedValidators = stargateTokenRepository.findAllDistinctValidatorIds().toSet()
+        }
+
+        val removed = cachedValidators.minus(currentValidators)
+        cachedValidators = currentValidators
+        return removed
     }
 
     /** Extract validator IDs from exit events. */
