@@ -710,6 +710,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.validator-rewards
     },
     {
+      name = "VERSION_STARGATE_TOKEN"
+      value = each.value.indexer.version.stargate-token
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },

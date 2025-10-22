@@ -176,6 +176,7 @@ enabled_nets:
         historic-proposals:          '3'
         validator: '3'
         validator-rewards: '3'
+        stargate-token: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
