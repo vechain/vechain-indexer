@@ -284,7 +284,7 @@ class StargateEventService(
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
             owner = Address.ZERO_ADDRESS,
-            manager = Address.ZERO_ADDRESS,
+            manager = null,
             vetStaked = BigInteger.ZERO,
             delegationStatus = Status.NONE,
             validatorId = null,

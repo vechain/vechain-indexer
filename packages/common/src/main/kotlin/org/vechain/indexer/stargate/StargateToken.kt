@@ -13,15 +13,14 @@ import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.validator.Status
 
 @Document("stargate_tokens")
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonView(Views.Public::class)
 data class StargateToken(
     @Id val tokenId: String,
     val level: TokenLevel,
     val owner: String,
-    val manager: String? = null,
+    @JsonInclude(JsonInclude.Include.ALWAYS) val manager: String? = null,
     val delegationStatus: Status,
-    val validatorId: String? = null,
+    @JsonInclude(JsonInclude.Include.ALWAYS) val validatorId: String? = null,
     val totalRewardsClaimed: BigInteger,
     val totalBootstrapRewardsClaimed: BigInteger,
     val vetStaked: BigInteger,
