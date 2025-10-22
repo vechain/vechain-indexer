@@ -25,25 +25,61 @@ resource "aws_security_group" "alb-sg" {
     to_port     = 0
   }
 
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 80
-    protocol    = "tcp"
-    to_port     = 80
+  # HTTP ingress - Allow from internet when CloudFront prefix list is disabled
+  dynamic "ingress" {
+    for_each = try(local.env.turn_on_cloudfront_prefix_list, false) ? [] : [1]
+    content {
+      cidr_blocks = ["0.0.0.0/0"]
+      from_port   = 80
+      protocol    = "tcp"
+      to_port     = 80
+      description = "Allow HTTP from internet"
+    }
   }
 
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 443
-    protocol    = "tcp"
-    to_port     = 443
+  # HTTP ingress - Allow from CloudFront only when prefix list is enabled
+  dynamic "ingress" {
+    for_each = try(local.env.turn_on_cloudfront_prefix_list, false) ? [1] : []
+    content {
+      prefix_list_ids = ["pl-4fa04526"]
+      from_port       = 80
+      protocol        = "tcp"
+      to_port         = 80
+      description     = "Allow HTTP from CloudFront only"
+    }
   }
 
+  # HTTPS ingress - Allow from internet when CloudFront prefix list is disabled
+  dynamic "ingress" {
+    for_each = try(local.env.turn_on_cloudfront_prefix_list, false) ? [] : [1]
+    content {
+      cidr_blocks = ["0.0.0.0/0"]
+      from_port   = 443
+      protocol    = "tcp"
+      to_port     = 443
+      description = "Allow HTTPS from internet"
+    }
+  }
+
+  # HTTPS ingress - Allow from CloudFront only when prefix list is enabled
+  dynamic "ingress" {
+    for_each = try(local.env.turn_on_cloudfront_prefix_list, false) ? [1] : []
+    content {
+      prefix_list_ids = ["pl-4fa04526"]
+      from_port       = 443
+      protocol        = "tcp"
+      to_port         = 443
+      description     = "Allow HTTPS from CloudFront only"
+    }
+  }
+
+  # Self-referencing rule for internal communication
   ingress {
-    from_port = 0
-    protocol  = "-1"
-    to_port   = 0
-    self      = true
+    from_port   = 0
+    protocol    = "-1"
+    to_port     = 0
+    self        = true
+    description = "Allow all traffic from instances with this security group"
   }
 
   tags = {

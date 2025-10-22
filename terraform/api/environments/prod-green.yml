@@ -25,6 +25,12 @@ rate_limit_exception_list:
   -                              81.39.47.171/32
   -                              90.26.60.41/32
 cloudwatch_alarms:               true
+
+# CloudFront Security Configuration
+# Set to true to restrict ALB ingress to CloudFront IP ranges only (using AWS managed prefix list)
+# When false, ALB accepts traffic from any source (0.0.0.0/0)
+turn_on_cloudfront_prefix_list:  false
+
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
 datadog:
