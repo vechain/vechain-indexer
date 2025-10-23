@@ -26,13 +26,27 @@ class ValidatorDelegationService(
 ) {
     private val cachedGetDelegationAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
+    /**
+     * Returns the next status of a validator.
+     * - If the current status is [Status.EXITING], the next status will be [Status.EXITED].
+     * - Otherwise, the validator is considered [Status.ACTIVE].
+     *
+     * @param status Current validator status.
+     * @return The next status.
+     */
     fun nextStatus(status: Status): Status =
         if (status == Status.EXITING) Status.EXITED else Status.ACTIVE
 
     /**
-     * Fetches validator period info directly from chain.
+     * Fetches a validator’s validation period information directly from chain.
      *
-     * @return Pair(periodLength, nextCycleStart) or (periodLength, 0) if not started
+     * Uses `getValidationPeriodDetails` to fetch the validator’s start block and period length, and
+     * calculates the next cycle start block relative to the current block.
+     *
+     * @param validatorId Validator identifier (e.g., address).
+     * @param currentBlock The current block number.
+     * @return Pair of (periodLength, nextCycleStart). If the validator has not started, returns
+     *   (periodLength, 0).
      */
     fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
         val clause =
@@ -54,19 +68,12 @@ class ValidatorDelegationService(
         return periodLength to nextCycleStart
     }
 
-    /** Decodes `getValidationPeriodDetails` response. */
-    private fun decodeValidationPeriodDetails(data: String): Pair<Long, Long> {
-        val decoded =
-            FunctionReturnDecoder.decode(
-                data,
-                getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
-            )
-        val startBlock = (decoded["startBlock"] as BigInteger).toLong()
-        val periodLength = (decoded["period"] as BigInteger).toLong()
-        return startBlock to periodLength
-    }
-
-    /** Convenience helper if you only care about startBlock from an already-fetched response. */
+    /**
+     * Extracts the start block from a chain response.
+     *
+     * @param response The chain execution response.
+     * @return The decoded start block.
+     */
     fun determineStartBlock(response: ExecuteCodeResponse): Long =
         decodeValidationPeriodDetails(response.data).first
 
@@ -84,8 +91,13 @@ class ValidatorDelegationService(
     }
 
     /**
-     * Resolve a validator's exit block. Uses cached snapshot if available, otherwise falls back to
-     * chain call.
+     * Resolves the exit block for a validator.
+     *
+     * Uses cached snapshot if available, otherwise queries the chain.
+     *
+     * @param validatorId The validator identifier.
+     * @param validatorSnapshots Cached validator snapshots.
+     * @return The exit block number.
      */
     fun getValidatorExitBlock(
         validatorId: String,
@@ -108,7 +120,14 @@ class ValidatorDelegationService(
                 (decoded["exitBlock"] as BigInteger).toLong()
             }
 
-    /** Decode validator state from chain call responses. */
+    /**
+     * Decodes validator snapshots from chain responses.
+     *
+     * Parses masters, staking period lengths, start blocks, and exit blocks.
+     *
+     * @param callResponses Chain responses from the staking contract.
+     * @return Map of validatorId → [ValidatorSnapshot].
+     */
     fun decodeValidatorSnapshots(
         callResponses: List<InspectionResult>
     ): Map<String, ValidatorSnapshot> {
@@ -137,6 +156,14 @@ class ValidatorDelegationService(
             .toMap()
     }
 
+    /**
+     * Fetches validation period details for a list of validators.
+     *
+     * Performs a batch chain call for efficiency.
+     *
+     * @param validatorIds List of validator identifiers.
+     * @return List of [ExecuteCodeResponse] with ABI-encoded results.
+     */
     fun fetchValidationPeriodDetails(validatorIds: List<String>): List<ExecuteCodeResponse> {
         if (validatorIds.isEmpty()) return emptyList()
 
@@ -151,6 +178,16 @@ class ValidatorDelegationService(
         return thorService.executeReadOnlyCode(clauses)
     }
 
+    /**
+     * Calculates the next cycle block for a validator.
+     * - If the last cycle end is in the future, that value is returned.
+     * - Otherwise, aligns to the next multiple of the cycle length after the current block.
+     *
+     * @param lastCycleEnd The last known cycle end block (nullable).
+     * @param cycleLength Length of a single cycle.
+     * @param currentBlock The current block number.
+     * @return The block number where the next cycle starts.
+     */
     fun resolveNextCycleBlock(lastCycleEnd: Long?, cycleLength: Long, currentBlock: Long): Long {
         val base = lastCycleEnd ?: currentBlock
         return if (base > currentBlock) {
@@ -160,6 +197,19 @@ class ValidatorDelegationService(
         }
     }
 
+    /** Decodes `getValidationPeriodDetails` response. */
+    private fun decodeValidationPeriodDetails(data: String): Pair<Long, Long> {
+        val decoded =
+            FunctionReturnDecoder.decode(
+                data,
+                getDelegationsAbiFunctions("getValidationPeriodDetails").outputs,
+            )
+        val startBlock = (decoded["startBlock"] as BigInteger).toLong()
+        val periodLength = (decoded["period"] as BigInteger).toLong()
+        return startBlock to periodLength
+    }
+
+    /** Retrieves and caches ABI function definitions for delegation-related calls. */
     private fun getDelegationsAbiFunctions(name: String): AbiElement =
         cachedGetDelegationAbi[name]
             ?: run {
