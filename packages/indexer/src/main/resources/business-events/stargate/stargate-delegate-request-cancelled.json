@@ -1,0 +1,99 @@
+{
+  "name": "STARGATE_DELEGATE_REQUEST_CANCELLED",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationExitRequested",
+      "alias": "delegationSG",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "DelegationAdded",
+      "alias": "delegationBuiltin",
+      "conditions": [
+        {
+          "firstOperand": "stake",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x00000000000000000000000000005374616B6572",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "delegationSG",
+      "firstEventProperty": "delegationId",
+      "secondEventName": "delegationBuiltin",
+      "secondEventProperty": "delegationID",
+      "operator": "EQ"
+    },
+    {
+      "firstEventName": "delegationSG",
+      "firstEventProperty": "validator",
+      "secondEventName": "delegationBuiltin",
+      "secondEventProperty": "validator",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "delegationSG",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "validator",
+      "eventName": "delegationSG",
+      "businessEventName": "validator"
+    },
+    {
+      "name": "delegationId",
+      "eventName": "delegationSG",
+      "businessEventName": "delegationId"
+    },
+    {
+      "name": "origin",
+      "eventName": "delegationSG",
+      "businessEventName": "owner"
+    },
+    {
+      "name": "amount",
+      "eventName": "delegationSG",
+      "businessEventName": "value"
+    },
+    {
+      "name": "amount",
+      "eventName": "delegationSG",
+      "businessEventName": "value"
+    },
+    {
+      "name": "levelId",
+      "eventName": "delegationSG",
+      "businessEventName": "levelId"
+    }
+  ]
+}
