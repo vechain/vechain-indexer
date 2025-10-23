@@ -22,6 +22,12 @@ open class SwaggerConfig {
                     .version(semver)
                     .description("Blockchain data indexed for fast querying")
             )
-            .servers(listOf(Server().url("/").description("VeWorld Indexer")))
+            .servers(
+                listOf(
+                    Server().url("/").description("Local"),
+                    Server().url("https://indexer.mainnet.vechain.org").description("Mainnet"),
+                    Server().url("https://indexer.testnet.vechain.org").description("Testnet"),
+                )
+            )
     }
 }
