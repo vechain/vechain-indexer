@@ -80,3 +80,37 @@ module "waf" {
   }
 }
 
+module "testnet_waf" {
+  count = local.is_shared && try(local.env_config.waf.enable_waf, false) ? 1 : 0
+  
+  source = "git::git@github.com:/vechainfoundation/terraform_infrastructure_modules.git//waf?ref=cloudfront-changes"
+  
+  env                       = local.env_config.environment
+  project_name              = "veworld-testnet"
+  waf_cloudfront_enable     = try(local.env_config.waf.waf_cloudfront_enable, false)
+  logs_enable               = try(local.env_config.waf.waf_logs_enable, false)
+  logs_s3_enable            = try(local.env_config.waf.waf_logs_s3_enable, false)
+  logs_retension            = try(local.env_config.waf.waf_logs_retention, 30)
+  scope                     = try(local.env_config.waf.waf_scope, "CLOUDFRONT")
+  associate_waf             = try(local.env_config.waf.waf_associate, false)
+  rate_limit                = try(local.env_config.waf.waf_rate_limit, 1000)
+  rate_limit_exception_list = try(local.env_config.waf.waf_rate_limit_exceptions, [])
+  
+  managed_rule_group_statement_rules = [
+    for rule in try(local.env_config.waf_managed_rules, []) : {
+      name            = rule.name
+      priority        = rule.priority
+      override_action = rule.override_action
+      managed_rule_group_statement = [{
+        name          = rule.rule_group_name
+        vendor_name   = rule.vendor_name
+        excluded_rule = rule.excluded_rules
+      }]
+    }
+  ]
+  
+  providers = {
+    aws = aws.us_east_1
+  }
+}
+

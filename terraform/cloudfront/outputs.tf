@@ -28,16 +28,12 @@ output "waf_arn" {
   value = local.is_shared && length(module.waf) > 0 ? module.waf[0].waf_arn : null
 }
 
-# CloudFront Distribution Outputs (Staging and Prod workspaces only)
-output "mainnet_cloudfront_domain_name" {
-  description = "Domain name of the mainnet CloudFront distribution"
-  value = local.is_shared ? null : (length(data.aws_cloudfront_distribution.mainnet_distribution) > 0 ? data.aws_cloudfront_distribution.mainnet_distribution[0].domain_name : null)
+output "testnet_waf_arn" {
+  description = "ARN of the WAF Web ACL"
+  value = local.is_shared && length(module.testnet_waf) > 0 ? module.testnet_waf[0].waf_arn : null
 }
 
-output "mainnet_cloudfront_distribution_id" {
-  description = "ID of the mainnet CloudFront distribution"
-  value = local.is_shared ? null : (length(module.mainnet_cloudfront) > 0 ? module.mainnet_cloudfront[0].distribution : null)
-}
+
 
 output "testnet_cloudfront_domain_name" {
   description = "Domain name of the testnet CloudFront distribution"

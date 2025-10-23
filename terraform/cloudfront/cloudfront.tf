@@ -8,6 +8,7 @@ locals {
   
   # WAF ARN - references shared resources
   waf_arn = local.is_shared ? null : try(data.terraform_remote_state.shared[0].outputs.waf_arn, null)
+  testnet_waf_arn = local.is_shared ? null : try(data.terraform_remote_state.shared[0].outputs.testnet_waf_arn, null)
 }
 
 # Mainnet CloudFront Distribution
@@ -67,7 +68,7 @@ module "testnet_cloudfront" {
     }
   ]
   
-  waf_web_acl              = local.waf_arn
+  waf_web_acl              = local.testnet_waf_arn
   cache_policy_id          = try(local.cache_policy_map["default"].cache_policy_id, "")
   headers_policy_id        = try(local.env_config.default_headers_policy_id, "")
   origin_request_policy_id = try(local.env_config.default_origin_request_policy_id, "")
