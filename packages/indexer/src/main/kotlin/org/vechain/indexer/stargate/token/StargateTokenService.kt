@@ -7,9 +7,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.rest.ExecuteCodeResponse
-import org.vechain.indexer.stargate.StargateToken
-import org.vechain.indexer.stargate.StargateTokenArchive
-import org.vechain.indexer.stargate.StargateTokenRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult

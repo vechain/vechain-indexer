@@ -6,9 +6,6 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.stargate.VthoClaimedByAccount
-import org.vechain.indexer.stargate.VthoClaimedByAccountArchive
-import org.vechain.indexer.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-account")

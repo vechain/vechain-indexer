@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoClaimed
 
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding

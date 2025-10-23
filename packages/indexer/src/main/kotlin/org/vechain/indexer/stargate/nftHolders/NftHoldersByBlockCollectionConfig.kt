@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.stargate.NftHoldersByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "nft-holders-by-block")

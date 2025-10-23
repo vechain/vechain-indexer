@@ -11,9 +11,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
-import org.vechain.indexer.stargate.VthoClaimedByAccount
-import org.vechain.indexer.stargate.VthoClaimedByAccountArchive
-import org.vechain.indexer.stargate.VthoClaimedByAccountRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 

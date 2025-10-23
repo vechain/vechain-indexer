@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetDelegated
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
@@ -7,17 +7,12 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 
-@Document(collection = "stargate_total_vet_staked_by_block")
-data class VetStakedByBlock
+@Document(collection = "stargate_total_vet_delegated_by_block")
+data class VetDelegatedByBlock
 @ConstructorBinding
 constructor(
     @JsonIgnore override val blockId: String,
     @JsonIgnore @Id override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    override val total: BigInteger,
-    override val byLevel: Map<TokenLevel, BigInteger>,
-) : IndexedDocument, LevelledValue<BigInteger> {
-    override fun valueForLevel(level: TokenLevel?): BigInteger {
-        return if (level == null) total else byLevel[level] ?: BigInteger.ZERO
-    }
-}
+    val total: BigInteger,
+) : IndexedDocument

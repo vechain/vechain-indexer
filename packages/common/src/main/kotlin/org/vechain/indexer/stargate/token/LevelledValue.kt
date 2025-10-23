@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.token
 
 interface LevelledValue<T> {
     val total: T

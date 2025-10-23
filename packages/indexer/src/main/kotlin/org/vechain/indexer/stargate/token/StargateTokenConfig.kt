@@ -11,8 +11,6 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.stargate.StargateToken
-import org.vechain.indexer.stargate.StargateTokenArchive
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult

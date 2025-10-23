@@ -10,7 +10,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = "validators")

@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
+import org.vechain.indexer.stargate.token.StargateToken
+import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
+import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord

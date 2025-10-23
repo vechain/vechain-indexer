@@ -4,7 +4,7 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
 import org.bson.types.Decimal128
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator

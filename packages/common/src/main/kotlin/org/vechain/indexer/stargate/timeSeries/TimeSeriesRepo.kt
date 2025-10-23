@@ -1,10 +1,9 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.timeSeries
 
 import org.springframework.data.domain.Sort
 import org.vechain.indexer.IndexedDocument
 
 interface TimeSeriesRepo<T : IndexedDocument> {
-
     fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): T?
 
     fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): T?

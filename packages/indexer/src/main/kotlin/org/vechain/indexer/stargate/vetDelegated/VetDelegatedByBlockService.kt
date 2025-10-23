@@ -4,8 +4,6 @@ import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.stargate.VetDelegatedByBlock
-import org.vechain.indexer.stargate.VetDelegatedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 
 @Profile("stargate", "vet-delegated-by-block")

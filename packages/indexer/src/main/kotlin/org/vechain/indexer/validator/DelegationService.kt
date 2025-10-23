@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.rest.ExecuteCodeResponse
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.EventUtils.shouldProcessDelegationEvent

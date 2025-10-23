@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoClaimed
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger

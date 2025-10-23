@@ -10,6 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountArchive
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountService
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString

@@ -5,8 +5,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.stargate.StargateToken
-import org.vechain.indexer.stargate.TokenLevel
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean

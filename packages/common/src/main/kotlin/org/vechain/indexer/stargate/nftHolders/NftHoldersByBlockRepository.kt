@@ -1,12 +1,13 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.nftHolders
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
 
-@Profile("stargate", "vtho-claimed-by-block")
-interface VthoClaimedByBlockRepository :
-    BaseIndexedRepository<VthoClaimedByBlock, Long>, TimeSeriesRepo<VthoClaimedByBlock> {
+@Profile("stargate", "nft-holders-by-block")
+interface NftHoldersByBlockRepository :
+    BaseIndexedRepository<NftHoldersByBlock, Long>, TimeSeriesRepo<NftHoldersByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -15,7 +16,7 @@ interface VthoClaimedByBlockRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VthoClaimedByBlock?
+    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): NftHoldersByBlock?
 
     @Aggregation(
         pipeline =
@@ -25,5 +26,5 @@ interface VthoClaimedByBlockRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoClaimedByBlock?
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): NftHoldersByBlock?
 }

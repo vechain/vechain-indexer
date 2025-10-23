@@ -6,9 +6,6 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.stargate.StargateToken
-import org.vechain.indexer.stargate.StargateTokenArchive
-import org.vechain.indexer.stargate.StargateTokenRepository
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "stargate-token")

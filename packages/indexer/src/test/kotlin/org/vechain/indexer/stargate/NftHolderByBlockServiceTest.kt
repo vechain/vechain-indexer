@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import strikt.api.Assertion
 import strikt.api.expectThat

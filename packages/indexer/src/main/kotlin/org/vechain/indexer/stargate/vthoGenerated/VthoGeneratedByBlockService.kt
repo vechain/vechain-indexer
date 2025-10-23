@@ -6,8 +6,6 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.stargate.VthoGeneratedByBlock
-import org.vechain.indexer.stargate.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -24,8 +22,8 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      * - Starts from the latest persisted totals (or zero if none).
      * - Adds the current VTHO balance from call responses.
      * - Iterates through all events in the block, summing their required "value" fields.
-     * - Produces one [org.vechain.indexer.stargate.VthoGeneratedByBlock] record that represents the
-     *   running totals at this block.
+     * - Produces one [VthoGeneratedByBlock] record that represents the running totals at this
+     *   block.
      *
      * Returns null if both the event list is empty and no ABI data is available from call
      * responses.

@@ -1,8 +1,9 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetStaked
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
 
 @Profile("stargate", "vet-staked-by-block")
 interface VetStakedByBlockRepository :

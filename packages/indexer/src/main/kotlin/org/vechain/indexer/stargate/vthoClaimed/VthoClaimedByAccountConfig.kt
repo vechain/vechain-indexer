@@ -12,8 +12,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.stargate.VthoClaimedByAccount
-import org.vechain.indexer.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 

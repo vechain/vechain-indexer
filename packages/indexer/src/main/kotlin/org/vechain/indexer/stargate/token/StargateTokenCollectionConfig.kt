@@ -11,8 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.stargate.StargateToken
-import org.vechain.indexer.stargate.StargateTokenArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "stargate-token")

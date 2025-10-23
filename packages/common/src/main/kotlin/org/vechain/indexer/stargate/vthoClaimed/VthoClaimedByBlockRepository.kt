@@ -1,12 +1,13 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoClaimed
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
 
-@Profile("stargate", "vtho-generated-by-block")
-interface VthoGeneratedByBlockRepository :
-    BaseIndexedRepository<VthoGeneratedByBlock, Long>, TimeSeriesRepo<VthoGeneratedByBlock> {
+@Profile("stargate", "vtho-claimed-by-block")
+interface VthoClaimedByBlockRepository :
+    BaseIndexedRepository<VthoClaimedByBlock, Long>, TimeSeriesRepo<VthoClaimedByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -15,7 +16,7 @@ interface VthoGeneratedByBlockRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VthoGeneratedByBlock?
+    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VthoClaimedByBlock?
 
     @Aggregation(
         pipeline =
@@ -25,5 +26,5 @@ interface VthoGeneratedByBlockRepository :
                 "{ '\$limit': 1 }",
             ]
     )
-    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoGeneratedByBlock?
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoClaimedByBlock?
 }

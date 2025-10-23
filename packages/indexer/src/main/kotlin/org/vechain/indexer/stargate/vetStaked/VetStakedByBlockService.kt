@@ -6,9 +6,7 @@ import kotlin.collections.plusAssign
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.stargate.TokenLevel
-import org.vechain.indexer.stargate.VetStakedByBlock
-import org.vechain.indexer.stargate.VetStakedByBlockRepository
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 

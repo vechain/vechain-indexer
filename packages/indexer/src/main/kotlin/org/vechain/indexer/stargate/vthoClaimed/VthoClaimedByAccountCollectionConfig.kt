@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.stargate.VthoClaimedByAccount
-import org.vechain.indexer.stargate.VthoClaimedByAccountArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-account")

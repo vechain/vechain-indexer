@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.BaseIndexedRepository
-import org.vechain.indexer.stargate.TimeSeriesRepo
+import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
 
 @Profile("validator", "validator-reward")
 interface ValidatorBlockRepository :

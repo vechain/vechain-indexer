@@ -8,6 +8,17 @@ import org.springframework.data.domain.SliceImpl
 import org.springframework.stereotype.Service
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
+import org.vechain.indexer.stargate.token.StargateToken
+import org.vechain.indexer.stargate.token.StargateTokenRepository
+import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
+import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
+import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.TimeSeriesUtils
@@ -210,7 +221,7 @@ open class StargateService(
      * @param manager Optional manager address to filter by.
      * @param owner Optional owner address to filter by.
      * @param pageable Pagination information.
-     * @return A [Slice] of [StargateToken] results.
+     * @return A [Slice] of [org.vechain.indexer.stargate.token.StargateToken] results.
      */
     open fun getStargateTokens(
         tokenId: String?,
