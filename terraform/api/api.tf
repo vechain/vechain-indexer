@@ -122,10 +122,31 @@ module "ecs-lb-service-api" {
   container_port            = 8080
   certificate_arn           = local.env.certificate_arn
   ecs_sg                    = [aws_security_group.alb-sg.id]
-  rule_0_path_pattern       = ["/api/v*", "/api-docs", "/swagger-ui/*"]
+  # Listener Rules Configuration
+  rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
+  is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
+  rule_1_path_pattern       = try(local.env.alb.listener_rules[1].path_patterns, [])
+  is_rule_2_required         = try(local.env.alb.listener_rules[2].enabled, false)
+  rule_2_path_pattern       = try(local.env.alb.listener_rules[2].path_patterns, [])
+  
+  # Target Groups Configuration
+  is_tg_1_required          = try(local.env.alb.target_groups[0].enabled, false)
+  tg_1_name                 = try(local.env.alb.target_groups[0].name, "")
+  tg_1_port                 = try(local.env.alb.target_groups[0].port, 8080)
+  tg_1_healthcheck_port     = try(local.env.alb.target_groups[0].healthcheck_port, 8080)
+  tg_1_healthcheck_path     = try(local.env.alb.target_groups[0].healthcheck_path, "/actuator/health")
+  is_tg_2_required          = try(local.env.alb.target_groups[1].enabled, false)
+  tg_2_name                 = try(local.env.alb.target_groups[1].name, "")
+  tg_2_port                 = try(local.env.alb.target_groups[1].port, 8080)
+  tg_2_healthcheck_port     = try(local.env.alb.target_groups[1].healthcheck_port, 8080)
+  tg_2_healthcheck_path     = try(local.env.alb.target_groups[1].healthcheck_path, "/actuator/health")
+  
+  # Authentication Configuration
+  okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
+  secret_id                 = try(local.env.alb.authentication.secret_id, "")
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path = "/actuator/health"
+  https_tg_healthcheck_path = try(local.env.alb.healthcheck.path, "/actuator/health")
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
