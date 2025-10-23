@@ -290,7 +290,7 @@ class HistoryIndexerTest {
                         "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
                         "STARGATE_DELEGATE_LEGACY",
                         "STARGATE_STAKE",
-                        "STARGATE_DELEGATION_REMOVED_LEGACY",
+                        "STARGATE_UNDELEGATE_LEGACY",
                         "Transfer",
                     )
                 )
