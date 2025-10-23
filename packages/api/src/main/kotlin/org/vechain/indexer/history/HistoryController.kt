@@ -98,6 +98,7 @@ open class HistoryController(private val historyService: HistoryService) {
                                 "STARGATE_DELEGATE_EXIT_REQUEST",
                                 "STARGATE_DELEGATION_EXITED_VALIDATOR",
                                 "STARGATE_DELEGATION_EXITED",
+                                "STARGATE_DELEGATE_REQUEST_CANCELLED",
                                 "STARGATE_CLAIM_REWARDS",
                                 "STARGATE_BOOST",
                                 "STARGATE_MANAGER_ADDED",
