@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetDelegated
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,26 +12,27 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.stargate.VetDelegatedByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vtho-generated-by-block")
+@Profile("stargate", "vet-delegated-by-block")
 @Configuration
-open class VthoGeneratedByBlockCollectionConfig(
+open class VetDelegatedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, VthoGeneratedByBlock::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, VetDelegatedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate-vtho-generated-by-block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vet-delegated-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
-            VthoGeneratedByBlock::class.java,
+            indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
+            VetDelegatedByBlock::class.java,
             version,
         )
 

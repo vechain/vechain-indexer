@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetStaked
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,26 +12,27 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.stargate.VetStakedByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vet-delegated-by-block")
+@Profile("stargate", "vet-staked-by-block")
 @Configuration
-open class VetDelegatedByBlockCollectionConfig(
+open class VetStakedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, VetDelegatedByBlock::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, VetStakedByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate-vet-delegated-by-block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-vet-staked-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
-            VetDelegatedByBlock::class.java,
+            indexerName = IndexerNames.VET_STAKED_BY_BLOCK,
+            VetStakedByBlock::class.java,
             version,
         )
 

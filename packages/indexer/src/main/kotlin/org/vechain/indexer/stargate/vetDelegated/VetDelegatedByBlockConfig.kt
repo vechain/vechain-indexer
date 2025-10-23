@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetDelegated
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean

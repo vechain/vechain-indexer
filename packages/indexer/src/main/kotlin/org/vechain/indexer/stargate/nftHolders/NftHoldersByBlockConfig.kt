@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.nftHolders
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -8,16 +8,15 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "vtho-claimed-by-block")
-open class VthoClaimedByBlockConfig {
+@Profile("stargate", "nft-holders-by-block")
+open class NftHoldersByBlockConfig {
     @Bean
-    open fun vthoClaimedByBlockIndexer(
+    open fun nftHoldersByBlockIndexer(
         thorClient: ThorClient,
-        processor: VthoClaimedByBlockProcessor,
+        processor: NftHoldersByBlockProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
@@ -25,32 +24,18 @@ open class VthoClaimedByBlockConfig {
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
-        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK)
+            .name(IndexerNames.NFT_HOLDERS_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(
-                listOf(
-                    "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
-                    "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
-                    "STARGATE_CLAIM_REWARDS",
-                )
-            )
-            .businessEventContracts(
-                listOf(
-                    stargateNftContract,
-                    stargateDelegationContract,
-                    stargateStakerAddress,
-                    VTHO_CONTRACT_ADDRESS,
-                )
-            )
+            .businessEventNames(listOf("STARGATE_STAKE", "STARGATE_UNSTAKE"))
+            .businessEventContracts(listOf(stargateNftContract, stargateDelegationContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetStaked
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -11,12 +11,12 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "nft-holders-by-block")
-open class NftHoldersByBlockConfig {
+@Profile("stargate", "vet-staked-by-block")
+open class VetStakedByBlockConfig {
     @Bean
-    open fun nftHoldersByBlockIndexer(
+    open fun vetStakedByBlockIndexer(
         thorClient: ThorClient,
-        processor: NftHoldersByBlockProcessor,
+        processor: VetStakedByBlockProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
@@ -27,7 +27,7 @@ open class NftHoldersByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.NFT_HOLDERS_BY_BLOCK)
+            .name(IndexerNames.VET_STAKED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

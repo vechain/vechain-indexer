@@ -1,35 +1,37 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetDelegated
 
+import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.stargate.VetDelegatedByBlock
+import org.vechain.indexer.stargate.VetDelegatedByBlockRepository
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 
-@Profile("stargate", "nft-holders-by-block")
+@Profile("stargate", "vet-delegated-by-block")
 @Service
-open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRepository) {
-
+open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
     /**
-     * Build per-block cumulative records of NFT holders (total and by level).
+     * Build per-block cumulative records from the provided events.
      *
      * Behavior:
-     * - Loads the latest persisted record for the last processed blockNumber and running totals.
+     * - Loads the latest persisted record to get the last processed blockNumber and running totals.
      * - FAILS FAST if any incoming event has blockNumber <= last persisted blockNumber.
      * - Groups events by blockNumber (ascending).
      * - For each block, applies all stake/unstake deltas, updating:
-     *     - cumulative `total` (Long)
-     *     - cumulative `byLevel` (MutableMap<TokenLevel, Long>)
-     * - Returns a list ordered by ascending blockNumber. Each element is a snapshot of the
+     *     - cumulative `total`
+     *     - cumulative `byLevel` map
+     * - Returns a list ordered by ascending blockNumber. Each element contains a snapshot of the
      *   cumulative totals after processing that block.
      *
      * Assumptions / Optimizations:
-     * - All events in the same block share the same `blockTimestamp`. Use the first event as
+     * - All events in the same block share the same `blockTimestamp`. We use the first event as the
      *   representative for `blockId` and `blockTimestamp`.
-     * - `"levelId"` is required and must map to a valid TokenLevel; we throw on access if
-     *   missing/invalid.
-     * - Any unknown `eventType` causes an immediate error.
+     * - The `"amount"` parameter is required; we throw when reading it if missing.
+     * - The `"levelId"` parameter is required and must map to a valid TokenLevel.
+     * - Any **unknown `eventType`** causes an immediate error.
      */
-    open fun processEvents(events: List<IndexedEvent>): List<NftHoldersByBlock> {
+    open fun processEvents(events: List<IndexedEvent>): List<VetDelegatedByBlock> {
         if (events.isEmpty()) return emptyList()
 
         val latestRecord = repository.getLatestRecord()
@@ -50,28 +52,24 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
             }
         }
 
-        var runningTotal = latestRecord?.total ?: 0L
-        val runningByLevel: MutableMap<TokenLevel, Long> =
-            (latestRecord?.byLevel?.toMutableMap() ?: mutableMapOf())
+        var runningTotal = latestRecord?.total ?: BigInteger.ZERO
 
         // Group by block and process in ascending order
         val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
 
-        val output = mutableListOf<NftHoldersByBlock>()
+        val output = mutableListOf<VetDelegatedByBlock>()
 
         for ((blockNumber, blockEvents) in eventsByBlock) {
             // Apply all deltas for this block
             blockEvents.forEach { e ->
-                val level = e.requireLevel() // throws if missing or invalid
+                val amount = e.requireAmount() // throws if missing
 
                 when (e.eventType) {
-                    "STARGATE_STAKE" -> {
-                        runningTotal += 1L
-                        runningByLevel[level] = (runningByLevel[level] ?: 0L) + 1L
+                    "DelegationInitiated" -> {
+                        runningTotal += amount
                     }
-                    "STARGATE_UNSTAKE" -> {
-                        runningTotal -= 1L
-                        runningByLevel[level] = (runningByLevel[level] ?: 0L) - 1L
+                    "DelegationWithdrawn" -> {
+                        runningTotal -= amount
                     }
                     else -> {
                         throw IllegalArgumentException("Unknown eventType: ${e.eventType}")
@@ -82,32 +80,27 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
             // Snapshot after processing this block
             val representative = blockEvents.first()
             output +=
-                NftHoldersByBlock(
+                VetDelegatedByBlock(
                     blockId = representative.blockId,
                     blockNumber = blockNumber,
                     blockTimestamp = representative.blockTimestamp,
                     total = runningTotal,
-                    byLevel = runningByLevel.toMutableMap(), // snapshot copy
                 )
         }
 
         return output
     }
 
-    open fun saveRecord(record: NftHoldersByBlock) {
-        repository.save(record)
-    }
-
-    open fun saveRecords(records: List<NftHoldersByBlock>) {
+    open fun saveRecords(records: List<VetDelegatedByBlock>) {
         repository.saveAll(records)
     }
 }
 
-/** Helper that enforces presence/validity of levelId and returns the TokenLevel. */
-private fun IndexedEvent.requireLevel(): TokenLevel {
-    val levelId =
-        this.params.getAsInt("levelId")
-            ?: throw IllegalArgumentException("Missing levelId in event params")
-    return TokenLevel.fromOrdinal(levelId)
-        ?: throw IllegalArgumentException("Invalid levelId: $levelId")
-}
+/**
+ * Helper that enforces presence of the required "amount" param and throws with context if missing.
+ */
+private fun IndexedEvent.requireAmount(): BigInteger =
+    this.params.getAsBigInteger("amount")
+        ?: throw IllegalStateException(
+            "Event for block $blockNumber (blockId=$blockId) is missing required 'amount' parameter"
+        )

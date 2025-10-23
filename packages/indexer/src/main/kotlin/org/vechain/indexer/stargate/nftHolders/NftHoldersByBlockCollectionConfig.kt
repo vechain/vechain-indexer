@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.nftHolders
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,26 +12,27 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.stargate.NftHoldersByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vet-staked-by-block")
+@Profile("stargate", "nft-holders-by-block")
 @Configuration
-open class VetStakedByBlockCollectionConfig(
+open class NftHoldersByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, VetStakedByBlock::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, NftHoldersByBlock::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.stargate-vet-staked-by-block}") private val version: Int = 1
+    @Value("\${indexer.version.stargate-nft-holders-by-block}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VET_STAKED_BY_BLOCK,
-            VetStakedByBlock::class.java,
+            indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK,
+            NftHoldersByBlock::class.java,
             version,
         )
 

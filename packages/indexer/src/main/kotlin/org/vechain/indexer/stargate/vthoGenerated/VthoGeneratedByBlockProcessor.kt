@@ -1,10 +1,11 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoGenerated
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.stargate.VthoGeneratedByBlockRepository
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-generated-by-block")

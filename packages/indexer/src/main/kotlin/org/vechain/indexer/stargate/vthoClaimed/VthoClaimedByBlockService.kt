@@ -1,15 +1,18 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoClaimed
 
 import java.math.BigInteger
+import kotlin.collections.iterator
+import kotlin.collections.plusAssign
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.VthoClaimedByBlock
+import org.vechain.indexer.stargate.VthoClaimedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 
 @Profile("stargate", "vtho-claimed-by-block")
 @Service
 open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockRepository) {
-
     /**
      * Builds per-block cumulative records from the provided events.
      *

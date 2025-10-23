@@ -1,14 +1,20 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetStaked
 
 import java.math.BigInteger
+import kotlin.collections.iterator
+import kotlin.collections.plusAssign
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.VetStakedByBlock
+import org.vechain.indexer.stargate.VetStakedByBlockRepository
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsInt
 
-@Profile("stargate", "vet-delegated-by-block")
+@Profile("stargate", "vet-staked-by-block")
 @Service
-open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
+open class VetStakedByBlockService(private val repository: VetStakedByBlockRepository) {
     /**
      * Build per-block cumulative records from the provided events.
      *
@@ -25,11 +31,11 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
      * Assumptions / Optimizations:
      * - All events in the same block share the same `blockTimestamp`. We use the first event as the
      *   representative for `blockId` and `blockTimestamp`.
-     * - The `"amount"` parameter is required; we throw when reading it if missing.
+     * - The `"value"` parameter is required; we throw when reading it if missing.
      * - The `"levelId"` parameter is required and must map to a valid TokenLevel.
      * - Any **unknown `eventType`** causes an immediate error.
      */
-    open fun processEvents(events: List<IndexedEvent>): List<VetDelegatedByBlock> {
+    open fun processEvents(events: List<IndexedEvent>): List<VetStakedByBlock> {
         if (events.isEmpty()) return emptyList()
 
         val latestRecord = repository.getLatestRecord()
@@ -51,25 +57,31 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
         }
 
         var runningTotal = latestRecord?.total ?: BigInteger.ZERO
+        val runningByLevel: MutableMap<TokenLevel, BigInteger> =
+            (latestRecord?.byLevel?.toMutableMap() ?: mutableMapOf())
 
         // Group by block and process in ascending order
         val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
 
-        val output = mutableListOf<VetDelegatedByBlock>()
+        val output = mutableListOf<VetStakedByBlock>()
 
         for ((blockNumber, blockEvents) in eventsByBlock) {
             // Apply all deltas for this block
             blockEvents.forEach { e ->
-                val amount = e.requireAmount() // throws if missing
+                val amount = e.requireValue() // throws if missing
+                val level = e.requireLevel() // throws if missing or invalid
 
                 when (e.eventType) {
-                    "DelegationInitiated" -> {
+                    "STARGATE_STAKE" -> {
                         runningTotal += amount
+                        runningByLevel[level] = (runningByLevel[level] ?: BigInteger.ZERO) + amount
                     }
-                    "DelegationWithdrawn" -> {
+                    "STARGATE_UNSTAKE" -> {
                         runningTotal -= amount
+                        runningByLevel[level] = (runningByLevel[level] ?: BigInteger.ZERO) - amount
                     }
                     else -> {
+                        // NEW: fail fast on unknown event type
                         throw IllegalArgumentException("Unknown eventType: ${e.eventType}")
                     }
                 }
@@ -78,27 +90,41 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
             // Snapshot after processing this block
             val representative = blockEvents.first()
             output +=
-                VetDelegatedByBlock(
+                VetStakedByBlock(
                     blockId = representative.blockId,
                     blockNumber = blockNumber,
                     blockTimestamp = representative.blockTimestamp,
                     total = runningTotal,
+                    byLevel = runningByLevel.toMutableMap(), // snapshot
                 )
         }
 
         return output
     }
 
-    open fun saveRecords(records: List<VetDelegatedByBlock>) {
+    open fun saveRecord(record: VetStakedByBlock) {
+        repository.save(record)
+    }
+
+    open fun saveRecords(records: List<VetStakedByBlock>) {
         repository.saveAll(records)
     }
 }
 
 /**
- * Helper that enforces presence of the required "amount" param and throws with context if missing.
+ * Helper that enforces presence of the required "value" param and throws with context if missing.
  */
-private fun IndexedEvent.requireAmount(): BigInteger =
-    this.params.getAsBigInteger("amount")
+private fun IndexedEvent.requireValue(): BigInteger =
+    this.params.getAsBigInteger("value")
         ?: throw IllegalStateException(
-            "Event for block $blockNumber (blockId=$blockId) is missing required 'amount' parameter"
+            "Event for block $blockNumber (blockId=$blockId) is missing required 'value' parameter"
         )
+
+/** Helper that enforces presence/validity of levelId and returns the TokenLevel. */
+private fun IndexedEvent.requireLevel(): TokenLevel {
+    val levelId =
+        this.params.getAsInt("levelId")
+            ?: throw IllegalArgumentException("Missing levelId in event params")
+    return TokenLevel.Companion.fromOrdinal(levelId)
+        ?: throw IllegalArgumentException("Invalid levelId: $levelId")
+}

@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vthoClaimed
 
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.stargate.VthoClaimedByBlock
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-block")
