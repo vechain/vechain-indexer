@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockService
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import strikt.api.Assertion
@@ -21,7 +22,6 @@ import strikt.assertions.isEqualTo
 
 @ExtendWith(MockKExtension::class)
 internal class VetStakedByBlockServiceTest {
-
     @MockK lateinit var repository: VetStakedByBlockRepository
 
     private lateinit var service: VetStakedByBlockService
