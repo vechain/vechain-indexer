@@ -61,33 +61,18 @@ open class HistoryCollectionConfig(
                         .on("origin", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC),
-                "from_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("from", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "from_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("from", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC),
-                "to_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("to", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "to_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("to", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC),
-                "origin_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "origin_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("origin", Sort.Direction.ASC)
