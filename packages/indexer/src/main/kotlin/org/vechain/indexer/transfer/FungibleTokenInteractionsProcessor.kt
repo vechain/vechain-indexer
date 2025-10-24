@@ -9,15 +9,15 @@ import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("transfers")
 @Component
-open class TransferProcessor(
-    private val service: TransferService,
-    repository: TransferEventRepository,
+open class FungibleTokenInteractionsProcessor(
+    private val service: FungibleTokenInteractionsService,
+    repository: FungibleTokenInteractionsRepository,
     indexerVersionService: IndexerVersionService,
 ) :
     BaseProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.TRANSFER,
+        indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS,
     ) {
 
     override fun process(entry: IndexingResult) {

@@ -2,9 +2,9 @@ package org.vechain.indexer.b3tr.action
 
 import kotlin.collections.component1
 import kotlin.collections.component2
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
@@ -23,7 +23,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Configuration
+@Service
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
 open class UserAllTimeActionSummaryService(
     private val repository: UserAllTimeActionSummaryRepository,

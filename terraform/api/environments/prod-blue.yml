@@ -146,6 +146,7 @@ enabled_nets:
       version:
         nfts:                       '5'
         transfers:                  '2'
+        fungible-token-interactions: '1'
         transactions:               '2'
         history:                    '3'
         nft-blacklist:              '3'
@@ -338,6 +339,7 @@ enabled_nets:
       version:
         nfts:                       '6'
         transfers:                  '4'
+        fungible-token-interactions: '1'
         transactions:               '4'
         history:                    '9'
         nft-blacklist:              '6'

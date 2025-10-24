@@ -43,10 +43,4 @@ interface TransferEventRepository :
         addresses: List<String>,
         pageable: Pageable,
     ): Slice<IndexedTransferEvent>
-
-    fun findFungibleTokensContractsByAddress(
-        address: String,
-        tokenWhitelist: List<String>,
-        pageable: Pageable,
-    ): Slice<String>
 }
