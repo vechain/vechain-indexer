@@ -75,7 +75,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -93,7 +94,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 eventType = "Transfer",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("to" to "0xto123") as Map<String, Any>,
+                        returnValues =
+                            mapOf("to" to "0xto123", "value" to "100") as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -111,7 +113,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 eventType = "Transfer",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("from" to "0xfrom123") as Map<String, Any>,
+                        returnValues =
+                            mapOf("from" to "0xfrom123", "value" to "100") as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -133,7 +136,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser1", "to" to "0xuser2") as Map<String, Any>,
+                            mapOf("from" to "0xuser1", "to" to "0xuser2", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -147,7 +151,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser1", "to" to "0xuser2") as Map<String, Any>,
+                            mapOf("from" to "0xuser1", "to" to "0xuser2", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -168,7 +173,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -190,7 +196,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser", "to" to "0xother1") as Map<String, Any>,
+                            mapOf("from" to "0xuser", "to" to "0xother1", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -201,7 +208,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser", "to" to "0xother2") as Map<String, Any>,
+                            mapOf("from" to "0xuser", "to" to "0xother2", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -222,7 +230,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "NotTransfer",
                     ),
             )
@@ -249,7 +258,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -271,7 +281,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser123", "to" to "0xuser123") as Map<String, Any>,
+                            mapOf("from" to "0xuser123", "to" to "0xuser123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -295,7 +306,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuserA", "to" to "0xuserB") as Map<String, Any>,
+                            mapOf("from" to "0xuserA", "to" to "0xuserB", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -309,7 +321,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuserB", "to" to "0xuserA") as Map<String, Any>,
+                            mapOf("from" to "0xuserB", "to" to "0xuserA", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -323,7 +336,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuserA", "to" to "0xuserB") as Map<String, Any>,
+                            mapOf("from" to "0xuserA", "to" to "0xuserB", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -343,7 +357,9 @@ internal class FungibleTokenInteractionsServiceTest {
                 eventType = "Transfer",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("from" to null, "to" to "0xto123") as Map<String, Any>,
+                        returnValues =
+                            mapOf("from" to null, "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -365,6 +381,7 @@ internal class FungibleTokenInteractionsServiceTest {
                             mapOf(
                                 "from" to 12345 as Any, // Wrong type - should be string
                                 "to" to "0xto123",
+                                "value" to "100",
                             )
                                 as Map<String, Any>,
                         eventType = "Transfer",
@@ -385,7 +402,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -404,7 +422,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                            mapOf("from" to "0xfrom123", "to" to "0xto123", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -415,7 +434,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom456", "to" to "0xto456") as Map<String, Any>,
+                            mapOf("from" to "0xfrom456", "to" to "0xto456", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -436,7 +456,11 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to Address.ZERO_ADDRESS, "to" to "0xto123")
+                            mapOf(
+                                "from" to Address.ZERO_ADDRESS,
+                                "to" to "0xto123",
+                                "value" to "100",
+                            )
                                 as Map<String, Any>,
                         eventType = "Transfer",
                     ),
@@ -458,7 +482,11 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xfrom123", "to" to Address.ZERO_ADDRESS)
+                            mapOf(
+                                "from" to "0xfrom123",
+                                "to" to Address.ZERO_ADDRESS,
+                                "value" to "100",
+                            )
                                 as Map<String, Any>,
                         eventType = "Transfer",
                     ),
@@ -480,7 +508,11 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to Address.ZERO_ADDRESS, "to" to Address.ZERO_ADDRESS)
+                            mapOf(
+                                "from" to Address.ZERO_ADDRESS,
+                                "to" to Address.ZERO_ADDRESS,
+                                "value" to "100",
+                            )
                                 as Map<String, Any>,
                         eventType = "Transfer",
                     ),
@@ -501,7 +533,11 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to Address.ZERO_ADDRESS, "to" to "0xuser1")
+                            mapOf(
+                                "from" to Address.ZERO_ADDRESS,
+                                "to" to "0xuser1",
+                                "value" to "100",
+                            )
                                 as Map<String, Any>,
                         eventType = "Transfer",
                     ),
@@ -513,7 +549,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser2", "to" to "0xuser3") as Map<String, Any>,
+                            mapOf("from" to "0xuser2", "to" to "0xuser3", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -524,7 +561,8 @@ internal class FungibleTokenInteractionsServiceTest {
                 params =
                     AbiEventParameters(
                         returnValues =
-                            mapOf("from" to "0xuser4", "to" to "0xuser5") as Map<String, Any>,
+                            mapOf("from" to "0xuser4", "to" to "0xuser5", "value" to "100")
+                                as Map<String, Any>,
                         eventType = "Transfer",
                     ),
             )
@@ -535,5 +573,22 @@ internal class FungibleTokenInteractionsServiceTest {
         expectThat(result).hasSize(3)
         expectThat(result.map { it.walletAddress })
             .containsExactlyInAnyOrder("0xuser1", "0xuser4", "0xuser5")
+    }
+
+    @Test
+    fun `processEvents - should filter out events with missing value parameter`() {
+        val event =
+            fixture.buildIndexedEvent(
+                address = "0xcontract123",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to "0xfrom123", "to" to "0xto123") as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+
+        assertThrows<IllegalArgumentException> { service.processEvents(listOf(event)) }
     }
 }
