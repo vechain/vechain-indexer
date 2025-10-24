@@ -57,6 +57,24 @@ data class Validator(
     @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
+
+    /**
+     * Check if this Validator is equivalent to another, ignoring volatile fields such as blockId,
+     * blockNumber, blockTimestamp, and version.
+     */
+    fun isEquivalentTo(other: Validator): Boolean =
+        this.copy(
+            blockId = other.blockId,
+            blockNumber = other.blockNumber,
+            blockTimestamp = other.blockTimestamp,
+            version = other.version,
+        ) ==
+            other.copy(
+                blockId = this.blockId,
+                blockNumber = this.blockNumber,
+                blockTimestamp = this.blockTimestamp,
+                version = this.version,
+            )
 }
 
 @Document("validators_archives")

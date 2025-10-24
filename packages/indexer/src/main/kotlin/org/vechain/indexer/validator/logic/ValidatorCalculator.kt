@@ -15,138 +15,21 @@ import org.vechain.indexer.validator.models.DecodedValidatorRow
 object ValidatorCalculator {
     private val BLOCKS_PER_YEAR = BigDecimal("3155760") // 360 * 24 * 365.25
     private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
-    private val MIN_VALIDATOR_STAKE = BigDecimal("25000000")
-
-    /** Create Validator using latest on-chain info and calculations */
-    fun buildValidator(
-        row: DecodedValidatorRow,
-        existingDoc: Validator?,
-        totalWeight: BigInteger,
-        vthoIssued: BigInteger,
-        vetPriceUsd: BigInteger,
-        vthoPriceUsd: BigInteger,
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-        nextPeriodTotalWeight: BigInteger,
-    ): Validator {
-        val vetPrice = NumberUtils.toVET(vetPriceUsd)
-        val vthoPrice = NumberUtils.toVET(vthoPriceUsd)
-        val vthoIssuedBD = NumberUtils.toVET(vthoIssued)
-
-        val stakes = computeStakes(row, existingDoc, blockNumber)
-        val tvl = computeTVL(stakes, vetPrice)
-        val offline = computeOffline(existingDoc, row, blockNumber)
-        val probabilities = computeProbabilities(row, totalWeight, nextPeriodTotalWeight)
-
-        val (validatorYield, tvlBasedYield, avgDelegatorYield) =
-            calculateValidatorYield(
-                tvl.validatorTvl,
-                tvl.delegatorTvl,
-                row.delegatorsStake > BigInteger.ZERO,
-                probabilities.blocksPerYear,
-                vthoIssuedBD,
-                vthoPrice,
-            )
-
-        val status = Status.fromCode(resolveStatus(row.exitBlock, row.status))
-
-        val cycleEndBlock =
-            calculateNextCycleBlock(row.startBlock, row.completedPeriods, row.stakingPeriodLength)
-
-        val (nextCycleValidatorYield, nextCycleTvlBasedYield, nextCycleAvgDelegatorYield) =
-            if (status == Status.EXITING && cycleEndBlock >= row.exitBlock.toLong()) {
-                Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
-            } else {
-                calculateValidatorYield(
-                    stakes.nextCycleValidatorStake * vetPrice,
-                    stakes.nextCycleDelegationStake * vetPrice,
-                    stakes.nextCycleDelegationStake > BigDecimal.ZERO,
-                    blocksPerYear(probabilities.blockProbabilityNextCycle),
-                    vthoIssuedBD,
-                    vthoPrice,
-                )
-            }
-
-        return Validator(
-            id = row.id,
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            endorser = row.endorser,
-            beneficiary = existingDoc?.beneficiary,
-            status = status,
-            online = row.online,
-            offlineBlocks = offline.blocksOffline,
-            cyclePeriodLength = row.stakingPeriodLength.toLong(),
-            startBlock = row.startBlock.toLong(),
-            completedPeriods = row.completedPeriods.toLong(),
-            vetStaked = NumberUtils.toSafeDecimal128(stakes.totalVET),
-            validatorVetStaked = NumberUtils.toSafeDecimal128(stakes.validatorVET),
-            delegatorVetStaked = NumberUtils.toSafeDecimal128(stakes.delegatorVET),
-            queuedVetStaked = NumberUtils.toSafeDecimal128(stakes.queuedStake),
-            exitingVetStaked = NumberUtils.toSafeDecimal128(stakes.exitingStake),
-            totalWeight =
-                NumberUtils.toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),
-            blockProbability = NumberUtils.toSafeDecimal128(probabilities.blockProbability),
-            blocksPerEpoch =
-                NumberUtils.toSafeDecimal128(probabilities.blockProbability * BigDecimal(180)),
-            blocksPerYear = NumberUtils.toSafeDecimal128(probabilities.blocksPerYear),
-            validatorTvl = NumberUtils.toSafeDecimal128(tvl.validatorTvl),
-            delegatorTvl = NumberUtils.toSafeDecimal128(tvl.delegatorTvl),
-            totalTvl = NumberUtils.toSafeDecimal128(tvl.totalTvl),
-            validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
-            tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
-            avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
-            nextCycleValidatorYield = NumberUtils.toSafeDecimal128(nextCycleValidatorYield),
-            nextCycleTvlBasedYield = NumberUtils.toSafeDecimal128(nextCycleTvlBasedYield),
-            nextCycleAvgDelegatorYield = NumberUtils.toSafeDecimal128(nextCycleAvgDelegatorYield),
-            nftYieldsNextCycle =
-                calculateNftLevelYields(
-                    stakes.totalVET,
-                    NumberUtils.toVET(row.nextPeriodDelegationStake),
-                    NumberUtils.toVET(nextPeriodTotalWeight),
-                    vthoIssuedBD,
-                    vthoPrice,
-                    vetPrice,
-                    status,
-                ),
-            percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
-            version = (existingDoc?.version ?: 0) + 1,
-            cycleEndBlock = cycleEndBlock,
-        )
-    }
 
     // ------------------------------
-    // Calculation helpers
+    // Core calculations
     // ------------------------------
 
-    data class Stakes(
-        val validatorVET: BigDecimal,
-        val delegatorVET: BigDecimal,
-        val totalVET: BigDecimal,
-        val queuedStake: BigDecimal,
-        val exitingStake: BigDecimal,
-        val nextCycleStake: BigDecimal,
-        val nextCycleValidatorStake: BigDecimal,
-        val nextCycleDelegationStake: BigDecimal,
-    )
-
-    data class Tvl(
-        val validatorTvl: BigDecimal,
-        val delegatorTvl: BigDecimal,
-        val totalTvl: BigDecimal,
-    )
-
-    data class OfflineStats(val blocksOffline: Long, val percentageOffline: BigDecimal)
-
-    data class Probabilities(
-        val blockProbability: BigDecimal,
-        val blockProbabilityNextCycle: BigDecimal,
-        val blocksPerYear: BigDecimal,
-    )
-
-    private fun computeStakes(
+    /**
+     * Computes stake balances for a validator.
+     *
+     * @param row decoded validator row from chain state
+     * @param existingDoc current persisted validator document (used to carry over exit stakes)
+     * @param blockNumber current block number
+     * @return a [Stakes] object with validator/delegator VET, queued/exiting stakes, and next-cycle
+     *   stakes
+     */
+    fun computeStakes(
         row: DecodedValidatorRow,
         existingDoc: Validator?,
         blockNumber: Long,
@@ -186,14 +69,29 @@ object ValidatorCalculator {
         )
     }
 
-    private fun computeTVL(stakes: Stakes, vetPrice: BigDecimal): Tvl =
+    /**
+     * Computes TVL (Total Value Locked) in USD terms.
+     *
+     * @param stakes validator and delegator stakes in VET
+     * @param vetPrice VET → USD conversion rate
+     * @return a [Tvl] object containing validator, delegator, and total TVL in USD
+     */
+    fun computeTVL(stakes: Stakes, vetPrice: BigDecimal): Tvl =
         Tvl(
             validatorTvl = stakes.validatorVET * vetPrice,
             delegatorTvl = stakes.delegatorVET * vetPrice,
             totalTvl = (stakes.validatorVET * vetPrice) + (stakes.delegatorVET * vetPrice),
         )
 
-    private fun computeOffline(
+    /**
+     * Computes offline statistics for a validator.
+     *
+     * @param existingDoc current persisted validator document
+     * @param row decoded validator row from chain state
+     * @param blockNumber current block number
+     * @return [OfflineStats] containing total offline blocks and percentage offline
+     */
+    fun computeOffline(
         existingDoc: Validator?,
         row: DecodedValidatorRow,
         blockNumber: Long,
@@ -210,7 +108,16 @@ object ValidatorCalculator {
         return OfflineStats(blocksOffline, percentageOffline)
     }
 
-    private fun computeProbabilities(
+    /**
+     * Computes block production probabilities for the current and next cycle.
+     *
+     * @param row decoded validator row
+     * @param totalWeight total weight of all validators in the current cycle
+     * @param nextPeriodTotalWeight total weight of all validators in the next cycle
+     * @return [Probabilities] containing current probability, next-cycle probability, and blocks
+     *   per year
+     */
+    fun computeProbabilities(
         row: DecodedValidatorRow,
         totalWeight: BigInteger,
         nextPeriodTotalWeight: BigInteger,
@@ -223,9 +130,18 @@ object ValidatorCalculator {
     }
 
     // ------------------------------
-    // Utility functions (same as before)
+    // Utility functions
     // ------------------------------
 
+    /**
+     * Calculates total number of offline blocks for a validator.
+     *
+     * @param previousOffline previously recorded offline blocks
+     * @param online whether the validator is currently online
+     * @param offlineStart the block number when the validator first went offline
+     * @param currentBlock current block number
+     * @return updated offline block count
+     */
     fun calculateOfflineBlocks(
         previousOffline: Long?,
         online: Boolean,
@@ -240,6 +156,14 @@ object ValidatorCalculator {
             (previousOffline ?: 0L) + 1
         }
 
+    /**
+     * Calculates percentage of time spent offline since start block.
+     *
+     * @param blocksOffline number of offline blocks
+     * @param startBlock validator's start block
+     * @param currentBlock current block number
+     * @return percentage offline as a BigDecimal (0–100)
+     */
     fun calculatePercentageOffline(
         blocksOffline: Long,
         startBlock: Long,
@@ -252,12 +176,35 @@ object ValidatorCalculator {
             .multiply(BigDecimal(100))
     }
 
+    /**
+     * Converts block probability to expected blocks per year.
+     *
+     * @param blockProbability probability of producing a block
+     * @return number of blocks expected per year
+     */
     fun blocksPerYear(blockProbability: BigDecimal): BigDecimal =
         BLOCKS_PER_YEAR.multiply(blockProbability)
 
+    /**
+     * Resolves a validator's status.
+     *
+     * If exitBlock != MAX_UINT32, then validator is exiting (status = 4).
+     *
+     * @param exitBlock exit block number
+     * @param rawStatus raw status code from chain
+     * @return resolved status code
+     */
     fun resolveStatus(exitBlock: BigInteger, rawStatus: BigInteger): Int =
         if (exitBlock == MAX_UINT32) rawStatus.toInt() else 4 // 4 = Exiting
 
+    /**
+     * Calculates the block number at which the next cycle will start.
+     *
+     * @param startBlock validator start block
+     * @param completedPeriods number of completed periods
+     * @param stakingPeriodLength length of each staking period
+     * @return next cycle start block
+     */
     fun calculateNextCycleBlock(
         startBlock: BigInteger,
         completedPeriods: BigInteger,
@@ -265,6 +212,13 @@ object ValidatorCalculator {
     ): Long =
         startBlock.toLong() + ((completedPeriods.toLong() + 1L) * stakingPeriodLength.toLong())
 
+    /**
+     * Calculates the next cycle start for a validator snapshot.
+     *
+     * @param snapshot validator snapshot
+     * @param currentBlock current block number
+     * @return block number of next cycle start, or 0 if validator hasn't started
+     */
     fun calculateNextCycleStart(snapshot: ValidatorSnapshot, currentBlock: Long): Long {
         if (snapshot.startBlock == 0L) return 0L
         val offset = currentBlock - snapshot.startBlock
@@ -273,6 +227,17 @@ object ValidatorCalculator {
         return currentCycleStart + snapshot.stakingPeriodLength
     }
 
+    /**
+     * Calculates annualized yields for a validator.
+     *
+     * @param validatorTvl validator TVL in USD
+     * @param delegatorTvl delegator TVL in USD
+     * @param hasDelegations whether the validator has active delegations
+     * @param blocksPerYear expected number of blocks produced per year
+     * @param vthoIssued amount of VTHO issued per block
+     * @param vthoPrice VTHO price in USD
+     * @return Triple(validator yield %, tvl-based yield %, avg delegator yield %)
+     */
     fun calculateValidatorYield(
         validatorTvl: BigDecimal,
         delegatorTvl: BigDecimal,
@@ -341,6 +306,18 @@ object ValidatorCalculator {
         return Triple(validatorYield, tvlBasedYield, avgDelegatorYield)
     }
 
+    /**
+     * Calculates expected NFT-level APYs if they delegate to this validator from the next cycle.
+     *
+     * @param nextPeriodWeight validator's next-period weight
+     * @param nextCycleEffectiveDelegationStake delegator stake for the next cycle
+     * @param totalNextPeriodWeight total validator weight in next period
+     * @param vthoIssued amount of VTHO issued per block
+     * @param vthoPriceUsd VTHO price in USD
+     * @param vetPriceUsd VET price in USD
+     * @param status current validator status
+     * @return map of TokenLevel → yield (Decimal128)
+     */
     fun calculateNftLevelYields(
         nextPeriodWeight: BigDecimal,
         nextCycleEffectiveDelegationStake: BigDecimal,
@@ -394,6 +371,19 @@ object ValidatorCalculator {
             .toMap()
     }
 
+    /**
+     * Updates the pending VET amount for a validator.
+     *
+     * Accumulates pending stake until a new cycle starts, then resets.
+     *
+     * @param pendingVET pending stake amount in raw units
+     * @param existing existing pending stake (carried forward)
+     * @param lastBlock last processed block
+     * @param currentBlock current block
+     * @param startBlock validator start block (nullable)
+     * @param cyclePeriodLength cycle length (nullable)
+     * @return updated pending VET
+     */
     fun updatePendingValidatorVET(
         pendingVET: BigInteger?,
         existing: BigDecimal,
@@ -422,4 +412,37 @@ object ValidatorCalculator {
 
         return if (isNewCycle) pending else existing + pending
     }
+
+    // ------------------------------
+    // Data models
+    // ------------------------------
+
+    /** Represents validator and delegator stake breakdowns. */
+    data class Stakes(
+        val validatorVET: BigDecimal,
+        val delegatorVET: BigDecimal,
+        val totalVET: BigDecimal,
+        val queuedStake: BigDecimal,
+        val exitingStake: BigDecimal,
+        val nextCycleStake: BigDecimal,
+        val nextCycleValidatorStake: BigDecimal,
+        val nextCycleDelegationStake: BigDecimal,
+    )
+
+    /** Represents total value locked (TVL) distribution between validator and delegators. */
+    data class Tvl(
+        val validatorTvl: BigDecimal,
+        val delegatorTvl: BigDecimal,
+        val totalTvl: BigDecimal,
+    )
+
+    /** Represents offline performance statistics. */
+    data class OfflineStats(val blocksOffline: Long, val percentageOffline: BigDecimal)
+
+    /** Represents validator block production probabilities. */
+    data class Probabilities(
+        val blockProbability: BigDecimal,
+        val blockProbabilityNextCycle: BigDecimal,
+        val blocksPerYear: BigDecimal,
+    )
 }

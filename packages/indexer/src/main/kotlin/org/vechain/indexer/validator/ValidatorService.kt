@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,6 +26,7 @@ open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
+    @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
@@ -247,7 +249,7 @@ open class ValidatorService(
      */
     private fun getThreshold(): Long {
         val bestBlock = thorService.getBestBlock()
-        return bestBlock.number - 25
+        return bestBlock.number - statsStartThreshold
     }
 
     /**

@@ -1,12 +1,23 @@
 package org.vechain.indexer.validator.logic
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.bson.types.Decimal128
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
+import org.vechain.indexer.validator.logic.ValidatorCalculator.blocksPerYear
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleBlock
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNftLevelYields
+import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateValidatorYield
+import org.vechain.indexer.validator.logic.ValidatorCalculator.computeOffline
+import org.vechain.indexer.validator.logic.ValidatorCalculator.computeProbabilities
+import org.vechain.indexer.validator.logic.ValidatorCalculator.computeStakes
+import org.vechain.indexer.validator.logic.ValidatorCalculator.computeTVL
+import org.vechain.indexer.validator.logic.ValidatorCalculator.resolveStatus
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
@@ -97,19 +108,23 @@ object ValidatorAssembler {
             totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
         val active =
-            rows.map { row ->
-                ValidatorCalculator.buildValidator(
-                    row,
-                    existingDocs[row.id],
-                    totalWeight,
-                    vthoIssuedBlock,
-                    vetPriceUsd,
-                    vthoPriceUsd,
-                    blockId,
-                    blockNumber,
-                    blockTimestamp,
-                    nextPeriodTotalWeight,
-                )
+            rows.mapNotNull { row ->
+                val candidate =
+                    buildValidator(
+                        row,
+                        existingDocs[row.id],
+                        totalWeight,
+                        vthoIssuedBlock,
+                        vetPriceUsd,
+                        vthoPriceUsd,
+                        blockId,
+                        blockNumber,
+                        blockTimestamp,
+                        nextPeriodTotalWeight,
+                    )
+
+                val existing = existingDocs[row.id]
+                candidate.takeUnless { existing != null && candidate.isEquivalentTo(existing) }
             }
 
         val disappeared =
@@ -142,6 +157,106 @@ object ValidatorAssembler {
             }
 
         return active + disappeared
+    }
+
+    /** Create Validator using latest on-chain info and calculations */
+    fun buildValidator(
+        row: DecodedValidatorRow,
+        existingDoc: Validator?,
+        totalWeight: BigInteger,
+        vthoIssued: BigInteger,
+        vetPriceUsd: BigInteger,
+        vthoPriceUsd: BigInteger,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
+        nextPeriodTotalWeight: BigInteger,
+    ): Validator {
+        val vetPrice = NumberUtils.toVET(vetPriceUsd)
+        val vthoPrice = NumberUtils.toVET(vthoPriceUsd)
+        val vthoIssuedBD = NumberUtils.toVET(vthoIssued)
+
+        val stakes = computeStakes(row, existingDoc, blockNumber)
+        val tvl = computeTVL(stakes, vetPrice)
+        val offline = computeOffline(existingDoc, row, blockNumber)
+        val probabilities = computeProbabilities(row, totalWeight, nextPeriodTotalWeight)
+
+        val (validatorYield, tvlBasedYield, avgDelegatorYield) =
+            calculateValidatorYield(
+                tvl.validatorTvl,
+                tvl.delegatorTvl,
+                row.delegatorsStake > BigInteger.ZERO,
+                probabilities.blocksPerYear,
+                vthoIssuedBD,
+                vthoPrice,
+            )
+
+        val status = Status.fromCode(resolveStatus(row.exitBlock, row.status))
+
+        val cycleEndBlock =
+            calculateNextCycleBlock(row.startBlock, row.completedPeriods, row.stakingPeriodLength)
+
+        val (nextCycleValidatorYield, nextCycleTvlBasedYield, nextCycleAvgDelegatorYield) =
+            if (status == Status.EXITING && cycleEndBlock >= row.exitBlock.toLong()) {
+                Triple(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO)
+            } else {
+                calculateValidatorYield(
+                    stakes.nextCycleValidatorStake * vetPrice,
+                    stakes.nextCycleDelegationStake * vetPrice,
+                    stakes.nextCycleDelegationStake > BigDecimal.ZERO,
+                    blocksPerYear(probabilities.blockProbabilityNextCycle),
+                    vthoIssuedBD,
+                    vthoPrice,
+                )
+            }
+
+        return Validator(
+            id = row.id,
+            blockId = blockId,
+            blockNumber = blockNumber,
+            blockTimestamp = blockTimestamp,
+            endorser = row.endorser,
+            beneficiary = existingDoc?.beneficiary,
+            status = status,
+            online = row.online,
+            offlineBlocks = offline.blocksOffline,
+            cyclePeriodLength = row.stakingPeriodLength.toLong(),
+            startBlock = row.startBlock.toLong(),
+            completedPeriods = row.completedPeriods.toLong(),
+            vetStaked = NumberUtils.toSafeDecimal128(stakes.totalVET),
+            validatorVetStaked = NumberUtils.toSafeDecimal128(stakes.validatorVET),
+            delegatorVetStaked = NumberUtils.toSafeDecimal128(stakes.delegatorVET),
+            queuedVetStaked = NumberUtils.toSafeDecimal128(stakes.queuedStake),
+            exitingVetStaked = NumberUtils.toSafeDecimal128(stakes.exitingStake),
+            totalWeight =
+                NumberUtils.toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),
+            blockProbability = NumberUtils.toSafeDecimal128(probabilities.blockProbability),
+            blocksPerEpoch =
+                NumberUtils.toSafeDecimal128(probabilities.blockProbability * BigDecimal(180)),
+            blocksPerYear = NumberUtils.toSafeDecimal128(probabilities.blocksPerYear),
+            validatorTvl = NumberUtils.toSafeDecimal128(tvl.validatorTvl),
+            delegatorTvl = NumberUtils.toSafeDecimal128(tvl.delegatorTvl),
+            totalTvl = NumberUtils.toSafeDecimal128(tvl.totalTvl),
+            validatorYield = NumberUtils.toSafeDecimal128(validatorYield),
+            tvlBasedYield = NumberUtils.toSafeDecimal128(tvlBasedYield),
+            avgDelegatorYield = NumberUtils.toSafeDecimal128(avgDelegatorYield),
+            nextCycleValidatorYield = NumberUtils.toSafeDecimal128(nextCycleValidatorYield),
+            nextCycleTvlBasedYield = NumberUtils.toSafeDecimal128(nextCycleTvlBasedYield),
+            nextCycleAvgDelegatorYield = NumberUtils.toSafeDecimal128(nextCycleAvgDelegatorYield),
+            nftYieldsNextCycle =
+                calculateNftLevelYields(
+                    stakes.totalVET,
+                    NumberUtils.toVET(row.nextPeriodDelegationStake),
+                    NumberUtils.toVET(nextPeriodTotalWeight),
+                    vthoIssuedBD,
+                    vthoPrice,
+                    vetPrice,
+                    status,
+                ),
+            percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
+            version = (existingDoc?.version ?: 0) + 1,
+            cycleEndBlock = cycleEndBlock,
+        )
     }
 
     @Suppress("UNCHECKED_CAST")
