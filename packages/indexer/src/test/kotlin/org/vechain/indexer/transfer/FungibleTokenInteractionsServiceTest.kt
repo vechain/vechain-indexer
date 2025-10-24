@@ -7,6 +7,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
+import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import strikt.api.expectThat
 import strikt.assertions.containsExactlyInAnyOrder
@@ -424,5 +425,115 @@ internal class FungibleTokenInteractionsServiceTest {
         // Should only have interactions from the non-VTHO contract
         expectThat(result).hasSize(2)
         expectThat(result.all { it.contractAddress == "0xothercontract" }).isEqualTo(true)
+    }
+
+    @Test
+    fun `processEvents - should filter out ZERO_ADDRESS for from`() {
+        val event =
+            fixture.buildIndexedEvent(
+                address = "0xcontract123",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to Address.ZERO_ADDRESS, "to" to "0xto123")
+                                as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+
+        val result = service.processEvents(listOf(event))
+
+        // Should only have interaction for 'to' address, not 'from'
+        expectThat(result).hasSize(1)
+        expectThat(result.single().walletAddress).isEqualTo("0xto123")
+    }
+
+    @Test
+    fun `processEvents - should filter out ZERO_ADDRESS for to`() {
+        val event =
+            fixture.buildIndexedEvent(
+                address = "0xcontract123",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to "0xfrom123", "to" to Address.ZERO_ADDRESS)
+                                as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+
+        val result = service.processEvents(listOf(event))
+
+        // Should only have interaction for 'from' address, not 'to'
+        expectThat(result).hasSize(1)
+        expectThat(result.single().walletAddress).isEqualTo("0xfrom123")
+    }
+
+    @Test
+    fun `processEvents - should filter out both addresses when both are ZERO_ADDRESS`() {
+        val event =
+            fixture.buildIndexedEvent(
+                address = "0xcontract123",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to Address.ZERO_ADDRESS, "to" to Address.ZERO_ADDRESS)
+                                as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+
+        val result = service.processEvents(listOf(event))
+
+        // Should have no interactions since both addresses are zero
+        expectThat(result).isEmpty()
+    }
+
+    @Test
+    fun `processEvents - should handle mixed events with ZERO_ADDRESS and VTHO`() {
+        val zeroAddressEvent =
+            fixture.buildIndexedEvent(
+                address = "0xcontract1",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to Address.ZERO_ADDRESS, "to" to "0xuser1")
+                                as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+        val vthoEvent =
+            fixture.buildIndexedEvent(
+                address = VTHO_CONTRACT_ADDRESS,
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to "0xuser2", "to" to "0xuser3") as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+        val validEvent =
+            fixture.buildIndexedEvent(
+                address = "0xcontract2",
+                eventType = "Transfer",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf("from" to "0xuser4", "to" to "0xuser5") as Map<String, Any>,
+                        eventType = "Transfer",
+                    ),
+            )
+
+        val result = service.processEvents(listOf(zeroAddressEvent, vthoEvent, validEvent))
+
+        // Should have: 1 from zero event (0xuser1) + 0 from VTHO + 2 from valid event
+        expectThat(result).hasSize(3)
+        expectThat(result.map { it.walletAddress })
+            .containsExactlyInAnyOrder("0xuser1", "0xuser4", "0xuser5")
     }
 }
