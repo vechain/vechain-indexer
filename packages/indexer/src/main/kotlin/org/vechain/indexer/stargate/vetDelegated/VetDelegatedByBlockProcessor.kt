@@ -7,7 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("vet-delegated-by-block")
+@Profile("stargate", "vet-delegated-by-block")
 @Component
 open class VetDelegatedByBlockProcessor(
     private val service: VetDelegatedByBlockService,
