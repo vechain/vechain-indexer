@@ -28,6 +28,19 @@ open class ValidatorService(
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
+    /**
+     * Processes a block to update validator state.
+     * - Loads existing validator documents (from DB or cache).
+     * - Applies changes detected from blockchain events.
+     * - Optionally decodes full validator state from chain calls (if not an old block).
+     *
+     * @param block Current blockchain block being processed.
+     * @param matchedEvents Events from this block related to validators.
+     * @param callResponses Read-only call responses (e.g. contract state).
+     * @return Pair of:
+     *     - Updated validators (to be persisted).
+     *     - Validators that should be archived.
+     */
     open fun processBlock(
         block: Block,
         matchedEvents: List<IndexedEvent>,
@@ -79,6 +92,12 @@ open class ValidatorService(
         return working.values.toList() to existingDocs.values.toList()
     }
 
+    /**
+     * Persists updated validator records and archives old ones.
+     *
+     * @param updates List of validators with new state.
+     * @param archive List of validators to archive.
+     */
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updates: List<Validator>, archive: List<Validator>) {
         repository.saveAll(updates)
@@ -88,6 +107,16 @@ open class ValidatorService(
         }
     }
 
+    /**
+     * Loads existing validator documents depending on block number.
+     * - For older blocks: only fetch docs for validators present in events.
+     * - For newer blocks: fetch all non-exited validators.
+     *
+     * @param block Current block being processed.
+     * @param matchedEvents Events in this block.
+     * @param threshold Block threshold separating old vs new logic.
+     * @return Map of validatorId → Validator document.
+     */
     private fun loadExistingDocs(
         block: Block,
         matchedEvents: List<IndexedEvent>,
@@ -107,6 +136,14 @@ open class ValidatorService(
             repository.findByStatusNot(Status.EXITED).associateBy { it.id }
         }
 
+    /**
+     * Applies chain updates (decoded from contract calls) into the working validator set.
+     * - Preserves certain fields like `beneficiary` and `exitingValidatorVetStaked` if the
+     *   validator already exists in the working map.
+     *
+     * @param chainUpdates List of validators decoded from chain.
+     * @param working Mutable map of validators being updated.
+     */
     private fun applyChainUpdates(
         chainUpdates: List<Validator>,
         working: MutableMap<String, Validator>,
@@ -125,6 +162,15 @@ open class ValidatorService(
         }
     }
 
+    /**
+     * Applies validator updates based on blockchain events.
+     * - Sets/updates `beneficiary` and `exitingValidatorVetStaked` fields.
+     *
+     * @param events Blockchain events from this block.
+     * @param working Mutable map of validators being updated.
+     * @param responses Optional call responses (used for old blocks).
+     * @param isOldBlock Whether this block is considered old (pre-threshold).
+     */
     private fun applyEventChanges(
         events: List<IndexedEvent>,
         working: MutableMap<String, Validator>,
@@ -191,11 +237,26 @@ open class ValidatorService(
         }
     }
 
+    /**
+     * Calculates the threshold block number for validator processing.
+     * - Defined as: bestBlock.number - 25
+     * - Used to distinguish "old" blocks (requires reduced processing) from recent blocks (full
+     *   processing).
+     *
+     * @return The block threshold.
+     */
     private fun getThreshold(): Long {
         val bestBlock = thorService.getBestBlock()
         return bestBlock.number - 25
     }
 
+    /**
+     * Loads and caches ABI function definitions needed for validator processing.
+     * - Loads from `abis/stargate` path.
+     * - Only runs once; subsequent calls reuse cached ABIs.
+     *
+     * @param functionNames List of ABI function names to load.
+     */
     private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
         if (cachedGetValidatorsAbi.isNotEmpty()) return
 
