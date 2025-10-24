@@ -79,13 +79,16 @@ open class TransferEventService(
         officialTokensOnly: Boolean,
         pageable: Pageable,
     ): Slice<String> {
-        return if (officialTokensOnly)
-            fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
-        else
-            fungibleTokenInteractionsRepository.findAllByWalletAddressAndContractAddresses(
-                address.value,
-                officialTokenService.getOfficialTokenAddresses(),
-                pageable,
-            )
+        val interactions =
+            if (officialTokensOnly) {
+                fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
+            } else {
+                fungibleTokenInteractionsRepository.findAllByWalletAddressAndContractAddresses(
+                    address.value,
+                    officialTokenService.getOfficialTokenAddresses(),
+                    pageable,
+                )
+            }
+        return interactions.map { it.contractAddress }
     }
 }
