@@ -14,7 +14,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vet-delegated-by-block")
+@Profile("vet-delegated-by-block")
 @Configuration
 open class VetDelegatedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,

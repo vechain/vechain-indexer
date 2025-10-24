@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "vet-delegated-by-block")
+@Profile("vet-delegated-by-block")
 open class VetDelegatedByBlockConfig {
     @Bean
     open fun vetDelegatedByBlockIndexer(

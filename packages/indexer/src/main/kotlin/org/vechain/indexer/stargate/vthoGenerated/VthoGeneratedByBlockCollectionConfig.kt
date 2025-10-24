@@ -14,7 +14,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vtho-generated-by-block")
+@Profile("vtho-generated-by-block")
 @Configuration
 open class VthoGeneratedByBlockCollectionConfig(
     mongoTemplate: MongoTemplate,

@@ -9,7 +9,7 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 
-@Profile("stargate", "vet-delegated-by-block")
+@Profile("vet-delegated-by-block")
 @Service
 open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
     /**
@@ -78,15 +78,17 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                 when (e.eventType) {
                     "DelegationInitiated" -> {
                         runningTotal += amount
-                        if (level != null)
+                        if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) + amount
+                        }
                     }
                     "DelegationWithdrawn" -> {
                         runningTotal -= amount
-                        if (level != null)
+                        if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) - amount
+                        }
                     }
                     else -> {
                         throw IllegalArgumentException("Unknown eventType: ${e.eventType}")

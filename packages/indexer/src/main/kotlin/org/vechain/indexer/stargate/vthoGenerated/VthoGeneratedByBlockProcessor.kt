@@ -7,7 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "vtho-generated-by-block")
+@Profile("vtho-generated-by-block")
 @Component
 open class VthoGeneratedByBlockProcessor(
     private val service: VthoGeneratedByBlockService,

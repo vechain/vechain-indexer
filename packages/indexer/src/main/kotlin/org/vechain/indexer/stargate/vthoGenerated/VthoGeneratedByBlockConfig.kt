@@ -13,7 +13,7 @@ import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("stargate", "vtho-generated-by-block")
+@Profile("vtho-generated-by-block")
 open class VthoGeneratedByBlockConfig {
     @Bean
     open fun vthoGeneratedByBlockIndexer(
