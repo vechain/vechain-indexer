@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.stargate.NftHoldersByBlockRepository
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "nft-holders-by-block")

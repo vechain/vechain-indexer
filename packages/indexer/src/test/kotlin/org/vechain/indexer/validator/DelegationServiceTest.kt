@@ -9,11 +9,8 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
-import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.validator.domain.ValidatorDecoder
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
 import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.isEqualTo
@@ -22,7 +19,8 @@ class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
     private val archiveService =
         mockk<ArchiveService<Delegation, DelegationArchive>>(relaxed = true)
-    private val thorService = mockk<ThorService>()
+
+    private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
     private lateinit var service: DelegationService
 
@@ -30,14 +28,26 @@ class DelegationServiceTest {
     fun setup() {
         clearAllMocks()
         service =
-            spyk(DelegationService(repository, archiveService, thorService, stakerSC = "0xSTAKER"))
+            spyk(
+                DelegationService(
+                    repository,
+                    archiveService,
+                    validatorDelegationService,
+                    stakerSC = "0xSTAKER",
+                )
+            )
 
         every { repository.findValidatorIdsByStatusNot(any()) } returns emptyList()
         every { repository.findByValidatorIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
-        mockkObject(ValidatorDecoder)
-        every { decodeValidators(any(), any()) } returns mapOf("masters" to listOf("0xSAFE"))
+
+        every { validatorDelegationService.decodeValidatorSnapshots(any()) } returns emptyMap()
+        every { validatorDelegationService.nextStatus(any()) } answers
+            {
+                val status = firstArg<Status>()
+                if (status == Status.QUEUED) Status.ACTIVE else Status.EXITED
+            }
     }
 
     private fun block(num: Long) =
@@ -108,10 +118,6 @@ class DelegationServiceTest {
             )
 
         every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns listOf(due)
-        every { repository.findAllById(any<Iterable<String>>()) } returns emptyList()
-        every { repository.findByValidatorIn(any()) } returns emptyList()
-        mockkObject(ValidatorDecoder)
-        every { decodeValidators(any(), any()) } returns mapOf("masters" to listOf("v1"))
 
         val (updates, archive) =
             service.processBlock(
@@ -121,39 +127,29 @@ class DelegationServiceTest {
             )
 
         assertThat(updates).hasSize(1)
-        assertThat(updates.first().status).isEqualTo(Status.ACTIVE) // transitioned
+        assertThat(updates.first().status).isEqualTo(Status.ACTIVE)
         assertThat(archive).isNotEmpty()
     }
 
-    // --- Event handlers ---
-
     @Test
     fun `DelegationInitiated creates new delegation`() {
-        // stub validator period info
-        every { service.getValidatorPeriodInfo(any(), any()) } returns (5L to 10L)
-
-        mockkObject(ValidatorDecoder)
-        every { decodeValidators(any(), any()) } returns
-            mapOf("masters" to listOf("0x00000000000000000000000000000000000000v1"))
+        // stub validator cycle resolution
+        every { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } returns
+            (5L to 10L)
 
         val ev =
             event(
                 "DelegationInitiated",
                 mapOf(
                     "delegationId" to "d1",
-                    "validator" to "0x00000000000000000000000000000000000000v1",
+                    "validator" to "0xv1",
                     "tokenId" to "t1",
                     "levelId" to "2",
                     "amount" to "100",
                 ),
             )
 
-        val (updates, _) =
-            service.processBlock(
-                block(5),
-                listOf(ev),
-                listOf(InspectionResult("0x", emptyList(), emptyList(), false, "")),
-            )
+        val (updates, _) = service.processBlock(block(5), listOf(ev), emptyList())
 
         assertThat(updates.map { it.id }).contains("d1")
         assertThat(updates.first().status).isEqualTo(Status.QUEUED)
@@ -182,20 +178,12 @@ class DelegationServiceTest {
                 force = false,
             )
 
-        every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
-        every { repository.findByTokenIdIn(any<List<String>>()) } returns listOf(existing)
-        every { repository.findByValidatorIn(any()) } returns emptyList()
-        mockkObject(ValidatorDecoder)
-        every { decodeValidators(any(), any()) } returns mapOf("masters" to listOf("v1"))
+        every { repository.findByTokenIdIn(any()) } returns listOf(existing)
+        every { validatorDelegationService.resolveNextCycleBlock(any(), any(), any()) } returns 10L
 
         val ev = event("DelegationExitRequested", mapOf("delegationId" to "d2", "tokenId" to "t"))
 
-        val (updates, archive) =
-            service.processBlock(
-                block(10),
-                listOf(ev),
-                listOf(InspectionResult("0x", emptyList(), emptyList(), false, "")),
-            )
+        val (updates, archive) = service.processBlock(block(10), listOf(ev), emptyList())
 
         val updated = updates.first { it.id == "d2" }
         assertThat(updated.status).isEqualTo(Status.EXITING)
@@ -225,7 +213,6 @@ class DelegationServiceTest {
 
         every { repository.findByTokenIdIn(any()) } returns listOf(existing)
 
-        // note: uppercase ID
         val ev = event("DelegationWithdrawn", mapOf("delegationId" to "d3", "tokenId" to "t1"))
 
         val (updates, archive) = service.processBlock(block(2), listOf(ev), emptyList())
@@ -291,11 +278,7 @@ class DelegationServiceTest {
             )
 
         every { repository.findByValidatorIn(any()) } returns listOf(existing)
-
-        mockkObject(ValidatorDecoder)
-        every { decodeValidators(any(), any()) } returns mapOf("masters" to listOf("0xVEXIT"))
-
-        every { service.getValidatorExitBlock("0xVEXIT", any()) } returns 20L
+        every { validatorDelegationService.getValidatorExitBlock("0xVEXIT", any()) } returns 20L
 
         val ev =
             event("ValidatorExitRequested", mapOf("validator" to "0xVEXIT"), address = "0xSTAKER")

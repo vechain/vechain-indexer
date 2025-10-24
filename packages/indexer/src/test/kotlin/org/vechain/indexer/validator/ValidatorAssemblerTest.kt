@@ -23,7 +23,9 @@ class ValidatorAssemblerTest {
             "delegatorsStake" to listOf(BigInteger("500000000000000000")), // 0.5 VET
             "totalQueuedStakes" to listOf(BigInteger.ZERO),
             "totalExitingStakes" to listOf(BigInteger.ZERO),
+            "validatorQueuedStakes" to listOf(BigInteger.ZERO),
             "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100)),
+            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO),
         )
 
     @Test
