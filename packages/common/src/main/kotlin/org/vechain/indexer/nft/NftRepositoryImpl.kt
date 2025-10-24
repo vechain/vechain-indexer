@@ -1,7 +1,6 @@
 package org.vechain.indexer.nft
 
 import org.bson.Document
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.Sort
@@ -9,12 +8,9 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.stereotype.Component
 import org.vechain.indexer.BlacklistableRepository
 import org.vechain.indexer.utils.SliceBuilder
 
-@Profile("nfts")
-@Component
 open class NftRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
     repo: NftBlacklistRepository,
