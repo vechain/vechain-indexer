@@ -53,6 +53,29 @@ open class ValidatorBlockCollectionConfig(
                     Index()
                         .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
                         .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
+                "isMonthly_1_status_1_validator_1_blockTimestamp_1" to
+                    Index()
+                        .on(ValidatorBlock::isMonthly.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "isWeekly_1_status_1_validator_1_blockTimestamp_1" to
+                    Index()
+                        .on(ValidatorBlock::isWeekly.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "status_1_validator_1_blockTimestamp_1" to
+                    Index()
+                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "isDaily_1_status_1_validator_1_blockTimestamp_1" to
+                    Index()
+                        .on(ValidatorBlock::isDaily.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
+                        .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
             )
         )
     }
