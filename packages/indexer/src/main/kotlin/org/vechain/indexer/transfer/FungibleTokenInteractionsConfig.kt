@@ -24,7 +24,7 @@ open class FungibleTokenInteractionsConfig {
             .name(IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS)
             .thorClient(thorClient)
             .processor(processor)
-            .abis("abis/tokens")
+            .abis("abis/fungible-tokens")
             .abiEventNames(listOf("Transfer"))
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)

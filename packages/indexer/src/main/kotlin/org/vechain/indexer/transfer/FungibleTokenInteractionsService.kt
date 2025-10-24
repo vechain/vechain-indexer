@@ -22,6 +22,9 @@ open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemp
                 require(event.eventType == "Transfer") {
                     "Event type must be 'Transfer', found '${event.eventType}'"
                 }
+                require(event.params.params.containsKey("value")) {
+                    "Transfer event must have a 'value' parameter"
+                }
                 event.address != null &&
                     event.address != VTHO_CONTRACT_ADDRESS &&
                     event.params.params["from"] is String &&
