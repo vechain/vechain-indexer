@@ -18,6 +18,8 @@ import org.vechain.indexer.nft.NftRepository
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.transaction.IndexedTransaction
 import org.vechain.indexer.transaction.TransactionRepository
+import org.vechain.indexer.transfer.FungibleTokenInteraction
+import org.vechain.indexer.transfer.FungibleTokenInteractionsRepository
 import org.vechain.indexer.transfer.IndexedTransferEvent
 import org.vechain.indexer.transfer.TransferEventRepository
 import org.vechain.indexer.utils.JsonUtils
@@ -45,6 +47,8 @@ abstract class AbstractIntegrationTest {
         object : TypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
     protected val PAGINATED_FUNGIBLE_TOKENS_CONTRACTS_TYPE =
         object : TypeReference<PaginatedResponse<String>>() {}
+    protected val LIST_FUNGIBLE_TOKEN_INTERACTION_TYPE =
+        object : TypeReference<List<FungibleTokenInteraction>>() {}
 
     protected val objectMapper = JsonUtils.mapper
 
@@ -54,6 +58,8 @@ abstract class AbstractIntegrationTest {
 
     @Autowired lateinit var transferEventRepository: TransferEventRepository
 
+    @Autowired lateinit var fungibleTokenInteractionsRepository: FungibleTokenInteractionsRepository
+
     @BeforeAll
     fun setup() {
 
@@ -62,13 +68,25 @@ abstract class AbstractIntegrationTest {
         val nfts: List<IndexedNft> = loadDataFromResources("/nfts.json", LIST_NFT_TYPE)
         val transferEvents: List<IndexedTransferEvent> =
             loadDataFromResources("/transfers.json", LIST_TRANSFER_EVENT_TYPE)
+        val fungibleTokenInteractions: List<FungibleTokenInteraction> =
+            loadDataFromResources(
+                "/fungible-token-interactions.json",
+                LIST_FUNGIBLE_TOKEN_INTERACTION_TYPE,
+            )
 
-        val repos = listOf(transactionRepository, nftRepository, transferEventRepository)
+        val repos =
+            listOf(
+                transactionRepository,
+                nftRepository,
+                transferEventRepository,
+                fungibleTokenInteractionsRepository,
+            )
         repos.forEach { it.deleteAll() }
 
         transactionRepository.saveAll(transactions)
         nftRepository.saveAll(nfts)
         transferEventRepository.saveAll(transferEvents)
+        fungibleTokenInteractionsRepository.saveAll(fungibleTokenInteractions)
     }
 
     /** Load json files from resources */
