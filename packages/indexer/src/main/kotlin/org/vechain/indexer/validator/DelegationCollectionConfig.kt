@@ -50,12 +50,14 @@ open class DelegationCollectionConfig(
         ensureIndexes(
             listOf(
                 "validator_1_status_1" to
-                    Index().on("validator", Sort.Direction.ASC).on("status", Sort.Direction.ASC),
+                    Index()
+                        .on(Delegation::validator.name, Sort.Direction.ASC)
+                        .on(Delegation::status.name, Sort.Direction.ASC),
                 "status_1_validatorNextCycle_1" to
                     Index()
-                        .on("status_", Sort.Direction.ASC)
-                        .on("validatorNextCycle", Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                        .on(Delegation::status.name, Sort.Direction.ASC)
+                        .on(Delegation::validatorNextCycle.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on(Delegation::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }

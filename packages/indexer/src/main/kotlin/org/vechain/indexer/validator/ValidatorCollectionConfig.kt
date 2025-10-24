@@ -49,12 +49,12 @@ open class ValidatorCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "endorser_1" to Index().on("endorser", Sort.Direction.ASC),
-                "delegationIdList_1" to Index().on("delegationIdList", Sort.Direction.ASC),
-                "validatorTvl_-1" to Index().on("validatorTvl", Sort.Direction.DESC),
-                "delegatorTvl_-1" to Index().on("delegatorTvl", Sort.Direction.DESC),
-                "totalTvl_-1" to Index().on("totalTvl", Sort.Direction.DESC),
-                "blockProbability" to Index().on("blockProbability", Sort.Direction.DESC),
+                "endorser_1" to Index().on(Validator::endorser.name, Sort.Direction.ASC),
+                "validatorTvl_-1" to Index().on(Validator::validatorTvl.name, Sort.Direction.DESC),
+                "delegatorTvl_-1" to Index().on(Validator::delegatorTvl.name, Sort.Direction.DESC),
+                "totalTvl_-1" to Index().on(Validator::totalTvl.name, Sort.Direction.DESC),
+                "blockProbability" to
+                    Index().on(Validator::blockProbability.name, Sort.Direction.DESC),
             )
         )
     }
