@@ -11,7 +11,7 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
-@Profile("vtho-generated-by-block")
+@Profile("stargate", "vtho-generated-by-block")
 @Service
 open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBlockRepository) {
     /**

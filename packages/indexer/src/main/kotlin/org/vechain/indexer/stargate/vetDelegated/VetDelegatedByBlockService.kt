@@ -9,7 +9,7 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 
-@Profile("vet-delegated-by-block")
+@Profile("stargate", "vet-delegated-by-block")
 @Service
 open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
     /**

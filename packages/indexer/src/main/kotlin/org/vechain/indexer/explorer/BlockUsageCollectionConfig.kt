@@ -42,7 +42,6 @@ open class BlockUsageCollectionConfig(
             listOf(
                 // Index for findAllInTimestampRange - range queries on blockTimestamp
                 "blockTimestamp_1" to Index().on("blockTimestamp", Sort.Direction.ASC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
                 // Index for findHourlyInTimestampRange - filter by isHourly, then range by
                 // blockTimestamp
                 "isHourly_1_blockTimestamp_1" to
