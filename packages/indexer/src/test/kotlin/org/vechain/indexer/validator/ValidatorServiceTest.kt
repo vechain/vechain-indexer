@@ -24,7 +24,7 @@ class ValidatorServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorService))
+        service = spyk(ValidatorService(repository, archiveService, thorService, 25L))
     }
 
     private fun block(num: Long) =
