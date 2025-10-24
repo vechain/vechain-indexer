@@ -1,10 +1,13 @@
 package org.vechain.indexer.stargate.vetDelegated
 
 import java.math.BigInteger
+import kotlin.collections.set
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsInt
 
 @Profile("stargate", "vet-delegated-by-block")
 @Service
@@ -51,6 +54,8 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
         }
 
         var runningTotal = latestRecord?.total ?: BigInteger.ZERO
+        val runningByLevel: MutableMap<TokenLevel, BigInteger> =
+            (latestRecord?.byLevel?.toMutableMap() ?: mutableMapOf())
 
         // Group by block and process in ascending order
         val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
@@ -60,14 +65,28 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
         for ((blockNumber, blockEvents) in eventsByBlock) {
             // Apply all deltas for this block
             blockEvents.forEach { e ->
-                val amount = e.requireAmount() // throws if missing
+                val amount = e.requireAmount()
+
+                // throws if missing
+                @Suppress("ktlint:standard:max-line-length")
+                val levelId =
+                    e.params.getAsInt("levelId")
+                        ?: 0 // TODO: Update this to not set value to 0 if missing, devnet event is
+                // missing levelId up to a certain block
+                val level = TokenLevel.Companion.fromOrdinal(levelId)
 
                 when (e.eventType) {
                     "DelegationInitiated" -> {
                         runningTotal += amount
+                        if (level != null)
+                            runningByLevel[level] =
+                                (runningByLevel[level] ?: BigInteger.ZERO) + amount
                     }
                     "DelegationWithdrawn" -> {
                         runningTotal -= amount
+                        if (level != null)
+                            runningByLevel[level] =
+                                (runningByLevel[level] ?: BigInteger.ZERO) - amount
                     }
                     else -> {
                         throw IllegalArgumentException("Unknown eventType: ${e.eventType}")
@@ -83,6 +102,7 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                     blockNumber = blockNumber,
                     blockTimestamp = representative.blockTimestamp,
                     total = runningTotal,
+                    byLevel = runningByLevel.toMutableMap(), // snapshot
                 )
         }
 

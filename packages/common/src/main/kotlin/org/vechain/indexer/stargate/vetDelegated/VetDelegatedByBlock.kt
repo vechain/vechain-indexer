@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.stargate.token.LevelledValue
+import org.vechain.indexer.stargate.token.TokenLevel
 
 @Document(collection = "stargate_total_vet_delegated_by_block")
 data class VetDelegatedByBlock
@@ -14,5 +16,9 @@ constructor(
     @JsonIgnore override val blockId: String,
     @JsonIgnore @Id override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
-    val total: BigInteger,
-) : IndexedDocument
+    override val total: BigInteger,
+    override val byLevel: Map<TokenLevel, BigInteger>,
+) : IndexedDocument, LevelledValue<BigInteger> {
+    override fun valueForLevel(level: TokenLevel?): BigInteger =
+        if (level == null) total else byLevel[level] ?: BigInteger.ZERO
+}

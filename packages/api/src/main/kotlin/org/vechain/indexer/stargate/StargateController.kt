@@ -338,6 +338,7 @@ open class StargateController(private val stargateService: StargateService) {
                 blockNumber = 0,
                 blockTimestamp = 0,
                 total = BigInteger.ZERO,
+                byLevel = emptyMap(),
             )
 
     @GetMapping("/tokens")
