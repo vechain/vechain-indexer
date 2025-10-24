@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history}
   output:
     ansi:
       enabled: always
@@ -67,6 +67,9 @@ business-event:
     STARGATE_DELEGATION_CONTRACT: ${STARGATE_DELEGATION_CONTRACT:0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e}
     STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7}
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0x7d812e8e544bb0c7898ea656b70173e7ef426b4c}
+    STARGATE_CONTRACT: ${STARGATE_CONTRACT:0x35ce14062457ef7817e10bbc3815317f5a07d695}
+    BUILTIN_STAKER_CONTRACT: ${BUILTIN_STAKER_CONTRACT:0x00000000000000000000000000005374616B6572}
+    GET_ALL_VALIDATORS_CONTRACT: ${GET_ALL_VALIDATORS_CONTRACT:0xceafcbd80aea95b41fc9cc90b9bbf892f6b06f6a}
 veworld:
   contract:
     authority-node:
@@ -75,6 +78,10 @@ veworld:
       steering-committee: ${STEERING_COMMITTEE_ADDRESS:0x7E54f0790153647Ec0651c35cEd28171Adb5D44A}
       all-stakeholders: ${ALL_STAKEHOLDERS_ADDRESS:0xA6416A72F816d3a69f33D0814700545C8E3fe4BE}
       legacy-descriptions: ${LEGACY_DESCRIPTIONS_ADDRESS:0x6957f76d0749EbF4d098F5EDba1F657635F0D483}
+scheduler:
+  delegationHistory:
+    initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
+    interval: ${DELEGATION_HISTORY_INTERVAL:30s}
 
 indexer:
   start-block:
@@ -90,6 +97,9 @@ indexer:
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
+    validator: ${INDEXER_START_BLOCK_VALIDATOR:0}
+    delegation: ${INDEXER_START_BLOCK_DELEGATION:0}
+  validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
   start-round:
@@ -120,9 +130,11 @@ indexer:
     vevote-comments: ${VERSION_VEVOTE_COMMENTS:1}
     vevote-results: ${VERSION_VEVOTE_RESULTS:1}
     stargate-vtho-claimed-by-block: ${VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK:1}
+    stargate-vtho-generated-by-block: ${VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK:1}
     stargate-vtho-claimed-by-account: ${VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT:1}
     stargate-nft-holders-by-block: ${VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK:1}
     stargate-vet-staked-by-block: ${VERSION_STARGATE_VET_STAKED_BY_BLOCK:1}
+    stargate-vet-delegated-by-block: ${VERSION_STARGATE_VET_DELEGATED_BY_BLOCK:1}
     authority-node-endorser: ${VERSION_AUTHORITY_NODE_ENDORSER:1}
     historic-proposals: ${VERSION_HISTORIC_PROPOSALS:1}
     b3tr-proposal-comments: ${VERSION_B3TR_PROPOSAL_COMMENTS:1}
@@ -137,6 +149,9 @@ indexer:
     b3tr-gm-nft: ${VERSION_B3TR_GM_NFT:1}
     b3tr-gm-nft-level-overview: ${VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW:1}
     block-usage: ${VERSION_BLOCK_USAGE:1}
+    validator: ${VERSION_VALIDATOR:1}
+    validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
+    stargate-token: ${VERSION_STARGATE_TOKEN:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}

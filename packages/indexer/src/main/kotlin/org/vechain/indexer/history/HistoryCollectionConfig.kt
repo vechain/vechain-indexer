@@ -67,6 +67,16 @@ open class HistoryCollectionConfig(
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC),
+                "to_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("to", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
+                "tokenId_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("tokenId", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
                 "to_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("to", Sort.Direction.ASC)

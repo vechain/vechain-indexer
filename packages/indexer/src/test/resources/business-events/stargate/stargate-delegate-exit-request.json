@@ -1,0 +1,65 @@
+{
+  "name": "STARGATE_DELEGATION_EXIT_REQUEST",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "DelegationExitRequested",
+      "alias": "delegationSG",
+      "conditions": [
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": 0,
+          "isSecondStatic": true,
+          "operator": "GT"
+        },
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${STARGATE_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    },
+    {
+      "name": "DelegationSignaledExit",
+      "alias": "delegationBuiltin",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "0x00000000000000000000000000005374616B6572",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "firstEventName": "delegationSG",
+      "firstEventProperty": "delegationId",
+      "secondEventName": "delegationBuiltin",
+      "secondEventProperty": "delegationID",
+      "operator": "EQ"
+    }
+  ],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "delegationSG",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "delegationId",
+      "eventName": "delegationSG",
+      "businessEventName": "delegationId"
+    },
+    {
+      "name": "origin",
+      "eventName": "delegationSG",
+      "businessEventName": "owner"
+    }
+  ]
+}

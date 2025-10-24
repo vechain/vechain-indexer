@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDaily
 import org.vechain.indexer.explorer.TimestampUtils.isHourly
 import org.vechain.indexer.explorer.TimestampUtils.isMonthly
@@ -15,7 +16,6 @@ import org.vechain.indexer.thor.model.Block
 @Profile("explorer", "block-usage")
 @Service
 open class BlockUsageService(private val repository: BlockUsageRepository) {
-
     // Cache to store the last processed block usage to avoid DB lookups for sequential processing
     @Volatile private var lastProcessedBlockUsage: BlockUsage? = null
 
@@ -88,8 +88,8 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @param block The genesis block
      * @return BlockUsage record with initial values
      */
-    internal fun createGenesisBlockUsage(block: Block): BlockUsage {
-        return BlockUsage(
+    internal fun createGenesisBlockUsage(block: Block): BlockUsage =
+        BlockUsage(
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
@@ -119,7 +119,6 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
                     ::isMonthly,
                 ),
         )
-    }
 
     /**
      * Create a BlockUsage record with cumulative values from previous block.
@@ -128,8 +127,8 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @param previousBlockUsage The previous block usage record
      * @return BlockUsage record with cumulative statistics
      */
-    internal fun createBlockUsage(block: Block, previousBlockUsage: BlockUsage): BlockUsage {
-        return BlockUsage(
+    internal fun createBlockUsage(block: Block, previousBlockUsage: BlockUsage): BlockUsage =
+        BlockUsage(
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
@@ -163,7 +162,6 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
                     ::isMonthly,
                 ),
         )
-    }
 
     /**
      * Parse base fee per gas from hex string to BigInteger.
@@ -171,9 +169,8 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @param baseFeePerGas Hex string with optional "0x" prefix
      * @return BigInteger value or null if input is null
      */
-    internal fun parseBaseFeePerGas(baseFeePerGas: String?): BigInteger? {
-        return baseFeePerGas?.removePrefix("0x")?.let { BigInteger(it, 16) }
-    }
+    internal fun parseBaseFeePerGas(baseFeePerGas: String?): BigInteger? =
+        baseFeePerGas?.removePrefix("0x")?.let { BigInteger(it, 16) }
 
     /**
      * Calculate total number of clauses in a block.
@@ -181,9 +178,8 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @param block The block to analyze
      * @return Total number of clauses as BigInteger
      */
-    internal fun calculateTotalClauses(block: Block): BigInteger {
-        return block.transactions.sumOf { it.clauses.size }.toBigInteger()
-    }
+    internal fun calculateTotalClauses(block: Block): BigInteger =
+        block.transactions.sumOf { it.clauses.size }.toBigInteger()
 
     /**
      * Calculate cumulative gas limit.
@@ -195,9 +191,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeGasLimit(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger {
-        return previousBlockUsage.cumulativeGasLimit + BigInteger.valueOf(block.gasLimit)
-    }
+    ): BigInteger = previousBlockUsage.cumulativeGasLimit + BigInteger.valueOf(block.gasLimit)
 
     /**
      * Calculate cumulative gas used.
@@ -209,9 +203,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeGasUsed(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger {
-        return previousBlockUsage.cumulativeGasUsed + BigInteger.valueOf(block.gasUsed)
-    }
+    ): BigInteger = previousBlockUsage.cumulativeGasUsed + BigInteger.valueOf(block.gasUsed)
 
     /**
      * Calculate cumulative base fee per gas.
@@ -223,11 +215,10 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeBaseFeePerGas(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger? {
-        return previousBlockUsage.cumulativeBaseFeePerGas?.let { prev ->
+    ): BigInteger? =
+        previousBlockUsage.cumulativeBaseFeePerGas?.let { prev ->
             parseBaseFeePerGas(block.baseFeePerGas)?.let { current -> prev + current }
         }
-    }
 
     /**
      * Calculate cumulative number of transactions.
@@ -239,9 +230,8 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeTransactions(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger {
-        return previousBlockUsage.cumulativeNumTransactions + block.transactions.size.toBigInteger()
-    }
+    ): BigInteger =
+        previousBlockUsage.cumulativeNumTransactions + block.transactions.size.toBigInteger()
 
     /**
      * Calculate cumulative number of clauses.
@@ -253,26 +243,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeClauses(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger {
-        return previousBlockUsage.cumulativeNumClauses + calculateTotalClauses(block)
-    }
-
-    /**
-     * Calculate if a time boundary is crossed between two timestamps. Returns true if boundary is
-     * crossed, null otherwise (to save storage space).
-     *
-     * @param previousTimestamp Previous block timestamp
-     * @param currentTimestamp Current block timestamp
-     * @param boundaryCheck Function to check if boundary is crossed
-     * @return true if boundary crossed, null otherwise
-     */
-    internal fun calculateTimeBoundary(
-        previousTimestamp: Long,
-        currentTimestamp: Long,
-        boundaryCheck: (Long, Long) -> Boolean,
-    ): Boolean? {
-        return if (boundaryCheck(previousTimestamp, currentTimestamp)) true else null
-    }
+    ): BigInteger = previousBlockUsage.cumulativeNumClauses + calculateTotalClauses(block)
 
     /**
      * Save a BlockUsage record to the repository.

@@ -11,6 +11,7 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
@@ -83,7 +84,7 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
         val value =
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
-                HistoryEventName.STARGATE_DELEGATE ->
+                HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
                 else -> event.params.getAsString("value")
             }
@@ -130,6 +131,9 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
             levelId = event.params.getAsString("levelId"),
             tokenIds = event.params.getReturnValues()["tokenIds"] as? List<String>,
             validator = event.params.getAsString("validator"),
+            delegationId = event.params.getAsString("delegationId"),
+            periodClaimed = event.params.getAsLong("periodClaimed"),
+            boostedBlocks = event.params.getAsString("boostedBlocks"),
         )
     }
 

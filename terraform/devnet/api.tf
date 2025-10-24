@@ -447,6 +447,10 @@ module "ecs-backend-service" {
         value = each.value.indexer.start-block.validator
     },
     {
+        name = "INDEXER_START_BLOCK_DELEGATION"
+        value = each.value.indexer.start-block.delegation
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -519,8 +523,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
+      name = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vtho-generated-by-block
+    },
+    {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
+    },
+    {
+      name = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
       name = "VERSION_HISTORIC_PROPOSALS"
@@ -579,6 +591,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.validator
     },
     {
+      name = "VERSION_VALIDATOR_BLOCKS"
+      value = each.value.indexer.version.validator-rewards
+    },
+    {
+      name = "VERSION_STARGATE_TOKEN"
+      value = each.value.indexer.version.stargate-token
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
@@ -631,12 +651,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
-      name  = "VEVOTE_CONTRACT"
-      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+      name  = "STARGATE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_CONTRACT
     },
     {
-      name  = "STARGATE_STAKER_CONTRACT"
-      value = each.value.indexer.business-event.substitutions.STARGATE_STAKER_CONTRACT
+      name  = "VEVOTE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
     {
       name  = "BUILTIN_STAKER_CONTRACT"

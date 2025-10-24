@@ -25,7 +25,13 @@ object IndexerNames {
     const val VEVOTE_COMMENT = "VeVoteCommentIndexer"
     const val VEVOTE_RESULT = "VeVoteResultIndexer"
     const val VET_STAKED_BY_BLOCK = "VetStakedByBlockIndexer"
+    const val VET_DELEGATED_BY_BLOCK = "VetDelegatedByBlockIndexer"
     const val VTHO_CLAIMED_BY_ACCOUNT = "VthoClaimedByAccountIndexer"
     const val VTHO_CLAIMED_BY_BLOCK = "VthoClaimedByBlockIndexer"
     const val X_ALLOC_RESULT = "XAllocResultIndexer"
+    const val VALIDATOR = "ValidatorIndexer"
+    const val DELEGATION = "DelegationIndexer"
+    const val VTHO_GENERATED_BY_BLOCK = "VthoGeneratedByBlockIndexer"
+    const val VALIDATOR_BLOCK = "ValidatorBlockIndexer"
+    const val STARGATE_TOKEN = "StargateTokenIndexer"
 }
