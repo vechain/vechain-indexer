@@ -1,19 +1,15 @@
 package org.vechain.indexer.transfer
 
 import org.bson.Document
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.stereotype.Component
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.utils.SliceBuilder
 
-@Profile("transfers")
-@Component
 open class TransferEventRepositoryImpl(private val mongoTemplate: MongoTemplate) {
 
     fun findFungibleTokensContractsByAddress(
