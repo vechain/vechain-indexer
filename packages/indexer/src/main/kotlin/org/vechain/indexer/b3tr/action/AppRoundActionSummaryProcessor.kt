@@ -1,8 +1,8 @@
 package org.vechain.indexer.b3tr.action
 
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
@@ -10,7 +10,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.version.IndexerVersionService
 
-@Configuration
+@Component
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 open class AppRoundActionSummaryProcessor(
     private val repository: AppRoundActionSummaryRepository,

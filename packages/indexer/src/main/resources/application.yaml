@@ -123,6 +123,7 @@ indexer:
   version:
     nfts: ${VERSION_NFTS:1}
     transfers: ${VERSION_TRANSFERS:1}
+    fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}
     transactions: ${VERSION_TRANSACTIONS:1}
     history: ${VERSION_HISTORY:1}
     nft-blacklist: ${VERSION_NFT_BLACKLIST:1}

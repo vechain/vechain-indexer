@@ -145,6 +145,7 @@ enabled_nets:
       version:
         nfts:                       '3'
         transfers:                  '3'
+        fungible-token-interactions: '1'
         transactions:               '3'
         history:                    '5'
         nft-blacklist:              '3'

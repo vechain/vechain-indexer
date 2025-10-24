@@ -18,6 +18,7 @@ object IndexerNames {
     const val PROPOSAL_RESULT = "ProposalResultIndexer"
     const val TRANSACTION = "TransactionIndexer"
     const val TRANSFER = "TransferIndexer"
+    const val FUNGIBLE_TOKEN_INTERACTIONS = "FungibleTokenInteractionsIndexer"
     const val USER_ALL_TIME_ACTION_SUMMARY = "UserAllTimeActionSummaryIndexer"
     const val USER_DAILY_ACTION_SUMMARY = "UserDailyActionSummaryIndexer"
     const val USER_ROUND_ACTION_SUMMARY = "UserRoundActionSummaryIndexer"
