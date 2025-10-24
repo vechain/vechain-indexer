@@ -10,6 +10,7 @@ import org.vechain.indexer.thor.Address
 @Service
 open class TransferEventService(
     private val transferEventRepository: TransferEventRepository,
+    private val fungibleTokenInteractionsRepository: FungibleTokenInteractionsRepository,
     private val officialTokenService: OfficialTokenService,
 ) {
 
@@ -78,13 +79,13 @@ open class TransferEventService(
         officialTokensOnly: Boolean,
         pageable: Pageable,
     ): Slice<String> {
-        val whitelist =
-            if (officialTokensOnly) officialTokenService.getOfficialTokenAddresses()
-            else emptyList()
-        return transferEventRepository.findFungibleTokensContractsByAddress(
-            address.value,
-            whitelist,
-            pageable,
-        )
+        return if (officialTokensOnly)
+            fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
+        else
+            fungibleTokenInteractionsRepository.findAllByWalletAddressAndContractAddresses(
+                address.value,
+                officialTokenService.getOfficialTokenAddresses(),
+                pageable,
+            )
     }
 }

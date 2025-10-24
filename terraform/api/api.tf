@@ -482,6 +482,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.transfers
     },
     {
+      name  = "VERSION_FUNGIBLE_TOKEN_INTERACTIONS"
+      value = each.value.indexer.version.fungible-token-interactions
+    },
+    {
       name  = "VERSION_TRANSACTIONS"
       value = each.value.indexer.version.transactions
     },
