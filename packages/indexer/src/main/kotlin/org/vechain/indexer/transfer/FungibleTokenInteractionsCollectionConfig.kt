@@ -19,7 +19,7 @@ open class FungibleTokenInteractionsCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedTransferEvent::class.java) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, FungibleTokenInteraction::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.fungible-token-interactions}") private val version: Int = 1
@@ -41,6 +41,7 @@ open class FungibleTokenInteractionsCollectionConfig(
         ensureIndexes(
             listOf(
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "walletAddress_1" to Index().on("walletAddress", Sort.Direction.ASC),
                 "contractAddress_1_walletAddress_1" to
                     Index()
                         .on("contractAddress", Sort.Direction.ASC)
