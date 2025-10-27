@@ -1,16 +1,20 @@
 package org.vechain.indexer.b3tr.xAlloc
 
-import java.math.BigDecimal
-import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Service
-open class XAllocService(private val xAllocResultRepository: XAllocResultRepository) :
-    IndexerService {
+open class XAllocService(
+    private val xAllocResultRepository: XAllocResultRepository,
+    private val mongoTemplate: MongoTemplate,
+) : IndexerService {
     /**
      * Get the results of XAllocation voting for a specific round.
      *
@@ -20,86 +24,23 @@ open class XAllocService(private val xAllocResultRepository: XAllocResultReposit
         xAllocResultRepository.findByRoundId(roundId)
 
     /**
-     * Get aggregated XAllocation results for a specific app across all rounds. Fetches results for
-     * the app and aggregates them in memory. Returns a response object with aggregated data and
-     * roundId set to null.
+     * Get aggregated XAllocation results for a specific app across all rounds using MongoDB
+     * aggregation pipeline. Returns a response object with aggregated data and roundId set to null.
      *
      * @param appId App ID to filter by.
      */
     open fun getXAllocResultsAggregatedByAppId(appId: String): XAllocResultResponse? {
-        val appResults = xAllocResultRepository.findByAppId(appId)
-        if (appResults.isEmpty()) {
-            return null
-        }
+        val aggregation =
+            Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("appId").`is`(appId)),
+                buildAggregationGroup(),
+                buildAggregationProjection(),
+            )
 
-        var totalVoters = 0L
-        var totalVotes = BigInteger.ZERO
-        var totalAmount: BigDecimal? = null
-        var unallocatedAmount: BigDecimal? = null
-        var teamAllocationAmount: BigDecimal? = null
-        var rewardsAllocationAmount: BigDecimal? = null
-
-        for (result in appResults) {
-            totalVoters += result.voters
-            totalVotes = totalVotes.add(result.totalVotes)
-
-            val existingTotalAmount = totalAmount
-            val resultTotalAmount = result.totalAmount
-            totalAmount =
-                if (existingTotalAmount != null && resultTotalAmount != null) {
-                    existingTotalAmount.add(resultTotalAmount)
-                } else if (resultTotalAmount != null) {
-                    resultTotalAmount
-                } else {
-                    existingTotalAmount
-                }
-
-            val existingUnallocatedAmount = unallocatedAmount
-            val resultUnallocatedAmount = result.unallocatedAmount
-            unallocatedAmount =
-                if (existingUnallocatedAmount != null && resultUnallocatedAmount != null) {
-                    existingUnallocatedAmount.add(resultUnallocatedAmount)
-                } else if (resultUnallocatedAmount != null) {
-                    resultUnallocatedAmount
-                } else {
-                    existingUnallocatedAmount
-                }
-
-            val existingTeamAllocationAmount = teamAllocationAmount
-            val resultTeamAllocationAmount = result.teamAllocationAmount
-            teamAllocationAmount =
-                if (existingTeamAllocationAmount != null && resultTeamAllocationAmount != null) {
-                    existingTeamAllocationAmount.add(resultTeamAllocationAmount)
-                } else if (resultTeamAllocationAmount != null) {
-                    resultTeamAllocationAmount
-                } else {
-                    existingTeamAllocationAmount
-                }
-
-            val existingRewardsAllocationAmount = rewardsAllocationAmount
-            val resultRewardsAllocationAmount = result.rewardsAllocationAmount
-            rewardsAllocationAmount =
-                if (
-                    existingRewardsAllocationAmount != null && resultRewardsAllocationAmount != null
-                ) {
-                    existingRewardsAllocationAmount.add(resultRewardsAllocationAmount)
-                } else if (resultRewardsAllocationAmount != null) {
-                    resultRewardsAllocationAmount
-                } else {
-                    existingRewardsAllocationAmount
-                }
-        }
-
-        return XAllocResultResponse(
-            roundId = null,
-            appId = appId,
-            voters = totalVoters,
-            totalVotes = totalVotes,
-            totalAmount = totalAmount,
-            unallocatedAmount = unallocatedAmount,
-            teamAllocationAmount = teamAllocationAmount,
-            rewardsAllocationAmount = rewardsAllocationAmount,
-        )
+        return mongoTemplate
+            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
+            .mappedResults
+            .firstOrNull()
     }
 
     /**
@@ -119,109 +60,73 @@ open class XAllocService(private val xAllocResultRepository: XAllocResultReposit
      *
      * @param roundId Round to filter by.
      */
-    open fun getXAllocResultsByRoundIdAsResponse(roundId: Int): List<XAllocResultResponse> =
-        xAllocResultRepository
-            .findByRoundId(roundId)
-            .map { XAllocResultResponse.from(it) }
-            .sortedByDescending { it.totalAmount }
+    open fun getXAllocResultsByRoundIdAsResponse(roundId: Int): List<XAllocResultResponse> {
+        val aggregation =
+            Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("roundId").`is`(roundId)),
+                Aggregation.sort(Sort.by(Sort.Direction.DESC, "totalAmount")),
+            )
+
+        return mongoTemplate
+            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
+            .mappedResults
+    }
 
     /**
-     * Get aggregated XAllocation results by app across all rounds. Returns a list of
-     * XAllocResultResponse objects with roundId set to null for each app, sorted by totalAmount
-     * descending.
+     * Get aggregated XAllocation results by app across all rounds using MongoDB aggregation
+     * pipeline. Returns a list of XAllocResultResponse objects with roundId set to null for each
+     * app, sorted by totalAmount descending.
      */
     open fun getXAllocResultsAggregatedByAllApps(): List<XAllocResultResponse> {
-        val allResults = xAllocResultRepository.findAll().toList()
-        if (allResults.isEmpty()) {
-            return emptyList()
-        }
+        val aggregation =
+            Aggregation.newAggregation(
+                buildAggregationGroup(),
+                Aggregation.sort(Sort.by(Sort.Direction.DESC, "totalAmount")),
+                buildAggregationProjection(),
+            )
 
-        // Group by appId and aggregate
-        val resultsByApp = mutableMapOf<String, XAllocResultResponse>()
-
-        for (result in allResults) {
-            val appId = result.appId
-            val existing = resultsByApp[appId]
-
-            if (existing == null) {
-                resultsByApp[appId] =
-                    XAllocResultResponse(
-                        roundId = null,
-                        appId = appId,
-                        voters = result.voters,
-                        totalVotes = result.totalVotes,
-                        totalAmount = result.totalAmount,
-                        unallocatedAmount = result.unallocatedAmount,
-                        teamAllocationAmount = result.teamAllocationAmount,
-                        rewardsAllocationAmount = result.rewardsAllocationAmount,
-                    )
-            } else {
-                // Aggregate with existing entry
-                val existingTotalAmount = existing.totalAmount
-                val resultTotalAmount = result.totalAmount
-                val aggregatedTotalAmount =
-                    if (existingTotalAmount != null && resultTotalAmount != null) {
-                        existingTotalAmount.add(resultTotalAmount)
-                    } else if (resultTotalAmount != null) {
-                        resultTotalAmount
-                    } else {
-                        existingTotalAmount
-                    }
-
-                val existingUnallocatedAmount = existing.unallocatedAmount
-                val resultUnallocatedAmount = result.unallocatedAmount
-                val aggregatedUnallocatedAmount =
-                    if (existingUnallocatedAmount != null && resultUnallocatedAmount != null) {
-                        existingUnallocatedAmount.add(resultUnallocatedAmount)
-                    } else if (resultUnallocatedAmount != null) {
-                        resultUnallocatedAmount
-                    } else {
-                        existingUnallocatedAmount
-                    }
-
-                val existingTeamAllocationAmount = existing.teamAllocationAmount
-                val resultTeamAllocationAmount = result.teamAllocationAmount
-                val aggregatedTeamAllocationAmount =
-                    if (
-                        existingTeamAllocationAmount != null && resultTeamAllocationAmount != null
-                    ) {
-                        existingTeamAllocationAmount.add(resultTeamAllocationAmount)
-                    } else if (resultTeamAllocationAmount != null) {
-                        resultTeamAllocationAmount
-                    } else {
-                        existingTeamAllocationAmount
-                    }
-
-                val existingRewardsAllocationAmount = existing.rewardsAllocationAmount
-                val resultRewardsAllocationAmount = result.rewardsAllocationAmount
-                val aggregatedRewardsAllocationAmount =
-                    if (
-                        existingRewardsAllocationAmount != null &&
-                            resultRewardsAllocationAmount != null
-                    ) {
-                        existingRewardsAllocationAmount.add(resultRewardsAllocationAmount)
-                    } else if (resultRewardsAllocationAmount != null) {
-                        resultRewardsAllocationAmount
-                    } else {
-                        existingRewardsAllocationAmount
-                    }
-
-                resultsByApp[appId] =
-                    XAllocResultResponse(
-                        roundId = null,
-                        appId = appId,
-                        voters = existing.voters + result.voters,
-                        totalVotes = existing.totalVotes.add(result.totalVotes),
-                        totalAmount = aggregatedTotalAmount,
-                        unallocatedAmount = aggregatedUnallocatedAmount,
-                        teamAllocationAmount = aggregatedTeamAllocationAmount,
-                        rewardsAllocationAmount = aggregatedRewardsAllocationAmount,
-                    )
-            }
-        }
-
-        return resultsByApp.values.toList().sortedByDescending { it.totalAmount }
+        return mongoTemplate
+            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
+            .mappedResults
     }
+
+    /**
+     * Builds the group stage for aggregation pipelines. Groups by appId and sums all numeric fields
+     * (voters, totalVotes, and various allocation amounts).
+     */
+    private fun buildAggregationGroup() =
+        Aggregation.group("appId")
+            .sum("voters")
+            .`as`("voters")
+            .sum("totalVotes")
+            .`as`("totalVotes")
+            .sum("totalAmount")
+            .`as`("totalAmount")
+            .sum("unallocatedAmount")
+            .`as`("unallocatedAmount")
+            .sum("teamAllocationAmount")
+            .`as`("teamAllocationAmount")
+            .sum("rewardsAllocationAmount")
+            .`as`("rewardsAllocationAmount")
+            .first("appId")
+            .`as`("appId")
+
+    /**
+     * Builds the projection stage for aggregation pipelines. Projects the aggregated fields and
+     * sets roundId to null to indicate aggregation across rounds.
+     */
+    private fun buildAggregationProjection() =
+        Aggregation.project(
+                "appId",
+                "voters",
+                "totalVotes",
+                "totalAmount",
+                "unallocatedAmount",
+                "teamAllocationAmount",
+                "rewardsAllocationAmount",
+            )
+            .andExpression("null")
+            .`as`("roundId")
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
         mapOf("XAllocResult" to (xAllocResultRepository.getLatestRecord()?.blockNumber ?: 0))
