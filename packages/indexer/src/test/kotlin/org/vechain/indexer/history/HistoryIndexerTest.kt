@@ -174,4 +174,126 @@ class HistoryIndexerTest {
                 )
         }
     }
+
+    @Test
+    fun `Process block - With Stargate TXs via Indexer (Hayabusa)`() = runBlocking {
+        val stargateBlocks =
+            listOf(
+                BlockFixtures.BLOCK_STARGATE_STAKER_DELEGATION,
+                BlockFixtures.BLOCK_STARGATE_CLAIM_REWARDS,
+                BlockFixtures.BLOCK_STARGATE_MANAGER_ADDED,
+                BlockFixtures.BLOCK_STARGATE_MANAGER_REMOVED,
+                BlockFixtures.BLOCK_STARGATE_DELEGATION_EXIT_REQUEST,
+            )
+
+        val startBlock = BlockFixtures.BLOCK_STARGATE_STAKER_DELEGATION
+        every { processor.getLastSyncedBlock() } returns null
+        val capturedResults = mutableListOf<IndexingResult>()
+        every { processor.rollback(any()) } returns Unit
+        every { processor.process(any()) } answers
+            {
+                val result = firstArg<IndexingResult>()
+                capturedResults.add(result)
+            }
+
+        val indexer =
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = startBlock.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
+
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = stargateBlocks)
+
+        expectThat(capturedResults).hasSize(stargateBlocks.size)
+
+        val allEvents =
+            capturedResults.filterIsInstance<IndexingResult.Normal>().flatMap { it.events }
+
+        val eventTypes = allEvents.map { it.eventType }
+        expect {
+            that(eventTypes)
+                .isEqualTo(
+                    listOf(
+                        "STARGATE_BOOST",
+                        "STARGATE_DELEGATE_REQUEST",
+                        "STARGATE_STAKE",
+                        "Transfer",
+                        "Transfer",
+                        "Transfer",
+                        "STARGATE_MANAGER_ADDED",
+                        "STARGATE_MANAGER_REMOVED",
+                        "STARGATE_DELEGATION_EXIT_REQUEST",
+                    )
+                )
+        }
+    }
+
+    @Test
+    fun `Process block - With Stargate TXs via Indexer (Legacy)`() = runBlocking {
+        val stargateBlocks =
+            listOf(
+                BlockFixtures.BLOCK_STARGATE_STAKE,
+                BlockFixtures.BLOCK_STARGATE_UNSTAKE,
+                BlockFixtures.BLOCK_STARGATE_BASE_REWARD,
+                BlockFixtures.BLOCK_STARGATE_DELEGATE_REWARD,
+                BlockFixtures.BLOCK_STARGATE_STAKE_DELEGATE,
+                BlockFixtures.BLOCK_STARGATE_UNDELEGATE,
+                BlockFixtures.BLOCK_STARGATE_DELEGATION,
+            )
+
+        val startBlock = BlockFixtures.BLOCK_STARGATE_STAKE
+        every { processor.getLastSyncedBlock() } returns null
+        val capturedResults = mutableListOf<IndexingResult>()
+        every { processor.rollback(any()) } returns Unit
+        every { processor.process(any()) } answers
+            {
+                val result = firstArg<IndexingResult>()
+                capturedResults.add(result)
+            }
+
+        val indexer =
+            HistoryConfig()
+                .historyIndexer(
+                    thorClient = thorClient,
+                    processor = processor,
+                    startBlock = startBlock.number,
+                    syncLoggerInterval = 1L,
+                    bEProperties = businessEventProperties,
+                )
+
+        // Create a coordinator to run the indexer
+        SimpleBlockIndexerCoordinator.launch(indexer = indexer, blocks = stargateBlocks)
+
+        expectThat(capturedResults).hasSize(stargateBlocks.size)
+
+        val allEvents =
+            capturedResults.filterIsInstance<IndexingResult.Normal>().flatMap { it.events }
+
+        val eventTypes = allEvents.map { it.eventType }
+        expect {
+            that(eventTypes)
+                .isEqualTo(
+                    listOf(
+                        "STARGATE_DELEGATE_LEGACY",
+                        "STARGATE_STAKE",
+                        "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                        "STARGATE_UNSTAKE",
+                        "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                        "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                        "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                        "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
+                        "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
+                        "STARGATE_DELEGATE_LEGACY",
+                        "STARGATE_STAKE",
+                        "STARGATE_UNDELEGATE_LEGACY",
+                        "Transfer",
+                    )
+                )
+        }
+    }
 }

@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
@@ -23,7 +23,5 @@ class TokenLevelValidator : ConstraintValidator<ValidTokenLevel, String?> {
     override fun isValid(
         value: String?,
         constraintValidatorContext: ConstraintValidatorContext,
-    ): Boolean {
-        return value == null || TokenLevel.fromString(value) != null
-    }
+    ): Boolean = value == null || TokenLevel.fromString(value) != null
 }

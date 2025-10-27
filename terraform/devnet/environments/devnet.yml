@@ -36,7 +36,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: transactions,transfers,history,stargate,validator
+      spring_profile: transactions,transfers,history,stargate,validator,nfts
       ecr_common_repo: 951789968977.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -96,7 +96,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,transactions,transfers,history,stargate,validator
+      spring_profile: indexer,transactions,transfers,history,stargate,validator,nfts
       ecr_common_repo: 951789968977.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -119,7 +119,8 @@ enabled_nets:
         b3tr-sustainable-actions:   '0'
         b3tr-proposal:              '0'
         historic-proposals:         '0'
-        validator:                  '26040'
+        delegation:                 '0'
+        validator:                  '19210'
       start-round:
         b3tr-sustainable-actions:   '0'
       sync-log-interval: '100'
@@ -144,18 +145,21 @@ enabled_nets:
       version:
         nfts:                       '3'
         transfers:                  '3'
+        fungible-token-interactions: '1'
         transactions:               '3'
-        history:                    '4'
+        history:                    '5'
         nft-blacklist:              '3'
         vevote-comments:            '3'
         vevote-results:             '3'
         authority-node-endorser:    '3'
         stargate-vtho-claimed-by-block: '4'
+        stargate-vtho-generated-by-block: '2'
         stargate-vtho-claimed-by-account: '4'
         stargate_nft_holders_by_account: '3'
         stargate_vet_staked_by_account: '3'
         stargate-nft-holders-by-block: '3'
         stargate-vet-staked-by-block: '3'
+        stargate-vet-delegated-by-block: '2'
         b3tr-proposal-comments: '3'
         b3tr-proposal-results: '3'
         b3tr-user-all-time-action-summary: '3'
@@ -164,6 +168,7 @@ enabled_nets:
         b3tr-user-daily-action-summary: '3'
         b3tr-sustainability-overview-all: '3'
         b3tr-user-round-action-summary: '3'
+        b3tr-app-daily-action-summary: '3'
         b3tr-sustainability-action: '3'
         b3tr-x-alloc-result: '3'
         b3tr-gm-nft: '3'
@@ -171,6 +176,8 @@ enabled_nets:
         block-usage: '1'
         historic-proposals:          '3'
         validator: '3'
+        validator-rewards: '3'
+        stargate-token: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
@@ -183,11 +190,11 @@ enabled_nets:
           VOTER_REWARDS_CONTRACT: '0x2e47fc4aabb3403037fb5e1f38995e7a91ce8ed2'
           TREASURY_CONTRACT: '0x039893ebe092a2d22b08e2b029735d211bff7f50'
           STARGATE_DELEGATION_CONTRACT: '0xd9ee859de7b47c151619bd45f3e0d73cce68af60'
-          STARGATE_NFT_CONTRACT: '0x820d17ec4882e65e42588d91ea9c7cb7225022a3'
+          STARGATE_NFT_CONTRACT: '0x2fd6240f2eeef39b213c600c70ad2ab64753db6d'
           VEVOTE_CONTRACT: '0xe1ecc51fc02c29e54b428279c0456010fda5c4f2'
-          STARGATE_STAKER_CONTRACT: '0x54d7f2de232e59bfb95c6b2c2b9f678ab73e5a38'
+          STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
-          GET_ALL_VALIDATORS_CONTRACT: '0x089c66e64b45b4d532cfe0093eecef2f2d2ed2a7'
+          GET_ALL_VALIDATORS_CONTRACT: '0xceafcbd80aea95b41fc9cc90b9bbf892f6b06f6a'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

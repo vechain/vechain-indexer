@@ -1,13 +1,12 @@
 package org.vechain.indexer.validation
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.stargate.TokenLevel
+import org.vechain.indexer.stargate.token.TokenLevel
 import strikt.api.expect
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
 
 internal class ValidTokenLevelTest {
-
     private val validator = TokenLevelValidator()
 
     @Test
@@ -18,7 +17,7 @@ internal class ValidTokenLevelTest {
     @Test
     fun `accepts valid token level values (case-insensitive)`() {
         TokenLevel.entries.forEach { level ->
-            if (level !== TokenLevel.None) {
+            if (level !== TokenLevel.All) {
                 expect {
                     that(validator.isValid(level.name.lowercase(), DummyContext())).isTrue()
                     that(validator.isValid(level.name.uppercase(), DummyContext())).isTrue()
@@ -28,8 +27,8 @@ internal class ValidTokenLevelTest {
     }
 
     @Test
-    fun `None is not accepted`() {
-        expect { that(validator.isValid(TokenLevel.None.name, DummyContext())).isFalse() }
+    fun `All is not accepted`() {
+        expect { that(validator.isValid(TokenLevel.All.name, DummyContext())).isFalse() }
     }
 
     @Test

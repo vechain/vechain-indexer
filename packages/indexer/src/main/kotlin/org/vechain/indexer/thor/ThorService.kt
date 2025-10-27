@@ -15,7 +15,6 @@ import org.vechain.indexer.thor.model.Clause
 
 @Service
 class ThorService(private val thorRest: WebClient) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun getBestBlock(): Block {
@@ -41,6 +40,21 @@ class ThorService(private val thorRest: WebClient) {
         return thorRest
             .post()
             .uri("/accounts/*")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .retrieve()
+            .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
+            .block() ?: throw Exception("Empty response from Thor")
+    }
+
+    fun inspectClausesAtBlock(clauses: List<Clause>, blockID: String): List<ExecuteCodeResponse> {
+        val blockRef = blockID.substring(0, 18)
+        val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
+
+        return thorRest
+            .post()
+            .uri("/accounts/*?revision=$blockID")
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .accept(MediaType.APPLICATION_JSON)
             .body(BodyInserters.fromValue(request))
