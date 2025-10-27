@@ -25,6 +25,45 @@ rate_limit_exception_list:
   -                              81.39.47.171/32
   -                              90.26.60.41/32
 cloudwatch_alarms:               true
+
+# ALB Configuration
+alb:
+  # Listener Rules Configuration
+  listener_rules:
+    - name: "api-rules"
+      path_patterns: ["/api/v*"]
+      priority: 0
+    - name: "swagger-ui"
+      path_patterns: ["/swagger-ui/*"]
+      priority: 1
+      enabled: true
+    - name: "api-docs"
+      path_patterns: ["/api-docs"]
+      priority: 2
+      enabled: true
+  
+  # Target Groups Configuration
+  target_groups:
+    - name: "swg"
+      port: 8080
+      healthcheck_port: 8080
+      healthcheck_path: "/actuator/health"
+      enabled: true
+    - name: "doc"
+      port: 8080
+      healthcheck_port: 8080
+      healthcheck_path: "/actuator/health"
+      enabled: true
+  
+  # Authentication Configuration
+  authentication:
+    okta_auth_server_base_url: "https://vechaineu.okta.com"
+    secret_id: "arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/veworld/okta-AHB6D3"
+  
+  # Health Check Configuration
+  healthcheck:
+    path: "/actuator/health"
+
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
 datadog:
