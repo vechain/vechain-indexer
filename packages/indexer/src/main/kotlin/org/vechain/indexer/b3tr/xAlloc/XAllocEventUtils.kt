@@ -1,8 +1,11 @@
 package org.vechain.indexer.b3tr.xAlloc
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.utils.scaleDown
 
 object XAllocEventUtils {
 
@@ -16,6 +19,46 @@ object XAllocEventUtils {
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, roundEvents) -> roundEvents.sortedBy { it.blockNumber } }
+
+    fun getAppId(event: IndexedEvent): String =
+        event.params.getAsString("appId") ?: error("Missing param 'appId' in event: ${event.id}")
+
+    fun getTotalAmount(event: IndexedEvent): BigInteger = getBigIntegerParam(event, "totalAmount")
+
+    fun getUnallocatedAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "unallocatedAmount")
+
+    fun getTeamAllocationAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "teamAllocationAmount")
+
+    fun getRewardsAllocationAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "rewardsAllocationAmount")
+
+    fun getTotalAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getTotalAmount(event), 18)
+
+    fun getUnallocatedAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getUnallocatedAmount(event), 18)
+
+    fun getTeamAllocationAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getTeamAllocationAmount(event), 18)
+
+    fun getRewardsAllocationAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getRewardsAllocationAmount(event), 18)
+
+    private fun getBigIntegerParam(event: IndexedEvent, paramName: String): BigInteger {
+        return when (val raw = event.params.params[paramName]) {
+            is BigInteger -> raw
+            is Number -> BigInteger.valueOf(raw.toLong())
+            is String ->
+                try {
+                    BigInteger(raw.trim())
+                } catch (_: Exception) {
+                    error("Invalid $paramName number format in event: ${event.id}")
+                }
+            else -> error("Missing or invalid $paramName in event: ${event.id}")
+        }
+    }
 
     fun getAppIds(event: IndexedEvent): List<String> {
         val raw = event.params.params["appsIds"]

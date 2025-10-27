@@ -9,6 +9,7 @@ object BusinessEventParamFixtures {
             "B3TR_GOVERNOR_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
             "GM_NFT_CONTRACT" to "0x93b8cd34a7fc4f53271b9011161f7a2b5fea9d1f",
             "X_ALLOC_VOTING_CONTRACT" to "0x89a00bb0947a30ff95beef77a66aede3842fe5b7",
+            "X_ALLOC_POOL_CONTRACT" to "0x4191776F05f4bE4848d3f4d587345078B439C7d3",
             "X2EARN_REWARDS_POOL_CONTRACT" to "0x6bee7ddab6c99d5b2af0554eaea484ce18f52631",
             "VOTER_REWARDS_CONTRACT" to "0x838a33af756a6366f93e201423e1425f67ec0fa7",
             "TREASURY_CONTRACT" to "0xd5903bcc66e439c753e525f8af2fec7be2429593",

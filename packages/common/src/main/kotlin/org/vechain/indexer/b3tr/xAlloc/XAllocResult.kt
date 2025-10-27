@@ -1,10 +1,13 @@
 package org.vechain.indexer.b3tr.xAlloc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.data.mongodb.core.mapping.Field
+import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
@@ -22,6 +25,10 @@ constructor(
     val appId: String,
     val voters: Long,
     val totalVotes: BigInteger,
+    @Field(targetType = FieldType.DECIMAL128) val totalAmount: BigDecimal?,
+    @Field(targetType = FieldType.DECIMAL128) val unallocatedAmount: BigDecimal?,
+    @Field(targetType = FieldType.DECIMAL128) val teamAllocationAmount: BigDecimal?,
+    @Field(targetType = FieldType.DECIMAL128) val rewardsAllocationAmount: BigDecimal?,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -32,6 +39,10 @@ constructor(
         appId: String,
         voters: Long,
         totalVotes: BigInteger,
+        totalAmount: BigDecimal? = null,
+        unallocatedAmount: BigDecimal? = null,
+        teamAllocationAmount: BigDecimal? = null,
+        rewardsAllocationAmount: BigDecimal? = null,
     ) : this(
         version = version,
         id = generateId("$roundId", appId),
@@ -42,6 +53,10 @@ constructor(
         appId = appId,
         voters = voters,
         totalVotes = totalVotes,
+        totalAmount = totalAmount,
+        unallocatedAmount = unallocatedAmount,
+        teamAllocationAmount = teamAllocationAmount,
+        rewardsAllocationAmount = rewardsAllocationAmount,
     )
 
     @JsonIgnore override fun getDocumentId(): String = id

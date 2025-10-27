@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.xAlloc
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Nested
@@ -303,6 +304,495 @@ class XAllocEventsUtilsTest {
         fun `returns empty map for empty input`() {
             val aggregated = XAllocEventUtils.parseVotes(emptyList())
             assertTrue(aggregated.isEmpty())
+        }
+    }
+
+    @Nested
+    inner class GetTotalAmountTest {
+        @Test
+        fun `returns BigInteger directly`() {
+            val amount = BigInteger("1000000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "total-big",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to amount)),
+                )
+            assertEquals(amount, XAllocEventUtils.getTotalAmount(e))
+        }
+
+        @Test
+        fun `converts Number to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-number",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to 5000L)),
+                )
+            assertEquals(BigInteger("5000"), XAllocEventUtils.getTotalAmount(e))
+        }
+
+        @Test
+        fun `parses String to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-string",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("totalAmount" to "2500000000000000000")
+                        ),
+                )
+            assertEquals(BigInteger("2500000000000000000"), XAllocEventUtils.getTotalAmount(e))
+        }
+
+        @Test
+        fun `handles leading and trailing whitespace in String`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-whitespace",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("totalAmount" to "  1000000000000000000  ")
+                        ),
+                )
+            assertEquals(BigInteger("1000000000000000000"), XAllocEventUtils.getTotalAmount(e))
+        }
+
+        @Test
+        fun `throws on invalid String format`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-invalid",
+                    params =
+                        AbiEventParameters(returnValues = mapOf("totalAmount" to "not-a-number")),
+                )
+            assertThrows(IllegalStateException::class.java) { XAllocEventUtils.getTotalAmount(e) }
+        }
+
+        @Test
+        fun `throws when totalAmount is missing`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) { XAllocEventUtils.getTotalAmount(e) }
+        }
+    }
+
+    @Nested
+    inner class GetUnallocatedAmountTest {
+        @Test
+        fun `returns BigInteger directly`() {
+            val amount = BigInteger("500000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-big",
+                    params = AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
+                )
+            assertEquals(amount, XAllocEventUtils.getUnallocatedAmount(e))
+        }
+
+        @Test
+        fun `converts Number to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-number",
+                    params = AbiEventParameters(returnValues = mapOf("unallocatedAmount" to 2500L)),
+                )
+            assertEquals(BigInteger("2500"), XAllocEventUtils.getUnallocatedAmount(e))
+        }
+
+        @Test
+        fun `parses String to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-string",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("unallocatedAmount" to "1000000000000000000")
+                        ),
+                )
+            assertEquals(
+                BigInteger("1000000000000000000"),
+                XAllocEventUtils.getUnallocatedAmount(e),
+            )
+        }
+
+        @Test
+        fun `throws on invalid String format`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-invalid",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("unallocatedAmount" to "invalid-amount")
+                        ),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getUnallocatedAmount(e)
+            }
+        }
+
+        @Test
+        fun `throws when unallocatedAmount is missing`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getUnallocatedAmount(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetTeamAllocationAmountTest {
+        @Test
+        fun `returns BigInteger directly`() {
+            val amount = BigInteger("300000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "team-big",
+                    params =
+                        AbiEventParameters(returnValues = mapOf("teamAllocationAmount" to amount)),
+                )
+            assertEquals(amount, XAllocEventUtils.getTeamAllocationAmount(e))
+        }
+
+        @Test
+        fun `converts Number to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-number",
+                    params =
+                        AbiEventParameters(returnValues = mapOf("teamAllocationAmount" to 1500L)),
+                )
+            assertEquals(BigInteger("1500"), XAllocEventUtils.getTeamAllocationAmount(e))
+        }
+
+        @Test
+        fun `parses String to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-string",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("teamAllocationAmount" to "750000000000000000")
+                        ),
+                )
+            assertEquals(
+                BigInteger("750000000000000000"),
+                XAllocEventUtils.getTeamAllocationAmount(e),
+            )
+        }
+
+        @Test
+        fun `throws on invalid String format`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-invalid",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("teamAllocationAmount" to "bad-amount")
+                        ),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getTeamAllocationAmount(e)
+            }
+        }
+
+        @Test
+        fun `throws when teamAllocationAmount is missing`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getTeamAllocationAmount(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetRewardsAllocationAmountTest {
+        @Test
+        fun `returns BigInteger directly`() {
+            val amount = BigInteger("200000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-big",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to amount)
+                        ),
+                )
+            assertEquals(amount, XAllocEventUtils.getRewardsAllocationAmount(e))
+        }
+
+        @Test
+        fun `converts Number to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-number",
+                    params =
+                        AbiEventParameters(returnValues = mapOf("rewardsAllocationAmount" to 1000L)),
+                )
+            assertEquals(BigInteger("1000"), XAllocEventUtils.getRewardsAllocationAmount(e))
+        }
+
+        @Test
+        fun `parses String to BigInteger`() {
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-string",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to "500000000000000000")
+                        ),
+                )
+            assertEquals(
+                BigInteger("500000000000000000"),
+                XAllocEventUtils.getRewardsAllocationAmount(e),
+            )
+        }
+
+        @Test
+        fun `throws on invalid String format`() {
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-invalid",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to "oops")
+                        ),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getRewardsAllocationAmount(e)
+            }
+        }
+
+        @Test
+        fun `throws when rewardsAllocationAmount is missing`() {
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getRewardsAllocationAmount(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetTotalAmountAsDecimalTest {
+        @Test
+        fun `scales down 10^18 to decimal`() {
+            val amount = BigInteger("1000000000000000000") // 1 with 18 zeros
+            val e =
+                buildIndexedEvent(
+                    id = "total-decimal",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("1.000000000000000000"),
+                XAllocEventUtils.getTotalAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `scales down partial amounts correctly`() {
+            val amount = BigInteger("5500000000000000000") // 5.5 with 18 zeros
+            val e =
+                buildIndexedEvent(
+                    id = "total-partial",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("5.500000000000000000"),
+                XAllocEventUtils.getTotalAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `handles small amounts below 1`() {
+            val amount = BigInteger("123456789000000000") // 0.123456789
+            val e =
+                buildIndexedEvent(
+                    id = "total-small",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("0.123456789000000000"),
+                XAllocEventUtils.getTotalAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `handles zero amount`() {
+            val amount = BigInteger("0")
+            val e =
+                buildIndexedEvent(
+                    id = "total-zero",
+                    params = AbiEventParameters(returnValues = mapOf("totalAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("0.000000000000000000"),
+                XAllocEventUtils.getTotalAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `throws on missing totalAmount`() {
+            val e =
+                buildIndexedEvent(
+                    id = "total-decimal-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getTotalAmountAsDecimal(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetUnallocatedAmountAsDecimalTest {
+        @Test
+        fun `scales down 10^18 to decimal`() {
+            val amount = BigInteger("500000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-decimal",
+                    params = AbiEventParameters(returnValues = mapOf("unallocatedAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("0.500000000000000000"),
+                XAllocEventUtils.getUnallocatedAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `scales down correctly with Number input`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-decimal-number",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("unallocatedAmount" to 2500000000000000000L)
+                        ),
+                )
+            assertEquals(
+                BigDecimal("2.500000000000000000"),
+                XAllocEventUtils.getUnallocatedAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `throws on missing unallocatedAmount`() {
+            val e =
+                buildIndexedEvent(
+                    id = "unalloc-decimal-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getUnallocatedAmountAsDecimal(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetTeamAllocationAmountAsDecimalTest {
+        @Test
+        fun `scales down 10^18 to decimal`() {
+            val amount = BigInteger("300000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "team-decimal",
+                    params =
+                        AbiEventParameters(returnValues = mapOf("teamAllocationAmount" to amount)),
+                )
+            assertEquals(
+                BigDecimal("0.300000000000000000"),
+                XAllocEventUtils.getTeamAllocationAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `scales down correctly with String input`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-decimal-string",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("teamAllocationAmount" to "750000000000000000")
+                        ),
+                )
+            assertEquals(
+                BigDecimal("0.750000000000000000"),
+                XAllocEventUtils.getTeamAllocationAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `throws on missing teamAllocationAmount`() {
+            val e =
+                buildIndexedEvent(
+                    id = "team-decimal-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getTeamAllocationAmountAsDecimal(e)
+            }
+        }
+    }
+
+    @Nested
+    inner class GetRewardsAllocationAmountAsDecimalTest {
+        @Test
+        fun `scales down 10^18 to decimal`() {
+            val amount = BigInteger("200000000000000000")
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-decimal",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to amount)
+                        ),
+                )
+            assertEquals(
+                BigDecimal("0.200000000000000000"),
+                XAllocEventUtils.getRewardsAllocationAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `scales down large amounts correctly`() {
+            val amount = BigInteger("10000000000000000000") // 10 with 18 zeros
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-decimal-large",
+                    params =
+                        AbiEventParameters(
+                            returnValues = mapOf("rewardsAllocationAmount" to amount)
+                        ),
+                )
+            assertEquals(
+                BigDecimal("10.000000000000000000"),
+                XAllocEventUtils.getRewardsAllocationAmountAsDecimal(e),
+            )
+        }
+
+        @Test
+        fun `throws on missing rewardsAllocationAmount`() {
+            val e =
+                buildIndexedEvent(
+                    id = "rewards-decimal-missing",
+                    params = AbiEventParameters(returnValues = emptyMap()),
+                )
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.getRewardsAllocationAmountAsDecimal(e)
+            }
         }
     }
 }

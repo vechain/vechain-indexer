@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.xAlloc
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -9,6 +10,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getRewardsAllocationAmountAsDecimal
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getTeamAllocationAmountAsDecimal
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getTotalAmountAsDecimal
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getUnallocatedAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.groupByRoundId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.parseVotes
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
@@ -34,7 +40,9 @@ open class XAllocResultService(
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
-                parseVotes(roundEvents).forEach { (appId, aggregatedVote) ->
+                // Parse vote events
+                parseVotes(roundEvents.filter { it.eventType == "B3TR_XAllocationVote" }).forEach {
+                    (appId, aggregatedVote) ->
                     val recordId = generateId("$roundId", appId)
                     val existing = resolveExisting(recordId, updatedResult)
                     val updated =
@@ -50,6 +58,31 @@ open class XAllocResultService(
                     updatedResult[recordId] = updated
                     existing?.let { archiveResult.add(it) }
                 }
+                // Parse ClaimReward events
+                roundEvents
+                    .filter { it.eventType == "B3TR_XAllocationRewardsClaimed" }
+                    .forEach { event ->
+                        val appId = getAppId(event)
+                        val totalAmount = getTotalAmountAsDecimal(event)
+                        val unallocatedAmount = getUnallocatedAmountAsDecimal(event)
+                        val teamAllocationAmount = getTeamAllocationAmountAsDecimal(event)
+                        val rewardsAllocationAmount = getRewardsAllocationAmountAsDecimal(event)
+                        val recordId = generateId("$roundId", appId)
+                        val existing = resolveExisting(recordId, updatedResult)
+                        val updated =
+                            createOrUpdateExisting(
+                                roundId = roundId,
+                                appId = appId,
+                                blockDetails = blockDetails,
+                                existing = existing,
+                                totalAmount = totalAmount,
+                                unallocatedAmount = unallocatedAmount,
+                                teamAllocationAmount = teamAllocationAmount,
+                                rewardsAllocationAmount = rewardsAllocationAmount,
+                            )
+                        updatedResult[recordId] = updated
+                        existing?.let { archiveResult.add(it) }
+                    }
             }
         }
 
@@ -59,10 +92,14 @@ open class XAllocResultService(
     protected fun createOrUpdateExisting(
         roundId: Int,
         appId: String,
-        voters: Long,
-        totalVotes: BigInteger,
         blockDetails: BlockDetails,
         existing: XAllocResult?,
+        voters: Long = 0,
+        totalVotes: BigInteger = BigInteger.ZERO,
+        totalAmount: BigDecimal? = null,
+        unallocatedAmount: BigDecimal? = null,
+        teamAllocationAmount: BigDecimal? = null,
+        rewardsAllocationAmount: BigDecimal? = null,
     ): XAllocResult {
         return if (existing != null) {
             XAllocResult(
@@ -74,6 +111,11 @@ open class XAllocResultService(
                 appId = appId,
                 voters = existing.voters + voters,
                 totalVotes = existing.totalVotes + totalVotes,
+                totalAmount = totalAmount ?: existing.totalAmount,
+                unallocatedAmount = unallocatedAmount ?: existing.unallocatedAmount,
+                teamAllocationAmount = teamAllocationAmount ?: existing.teamAllocationAmount,
+                rewardsAllocationAmount =
+                    rewardsAllocationAmount ?: existing.rewardsAllocationAmount,
             )
         } else {
             XAllocResult(
@@ -85,6 +127,10 @@ open class XAllocResultService(
                 appId = appId,
                 voters = voters,
                 totalVotes = totalVotes,
+                totalAmount = totalAmount,
+                unallocatedAmount = unallocatedAmount,
+                teamAllocationAmount = teamAllocationAmount,
+                rewardsAllocationAmount = rewardsAllocationAmount,
             )
         }
     }
