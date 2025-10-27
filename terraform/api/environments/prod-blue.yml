@@ -44,12 +44,12 @@ alb:
   
   # Target Groups Configuration
   target_groups:
-    - name: "tg-swagger"
+    - name: "swg"
       port: 8080
       healthcheck_port: 8080
       healthcheck_path: "/actuator/health"
       enabled: true
-    - name: "tg-api-docs"
+    - name: "doc"
       port: 8080
       healthcheck_port: 8080
       healthcheck_path: "/actuator/health"
