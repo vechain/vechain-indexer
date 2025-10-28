@@ -151,6 +151,7 @@ indexer:
     block-usage: ${VERSION_BLOCK_USAGE:1}
     validator: ${VERSION_VALIDATOR:1}
     validator-rewards: ${VERSION_VALIDATOR_BLOCKS:1}
+    token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
