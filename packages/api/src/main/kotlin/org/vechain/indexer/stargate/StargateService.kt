@@ -13,6 +13,9 @@ import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.tokenReward.RewardPeriod
+import org.vechain.indexer.stargate.tokenReward.TokenReward
+import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
@@ -34,6 +37,7 @@ open class StargateService(
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
     private val stargateTokenRepository: StargateTokenRepository,
+    private val tokenRewardRepository: TokenRewardRepository,
 ) {
     /**
      * Retrieves the total VTHO claimed up to a specific block number. If no block number is
@@ -249,5 +253,88 @@ open class StargateService(
             }
 
         return paginatedResponse(slice)
+    }
+
+    fun getRewards(
+        tokenId: String,
+        validator: String?,
+        period: RewardPeriod?,
+        pageable: Pageable,
+    ): Slice<TokenReward> {
+        val target = period ?: RewardPeriod.ALL
+        val periods: List<RewardPeriod> =
+            when (target) {
+                RewardPeriod.ALL -> listOf(RewardPeriod.ALL)
+                else ->
+                    listOf(
+                        target,
+                        RewardPeriod.ALL,
+                    ) // always include ALL alongside the target period
+            }
+
+        val slice =
+            if (validator != null) {
+                tokenRewardRepository.findByTokenIdAndValidatorAndRewardPeriodIn(
+                    tokenId,
+                    validator,
+                    periods,
+                    pageable,
+                )
+            } else {
+                tokenRewardRepository.findByTokenIdAndRewardPeriodIn(tokenId, periods, pageable)
+            }
+
+        // If target == ALL → nothing to normalize; return as-is.
+        if (target == RewardPeriod.ALL || slice.isEmpty) return slice
+
+        // We included ALL in the query; adjust the ALL doc to look like the target period.
+        val sortDesc = pageable.sort.getOrderFor("blockTimestamp")?.isDescending ?: true
+        val edgeIndex = if (sortDesc) 0 else slice.content.lastIndex
+
+        val adjustedContent = slice.content.toMutableList()
+        val edgeDoc = adjustedContent[edgeIndex]
+
+        if (edgeDoc.rewardPeriod == RewardPeriod.ALL) {
+            adjustedContent[edgeIndex] = normalizeAllAs(edgeDoc, target)
+        } else {
+            // If your data can return ALL not at the edge, optionally scan & normalize the first
+            // ALL found:
+            val idx = adjustedContent.indexOfFirst { it.rewardPeriod == RewardPeriod.ALL }
+            if (idx >= 0) {
+                adjustedContent[idx] = normalizeAllAs(adjustedContent[idx], target)
+            }
+        }
+
+        return SliceImpl(adjustedContent, pageable, slice.hasNext())
+    }
+
+    private fun normalizeAllAs(allDoc: TokenReward, target: RewardPeriod): TokenReward {
+        val normalized =
+            when (target) {
+                RewardPeriod.DAY -> allDoc.dayReward
+                RewardPeriod.WEEK -> allDoc.weekReward
+                RewardPeriod.MONTH -> allDoc.monthReward
+                RewardPeriod.YEAR -> allDoc.yearReward
+                RewardPeriod.CYCLE -> allDoc.cycleReward
+                RewardPeriod.ALL -> allDoc.rewards
+            } ?: BigInteger.ZERO
+
+        println(
+            "Adjusting ALL reward ${allDoc.rewards} to $target reward $normalized for doc id=${allDoc.id}"
+        )
+        println(
+            "dayReward=${allDoc.dayReward}, weekReward=${allDoc.weekReward}, monthReward=${allDoc.monthReward}, yearReward=${allDoc.yearReward}, cycleReward=${allDoc.cycleReward}"
+        )
+
+        return allDoc.copy(
+            rewards = normalized,
+            rewardPeriod = target,
+            // hide ALL internals from response
+            dayReward = null,
+            weekReward = null,
+            monthReward = null,
+            yearReward = null,
+            cycleReward = null,
+        )
     }
 }
