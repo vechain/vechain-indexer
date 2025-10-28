@@ -1,5 +1,6 @@
 package org.vechain.indexer.amn
 
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.plusAssign
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -21,9 +22,9 @@ open class AmnService(
     private val thorService: ThorService,
     private val amnRepository: AmnRepository,
     private val mongoTemplate: MongoTemplate,
-    @Value("\${veworld.contract.authority-node.address}") private val contractAddress: String,
+    @param:Value("\${veworld.contract.authority-node.address}") private val contractAddress: String,
 ) {
-    private val cachedAuthorityAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedAuthorityAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     private val logger = LoggerFactory.getLogger(AmnService::class.java)
 

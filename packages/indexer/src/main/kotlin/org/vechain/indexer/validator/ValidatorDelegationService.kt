@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
@@ -22,9 +23,10 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycl
 @Service
 class ValidatorDelegationService(
     private val thorService: ThorService,
-    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
+    @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    private val stakerSC: String,
 ) {
-    private val cachedGetDelegationAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedGetDelegationAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     /**
      * Returns the next status of a validator.
