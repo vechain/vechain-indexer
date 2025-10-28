@@ -2,6 +2,7 @@ package org.vechain.indexer.b3tr.xAlloc
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -43,7 +44,8 @@ open class XAllocResultService(
     private val xAllocPoolContract: String,
 ) {
 
-    private val cachedIsQuadraticFundingEnabled: MutableMap<Int, Boolean> = mutableMapOf()
+    private val cachedIsQuadraticFundingEnabled: ConcurrentHashMap<Int, Boolean> =
+        ConcurrentHashMap()
     private val isQuadraticFundingDisabledAbi: AbiElement by lazy {
         val abis =
             AbiLoader.loadFunctions("abis/b3tr", listOf("isQuadraticFundingDisabledForRound"))
