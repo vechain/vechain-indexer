@@ -22,7 +22,7 @@ open class VthoGeneratedByBlockConfig {
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
-        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
@@ -34,9 +34,9 @@ open class VthoGeneratedByBlockConfig {
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(listOf("STARGATE_CLAIM_REWARDS"))
-            .businessEventContracts(listOf(stargateStakerAddress, VTHO_CONTRACT_ADDRESS))
+            .businessEventContracts(listOf(stargateContract, VTHO_CONTRACT_ADDRESS))
             .businessEventSubstitutionParams(bEProperties.substitutions)
-            .callDataClauses(StargateUtils.buildBalanceOfClause(stargateStakerAddress))
+            .callDataClauses(StargateUtils.buildBalanceOfClause(stargateContract))
             .includeFullBlock()
             .build()
 }

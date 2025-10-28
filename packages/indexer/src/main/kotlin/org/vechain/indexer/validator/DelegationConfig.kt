@@ -45,8 +45,9 @@ open class DelegationConfig {
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
-        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
-        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}") stargateAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
+        @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
+        stargateNftContract: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,
     ): Indexer =
@@ -58,7 +59,7 @@ open class DelegationConfig {
             .syncLoggerInterval(syncLogInterval)
             .includeFullBlock()
             .abis("abis/stargate")
-            .abiContracts(listOf(builtinStakerAddress, stargateStakerAddress, stargateAddress))
+            .abiContracts(listOf(builtinStakerAddress, stargateContract, stargateNftContract))
             .abiEventNames(
                 listOf(
                     "DelegationInitiated",
