@@ -6,17 +6,21 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.isNotEmpty
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
+import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
@@ -31,22 +35,41 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
-@Profile("validator", "validator-reward")
+@Profile("stargate", "token-reward")
 @Service
 open class TokenRewardService(
     private val repository: TokenRewardRepository,
+    private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
     private val thorService: ThorService,
     @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
     private val stargateContract: String,
 ) {
+    /**
+     * @notice Cache of Stargate contract ABI functions.
+     * @dev Populated once at service initialization by loading ABIs from disk. Keys are function
+     *   names, values are parsed AbiElement objects.
+     */
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
+    /**
+     * @notice In-memory cache of validator cycle information.
+     * @dev Stores per-validator cycle metadata such as next cycle block, current cycle number,
+     *   delegation status, and effective stake totals. Keyed by validator address or ID.
+     */
     private val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
 
-    /** Cached VTHO total supply from the previous block to calculate deltas. */
+    /**
+     * @notice Cached VTHO total supply from the previous block.
+     * @dev Used to calculate deltas in block rewards between consecutive blocks.
+     */
     private var vthoTotalSupply: BigInteger = BigInteger.ZERO
 
+    /**
+     * @notice Initialize contract ABI cache at service startup.
+     * @dev Loads required Stargate ABI function definitions from resources into {@link
+     *   cachedGetValidatorsAbi}. Ensures they are available for all subsequent decode operations.
+     */
     init {
         loadAllValidatorAbiFunctions(
             listOf(
@@ -56,42 +79,70 @@ open class TokenRewardService(
                 "getVetPriceUsd",
                 "getVthoPriceUsd",
                 "totalBurned",
+                "getEffectiveStake",
+                "getDelegatorsEffectiveStake",
             )
         )
     }
 
-    open fun processBlock(block: Block, callResponses: List<InspectionResult>): List<TokenReward> {
+    /**
+     * @param block Thor block containing validator and transaction info.
+     * @param callResponses ABI-decoded inspection results for validator state.
+     * @return A list of updated TokenReward documents for this block.
+     * @notice Process a block and update validator reward state.
+     * @dev Decodes validator info, fetches or creates reward trackers, calculates block reward
+     *   distribution, and updates ongoing rewards.
+     */
+    open fun processBlock(
+        block: Block,
+        callResponses: List<InspectionResult>,
+    ): Pair<List<TokenReward>, List<TokenReward>> {
         val decodedInfo =
-            decodeResponseInfo(callResponses, cachedGetValidatorsAbi) ?: return emptyList()
+            decodeResponseInfo(callResponses, cachedGetValidatorsAbi)
+                ?: return Pair(emptyList(), emptyList())
 
         // Fetch ABIs for decoding
         val latestRewards = getLatestRewards(block, decodedInfo)
 
         // Validator has no delegations in this cycle
         if (latestRewards.isEmpty()) {
-            return emptyList()
+            return Pair(emptyList(), emptyList())
         }
 
         // Get validator total block reward
         val delegatorBlockReward =
-            getDelegatorsBlockReward(block, decodedInfo) ?: return emptyList()
+            getDelegatorsBlockReward(block, decodedInfo) ?: return Pair(emptyList(), emptyList())
 
-        // Update reward info for each delegation
-        val updatedRewards =
-            updateRewardInfo(
-                currentTokenRewards = latestRewards,
-                totalBlockReward = delegatorBlockReward,
-                validator = block.signer,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                blockId = block.id,
-            )
-
-        return updatedRewards
+        // Update reward info for each delegation and handle period rollovers
+        return updateRewardInfo(
+            currentTokenRewards = latestRewards,
+            totalBlockReward = delegatorBlockReward,
+            validator = block.signer,
+            blockNumber = block.number,
+            blockTimestamp = block.timestamp,
+            blockId = block.id,
+        )
     }
 
-    @Transactional open fun save(records: List<TokenReward>) {}
+    /** @notice Persist a batch of reward records to MongoDB. */
+    @Transactional
+    open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
+        if (rewards.isEmpty()) return
+        repository.saveAll(rewards)
 
+        if (archive.isNotEmpty()) {
+            archiveService.saveAll(archive)
+        }
+    }
+
+    /**
+     * @param block Current Thor block.
+     * @param decodedInfo Optional decoded validator state info (saves RPC calls if present).
+     * @return Total delegators' reward as BigInteger, or null if unavailable.
+     * @notice Compute total delegators' reward share for a block.
+     * @dev Calculates block reward as the delta in VTHO supply, then applies a 70% weighting to
+     *   delegators.
+     */
     fun getDelegatorsBlockReward(block: Block, decodedInfo: DecodedValidatorInfo?): BigInteger? {
         // Get total VTHO issued at this block
         val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
@@ -104,41 +155,38 @@ open class TokenRewardService(
         val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
         vthoTotalSupply = blockTotalSupply // update cache
 
-        // Sum all transaction rewards in this block
-        val priorityRewards: BigInteger =
-            block.transactions
-                .map { it.reward }
-                .map { it.hexToBigInteger() }
-                .fold(BigInteger.ZERO, BigInteger::add)
-
-        return (blockReward.add(priorityRewards) * BigInteger.valueOf(7)).divide(BigInteger.TEN)
+        return (blockReward * BigInteger.valueOf(7)).divide(BigInteger.TEN)
     }
 
+    /**
+     * @param block Current Thor block.
+     * @param decodedInfo Decoded validator state from contract call.
+     * @return List of TokenReward trackers (existing or newly created).
+     * @notice Get current validator reward trackers.
+     * @dev Returns ongoing reward docs for a validator in the current cycle. If a new cycle has
+     *   started, triggers creation of new docs.
+     */
     fun getLatestRewards(block: Block, decodedInfo: DecodedValidatorInfo): List<TokenReward> {
         val validatorId = block.signer
 
-        val cached = validatorCycleCache[validatorId]
+        var cached = validatorCycleCache[validatorId]
         var newCycle = false
 
         if (cached == null || block.number > cached.nextCycleBlock) {
             // Need to update cycle info
             updateValidatorCycleCache(validatorId, decodedInfo)
             newCycle = true
+            cached = validatorCycleCache[validatorId]!!
         }
 
         // If delegations is false return empty list
-        if (!cached!!.hasDelegations) {
+        if (!cached.hasDelegations) {
             return emptyList() // Validator has no delegations in this cycle
         }
 
         // If new cycle, ensure we have up-to-date delegations
         if (newCycle) {
-            return getOrFetchRewardsNewCycle(
-                validatorId,
-                stargateContract,
-                block.id,
-                getTimeInfo(block.timestamp),
-            )
+            return getOrFetchRewardsNewCycle(validatorId, block.id, getTimeInfo(block.timestamp))
         }
 
         // Otherwise return saved delegations for current cycle
@@ -149,9 +197,18 @@ open class TokenRewardService(
         )
     }
 
+    /**
+     * @param validatorId Validator address (signer).
+     * @param contractAddress Stargate contract address.
+     * @param blockId Block ID for inspection.
+     * @param time LocalDate derived from block timestamp.
+     * @return Combined list of existing + new TokenReward docs.
+     * @notice Fetch or create reward trackers for a validator in a new cycle.
+     * @dev Ensures every delegation has a TokenReward doc. Queries DB for existing docs and calls
+     *   Thor for missing effective stakes.
+     */
     fun getOrFetchRewardsNewCycle(
         validatorId: String,
-        contractAddress: String,
         blockId: String,
         time: LocalDate,
     ): List<TokenReward> {
@@ -179,38 +236,13 @@ open class TokenRewardService(
         }
 
         // 6. Need to call Thor for effective stakes
-        val clauses = buildList {
-            // Validator effective stake (cache it for the cycle)
-            if (!validatorCycleCache.containsKey(validatorId)) {
-                add(
-                    ContractUtils.createClause(
-                        contractAddress,
-                        cachedGetValidatorsAbi["getDelegatorsEffectiveStake"]!!,
-                        AddressUtils.toBigInt(validatorId),
-                    )
-                )
-            }
-
-            // Add each missing delegation effective stake clause
-            missingIds.forEach { rewardId ->
-                val tokenId = rewardId.substringAfter("$validatorId-")
-                add(
-                    ContractUtils.createClause(
-                        contractAddress,
-                        cachedGetValidatorsAbi["getEffectiveStake"]!!,
-                        tokenId,
-                    )
-                )
-            }
-        }
-
-        val inspectionResults = thorService.inspectClausesAtBlock(clauses, blockId)
+        val inspectionResults = getEffectiveStakes(validatorId, missingIds, blockId)
 
         // 7. Decode results & build new TokenReward docs
         val newDocs = mutableListOf<TokenReward>()
         var resultIndex = 0
 
-        val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex++].data)
+        val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex].data)
         validatorCycleCache[validatorId]!!.totalEffectiveDelegations = validatorStake
 
         // Each missing delegation effective stake
@@ -229,7 +261,6 @@ open class TokenRewardService(
                     validator = validatorId,
                     rewards = stake, // raw effective stake or converted reward
                     effectiveStake = stake,
-                    allTimeRewards = BigInteger.ZERO, // compute later
                     rewardPeriod = RewardPeriod.ALL,
                     date = time,
                     dayOfMonth = time.dayOfMonth.toLong(),
@@ -241,6 +272,7 @@ open class TokenRewardService(
                     monthReward = null,
                     yearReward = null,
                     cycleReward = null,
+                    version = 0,
                 )
             newDocs.add(doc)
         }
@@ -249,6 +281,13 @@ open class TokenRewardService(
         return rewardsFromDb + newDocs
     }
 
+    /**
+     * @param validatorId Validator address (signer).
+     * @param decodedInfo Decoded validator state from ABI.
+     * @notice Update cached cycle info for a validator.
+     * @dev Reads validator ABI fields to compute next cycle start, current cycle number, and
+     *   delegation presence.
+     */
     fun updateValidatorCycleCache(validatorId: String, decodedInfo: DecodedValidatorInfo) {
         val ids = decodedInfo.decodedValidators.listOf<String>("masters")
         val stakingPeriodLengths =
@@ -274,6 +313,19 @@ open class TokenRewardService(
         }
     }
 
+    /**
+     * @param currentTokenRewards List of ongoing reward trackers (from DB or new).
+     * @param totalBlockReward Total delegators’ reward for this block.
+     * @param validator Validator address (signer).
+     * @param blockNumber Current block number.
+     * @param blockTimestamp Current block timestamp (seconds).
+     * @param blockId Block ID (hash).
+     * @return List of updated TokenReward docs (including rollovers).
+     * @notice Update per-delegation rewards for the current block.
+     * @dev Splits block reward across delegations proportionally by effective stake. Updates
+     *   in-progress counters in `ALL` docs and emits new period docs (DAY/WEEK/MONTH/YEAR/CYCLE)
+     *   when rollovers occur.
+     */
     fun updateRewardInfo(
         currentTokenRewards: List<TokenReward>,
         totalBlockReward: BigInteger,
@@ -281,15 +333,21 @@ open class TokenRewardService(
         blockNumber: Long,
         blockTimestamp: Long,
         blockId: String,
-    ): List<TokenReward> {
+    ): Pair<List<TokenReward>, List<TokenReward>> {
         val cycleCache = validatorCycleCache[validator]!!
-
         val updatedRewards = mutableListOf<TokenReward>()
+        val archive = mutableListOf<TokenReward>()
+
+        val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
+        val blockDate = blockDateTime.toLocalDate()
+
+        val blockDay = blockDate.dayOfMonth.toLong()
+        val blockWeek = blockDate.get(WeekFields.ISO.weekOfYear()).toLong()
+        val blockMonth = blockDate.monthValue.toLong()
+        val blockYear = blockDate.year.toLong()
 
         currentTokenRewards.forEach { rewardTracker ->
             val effectiveStake = rewardTracker.effectiveStake
-
-            // Calculate reward share
             val rewardShare =
                 if (cycleCache.totalEffectiveDelegations == BigInteger.ZERO) {
                     BigInteger.ZERO
@@ -299,88 +357,74 @@ open class TokenRewardService(
                         .divide(cycleCache.totalEffectiveDelegations)
                 }
 
-            var updatedDailyReward = rewardTracker.dayReward ?: BigInteger.ZERO
-            var updatedWeeklyReward = rewardTracker.weekReward ?: BigInteger.ZERO
-            var updatedMonthlyReward = rewardTracker.monthReward ?: BigInteger.ZERO
-            var updatedYearlyReward = rewardTracker.yearReward ?: BigInteger.ZERO
-            var updatedCycleReward = rewardTracker.cycleReward ?: BigInteger.ZERO
+            // convenience values
+            var daily = rewardTracker.dayReward ?: BigInteger.ZERO
+            var weekly = rewardTracker.weekReward ?: BigInteger.ZERO
+            var monthly = rewardTracker.monthReward ?: BigInteger.ZERO
+            var yearly = rewardTracker.yearReward ?: BigInteger.ZERO
+            var cycle = rewardTracker.cycleReward ?: BigInteger.ZERO
 
-            val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
-            val blockDate = blockDateTime.toLocalDate()
-
-            val blockDay = blockDate.dayOfMonth.toLong()
-            val blockWeek = blockDate.get(WeekFields.ISO.weekOfYear()).toLong()
-            val blockMonth = blockDate.monthValue.toLong()
-            val blockYear = blockDate.year.toLong()
-
-            // Check if new docs need to be created for different reward periods
-            if (
-                rewardTracker.dayReward!! > BigInteger.ZERO &&
-                    (rewardTracker.dayOfMonth != blockDay ||
-                        rewardTracker.month != blockMonth ||
-                        rewardTracker.year != blockYear)
-            ) {
-                // Create new daily reward doc
-                val dailyReward =
-                    createPeriodReward(
-                        id =
-                            "${rewardTracker.id}-day-${rewardTracker.year}-${rewardTracker.month}-${rewardTracker.dayOfMonth}",
-                        period = RewardPeriod.DAY,
-                        rewards = rewardTracker.dayReward!!,
-                        mainTracker = rewardTracker,
+            // Check rollover for each period
+            fun rollover(
+                condition: Boolean,
+                period: RewardPeriod,
+                oldId: String,
+                rewards: BigInteger,
+            ): BigInteger =
+                if (condition && rewards > BigInteger.ZERO) {
+                    updatedRewards.add(
+                        createPeriodReward(
+                            id = oldId,
+                            period = period,
+                            rewards = rewards,
+                            mainTracker = rewardTracker,
+                        )
                     )
-                updatedRewards.add(dailyReward)
+                    rewardShare // reset to new cycle value
+                } else {
+                    rewards.add(rewardShare)
+                }
 
-                // Reset daily reward in main tracker
-                updatedDailyReward = rewardShare
-            } else {
-                updatedDailyReward = updatedDailyReward.add(rewardShare)
-            }
-            if (rewardTracker.weekOfYear != blockWeek || rewardTracker.year != blockYear) {
-                createPeriodReward(
-                    id =
-                        "${rewardTracker.id}-week-${rewardTracker.year}-${rewardTracker.weekOfYear}",
-                    period = RewardPeriod.WEEK,
-                    rewards = rewardTracker.monthReward!!,
-                    mainTracker = rewardTracker,
+            // Apply rollover logic
+            daily =
+                rollover(
+                    rewardTracker.dayOfMonth != blockDay ||
+                        rewardTracker.month != blockMonth ||
+                        rewardTracker.year != blockYear,
+                    RewardPeriod.DAY,
+                    "${rewardTracker.id}-day-${rewardTracker.year}-${rewardTracker.month}-${rewardTracker.dayOfMonth}",
+                    daily,
                 )
-                updatedWeeklyReward = rewardShare
-            } else {
-                updatedWeeklyReward = updatedWeeklyReward.add(rewardShare)
-            }
-            if (rewardTracker.month != blockMonth || rewardTracker.year != blockYear) {
-                createPeriodReward(
-                    id = "${rewardTracker.id}-month-${rewardTracker.month}-${rewardTracker.year}",
-                    period = RewardPeriod.MONTH,
-                    rewards = rewardTracker.monthReward!!,
-                    mainTracker = rewardTracker,
+            weekly =
+                rollover(
+                    rewardTracker.weekOfYear != blockWeek || rewardTracker.year != blockYear,
+                    RewardPeriod.WEEK,
+                    "${rewardTracker.id}-week-${rewardTracker.year}-${rewardTracker.weekOfYear}",
+                    weekly,
                 )
-                updatedMonthlyReward = rewardShare
-            } else {
-                updatedMonthlyReward = updatedMonthlyReward.add(rewardShare)
-            }
-            if (rewardTracker.year != blockYear) {
-                createPeriodReward(
-                    id = "${rewardTracker.id}-year-${rewardTracker.year}",
-                    period = RewardPeriod.YEAR,
-                    rewards = rewardTracker.yearReward!!,
-                    mainTracker = rewardTracker,
+            monthly =
+                rollover(
+                    rewardTracker.month != blockMonth || rewardTracker.year != blockYear,
+                    RewardPeriod.MONTH,
+                    "${rewardTracker.id}-month-${rewardTracker.month}-${rewardTracker.year}",
+                    monthly,
                 )
-                updatedYearlyReward = rewardShare
-            } else {
-                updatedYearlyReward = updatedYearlyReward.add(rewardShare)
-            }
-            if (rewardTracker.cycle != cycleCache.currentCycle) {
-                createPeriodReward(
-                    id = "${rewardTracker.id}-cycle-${rewardTracker.cycle}",
-                    period = RewardPeriod.CYCLE,
-                    rewards = rewardTracker.cycleReward!!,
-                    mainTracker = rewardTracker,
+
+            yearly =
+                rollover(
+                    rewardTracker.year != blockYear,
+                    RewardPeriod.YEAR,
+                    "${rewardTracker.id}-year-${rewardTracker.year}",
+                    yearly,
                 )
-                updatedCycleReward = rewardShare
-            } else {
-                updatedCycleReward = updatedCycleReward.add(rewardShare)
-            }
+
+            cycle =
+                rollover(
+                    rewardTracker.cycle != cycleCache.currentCycle,
+                    RewardPeriod.CYCLE,
+                    "${rewardTracker.id}-cycle-${rewardTracker.cycle}",
+                    cycle,
+                )
 
             // Update main reward tracker
             val updatedTracker =
@@ -389,24 +433,36 @@ open class TokenRewardService(
                     blockNumber = blockNumber,
                     blockTimestamp = blockTimestamp,
                     rewards = rewardTracker.rewards.add(rewardShare),
-                    dayReward = updatedDailyReward,
-                    weekReward = updatedWeeklyReward,
-                    monthReward = updatedMonthlyReward,
-                    yearReward = updatedYearlyReward,
-                    cycleReward = updatedCycleReward,
+                    dayReward = daily,
+                    weekReward = weekly,
+                    monthReward = monthly,
+                    yearReward = yearly,
+                    cycleReward = cycle,
+                    cycle = cycleCache.currentCycle,
                     date = blockDate,
                     dayOfMonth = blockDay,
                     weekOfYear = blockWeek,
                     month = blockMonth,
                     year = blockYear,
+                    version = rewardTracker.version + 1,
                 )
 
             updatedRewards.add(updatedTracker)
+            archive.add(rewardTracker)
         }
 
-        return updatedRewards
+        return updatedRewards to archive
     }
 
+    /**
+     * @param id Unique doc ID (validator-tokenId-period).
+     * @param period RewardPeriod (DAY, WEEK, MONTH, YEAR, CYCLE).
+     * @param rewards Total reward for the period.
+     * @param mainTracker Current ALL tracker providing context.
+     * @return New TokenReward doc representing finalized period totals.
+     * @notice Create a finalized reward document for a closed period.
+     * @dev Copies metadata from the main tracker but stores only the finalized reward total.
+     */
     fun createPeriodReward(
         id: String,
         period: RewardPeriod,
@@ -428,10 +484,16 @@ open class TokenRewardService(
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
             year = mainTracker.year,
-            dayReward = mainTracker.dayReward,
+            version = 0,
         )
 
-    /** Resolve total VTHO issued = totalSupply + burned */
+    /**
+     * @param decodedInfo Optional decoded validator info (saves Thor RPC calls).
+     * @param blockId Block ID.
+     * @return Total VTHO issued at this block.
+     * @notice Get total VTHO issued at a block.
+     * @dev Adds totalSupply + burned, optionally using decodedInfo if present.
+     */
     fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
@@ -439,6 +501,12 @@ open class TokenRewardService(
         return decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
     }
 
+    /**
+     * @param blockId Block ID.
+     * @return Total VTHO issued.
+     * @notice Get total VTHO issued at a specific block via Thor calls.
+     * @dev Calls vthoTotalSupply + totalBurned contract functions and decodes result.
+     */
     fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
         val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
 
@@ -455,6 +523,12 @@ open class TokenRewardService(
         return decodeVTHOIssued(inspectionResults)
     }
 
+    /**
+     * @param data Hex-encoded response string.
+     * @return Effective stake as BigInteger.
+     * @notice Decode effective stake from Thor call response.
+     * @dev Parses ABI return value into a BigInteger. Returns 0 if empty.
+     */
     private fun decodeEffectiveStake(data: String): BigInteger {
         if (data.isBlank() || data == "0x") return BigInteger.ZERO
         val decoded =
@@ -465,9 +539,56 @@ open class TokenRewardService(
         return decoded["effectiveStake"] as? BigInteger ?: BigInteger.ZERO
     }
 
-    /** Convert hex string (with optional "0x" prefix) into BigInteger. */
-    fun String.hexToBigInteger(): BigInteger = BigInteger(this.removePrefix("0x"), 16)
+    /**
+     * @param validatorId The address of the validator.
+     * @param missingIds List of delegation reward document IDs (validatorId-tokenId) not yet
+     *   present in DB.
+     * @param blockId The block hash or number to perform inspection at.
+     * @return Pair of validator total effective stake and a map of tokenId -> effective stake.
+     * @notice Fetch effective stake values for a validator and its missing delegations.
+     * @dev Builds Thor call clauses for validator total delegations and each missing token ID.
+     *   Executes inspection at the given block and decodes the ABI responses into BigIntegers. Also
+     *   updates the cycle cache with the validator's total effective delegations.
+     */
+    private fun getEffectiveStakes(
+        validatorId: String,
+        missingIds: List<String>,
+        blockId: String,
+    ): List<ExecuteCodeResponse> {
+        val clauses = buildList {
+            // Validator effective stake (cache it for the cycle)
+            if (!validatorCycleCache.containsKey(validatorId)) {
+                add(
+                    ContractUtils.createClause(
+                        stargateContract,
+                        cachedGetValidatorsAbi["getDelegatorsEffectiveStake"]!!,
+                        AddressUtils.toBigInt(validatorId),
+                    )
+                )
+            }
 
+            // Add each missing delegation effective stake clause
+            missingIds.forEach { rewardId ->
+                val tokenId = rewardId.substringAfter("$validatorId-")
+                add(
+                    ContractUtils.createClause(
+                        stargateContract,
+                        cachedGetValidatorsAbi["getEffectiveStake"]!!,
+                        tokenId.toBigInteger(),
+                    )
+                )
+            }
+        }
+
+        return thorService.inspectClausesAtBlock(clauses, blockId)
+    }
+
+    /**
+     * @param functionNames List of ABI function names to load from resources.
+     * @notice Load and cache Stargate validator ABI functions.
+     * @dev Prevents repeated ABI loading by caching function definitions. Will skip execution if
+     *   already populated.
+     */
     private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
         if (cachedGetValidatorsAbi.isNotEmpty()) return // already loaded
 
@@ -476,11 +597,26 @@ open class TokenRewardService(
         abis.forEach { abi -> cachedGetValidatorsAbi[abi.name!!] = abi }
     }
 
+    /**
+     * @param blockTimestamp Unix epoch seconds from Thor block header.
+     * @return LocalDate corresponding to the block timestamp.
+     * @notice Convert a Thor block timestamp into LocalDate.
+     * @dev Uses UTC zone offset to derive date, day, week, month, and year fields.
+     */
     private fun getTimeInfo(blockTimestamp: Long): LocalDate {
         val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
         return blockDateTime.toLocalDate()
     }
 
+    /**
+     * @param nextCycleBlock Block number when the next cycle begins.
+     * @param currentCycle Current cycle index for the validator.
+     * @param hasDelegations Whether the validator has delegations in this cycle.
+     * @param totalEffectiveDelegations Total effective stake delegated in current cycle.
+     * @notice Cache entry for a validator's cycle state.
+     * @dev Stores next cycle boundary, delegation presence, current cycle index, and total
+     *   effective delegation stake.
+     */
     data class CycleCache(
         var nextCycleBlock: Long,
         var currentCycle: Long = 0L,
