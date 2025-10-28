@@ -46,6 +46,10 @@ object XAllocEventUtils {
     fun getRewardsAllocationAmountAsDecimal(event: IndexedEvent): BigDecimal =
         scaleDown(getRewardsAllocationAmount(event), 18)
 
+    fun getAmount(event: IndexedEvent): BigInteger = getBigIntegerParam(event, "amount")
+
+    fun getAmountAsDecimal(event: IndexedEvent): BigDecimal = scaleDown(getAmount(event), 18)
+
     private fun getBigIntegerParam(event: IndexedEvent, paramName: String): BigInteger {
         return when (val raw = event.params.params[paramName]) {
             is BigInteger -> raw

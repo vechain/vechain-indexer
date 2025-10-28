@@ -623,6 +623,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
     },
     {
+      name  = "B3TR_DBA_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_DBA_POOL_CONTRACT
+    },
+    {
       name  = "GM_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },

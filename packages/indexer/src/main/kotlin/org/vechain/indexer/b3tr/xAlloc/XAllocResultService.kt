@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
+import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getRewardsAllocationAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getTeamAllocationAmountAsDecimal
@@ -79,6 +80,25 @@ open class XAllocResultService(
                                 unallocatedAmount = unallocatedAmount,
                                 teamAllocationAmount = teamAllocationAmount,
                                 rewardsAllocationAmount = rewardsAllocationAmount,
+                            )
+                        updatedResult[recordId] = updated
+                        existing?.let { archiveResult.add(it) }
+                    }
+                // Parse DBA Funds Distributed events
+                roundEvents
+                    .filter { it.eventType == "B3TR_DBAFundsDistributed" }
+                    .forEach { event ->
+                        val appId = getAppId(event)
+                        val amount = getAmountAsDecimal(event)
+                        val recordId = generateId("$roundId", appId)
+                        val existing = resolveExisting(recordId, updatedResult)
+                        val updated =
+                            createOrUpdateExisting(
+                                roundId = roundId,
+                                appId = appId,
+                                blockDetails = blockDetails,
+                                existing = existing,
+                                totalAmount = amount,
                             )
                         updatedResult[recordId] = updated
                         existing?.let { archiveResult.add(it) }
