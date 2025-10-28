@@ -6,7 +6,7 @@ import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
 import org.vechain.indexer.validator.ValidatorBlock
 
-@Profile("validator", "validator-reward")
+@Profile("stargate", "token-reward")
 interface TokenRewardRepository :
     BaseIndexedRepository<TokenReward, String>, TimeSeriesRepo<ValidatorBlock> {
     @Aggregation(
