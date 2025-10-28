@@ -7,6 +7,7 @@ import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -36,7 +37,8 @@ open class TokenRewardService(
     private val repository: TokenRewardRepository,
     private val delegationRepository: DelegationRepository,
     private val thorService: ThorService,
-    private val contractAddress: String,
+    @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
+    private val stargateContract: String,
 ) {
     private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
 
@@ -59,10 +61,11 @@ open class TokenRewardService(
     }
 
     open fun processBlock(block: Block, callResponses: List<InspectionResult>): List<TokenReward> {
-        val decodedInfo = decodeResponseInfo(callResponses, cachedGetValidatorsAbi)
+        val decodedInfo =
+            decodeResponseInfo(callResponses, cachedGetValidatorsAbi) ?: return emptyList()
 
         // Fetch ABIs for decoding
-        val latestRewards = getLatestRewards(block.signer, block.number, block.id, decodedInfo)
+        val latestRewards = getLatestRewards(block, decodedInfo)
 
         // Validator has no delegations in this cycle
         if (latestRewards.isEmpty()) {
@@ -73,7 +76,18 @@ open class TokenRewardService(
         val delegatorBlockReward =
             getDelegatorsBlockReward(block, decodedInfo) ?: return emptyList()
 
-        return listOfNotNull(validationInfo) + missedSlots
+        // Update reward info for each delegation
+        val updatedRewards =
+            updateRewardInfo(
+                currentTokenRewards = latestRewards,
+                totalBlockReward = delegatorBlockReward,
+                validator = block.signer,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                blockId = block.id,
+            )
+
+        return updatedRewards
     }
 
     @Transactional open fun save(records: List<TokenReward>) {}
@@ -121,7 +135,7 @@ open class TokenRewardService(
         if (newCycle) {
             return getOrFetchRewardsNewCycle(
                 validatorId,
-                contractAddress,
+                stargateContract,
                 block.id,
                 getTimeInfo(block.timestamp),
             )
@@ -270,7 +284,7 @@ open class TokenRewardService(
     ): List<TokenReward> {
         val cycleCache = validatorCycleCache[validator]!!
 
-        var updatedRewards = mutableListOf<TokenReward>()
+        val updatedRewards = mutableListOf<TokenReward>()
 
         currentTokenRewards.forEach { rewardTracker ->
             val effectiveStake = rewardTracker.effectiveStake
@@ -284,6 +298,12 @@ open class TokenRewardService(
                         .multiply(effectiveStake)
                         .divide(cycleCache.totalEffectiveDelegations)
                 }
+
+            var updatedDailyReward = rewardTracker.dayReward ?: BigInteger.ZERO
+            var updatedWeeklyReward = rewardTracker.weekReward ?: BigInteger.ZERO
+            var updatedMonthlyReward = rewardTracker.monthReward ?: BigInteger.ZERO
+            var updatedYearlyReward = rewardTracker.yearReward ?: BigInteger.ZERO
+            var updatedCycleReward = rewardTracker.cycleReward ?: BigInteger.ZERO
 
             val blockDateTime = Instant.ofEpochSecond(blockTimestamp).atZone(ZoneOffset.UTC)
             val blockDate = blockDateTime.toLocalDate()
@@ -310,9 +330,11 @@ open class TokenRewardService(
                         mainTracker = rewardTracker,
                     )
                 updatedRewards.add(dailyReward)
-                // TODO: Set day reward to stake of current block
+
+                // Reset daily reward in main tracker
+                updatedDailyReward = rewardShare
             } else {
-                // TODO: Update existing daily reward doc with new stake
+                updatedDailyReward = updatedDailyReward.add(rewardShare)
             }
             if (rewardTracker.weekOfYear != blockWeek || rewardTracker.year != blockYear) {
                 createPeriodReward(
@@ -322,11 +344,67 @@ open class TokenRewardService(
                     rewards = rewardTracker.monthReward!!,
                     mainTracker = rewardTracker,
                 )
+                updatedWeeklyReward = rewardShare
+            } else {
+                updatedWeeklyReward = updatedWeeklyReward.add(rewardShare)
             }
-            if (rewardTracker.month != blockMonth || rewardTracker.year != blockYear) {}
-            if (rewardTracker.year != blockYear) {}
-            if (rewardTracker.cycle != cycleCache.currentCycle) {}
+            if (rewardTracker.month != blockMonth || rewardTracker.year != blockYear) {
+                createPeriodReward(
+                    id = "${rewardTracker.id}-month-${rewardTracker.month}-${rewardTracker.year}",
+                    period = RewardPeriod.MONTH,
+                    rewards = rewardTracker.monthReward!!,
+                    mainTracker = rewardTracker,
+                )
+                updatedMonthlyReward = rewardShare
+            } else {
+                updatedMonthlyReward = updatedMonthlyReward.add(rewardShare)
+            }
+            if (rewardTracker.year != blockYear) {
+                createPeriodReward(
+                    id = "${rewardTracker.id}-year-${rewardTracker.year}",
+                    period = RewardPeriod.YEAR,
+                    rewards = rewardTracker.yearReward!!,
+                    mainTracker = rewardTracker,
+                )
+                updatedYearlyReward = rewardShare
+            } else {
+                updatedYearlyReward = updatedYearlyReward.add(rewardShare)
+            }
+            if (rewardTracker.cycle != cycleCache.currentCycle) {
+                createPeriodReward(
+                    id = "${rewardTracker.id}-cycle-${rewardTracker.cycle}",
+                    period = RewardPeriod.CYCLE,
+                    rewards = rewardTracker.cycleReward!!,
+                    mainTracker = rewardTracker,
+                )
+                updatedCycleReward = rewardShare
+            } else {
+                updatedCycleReward = updatedCycleReward.add(rewardShare)
+            }
+
+            // Update main reward tracker
+            val updatedTracker =
+                rewardTracker.copy(
+                    blockId = blockId,
+                    blockNumber = blockNumber,
+                    blockTimestamp = blockTimestamp,
+                    rewards = rewardTracker.rewards.add(rewardShare),
+                    dayReward = updatedDailyReward,
+                    weekReward = updatedWeeklyReward,
+                    monthReward = updatedMonthlyReward,
+                    yearReward = updatedYearlyReward,
+                    cycleReward = updatedCycleReward,
+                    date = blockDate,
+                    dayOfMonth = blockDay,
+                    weekOfYear = blockWeek,
+                    month = blockMonth,
+                    year = blockYear,
+                )
+
+            updatedRewards.add(updatedTracker)
         }
+
+        return updatedRewards
     }
 
     fun createPeriodReward(
@@ -334,7 +412,7 @@ open class TokenRewardService(
         period: RewardPeriod,
         rewards: BigInteger,
         mainTracker: TokenReward,
-    ): TokenReward {
+    ): TokenReward =
         TokenReward(
             id = id,
             blockId = mainTracker.blockId,
@@ -352,7 +430,6 @@ open class TokenRewardService(
             year = mainTracker.year,
             dayReward = mainTracker.dayReward,
         )
-    }
 
     /** Resolve total VTHO issued = totalSupply + burned */
     fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
