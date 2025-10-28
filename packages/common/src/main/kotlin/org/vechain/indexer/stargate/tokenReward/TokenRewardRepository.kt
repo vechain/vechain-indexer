@@ -1,6 +1,8 @@
 package org.vechain.indexer.stargate.tokenReward
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
@@ -34,4 +36,17 @@ interface TokenRewardRepository :
         rewardPeriod: RewardPeriod,
         cycle: Long,
     ): List<TokenReward>
+
+    fun findByTokenIdAndValidatorAndRewardPeriodIn(
+        tokenId: String,
+        validator: String,
+        ewardPeriod: List<RewardPeriod>,
+        pageable: Pageable,
+    ): Slice<TokenReward>
+
+    fun findByTokenIdAndRewardPeriodIn(
+        tokenId: String,
+        rewardPeriod: List<RewardPeriod>,
+        pageable: Pageable,
+    ): Slice<TokenReward>
 }
