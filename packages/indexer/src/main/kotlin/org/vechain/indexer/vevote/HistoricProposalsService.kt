@@ -86,6 +86,7 @@ open class HistoricProposalsService(
             return HistoricProposals(
                 id = "$contractAddress-$proposalId",
                 proposalId = proposalId,
+                contractAddress = contractAddress,
                 createdDate = event.blockTimestamp.toString(),
                 proposer = contractData.basicInfo?.get("creator") as? String,
                 title = contractData.basicInfo?.get("title") as? String,
