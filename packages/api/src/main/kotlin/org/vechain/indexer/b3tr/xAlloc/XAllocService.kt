@@ -1,47 +1,14 @@
 package org.vechain.indexer.b3tr.xAlloc
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
-import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Service
-open class XAllocService(
-    private val xAllocResultRepository: XAllocResultRepository,
-    private val mongoTemplate: MongoTemplate,
-) : IndexerService {
-    /**
-     * Get the results of XAllocation voting for a specific round.
-     *
-     * @param roundId Round to filter by.
-     */
-    open fun getXAllocResults(roundId: Int): List<XAllocResult> =
-        xAllocResultRepository.findByRoundId(roundId)
-
-    /**
-     * Get aggregated XAllocation results for a specific app across all rounds using MongoDB
-     * aggregation pipeline. Returns a response object with aggregated data and roundId set to null.
-     *
-     * @param appId App ID to filter by.
-     */
-    open fun getXAllocResultsAggregatedByAppId(appId: String): XAllocResultResponse? {
-        val aggregation =
-            Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("appId").`is`(appId)),
-                buildAggregationGroup(),
-                buildAggregationProjection(),
-            )
-
-        return mongoTemplate
-            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
-            .mappedResults
-            .firstOrNull()
-    }
+open class XAllocService(private val xAllocResultRepository: XAllocResultRepository) :
+    IndexerService {
 
     /**
      * Get XAllocation results for a specific app and round.
@@ -55,81 +22,57 @@ open class XAllocService(
         }
 
     /**
-     * Get XAllocation results for a specific round, grouped by app. Returns a list of
-     * XAllocResultResponse objects, one per app, sorted by totalAmount descending.
+     * Get XAllocation results for a specific round, grouped by app. Returns voting data only,
+     * sorted by votesReceived descending.
      *
      * @param roundId Round to filter by.
      */
-    open fun getXAllocResultsByRoundIdAsResponse(roundId: Int): List<XAllocResultResponse> {
-        val aggregation =
-            Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("roundId").`is`(roundId)),
-                Aggregation.sort(Sort.by(Sort.Direction.DESC, "totalAmount")),
-            )
-
-        return mongoTemplate
-            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
-            .mappedResults
+    open fun getXAllocResultsByRoundId(roundId: Int): List<XAllocResultResponse> {
+        return xAllocResultRepository
+            .findByRoundId(roundId)
+            .map { XAllocResultResponse.from(it) }
+            .sortedByDescending { it.votesReceived }
     }
 
     /**
-     * Get aggregated XAllocation results by app across all rounds using MongoDB aggregation
-     * pipeline. Returns a list of XAllocResultResponse objects with roundId set to null for each
-     * app, sorted by totalAmount descending.
+     * Get XAllocation earnings for a specific round and app.
+     *
+     * @param appId App ID to filter by.
+     * @param roundId Round ID to filter by.
      */
-    open fun getXAllocResultsAggregatedByAllApps(): List<XAllocResultResponse> {
-        val aggregation =
-            Aggregation.newAggregation(
-                buildAggregationGroup(),
-                Aggregation.sort(Sort.by(Sort.Direction.DESC, "totalAmount")),
-                buildAggregationProjection(),
-            )
+    open fun getXAllocEarningsByAppIdAndRoundId(
+        appId: String,
+        roundId: Int,
+    ): XAllocEarningsResponse? =
+        xAllocResultRepository.findByAppIdAndRoundId(appId, roundId)?.let { result ->
+            XAllocEarningsResponse.from(result)
+        }
 
-        return mongoTemplate
-            .aggregate(aggregation, XAllocResult::class.java, XAllocResultResponse::class.java)
-            .mappedResults
+    /**
+     * Get XAllocation earnings for a specific round, grouped by app. Returns earnings data only,
+     * sorted by totalAmount descending.
+     *
+     * @param roundId Round to filter by.
+     */
+    open fun getXAllocEarningsByRoundId(roundId: Int): List<XAllocEarningsResponse> {
+        return xAllocResultRepository
+            .findByRoundId(roundId)
+            .mapNotNull { XAllocEarningsResponse.from(it) }
+            .sortedByDescending { it.totalAmount }
     }
 
     /**
-     * Builds the group stage for aggregation pipelines. Groups by appId and sums all numeric fields
-     * (voters, votesReceived, votesReceivedQf, and various allocation amounts).
+     * Get XAllocation earnings for a specific app across all rounds. Returns earnings data for each
+     * round as separate records, sorted by roundId ascending then totalAmount descending.
+     *
+     * @param appId App ID to filter by.
      */
-    private fun buildAggregationGroup() =
-        Aggregation.group("appId")
-            .sum("voters")
-            .`as`("voters")
-            .sum("votesReceived")
-            .`as`("votesReceived")
-            .sum("votesReceivedQf")
-            .`as`("votesReceivedQf")
-            .sum("totalAmount")
-            .`as`("totalAmount")
-            .sum("unallocatedAmount")
-            .`as`("unallocatedAmount")
-            .sum("teamAllocationAmount")
-            .`as`("teamAllocationAmount")
-            .sum("rewardsAllocationAmount")
-            .`as`("rewardsAllocationAmount")
-            .first("appId")
-            .`as`("appId")
-
-    /**
-     * Builds the projection stage for aggregation pipelines. Projects the aggregated fields and
-     * sets roundId to null to indicate aggregation across rounds.
-     */
-    private fun buildAggregationProjection() =
-        Aggregation.project(
-                "appId",
-                "voters",
-                "votesReceived",
-                "votesReceivedQf",
-                "totalAmount",
-                "unallocatedAmount",
-                "teamAllocationAmount",
-                "rewardsAllocationAmount",
-            )
-            .andExpression("null")
-            .`as`("roundId")
+    open fun getXAllocEarningsByAppId(appId: String): List<XAllocEarningsResponse> {
+        return xAllocResultRepository
+            .findByAppId(appId)
+            .mapNotNull { XAllocEarningsResponse.from(it) }
+            .sortedWith(compareBy({ it.roundId }, { -it.totalAmount.toLong() }))
+    }
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
         mapOf("XAllocResult" to (xAllocResultRepository.getLatestRecord()?.blockNumber ?: 0))

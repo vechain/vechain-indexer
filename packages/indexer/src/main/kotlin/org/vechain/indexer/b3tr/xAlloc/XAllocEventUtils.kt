@@ -9,11 +9,7 @@ import org.vechain.indexer.utils.scaleDown
 
 object XAllocEventUtils {
 
-    data class AggregatedVote(
-        val votesReceived: BigInteger,
-        val votesReceivedQf: BigInteger,
-        val voters: Long,
-    )
+    data class AggregatedVote(val votesReceived: BigInteger, val voters: Long)
 
     fun groupByRoundId(events: List<IndexedEvent>): Map<Int, List<IndexedEvent>> =
         events
@@ -95,25 +91,20 @@ object XAllocEventUtils {
         return list ?: error("Missing or invalid weights in event: ${event.id}")
     }
 
-    fun parseVotes(events: List<IndexedEvent>): Map<String, AggregatedVote> {
+    fun parseVotes(events: List<IndexedEvent>, isQfEnabled: Boolean): Map<String, AggregatedVote> {
         val aggregated = mutableMapOf<String, AggregatedVote>()
 
         events.forEach { event ->
-            val votes = parseVotes(event) // appId -> weight for this one voter
+            val votes = parseVotes(event, isQfEnabled) // appId -> weight for this one voter
             votes.forEach { (appId, votes) ->
                 val current =
                     aggregated.getOrDefault(
                         appId,
-                        AggregatedVote(
-                            votesReceived = BigInteger.ZERO,
-                            votesReceivedQf = BigInteger.ZERO,
-                            0,
-                        ),
+                        AggregatedVote(votesReceived = BigInteger.ZERO, 0),
                     )
                 aggregated[appId] =
                     AggregatedVote(
                         votesReceived = current.votesReceived + votes,
-                        votesReceivedQf = current.votesReceivedQf + sqrtIntegerSafe(votes),
                         voters = current.voters + 1,
                     )
             }
@@ -129,7 +120,7 @@ object XAllocEventUtils {
      * @param event The IndexedEvent containing the vote data.
      * @return A map where keys are appIds and values are their corresponding weights.
      */
-    fun parseVotes(event: IndexedEvent): Map<String, BigInteger> {
+    fun parseVotes(event: IndexedEvent, isQfEnabled: Boolean): Map<String, BigInteger> {
         // Extract appIds and weights from event parameters
         val appIds = getAppIds(event)
         val weights = getWeights(event)
@@ -144,7 +135,8 @@ object XAllocEventUtils {
         for (i in appIds.indices) {
             val id = appIds[i]
             val w = weights[i]
-            merged[id] = (merged[id] ?: BigInteger.ZERO) + w
+            merged[id] =
+                (merged[id] ?: BigInteger.ZERO) + if (isQfEnabled) sqrtIntegerSafe(w) else w
         }
 
         // Combine into a map of appId to weight

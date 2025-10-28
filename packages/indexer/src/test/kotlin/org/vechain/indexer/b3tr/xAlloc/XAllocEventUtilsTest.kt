@@ -212,7 +212,7 @@ class XAllocEventsUtilsTest {
                         ),
                 )
 
-            val result = XAllocEventUtils.parseVotes(e)
+            val result = XAllocEventUtils.parseVotes(e, isQfEnabled = false)
 
             assertEquals(mapOf("app1" to BigInteger("100"), "app2" to BigInteger("200")), result)
         }
@@ -231,7 +231,9 @@ class XAllocEventsUtilsTest {
                                 )
                         ),
                 )
-            assertThrows(IllegalStateException::class.java) { XAllocEventUtils.parseVotes(e) }
+            assertThrows(IllegalStateException::class.java) {
+                XAllocEventUtils.parseVotes(e, isQfEnabled = false)
+            }
         }
 
         @Test
@@ -248,7 +250,7 @@ class XAllocEventsUtilsTest {
                                 )
                         ),
                 )
-            val result = XAllocEventUtils.parseVotes(e)
+            val result = XAllocEventUtils.parseVotes(e, isQfEnabled = false)
             assertEquals(mapOf("app1" to BigInteger("300")), result)
         }
     }
@@ -282,7 +284,7 @@ class XAllocEventsUtilsTest {
                         ),
                 )
 
-            val aggregated = XAllocEventUtils.parseVotes(listOf(e1, e2))
+            val aggregated = XAllocEventUtils.parseVotes(listOf(e1, e2), isQfEnabled = false)
 
             assertEquals(3, aggregated.size)
 
@@ -290,19 +292,19 @@ class XAllocEventsUtilsTest {
             val b = aggregated["B"]!!
             val c = aggregated["C"]!!
 
-            assertEquals(BigInteger("10"), a.weight)
+            assertEquals(BigInteger("10"), a.votesReceived)
             assertEquals(1L, a.voters)
 
-            assertEquals(BigInteger("50"), b.weight) // 20 + 30
+            assertEquals(BigInteger("50"), b.votesReceived) // 20 + 30
             assertEquals(2L, b.voters)
 
-            assertEquals(BigInteger("40"), c.weight)
+            assertEquals(BigInteger("40"), c.votesReceived)
             assertEquals(1L, c.voters)
         }
 
         @Test
         fun `returns empty map for empty input`() {
-            val aggregated = XAllocEventUtils.parseVotes(emptyList())
+            val aggregated = XAllocEventUtils.parseVotes(emptyList(), isQfEnabled = false)
             assertTrue(aggregated.isEmpty())
         }
     }

@@ -6,8 +6,10 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.X_ALLOC_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 
@@ -19,61 +21,58 @@ import org.vechain.indexer.docs.CommonApiResponses
 open class XAllocController(private val xAllocService: XAllocService) {
 
     @GetMapping("{roundId}/results")
-    @Deprecated(message = "Use GET /results?roundId={roundId} instead")
     @Operation(
-        summary =
-            "Get the results of XAllocation voting for a specific round. [DEPRECATED: Use GET /results endpoint instead]"
+        summary = "Get XAllocation voting results for a round",
+        description = "Returns voting results for a specific round, optionally filtered by appId.",
     )
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "roundId",
-        description = "Round to filter by.",
+        description = "Round ID to filter by.",
         required = true,
-        schema = Schema(type = "integer"),
-        example = "62",
-    )
-    @CommonApiResponses
-    open fun getAllocationVoteResults(
-        @PathVariable(required = true) roundId: Int
-    ): List<XAllocResult> {
-        return xAllocService.getXAllocResults(roundId)
-    }
-
-    @GetMapping("results")
-    @Operation(
-        summary =
-            "Get XAllocation voting results grouped by app. If roundId is provided, returns results for that specific round. If not provided, returns aggregated results across all rounds for each app."
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "roundId",
-        description =
-            "Optional round ID to filter by. If not provided, returns aggregated results across all rounds.",
-        required = false,
         schema = Schema(type = "integer"),
         example = "2",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "appId",
+        description =
+            "Optional app ID to filter by. If provided, returns results for that app in the specified round.",
+        required = false,
+        schema = Schema(type = "string"),
+        example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
+    )
     @CommonApiResponses
-    open fun getAllocationVoteResultsWithOptionalRound(
-        @RequestParam(required = false) roundId: Int?
+    open fun getXAllocResults(
+        @PathVariable roundId: Int,
+        @RequestParam(required = false) appId: String?,
     ): List<XAllocResultResponse> {
-        return if (roundId != null) {
-            xAllocService.getXAllocResultsByRoundIdAsResponse(roundId)
+        return if (appId != null) {
+            // Both provided: return single result as a list
+            val result = xAllocService.getXAllocResultByAppIdAndRoundId(appId, roundId)
+            if (result != null) listOf(result) else emptyList()
         } else {
-            xAllocService.getXAllocResultsAggregatedByAllApps()
+            // Only roundId: return all apps in that round
+            xAllocService.getXAllocResultsByRoundId(roundId)
         }
     }
 
-    @GetMapping("apps/{appId}/results")
+    @GetMapping("earnings")
     @Operation(
-        summary =
-            "Get the results of XAllocation voting for a specific app. If roundId is provided, returns the specific round result. If not provided, returns aggregated results across all rounds."
+        summary = "Get XAllocation earnings distribution",
+        description =
+            "Returns earnings distribution for a specific app and/or round. At least one parameter " +
+                "(appId or roundId) must be provided. If both are provided, returns earnings for that " +
+                "specific app and round. If only appId is provided, returns earnings for that app across " +
+                "all rounds. If only roundId is provided, returns earnings for all apps in that round.",
     )
     @Parameter(
-        `in` = ParameterIn.PATH,
+        `in` = ParameterIn.QUERY,
         name = "appId",
-        description = "App ID to filter by.",
-        required = true,
+        description =
+            "Optional app ID to filter by. If omitted, must provide roundId. Returns earnings for " +
+                "the specified app (across all rounds if roundId is also omitted).",
+        required = false,
         schema = Schema(type = "string"),
         example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
     )
@@ -81,20 +80,39 @@ open class XAllocController(private val xAllocService: XAllocService) {
         `in` = ParameterIn.QUERY,
         name = "roundId",
         description =
-            "Optional round ID to filter by. If not provided, returns aggregated results across all rounds.",
+            "Optional round ID to filter by. If omitted, must provide appId. Returns earnings for " +
+                "the specified round (across all apps if appId is also omitted).",
         required = false,
         schema = Schema(type = "integer"),
         example = "2",
     )
     @CommonApiResponses
-    open fun getAllocationVoteResultsByAppId(
-        @PathVariable(required = true) appId: String,
+    open fun getXAllocEarnings(
+        @RequestParam(required = false) appId: String?,
         @RequestParam(required = false) roundId: Int?,
-    ): XAllocResultResponse? {
-        return if (roundId != null) {
-            xAllocService.getXAllocResultByAppIdAndRoundId(appId, roundId)
-        } else {
-            xAllocService.getXAllocResultsAggregatedByAppId(appId)
+    ): List<XAllocEarningsResponse> {
+        // Validate that at least one parameter is provided
+        if (appId == null && roundId == null) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Either appId or roundId must be provided to limit the results",
+            )
+        }
+
+        return when {
+            appId != null && roundId != null -> {
+                // Both provided: return single earnings as a list
+                val earnings = xAllocService.getXAllocEarningsByAppIdAndRoundId(appId, roundId)
+                if (earnings != null) listOf(earnings) else emptyList()
+            }
+            appId != null -> {
+                // Only appId: return earnings for that app across all rounds
+                xAllocService.getXAllocEarningsByAppId(appId)
+            }
+            else -> {
+                // Only roundId: return earnings for all apps in that round
+                xAllocService.getXAllocEarningsByRoundId(roundId!!)
+            }
         }
     }
 }
