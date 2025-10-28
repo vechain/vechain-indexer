@@ -230,20 +230,26 @@ open class TokenRewardService(
         // 4. Find missing delegations
         val missingIds = rewardIds.filterNot { it in existingIds }
 
-        // 5. If nothing is missing, just return what we have
-        if (missingIds.isEmpty()) {
-            return rewardsFromDb.toList()
-        }
+        // 5. Need to call Thor for effective stakes
+        val inspectionResults =
+            getEffectiveStakes(
+                validatorId,
+                missingIds,
+                blockId,
+                validatorCycleCache[validatorId]!!.currentCycle,
+            )
 
-        // 6. Need to call Thor for effective stakes
-        val inspectionResults = getEffectiveStakes(validatorId, missingIds, blockId)
-
-        // 7. Decode results & build new TokenReward docs
+        // 6. Decode results & build new TokenReward docs
         val newDocs = mutableListOf<TokenReward>()
         var resultIndex = 0
 
         val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex].data)
         validatorCycleCache[validatorId]!!.totalEffectiveDelegations = validatorStake
+
+        // 7. If nothing is missing, just return what we have
+        if (missingIds.isEmpty()) {
+            return rewardsFromDb.toList()
+        }
 
         // Each missing delegation effective stake
         missingIds.forEach { rewardId ->
@@ -262,7 +268,6 @@ open class TokenRewardService(
                     rewards = stake, // raw effective stake or converted reward
                     effectiveStake = stake,
                     rewardPeriod = RewardPeriod.ALL,
-                    date = time,
                     dayOfMonth = time.dayOfMonth.toLong(),
                     weekOfYear = time.get(WeekFields.ISO.weekOfYear()).toLong(),
                     month = time.monthValue.toLong(),
@@ -439,7 +444,6 @@ open class TokenRewardService(
                     yearReward = yearly,
                     cycleReward = cycle,
                     cycle = cycleCache.currentCycle,
-                    date = blockDate,
                     dayOfMonth = blockDay,
                     weekOfYear = blockWeek,
                     month = blockMonth,
@@ -479,7 +483,6 @@ open class TokenRewardService(
             validator = mainTracker.validator,
             rewards = rewards,
             rewardPeriod = period,
-            date = mainTracker.date,
             dayOfMonth = mainTracker.dayOfMonth,
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
@@ -554,18 +557,18 @@ open class TokenRewardService(
         validatorId: String,
         missingIds: List<String>,
         blockId: String,
+        cycle: Long = 0L,
     ): List<ExecuteCodeResponse> {
         val clauses = buildList {
             // Validator effective stake (cache it for the cycle)
-            if (!validatorCycleCache.containsKey(validatorId)) {
-                add(
-                    ContractUtils.createClause(
-                        stargateContract,
-                        cachedGetValidatorsAbi["getDelegatorsEffectiveStake"]!!,
-                        AddressUtils.toBigInt(validatorId),
-                    )
+            add(
+                ContractUtils.createClause(
+                    stargateContract,
+                    cachedGetValidatorsAbi["getDelegatorsEffectiveStake"]!!,
+                    AddressUtils.toBigInt(validatorId),
+                    cycle,
                 )
-            }
+            )
 
             // Add each missing delegation effective stake clause
             missingIds.forEach { rewardId ->
