@@ -71,7 +71,7 @@ open class XAllocService(private val xAllocResultRepository: XAllocResultReposit
         return xAllocResultRepository
             .findByAppId(appId)
             .mapNotNull { XAllocEarningsResponse.from(it) }
-            .sortedWith(compareBy({ it.roundId }, { -it.totalAmount.toLong() }))
+            .sortedWith(compareBy<XAllocEarningsResponse> { it.roundId }.thenByDescending { it.totalAmount })
     }
 
     override fun getLatestIndexedBlocks(): Map<String, Long> =
