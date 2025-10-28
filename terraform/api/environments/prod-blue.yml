@@ -1,7 +1,7 @@
 region:                          eu-west-1
 project:                         veworld
 environment:                     prod-blue
-certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/579f8060-4a4c-42c8-8de3-891469199f7d
+certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/57fc89c7-5577-4cc6-9c07-22fff2265028
 azs:
   -                              eu-west-1a
   -                              eu-west-1b
