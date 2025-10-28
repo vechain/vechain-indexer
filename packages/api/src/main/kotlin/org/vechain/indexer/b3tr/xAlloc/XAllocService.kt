@@ -92,14 +92,16 @@ open class XAllocService(
 
     /**
      * Builds the group stage for aggregation pipelines. Groups by appId and sums all numeric fields
-     * (voters, totalVotes, and various allocation amounts).
+     * (voters, votesReceived, votesReceivedQf, and various allocation amounts).
      */
     private fun buildAggregationGroup() =
         Aggregation.group("appId")
             .sum("voters")
             .`as`("voters")
-            .sum("totalVotes")
-            .`as`("totalVotes")
+            .sum("votesReceived")
+            .`as`("votesReceived")
+            .sum("votesReceivedQf")
+            .`as`("votesReceivedQf")
             .sum("totalAmount")
             .`as`("totalAmount")
             .sum("unallocatedAmount")
@@ -119,7 +121,8 @@ open class XAllocService(
         Aggregation.project(
                 "appId",
                 "voters",
-                "totalVotes",
+                "votesReceived",
+                "votesReceivedQf",
                 "totalAmount",
                 "unallocatedAmount",
                 "teamAllocationAmount",

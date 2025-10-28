@@ -9,7 +9,11 @@ import org.vechain.indexer.utils.scaleDown
 
 object XAllocEventUtils {
 
-    data class AggregatedVote(val weight: BigInteger, val voters: Long)
+    data class AggregatedVote(
+        val votesReceived: BigInteger,
+        val votesReceivedQf: BigInteger,
+        val voters: Long,
+    )
 
     fun groupByRoundId(events: List<IndexedEvent>): Map<Int, List<IndexedEvent>> =
         events
@@ -96,10 +100,22 @@ object XAllocEventUtils {
 
         events.forEach { event ->
             val votes = parseVotes(event) // appId -> weight for this one voter
-            votes.forEach { (appId, weight) ->
-                val current = aggregated.getOrDefault(appId, AggregatedVote(BigInteger.ZERO, 0))
+            votes.forEach { (appId, votes) ->
+                val current =
+                    aggregated.getOrDefault(
+                        appId,
+                        AggregatedVote(
+                            votesReceived = BigInteger.ZERO,
+                            votesReceivedQf = BigInteger.ZERO,
+                            0,
+                        ),
+                    )
                 aggregated[appId] =
-                    AggregatedVote(weight = current.weight + weight, voters = current.voters + 1)
+                    AggregatedVote(
+                        votesReceived = current.votesReceived + votes,
+                        votesReceivedQf = current.votesReceivedQf + sqrtIntegerSafe(votes),
+                        voters = current.voters + 1,
+                    )
             }
         }
         return aggregated
@@ -133,5 +149,35 @@ object XAllocEventUtils {
 
         // Combine into a map of appId to weight
         return merged
+    }
+
+    /**
+     * Computes the integer square root of n using Newton's method, mimicking OpenZeppelin's
+     * Math.sqrt() implementation from Solidity.
+     *
+     * This is a safe implementation that uses integer arithmetic throughout, avoiding floating
+     * point precision issues. It uses Newton's method with integer arithmetic:
+     * - Start with an initial guess
+     * - Iteratively improve: x_new = (x + n/x) / 2
+     * - Stop when convergence is reached
+     *
+     * The algorithm is optimized to require minimal iterations and handles edge cases properly.
+     *
+     * @param n The number to compute the square root of
+     * @return The integer square root of n (rounded down)
+     */
+    private fun sqrtIntegerSafe(n: BigInteger): BigInteger {
+        if (n == BigInteger.ZERO) return BigInteger.ZERO
+        if (n == BigInteger.ONE) return BigInteger.ONE
+
+        var x = n
+        var y = (x + BigInteger.ONE) / BigInteger.TWO
+
+        while (y < x) {
+            x = y
+            y = (x + n / x) / BigInteger.TWO
+        }
+
+        return x
     }
 }
