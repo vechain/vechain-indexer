@@ -319,13 +319,6 @@ open class StargateService(
                 RewardPeriod.ALL -> allDoc.rewards
             } ?: BigInteger.ZERO
 
-        println(
-            "Adjusting ALL reward ${allDoc.rewards} to $target reward $normalized for doc id=${allDoc.id}"
-        )
-        println(
-            "dayReward=${allDoc.dayReward}, weekReward=${allDoc.weekReward}, monthReward=${allDoc.monthReward}, yearReward=${allDoc.yearReward}, cycleReward=${allDoc.cycleReward}"
-        )
-
         return allDoc.copy(
             rewards = normalized,
             rewardPeriod = target,
