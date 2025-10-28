@@ -1,7 +1,7 @@
 region:                          eu-west-1
 project:                         veworld
 environment:                     prod-green
-certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/579f8060-4a4c-42c8-8de3-891469199f7d
+certificate_arn:                 arn:aws:acm:eu-west-1:905964754131:certificate/57fc89c7-5577-4cc6-9c07-22fff2265028
 azs:
   -                              eu-west-1a
   -                              eu-west-1b
@@ -34,26 +34,11 @@ alb:
       path_patterns: ["/api/v*"]
       priority: 0
     - name: "swagger-ui"
-      path_patterns: ["/swagger-ui/*"]
+      path_patterns: ["/swagger-ui/*","/api-docs"]
       priority: 1
       enabled: true
-    - name: "api-docs"
-      path_patterns: ["/api-docs"]
-      priority: 2
-      enabled: true
-  
-  # Target Groups Configuration
-  target_groups:
-    - name: "swg"
-      port: 8080
-      healthcheck_port: 8080
-      healthcheck_path: "/actuator/health"
-      enabled: true
-    - name: "doc"
-      port: 8080
-      healthcheck_port: 8080
-      healthcheck_path: "/actuator/health"
-      enabled: true
+      use_default_tg_group: true
+
   
   # Authentication Configuration
   authentication:

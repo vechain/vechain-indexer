@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.4.24"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
   ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -126,21 +126,8 @@ module "ecs-lb-service-api" {
   rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
   is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
   rule_1_path_pattern       = try(local.env.alb.listener_rules[1].path_patterns, [])
-  is_rule_2_required         = try(local.env.alb.listener_rules[2].enabled, false)
-  rule_2_path_pattern       = try(local.env.alb.listener_rules[2].path_patterns, [])
   
-  # Target Groups Configuration
-  is_tg_1_required          = try(local.env.alb.target_groups[0].enabled, false)
-  tg_1_name                 = try(local.env.alb.target_groups[0].name, "")
-  tg_1_port                 = try(local.env.alb.target_groups[0].port, 8080)
-  tg_1_healthcheck_port     = try(local.env.alb.target_groups[0].healthcheck_port, 8080)
-  tg_1_healthcheck_path     = try(local.env.alb.target_groups[0].healthcheck_path, "/actuator/health")
-  is_tg_2_required          = try(local.env.alb.target_groups[1].enabled, false)
-  tg_2_name                 = try(local.env.alb.target_groups[1].name, "")
-  tg_2_port                 = try(local.env.alb.target_groups[1].port, 8080)
-  tg_2_healthcheck_port     = try(local.env.alb.target_groups[1].healthcheck_port, 8080)
-  tg_2_healthcheck_path     = try(local.env.alb.target_groups[1].healthcheck_path, "/actuator/health")
-  
+  use_default_tg_group_for_rule_1 = try(local.env.alb.listener_rules[1].use_default_tg_group, false)
   # Authentication Configuration
   okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
   secret_id                 = try(local.env.alb.authentication.secret_id, "")
