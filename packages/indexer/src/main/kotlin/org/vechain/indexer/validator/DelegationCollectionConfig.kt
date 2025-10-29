@@ -28,7 +28,7 @@ open class DelegationCollectionConfig(
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.validator}") private val version: Int = 1
+    @Value("\${indexer.version.delegation}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {

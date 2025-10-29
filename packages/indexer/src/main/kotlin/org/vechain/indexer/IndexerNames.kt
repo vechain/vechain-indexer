@@ -34,4 +34,5 @@ object IndexerNames {
     const val VTHO_GENERATED_BY_BLOCK = "VthoGeneratedByBlockIndexer"
     const val VALIDATOR_BLOCK = "ValidatorBlockIndexer"
     const val STARGATE_TOKEN = "StargateTokenIndexer"
+    const val TOKEN_REWARD = "TokenRewardIndexer"
 }

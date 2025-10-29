@@ -17,9 +17,12 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.stargate.tokenReward.RewardPeriod
+import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
 import org.vechain.indexer.thor.Address
@@ -388,5 +391,56 @@ open class StargateController(private val stargateService: StargateService) {
             owner?.value?.lowercase(),
             pageable,
         )
+    }
+
+    @GetMapping("/token-rewards/{tokenId}")
+    @Operation(
+        summary = "Get Stargate Token rewards",
+        description =
+            """
+        Retrieve reward history for a given Stargate delegation token. 
+        Rewards can be queried by period (CYCLE, DAY, WEEK, MONTH, YEAR). 
+        All rewards are calculated and rolled over based on UTC time.
+        
+        If no `periodType` is provided, the response defaults to showing the full cumulative rewards.
+    """,
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "tokenId",
+        schema = Schema(type = "string"),
+        description = "The tokenId to query for rewards",
+        required = true,
+        example = "10001",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "validator",
+        schema = Schema(type = "string", pattern = Address.REGEX),
+        description = "Optional query parameter to filter by validator address",
+        required = false,
+        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "periodType",
+        description = "Reward period to filter by. Options: CYCLE, DAY, WEEK, MONTH, YEAR, ALL.",
+        required = false,
+    )
+    @CommonApiResponses
+    open fun getStargateTokenRewards(
+        @PathVariable("tokenId") tokenId: String,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) periodType: RewardPeriod,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TokenReward> {
+        val pageable =
+            PaginationUtils.toPageable(page, size, direction, TokenReward::blockTimestamp.name)
+
+        val rewards =
+            stargateService.getRewards(tokenId, validator?.value?.lowercase(), periodType, pageable)
+        return paginatedResponse(rewards)
     }
 }
