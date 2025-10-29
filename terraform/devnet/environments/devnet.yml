@@ -120,7 +120,7 @@ enabled_nets:
         b3tr-proposal:              '0'
         historic-proposals:         '0'
         delegation:                 '0'
-        validator:                  '19210'
+        validator:                  '1000'
       start-round:
         b3tr-sustainable-actions:   '0'
       sync-log-interval: '100'
@@ -178,6 +178,8 @@ enabled_nets:
         validator: '4'
         validator-rewards: '4'
         stargate-token: '3'
+        token-rewards: '2'
+        delegation: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'
