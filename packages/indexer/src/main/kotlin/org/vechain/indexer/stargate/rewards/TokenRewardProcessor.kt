@@ -11,7 +11,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "token-reward")
+@Profile("token-reward")
 @Component
 open class TokenRewardProcessor(
     private val service: TokenRewardService,

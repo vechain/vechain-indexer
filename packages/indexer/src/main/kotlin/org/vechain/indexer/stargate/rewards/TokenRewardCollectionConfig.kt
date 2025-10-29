@@ -16,7 +16,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("stargate", "token-reward")
+@Profile("token-reward")
 @Configuration
 open class TokenRewardCollectionConfig(
     mongoTemplate: MongoTemplate,
