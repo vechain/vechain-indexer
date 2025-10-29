@@ -631,6 +631,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
     },
     {
+      name  = "B3TR_DBA_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_DBA_POOL_CONTRACT
+    },
+    {
       name  = "GM_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
@@ -641,6 +645,10 @@ module "ecs-backend-service" {
     {
       name = "X2EARN_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
+    },
+    {
+      name = "X_ALLOC_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
       name  = "VOTER_REWARDS_CONTRACT"

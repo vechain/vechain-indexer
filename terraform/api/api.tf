@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.4.24"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
   ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -122,10 +122,18 @@ module "ecs-lb-service-api" {
   container_port            = 8080
   certificate_arn           = local.env.certificate_arn
   ecs_sg                    = [aws_security_group.alb-sg.id]
-  rule_0_path_pattern       = ["/api/v*", "/api-docs", "/swagger-ui/*"]
+  # Listener Rules Configuration
+  rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
+  is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
+  rule_1_path_pattern       = try(local.env.alb.listener_rules[1].path_patterns, [])
+  
+  use_default_tg_group_for_rule_1 = try(local.env.alb.listener_rules[1].use_default_tg_group, false)
+  # Authentication Configuration
+  okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
+  secret_id                 = try(local.env.alb.authentication.secret_id, "")
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path = "/actuator/health"
+  https_tg_healthcheck_path = try(local.env.alb.healthcheck.path, "/actuator/health")
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -750,12 +758,20 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
     },
     {
+      name  = "B3TR_DBA_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_DBA_POOL_CONTRACT
+    },
+    {
       name  = "GM_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
       name = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
+    },
+    {
+      name = "X_ALLOC_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
       name = "X2EARN_REWARDS_POOL_CONTRACT"

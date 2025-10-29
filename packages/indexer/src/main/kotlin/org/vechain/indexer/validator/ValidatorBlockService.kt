@@ -28,7 +28,7 @@ open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
     private val thorService: ThorService,
 ) {
-    private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     private val hourlyCache = ConcurrentHashMap<String, Long>()
     private val dailyCache = ConcurrentHashMap<String, Long>()
@@ -36,7 +36,7 @@ open class ValidatorBlockService(
     private val monthlyCache = ConcurrentHashMap<String, Long>()
 
     /** Cached VTHO total supply from the previous block to calculate deltas. */
-    private var vthoTotalSupply: BigInteger = BigInteger.ZERO
+    @Volatile private var vthoTotalSupply: BigInteger = BigInteger.ZERO
 
     init {
         preloadLatestAggregates()

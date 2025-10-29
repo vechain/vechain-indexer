@@ -18,8 +18,8 @@ const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 @Component
 open class ApplicationHealth(
     private val healthEndpoint: HealthEndpoint,
-    @Value("\${spring.application.name}") private val applicationName: String,
-    @Value("\${slack.webhook.url}") private val slackWebhookUrl: String? = null,
+    @param:Value("\${spring.application.name}") private val applicationName: String,
+    @param:Value("\${slack.webhook.url}") private val slackWebhookUrl: String? = null,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

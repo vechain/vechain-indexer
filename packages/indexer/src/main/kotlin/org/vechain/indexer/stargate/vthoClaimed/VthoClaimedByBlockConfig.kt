@@ -25,7 +25,7 @@ open class VthoClaimedByBlockConfig {
         stargateNftContract: String,
         @Value("\${business-event.substitutions.STARGATE_DELEGATION_CONTRACT}")
         stargateDelegationContract: String,
-        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateStakerAddress: String,
+        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -47,7 +47,7 @@ open class VthoClaimedByBlockConfig {
                 listOf(
                     stargateNftContract,
                     stargateDelegationContract,
-                    stargateStakerAddress,
+                    stargateContract,
                     VTHO_CONTRACT_ADDRESS,
                 )
             )

@@ -9,4 +9,8 @@ import org.vechain.indexer.b3tr.xAlloc.XAllocResult
 @Repository
 interface XAllocResultRepository : BasePagingAndSortingIndexedRepository<XAllocResult, String> {
     fun findByRoundId(roundId: Int): List<XAllocResult>
+
+    fun findByAppId(appId: String): List<XAllocResult>
+
+    fun findByAppIdAndRoundId(appId: String, roundId: Int): XAllocResult?
 }
