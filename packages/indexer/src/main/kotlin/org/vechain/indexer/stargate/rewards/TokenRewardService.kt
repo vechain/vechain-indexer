@@ -35,7 +35,7 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
-@Profile("stargate", "token-reward")
+@Profile("token-reward")
 @Service
 open class TokenRewardService(
     private val repository: TokenRewardRepository,

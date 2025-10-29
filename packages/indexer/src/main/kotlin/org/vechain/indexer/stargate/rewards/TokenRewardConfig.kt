@@ -20,7 +20,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
-@Profile("stargate", "token-reward")
+@Profile("token-reward")
 open class TokenRewardConfig {
     @Bean
     open fun tokenRewardArchiveService(
