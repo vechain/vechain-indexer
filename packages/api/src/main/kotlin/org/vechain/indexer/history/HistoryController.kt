@@ -33,9 +33,9 @@ import org.vechain.indexer.validation.ValidPageSize
 @Validated
 @RestController
 open class HistoryController(private val historyService: HistoryService) {
-    // TODO: Remove this when veworld have migrated to V2 History API
+    @Deprecated("This api is deprecated post hayabusa release")
     @GetMapping("$API_VERSION/history/{account}")
-    @Operation(summary = "Get account history - This will be deprecated post hayabusa release")
+    @Operation(summary = "Get account history")
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "account",
@@ -297,7 +297,7 @@ open class HistoryController(private val historyService: HistoryService) {
         )
     }
 
-    @GetMapping("$API_VERSION/history/token/{tokenId}")
+    @GetMapping("v2/history/token/{tokenId}")
     @Operation(summary = "Get token history")
     @Parameter(
         `in` = ParameterIn.PATH,
