@@ -28,6 +28,8 @@ interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegatio
         pageable: Pageable,
     ): Slice<Delegation>
 
+    fun findByValidatorAndStatusIn(validator: String, statuses: List<Status>): List<Delegation>
+
     fun findByValidator(validator: String, pageable: Pageable): Slice<Delegation>
 
     fun findByTokenId(tokenId: String, pageable: Pageable): Slice<Delegation>

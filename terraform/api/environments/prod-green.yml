@@ -199,6 +199,8 @@ enabled_nets:
         validator-rewards: '1'
         block-usage: '1'
         stargate-token: '1'
+        token-rewards: '1'
+        delegation: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -394,6 +396,8 @@ enabled_nets:
         validator: '1'
         validator-rewards: '1'
         stargate-token: '1'
+        token-rewards: '1'
+        delegation: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x95761346d18244bb91664181bf91193376197088'

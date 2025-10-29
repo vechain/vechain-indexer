@@ -726,6 +726,14 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-token
     },
     {
+      name = "VERSION_TOKEN_REWARDS"
+      value = each.value.indexer.version.token-rewards
+    },
+    {
+      name = "VERSION_DELEGATION"
+      value = each.value.indexer.version.delegation
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
