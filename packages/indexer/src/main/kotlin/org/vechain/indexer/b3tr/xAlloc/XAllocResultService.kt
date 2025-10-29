@@ -120,6 +120,11 @@ open class XAllocResultService(
                         val amount = getAmountAsDecimal(event)
                         val recordId = generateId("$roundId", appId)
                         val existing = resolveExisting(recordId, updatedResult)
+                        // If the amount is zero and there is an existing record, we don't need to
+                        // update
+                        if (amount == BigDecimal.ZERO && existing != null) {
+                            return@forEach
+                        }
                         val updated =
                             createOrUpdateExisting(
                                 roundId = roundId,

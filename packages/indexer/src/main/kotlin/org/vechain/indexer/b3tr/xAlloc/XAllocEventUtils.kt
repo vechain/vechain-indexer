@@ -54,12 +54,18 @@ object XAllocEventUtils {
         return when (val raw = event.params.params[paramName]) {
             is BigInteger -> raw
             is Number -> BigInteger.valueOf(raw.toLong())
-            is String ->
-                try {
-                    BigInteger(raw.trim())
-                } catch (_: Exception) {
-                    error("Invalid $paramName number format in event: ${event.id}")
+            is String -> {
+                val trimmed = raw.trim()
+                if (trimmed.isEmpty()) {
+                    BigInteger.ZERO
+                } else {
+                    try {
+                        BigInteger(trimmed)
+                    } catch (_: Exception) {
+                        error("Invalid $paramName number format in event: ${event.id}")
+                    }
                 }
+            }
             else -> error("Missing or invalid $paramName in event: ${event.id}")
         }
     }
@@ -78,12 +84,18 @@ object XAllocEventUtils {
                 when (elem) {
                     is BigInteger -> elem
                     is Number -> BigInteger.valueOf(elem.toLong())
-                    is String ->
-                        try {
-                            BigInteger(elem.trim())
-                        } catch (_: Exception) {
-                            error("Invalid weight number format in event: ${event.id}")
+                    is String -> {
+                        val trimmed = elem.trim()
+                        if (trimmed.isEmpty()) {
+                            BigInteger.ZERO
+                        } else {
+                            try {
+                                BigInteger(trimmed)
+                            } catch (_: Exception) {
+                                error("Invalid weight number format in event: ${event.id}")
+                            }
                         }
+                    }
                     else ->
                         error("Unexpected weight type: ${elem?.let { it::class.java } ?: "null"}")
                 }
