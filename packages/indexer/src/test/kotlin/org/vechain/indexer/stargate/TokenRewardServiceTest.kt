@@ -183,7 +183,6 @@ class TokenRewardServiceTest {
     @Test
     fun `getOrFetchRewardsNewCycle creates new docs for missing delegations`() {
         val validator = "0x00000000000000000000000000000000000000a1"
-        val blockId = "0xBLOCK"
 
         every {
             delegationRepository.findByValidatorAndStatusIn(
@@ -226,7 +225,7 @@ class TokenRewardServiceTest {
         val result =
             service.getOrFetchRewardsNewCycle(
                 validator,
-                blockId,
+                block(num = 200),
                 Instant.now().atZone(ZoneOffset.UTC).toLocalDate(),
             )
 

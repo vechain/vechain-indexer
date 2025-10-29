@@ -186,7 +186,7 @@ open class TokenRewardService(
 
         // If new cycle, ensure we have up-to-date delegations
         if (newCycle) {
-            return getOrFetchRewardsNewCycle(validatorId, block.id, getTimeInfo(block.timestamp))
+            return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
         }
 
         // Otherwise return saved delegations for current cycle
@@ -200,7 +200,7 @@ open class TokenRewardService(
     /**
      * @param validatorId Validator address (signer).
      * @param contractAddress Stargate contract address.
-     * @param blockId Block ID for inspection.
+     * @param blockBlock for inspection.
      * @param time LocalDate derived from block timestamp.
      * @return Combined list of existing + new TokenReward docs.
      * @notice Fetch or create reward trackers for a validator in a new cycle.
@@ -209,7 +209,7 @@ open class TokenRewardService(
      */
     fun getOrFetchRewardsNewCycle(
         validatorId: String,
-        blockId: String,
+        block: Block,
         time: LocalDate,
     ): List<TokenReward> {
         // 1. Get active/exiting delegations for validator
@@ -235,7 +235,7 @@ open class TokenRewardService(
             getEffectiveStakes(
                 validatorId,
                 missingIds,
-                blockId,
+                block.id,
                 validatorCycleCache[validatorId]!!.currentCycle,
             )
 
@@ -259,9 +259,9 @@ open class TokenRewardService(
             val doc =
                 TokenReward(
                     id = rewardId,
-                    blockId = blockId,
-                    blockNumber = 0L, // fill with real block number
-                    blockTimestamp = 0L, // fill with real block timestamp
+                    blockId = block.id,
+                    blockNumber = block.number,
+                    blockTimestamp = block.timestamp,
                     tokenId = tokenId,
                     cycle = validatorCycleCache[validatorId]!!.currentCycle, // from context
                     validator = validatorId,
