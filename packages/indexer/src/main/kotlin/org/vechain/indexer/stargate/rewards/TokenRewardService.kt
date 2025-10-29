@@ -57,7 +57,7 @@ open class TokenRewardService(
      * @dev Stores per-validator cycle metadata such as next cycle block, current cycle number,
      *   delegation status, and effective stake totals. Keyed by validator address or ID.
      */
-    private val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
+    val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
 
     /**
      * @notice Cached VTHO total supply from the previous block.
