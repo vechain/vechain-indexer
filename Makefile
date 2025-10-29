@@ -78,7 +78,7 @@ down: #@ Stop all the infrastructure and the application.
 	make app-down db-down
 
 # Application
-app-up: #@ Start the application.
+app-up: format #@ Start the application.
 	docker compose up -d --build --wait
 app-down: #@ Stop the application.
 	docker compose down

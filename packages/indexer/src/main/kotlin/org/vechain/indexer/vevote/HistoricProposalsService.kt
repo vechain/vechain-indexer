@@ -1,5 +1,6 @@
 package org.vechain.indexer.vevote
 
+import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -18,12 +19,12 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 open class HistoricProposalsService(
     private val thorService: ThorService,
     private val repository: HistoricProposalsRepository,
-    @Value("\${veworld.contract.historic-proposals.steering-committee}")
+    @param:Value("\${veworld.contract.historic-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
-    @Value("\${veworld.contract.historic-proposals.all-stakeholders}")
+    @param:Value("\${veworld.contract.historic-proposals.all-stakeholders}")
     private val allStakeholdersAddress: String,
 ) {
-    private val cachedAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     open fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
         if (events.isEmpty()) return emptyList()

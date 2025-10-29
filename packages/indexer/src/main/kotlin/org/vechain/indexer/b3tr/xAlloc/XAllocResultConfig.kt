@@ -51,6 +51,8 @@ open class XAllocResultConfig {
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.X_ALLOC_VOTING_CONTRACT}")
         xAllocVotingContract: String,
+        @Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}") xAllocPoolContract: String,
+        @Value("\${business-event.substitutions.B3TR_DBA_POOL_CONTRACT}") dbaPoolContract: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -63,8 +65,16 @@ open class XAllocResultConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(listOf("B3TR_XAllocationVote"))
-            .businessEventContracts(listOf(xAllocVotingContract))
+            .businessEventNames(
+                listOf(
+                    "B3TR_XAllocationVote",
+                    "B3TR_XAllocationRewardsClaimed",
+                    "B3TR_DBAFundsDistributed",
+                )
+            )
+            .businessEventContracts(
+                listOf(xAllocVotingContract, xAllocPoolContract, dbaPoolContract)
+            )
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }

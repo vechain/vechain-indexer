@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import java.math.BigInteger
+import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -26,9 +27,10 @@ open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
-    @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
+    @param:Value("\${indexer.validator-stats-threshold-blocks}")
+    private val statsStartThreshold: Long,
 ) {
-    private val cachedGetValidatorsAbi: MutableMap<String, AbiElement> = mutableMapOf()
+    private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     /**
      * Processes a block to update validator state.

@@ -1,12 +1,15 @@
 package org.vechain.indexer.b3tr.xAlloc
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.utils.scaleDown
 
 object XAllocEventUtils {
 
-    data class AggregatedVote(val weight: BigInteger, val voters: Long)
+    data class AggregatedVote(val votesReceived: BigInteger, val voters: Long)
 
     fun groupByRoundId(events: List<IndexedEvent>): Map<Int, List<IndexedEvent>> =
         events
@@ -16,6 +19,56 @@ object XAllocEventUtils {
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, roundEvents) -> roundEvents.sortedBy { it.blockNumber } }
+
+    fun getAppId(event: IndexedEvent): String =
+        event.params.getAsString("appId") ?: error("Missing param 'appId' in event: ${event.id}")
+
+    fun getTotalAmount(event: IndexedEvent): BigInteger = getBigIntegerParam(event, "totalAmount")
+
+    fun getUnallocatedAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "unallocatedAmount")
+
+    fun getTeamAllocationAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "teamAllocationAmount")
+
+    fun getRewardsAllocationAmount(event: IndexedEvent): BigInteger =
+        getBigIntegerParam(event, "rewardsAllocationAmount")
+
+    fun getTotalAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getTotalAmount(event), 18)
+
+    fun getUnallocatedAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getUnallocatedAmount(event), 18)
+
+    fun getTeamAllocationAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getTeamAllocationAmount(event), 18)
+
+    fun getRewardsAllocationAmountAsDecimal(event: IndexedEvent): BigDecimal =
+        scaleDown(getRewardsAllocationAmount(event), 18)
+
+    fun getAmount(event: IndexedEvent): BigInteger = getBigIntegerParam(event, "amount")
+
+    fun getAmountAsDecimal(event: IndexedEvent): BigDecimal = scaleDown(getAmount(event), 18)
+
+    private fun getBigIntegerParam(event: IndexedEvent, paramName: String): BigInteger {
+        return when (val raw = event.params.params[paramName]) {
+            is BigInteger -> raw
+            is Number -> BigInteger.valueOf(raw.toLong())
+            is String -> {
+                val trimmed = raw.trim()
+                if (trimmed.isEmpty()) {
+                    BigInteger.ZERO
+                } else {
+                    try {
+                        BigInteger(trimmed)
+                    } catch (_: Exception) {
+                        error("Invalid $paramName number format in event: ${event.id}")
+                    }
+                }
+            }
+            else -> error("Missing or invalid $paramName in event: ${event.id}")
+        }
+    }
 
     fun getAppIds(event: IndexedEvent): List<String> {
         val raw = event.params.params["appsIds"]
@@ -31,12 +84,18 @@ object XAllocEventUtils {
                 when (elem) {
                     is BigInteger -> elem
                     is Number -> BigInteger.valueOf(elem.toLong())
-                    is String ->
-                        try {
-                            BigInteger(elem.trim())
-                        } catch (_: Exception) {
-                            error("Invalid weight number format in event: ${event.id}")
+                    is String -> {
+                        val trimmed = elem.trim()
+                        if (trimmed.isEmpty()) {
+                            BigInteger.ZERO
+                        } else {
+                            try {
+                                BigInteger(trimmed)
+                            } catch (_: Exception) {
+                                error("Invalid weight number format in event: ${event.id}")
+                            }
                         }
+                    }
                     else ->
                         error("Unexpected weight type: ${elem?.let { it::class.java } ?: "null"}")
                 }
@@ -44,15 +103,22 @@ object XAllocEventUtils {
         return list ?: error("Missing or invalid weights in event: ${event.id}")
     }
 
-    fun parseVotes(events: List<IndexedEvent>): Map<String, AggregatedVote> {
+    fun parseVotes(events: List<IndexedEvent>, isQfEnabled: Boolean): Map<String, AggregatedVote> {
         val aggregated = mutableMapOf<String, AggregatedVote>()
 
         events.forEach { event ->
-            val votes = parseVotes(event) // appId -> weight for this one voter
-            votes.forEach { (appId, weight) ->
-                val current = aggregated.getOrDefault(appId, AggregatedVote(BigInteger.ZERO, 0))
+            val votes = parseVotes(event, isQfEnabled) // appId -> weight for this one voter
+            votes.forEach { (appId, votes) ->
+                val current =
+                    aggregated.getOrDefault(
+                        appId,
+                        AggregatedVote(votesReceived = BigInteger.ZERO, 0),
+                    )
                 aggregated[appId] =
-                    AggregatedVote(weight = current.weight + weight, voters = current.voters + 1)
+                    AggregatedVote(
+                        votesReceived = current.votesReceived + votes,
+                        voters = current.voters + 1,
+                    )
             }
         }
         return aggregated
@@ -66,7 +132,7 @@ object XAllocEventUtils {
      * @param event The IndexedEvent containing the vote data.
      * @return A map where keys are appIds and values are their corresponding weights.
      */
-    fun parseVotes(event: IndexedEvent): Map<String, BigInteger> {
+    fun parseVotes(event: IndexedEvent, isQfEnabled: Boolean): Map<String, BigInteger> {
         // Extract appIds and weights from event parameters
         val appIds = getAppIds(event)
         val weights = getWeights(event)
@@ -81,10 +147,41 @@ object XAllocEventUtils {
         for (i in appIds.indices) {
             val id = appIds[i]
             val w = weights[i]
-            merged[id] = (merged[id] ?: BigInteger.ZERO) + w
+            merged[id] =
+                (merged[id] ?: BigInteger.ZERO) + if (isQfEnabled) sqrtIntegerSafe(w) else w
         }
 
         // Combine into a map of appId to weight
         return merged
+    }
+
+    /**
+     * Computes the integer square root of n using Newton's method, mimicking OpenZeppelin's
+     * Math.sqrt() implementation from Solidity.
+     *
+     * This is a safe implementation that uses integer arithmetic throughout, avoiding floating
+     * point precision issues. It uses Newton's method with integer arithmetic:
+     * - Start with an initial guess
+     * - Iteratively improve: x_new = (x + n/x) / 2
+     * - Stop when convergence is reached
+     *
+     * The algorithm is optimized to require minimal iterations and handles edge cases properly.
+     *
+     * @param n The number to compute the square root of
+     * @return The integer square root of n (rounded down)
+     */
+    private fun sqrtIntegerSafe(n: BigInteger): BigInteger {
+        if (n == BigInteger.ZERO) return BigInteger.ZERO
+        if (n == BigInteger.ONE) return BigInteger.ONE
+
+        var x = n
+        var y = (x + BigInteger.ONE) / BigInteger.TWO
+
+        while (y < x) {
+            x = y
+            y = (x + n / x) / BigInteger.TWO
+        }
+
+        return x
     }
 }

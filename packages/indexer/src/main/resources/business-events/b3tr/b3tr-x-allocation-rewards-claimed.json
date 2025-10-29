@@ -1,0 +1,62 @@
+{
+  "name": "B3TR_XAllocationRewardsClaimed",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "AllocationRewardsClaimed",
+      "alias": "rewardsClaimedEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${X_ALLOC_POOL_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "appId",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "appId"
+    },
+    {
+      "name": "roundId",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "roundId"
+    },
+    {
+      "name": "totalAmount",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "totalAmount"
+    },
+    {
+      "name": "recipient",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "recipient"
+    },
+    {
+      "name": "caller",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "caller"
+    },
+    {
+      "name": "unallocatedAmount",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "unallocatedAmount"
+    },
+    {
+      "name": "teamAllocationAmount",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "teamAllocationAmount"
+    },
+    {
+      "name": "rewardsAllocationAmount",
+      "eventName": "rewardsClaimedEvent",
+      "businessEventName": "rewardsAllocationAmount"
+    }
+  ]
+}
