@@ -9,8 +9,9 @@ import org.vechain.indexer.BaseIndexedRepository
 @Profile("vevote", "vevote-historic-proposals")
 @Repository
 interface HistoricProposalsRepository : BaseIndexedRepository<HistoricProposals, String> {
-
     fun findAll(pageable: Pageable): Slice<HistoricProposals>
 
     fun findByProposalId(proposalId: String, pageable: Pageable): Slice<HistoricProposals>
+
+    fun findByContractAddress(contractAddress: String, pageable: Pageable): Slice<HistoricProposals>
 }
