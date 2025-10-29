@@ -8,6 +8,7 @@ import org.vechain.indexer.IndexedDocument
 data class HistoricProposals(
     @Id val id: String,
     val proposalId: String,
+    val contractAddress: String,
     val createdDate: String,
     val proposer: String?,
     val title: String?,
