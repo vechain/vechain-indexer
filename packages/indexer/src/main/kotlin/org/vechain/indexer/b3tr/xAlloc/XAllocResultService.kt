@@ -122,7 +122,7 @@ open class XAllocResultService(
                         val existing = resolveExisting(recordId, updatedResult)
                         // If the amount is zero and there is an existing record, we don't need to
                         // update
-                        if (amount == BigDecimal.ZERO && existing != null) {
+                        if (amount.compareTo(BigDecimal.ZERO) == 0 && existing != null) {
                             return@forEach
                         }
                         val updated =
