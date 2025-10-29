@@ -147,7 +147,7 @@ enabled_nets:
         transfers:                  '4'
         fungible-token-interactions: '2'
         transactions:               '4'
-        history:                    '6'
+        history:                    '7'
         nft-blacklist:              '4'
         vevote-comments:            '4'
         vevote-results:             '4'
@@ -178,8 +178,8 @@ enabled_nets:
         validator: '4'
         validator-rewards: '4'
         stargate-token: '3'
-        token-rewards: '2'
-        delegation: '1'
+        token-rewards: '3'
+        delegation: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0xbf64cf86894ee0877c4e7d03936e35ee8d8b864f'

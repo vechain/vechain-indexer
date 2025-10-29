@@ -243,7 +243,7 @@ open class TokenRewardService(
         val newDocs = mutableListOf<TokenReward>()
         var resultIndex = 0
 
-        val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex].data)
+        val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex++].data)
         validatorCycleCache[validatorId]!!.totalEffectiveDelegations = validatorStake
 
         // 7. If nothing is missing, just return what we have
@@ -265,7 +265,7 @@ open class TokenRewardService(
                     tokenId = tokenId,
                     cycle = validatorCycleCache[validatorId]!!.currentCycle, // from context
                     validator = validatorId,
-                    rewards = stake, // raw effective stake or converted reward
+                    rewards = BigInteger.ZERO,
                     effectiveStake = stake,
                     rewardPeriod = RewardPeriod.ALL,
                     dayOfMonth = time.dayOfMonth.toLong(),
@@ -353,6 +353,7 @@ open class TokenRewardService(
 
         currentTokenRewards.forEach { rewardTracker ->
             val effectiveStake = rewardTracker.effectiveStake
+
             val rewardShare =
                 if (cycleCache.totalEffectiveDelegations == BigInteger.ZERO) {
                     BigInteger.ZERO

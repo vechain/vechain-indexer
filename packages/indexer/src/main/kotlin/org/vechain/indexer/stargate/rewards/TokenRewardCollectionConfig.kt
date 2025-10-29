@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.version.IndexerVersionService
@@ -45,7 +44,7 @@ open class TokenRewardCollectionConfig(
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(StargateTokenArchive::class.java)
+        if (dropped) indexerVersionService.dropArchiveCollection(TokenRewardArchive::class.java)
 
         ensureCollection()
 
