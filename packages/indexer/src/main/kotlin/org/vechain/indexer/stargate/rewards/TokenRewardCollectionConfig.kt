@@ -56,8 +56,17 @@ open class TokenRewardCollectionConfig(
             listOf(
                 // For global queries (all validators, sorted by timestamp)
                 "blockTimestamp_-1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC)
-                // For per-validator queries sorted by timestamp
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                "validator_1_rewardPeriod_1_cycle_-1" to
+                    Index()
+                        .on(TokenReward::validator.name, Sort.Direction.ASC)
+                        .on(TokenReward::rewardPeriod.name, Sort.Direction.ASC)
+                        .on(TokenReward::cycle.name, Sort.Direction.DESC),
+                "tokenId_1_rewardPeriod_1_validator_1" to
+                    Index()
+                        .on(TokenReward::tokenId.name, Sort.Direction.ASC)
+                        .on(TokenReward::rewardPeriod.name, Sort.Direction.ASC)
+                        .on(TokenReward::validator.name, Sort.Direction.ASC),
             )
         )
     }

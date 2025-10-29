@@ -274,10 +274,10 @@ open class StargateService(
 
         val slice =
             if (validator != null) {
-                tokenRewardRepository.findByTokenIdAndValidatorAndRewardPeriodIn(
+                tokenRewardRepository.findByTokenIdAndRewardPeriodInAndValidator(
                     tokenId,
-                    validator,
                     periods,
+                    validator,
                     pageable,
                 )
             } else {

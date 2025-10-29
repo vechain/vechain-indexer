@@ -37,10 +37,10 @@ interface TokenRewardRepository :
         cycle: Long,
     ): List<TokenReward>
 
-    fun findByTokenIdAndValidatorAndRewardPeriodIn(
+    fun findByTokenIdAndRewardPeriodInAndValidator(
         tokenId: String,
+        rewardPeriod: List<RewardPeriod>,
         validator: String,
-        ewardPeriod: List<RewardPeriod>,
         pageable: Pageable,
     ): Slice<TokenReward>
 
