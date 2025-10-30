@@ -29,7 +29,7 @@ interface AppDailyActionSummaryRepository :
 
     @Cacheable(
         value = ["app_daily_action_countByTotalRewardAmountGreaterThanAndAppIdAndDate"],
-        key = "#totalRewardAmount + '-' + #appId + '-' + #date",
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #date",
     )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndDate(
         totalRewardAmount: java.math.BigDecimal,
