@@ -20,7 +20,7 @@ interface AppDailyActionSummaryRepository :
         pageable: Pageable,
     ): Slice<AppDailyActionSummary>
 
-    fun findAppIdsByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
+    fun findByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
 
     fun findByAppIdAndUserAndDate(appId: String, user: String, date: String): AppDailyActionSummary?
 

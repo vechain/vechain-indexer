@@ -248,7 +248,7 @@ open class ActionService(
 
         // Fetch uniqueInteractions if the required profiles are active
         val uniqueInteractions: List<String> =
-            appDailyRepo.findAppIdsByUserAndDate(normalizedEntity, date).map { it.appId }
+            appDailyRepo.findByUserAndDate(normalizedEntity, date).map { it.appId }
 
         // Return UserOverview with the calculated position fields
         return UserOverview(
