@@ -33,7 +33,7 @@ interface AppRoundActionSummaryRepository :
 
     @Cacheable(
         value = ["app_round_countByTotalRewardAmountGreaterThanAndAppIdAndRoundId"],
-        key = "#totalRewardAmount + '-' + #appId + '-' + #roundId",
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #roundId",
     )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
         totalRewardAmount: java.math.BigDecimal,
