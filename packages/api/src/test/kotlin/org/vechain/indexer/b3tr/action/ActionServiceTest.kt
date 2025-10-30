@@ -114,7 +114,7 @@ internal class ActionServiceTest {
         val normalized = "0xdef"
 
         every { userDailyRepo.findByEntityAndDate(normalized, date) } returns null
-        every { appDailyRepo.findAppIdsByUserAndDate(normalized, date) } returns emptyList()
+        every { appDailyRepo.findByUserAndDate(normalized, date) } returns emptyList()
 
         val result = service.getDailyUserOverview(wallet, date)
 
@@ -161,7 +161,7 @@ internal class ActionServiceTest {
         val app1 = mockk<AppDailyActionSummary> { every { this@mockk.appId } returns "app1" }
         val app2 = mockk<AppDailyActionSummary> { every { this@mockk.appId } returns "app2" }
 
-        every { appDailyRepo.findAppIdsByUserAndDate(normalized, date) } returns listOf(app1, app2)
+        every { appDailyRepo.findByUserAndDate(normalized, date) } returns listOf(app1, app2)
 
         val result = service.getDailyUserOverview(wallet, date)
 
