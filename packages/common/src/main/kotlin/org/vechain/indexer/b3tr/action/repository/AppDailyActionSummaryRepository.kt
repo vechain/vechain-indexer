@@ -20,7 +20,7 @@ interface AppDailyActionSummaryRepository :
         pageable: Pageable,
     ): Slice<AppDailyActionSummary>
 
-    fun findAppIdsByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
+    fun findByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
 
     @Cacheable(value = ["app_daily_action_countByAppIdAndDate"], key = "#appId + '-' + #date")
     fun countByAppIdAndDate(appId: String, date: String): Long
