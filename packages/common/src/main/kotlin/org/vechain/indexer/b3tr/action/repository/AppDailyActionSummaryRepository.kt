@@ -22,6 +22,28 @@ interface AppDailyActionSummaryRepository :
 
     fun findAppIdsByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
 
+    fun findByAppIdAndUserAndDate(appId: String, user: String, date: String): AppDailyActionSummary?
+
     @Cacheable(value = ["app_daily_action_countByAppIdAndDate"], key = "#appId + '-' + #date")
     fun countByAppIdAndDate(appId: String, date: String): Long
+
+    @Cacheable(
+        value = ["app_daily_action_countByTotalRewardAmountGreaterThanAndAppIdAndDate"],
+        key = "#totalRewardAmount + '-' + #appId + '-' + #date",
+    )
+    fun countByTotalRewardAmountGreaterThanAndAppIdAndDate(
+        totalRewardAmount: java.math.BigDecimal,
+        appId: String,
+        date: String,
+    ): Long
+
+    @Cacheable(
+        value = ["app_daily_action_countByActionsRewardedGreaterThanAndAppIdAndDate"],
+        key = "#actionsRewarded + '-' + #appId + '-' + #date",
+    )
+    fun countByActionsRewardedGreaterThanAndAppIdAndDate(
+        actionsRewarded: Long,
+        appId: String,
+        date: String,
+    ): Long
 }

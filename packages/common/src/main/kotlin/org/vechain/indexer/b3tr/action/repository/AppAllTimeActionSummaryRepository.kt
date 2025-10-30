@@ -16,6 +16,23 @@ interface AppAllTimeActionSummaryRepository :
 
     fun findAppIdsByUser(user: String): List<AppAllTimeActionSummary>
 
+    fun findByAppIdAndUser(appId: String, user: String): AppAllTimeActionSummary?
+
     @Cacheable(value = ["app_all_time_action_countByAppId"], key = "#appId")
     fun countByAppId(appId: String): Long
+
+    @Cacheable(
+        value = ["app_all_time_action_countByTotalRewardAmountGreaterThanAndAppId"],
+        key = "#totalRewardAmount + '-' + #appId",
+    )
+    fun countByTotalRewardAmountGreaterThanAndAppId(
+        totalRewardAmount: java.math.BigDecimal,
+        appId: String,
+    ): Long
+
+    @Cacheable(
+        value = ["app_all_time_action_countByActionsRewardedGreaterThanAndAppId"],
+        key = "#actionsRewarded + '-' + #appId",
+    )
+    fun countByActionsRewardedGreaterThanAndAppId(actionsRewarded: Long, appId: String): Long
 }

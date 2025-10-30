@@ -18,6 +18,7 @@ import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.ERROR_CANT_PASS_ROUND_AND_DATE
 import org.vechain.indexer.b3tr.action.response.GlobalOverview
+import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AppIdParameter
@@ -163,6 +164,46 @@ open class ActionController(private val service: ActionService) {
         }
 
         return service.getAllTimeUserOverview(wallet)
+    }
+
+    @GetMapping("/actions/users/{wallet}/app/{appId}/overview")
+    @Operation(
+        summary =
+            "Get B3TR action overview for a user on a specific app, optionally for a specific round or date.",
+        description =
+            """
+            This endpoint retrieves the B3TR action overview for a user on a specific app.
+            Optionally, a roundId or a date can be provided to retrieve the overview for a specific round or date.
+
+            - If roundId is provided, the overview for the specific round is returned.
+            - If date is provided, the overview for the specific date is returned.
+            - If roundId/date are not provided, the all time sustainability overview for the user on the app is returned.
+            - If both roundId and date are provided, a BadRequest error is returned.
+        """,
+    )
+    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AppIdParameter(required = true, `in` = ParameterIn.PATH)
+    @DateParameter
+    @CommonApiResponses
+    open fun getUserAppOverview(
+        @ValidAddress @PathVariable wallet: Address,
+        @ValidAppId @PathVariable appId: AppId,
+        @RequestParam(required = false) roundId: Int?,
+        @ValidISODateString @RequestParam(required = false) date: String?,
+    ): UserAppOverview {
+        if (roundId != null && date != null) {
+            throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
+        }
+
+        if (roundId != null) {
+            return service.getRoundUserAppOverview(wallet, appId, roundId)
+        }
+
+        if (date != null) {
+            return service.getDailyUserAppOverview(wallet, appId, date)
+        }
+
+        return service.getAllTimeUserAppOverview(wallet, appId)
     }
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")

@@ -22,6 +22,32 @@ interface AppRoundActionSummaryRepository :
 
     fun findAppIdsByUserAndRoundId(user: String, roundId: Int): List<AppRoundActionSummary>
 
+    fun findByAppIdAndUserAndRoundId(
+        appId: String,
+        user: String,
+        roundId: Int,
+    ): AppRoundActionSummary?
+
     @Cacheable(value = ["app_round_countByAppIdAndRoundId"], key = "#appId + '-' + #roundId")
     fun countByAppIdAndRoundId(appId: String, roundId: Int): Long
+
+    @Cacheable(
+        value = ["app_round_countByTotalRewardAmountGreaterThanAndAppIdAndRoundId"],
+        key = "#totalRewardAmount + '-' + #appId + '-' + #roundId",
+    )
+    fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
+        totalRewardAmount: java.math.BigDecimal,
+        appId: String,
+        roundId: Int,
+    ): Long
+
+    @Cacheable(
+        value = ["app_round_countByActionsRewardedGreaterThanAndAppIdAndRoundId"],
+        key = "#actionsRewarded + '-' + #appId + '-' + #roundId",
+    )
+    fun countByActionsRewardedGreaterThanAndAppIdAndRoundId(
+        actionsRewarded: Long,
+        appId: String,
+        roundId: Int,
+    ): Long
 }
