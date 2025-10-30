@@ -57,12 +57,21 @@ open class NftController(private val nftService: NftService) {
         description = "The NFT tokenId",
         required = false,
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "excludeCollections",
+        schema = Schema(type = "array"),
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+        required = false,
+        example = "[\"0x1234567890123456789012345678901234567890\"]",
+    )
     @CommonApiResponses
     @PaginationParameters
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @RequestParam(required = false) tokenId: String?,
+        @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -70,7 +79,13 @@ open class NftController(private val nftService: NftService) {
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
-            nftService.findOwnedNfts(address, contractAddress, tokenId, pageable)
+            nftService.findOwnedNfts(
+                address,
+                contractAddress,
+                tokenId,
+                excludeCollections,
+                pageable,
+            )
         )
     }
 
@@ -87,15 +102,26 @@ open class NftController(private val nftService: NftService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "excludeCollections",
+        schema = Schema(type = "array"),
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+        required = false,
+        example = "[\"0x1234567890123456789012345678901234567890\"]",
+    )
     @PaginationParameters
     open fun getContractsByNFTOwner(
         @ValidAddress @RequestParam owner: Address,
+        @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
-        return paginatedResponse(nftService.findContractsByNftOwner(owner, pageable))
+        return paginatedResponse(
+            nftService.findContractsByNftOwner(owner, excludeCollections, pageable)
+        )
     }
 }

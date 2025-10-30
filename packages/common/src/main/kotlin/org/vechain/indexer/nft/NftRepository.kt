@@ -10,7 +10,11 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 @Repository
 interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, String> {
 
-    fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft>
+    fun findByOwner(
+        owner: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<IndexedNft>
 
     fun findByOwnerAndContractAddress(
         owner: String,
@@ -25,5 +29,9 @@ interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, Stri
         pageable: Pageable,
     ): Slice<IndexedNft>
 
-    fun findContractsByNftOwner(owner: String, pageable: Pageable): Slice<String>
+    fun findContractsByNftOwner(
+        owner: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<String>
 }
