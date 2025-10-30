@@ -14,29 +14,38 @@ open class NftService(private val nftRepository: NftRepository) {
         owner: Address,
         contractAddress: Address?,
         tokenId: String?,
+        excludeCollections: List<Address>?,
         pageable: Pageable,
     ): Slice<IndexedNft> {
+        val excludeCollectionsList = excludeCollections?.map { it.value } ?: emptyList()
         return if (contractAddress != null) {
             return if (!tokenId.isNullOrEmpty()) {
                 nftRepository.findByOwnerAndContractAddressAndTokenId(
                     owner.value,
                     contractAddress.value,
                     tokenId,
+                    excludeCollectionsList,
                     pageable,
                 )
             } else {
                 nftRepository.findByOwnerAndContractAddress(
                     owner.value,
                     contractAddress.value,
+                    excludeCollectionsList,
                     pageable,
                 )
             }
         } else {
-            nftRepository.findByOwner(owner.value, pageable)
+            nftRepository.findByOwner(owner.value, excludeCollectionsList, pageable)
         }
     }
 
-    open fun findContractsByNftOwner(owner: Address, pageable: Pageable): Slice<String> {
-        return nftRepository.findContractsByNftOwner(owner.value, pageable)
+    open fun findContractsByNftOwner(
+        owner: Address,
+        excludeCollections: List<Address>?,
+        pageable: Pageable,
+    ): Slice<String> {
+        val excludeCollectionsList = excludeCollections?.map { it.value } ?: emptyList()
+        return nftRepository.findContractsByNftOwner(owner.value, excludeCollectionsList, pageable)
     }
 }

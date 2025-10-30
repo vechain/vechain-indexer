@@ -16,19 +16,32 @@ open class NftRepositoryImpl(
     repo: NftBlacklistRepository,
 ) : BlacklistableRepository<IndexedNft>(mongoTemplate, repo, IndexedNft::class.java) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft> =
-        findNotBlacklisted(Criteria.where(IndexedNft::owner.name).`is`(owner), pageable)
-
-    open fun findByOwnerAndContractAddress(
+    open fun findByOwner(
         owner: String,
-        contractAddress: String,
+        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft> =
         findNotBlacklisted(
             Criteria.where(IndexedNft::owner.name)
                 .`is`(owner)
                 .and(IndexedNft::contractAddress.name)
-                .`is`(contractAddress),
+                .`nin`(excludeCollections),
+            pageable,
+        )
+
+    open fun findByOwnerAndContractAddress(
+        owner: String,
+        contractAddress: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<IndexedNft> =
+        findNotBlacklisted(
+            Criteria.where(IndexedNft::owner.name)
+                .`is`(owner)
+                .and(IndexedNft::contractAddress.name)
+                .`is`(contractAddress)
+                .and(IndexedNft::contractAddress.name)
+                .`nin`(excludeCollections),
             pageable,
         )
 
@@ -36,6 +49,7 @@ open class NftRepositoryImpl(
         owner: String,
         contractAddress: String,
         tokenId: String,
+        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft> =
         findNotBlacklisted(
@@ -44,11 +58,17 @@ open class NftRepositoryImpl(
                 .and(IndexedNft::contractAddress.name)
                 .`is`(contractAddress)
                 .and(IndexedNft::tokenId.name)
-                .`is`(tokenId),
+                .`is`(tokenId)
+                .and(IndexedNft::contractAddress.name)
+                .`nin`(excludeCollections),
             pageable,
         )
 
-    open fun findContractsByNftOwner(owner: String, pageable: Pageable): Slice<String> {
+    open fun findContractsByNftOwner(
+        owner: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<String> {
         val matchOperation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
 
         val lookupBlacklistOperation =
@@ -62,6 +82,9 @@ open class NftRepositoryImpl(
                         Criteria.where("blacklistInfo").exists(false),
                     )
             )
+
+        val excludeCollectionsOperation =
+            Aggregation.match(Criteria.where(CONTRACT_ADDRESS).`nin`(excludeCollections))
 
         val groupOperation: GroupOperation =
             Aggregation.group(CONTRACT_ADDRESS)
@@ -77,6 +100,7 @@ open class NftRepositoryImpl(
                 matchOperation,
                 lookupBlacklistOperation,
                 matchBlacklistOperation,
+                excludeCollectionsOperation,
                 groupOperation,
                 Aggregation.sort(
                     Sort.by(
