@@ -12,6 +12,7 @@ import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryReposito
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.response.AppOverview
 import org.vechain.indexer.b3tr.action.response.GlobalOverview
+import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.exception.BadRequestException
@@ -331,6 +332,118 @@ open class ActionService(
             rankByActionsRewarded = rankByActionsRewarded,
             uniqueXAppInteractions = uniqueInteractions,
             date = null,
+        )
+    }
+
+    // User/App Overviews
+
+    open fun getAllTimeUserAppOverview(wallet: Address, appId: AppId): UserAppOverview {
+        val normalizedEntity = HexUtils.normalise(wallet.value)
+        val overview = appAllTimeRepo.findByAppIdAndUser(appId.value, normalizedEntity)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                appAllTimeRepo.countByTotalRewardAmountGreaterThanAndAppId(
+                    overview.totalRewardAmount,
+                    appId.value,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                appAllTimeRepo.countByActionsRewardedGreaterThanAndAppId(
+                    overview.actionsRewarded,
+                    appId.value,
+                ) + 1
+        }
+
+        return UserAppOverview(
+            wallet = normalizedEntity,
+            appId = appId.value,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
+            roundId = null,
+        )
+    }
+
+    open fun getDailyUserAppOverview(wallet: Address, appId: AppId, date: String): UserAppOverview {
+        val normalizedEntity = HexUtils.normalise(wallet.value)
+        val overview = appDailyRepo.findByAppIdAndUserAndDate(appId.value, normalizedEntity, date)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                appDailyRepo.countByTotalRewardAmountGreaterThanAndAppIdAndDate(
+                    overview.totalRewardAmount,
+                    appId.value,
+                    date,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                appDailyRepo.countByActionsRewardedGreaterThanAndAppIdAndDate(
+                    overview.actionsRewarded,
+                    appId.value,
+                    date,
+                ) + 1
+        }
+
+        return UserAppOverview(
+            wallet = normalizedEntity,
+            appId = appId.value,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
+            roundId = null,
+        )
+    }
+
+    open fun getRoundUserAppOverview(wallet: Address, appId: AppId, roundId: Int): UserAppOverview {
+        val normalizedEntity = HexUtils.normalise(wallet.value)
+        val overview =
+            appRoundRepo.findByAppIdAndUserAndRoundId(appId.value, normalizedEntity, roundId)
+
+        var rankByActionsRewarded: Long? = null
+        var rankByReward: Long? = null
+
+        if (overview != null) {
+            // Calculate the position by totalRewardAmount
+            rankByReward =
+                appRoundRepo.countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
+                    overview.totalRewardAmount,
+                    appId.value,
+                    roundId,
+                ) + 1
+
+            // Calculate the position by actionsRewarded
+            rankByActionsRewarded =
+                appRoundRepo.countByActionsRewardedGreaterThanAndAppIdAndRoundId(
+                    overview.actionsRewarded,
+                    appId.value,
+                    roundId,
+                ) + 1
+        }
+
+        return UserAppOverview(
+            wallet = normalizedEntity,
+            appId = appId.value,
+            roundId = roundId,
+            totalRewardAmount = overview?.totalRewardAmount?.toDouble() ?: 0.0,
+            actionsRewarded = overview?.actionsRewarded ?: 0,
+            totalImpact = overview?.totalImpact,
+            rankByReward = rankByReward,
+            rankByActionsRewarded = rankByActionsRewarded,
         )
     }
 
