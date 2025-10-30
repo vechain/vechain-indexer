@@ -30,7 +30,7 @@
     },
     {
       "name": "amount",
-      "eventName": "rewardsClaimedEvent",
+      "eventName": "fundsDistributed",
       "businessEventName": "amount"
     }
   ]
