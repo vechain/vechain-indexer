@@ -23,7 +23,7 @@ interface AppAllTimeActionSummaryRepository :
 
     @Cacheable(
         value = ["app_all_time_action_countByTotalRewardAmountGreaterThanAndAppId"],
-        key = "#totalRewardAmount + '-' + #appId",
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId",
     )
     fun countByTotalRewardAmountGreaterThanAndAppId(
         totalRewardAmount: java.math.BigDecimal,
