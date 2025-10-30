@@ -56,6 +56,24 @@ open class UserDailyActionSummaryCollectionConfig(
                 "entity_-1" to Index().on("entity", Sort.Direction.DESC),
                 "date_-1" to Index().on("date", Sort.Direction.DESC),
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "entityType_-1_actionsRewarded_-1" to
+                    Index()
+                        .on("entityType", Sort.Direction.DESC)
+                        .on("actionsRewarded", Sort.Direction.DESC),
+                "entityType_-1_totalRewardAmount_-1" to
+                    Index()
+                        .on("entityType", Sort.Direction.DESC)
+                        .on("totalRewardAmount", Sort.Direction.DESC),
+                "entityType_-1_date_-1_actionsRewarded_-1" to
+                    Index()
+                        .on("entityType", Sort.Direction.DESC)
+                        .on("date", Sort.Direction.DESC)
+                        .on("actionsRewarded", Sort.Direction.DESC),
+                "entityType_-1_date_-1_totalRewardAmount_-1" to
+                    Index()
+                        .on("entityType", Sort.Direction.DESC)
+                        .on("date", Sort.Direction.DESC)
+                        .on("totalRewardAmount", Sort.Direction.DESC),
             )
         )
     }
