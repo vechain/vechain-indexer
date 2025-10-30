@@ -24,14 +24,12 @@ open class NftService(private val nftRepository: NftRepository) {
                     owner.value,
                     contractAddress.value,
                     tokenId,
-                    excludeCollectionsList,
                     pageable,
                 )
             } else {
                 nftRepository.findByOwnerAndContractAddress(
                     owner.value,
                     contractAddress.value,
-                    excludeCollectionsList,
                     pageable,
                 )
             }

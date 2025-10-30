@@ -19,7 +19,6 @@ interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, Stri
     fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
-        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft>
 
@@ -27,7 +26,6 @@ interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, Stri
         owner: String,
         contractAddress: String,
         tokenId: String,
-        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft>
 

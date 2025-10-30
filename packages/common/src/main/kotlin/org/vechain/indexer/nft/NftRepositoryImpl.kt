@@ -39,9 +39,7 @@ open class NftRepositoryImpl(
             Criteria.where(IndexedNft::owner.name)
                 .`is`(owner)
                 .and(IndexedNft::contractAddress.name)
-                .`is`(contractAddress)
-                .and(IndexedNft::contractAddress.name)
-                .`nin`(excludeCollections),
+                .`is`(contractAddress),
             pageable,
         )
 
@@ -49,7 +47,6 @@ open class NftRepositoryImpl(
         owner: String,
         contractAddress: String,
         tokenId: String,
-        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft> =
         findNotBlacklisted(
@@ -58,9 +55,7 @@ open class NftRepositoryImpl(
                 .and(IndexedNft::contractAddress.name)
                 .`is`(contractAddress)
                 .and(IndexedNft::tokenId.name)
-                .`is`(tokenId)
-                .and(IndexedNft::contractAddress.name)
-                .`nin`(excludeCollections),
+                .`is`(tokenId),
             pageable,
         )
 
