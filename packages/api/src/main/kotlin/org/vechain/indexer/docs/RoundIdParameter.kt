@@ -9,7 +9,8 @@ import org.springframework.core.annotation.AliasFor
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
     name = "roundId",
-    schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
+    schema =
+        Schema(type = "integer", format = "int32", minimum = "0", maximum = "${Int.MAX_VALUE}"),
     description = "Round ID to filter by.",
 )
 annotation class RoundIdParameter(
