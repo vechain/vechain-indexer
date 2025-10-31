@@ -31,10 +31,10 @@ alb:
   # Listener Rules Configuration
   listener_rules:
     - name: "api-rules"
-      path_patterns: ["/api/v*"]
+      path_patterns: ["/api/v*","/api-docs"]
       priority: 0
     - name: "swagger-ui"
-      path_patterns: ["/swagger-ui/*","/api-docs"]
+      path_patterns: ["/swagger-ui/*"]
       priority: 1
       enabled: true
       use_default_tg_group: true
