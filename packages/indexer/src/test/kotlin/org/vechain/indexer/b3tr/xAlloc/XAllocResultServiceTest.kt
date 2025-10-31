@@ -480,7 +480,7 @@ internal class XAllocResultServiceTest {
         // Voters and votesReceived should remain from existing record
         assertEquals(5, u.voters)
         assertEquals(BigInteger.valueOf(100), u.votesReceived)
-        // Allocation amounts should be updated
+        // Allocation amounts should be accumulated
         assertEquals(BigDecimal("2.000000000000000000"), u.totalAmount)
         assertEquals(BigDecimal("0.400000000000000000"), u.unallocatedAmount)
         assertEquals(BigDecimal("0.600000000000000000"), u.teamAllocationAmount)
@@ -490,6 +490,62 @@ internal class XAllocResultServiceTest {
         assertEquals(100L, u.blockTimestamp)
 
         // Existing record should be archived
+        assertEquals(1, archived.size)
+        assertEquals(existingRecord, archived.first())
+    }
+
+    @Test
+    fun `processEvents accumulates allocation amounts from multiple ClaimReward events`() {
+        val existingRecord =
+            XAllocResult(
+                version = 1,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 3,
+                appId = "accumulateApp",
+                voters = 0,
+                votesReceived = BigInteger.ZERO,
+                totalAmount = BigDecimal("1.000000000000000000"), // 1
+                unallocatedAmount = BigDecimal("0.200000000000000000"), // 0.2
+                teamAllocationAmount = BigDecimal("0.300000000000000000"), // 0.3
+                rewardsAllocationAmount = BigDecimal("0.500000000000000000"), // 0.5
+            )
+
+        val claimEvent =
+            buildIndexedEvent(
+                id = "claim-2",
+                blockNumber = 10L,
+                blockTimestamp = 100L,
+                blockId = "block-10",
+                eventType = "B3TR_XAllocationRewardsClaimed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 3,
+                                "appId" to "accumulateApp",
+                                "totalAmount" to BigInteger("1500000000000000000"), // 1.5
+                                "unallocatedAmount" to BigInteger("300000000000000000"), // 0.3
+                                "teamAllocationAmount" to BigInteger("400000000000000000"), // 0.4
+                                "rewardsAllocationAmount" to BigInteger("800000000000000000"), // 0.8
+                            )
+                    ),
+            )
+
+        every { repository.findByIdOrNull(any()) } returns existingRecord
+
+        val (updated, archived) = service.processEvents(listOf(claimEvent))
+
+        assertEquals(1, updated.size)
+        val u = updated.first()
+        assertEquals(2, u.version)
+        // Amounts should be accumulated (added together)
+        assertEquals(BigDecimal("2.500000000000000000"), u.totalAmount)
+        assertEquals(BigDecimal("0.500000000000000000"), u.unallocatedAmount)
+        assertEquals(BigDecimal("0.700000000000000000"), u.teamAllocationAmount)
+        assertEquals(BigDecimal("1.300000000000000000"), u.rewardsAllocationAmount)
+
         assertEquals(1, archived.size)
         assertEquals(existingRecord, archived.first())
     }
@@ -561,5 +617,182 @@ internal class XAllocResultServiceTest {
         // One archived snapshot from vote processing
         assertEquals(1, archived.size)
         assertEquals(1, archived.first().version)
+    }
+
+    @Test
+    fun `processEvents creates new record from DBAFundsDistributed event`() {
+        val dbaEvent =
+            buildIndexedEvent(
+                id = "dba-1",
+                blockNumber = 7L,
+                blockTimestamp = 77L,
+                blockId = "block-7",
+                eventType = "B3TR_DBAFundsDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 5,
+                                "appId" to "dbaApp",
+                                "amount" to BigInteger("3000000000000000000"), // 3
+                            )
+                    ),
+            )
+
+        every { repository.findByIdOrNull(any()) } returns null
+
+        val (updated, archived) = service.processEvents(listOf(dbaEvent))
+
+        assertEquals(1, updated.size)
+        val u = updated.first()
+        assertEquals(1, u.version)
+        assertEquals(5, u.roundId)
+        assertEquals("dbaApp", u.appId)
+        assertEquals(0, u.voters) // No voters from DBA event
+        assertEquals(BigInteger.ZERO, u.votesReceived)
+        assertEquals(BigDecimal("3.000000000000000000"), u.totalAmount)
+        assertEquals(null, u.unallocatedAmount) // Not set in DBA events
+        assertEquals(null, u.teamAllocationAmount) // Not set in DBA events
+        assertEquals(null, u.rewardsAllocationAmount) // Not set in DBA events
+        assertEquals("block-7", u.blockId)
+        assertEquals(7L, u.blockNumber)
+        assertEquals(77L, u.blockTimestamp)
+        assertEquals(0, archived.size)
+    }
+
+    @Test
+    fun `processEvents accumulates amounts from multiple DBAFundsDistributed events`() {
+        val existingRecord =
+            XAllocResult(
+                version = 1,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 5,
+                appId = "dbaApp",
+                voters = 0,
+                votesReceived = BigInteger.ZERO,
+                totalAmount = BigDecimal("2.000000000000000000"), // 2
+            )
+
+        val dbaEvent =
+            buildIndexedEvent(
+                id = "dba-2",
+                blockNumber = 8L,
+                blockTimestamp = 88L,
+                blockId = "block-8",
+                eventType = "B3TR_DBAFundsDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 5,
+                                "appId" to "dbaApp",
+                                "amount" to BigInteger("1500000000000000000"), // 1.5
+                            )
+                    ),
+            )
+
+        every { repository.findByIdOrNull(any()) } returns existingRecord
+
+        val (updated, archived) = service.processEvents(listOf(dbaEvent))
+
+        assertEquals(1, updated.size)
+        val u = updated.first()
+        assertEquals(2, u.version)
+        // Total amount should be accumulated (2 + 1.5 = 3.5)
+        assertEquals(BigDecimal("3.500000000000000000"), u.totalAmount)
+        assertEquals("block-8", u.blockId)
+        assertEquals(8L, u.blockNumber)
+        assertEquals(88L, u.blockTimestamp)
+
+        // Existing record should be archived
+        assertEquals(1, archived.size)
+        assertEquals(existingRecord, archived.first())
+    }
+
+    @Test
+    fun `processEvents handles vote, claim, and DBA events together`() {
+        val voteEvent =
+            buildIndexedEvent(
+                id = "vote-1",
+                blockNumber = 20L,
+                blockTimestamp = 200L,
+                blockId = "block-20",
+                eventType = "B3TR_XAllocationVote",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 6,
+                                "appsIds" to listOf("multiApp"),
+                                "voteWeights" to listOf(BigInteger.valueOf(100)),
+                            )
+                    ),
+            )
+
+        val claimEvent =
+            buildIndexedEvent(
+                id = "claim-1",
+                blockNumber = 21L,
+                blockTimestamp = 210L,
+                blockId = "block-21",
+                eventType = "B3TR_XAllocationRewardsClaimed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 6,
+                                "appId" to "multiApp",
+                                "totalAmount" to BigInteger("5000000000000000000"), // 5
+                                "unallocatedAmount" to BigInteger("1000000000000000000"), // 1
+                                "teamAllocationAmount" to BigInteger("1500000000000000000"), // 1.5
+                                "rewardsAllocationAmount" to
+                                    BigInteger("2500000000000000000"), // 2.5
+                            )
+                    ),
+            )
+
+        val dbaEvent =
+            buildIndexedEvent(
+                id = "dba-1",
+                blockNumber = 22L,
+                blockTimestamp = 220L,
+                blockId = "block-22",
+                eventType = "B3TR_DBAFundsDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 6,
+                                "appId" to "multiApp",
+                                "amount" to BigInteger("2000000000000000000"), // 2
+                            )
+                    ),
+            )
+
+        every { repository.findByIdOrNull(any()) } returns null
+
+        val (updated, archived) = service.processEvents(listOf(voteEvent, claimEvent, dbaEvent))
+
+        assertEquals(1, updated.size)
+        val u = updated.first()
+        assertEquals(3, u.version) // Updated 3 times
+        assertEquals(6, u.roundId)
+        assertEquals("multiApp", u.appId)
+        // From vote event
+        assertEquals(1, u.voters)
+        assertEquals(BigInteger.valueOf(100), u.votesReceived)
+        // From claim and DBA events (claim sets it to 5, DBA adds 2)
+        assertEquals(BigDecimal("7.000000000000000000"), u.totalAmount)
+        assertEquals(BigDecimal("1.000000000000000000"), u.unallocatedAmount)
+        assertEquals(BigDecimal("1.500000000000000000"), u.teamAllocationAmount)
+        assertEquals(BigDecimal("2.500000000000000000"), u.rewardsAllocationAmount)
+        // Block info from final event
+        assertEquals("block-22", u.blockId)
+        assertEquals(22L, u.blockNumber)
+        assertEquals(220L, u.blockTimestamp)
+        // Two archived snapshots
+        assertEquals(2, archived.size)
     }
 }
