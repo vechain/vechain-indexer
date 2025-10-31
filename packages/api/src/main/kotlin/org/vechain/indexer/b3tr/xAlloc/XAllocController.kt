@@ -30,8 +30,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
         name = "roundId",
         description = "Round ID to filter by.",
         required = true,
-        schema =
-            Schema(type = "integer", format = "int32", minimum = "0", maximum = "${Int.MAX_VALUE}"),
+        schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
         example = "2",
     )
     @Parameter(
@@ -84,8 +83,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
             "Optional round ID to filter by. If omitted, must provide appId. Returns earnings for " +
                 "the specified round (across all apps if appId is also omitted).",
         required = false,
-        schema =
-            Schema(type = "integer", format = "int32", minimum = "0", maximum = "${Int.MAX_VALUE}"),
+        schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
         example = "2",
     )
     @CommonApiResponses
