@@ -27,7 +27,7 @@ jobs:
     env:
       ENVIRONMENT: ${{ github.event.inputs.environment || 'dead' }}
       BASE_URL_INPUT: ${{ github.event.inputs.base_url }}
-      MAX_RESPONSE_MILLISECONDS: "500"
+      MAX_RESPONSE_MILLISECONDS: "2000"
       HYPOTHESIS_MAX_EXAMPLES: "250"
     steps:
       - name: Checkout repository

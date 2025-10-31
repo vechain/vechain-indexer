@@ -132,4 +132,15 @@ internal class PaginationUtilsTest {
                 .isEqualTo("Page size must be greater than zero")
         }
     }
+
+    @Test
+    fun `should throw bad request exception when page exceeds max`() {
+        expect {
+            catching { PaginationUtils.toPageable(10_001, 20) }
+                .isFailure()
+                .isA<BadRequestException>()
+                .get(BadRequestException::message)
+                .isEqualTo("Page index must be less than or equal to 10000")
+        }
+    }
 }

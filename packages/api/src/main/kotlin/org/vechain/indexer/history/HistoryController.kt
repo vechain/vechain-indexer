@@ -18,6 +18,7 @@ import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -150,19 +151,21 @@ open class HistoryController(private val historyService: HistoryService) {
         val mappedInputs: List<String>? = HistoryUtils.mapInputToNew(eventName)
 
         // Validate query parameters
-        val validatedEventNames: List<String> =
+        val validatedEventNames: List<String> = validateOrBadRequest {
             ArrayValidationUtils.validateArray(
                 input = mappedInputs,
                 allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
                 fieldName = "eventName",
             )
+        }
 
-        val validatedSearchFields =
+        val validatedSearchFields = validateOrBadRequest {
             ArrayValidationUtils.validateArray(
                 input = searchBy,
                 allowedValues = setOf("to", "from", "origin", "gasPayer"),
                 fieldName = "searchBy",
             )
+        }
 
         TimeValidationUtils.validateTimestamps(after, before)
 
@@ -269,19 +272,21 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedHistoryEvent> {
         // Validate query parameters
-        val validatedEventNames =
+        val validatedEventNames = validateOrBadRequest {
             ArrayValidationUtils.validateArray(
                 input = eventName,
                 allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
                 fieldName = "eventName",
             )
+        }
 
-        val validatedSearchFields =
+        val validatedSearchFields = validateOrBadRequest {
             ArrayValidationUtils.validateArray(
                 input = searchBy,
                 allowedValues = setOf("to", "from", "origin", "gasPayer"),
                 fieldName = "searchBy",
             )
+        }
 
         TimeValidationUtils.validateTimestamps(after, before)
 
@@ -383,12 +388,13 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedHistoryEvent> {
         // Validate query parameters
-        val validatedEventNames =
+        val validatedEventNames = validateOrBadRequest {
             ArrayValidationUtils.validateArray(
                 input = eventName,
                 allowedValues = allowedTokenNames,
                 fieldName = "eventName",
             )
+        }
 
         TimeValidationUtils.validateTimestamps(after, before)
 
@@ -411,6 +417,13 @@ open class HistoryController(private val historyService: HistoryService) {
             )
         )
     }
+
+    private fun <T> validateOrBadRequest(block: () -> T): T =
+        try {
+            block()
+        } catch (ex: IllegalArgumentException) {
+            throw BadRequestException(ex.message ?: "Invalid request parameters")
+        }
 
     private val allowedTokenNames: Set<String> =
         setOf(

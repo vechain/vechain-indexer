@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -81,6 +82,11 @@ open class NftController(private val nftService: NftService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedNft> {
+        validateAddress("address", address)
+        validateAddress("contractAddress", contractAddress)
+        validateAddressList("excludeCollections", excludeCollections)
+        validateTokenId(tokenId)
+
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
@@ -128,10 +134,31 @@ open class NftController(private val nftService: NftService) {
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
+        validateAddress("owner", owner)
+        validateAddressList("excludeCollections", excludeCollections)
+
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
             nftService.findContractsByNftOwner(owner, excludeCollections, pageable)
         )
+    }
+
+    private val tokenIdPattern = Regex("^[A-Za-z0-9_.:-]+$")
+
+    private fun validateAddress(paramName: String, address: Address?) {
+        if (address != null && !address.isValid()) {
+            throw BadRequestException("Invalid $paramName: ${address.value}")
+        }
+    }
+
+    private fun validateAddressList(paramName: String, addresses: List<Address>?) {
+        addresses?.forEach { validateAddress(paramName, it) }
+    }
+
+    private fun validateTokenId(tokenId: String?) {
+        if (!tokenId.isNullOrBlank() && !tokenIdPattern.matches(tokenId)) {
+            throw BadRequestException("Invalid tokenId: $tokenId")
+        }
     }
 }
