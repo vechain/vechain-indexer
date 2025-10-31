@@ -11,6 +11,10 @@ on:
         options:
           - dead
           - live
+      base_url:
+        description: "Override base URL (http/https). Leave blank to use the selected environment"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +26,7 @@ jobs:
     timeout-minutes: 45
     env:
       ENVIRONMENT: ${{ github.event.inputs.environment || 'dead' }}
+      BASE_URL_INPUT: ${{ github.event.inputs.base_url }}
       MAX_RESPONSE_MILLISECONDS: "500"
       HYPOTHESIS_MAX_EXAMPLES: "250"
     steps:
@@ -33,26 +38,36 @@ jobs:
         shell: bash
         run: |
           env_name="${ENVIRONMENT:-dead}"
-          case "$env_name" in
-            dead)
-              base_url="https://mainnet.dead.prod.veworld.vechain.org"
-              ;;
-            live)
-              base_url="https://indexer.mainnet.vechain.org"
-              ;;
-            *)
-              echo "Unsupported environment: $env_name" >&2
-              exit 1
-              ;;
-          esac
+          base_url="${BASE_URL_INPUT:-}"
+          if [[ -z "$base_url" ]]; then
+            case "$env_name" in
+              dead)
+                base_url="https://mainnet.dead.prod.vechain.org"
+                ;;
+              live)
+                base_url="https://indexer.mainnet.vechain.org"
+                ;;
+              *)
+                echo "Unsupported environment: $env_name" >&2
+                exit 1
+                ;;
+            esac
+            summary_env="$env_name"
+          else
+            summary_env="custom"
+          fi
+
+          base_url="${base_url%/}"
+          schema_url="$base_url/api-docs"
+
           echo "environment=$env_name" >> "$GITHUB_OUTPUT"
           echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
-          echo "schema_url=$base_url/api-docs" >> "$GITHUB_OUTPUT"
+          echo "schema_url=$schema_url" >> "$GITHUB_OUTPUT"
           {
             echo "### API contract run"
-            echo "- Environment: $env_name"
+            echo "- Environment: $summary_env"
             echo "- Base URL: $base_url"
-            echo "- Schema: $base_url/api-docs"
+            echo "- Schema: $schema_url"
             echo "- Max response (ms): $MAX_RESPONSE_MILLISECONDS"
             echo "- Hypothesis examples: $HYPOTHESIS_MAX_EXAMPLES"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -69,6 +84,7 @@ jobs:
         run: |
           mkdir -p .schemathesis
           scripts/run_api_contract_tests.sh "${{ steps.resolve.outputs.environment }}" \
+            --base-url "${{ steps.resolve.outputs.base_url }}" \
             --store-network-log=./.schemathesis/network.log \
             --junit-xml=./.schemathesis/results.xml
 
