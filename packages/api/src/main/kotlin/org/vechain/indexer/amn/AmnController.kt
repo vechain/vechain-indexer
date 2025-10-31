@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
+import java.util.Optional
 import org.springframework.context.annotation.Profile
+import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -32,9 +34,11 @@ open class AmnController(private val amnApiEndorserService: AmnApiEndorserServic
         name = "user",
         description = "User address to check if they are an endorser.",
         required = true,
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
     )
     @CommonApiResponses
-    open fun checkUserIsEndorser(@ValidAddress @PathVariable user: Address): AmnEndorser? =
-        amnApiEndorserService.findByEndorser(user.value)
+    open fun checkUserIsEndorser(
+        @ValidAddress @PathVariable user: Address
+    ): ResponseEntity<AmnEndorser> =
+        ResponseEntity.of(Optional.ofNullable(amnApiEndorserService.findByEndorser(user.value)))
 }

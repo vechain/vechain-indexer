@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -53,14 +54,18 @@ open class NftController(private val nftService: NftService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
         description = "The NFT tokenId",
         required = false,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "excludeCollections",
-        schema = Schema(type = "array"),
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                maxItems = 20,
+            ),
         description = "The addresses of the collections to exclude. Max 20 collections.",
         required = false,
         example = "[\"0x1234567890123456789012345678901234567890\"]",
@@ -105,11 +110,16 @@ open class NftController(private val nftService: NftService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "excludeCollections",
-        schema = Schema(type = "array"),
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                maxItems = 20,
+            ),
         description = "The addresses of the collections to exclude. Max 20 collections.",
         required = false,
         example = "[\"0x1234567890123456789012345678901234567890\"]",
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getContractsByNFTOwner(
         @ValidAddress @RequestParam owner: Address,

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.EXPLORER_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.exception.BadRequestException
 
 @Profile("explorer", "block-usage")
 @Tag(name = "Explorer", description = "Blockchain explorer analytics")
@@ -71,6 +72,11 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
         @RequestParam startTimestamp: Long,
         @RequestParam endTimestamp: Long,
     ): List<BlockUsage> {
+        if (endTimestamp < startTimestamp) {
+            throw BadRequestException(
+                "endTimestamp must be greater than or equal to startTimestamp"
+            )
+        }
         return blockUsageService.getBlockUsage(startTimestamp, endTimestamp)
     }
 }

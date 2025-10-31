@@ -220,7 +220,15 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "eventName",
-        array = ArraySchema(schema = Schema(implementation = HistoryEventName::class)),
+        array =
+            ArraySchema(
+                schema =
+                    Schema(
+                        type = "string",
+                        description =
+                            "Filter by specific transaction names. See HistoryEventName for the full list.",
+                    )
+            ),
         description = "Filter by specific transaction names.",
         required = false,
     )
@@ -303,7 +311,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "tokenId",
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
         description = "A valid account tokenId",
         required = true,
     )

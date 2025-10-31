@@ -45,7 +45,13 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+        schema =
+            Schema(
+                type = "integer",
+                format = "int64",
+                minimum = "0",
+                maximum = "9223372036854775807",
+            ),
         description =
             "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, " +
                 "the latest value will be returned.",
@@ -106,7 +112,13 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+        schema =
+            Schema(
+                type = "integer",
+                format = "int64",
+                minimum = "0",
+                maximum = "9223372036854775807",
+            ),
         description =
             "Optional query parameter to get the total number of NFT holders at a specific block number. If not " +
                 "provided, the latest value will be returned.",
@@ -190,7 +202,13 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+        schema =
+            Schema(
+                type = "integer",
+                format = "int64",
+                minimum = "0",
+                maximum = "9223372036854775807",
+            ),
         description =
             "Optional query parameter to get the total VET staked at a specific block number. If not provided, the" +
                 " latest value will be returned.",
@@ -277,7 +295,13 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+        schema =
+            Schema(
+                type = "integer",
+                format = "int64",
+                minimum = "0",
+                maximum = "9223372036854775807",
+            ),
         description =
             "Optional query parameter to get the total VTHO generated at a specific block number. If not provided, " +
                 "the latest value will be returned.",
@@ -354,7 +378,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
         description = "Optional query parameter to filter by token ID",
         required = false,
         example = "100001",
@@ -408,7 +432,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "tokenId",
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
         description = "The tokenId to query for rewards",
         required = true,
         example = "10001",

@@ -3,6 +3,7 @@ package org.vechain.indexer.transfer
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -146,7 +147,12 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "addresses",
-        schema = Schema(type = "array"),
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                minItems = 1,
+                maxItems = 20,
+            ),
         description = "Addresses to query. Max 20 addresses",
         required = true,
         example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]",
@@ -154,7 +160,13 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+        schema =
+            Schema(
+                type = "integer",
+                format = "int64",
+                minimum = "0",
+                maximum = "9223372036854775807",
+            ),
         description = "Block number to query",
         required = true,
         example = "1000000",

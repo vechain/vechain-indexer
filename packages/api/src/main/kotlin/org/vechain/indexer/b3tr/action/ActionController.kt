@@ -1,7 +1,5 @@
 package org.vechain.indexer.b3tr.action
 
-import DateParameter
-import RoundIdParameter
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -23,7 +21,9 @@ import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -60,6 +60,7 @@ open class ActionController(private val service: ActionService) {
         description = "Return transactions before this timestamp (Unix time in milliseconds).",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getUserActions(
         @ValidAddress @PathVariable(required = true) wallet: Address,
@@ -110,6 +111,7 @@ open class ActionController(private val service: ActionService) {
         description = "Return transactions before this timestamp (Unix time in milliseconds).",
         required = false,
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getAppActions(
         @ValidAppId @PathVariable(required = true) appId: AppId,
@@ -148,7 +150,7 @@ open class ActionController(private val service: ActionService) {
     @CommonApiResponses
     open fun getUserOverview(
         @ValidAddress @PathVariable wallet: Address,
-        @RequestParam(required = false) roundId: Int?,
+        @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
     ): UserOverview {
         if (roundId != null && date != null) {
@@ -188,7 +190,7 @@ open class ActionController(private val service: ActionService) {
     open fun getUserAppOverview(
         @ValidAddress @PathVariable wallet: Address,
         @ValidAppId @PathVariable appId: AppId,
-        @RequestParam(required = false) roundId: Int?,
+        @RoundIdParameter @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
     ): UserAppOverview {
         if (roundId != null && date != null) {

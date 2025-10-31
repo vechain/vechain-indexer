@@ -3,7 +3,7 @@ package org.vechain.indexer.thor
 data class Address(val value: String) {
 
     companion object {
-        const val REGEX = "^(0x)?[0-9a-fA-F]{40}\$"
+        const val REGEX = """^(0x)?[0-9a-fA-F]{40}$"""
         const val ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
     }
 

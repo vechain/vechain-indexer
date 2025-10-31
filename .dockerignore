@@ -50,5 +50,6 @@ node_modules/
 packages/**/.env
 packages/**/.env.*
 
+.schemathesis/
 .hypothesis/
 .venv-schemathesis/
