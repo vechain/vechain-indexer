@@ -6,7 +6,7 @@ project_name: "veworld"
 region: "eu-west-1"
 
 # CloudFront Distribution Configuration
-enable_continuous_deployment: false
+enable_continuous_deployment: true
 mainnet_origin_domain: "mainnet.live.prod.veworld.vechain.org"
 testnet_origin_domain: "testnet.live.prod.veworld.vechain.org"
 
