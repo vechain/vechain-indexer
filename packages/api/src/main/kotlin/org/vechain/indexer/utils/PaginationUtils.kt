@@ -33,11 +33,6 @@ object PaginationUtils {
             throw BadRequestException("Page size must be greater than zero")
         }
 
-        val requestedOffset = pageNumber.toLong() * pageSize.toLong()
-        if (requestedOffset > Int.MAX_VALUE) {
-            throw BadRequestException("Requested page is too large")
-        }
-
         return PageRequest.of(pageNumber, pageSize, Sort.by(toSortDirection(direction), *fields))
     }
 
