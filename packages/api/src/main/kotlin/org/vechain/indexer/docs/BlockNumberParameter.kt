@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.core.annotation.AliasFor
 
 @Target(
-    AnnotationTarget.FUNCTION,
     AnnotationTarget.VALUE_PARAMETER,
+    AnnotationTarget.FUNCTION,
     AnnotationTarget.ANNOTATION_CLASS,
 )
 @Retention(AnnotationRetention.RUNTIME)

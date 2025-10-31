@@ -58,9 +58,6 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        validateAddress("address", address)
-        validateAddress("tokenAddress", tokenAddress)
-
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         val resultsPage =
@@ -102,9 +99,6 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        validateAddress("address", address)
-        validateAddress("tokenAddress", tokenAddress)
-
         return paginatedResponse(
             transferEventService.findByFrom(
                 address,
@@ -140,9 +134,6 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        validateAddress("address", address)
-        validateAddress("tokenAddress", tokenAddress)
-
         return paginatedResponse(
             transferEventService.findByTo(
                 address,
@@ -181,8 +172,6 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        validateAddressList("addresses", addresses)
-
         return paginatedResponse(
             transferEventService.findByBlockNumber(
                 blockNumber,
@@ -219,8 +208,6 @@ open class TransferEventController(private val transferEventService: TransferEve
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
-        validateAddress("address", address)
-
         return paginatedResponse(
             transferEventService.findFungibleTokensContractsByAddress(
                 address,
@@ -228,15 +215,5 @@ open class TransferEventController(private val transferEventService: TransferEve
                 PaginationUtils.toPageable(page, size, direction),
             )
         )
-    }
-
-    private fun validateAddress(paramName: String, address: Address?) {
-        if (address != null && !address.isValid()) {
-            throw BadRequestException("Invalid $paramName: ${address.value}")
-        }
-    }
-
-    private fun validateAddressList(paramName: String, addresses: List<Address>) {
-        addresses.forEach { validateAddress(paramName, it) }
     }
 }

@@ -18,14 +18,15 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
-import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidAddressList
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTokenId
 
 @Profile("nfts")
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -76,17 +77,12 @@ open class NftController(private val nftService: NftService) {
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) tokenId: String?,
-        @RequestParam(required = false) excludeCollections: List<Address>?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
+        @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedNft> {
-        validateAddress("address", address)
-        validateAddress("contractAddress", contractAddress)
-        validateAddressList("excludeCollections", excludeCollections)
-        validateTokenId(tokenId)
-
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
@@ -129,36 +125,15 @@ open class NftController(private val nftService: NftService) {
     @PaginationParameters
     open fun getContractsByNFTOwner(
         @ValidAddress @RequestParam owner: Address,
-        @RequestParam(required = false) excludeCollections: List<Address>?,
+        @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
-        validateAddress("owner", owner)
-        validateAddressList("excludeCollections", excludeCollections)
-
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
             nftService.findContractsByNftOwner(owner, excludeCollections, pageable)
         )
-    }
-
-    private val tokenIdPattern = Regex("^[A-Za-z0-9_.:-]+$")
-
-    private fun validateAddress(paramName: String, address: Address?) {
-        if (address != null && !address.isValid()) {
-            throw BadRequestException("Invalid $paramName: ${address.value}")
-        }
-    }
-
-    private fun validateAddressList(paramName: String, addresses: List<Address>?) {
-        addresses?.forEach { validateAddress(paramName, it) }
-    }
-
-    private fun validateTokenId(tokenId: String?) {
-        if (!tokenId.isNullOrBlank() && !tokenIdPattern.matches(tokenId)) {
-            throw BadRequestException("Invalid tokenId: $tokenId")
-        }
     }
 }
