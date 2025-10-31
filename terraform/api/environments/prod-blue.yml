@@ -31,10 +31,10 @@ alb:
   # Listener Rules Configuration
   listener_rules:
     - name: "api-rules"
-      path_patterns: ["/api/v*"]
+      path_patterns: ["/api/v*","/api-docs"]
       priority: 0
     - name: "swagger-ui"
-      path_patterns: ["/swagger-ui/*","/api-docs"]
+      path_patterns: ["/swagger-ui/*"]
       priority: 1
       enabled: true
       use_default_tg_group: true
@@ -219,7 +219,7 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
           STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
           VEVOTE_CONTRACT: '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
-          STARGATE_CONTRACT: '0x0000000000000000000000000000000000000000'
+          STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
       log_metric_filters:
@@ -416,7 +416,7 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x7240e3bc0d26431512d5b67dbd26d199205bffe8'
           STARGATE_NFT_CONTRACT: '0x1ec1d168574603ec35b9d229843b7c2b44bcb770'
           VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
-          STARGATE_CONTRACT: '0x0000000000000000000000000000000000000000'
+          STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
       log_metric_filters:
