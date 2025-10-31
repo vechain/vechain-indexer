@@ -14,7 +14,7 @@ import org.springframework.core.annotation.AliasFor
 @Parameter(
     name = "blockNumber",
     schema =
-        Schema(type = "integer", format = "int64", minimum = "0", maximum = "9223372036854775807"),
+        Schema(type = "integer", format = "int64", minimum = "0", maximum = "${Long.MAX_VALUE}"),
 )
 annotation class BlockNumberParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
