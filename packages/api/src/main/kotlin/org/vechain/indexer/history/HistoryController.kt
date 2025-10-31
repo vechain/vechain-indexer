@@ -121,7 +121,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "after",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions after and including this timestamp (Unix time in seconds).",
         required = false,
@@ -129,7 +129,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "before",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,
@@ -234,7 +234,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "after",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions after and including this timestamp (Unix time in seconds).",
         required = false,
@@ -242,7 +242,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "before",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,
@@ -349,7 +349,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "after",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions after and including this timestamp (Unix time in seconds).",
         required = false,
@@ -357,7 +357,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "before",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Return transactions before and including this timestamp (Unix time in seconds).",
         required = false,

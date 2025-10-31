@@ -45,7 +45,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, " +
                 "the latest value will be returned.",
@@ -106,7 +106,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional query parameter to get the total number of NFT holders at a specific block number. If not " +
                 "provided, the latest value will be returned.",
@@ -190,7 +190,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional query parameter to get the total VET staked at a specific block number. If not provided, the" +
                 " latest value will be returned.",
@@ -277,7 +277,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional query parameter to get the total VTHO generated at a specific block number. If not provided, " +
                 "the latest value will be returned.",
@@ -324,7 +324,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional query parameter to get the total VET delegated at a specific block number. If not provided, the" +
                 " latest value will be returned.",

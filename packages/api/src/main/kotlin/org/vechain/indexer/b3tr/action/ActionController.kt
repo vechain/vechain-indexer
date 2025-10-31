@@ -49,14 +49,14 @@ open class ActionController(private val service: ActionService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "after",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description = "Return transactions after this timestamp (Unix time in milliseconds).",
         required = false,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "before",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description = "Return transactions before this timestamp (Unix time in milliseconds).",
         required = false,
     )
@@ -99,14 +99,14 @@ open class ActionController(private val service: ActionService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "after",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description = "Return transactions after this timestamp (Unix time in milliseconds).",
         required = false,
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "before",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description = "Return transactions before this timestamp (Unix time in milliseconds).",
         required = false,
     )

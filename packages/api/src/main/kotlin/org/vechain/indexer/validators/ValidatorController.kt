@@ -242,7 +242,7 @@ open class ValidatorController(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "blockNumber",
-        schema = Schema(type = "long"),
+        schema = Schema(type = "integer", format = "int64"),
         description =
             "Optional block number. If provided, returns the total VTHO rewards as of this block. ",
         required = false,
