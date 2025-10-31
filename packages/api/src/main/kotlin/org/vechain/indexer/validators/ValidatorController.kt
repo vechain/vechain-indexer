@@ -13,6 +13,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
+import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ExceptionResponse
@@ -239,14 +240,9 @@ open class ValidatorController(
             "Returns the block VTHO rewards generated for the specified block number or up to the latest block. " +
                 "You can optionally filter by a specific validator.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
+    @BlockNumberParameter(
         description =
-            "Optional block number. If provided, returns the total VTHO rewards as of this block. ",
-        required = false,
-        example = "12345678",
+            "Optional block number. If provided, returns the total VTHO rewards as of this block."
     )
     @Parameter(
         `in` = ParameterIn.QUERY,

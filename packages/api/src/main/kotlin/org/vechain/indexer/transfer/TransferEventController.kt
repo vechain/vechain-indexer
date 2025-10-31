@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
@@ -166,18 +167,9 @@ open class TransferEventController(private val transferEventService: TransferEve
         required = true,
         example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "blockNumber",
-        schema =
-            Schema(
-                type = "integer",
-                format = "int64",
-                minimum = "0",
-                maximum = "9223372036854775807",
-            ),
-        description = "Block number to query",
+    @BlockNumberParameter(
         required = true,
+        description = "Block number to query",
         example = "1000000",
     )
     @CommonApiResponses
