@@ -421,7 +421,7 @@ open class HistoryController(private val historyService: HistoryService) {
     private fun <T> validateOrBadRequest(block: () -> T): T =
         try {
             block()
-        } catch (ex: IllegalArgumentException) {
+        } catch (ex: RuntimeException) {
             throw BadRequestException(ex.message ?: "Invalid request parameters")
         }
 
