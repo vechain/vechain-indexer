@@ -170,7 +170,7 @@ enabled_nets:
         b3tr-user-round-action-summary: '4'
         b3tr-app-daily-action-summary: '4'
         b3tr-sustainability-action: '4'
-        b3tr-x-alloc-result: '5'
+        b3tr-x-alloc-result: '6'
         b3tr-gm-nft: '4'
         b3tr-gm-nft-level-overview: '4'
         block-usage: '2'

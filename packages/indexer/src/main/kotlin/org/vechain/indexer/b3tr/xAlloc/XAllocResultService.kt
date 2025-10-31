@@ -75,7 +75,7 @@ open class XAllocResultService(
                         val recordId = generateId("$roundId", appId)
                         val existing = resolveExisting(recordId, updatedResult)
                         val updated =
-                            createOrUpdateExisting(
+                            addOrCreateVoteResult(
                                 roundId = roundId,
                                 appId = appId,
                                 voters = aggregatedVote.voters,
@@ -99,7 +99,7 @@ open class XAllocResultService(
                         val recordId = generateId("$roundId", appId)
                         val existing = resolveExisting(recordId, updatedResult)
                         val updated =
-                            createOrUpdateExisting(
+                            addOrCreateRewardClaimResult(
                                 roundId = roundId,
                                 appId = appId,
                                 blockDetails = blockDetails,
@@ -120,18 +120,13 @@ open class XAllocResultService(
                         val amount = getAmountAsDecimal(event)
                         val recordId = generateId("$roundId", appId)
                         val existing = resolveExisting(recordId, updatedResult)
-                        // If the amount is zero and there is an existing record, we don't need to
-                        // update
-                        if (amount.compareTo(BigDecimal.ZERO) == 0 && existing != null) {
-                            return@forEach
-                        }
                         val updated =
-                            createOrUpdateExisting(
+                            addOrCreateDbaFundResult(
                                 roundId = roundId,
                                 appId = appId,
                                 blockDetails = blockDetails,
                                 existing = existing,
-                                totalAmount = amount,
+                                amount = amount,
                             )
                         updatedResult[recordId] = updated
                         existing?.let { archiveResult.add(it) }
@@ -142,36 +137,23 @@ open class XAllocResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
-    protected fun createOrUpdateExisting(
+    protected fun addOrCreateVoteResult(
         roundId: Int,
         appId: String,
         blockDetails: BlockDetails,
         existing: XAllocResult?,
-        voters: Long = 0,
-        votesReceived: BigInteger = BigInteger.ZERO,
-        totalAmount: BigDecimal? = null,
-        unallocatedAmount: BigDecimal? = null,
-        teamAllocationAmount: BigDecimal? = null,
-        rewardsAllocationAmount: BigDecimal? = null,
+        voters: Long,
+        votesReceived: BigInteger,
     ): XAllocResult {
-        return if (existing != null) {
-            XAllocResult(
-                version = existing.version + 1,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
-                roundId = roundId,
-                appId = appId,
-                voters = existing.voters + voters,
-                votesReceived = existing.votesReceived + votesReceived,
-                totalAmount = totalAmount ?: existing.totalAmount,
-                unallocatedAmount = unallocatedAmount ?: existing.unallocatedAmount,
-                teamAllocationAmount = teamAllocationAmount ?: existing.teamAllocationAmount,
-                rewardsAllocationAmount =
-                    rewardsAllocationAmount ?: existing.rewardsAllocationAmount,
-            )
-        } else {
-            XAllocResult(
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            voters = existing.voters + voters,
+            votesReceived = existing.votesReceived + votesReceived,
+        )
+            ?: XAllocResult(
                 version = 1,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
@@ -180,12 +162,81 @@ open class XAllocResultService(
                 appId = appId,
                 voters = voters,
                 votesReceived = votesReceived,
+                totalAmount = null,
+                unallocatedAmount = null,
+                teamAllocationAmount = null,
+                rewardsAllocationAmount = null,
+            )
+    }
+
+    protected fun addOrCreateRewardClaimResult(
+        roundId: Int,
+        appId: String,
+        blockDetails: BlockDetails,
+        existing: XAllocResult?,
+        totalAmount: BigDecimal,
+        unallocatedAmount: BigDecimal,
+        teamAllocationAmount: BigDecimal,
+        rewardsAllocationAmount: BigDecimal,
+    ): XAllocResult {
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            totalAmount = existing.totalAmount?.plus(totalAmount) ?: totalAmount,
+            unallocatedAmount =
+                existing.unallocatedAmount?.plus(unallocatedAmount) ?: unallocatedAmount,
+            teamAllocationAmount =
+                existing.teamAllocationAmount?.plus(teamAllocationAmount) ?: teamAllocationAmount,
+            rewardsAllocationAmount =
+                existing.rewardsAllocationAmount?.plus(rewardsAllocationAmount)
+                    ?: rewardsAllocationAmount,
+        )
+            ?: XAllocResult(
+                version = 1,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                roundId = roundId,
+                appId = appId,
+                voters = 0,
+                votesReceived = BigInteger.ZERO,
                 totalAmount = totalAmount,
                 unallocatedAmount = unallocatedAmount,
                 teamAllocationAmount = teamAllocationAmount,
                 rewardsAllocationAmount = rewardsAllocationAmount,
             )
-        }
+    }
+
+    protected fun addOrCreateDbaFundResult(
+        roundId: Int,
+        appId: String,
+        blockDetails: BlockDetails,
+        existing: XAllocResult?,
+        amount: BigDecimal,
+    ): XAllocResult {
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            totalAmount = existing.totalAmount?.plus(amount) ?: amount,
+        )
+            ?: XAllocResult(
+                version = 1,
+                blockId = blockDetails.blockId,
+                blockNumber = blockDetails.blockNumber,
+                blockTimestamp = blockDetails.blockTimestamp,
+                roundId = roundId,
+                appId = appId,
+                voters = 0,
+                votesReceived = BigInteger.ZERO,
+                totalAmount = amount,
+                unallocatedAmount = null,
+                teamAllocationAmount = null,
+                rewardsAllocationAmount = null,
+            )
     }
 
     @Transactional(rollbackFor = [Exception::class])
