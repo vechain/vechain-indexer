@@ -20,7 +20,10 @@ object HistoryUtils {
             HistoryEventName.STARGATE_UNDELEGATE_LEGACY to "STARGATE_UNDELEGATE",
         )
 
-    fun mapInputToNew(names: List<String>?): List<String>? = names?.map { oldToNew[it] ?: it }
+    fun mapInputToNew(names: List<String>?): List<String>? =
+        names
+            ?.filter { it != "STARGATE_DELEGATE_ONLY" } // remove unwanted names
+            ?.map { oldToNew[it] ?: it }
 
     fun mapEnumToOldStringForLegacy(name: HistoryEventName): String = newToOld[name] ?: name.name
 }
