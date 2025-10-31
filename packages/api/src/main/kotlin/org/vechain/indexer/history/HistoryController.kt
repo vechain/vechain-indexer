@@ -93,6 +93,7 @@ open class HistoryController(private val historyService: HistoryService) {
                                 "STARGATE_UNDELEGATE",
                                 "STARGATE_STAKE",
                                 "STARGATE_UNSTAKE",
+                                "STARGATE_DELEGATE_ONLY",
                                 "STARGATE_DELEGATE_ACTIVE",
                                 "STARGATE_DELEGATE_REQUEST",
                                 "STARGATE_DELEGATE_EXIT_REQUEST",
