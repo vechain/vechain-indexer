@@ -179,6 +179,13 @@ You can also choose to run specific tests only. We have included some commands i
 make load-test-history
 ```
 
+### External API Contract Checks
+
+Use the schema-driven harness when you need to validate the public API in a deployed environment. It fetches the OpenAPI document from `/api-docs`, runs Schemathesis-based checks across every documented operation, and fails if any response exceeds 500 ms (override by setting `MAX_RESPONSE_MILLISECONDS`).
+
+- Local run: `scripts/run_api_contract_tests.sh [dead|live]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
+- GitHub Action: trigger **API Contract Tests** from the Actions tab and choose the target environment. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
+
 ## Deployment & Testing
 
 The VeWorld Indexer can be deployed via two strategies: Regular or Blue/Green. To trigger a deployment, run the [Prod Deployment Workflow](https://github.com/vechain/veworld-indexer/actions/workflows/deploy-prod.yml). You will be prompted to select the deployment strategy and the version number. Please enter a version in the format `major.minor.patch` - this will be used to create a new release & tag. If in doubt about which environment is currently live, run the [Identify Live/Dead Environments](https://github.com/vechain/veworld-indexer/actions/workflows/identify-live-color.yml) workflow with the default arguments.

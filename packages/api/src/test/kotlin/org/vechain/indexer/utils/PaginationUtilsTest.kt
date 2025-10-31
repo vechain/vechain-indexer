@@ -110,4 +110,26 @@ internal class PaginationUtilsTest {
                 .isEqualTo("Invalid sort direction param: $direction")
         }
     }
+
+    @Test
+    fun `should throw bad request exception when page is negative`() {
+        expect {
+            catching { PaginationUtils.toPageable(-1, 10) }
+                .isFailure()
+                .isA<BadRequestException>()
+                .get(BadRequestException::message)
+                .isEqualTo("Page index must be greater than or equal to zero")
+        }
+    }
+
+    @Test
+    fun `should throw bad request exception when size is less than one`() {
+        expect {
+            catching { PaginationUtils.toPageable(0, 0) }
+                .isFailure()
+                .isA<BadRequestException>()
+                .get(BadRequestException::message)
+                .isEqualTo("Page size must be greater than zero")
+        }
+    }
 }

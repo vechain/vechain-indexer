@@ -23,6 +23,17 @@ import org.vechain.indexer.exception.ExceptionResponse
                     ],
             ),
             ApiResponse(
+                responseCode = "404",
+                description = "Requested resource was not found",
+                content =
+                    [
+                        Content(
+                            mediaType = "application/json",
+                            schema = Schema(implementation = ExceptionResponse::class),
+                        )
+                    ],
+            ),
+            ApiResponse(
                 responseCode = "500",
                 description = "Service not available",
                 content =
