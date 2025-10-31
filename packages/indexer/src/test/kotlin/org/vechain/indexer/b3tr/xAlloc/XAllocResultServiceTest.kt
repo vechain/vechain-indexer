@@ -34,6 +34,56 @@ internal class XAllocResultServiceTest {
 
     private lateinit var service: XAllocResultService
 
+    // Test wrapper to access protected functions directly
+    private inner class TestableXAllocResultService(
+        repository: XAllocResultRepository,
+        archiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
+        pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+        thorService: ThorService,
+        xAllocPoolContract: String,
+    ) : XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract) {
+        fun testAddOrCreateVoteResult(
+            roundId: Int,
+            appId: String,
+            blockDetails: org.vechain.indexer.utils.BlockDetails,
+            existing: XAllocResult?,
+            voters: Long,
+            votesReceived: BigInteger,
+        ): XAllocResult =
+            addOrCreateVoteResult(roundId, appId, blockDetails, existing, voters, votesReceived)
+
+        fun testAddOrCreateRewardClaimResult(
+            roundId: Int,
+            appId: String,
+            blockDetails: org.vechain.indexer.utils.BlockDetails,
+            existing: XAllocResult?,
+            totalAmount: BigDecimal,
+            unallocatedAmount: BigDecimal,
+            teamAllocationAmount: BigDecimal,
+            rewardsAllocationAmount: BigDecimal,
+        ): XAllocResult =
+            addOrCreateRewardClaimResult(
+                roundId,
+                appId,
+                blockDetails,
+                existing,
+                totalAmount,
+                unallocatedAmount,
+                teamAllocationAmount,
+                rewardsAllocationAmount,
+            )
+
+        fun testAddOrCreateDbaFundResult(
+            roundId: Int,
+            appId: String,
+            blockDetails: org.vechain.indexer.utils.BlockDetails,
+            existing: XAllocResult?,
+            amount: BigDecimal,
+        ): XAllocResult = addOrCreateDbaFundResult(roundId, appId, blockDetails, existing, amount)
+    }
+
+    private lateinit var testableService: TestableXAllocResultService
+
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
@@ -53,6 +103,298 @@ internal class XAllocResultServiceTest {
             )
         service =
             XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract)
+        testableService =
+            TestableXAllocResultService(
+                repository,
+                archiveService,
+                pruner,
+                thorService,
+                xAllocPoolContract,
+            )
+    }
+
+    private fun createBlockDetails(
+        blockId: String = "block-1",
+        blockNumber: Long = 1L,
+        blockTimestamp: Long = 100L,
+    ): org.vechain.indexer.utils.BlockDetails =
+        org.vechain.indexer.utils.BlockDetails(
+            blockId = blockId,
+            blockNumber = blockNumber,
+            blockTimestamp = blockTimestamp,
+        )
+
+    // ===== Unit tests for addOrCreateVoteResult =====
+
+    @Test
+    fun `addOrCreateVoteResult creates new record when existing is null`() {
+        val blockDetails = createBlockDetails()
+        val result =
+            testableService.testAddOrCreateVoteResult(
+                roundId = 1,
+                appId = "app1",
+                blockDetails = blockDetails,
+                existing = null,
+                voters = 5,
+                votesReceived = BigInteger.valueOf(100),
+            )
+
+        assertEquals(1, result.version)
+        assertEquals("app1", result.appId)
+        assertEquals(1, result.roundId)
+        assertEquals(5, result.voters)
+        assertEquals(BigInteger.valueOf(100), result.votesReceived)
+        assertEquals("block-1", result.blockId)
+        assertEquals(1L, result.blockNumber)
+        assertEquals(100L, result.blockTimestamp)
+        // Allocation amounts should be null when creating new
+        assertEquals(null, result.totalAmount)
+        assertEquals(null, result.unallocatedAmount)
+        assertEquals(null, result.teamAllocationAmount)
+        assertEquals(null, result.rewardsAllocationAmount)
+    }
+
+    @Test
+    fun `addOrCreateVoteResult accumulates voters and votes with existing record`() {
+        val blockDetails =
+            createBlockDetails(blockId = "block-5", blockNumber = 5L, blockTimestamp = 55L)
+        val existing =
+            XAllocResult(
+                version = 2,
+                blockId = "block-2",
+                blockNumber = 2L,
+                blockTimestamp = 22L,
+                roundId = 1,
+                appId = "app1",
+                voters = 3,
+                votesReceived = BigInteger.valueOf(50),
+            )
+
+        val result =
+            testableService.testAddOrCreateVoteResult(
+                roundId = 1,
+                appId = "app1",
+                blockDetails = blockDetails,
+                existing = existing,
+                voters = 2,
+                votesReceived = BigInteger.valueOf(30),
+            )
+
+        assertEquals(3, result.version) // incremented from 2
+        assertEquals("app1", result.appId)
+        assertEquals(1, result.roundId)
+        assertEquals(5, result.voters) // 3 + 2
+        assertEquals(BigInteger.valueOf(80), result.votesReceived) // 50 + 30
+        assertEquals("block-5", result.blockId) // updated
+        assertEquals(5L, result.blockNumber) // updated
+        assertEquals(55L, result.blockTimestamp) // updated
+    }
+
+    @Test
+    fun `addOrCreateVoteResult retains existing allocation amounts`() {
+        val blockDetails =
+            createBlockDetails(blockId = "block-5", blockNumber = 5L, blockTimestamp = 55L)
+        val existing =
+            XAllocResult(
+                version = 1,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 1,
+                appId = "app1",
+                voters = 2,
+                votesReceived = BigInteger.valueOf(50),
+                totalAmount = BigDecimal("5.000000000000000000"),
+                unallocatedAmount = BigDecimal("1.000000000000000000"),
+                teamAllocationAmount = BigDecimal("1.500000000000000000"),
+                rewardsAllocationAmount = BigDecimal("2.500000000000000000"),
+            )
+
+        val result =
+            testableService.testAddOrCreateVoteResult(
+                roundId = 1,
+                appId = "app1",
+                blockDetails = blockDetails,
+                existing = existing,
+                voters = 1,
+                votesReceived = BigInteger.valueOf(30),
+            )
+
+        assertEquals(2, result.version)
+        assertEquals(3, result.voters) // 2 + 1
+        assertEquals(BigInteger.valueOf(80), result.votesReceived) // 50 + 30
+        // Allocation amounts should be retained from existing
+        assertEquals(BigDecimal("5.000000000000000000"), result.totalAmount)
+        assertEquals(BigDecimal("1.000000000000000000"), result.unallocatedAmount)
+        assertEquals(BigDecimal("1.500000000000000000"), result.teamAllocationAmount)
+        assertEquals(BigDecimal("2.500000000000000000"), result.rewardsAllocationAmount)
+    }
+
+    // ===== Unit tests for addOrCreateRewardClaimResult =====
+
+    @Test
+    fun `addOrCreateRewardClaimResult creates new record when existing is null`() {
+        val blockDetails = createBlockDetails()
+        val result =
+            testableService.testAddOrCreateRewardClaimResult(
+                roundId = 2,
+                appId = "claimApp",
+                blockDetails = blockDetails,
+                existing = null,
+                totalAmount = BigDecimal("10.0"),
+                unallocatedAmount = BigDecimal("2.0"),
+                teamAllocationAmount = BigDecimal("3.0"),
+                rewardsAllocationAmount = BigDecimal("5.0"),
+            )
+
+        assertEquals(1, result.version)
+        assertEquals("claimApp", result.appId)
+        assertEquals(2, result.roundId)
+        assertEquals(0, result.voters)
+        assertEquals(BigInteger.ZERO, result.votesReceived)
+        assertEquals(BigDecimal("10.0"), result.totalAmount)
+        assertEquals(BigDecimal("2.0"), result.unallocatedAmount)
+        assertEquals(BigDecimal("3.0"), result.teamAllocationAmount)
+        assertEquals(BigDecimal("5.0"), result.rewardsAllocationAmount)
+    }
+
+    @Test
+    fun `addOrCreateRewardClaimResult accumulates allocation amounts`() {
+        val blockDetails =
+            createBlockDetails(blockId = "block-10", blockNumber = 10L, blockTimestamp = 100L)
+        val existing =
+            XAllocResult(
+                version = 1,
+                blockId = "block-5",
+                blockNumber = 5L,
+                blockTimestamp = 50L,
+                roundId = 2,
+                appId = "claimApp",
+                voters = 3,
+                votesReceived = BigInteger.valueOf(75),
+                totalAmount = BigDecimal("5.0"),
+                unallocatedAmount = BigDecimal("1.0"),
+                teamAllocationAmount = BigDecimal("1.5"),
+                rewardsAllocationAmount = BigDecimal("2.5"),
+            )
+
+        val result =
+            testableService.testAddOrCreateRewardClaimResult(
+                roundId = 2,
+                appId = "claimApp",
+                blockDetails = blockDetails,
+                existing = existing,
+                totalAmount = BigDecimal("3.0"),
+                unallocatedAmount = BigDecimal("0.5"),
+                teamAllocationAmount = BigDecimal("1.0"),
+                rewardsAllocationAmount = BigDecimal("1.5"),
+            )
+
+        assertEquals(2, result.version)
+        // Vote data should be retained
+        assertEquals(3, result.voters)
+        assertEquals(BigInteger.valueOf(75), result.votesReceived)
+        // Amounts should be accumulated
+        assertEquals(BigDecimal("8.0"), result.totalAmount) // 5.0 + 3.0
+        assertEquals(BigDecimal("1.5"), result.unallocatedAmount) // 1.0 + 0.5
+        assertEquals(BigDecimal("2.5"), result.teamAllocationAmount) // 1.5 + 1.0
+        assertEquals(BigDecimal("4.0"), result.rewardsAllocationAmount) // 2.5 + 1.5
+        assertEquals("block-10", result.blockId)
+        assertEquals(10L, result.blockNumber)
+        assertEquals(100L, result.blockTimestamp)
+    }
+
+    // ===== Unit tests for addOrCreateDbaFundResult =====
+
+    @Test
+    fun `addOrCreateDbaFundResult creates new record when existing is null`() {
+        val blockDetails = createBlockDetails()
+        val result =
+            testableService.testAddOrCreateDbaFundResult(
+                roundId = 3,
+                appId = "dbaApp",
+                blockDetails = blockDetails,
+                existing = null,
+                amount = BigDecimal("7.5"),
+            )
+
+        assertEquals(1, result.version)
+        assertEquals("dbaApp", result.appId)
+        assertEquals(3, result.roundId)
+        assertEquals(0, result.voters)
+        assertEquals(BigInteger.ZERO, result.votesReceived)
+        assertEquals(BigDecimal("7.5"), result.totalAmount)
+        assertEquals(null, result.unallocatedAmount)
+        assertEquals(null, result.teamAllocationAmount)
+        assertEquals(null, result.rewardsAllocationAmount)
+    }
+
+    @Test
+    fun `addOrCreateDbaFundResult accumulates total amount`() {
+        val blockDetails =
+            createBlockDetails(blockId = "block-8", blockNumber = 8L, blockTimestamp = 88L)
+        val existing =
+            XAllocResult(
+                version = 1,
+                blockId = "block-5",
+                blockNumber = 5L,
+                blockTimestamp = 50L,
+                roundId = 3,
+                appId = "dbaApp",
+                voters = 2,
+                votesReceived = BigInteger.valueOf(40),
+                totalAmount = BigDecimal("2.0"),
+            )
+
+        val result =
+            testableService.testAddOrCreateDbaFundResult(
+                roundId = 3,
+                appId = "dbaApp",
+                blockDetails = blockDetails,
+                existing = existing,
+                amount = BigDecimal("1.5"),
+            )
+
+        assertEquals(2, result.version)
+        // Vote data should be retained
+        assertEquals(2, result.voters)
+        assertEquals(BigInteger.valueOf(40), result.votesReceived)
+        // Amount should be accumulated
+        assertEquals(BigDecimal("3.5"), result.totalAmount) // 2.0 + 1.5
+        assertEquals("block-8", result.blockId)
+        assertEquals(8L, result.blockNumber)
+        assertEquals(88L, result.blockTimestamp)
+    }
+
+    @Test
+    fun `addOrCreateDbaFundResult with existing null totalAmount`() {
+        val blockDetails = createBlockDetails()
+        val existing =
+            XAllocResult(
+                version = 1,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 3,
+                appId = "dbaApp",
+                voters = 1,
+                votesReceived = BigInteger.TEN,
+                totalAmount = null,
+            )
+
+        val result =
+            testableService.testAddOrCreateDbaFundResult(
+                roundId = 3,
+                appId = "dbaApp",
+                blockDetails = blockDetails,
+                existing = existing,
+                amount = BigDecimal("5.0"),
+            )
+
+        assertEquals(2, result.version)
+        assertEquals(BigDecimal("5.0"), result.totalAmount) // null + 5.0 = 5.0
+        assertEquals(1, result.voters)
+        assertEquals(BigInteger.TEN, result.votesReceived)
     }
 
     @Test

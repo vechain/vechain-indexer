@@ -145,17 +145,15 @@ open class XAllocResultService(
         voters: Long,
         votesReceived: BigInteger,
     ): XAllocResult {
-        return if (existing != null) {
-            existing.copy(
-                version = existing.version + 1,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
-                voters = existing.voters + voters,
-                votesReceived = existing.votesReceived + votesReceived,
-            )
-        } else {
-            XAllocResult(
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            voters = existing.voters + voters,
+            votesReceived = existing.votesReceived + votesReceived,
+        )
+            ?: XAllocResult(
                 version = 1,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
@@ -169,7 +167,6 @@ open class XAllocResultService(
                 teamAllocationAmount = null,
                 rewardsAllocationAmount = null,
             )
-        }
     }
 
     protected fun addOrCreateRewardClaimResult(
@@ -182,24 +179,21 @@ open class XAllocResultService(
         teamAllocationAmount: BigDecimal,
         rewardsAllocationAmount: BigDecimal,
     ): XAllocResult {
-        return if (existing != null) {
-            existing.copy(
-                version = existing.version + 1,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
-                totalAmount = existing.totalAmount?.plus(totalAmount) ?: totalAmount,
-                unallocatedAmount =
-                    existing.unallocatedAmount?.plus(unallocatedAmount) ?: unallocatedAmount,
-                teamAllocationAmount =
-                    existing.teamAllocationAmount?.plus(teamAllocationAmount)
-                        ?: teamAllocationAmount,
-                rewardsAllocationAmount =
-                    existing.rewardsAllocationAmount?.plus(rewardsAllocationAmount)
-                        ?: rewardsAllocationAmount,
-            )
-        } else {
-            XAllocResult(
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            totalAmount = existing.totalAmount?.plus(totalAmount) ?: totalAmount,
+            unallocatedAmount =
+                existing.unallocatedAmount?.plus(unallocatedAmount) ?: unallocatedAmount,
+            teamAllocationAmount =
+                existing.teamAllocationAmount?.plus(teamAllocationAmount) ?: teamAllocationAmount,
+            rewardsAllocationAmount =
+                existing.rewardsAllocationAmount?.plus(rewardsAllocationAmount)
+                    ?: rewardsAllocationAmount,
+        )
+            ?: XAllocResult(
                 version = 1,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
@@ -213,7 +207,6 @@ open class XAllocResultService(
                 teamAllocationAmount = teamAllocationAmount,
                 rewardsAllocationAmount = rewardsAllocationAmount,
             )
-        }
     }
 
     protected fun addOrCreateDbaFundResult(
@@ -223,16 +216,14 @@ open class XAllocResultService(
         existing: XAllocResult?,
         amount: BigDecimal,
     ): XAllocResult {
-        return if (existing != null) {
-            existing.copy(
-                version = existing.version + 1,
-                blockId = blockDetails.blockId,
-                blockNumber = blockDetails.blockNumber,
-                blockTimestamp = blockDetails.blockTimestamp,
-                totalAmount = existing.totalAmount?.plus(amount) ?: amount,
-            )
-        } else {
-            XAllocResult(
+        return existing?.copy(
+            version = existing.version + 1,
+            blockId = blockDetails.blockId,
+            blockNumber = blockDetails.blockNumber,
+            blockTimestamp = blockDetails.blockTimestamp,
+            totalAmount = existing.totalAmount?.plus(amount) ?: amount,
+        )
+            ?: XAllocResult(
                 version = 1,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
@@ -246,7 +237,6 @@ open class XAllocResultService(
                 teamAllocationAmount = null,
                 rewardsAllocationAmount = null,
             )
-        }
     }
 
     @Transactional(rollbackFor = [Exception::class])
