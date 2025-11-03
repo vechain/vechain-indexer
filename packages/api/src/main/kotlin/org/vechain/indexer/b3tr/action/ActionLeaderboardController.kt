@@ -1,7 +1,5 @@
 package org.vechain.indexer.b3tr.action
 
-import DateParameter
-import RoundIdParameter
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
@@ -21,7 +19,9 @@ import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.SortByParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse

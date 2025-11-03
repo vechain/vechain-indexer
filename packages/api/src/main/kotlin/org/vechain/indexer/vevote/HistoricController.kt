@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.PositiveOrZero
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,6 +19,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidPageSize
 
 @Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
@@ -45,8 +47,8 @@ open class HistoricController(private val historicApiService: HistoricApiService
     open fun getAllProposals(
         @RequestParam(required = false) proposalId: String?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) page: Int?,
-        @RequestParam(required = false) size: Int?,
+        @PositiveOrZero @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
     ): PaginatedResponse<HistoricProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
         val result = historicApiService.findAll(proposalId, contractAddress, pageable)

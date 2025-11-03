@@ -12,17 +12,28 @@ import org.vechain.indexer.exception.BadRequestException
 
 object PaginationUtils {
 
+    private const val MAX_PAGE_NUMBER = 10_000
+
     fun toPageable(
         page: Int?,
         size: Int?,
         direction: String? = DEFAULT_SORT_DIRECTION,
         vararg fields: String = DEFAULT_SORT_FIELDS,
     ): Pageable {
-        return PageRequest.of(
-            page ?: DEFAULT_PAGE_NUMBER,
-            size ?: DEFAULT_PAGE_SIZE,
-            Sort.by(toSortDirection(direction), *fields),
-        )
+        val pageNumber = page ?: DEFAULT_PAGE_NUMBER
+        if (pageNumber < 0) {
+            throw BadRequestException("Page index must be greater than or equal to zero")
+        }
+        if (pageNumber > MAX_PAGE_NUMBER) {
+            throw BadRequestException("Page index must be less than or equal to $MAX_PAGE_NUMBER")
+        }
+
+        val pageSize = size ?: DEFAULT_PAGE_SIZE
+        if (pageSize < 1) {
+            throw BadRequestException("Page size must be greater than zero")
+        }
+
+        return PageRequest.of(pageNumber, pageSize, Sort.by(toSortDirection(direction), *fields))
     }
 
     private fun toSortDirection(direction: String?): Direction {

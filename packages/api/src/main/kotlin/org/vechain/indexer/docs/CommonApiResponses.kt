@@ -19,6 +19,21 @@ import org.vechain.indexer.exception.ExceptionResponse
                         Content(
                             mediaType = "application/json",
                             schema = Schema(implementation = ExceptionResponse::class),
+                        ),
+                        Content(
+                            mediaType = "application/problem+json",
+                            schema = Schema(implementation = ExceptionResponse::class),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Requested resource was not found",
+                content =
+                    [
+                        Content(
+                            mediaType = "application/json",
+                            schema = Schema(implementation = ExceptionResponse::class),
                         )
                     ],
             ),

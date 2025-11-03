@@ -62,3 +62,7 @@ apply.plan
 dist/
 
 database/backups/
+
+.schemathesis/
+.hypothesis/
+.venv-schemathesis/
