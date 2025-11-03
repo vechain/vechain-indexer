@@ -28,6 +28,9 @@ cloudwatch_alarms:               true
 
 # ALB Configuration
 alb:
+  is_rule_4_required: false
+  https_listener:
+    default_action: "fixed-response"
   # Listener Rules Configuration
   listener_rules:
     - name: "api-rules"

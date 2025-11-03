@@ -125,8 +125,9 @@ module "ecs-lb-service-api" {
   # Listener Rules Configuration
   rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
   is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
-  rule_1_path_pattern       = try(local.env.alb.listener_rules[1].path_patterns, [])
-  
+  rule_1_path_pattern        = try(local.env.alb.listener_rules[1].path_patterns, [])
+  is_rule_4_required         = try(local.env.alb.is_rule_4_required, false)
+  default_action             = try(local.env.alb.https_listener.default_action, "fixed-response")
   use_default_tg_group_for_rule_1 = try(local.env.alb.listener_rules[1].use_default_tg_group, false)
   # Authentication Configuration
   okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
