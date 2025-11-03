@@ -70,5 +70,4 @@ jobs:
         run: terraform plan -out "apply.plan" --var=live_color_mainnet=${{ env.LIVE_COLOR_MAINNET }} --var=live_color_testnet=${{ env.LIVE_COLOR_TESTNET }}
 
       - name: Terraform Apply
-        run: terraform apply "apply.plan"
-
+        run: echo "would run terraform apply \"apply.plan\""
