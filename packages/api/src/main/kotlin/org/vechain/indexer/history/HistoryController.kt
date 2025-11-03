@@ -172,7 +172,7 @@ open class HistoryController(private val historyService: HistoryService) {
         val pageable =
             PaginationUtils.toPageable(
                 page,
-                size?.plus(1),
+                size,
                 direction,
                 IndexedHistoryEvent::blockTimestamp.name,
             )
@@ -293,7 +293,7 @@ open class HistoryController(private val historyService: HistoryService) {
         val pageable =
             PaginationUtils.toPageable(
                 page,
-                size?.plus(1),
+                size,
                 direction,
                 IndexedHistoryEvent::blockTimestamp.name,
             )
@@ -401,7 +401,7 @@ open class HistoryController(private val historyService: HistoryService) {
         val pageable =
             PaginationUtils.toPageable(
                 page,
-                size?.plus(1),
+                size,
                 direction,
                 IndexedHistoryEvent::blockTimestamp.name,
             )
