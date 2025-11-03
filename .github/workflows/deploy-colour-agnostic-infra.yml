@@ -1,0 +1,74 @@
+name: Deploy Colour Agnostic Infra
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Terraform workspace/environment to target
+        required: true
+        type: string
+      live_color_mainnet:
+        description: Desired live colour for mainnet
+        required: true
+        type: string
+      live_color_testnet:
+        description: Desired live colour for testnet
+        required: true
+        type: string
+    secrets:
+      AWS_ACC_ROLE:
+        required: true
+      VECHAINCI_SSH_PRIVATE_KEYS:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-vpc-route53:
+    name: Deploy Terraform VPC Route53
+    runs-on: ubuntu-latest
+    env:
+      TERRAFORM_ENV: ${{ inputs.environment }}
+      LIVE_COLOR_MAINNET: ${{ inputs.live_color_mainnet }}
+      LIVE_COLOR_TESTNET: ${{ inputs.live_color_testnet }}
+
+    defaults:
+      run:
+        working-directory: terraform/vpc
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_ACC_ROLE }}
+
+      # Required for Terraform to source modules from other vechain repositories
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VECHAINCI_SSH_PRIVATE_KEYS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.3
+          terraform_wrapper: true
+
+      - name: Terraform Initialize
+        run: terraform init -reconfigure -backend-config="environments/${{ env.TERRAFORM_ENV }}.config"
+
+      - name: Terraform Workspace
+        run: terraform workspace select ${{ env.TERRAFORM_ENV }}
+
+      - name: Terraform Plan
+        run: terraform plan -out "apply.plan" --var=live_color_mainnet=${{ env.LIVE_COLOR_MAINNET }} --var=live_color_testnet=${{ env.LIVE_COLOR_TESTNET }}
+
+      - name: Terraform Apply
+        run: terraform apply "apply.plan"
+

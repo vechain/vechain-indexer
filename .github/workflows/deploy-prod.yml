@@ -140,6 +140,17 @@ jobs:
       id-token: write
     secrets: inherit
 
+  refresh-dead-dns:
+    name: Refresh dead Route53 records
+    needs: [identify-live-color, deploy-env]
+    if: ${{ needs.deploy-env.result == 'success' && inputs.environment == 'dead' }}
+    uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
+    with:
+      environment: prod
+      live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
+      live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
+    secrets: inherit
+
   log-live-environment:
     name: Log Live Environment
     needs: [identify-live-color]
