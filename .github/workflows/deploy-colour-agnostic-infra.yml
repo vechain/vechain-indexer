@@ -15,11 +15,6 @@ on:
         description: Desired live colour for testnet
         required: true
         type: string
-    secrets:
-      AWS_ACC_ROLE:
-        required: true
-      VECHAINCI_SSH_PRIVATE_KEYS:
-        required: true
 
 permissions:
   id-token: write
