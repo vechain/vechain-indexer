@@ -147,6 +147,7 @@ jobs:
     uses: ./.github/workflows/deploy-colour-agnostic-infra.yml
     with:
       environment: prod
+      dead_records_only: true # Only target dead Route53 records in teraform apply
       live_color_mainnet: ${{ needs.identify-live-color.outputs.mainnet_live_color }}
       live_color_testnet: ${{ needs.identify-live-color.outputs.testnet_live_color }}
     secrets: inherit
