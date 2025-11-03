@@ -1,4 +1,4 @@
-name: API Contract Tests
+name: API Tests
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   schemathesis:
-    name: Run contract checks
+    name: Run API schema checks
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -42,7 +42,7 @@ jobs:
           if [[ -z "$base_url" ]]; then
             case "$env_name" in
               dead)
-                base_url="https://mainnet.dead.prod.vechain.org"
+                base_url="https://mainnet.dead.prod.veworld.vechain.org"
                 ;;
               live)
                 base_url="https://indexer.mainnet.vechain.org"
@@ -64,7 +64,6 @@ jobs:
           echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
           echo "schema_url=$schema_url" >> "$GITHUB_OUTPUT"
           {
-            echo "### API contract run"
             echo "- Environment: $summary_env"
             echo "- Base URL: $base_url"
             echo "- Schema: $schema_url"
@@ -83,7 +82,7 @@ jobs:
       - name: Run schema-driven tests
         run: |
           mkdir -p .schemathesis
-          scripts/run_api_contract_tests.sh "${{ steps.resolve.outputs.environment }}" \
+          scripts/run_api_schema_tests.sh "${{ steps.resolve.outputs.environment }}" \
             --base-url "${{ steps.resolve.outputs.base_url }}" \
             --store-network-log=./.schemathesis/network.log \
             --junit-xml=./.schemathesis/results.xml
