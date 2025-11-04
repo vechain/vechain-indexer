@@ -60,9 +60,7 @@ open class TokenRewardConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(
-                ValidatorDecoder.buildClauses("0x6a5984079cD55966D16cfA1A391D7aB665a316A8")
-            )
+            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .dependsOn(delegationIndexer)
             .build()
