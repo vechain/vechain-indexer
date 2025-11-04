@@ -13,7 +13,7 @@ object NumberUtils {
      * Convert from wei (BigInteger) to VET (BigDecimal). Example: 1000000000000000000 wei => 1.0
      * VET
      */
-    fun toVET(value: BigInteger, scale: Int = 8): BigDecimal =
+    fun toVET(value: BigInteger, scale: Int = 12): BigDecimal =
         value.toBigDecimal().divide(WEI_DECIMALS, scale, RoundingMode.HALF_UP)
 
     /** Convert from raw BigInteger to a normalized probability (0–1). */
