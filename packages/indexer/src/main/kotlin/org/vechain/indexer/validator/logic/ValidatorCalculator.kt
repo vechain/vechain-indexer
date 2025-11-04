@@ -2,6 +2,7 @@ package org.vechain.indexer.validator.logic
 
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.MathContext
 import java.math.RoundingMode
 import org.bson.types.Decimal128
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -411,6 +412,35 @@ object ValidatorCalculator {
                 ((lastBlock - startBlock) / cyclePeriodLength)
 
         return if (isNewCycle) pending else existing + pending
+    }
+
+    /**
+     * @param totalVetStaked Total VET staked in Wei (BigInteger).
+     * @return VTHO issued per block in Wei (BigInteger).
+     * @notice Calculate VTHO issued per block using VeChain formula: annual = 1200 * 64 *
+     *   sqrt(VET_staked)
+     */
+    fun determineVTHOIssuedPerBlock(totalVetStaked: BigInteger?): BigInteger {
+        if (totalVetStaked == null || totalVetStaked <= BigInteger.ZERO) {
+            return BigInteger.ZERO
+        }
+
+        val mc = MathContext(30, RoundingMode.HALF_UP)
+
+        // Convert staked amount from Wei → VET (decimal)
+        val stakedVET = BigDecimal(totalVetStaked).divide(BigDecimal.TEN.pow(18), mc)
+
+        // Apply your formula: 1200 * 64 * sqrt(VET_staked)
+        val annualVTHO = BigDecimal(76800).multiply(stakedVET.sqrt(mc), mc)
+
+        // Blocks per year (365 days, 10s per block)
+        val blocksPerYear = BigDecimal("3153600")
+
+        // VTHO per block (as decimal in VTHO)
+        val vthoPerBlock = annualVTHO.divide(blocksPerYear, mc)
+
+        // Convert back to Wei (×10^18) and return BigInteger
+        return vthoPerBlock.multiply(BigDecimal.TEN.pow(18)).toBigInteger()
     }
 
     // ------------------------------

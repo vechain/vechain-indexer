@@ -17,12 +17,14 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.computeOffline
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeProbabilities
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeStakes
 import org.vechain.indexer.validator.logic.ValidatorCalculator.computeTVL
+import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssuedPerBlock
 import org.vechain.indexer.validator.logic.ValidatorCalculator.resolveStatus
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 object ValidatorAssembler {
     private var totalVTHOIssued: BigInteger = BigInteger.ZERO
+    var totalVTHOIssuedBlock: BigInteger = BigInteger.ZERO
 
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
@@ -31,6 +33,7 @@ object ValidatorAssembler {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
+        stakerVetBalance: BigInteger,
     ): List<Validator> {
         val decodedInfo: DecodedValidatorInfo =
             decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
@@ -38,6 +41,7 @@ object ValidatorAssembler {
         val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
         val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
         totalVTHOIssued = totalVTHOIssuedAtBlock
+        totalVTHOIssuedBlock = vthoIssuedBlock
 
         return unpackValidators(
             decodedInfo.decodedValidators,
@@ -49,6 +53,7 @@ object ValidatorAssembler {
             blockId,
             blockNumber,
             blockTimestamp,
+            stakerVetBalance,
         )
     }
 
@@ -62,6 +67,7 @@ object ValidatorAssembler {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
+        stakerVetBalance: BigInteger,
     ): List<Validator> {
         val ids = decoded.listOf<String>("masters")
         val endorsers = decoded.listOf<String>("endorsors")
@@ -114,7 +120,7 @@ object ValidatorAssembler {
                         row,
                         existingDocs[row.id],
                         totalWeight,
-                        vthoIssuedBlock,
+                        vthoIssued(vthoIssuedBlock, stakerVetBalance),
                         vetPriceUsd,
                         vthoPriceUsd,
                         blockId,
@@ -258,6 +264,14 @@ object ValidatorAssembler {
             cycleEndBlock = cycleEndBlock,
         )
     }
+
+    /** Determine VTHO issued per block, using staker's VET balance if total is zero */
+    fun vthoIssued(vthoIssued: BigInteger, vetBalance: BigInteger): BigInteger =
+        if (vthoIssued != BigInteger.ZERO) {
+            vthoIssued
+        } else {
+            determineVTHOIssuedPerBlock(vetBalance)
+        }
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> Map<String, Any?>.listOf(key: String): List<T> =
