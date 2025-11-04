@@ -203,6 +203,23 @@ object ValidatorDecoder {
         return periodDetails
     }
 
+    fun DecodedValidatorInfo.hasDelegations(address: String): Int {
+        val ids = this.decodedValidators.listOf<String>("masters")
+        val delegatorsStake = this.decodedValidators.listOf<BigInteger>("delegatorsStake")
+        val statuses = this.decodedValidators.listOf<BigInteger>("statuses")
+
+        val index = ids.indexOf(address.lowercase())
+        if (index == -1) return -1
+        val status = statuses[index].toInt()
+        if (status != 2) return -1
+
+        return if (delegatorsStake[index] > BigInteger.ZERO) {
+            1
+        } else {
+            0
+        }
+    }
+
     // --- Private helpers ---
 
     private fun decodeSingle(
