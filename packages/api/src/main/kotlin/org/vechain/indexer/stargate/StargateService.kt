@@ -46,13 +46,16 @@ open class StargateService(
      * @param blockNumber The block number to retrieve the total VTHO claimed for.
      * @return The total VTHO claimed as a BigInteger.
      */
-    open fun getTotalVthoClaimed(blockNumber: Long?): BigInteger {
+    open fun getTotalVthoClaimed(blockNumber: Long?, rewardType: String?): BigInteger {
         val record =
             if (blockNumber != null) {
                 vthoClaimedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
             } else {
                 vthoClaimedByBlockRepository.getLatestRecord()
             }
+        if (rewardType == "LEGACY") {
+            return record?.legacyRewards ?: BigInteger.ZERO
+        }
         return record?.total ?: BigInteger.ZERO
     }
 
@@ -62,10 +65,22 @@ open class StargateService(
      * @param account The account address to retrieve the total VTHO claimed for.
      * @return The total VTHO claimed by the account as a BigInteger.
      */
-    open fun getTotalVthoClaimed(account: String): BigInteger =
+    open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger =
         vthoClaimedByAccountRepository
             .findById(HexUtils.normalise(account))
-            .map { it.total }
+            .map {
+                when (rewardType) {
+                    "LEGACY" -> {
+                        it.legacyRewards
+                    }
+                    "DELEGATION" -> {
+                        it.delegationRewards
+                    }
+                    else -> {
+                        it.total
+                    }
+                }
+            }
             .orElse(BigInteger.ZERO)
 
     /**
