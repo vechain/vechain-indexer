@@ -263,7 +263,7 @@ enabled_nets:
       cpu: 512
       memory: 1024
       max_capacity: 2
-      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer
+      spring_profile: nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -323,7 +323,7 @@ enabled_nets:
       cpu: 2048
       memory: 4096
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -340,14 +340,14 @@ enabled_nets:
         transfers:                  '15034'
         history:                    '15034'
         vevote:                     '22331866'
-        stargate:                   '22087000'
+        stargate:                   '23188260'
         b3tr:                       '22126050'
         b3tr-x-alloc-result:        '22126050'
         b3tr-sustainable-actions:   '22126050'
         b3tr-proposal:              '22126050'
         historic-proposals:         '22087000'
-        validator:                   '0'
-        delegation:                  '0'
+        validator:                  '23221800'
+        delegation:                 '23222706'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
@@ -419,9 +419,9 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x32cb945dc25f4fc4214df63e3825045d6088b096'
           STARGATE_NFT_CONTRACT: '0x887d9102f0003f1724d8fd5d4fe95a11572fcd77'
           VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
-          STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
+          STARGATE_CONTRACT: '0x1e02b2953adefec225cf0ec49805b1146a4429c1'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
-          GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
+          GET_ALL_VALIDATORS_CONTRACT: '0x168fc982338b399598c10f8467bc66fb1b49aae7'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

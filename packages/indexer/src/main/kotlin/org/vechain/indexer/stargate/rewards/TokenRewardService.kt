@@ -176,7 +176,7 @@ open class TokenRewardService(
             // Need to update cycle info
             updateValidatorCycleCache(validatorId, decodedInfo)
             newCycle = true
-            cached = validatorCycleCache[validatorId]!!
+            cached = validatorCycleCache[validatorId] ?: return emptyList()
         }
 
         // If delegations is false return empty list

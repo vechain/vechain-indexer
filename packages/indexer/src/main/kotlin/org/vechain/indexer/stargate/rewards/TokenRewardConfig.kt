@@ -46,7 +46,7 @@ open class TokenRewardConfig {
         thorClient: ThorClient,
         processor: TokenRewardProcessor,
         @Qualifier("delegationIndexer") delegationIndexer: Indexer,
-        @Value("\${indexer.start-block.validator}") startBlock: Long,
+        @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         bEProperties: BusinessEventProperties,
@@ -60,9 +60,7 @@ open class TokenRewardConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(
-                ValidatorDecoder.buildClauses("0x6a5984079cD55966D16cfA1A391D7aB665a316A8")
-            )
+            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
             .includeFullBlock()
             .dependsOn(delegationIndexer)
             .build()
