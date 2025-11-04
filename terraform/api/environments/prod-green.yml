@@ -344,7 +344,7 @@ enabled_nets:
         b3tr-sustainable-actions:   '22126050'
         b3tr-proposal:              '22126050'
         historic-proposals:         '22087000'
-        validator:                  '23222706'
+        validator:                  '23221800'
         delegation:                 '23222706'
       start-round:
         b3tr-sustainable-actions:   '4'
