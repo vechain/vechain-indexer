@@ -34,7 +34,7 @@ alb:
   # Listener Rules Configuration
   listener_rules:
     - name: "api-rules"
-      path_patterns: ["/api/v*","/api-docs,"/api-docs/*"]   
+      path_patterns: [ "/api/v*", "/api-docs", "/api-docs/*" ]
       priority: 0
     - name: "swagger-ui"
       path_patterns: ["/swagger-ui/*"]
