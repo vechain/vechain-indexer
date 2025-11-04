@@ -14,4 +14,5 @@ constructor(
     @Id override val blockNumber: Long,
     override val blockTimestamp: Long,
     val total: BigInteger,
+    val legacyRewards: BigInteger,
 ) : IndexedDocument
