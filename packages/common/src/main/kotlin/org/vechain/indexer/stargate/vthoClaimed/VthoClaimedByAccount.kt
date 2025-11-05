@@ -17,6 +17,8 @@ constructor(
     override val blockNumber: Long,
     override val blockTimestamp: Long,
     val total: BigInteger,
+    val legacyRewards: BigInteger,
+    val delegationRewards: BigInteger,
     @Id val account: String,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = account

@@ -21,6 +21,8 @@ constructor(
     val priorityReward: BigInteger? = null,
     val total: BigInteger? = null,
     val status: BlockStatus,
+    val delegatorRewards: BigInteger? = null,
+    val validatorRewards: BigInteger? = null,
     @JsonIgnore val isHourly: Boolean? = null,
     @JsonIgnore val isDaily: Boolean? = null,
     @JsonIgnore val isWeekly: Boolean? = null,

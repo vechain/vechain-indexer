@@ -52,6 +52,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { blockTimestamp } returns 1000L
                     every { params.getAsString("owner") } returns "0xabc"
                     every { params.getAsBigInteger("value") } returns BigInteger("100")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 },
                 mockk<IndexedEvent> {
                     every { blockId } returns "block2"
@@ -59,6 +60,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { blockTimestamp } returns 1200L
                     every { params.getAsString("owner") } returns "0xabc"
                     every { params.getAsBigInteger("value") } returns BigInteger("200")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 },
                 mockk<IndexedEvent> {
                     every { blockId } returns "block3"
@@ -66,6 +68,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { blockTimestamp } returns 1300L
                     every { params.getAsString("owner") } returns "0xdef"
                     every { params.getAsBigInteger("value") } returns BigInteger("50")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 },
             )
         val result = service.parseRecords(events, emptyList())
@@ -93,6 +96,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { blockTimestamp } returns 2000L
                     every { params.getAsString("owner") } returns "0xabc"
                     every { params.getAsBigInteger("value") } returns BigInteger("10")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 }
             )
         val existing =
@@ -104,6 +108,8 @@ internal class VthoClaimByAccountServiceTest {
                     total = BigInteger("300"),
                     account = "0xabc",
                     version = 1,
+                    legacyRewards = BigInteger.ZERO,
+                    delegationRewards = BigInteger("300"),
                 )
             )
         val result = service.parseRecords(events, existing)
@@ -120,8 +126,32 @@ internal class VthoClaimByAccountServiceTest {
 
     @Test
     fun `update saves update and archives existing`() {
-        val update = listOf(VthoClaimedByAccount(1, "block1", 1L, 1000L, BigInteger("1"), "0xabc"))
-        val existing = listOf(VthoClaimedByAccount(0, "block0", 0L, 900L, BigInteger("0"), "0xabc"))
+        val update =
+            listOf(
+                VthoClaimedByAccount(
+                    1,
+                    "block1",
+                    1L,
+                    1000L,
+                    BigInteger("1"),
+                    BigInteger("0"),
+                    BigInteger("1"),
+                    "0xabc",
+                )
+            )
+        val existing =
+            listOf(
+                VthoClaimedByAccount(
+                    0,
+                    "block0",
+                    0L,
+                    900L,
+                    BigInteger("0"),
+                    BigInteger("0"),
+                    BigInteger("0"),
+                    "0xabc",
+                )
+            )
         every { repository.saveAll(update) } returns update
         every { archiveService.saveAll(existing) } just Runs
 
@@ -152,7 +182,18 @@ internal class VthoClaimByAccountServiceTest {
                 mockk<IndexedEvent> { every { params.getAsString("owner") } returns "0xdef" },
             )
         val existing =
-            listOf(VthoClaimedByAccount(1, "block1", 1L, 1000L, BigInteger("1"), "0xabc"))
+            listOf(
+                VthoClaimedByAccount(
+                    1,
+                    "block1",
+                    1L,
+                    1000L,
+                    BigInteger("1"),
+                    BigInteger("0"),
+                    BigInteger("1"),
+                    "0xabc",
+                )
+            )
         every { repository.findAllById(listOf("0xabc", "0xdef")) } returns existing
 
         val result = service.getExisting(events)

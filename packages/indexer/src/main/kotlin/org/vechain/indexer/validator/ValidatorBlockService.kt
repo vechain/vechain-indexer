@@ -19,6 +19,7 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
+import org.vechain.indexer.validator.domain.ValidatorDecoder.hasDelegations
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
@@ -88,6 +89,12 @@ open class ValidatorBlockService(
             vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
         }
 
+        val hasDelegations = decodedInfo?.hasDelegations(block.signer)
+
+        if (hasDelegations == null || hasDelegations == -1) {
+            return null
+        }
+
         val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
         vthoTotalSupply = blockTotalSupply // update cache
 
@@ -97,6 +104,13 @@ open class ValidatorBlockService(
                 .map { it.reward }
                 .map { it.hexToBigInteger() }
                 .fold(BigInteger.ZERO, BigInteger::add)
+
+        val delegationRewards =
+            if (hasDelegations == 1) {
+                blockReward.multiply(BigInteger("7")).divide(BigInteger("10"))
+            } else {
+                BigInteger.ZERO
+            }
 
         return ValidatorBlock(
             id = "${block.number}-${block.signer}",
@@ -108,6 +122,8 @@ open class ValidatorBlockService(
             priorityReward = priorityRewards,
             total = blockReward.add(priorityRewards),
             status = BlockStatus.VALIDATED,
+            delegatorRewards = delegationRewards,
+            validatorRewards = blockReward.add(priorityRewards).subtract(delegationRewards),
             isHourly =
                 calculateTimeBoundary(
                     hourlyCache[block.signer] ?: 0L,
@@ -146,11 +162,14 @@ open class ValidatorBlockService(
         val decodedValidators = decodedInfo.decodedValidators
 
         val ids = decodedValidators.listOf<String>("masters")
+        val statuses = decodedValidators.listOf<BigInteger>("statuses")
         val online = decodedValidators.listOf<Boolean>("onlines")
         val offlineBlocks = decodedValidators.listOf<BigInteger>("offlineBlocks")
 
         return ids.indices.mapNotNull { i ->
-            if (!online[i] && offlineBlocks[i].toLong() <= block.number) {
+            if (
+                !online[i] && statuses[i].toInt() != 2 && offlineBlocks[i].toLong() <= block.number
+            ) {
                 ValidatorBlock(
                     id = "${block.number}-${ids[i]}",
                     blockId = block.id,

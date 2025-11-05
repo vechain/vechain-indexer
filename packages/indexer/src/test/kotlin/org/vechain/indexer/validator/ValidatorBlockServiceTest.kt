@@ -31,6 +31,28 @@ class ValidatorBlockServiceTest {
         every { repository.findLatestMonthly() } returns emptyList()
     }
 
+    private fun buildDecoded(): Map<String, Any?> =
+        mapOf(
+            "masters" to listOf("0xVAL1", "0xVAL2"),
+            "endorsors" to listOf("0xEND1"),
+            "statuses" to listOf(BigInteger.TWO, BigInteger.TWO),
+            "onlines" to listOf(true),
+            "offlineBlocks" to listOf(BigInteger.ZERO),
+            "stakingPeriodLengths" to listOf(10),
+            "startBlocks" to listOf(BigInteger.TEN),
+            "exitBlocks" to listOf(BigInteger.valueOf(4294967295)),
+            "completedPeriods" to listOf(BigInteger.valueOf(5)),
+            "validatorLockedStakes" to listOf(BigInteger("1000000000000000000")), // 1 VET
+            "validatorLockedWeights" to listOf(BigInteger.valueOf(100)),
+            "delegatorsStake" to
+                listOf(BigInteger("500000000000000000"), BigInteger.ZERO), // 0.5 VET
+            "totalQueuedStakes" to listOf(BigInteger.ZERO),
+            "totalExitingStakes" to listOf(BigInteger.ZERO),
+            "validatorQueuedStakes" to listOf(BigInteger.ZERO),
+            "totalNextPeriodWeights" to listOf(BigInteger.valueOf(100)),
+            "nextPeriodDelegationStakes" to listOf(BigInteger.ZERO),
+        )
+
     private fun createBlock(
         num: Long = 100,
         signer: String = "0xvalidator",
@@ -61,7 +83,7 @@ class ValidatorBlockServiceTest {
 
     private fun createDecoded(supply: Long, burned: Long): DecodedValidatorInfo =
         DecodedValidatorInfo(
-            decodedValidators = emptyMap(),
+            decodedValidators = buildDecoded(),
             vthoTotalSupply = BigInteger.valueOf(supply),
             vthoBurned = BigInteger.valueOf(burned),
             totalWeight = BigInteger.ZERO,
@@ -74,7 +96,7 @@ class ValidatorBlockServiceTest {
         val block =
             createBlock(
                 num = 100,
-                signer = "0xvalidator",
+                signer = "0xVAL1",
                 txs =
                     listOf(
                         Transaction(
@@ -133,7 +155,7 @@ class ValidatorBlockServiceTest {
 
         val result = service.getValidationInfo(block, decodedInfo)!!
 
-        assertEquals("100-0xvalidator", result.id)
+        assertEquals("100-0xVAL1", result.id)
         assertEquals(BigInteger.valueOf(200), result.blockReward) // (1000+100) - 900
         assertEquals(BigInteger.valueOf(21), result.priorityReward) // 16+5
         assertEquals(BigInteger.valueOf(221), result.total)
@@ -143,7 +165,7 @@ class ValidatorBlockServiceTest {
     @Test
     fun `getValidationInfo computes delta correctly across multiple blocks`() {
         // First block initializes cache
-        val block1 = createBlock(num = 101, signer = "0xvalidator")
+        val block1 = createBlock(num = 101, signer = "0xVAL1")
         val info1 = createDecoded(1000, 0)
 
         every { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
@@ -151,7 +173,7 @@ class ValidatorBlockServiceTest {
         assertEquals(BigInteger.valueOf(100), res1.blockReward)
 
         // Second block uses updated cache
-        val block2 = createBlock(num = 102, signer = "0xvalidator")
+        val block2 = createBlock(num = 102, signer = "0xVAL2")
         val info2 = createDecoded(1200, 0)
 
         val res2 = service.getValidationInfo(block2, info2)!!
@@ -169,6 +191,7 @@ class ValidatorBlockServiceTest {
                         "masters" to listOf("0xA", "0xB"),
                         "onlines" to listOf(false, true),
                         "offlineBlocks" to listOf(BigInteger.valueOf(50), BigInteger.ZERO),
+                        "statuses" to listOf(BigInteger.ONE, BigInteger.TWO),
                     ),
                 vthoTotalSupply = BigInteger.ZERO,
                 vthoBurned = BigInteger.ZERO,
