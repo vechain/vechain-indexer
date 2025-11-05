@@ -8,12 +8,14 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import java.math.BigInteger
 import java.time.Instant
 import org.springframework.context.annotation.Profile
+import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
@@ -47,9 +49,34 @@ open class StargateController(private val stargateService: StargateService) {
         description =
             "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, the latest value will be returned."
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "rewardsType",
+        schema =
+            Schema(
+                type = "string",
+                allowableValues = ["LEGACY"], // add more if needed later
+            ),
+        description =
+            "Optional query parameter to filter rewards by type. If not only delegation rewards will be returned (post haybusa).",
+        required = false,
+    )
     @CommonApiResponses
-    open fun getTotalVthoClaimed(@RequestParam(required = false) blockNumber: Long?): BigInteger =
-        stargateService.getTotalVthoClaimed(blockNumber)
+    open fun getTotalVthoClaimed(
+        @RequestParam(required = false) blockNumber: Long?,
+        @RequestParam(required = false) rewardsType: String?,
+    ): BigInteger {
+        val allowed = setOf("LEGACY", null, "")
+
+        if (rewardsType !in allowed) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid rewardsType '$rewardsType'. Allowed values are: LEGACY or empty.",
+            )
+        }
+
+        return stargateService.getTotalVthoClaimed(blockNumber, rewardsType)
+    }
 
     @GetMapping("/total-vtho-claimed/{account}")
     @Operation(summary = "Get total VTHO claimed by a given account")
@@ -61,15 +88,36 @@ open class StargateController(private val stargateService: StargateService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "rewardsType",
+        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
+        description =
+            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
+        required = false,
+    )
     @CommonApiResponses
-    open fun getTotalVthoClaimed(@ValidAddress @PathVariable account: Address): BigInteger =
-        stargateService.getTotalVthoClaimed(account.value)
+    open fun getTotalVthoClaimed(
+        @ValidAddress @PathVariable account: Address,
+        @RequestParam(required = false) rewardsType: String?,
+    ): BigInteger {
+        val allowed = setOf("LEGACY", "DELEGATION", null, "")
+
+        if (rewardsType !in allowed) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid rewardsType '$rewardsType'. Allowed values are: LEGACY or empty.",
+            )
+        }
+
+        return stargateService.getTotalVthoClaimed(account.value, rewardsType)
+    }
 
     @GetMapping("/total-vtho-claimed/historic/{range}")
     @Operation(
         summary = "Get historic data for total VTHO claimed",
         description =
-            "This endpoint returns a time series of total VTHO claimed by all Stargate users.",
+            "This endpoint returns a time series of total VTHO claimed by all Stargate users (Delegation only).",
     )
     @Parameter(
         `in` = ParameterIn.PATH,

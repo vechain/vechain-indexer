@@ -23,6 +23,9 @@ open class VthoClaimedByAccountService(
     private val vthoClaimByAccountPruner:
         TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
 ) {
+    private val legacyEvents =
+        setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")
+
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
         saveVersionedDocuments(
@@ -44,23 +47,42 @@ open class VthoClaimedByAccountService(
         val groupedEvents =
             events.groupBy {
                 it.params.getAsString("owner")
-                    ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
+                    ?: throw IllegalArgumentException("Missing 'owner' in event")
             }
+
         val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()
 
         return groupedEvents.map { (account, accountEvents) ->
             val prev = existingByAccount[account]
             val version = (prev?.version ?: 0) + 1
-            val totalVthoClaimed =
-                accountEvents.sumOf { it.params.getAsBigInteger("value") ?: BigInteger.ZERO }
-            val value = prev?.total?.add(totalVthoClaimed) ?: totalVthoClaimed
+
+            // Sum reward values per category
+            var legacySum = BigInteger.ZERO
+            var delegationSum = BigInteger.ZERO
+
+            for (e in accountEvents) {
+                val value = e.params.getAsBigInteger("value") ?: BigInteger.ZERO
+                if (e.eventType in legacyEvents) {
+                    legacySum += value
+                } else {
+                    delegationSum += value
+                }
+            }
+
+            // Add to previous totals
+            val newLegacyTotal = prev?.legacyRewards?.add(legacySum) ?: legacySum
+            val newDelegationTotal = prev?.delegationRewards?.add(delegationSum) ?: delegationSum
+            val newTotal = newLegacyTotal + newDelegationTotal
+
             VthoClaimedByAccount(
+                version = version,
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,
                 blockTimestamp = latestEvent.blockTimestamp,
-                total = value,
+                total = newTotal,
+                legacyRewards = newLegacyTotal,
+                delegationRewards = newDelegationTotal,
                 account = account,
-                version = version,
             )
         }
     }

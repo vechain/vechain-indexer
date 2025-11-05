@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.NotFoundException
+import org.vechain.indexer.rest.ExecuteAccountResponse
 import org.vechain.indexer.rest.ExecuteCodeRequest
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
@@ -62,4 +63,12 @@ class ThorService(private val thorRest: WebClient) {
             .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
             .block() ?: throw Exception("Empty response from Thor")
     }
+
+    fun inspectBalanceAtBlock(account: String, blockID: String): ExecuteAccountResponse =
+        thorRest
+            .get()
+            .uri("/accounts/$account?revision=$blockID")
+            .retrieve()
+            .bodyToMono(ExecuteAccountResponse::class.java)
+            .block() ?: throw Exception("Empty response from Thor")
 }

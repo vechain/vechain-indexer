@@ -27,8 +27,8 @@ open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
-    @param:Value("\${indexer.validator-stats-threshold-blocks}")
-    private val statsStartThreshold: Long,
+    @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
+    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
 ) {
     private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
@@ -79,6 +79,12 @@ open class ValidatorService(
             return working.values.toList() to emptyList()
         }
 
+        // If VTHO issued is zero, fetch total VET staked from chain to calculate rewards properly
+        var stakerVetBalance = BigInteger.ZERO
+        if (ValidatorAssembler.totalVTHOIssuedBlock == BigInteger.ZERO) {
+            stakerVetBalance = getTotalVETStaked(block.id)
+        }
+
         // Decode and calculate full validator updates
         val chainUpdates =
             ValidatorAssembler.getLatestValidatorInfo(
@@ -88,6 +94,7 @@ open class ValidatorService(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
+                stakerVetBalance = stakerVetBalance,
             )
 
         // Merge into working set
@@ -252,6 +259,17 @@ open class ValidatorService(
     private fun getThreshold(): Long {
         val bestBlock = thorService.getBestBlock()
         return bestBlock.number - statsStartThreshold
+    }
+
+    /**
+     * @param blockId Block number or revision.
+     * @return Balance in Wei.
+     * @notice Get total VET staked at a specific block.
+     * @dev Reads account balance from Thor and converts hex to BigInteger (Wei).
+     */
+    fun getTotalVETStaked(blockId: String): BigInteger {
+        val res = thorService.inspectBalanceAtBlock(stakerSC, blockId)
+        return res.balance.removePrefix("0x").ifEmpty { "0" }.toBigInteger(16)
     }
 
     /**
