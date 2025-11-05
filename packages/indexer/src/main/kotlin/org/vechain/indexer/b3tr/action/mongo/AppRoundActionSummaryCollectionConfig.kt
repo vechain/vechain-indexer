@@ -53,34 +53,33 @@ open class AppRoundActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "roundId_-1_actionsRewarded_-1" to
-                    Index()
-                        .on("roundId", Sort.Direction.DESC)
-                        .on("actionsRewarded", Sort.Direction.DESC),
-                "roundId_-1_totalRewardAmount_-1" to
-                    Index()
-                        .on("roundId", Sort.Direction.DESC)
-                        .on("totalRewardAmount", Sort.Direction.DESC),
-                "roundId_1_user_1" to
-                    Index().on("roundId", Sort.Direction.ASC).on("user", Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "appId_-1_user_-1" to
                     Index().on("appId", Sort.Direction.DESC).on("user", Sort.Direction.DESC),
-                "appId_-1_roundId_-1_totalRewardAmount_-1" to
-                    Index()
-                        .on("appId", Sort.Direction.DESC)
-                        .on("roundId", Sort.Direction.DESC)
-                        .on("totalRewardAmount", Sort.Direction.DESC),
-                "appId_-1_roundId_-1_actionsRewarded_-1" to
-                    Index()
-                        .on("appId", Sort.Direction.DESC)
-                        .on("roundId", Sort.Direction.DESC)
-                        .on("actionsRewarded", Sort.Direction.DESC),
-                "appId_1_roundId_1_actionsRewarded_1" to
+                "appId_1_roundId_1_totalRewardAmount_-1_user_1" to
                     Index()
                         .on("appId", Sort.Direction.ASC)
                         .on("roundId", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                        .on("totalRewardAmount", Sort.Direction.DESC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_roundId_1_totalRewardAmount_1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("roundId", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.ASC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_roundId_1_actionsRewarded_-1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("roundId", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.DESC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_roundId_1_actionsRewarded_1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("roundId", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.ASC)
+                        .on("user", Sort.Direction.ASC),
             )
         )
     }

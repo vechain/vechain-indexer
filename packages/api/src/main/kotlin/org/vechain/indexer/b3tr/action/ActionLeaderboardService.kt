@@ -1,226 +1,317 @@
 package org.vechain.indexer.b3tr.action
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.b3tr.AppId
 import org.vechain.indexer.b3tr.action.SortFieldUtils.assertSortFields
-import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
-import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.utils.PaginationUtils.toPageable
 
 @Profile("b3tr", "b3tr-actions")
 @Service
-open class ActionLeaderboardService(
-    private val userAllTimeRepo: UserAllTimeActionSummaryRepository,
-    private val userDailyRepo: UserDailyActionSummaryRepository,
-    private val userRoundRepo: UserRoundActionSummaryRepository,
-    private val appAllTimeRepo: AppAllTimeActionSummaryRepository,
-    private val appDailyRepo: AppDailyActionSummaryRepository,
-    private val appRoundRepo: AppRoundActionSummaryRepository,
-) {
+open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
+
+    private fun buildCursorQuery(
+        criteria: Criteria,
+        size: Int?,
+        direction: String?,
+        sortBy: String,
+        cursor: String?,
+        cursorField: String = "entity",
+    ): Pair<Int, Query> {
+        val pageSize = size ?: 20
+        val sortDir =
+            if (direction?.uppercase() == "ASC") Sort.Direction.ASC else Sort.Direction.DESC
+
+        if (cursor != null) {
+            criteria.and(cursorField).gt(cursor)
+        }
+
+        val query =
+            Query(criteria)
+                .with(Sort.by(sortDir, sortBy).and(Sort.by(Sort.Direction.ASC, cursorField)))
+                .limit(pageSize + 1)
+
+        return pageSize to query
+    }
 
     // User leaderboards
 
     fun getUserAllTimeLeaderboard(
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserAllTimeActionSummary::totalRewardAmount.name,
             UserAllTimeActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserAllTimeActionSummary::entityType.name).`is`(EntityType.USER)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userAllTimeRepo.findAllByEntityType(EntityType.USER, pageable)
+        val results = mongoTemplate.find(query, UserAllTimeActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getUserDailyLeaderboard(
         date: String,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserDailyActionSummary::totalRewardAmount.name,
             UserDailyActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserDailyActionSummary::entityType.name)
+                .`is`(EntityType.USER)
+                .and(UserDailyActionSummary::date.name)
+                .`is`(date)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userDailyRepo.findAllByEntityTypeAndDate(EntityType.USER, date, pageable)
+        val results = mongoTemplate.find(query, UserDailyActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getUserRoundLeaderboard(
         roundId: Int,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserRoundActionSummary::totalRewardAmount.name,
             UserRoundActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserRoundActionSummary::entityType.name)
+                .`is`(EntityType.USER)
+                .and(UserRoundActionSummary::roundId.name)
+                .`is`(roundId)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userRoundRepo.findAllByEntityTypeAndRoundId(EntityType.USER, roundId, pageable)
+        val results = mongoTemplate.find(query, UserRoundActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { UserLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     // App leaderboards
 
     fun getAppAllTimeLeaderboard(
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserAllTimeActionSummary::totalRewardAmount.name,
             UserAllTimeActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserAllTimeActionSummary::entityType.name).`is`(EntityType.APP)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userAllTimeRepo.findAllByEntityType(EntityType.APP, pageable)
+        val results = mongoTemplate.find(query, UserAllTimeActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getAppDailyLeaderboard(
         date: String,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserDailyActionSummary::totalRewardAmount.name,
             UserDailyActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserDailyActionSummary::entityType.name)
+                .`is`(EntityType.APP)
+                .and(UserDailyActionSummary::date.name)
+                .`is`(date)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userDailyRepo.findAllByEntityTypeAndDate(EntityType.APP, date, pageable)
+        val results = mongoTemplate.find(query, UserDailyActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getAppRoundLeaderboard(
         roundId: Int,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<AppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             UserRoundActionSummary::totalRewardAmount.name,
             UserRoundActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(UserRoundActionSummary::entityType.name)
+                .`is`(EntityType.APP)
+                .and(UserRoundActionSummary::roundId.name)
+                .`is`(roundId)
+        val (pageSize, query) = buildCursorQuery(criteria, size, direction, sortBy, cursor)
 
-        val result = userRoundRepo.findAllByEntityTypeAndRoundId(EntityType.APP, roundId, pageable)
+        val results = mongoTemplate.find(query, UserRoundActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
 
-        return paginatedResponse(result.map { AppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     // User leaderboards by app
 
     fun getUserAppAllTimeLeaderboard(
         appId: AppId,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             AppAllTimeActionSummary::totalRewardAmount.name,
             AppAllTimeActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria = Criteria.where(AppAllTimeActionSummary::appId.name).`is`(appId.value)
+        val (pageSize, query) =
+            buildCursorQuery(
+                criteria,
+                size,
+                direction,
+                sortBy,
+                cursor,
+                AppAllTimeActionSummary::user.name,
+            )
 
-        val result = appAllTimeRepo.findAllByAppId(appId.value, pageable)
+        val results = mongoTemplate.find(query, AppAllTimeActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
 
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getUserAppDailyLeaderboard(
         appId: AppId,
         date: String,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             AppDailyActionSummary::totalRewardAmount.name,
             AppDailyActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(AppDailyActionSummary::appId.name)
+                .`is`(appId.value)
+                .and(AppDailyActionSummary::date.name)
+                .`is`(date)
+        val (pageSize, query) =
+            buildCursorQuery(
+                criteria,
+                size,
+                direction,
+                sortBy,
+                cursor,
+                AppDailyActionSummary::user.name,
+            )
 
-        val result = appDailyRepo.findAllByAppIdAndDate(appId.value, date, pageable)
+        val results = mongoTemplate.find(query, AppDailyActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
 
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 
     fun getUserAppRoundLeaderboard(
         appId: AppId,
         roundId: Int,
-        page: Int?,
         size: Int?,
         direction: String?,
         sortBy: String,
+        cursor: String? = null,
     ): PaginatedResponse<UserAppLeaderboardItem> {
-        // Ensure the sortBy field is valid
         assertSortFields(
             sortBy,
             AppRoundActionSummary::totalRewardAmount.name,
             AppRoundActionSummary::actionsRewarded.name,
         )
 
-        val pageable = toPageable(page, size, direction, sortBy)
+        val criteria =
+            Criteria.where(AppRoundActionSummary::appId.name)
+                .`is`(appId.value)
+                .and(AppRoundActionSummary::roundId.name)
+                .`is`(roundId)
+        val (pageSize, query) =
+            buildCursorQuery(
+                criteria,
+                size,
+                direction,
+                sortBy,
+                cursor,
+                AppRoundActionSummary::user.name,
+            )
 
-        val result = appRoundRepo.findAllByAppIdAndRoundId(appId.value, roundId, pageable)
+        val results = mongoTemplate.find(query, AppRoundActionSummary::class.java)
+        val hasNext = results.size > pageSize
+        val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
+        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
 
-        return paginatedResponse(result.map { UserAppLeaderboardItem.from(it) })
+        return paginatedResponse(items, hasNext, nextCursor)
     }
 }

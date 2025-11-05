@@ -54,14 +54,26 @@ open class UserAllTimeActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "entity_-1" to Index().on("entity", Sort.Direction.DESC),
-                "entityType_-1_actionsRewarded_-1" to
+                "entityType_1_actionsRewarded_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.DESC)
-                        .on("actionsRewarded", Sort.Direction.DESC),
-                "entityType_-1_totalRewardAmount_-1" to
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.DESC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_actionsRewarded_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.DESC)
-                        .on("totalRewardAmount", Sort.Direction.DESC),
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.ASC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_totalRewardAmount_-1_entity_1" to
+                    Index()
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.DESC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_totalRewardAmount_1_entity_1" to
+                    Index()
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.ASC)
+                        .on("entity", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
             )
         )
