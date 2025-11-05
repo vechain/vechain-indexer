@@ -55,12 +55,13 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
             )
         } else if (!account.isNullOrBlank()) {
             criteria.orOperator(
+                Criteria.where(IndexedHistoryEvent::origin.name).`is`(account),
+                Criteria.where(IndexedHistoryEvent::gasPayer.name).`is`(account),
                 Criteria.where(IndexedHistoryEvent::to.name).`is`(account),
                 Criteria.where(IndexedHistoryEvent::from.name).`is`(account),
                 Criteria.where(IndexedHistoryEvent::owner.name).`is`(account),
             )
         } else {
-            // Default to "to", "from", "origin"
             criteria.and(IndexedHistoryEvent::tokenId.name).`is`(tokenId)
         }
 
