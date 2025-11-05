@@ -99,6 +99,17 @@ open class HistoryCollectionConfig(
                         .on("eventName", Sort.Direction.ASC)
                         .on("to", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC),
+                "owner_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
+                    Index()
+                        .on("owner", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("contractAddress", Sort.Direction.ASC),
+                "appId_1_eventName_1_to_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("to", Sort.Direction.ASC),
             )
         )
     }
