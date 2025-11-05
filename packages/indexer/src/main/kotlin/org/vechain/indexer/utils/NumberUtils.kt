@@ -8,6 +8,7 @@ import org.bson.types.Decimal128
 object NumberUtils {
     // Commonly used scaling factors
     private val WEI_DECIMALS = BigDecimal.TEN.pow(18) // 1e18
+    private val USD_DECIMALS = BigDecimal.TEN.pow(12) // 1e12
 
     /**
      * Convert from wei (BigInteger) to VET (BigDecimal). Example: 1000000000000000000 wei => 1.0
@@ -15,6 +16,9 @@ object NumberUtils {
      */
     fun toVET(value: BigInteger, scale: Int = 12): BigDecimal =
         value.toBigDecimal().divide(WEI_DECIMALS, scale, RoundingMode.HALF_UP)
+
+    fun toUSD(value: BigInteger, scale: Int = 12): BigDecimal =
+        value.toBigDecimal().divide(USD_DECIMALS, scale, RoundingMode.HALF_UP)
 
     /** Convert from raw BigInteger to a normalized probability (0–1). */
     fun toProbabilityOf(value: BigInteger, total: BigInteger, scale: Int = 6): BigDecimal =
