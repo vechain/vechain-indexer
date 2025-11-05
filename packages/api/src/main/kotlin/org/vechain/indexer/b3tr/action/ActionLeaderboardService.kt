@@ -32,7 +32,11 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
             if (direction?.uppercase() == "ASC") Sort.Direction.ASC else Sort.Direction.DESC
 
         if (cursor != null) {
-            criteria.and(cursorField).gt(cursor)
+            if (sortDir == Sort.Direction.ASC) {
+                criteria.and(cursorField).gt(cursor)
+            } else {
+                criteria.and(cursorField).lt(cursor)
+            }
         }
 
         val query =
