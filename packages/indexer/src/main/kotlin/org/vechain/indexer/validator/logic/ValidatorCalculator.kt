@@ -430,7 +430,7 @@ object ValidatorCalculator {
         // Convert staked amount from Wei → VET (decimal)
         val stakedVET = BigDecimal(totalVetStaked).divide(BigDecimal.TEN.pow(18), mc)
 
-        // Apply your formula: 1200 * 64 * sqrt(VET_staked)
+        // Apply formula: 1200 * 64 * sqrt(VET_staked)
         val annualVTHO = BigDecimal(76800).multiply(stakedVET.sqrt(mc), mc)
 
         // Blocks per year (365 days, 10s per block)

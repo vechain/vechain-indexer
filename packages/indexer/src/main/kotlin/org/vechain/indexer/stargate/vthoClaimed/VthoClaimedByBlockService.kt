@@ -55,8 +55,8 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
                     blockId = rep.blockId,
                     blockNumber = blockNum,
                     blockTimestamp = rep.blockTimestamp,
-                    total = runningLatest, // ✅ only latest rewards
-                    legacyRewards = runningLegacy, // ✅ only legacy
+                    total = runningLatest,
+                    legacyRewards = runningLegacy,
                 )
         }
 
