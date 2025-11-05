@@ -203,7 +203,7 @@ open class StargateTokenService(
                 if (snapshotEmpty) {
                     validatorDelegationService.determineStartBlock(responses[index])
                 } else {
-                    validatorsSnapshots[validatorId]!!.startBlock
+                    validatorsSnapshots[validatorId]?.startBlock ?: 0L
                 }
 
             if (startBlock != 0L) {
