@@ -100,6 +100,7 @@ internal class VthoClaimByBlockServiceTest {
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
                 total = BigInteger("300"),
+                legacyRewards = BigInteger("0"),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
@@ -139,14 +140,12 @@ internal class VthoClaimByBlockServiceTest {
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
                 total = BigInteger("300"),
+                legacyRewards = BigInteger("0"),
             )
         every { repository.getLatestRecord() } returns latestRecord
 
         val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
-        expectThat(ex.message)
-            .isEqualTo(
-                "Provided events include blockNumber 12 which is <= last persisted blockNumber 12"
-            )
+        expectThat(ex.message).isEqualTo("Events include block ≤ last persisted block 12")
     }
 
     @Test
@@ -210,6 +209,7 @@ internal class VthoClaimByBlockServiceTest {
                     blockNumber = 99L,
                     blockTimestamp = 9999L,
                     total = BigInteger("123"),
+                    legacyRewards = BigInteger.ZERO,
                 )
             )
         every { repository.saveAll(records) } returns records
@@ -231,6 +231,7 @@ internal class VthoClaimByBlockServiceTest {
             every { this@mockk.blockId } returns blockId
             every { this@mockk.blockNumber } returns blockNumber
             every { this@mockk.blockTimestamp } returns blockTimestamp
+            every { this@mockk.eventType } returns "STARGATE_CLAIM_REWARDS"
             every { params.getAsBigInteger("value") } returns value?.let { BigInteger(it) }
         }
 

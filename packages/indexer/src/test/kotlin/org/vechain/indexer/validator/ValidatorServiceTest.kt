@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -8,6 +9,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.rest.ExecuteAccountResponse
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -24,7 +26,7 @@ class ValidatorServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorService, 25L))
+        service = spyk(ValidatorService(repository, archiveService, thorService, 25L, "0xcontract"))
     }
 
     private fun block(num: Long) =
@@ -125,7 +127,9 @@ class ValidatorServiceTest {
         // Fake ABI + responses
         val abi = AbiElement(name = "getValidators", type = "function")
         mockkObject(ValidatorAssembler)
-        every { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) } returns
+        every {
+            getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO)
+        } returns
             listOf(
                 Validator(
                     id = "0xVAL1",
@@ -136,6 +140,8 @@ class ValidatorServiceTest {
                     version = 1,
                 )
             )
+        every { thorService.inspectBalanceAtBlock(any(), any()) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x0", hasCode = false)
 
         // FIX: InspectionResult must get a List<TxEvent>, not a BigInteger
         val inspectionResult =
@@ -151,7 +157,7 @@ class ValidatorServiceTest {
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
-        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
+        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO) }
     }
 
     // --- saveAndDelete tests ---

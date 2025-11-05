@@ -11,7 +11,7 @@ class ValidatorAssemblerTest {
         mapOf(
             "masters" to listOf("0xVAL1"),
             "endorsors" to listOf("0xEND1"),
-            "statuses" to listOf(BigInteger.ONE),
+            "statuses" to listOf(BigInteger.TWO),
             "onlines" to listOf(true),
             "offlineBlocks" to listOf(BigInteger.ZERO),
             "stakingPeriodLengths" to listOf(10),
@@ -43,6 +43,7 @@ class ValidatorAssemblerTest {
                 blockId = "0xBLOCK",
                 blockNumber = 20,
                 blockTimestamp = 1234567890,
+                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators).hasSize(1)
@@ -83,6 +84,7 @@ class ValidatorAssemblerTest {
                 "0xBLOCK",
                 20,
                 1234567890,
+                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators.first().offlineBlocks).isEqualTo(2L)
@@ -106,6 +108,7 @@ class ValidatorAssemblerTest {
                 "0xBLOCK",
                 20,
                 1234567890,
+                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators.first().status).isEqualTo(Status.fromCode(4))
@@ -135,6 +138,7 @@ class ValidatorAssemblerTest {
                 "0xBLOCK",
                 20,
                 1234567890,
+                stakerVetBalance = BigInteger("0"),
             )
 
         val disappeared = validators.firstOrNull { it.id == "0xOLD" }

@@ -207,8 +207,7 @@ object ValidatorDecoder {
         val ids = this.decodedValidators.listOf<String>("masters")
         val delegatorsStake = this.decodedValidators.listOf<BigInteger>("delegatorsStake")
         val statuses = this.decodedValidators.listOf<BigInteger>("statuses")
-
-        val index = ids.indexOf(address.lowercase())
+        val index = ids.indexOf(address)
         if (index == -1) return -1
         val status = statuses[index].toInt()
         if (status != 2) return -1
@@ -239,6 +238,5 @@ object ValidatorDecoder {
             ?: throw IllegalStateException("Expected BigInteger for $functionName.$key")
     }
 
-    fun InspectionResult.hasAbiData(): Boolean =
-        this.data != null && this.data.isNotBlank() && this.data != "0x"
+    fun InspectionResult.hasAbiData(): Boolean = this.data.isNotBlank() && this.data != "0x"
 }
