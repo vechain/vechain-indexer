@@ -50,7 +50,7 @@ class ValidatorAssemblerTest {
         val v = validators.first()
         assertThat(v.id).isEqualTo("0xVAL1")
         assertThat(v.endorser).isEqualTo("0xEND1")
-        assertThat(v.status).isEqualTo(Status.fromCode(1))
+        assertThat(v.status).isEqualTo(Status.fromCode(2))
         assertThat(v.vetStaked!!.bigDecimalValue().setScale(6)).isEqualTo(BigDecimal("1.500000"))
     }
 
