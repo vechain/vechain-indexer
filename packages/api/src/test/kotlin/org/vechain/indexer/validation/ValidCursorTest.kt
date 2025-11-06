@@ -82,21 +82,21 @@ class ValidCursorTest {
     // ==================== Plain Integer Detection Tests ====================
 
     @Test
-    @DisplayName("Should reject cursor with plain integer sort value (0)")
+    @DisplayName("Should accept cursor with plain integer sort value (0)")
     fun testValidateCursorWithPlainIntegerZero() {
-        assertFalse(validator.isValid("0|wallet123", context))
+        assertTrue(validator.isValid("0|wallet123", context))
     }
 
     @Test
-    @DisplayName("Should reject cursor with plain integer sort value (positive)")
+    @DisplayName("Should accept cursor with plain integer sort value (positive)")
     fun testValidateCursorWithPlainIntegerPositive() {
-        assertFalse(validator.isValid("100|wallet123", context))
+        assertTrue(validator.isValid("100|wallet123", context))
     }
 
     @Test
-    @DisplayName("Should reject cursor with plain integer sort value (large)")
+    @DisplayName("Should accept cursor with plain integer sort value (large)")
     fun testValidateCursorWithPlainIntegerLarge() {
-        assertFalse(validator.isValid("999999|wallet123", context))
+        assertTrue(validator.isValid("999999|wallet123", context))
     }
 
     // ==================== Valid Decimal Sort Value Tests ====================
@@ -180,9 +180,9 @@ class ValidCursorTest {
     }
 
     @Test
-    @DisplayName("Should reject negative numbers without decimal")
+    @DisplayName("Should accept negative numbers without decimal")
     fun testValidateCursorWithNegativeIntegerValue() {
-        assertFalse(validator.isValid("-100|wallet123", context))
+        assertTrue(validator.isValid("-100|wallet123", context))
     }
 
     @Test

@@ -27,40 +27,14 @@ class CursorValidator : ConstraintValidator<ValidCursor, String> {
             return true
         }
 
-        // Validate well-formed cursor
+        // Validate well-formed cursor (contains pipe separator and non-blank cursor value)
         if (!CursorPaginationUtils.isValidCursor(value)) {
             return false
         }
 
-        // Additional check: ensure sort value is numeric for known numeric fields
+        // Validate that sort value can be parsed as a number
         val cursorInfo = CursorPaginationUtils.parseCursor(value) ?: return false
-        val sortValue = cursorInfo.sortValue
-
-        // Validate that the sort value is a valid number (Long or BigDecimal)
-        // This prevents MongoDB type conversion errors for numeric fields
-        // A valid numeric sort value should either:
-        // 1. Parse as Long/BigDecimal successfully, OR
-        // 2. Contain a decimal point (for BigDecimal fields)
-        if (!isValidNumericValue(sortValue)) {
-            return false
-        }
-
-        return true
-    }
-
-    private fun isValidNumericValue(sortValue: String): Boolean {
-        // Reject non-numeric strings
-        if (sortValue.toLongOrNull() == null && sortValue.toBigDecimalOrNull() == null) {
-            return false
-        }
-
-        // If it's a plain integer (no decimal point), reject it
-        // This prevents MongoDB type conversion errors with Decimal128 fields
-        if (sortValue.toLongOrNull() != null && !sortValue.contains(".")) {
-            return false
-        }
-
-        // Accept all other numeric values (those with decimal points)
-        return true
+        return cursorInfo.sortValue.toLongOrNull() != null ||
+            cursorInfo.sortValue.toBigDecimalOrNull() != null
     }
 }
