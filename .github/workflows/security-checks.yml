@@ -8,6 +8,7 @@ on:
 
 jobs:
   scorecard:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     uses: vechain/github-actions/.github/workflows/scorecard.yaml@v.1.13.0
     secrets:
       app-id: ${{ secrets.SCORECARD_APPID }}
