@@ -364,7 +364,7 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
                 results = results,
                 pageSize = pageSize,
                 sortByField = sortBy,
-                cursorField = UserAppLeaderboardItem::user.name,
+                cursorField = AppDailyActionSummary::user.name,
             )
 
         return paginatedResponse(
