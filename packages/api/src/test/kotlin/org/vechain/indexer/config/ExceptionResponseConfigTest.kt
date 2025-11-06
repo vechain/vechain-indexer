@@ -20,6 +20,7 @@ internal class ExceptionResponseConfigTest : ExceptionResponseConfig() {
     private val servlet: HttpServletRequest = mockk()
 
     init {
+        every { servlet.requestURI } returns requestPath
         every { servlet.servletPath } returns requestPath
     }
 
