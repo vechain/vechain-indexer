@@ -89,10 +89,10 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - uses: actions/setup-java@v3
+        if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           distribution: 'oracle'
           java-version: '21'
-        if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Unit Test
         if: needs.detect-code-changes.outputs.run-tests == 'true'
