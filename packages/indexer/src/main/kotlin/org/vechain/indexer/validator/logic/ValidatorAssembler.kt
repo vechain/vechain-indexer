@@ -178,8 +178,8 @@ object ValidatorAssembler {
         blockTimestamp: Long,
         nextPeriodTotalWeight: BigInteger,
     ): Validator {
-        val vetPrice = NumberUtils.toVET(vetPriceUsd)
-        val vthoPrice = NumberUtils.toVET(vthoPriceUsd)
+        val vetPrice = NumberUtils.toUSD(vetPriceUsd)
+        val vthoPrice = NumberUtils.toUSD(vthoPriceUsd)
         val vthoIssuedBD = NumberUtils.toVET(vthoIssued)
 
         val stakes = computeStakes(row, existingDoc, blockNumber)
@@ -251,7 +251,7 @@ object ValidatorAssembler {
             nextCycleAvgDelegatorYield = NumberUtils.toSafeDecimal128(nextCycleAvgDelegatorYield),
             nftYieldsNextCycle =
                 calculateNftLevelYields(
-                    stakes.totalVET,
+                    NumberUtils.toVET(row.totalNextPeriodWeight),
                     NumberUtils.toVET(row.nextPeriodDelegationStake),
                     NumberUtils.toVET(nextPeriodTotalWeight),
                     vthoIssuedBD,
