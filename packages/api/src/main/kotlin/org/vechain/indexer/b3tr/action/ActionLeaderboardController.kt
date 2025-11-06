@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.b3tr.AppId
-import org.vechain.indexer.b3tr.action.SortFieldUtils.assertSortFields
 import org.vechain.indexer.b3tr.action.response.AppLeaderboardItem
 import org.vechain.indexer.b3tr.action.response.ERROR_CANT_PASS_ROUND_AND_DATE
 import org.vechain.indexer.b3tr.action.response.UserAppLeaderboardItem
@@ -30,6 +29,7 @@ import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidISODateString
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidSortField
 
 @Profile("b3tr", "b3tr-actions")
 @Tag(name = "B3TR - Action Leaderboards", description = "Leaderboards for B3TR Actions.")
@@ -63,16 +63,15 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @ValidISODateString @RequestParam(required = false) date: String?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<UserLeaderboardItem> {
 
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
-
-        // Validate sortBy parameter
-        assertSortFields(sortBy, "totalRewardAmount", "actionsRewarded")
 
         if (roundId != null) {
             return service.getUserRoundLeaderboard(roundId, size, direction, sortBy, cursor)
@@ -111,16 +110,15 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @ValidISODateString @RequestParam(required = false) date: String?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<AppLeaderboardItem> {
 
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
-
-        // Validate sortBy parameter
-        assertSortFields(sortBy, "totalRewardAmount", "actionsRewarded")
 
         if (roundId != null) {
             return service.getAppRoundLeaderboard(roundId, size, direction, sortBy, cursor)
@@ -159,15 +157,14 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         @ValidISODateString @RequestParam(required = false) date: String?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
         @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<UserAppLeaderboardItem> {
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
-
-        // Validate sortBy parameter
-        assertSortFields(sortBy, "totalRewardAmount", "actionsRewarded")
 
         if (roundId != null) {
             return service.getUserAppRoundLeaderboard(
