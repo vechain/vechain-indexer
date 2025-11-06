@@ -59,11 +59,11 @@ jobs:
         if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - uses: actions/setup-java@v3
+        if: needs.detect-code-changes.outputs.run-tests == 'true'
         with:
           distribution: "oracle"
           java-version: "21"
           cache: "gradle"
-        if: needs.detect-code-changes.outputs.run-tests == 'true'
 
       - name: Grant execute permissions to Gradle wrapper
         if: needs.detect-code-changes.outputs.run-tests == 'true'
