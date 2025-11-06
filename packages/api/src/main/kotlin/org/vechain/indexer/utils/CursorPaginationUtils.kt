@@ -13,14 +13,6 @@ import org.springframework.data.mongodb.core.query.Query
  */
 object CursorPaginationUtils {
 
-    data class CursorPaginationParams(
-        val pageSize: Int,
-        val sortDirection: Sort.Direction,
-        val sortByField: String,
-        val cursor: String?,
-        val cursorField: String = "entity",
-    )
-
     data class CursorInfo(val sortValue: String, val cursorValue: String) {
         companion object {
             fun parse(cursor: String): CursorInfo? {
@@ -54,18 +46,27 @@ object CursorPaginationUtils {
     }
 
     /**
-     * Parses the sort value string into its appropriate type based on the sort field name.
+     * Parses a cursor sort value, attempting to convert it to common numeric types. Falls back to
+     * String if no conversion is possible.
+     *
+     * The caller is responsible for ensuring the cursor was generated with valid data.
      *
      * @param sortValue The sort value as a string
-     * @param sortByField The sort field name
-     * @return The parsed value in its appropriate type (Long, BigDecimal, or String)
+     * @return The parsed value as Long, BigDecimal, or String
      */
-    fun parseSortValue(sortValue: String, sortByField: String): Any {
-        return when {
-            sortByField.contains("actionsRewarded") -> sortValue.toLongOrNull() ?: sortValue
-            sortByField.contains("totalRewardAmount") -> sortValue.toBigDecimalOrNull() ?: sortValue
-            else -> sortValue
+    fun parseSortValue(sortValue: String): Any {
+        // Try parsing as Long first
+        sortValue.toLongOrNull()?.let {
+            return it
         }
+
+        // Try parsing as BigDecimal next
+        sortValue.toBigDecimalOrNull()?.let {
+            return it
+        }
+
+        // Fall back to String
+        return sortValue
     }
 
     /**
@@ -76,30 +77,39 @@ object CursorPaginationUtils {
      * - For ASC: (sortField > value) OR (sortField == value AND cursorField >= cursorValue)
      *
      * @param query The query to apply cursor filtering to
-     * @param params The cursor pagination parameters
+     * @param cursor The cursor string to parse
+     * @param sortByField The field to sort by
+     * @param sortDirection The sort direction
+     * @param cursorField The field to use for tie-breaking
      */
-    fun applyCursorFilter(query: Query, params: CursorPaginationParams) {
-        val cursorInfo = parseCursor(params.cursor) ?: return
+    fun applyCursorFilter(
+        query: Query,
+        cursor: String?,
+        sortByField: String,
+        sortDirection: Sort.Direction,
+        cursorField: String,
+    ) {
+        val cursorInfo = parseCursor(cursor) ?: return
 
-        val parsedSortValue = parseSortValue(cursorInfo.sortValue, params.sortByField)
+        val parsedSortValue = parseSortValue(cursorInfo.sortValue)
 
-        if (params.sortDirection == Sort.Direction.DESC) {
+        if (sortDirection == Sort.Direction.DESC) {
             // For DESC: (sortField < value) OR (sortField == value AND cursorField <= cursorValue)
-            val cond1 = Criteria.where(params.sortByField).lt(parsedSortValue)
+            val cond1 = Criteria.where(sortByField).lt(parsedSortValue)
             val cond2 =
-                Criteria.where(params.sortByField)
+                Criteria.where(sortByField)
                     .`is`(parsedSortValue)
-                    .and(params.cursorField)
+                    .and(cursorField)
                     .lte(cursorInfo.cursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         } else {
             // For ASC: (sortField > value) OR (sortField == value AND cursorField >= cursorValue)
-            val cond1 = Criteria.where(params.sortByField).gt(parsedSortValue)
+            val cond1 = Criteria.where(sortByField).gt(parsedSortValue)
             val cond2 =
-                Criteria.where(params.sortByField)
+                Criteria.where(sortByField)
                     .`is`(parsedSortValue)
-                    .and(params.cursorField)
+                    .and(cursorField)
                     .gte(cursorInfo.cursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
@@ -132,21 +142,30 @@ object CursorPaginationUtils {
         val query = Query(baseCriteria)
 
         // Apply cursor filtering
-        val params =
-            CursorPaginationParams(
-                pageSize = pageSize,
-                sortDirection = sortDir,
-                sortByField = sortByField,
-                cursor = cursor,
-                cursorField = cursorField,
-            )
-        applyCursorFilter(query, params)
+        applyCursorFilter(query, cursor, sortByField, sortDir, cursorField)
 
         // Apply sort and limit
         query.with(Sort.by(sortDir, sortByField).and(Sort.by(Sort.Direction.ASC, cursorField)))
         query.limit(pageSize + 1)
 
         return pageSize to query
+    }
+
+    /**
+     * Validates that a cursor is well-formed. Returns true if the cursor is valid, false otherwise.
+     *
+     * A valid cursor must:
+     * - Parse successfully (contain a pipe separator)
+     * - Have a non-blank cursor field value
+     *
+     * @param cursor The cursor string to validate
+     * @return true if the cursor is valid, false otherwise
+     */
+    fun isValidCursor(cursor: String?): Boolean {
+        val cursorInfo = parseCursor(cursor) ?: return false
+
+        // Validate that cursor value is not empty
+        return cursorInfo.cursorValue.isNotBlank()
     }
 
     /**
@@ -157,6 +176,7 @@ object CursorPaginationUtils {
      * @param sortByField The name of the sort field to extract from the result item
      * @param cursorField The name of the cursor field to extract from the result item
      * @return The next cursor string, or null if there are no more results
+     * @throws IllegalArgumentException if sortByField or cursorField don't exist on the result type
      */
     fun <T> calculateNextCursor(
         results: List<T>,
@@ -169,18 +189,26 @@ object CursorPaginationUtils {
         val nextItem = results[pageSize]
         val kClass = nextItem!!::class
 
+        // Validate that the fields exist on the target object
+        val sortProperty =
+            kClass.memberProperties.find { it.name == sortByField }
+                ?: throw IllegalArgumentException(
+                    "Field '$sortByField' not found on ${kClass.simpleName}. Available fields: " +
+                        "${kClass.memberProperties.map { it.name }.joinToString(", ")}"
+                )
+
+        val cursorProperty =
+            kClass.memberProperties.find { it.name == cursorField }
+                ?: throw IllegalArgumentException(
+                    "Field '$cursorField' not found on ${kClass.simpleName}. Available fields: " +
+                        "${kClass.memberProperties.map { it.name }.joinToString(", ")}"
+                )
+
         // Extract sort value by field name using reflection
-        val sortValue =
-            kClass.memberProperties.find { it.name == sortByField }?.getter?.call(nextItem)
-                ?: return null
+        val sortValue = sortProperty.getter.call(nextItem) ?: return null
 
         // Extract cursor value by field name using reflection
-        val cursorValue =
-            kClass.memberProperties
-                .find { it.name == cursorField }
-                ?.getter
-                ?.call(nextItem)
-                ?.toString() ?: return null
+        val cursorValue = cursorProperty.getter.call(nextItem)?.toString() ?: return null
 
         return generateCursor(sortValue, cursorValue)
     }

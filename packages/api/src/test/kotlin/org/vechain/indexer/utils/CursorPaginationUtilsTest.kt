@@ -2,6 +2,7 @@ package org.vechain.indexer.utils
 
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -79,27 +80,27 @@ class CursorPaginationUtilsTest {
     // ==================== parseSortValue Tests ====================
 
     @Test
-    @DisplayName("Should parse Long for actionsRewarded field")
+    @DisplayName("Should parse Long from numeric string")
     fun testParseSortValueLong() {
-        val result = CursorPaginationUtils.parseSortValue("8053", "actionsRewarded")
+        val result = CursorPaginationUtils.parseSortValue("8053")
 
         assertTrue(result is Long)
         assertEquals(8053L, result)
     }
 
     @Test
-    @DisplayName("Should parse BigDecimal for totalRewardAmount field")
+    @DisplayName("Should parse BigDecimal from decimal string")
     fun testParseSortValueBigDecimal() {
-        val result = CursorPaginationUtils.parseSortValue("254755.364186396", "totalRewardAmount")
+        val result = CursorPaginationUtils.parseSortValue("254755.364186396")
 
         assertTrue(result is BigDecimal)
         assertEquals(BigDecimal("254755.364186396"), result)
     }
 
     @Test
-    @DisplayName("Should return string for unknown field type")
+    @DisplayName("Should return string for non-numeric value")
     fun testParseSortValueString() {
-        val result = CursorPaginationUtils.parseSortValue("somevalue", "unknownField")
+        val result = CursorPaginationUtils.parseSortValue("somevalue")
 
         assertTrue(result is String)
         assertEquals("somevalue", result)
@@ -108,19 +109,20 @@ class CursorPaginationUtilsTest {
     @Test
     @DisplayName("Should fallback to string if Long parsing fails")
     fun testParseSortValueLongFallback() {
-        val result = CursorPaginationUtils.parseSortValue("not-a-number", "actionsRewarded")
+        val result = CursorPaginationUtils.parseSortValue("not-a-number")
 
         assertTrue(result is String)
         assertEquals("not-a-number", result)
     }
 
     @Test
-    @DisplayName("Should fallback to string if BigDecimal parsing fails")
-    fun testParseSortValueBigDecimalFallback() {
-        val result = CursorPaginationUtils.parseSortValue("not-a-decimal", "totalRewardAmount")
+    @DisplayName("Should parse Long before attempting BigDecimal")
+    fun testParseSortValueLongBeforeBigDecimal() {
+        // Integer values should parse as Long, not BigDecimal
+        val result = CursorPaginationUtils.parseSortValue("12345")
 
-        assertTrue(result is String)
-        assertEquals("not-a-decimal", result)
+        assertTrue(result is Long)
+        assertEquals(12345L, result)
     }
 
     // ==================== generateCursor Tests ====================
@@ -159,16 +161,14 @@ class CursorPaginationUtilsTest {
     @DisplayName("Should apply DESC filter with sort value comparison and cursor field tiebreaker")
     fun testApplyCursorFilterDESC() {
         val query = org.springframework.data.mongodb.core.query.Query()
-        val params =
-            CursorPaginationUtils.CursorPaginationParams(
-                pageSize = 20,
-                sortDirection = Sort.Direction.DESC,
-                sortByField = "actionsRewarded",
-                cursor = "8053|wallet123",
-                cursorField = "entity",
-            )
 
-        CursorPaginationUtils.applyCursorFilter(query, params)
+        CursorPaginationUtils.applyCursorFilter(
+            query,
+            "8053|wallet123",
+            "actionsRewarded",
+            Sort.Direction.DESC,
+            "entity",
+        )
 
         // Verify the query has cursor filtering applied
         // The query object doesn't expose the criteria directly, but we can verify it was modified
@@ -180,16 +180,14 @@ class CursorPaginationUtilsTest {
     @DisplayName("Should apply ASC filter with sort value comparison and cursor field tiebreaker")
     fun testApplyCursorFilterASC() {
         val query = org.springframework.data.mongodb.core.query.Query()
-        val params =
-            CursorPaginationUtils.CursorPaginationParams(
-                pageSize = 20,
-                sortDirection = Sort.Direction.ASC,
-                sortByField = "actionsRewarded",
-                cursor = "100|wallet123",
-                cursorField = "entity",
-            )
 
-        CursorPaginationUtils.applyCursorFilter(query, params)
+        CursorPaginationUtils.applyCursorFilter(
+            query,
+            "100|wallet123",
+            "actionsRewarded",
+            Sort.Direction.ASC,
+            "entity",
+        )
 
         val queryString = query.toString()
         assertTrue(queryString.contains("actionsRewarded"))
@@ -201,16 +199,13 @@ class CursorPaginationUtilsTest {
         val query = org.springframework.data.mongodb.core.query.Query()
         val originalQueryString = query.toString()
 
-        val params =
-            CursorPaginationUtils.CursorPaginationParams(
-                pageSize = 20,
-                sortDirection = Sort.Direction.DESC,
-                sortByField = "actionsRewarded",
-                cursor = null,
-                cursorField = "entity",
-            )
-
-        CursorPaginationUtils.applyCursorFilter(query, params)
+        CursorPaginationUtils.applyCursorFilter(
+            query,
+            null,
+            "actionsRewarded",
+            Sort.Direction.DESC,
+            "entity",
+        )
 
         // Query should remain unchanged
         assertEquals(originalQueryString, query.toString())
@@ -420,6 +415,62 @@ class CursorPaginationUtilsTest {
         assertEquals("400|user_gamma", cursor)
     }
 
+    // ==================== isValidCursor Tests ====================
+
+    @Test
+    @DisplayName("Should return false for null cursor")
+    fun testIsValidCursorNull() {
+        assertFalse(CursorPaginationUtils.isValidCursor(null))
+    }
+
+    @Test
+    @DisplayName("Should return false for blank cursor")
+    fun testIsValidCursorBlank() {
+        assertFalse(CursorPaginationUtils.isValidCursor(""))
+    }
+
+    @Test
+    @DisplayName("Should return false for cursor with empty cursor value")
+    fun testIsValidCursorEmptyCursorValue() {
+        assertFalse(CursorPaginationUtils.isValidCursor("0|"))
+    }
+
+    @Test
+    @DisplayName("Should return false for cursor with whitespace-only cursor value")
+    fun testIsValidCursorWhitespaceCursorValue() {
+        assertFalse(CursorPaginationUtils.isValidCursor("100|   "))
+    }
+
+    @Test
+    @DisplayName("Should return false for cursor with empty cursor value")
+    fun testIsValidCursorEmptyCursorValueDetail() {
+        assertFalse(CursorPaginationUtils.isValidCursor("0|"))
+    }
+
+    @Test
+    @DisplayName("Should return true for valid cursor with any sort value")
+    fun testIsValidCursorValidWithLongSortValue() {
+        assertTrue(CursorPaginationUtils.isValidCursor("100|wallet123"))
+    }
+
+    @Test
+    @DisplayName("Should return true for valid cursor with decimal sort value")
+    fun testIsValidCursorValidWithBigDecimalSortValue() {
+        assertTrue(CursorPaginationUtils.isValidCursor("254755.364186396|user456"))
+    }
+
+    @Test
+    @DisplayName("Should return true for valid cursor with string sort value")
+    fun testIsValidCursorValidWithStringSortValue() {
+        assertTrue(CursorPaginationUtils.isValidCursor("notanumber|entity123"))
+    }
+
+    @Test
+    @DisplayName("Should return true for valid cursor with any sort value type")
+    fun testIsValidCursorValidGeneric() {
+        assertTrue(CursorPaginationUtils.isValidCursor("50|user789"))
+    }
+
     // ==================== Integration Tests ====================
 
     @Test
@@ -439,28 +490,8 @@ class CursorPaginationUtilsTest {
         assertEquals("0xe1556fabbdab0dbf4bcdbfac07e4d470e366fc17", parsed?.cursorValue)
 
         // Parse sort value
-        val parsedSortValue =
-            CursorPaginationUtils.parseSortValue(parsed!!.sortValue, "actionsRewarded")
+        val parsedSortValue = CursorPaginationUtils.parseSortValue(parsed!!.sortValue)
         assertTrue(parsedSortValue is Long)
         assertEquals(8053L, parsedSortValue)
-    }
-
-    @Test
-    @DisplayName("Should handle pagination parameters data class")
-    fun testCursorPaginationParams() {
-        val params =
-            CursorPaginationUtils.CursorPaginationParams(
-                pageSize = 25,
-                sortDirection = Sort.Direction.DESC,
-                sortByField = "totalRewardAmount",
-                cursor = "1000.50|user123",
-                cursorField = "user",
-            )
-
-        assertEquals(25, params.pageSize)
-        assertEquals(Sort.Direction.DESC, params.sortDirection)
-        assertEquals("totalRewardAmount", params.sortByField)
-        assertEquals("1000.50|user123", params.cursor)
-        assertEquals("user", params.cursorField)
     }
 }
