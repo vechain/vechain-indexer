@@ -206,4 +206,3 @@ When testing is complete, or when a DNS switch has migrated traffic from one env
 
 Further details on the CICD process can be found [here](https://vechainfoundation-my.sharepoint.com/:w:/g/personal/dougal_rea_vechain_org/EcuW_jUEDh5PhS8jzH5PJ0EBw9pY8EqSd5IWKCJIG8rGVQ?e=i0Pa0N)
 
-## Test update
