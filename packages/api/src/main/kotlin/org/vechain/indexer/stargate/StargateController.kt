@@ -52,13 +52,9 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "rewardsType",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = ["LEGACY"], // add more if needed later
-            ),
+        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
         description =
-            "Optional query parameter to filter rewards by type. If not only delegation rewards will be returned (post haybusa).",
+            "Optional query parameter to filter rewards by type. If not all rewards will be returned.",
         required = false,
     )
     @CommonApiResponses
@@ -66,12 +62,12 @@ open class StargateController(private val stargateService: StargateService) {
         @RequestParam(required = false) blockNumber: Long?,
         @RequestParam(required = false) rewardsType: String?,
     ): BigInteger {
-        val allowed = setOf("LEGACY", null, "")
+        val allowed = setOf("LEGACY", "DELEGATION", null, "")
 
         if (rewardsType !in allowed) {
             throw ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
-                "Invalid rewardsType '$rewardsType'. Allowed values are: LEGACY or empty.",
+                "Invalid rewardsType '$rewardsType'. Allowed values are: LEGACY, DELEGATION or empty.",
             )
         }
 

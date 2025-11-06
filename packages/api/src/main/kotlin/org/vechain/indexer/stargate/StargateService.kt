@@ -55,8 +55,10 @@ open class StargateService(
             }
         if (rewardType == "LEGACY") {
             return record?.legacyRewards ?: BigInteger.ZERO
+        } else if (rewardType == "DELEGATION") {
+            return record?.total ?: BigInteger.ZERO
         }
-        return record?.total ?: BigInteger.ZERO
+        return (record?.total ?: BigInteger.ZERO) + (record?.legacyRewards ?: BigInteger.ZERO)
     }
 
     /**
