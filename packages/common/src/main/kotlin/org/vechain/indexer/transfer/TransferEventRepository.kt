@@ -11,6 +11,7 @@ import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 @Repository
 interface TransferEventRepository :
     BasePagingAndSortingIndexedRepository<IndexedTransferEvent, String> {
+    @Query("{'\$and': [ {'tokenAddress': ?1}, {'\$or': [{'to': ?0}, {'from': ?0}]} ] }")
     fun findByToOrFromAndTokenAddress(
         address: String,
         contractAddress: String,

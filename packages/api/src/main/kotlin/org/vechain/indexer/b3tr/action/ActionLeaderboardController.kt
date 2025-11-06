@@ -19,16 +19,17 @@ import org.vechain.indexer.b3tr.action.response.UserLeaderboardItem
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.CursorPaginationParameters
 import org.vechain.indexer.docs.DateParameter
-import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.SortByParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.validation.ValidAppId
+import org.vechain.indexer.validation.ValidCursor
 import org.vechain.indexer.validation.ValidISODateString
-import org.vechain.indexer.validation.ValidPageNumber
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidSortField
 
 @Profile("b3tr", "b3tr-actions")
 @Tag(name = "B3TR - Action Leaderboards", description = "Leaderboards for B3TR Actions.")
@@ -43,12 +44,12 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         description =
             """
             This endpoint retrieves the user leaderboard based on their B3TR actions.
-            
+
             - If roundId is provided, the leaderboard for the specific round is returned.
             - If date is provided, the leaderboard for the specific date is returned.
             - If neither roundId nor date are provided, the all-time leaderboard is returned.
             - If both roundId and date are provided, a BadRequest error is returned.
-            
+
             """,
     )
     @RoundIdParameter
@@ -56,14 +57,16 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         Schema(type = "string", allowableValues = ["totalRewardAmount", "actionsRewarded"])
     )
     @CommonApiResponses
-    @PaginationParameters
+    @CursorPaginationParameters
     open fun getUserLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-        @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<UserLeaderboardItem> {
 
         if (roundId != null && date != null) {
@@ -71,14 +74,14 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         }
 
         if (roundId != null) {
-            return service.getUserRoundLeaderboard(roundId, page, size, direction, sortBy)
+            return service.getUserRoundLeaderboard(roundId, size, direction, sortBy, cursor)
         }
 
         if (date != null) {
-            return service.getUserDailyLeaderboard(date, page, size, direction, sortBy)
+            return service.getUserDailyLeaderboard(date, size, direction, sortBy, cursor)
         }
 
-        return service.getUserAllTimeLeaderboard(page, size, direction, sortBy)
+        return service.getUserAllTimeLeaderboard(size, direction, sortBy, cursor)
     }
 
     @GetMapping("actions/leaderboards/apps")
@@ -101,14 +104,16 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         Schema(type = "string", allowableValues = ["totalRewardAmount", "actionsRewarded"])
     )
     @CommonApiResponses
-    @PaginationParameters
+    @CursorPaginationParameters
     open fun getAppLeaderboard(
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-        @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<AppLeaderboardItem> {
 
         if (roundId != null && date != null) {
@@ -116,12 +121,12 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         }
 
         if (roundId != null) {
-            return service.getAppRoundLeaderboard(roundId, page, size, direction, sortBy)
+            return service.getAppRoundLeaderboard(roundId, size, direction, sortBy, cursor)
         }
         if (date != null) {
-            return service.getAppDailyLeaderboard(date, page, size, direction, sortBy)
+            return service.getAppDailyLeaderboard(date, size, direction, sortBy, cursor)
         }
-        return service.getAppAllTimeLeaderboard(page, size, direction, sortBy)
+        return service.getAppAllTimeLeaderboard(size, direction, sortBy, cursor)
     }
 
     @GetMapping("actions/leaderboards/apps/{appId}")
@@ -145,28 +150,37 @@ open class ActionLeaderboardController(private val service: ActionLeaderboardSer
         Schema(type = "string", allowableValues = ["totalRewardAmount", "actionsRewarded"])
     )
     @CommonApiResponses
-    @PaginationParameters
+    @CursorPaginationParameters
     open fun getUserAppLeaderboard(
         @ValidAppId @PathVariable(required = true) appId: AppId,
         @RequestParam(required = false) roundId: Int?,
         @ValidISODateString @RequestParam(required = false) date: String?,
-        @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @RequestParam(required = false, defaultValue = "actionsRewarded") sortBy: String,
+        @ValidSortField(allowedValues = ["totalRewardAmount", "actionsRewarded"])
+        @RequestParam(required = false, defaultValue = "actionsRewarded")
+        sortBy: String,
+        @ValidCursor @RequestParam(required = false) cursor: String?,
     ): PaginatedResponse<UserAppLeaderboardItem> {
         if (roundId != null && date != null) {
             throw BadRequestException(ERROR_CANT_PASS_ROUND_AND_DATE)
         }
 
         if (roundId != null) {
-            return service.getUserAppRoundLeaderboard(appId, roundId, page, size, direction, sortBy)
+            return service.getUserAppRoundLeaderboard(
+                appId,
+                roundId,
+                size,
+                direction,
+                sortBy,
+                cursor,
+            )
         }
 
         if (date != null) {
-            return service.getUserAppDailyLeaderboard(appId, date, page, size, direction, sortBy)
+            return service.getUserAppDailyLeaderboard(appId, date, size, direction, sortBy, cursor)
         }
 
-        return service.getUserAppAllTimeLeaderboard(appId, page, size, direction, sortBy)
+        return service.getUserAppAllTimeLeaderboard(appId, size, direction, sortBy, cursor)
     }
 }
