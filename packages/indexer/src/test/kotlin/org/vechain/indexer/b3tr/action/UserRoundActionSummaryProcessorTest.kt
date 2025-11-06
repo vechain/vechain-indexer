@@ -13,12 +13,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class UserRoundActionSummaryProcessorTest {
@@ -29,12 +31,14 @@ internal class UserRoundActionSummaryProcessorTest {
         archiveService: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         service: UserRoundActionSummaryService,
         startRound: Int,
+        indexerVersionService: IndexerVersionService,
     ) :
         UserRoundActionSummaryProcessor(
             repository = repository,
             userRoundActionSummaryArchiveService = archiveService,
             service = service,
             startRound = startRound,
+            indexerVersionService = indexerVersionService,
         ) {
         fun readRoundId(): Int = roundId
     }
@@ -49,6 +53,8 @@ internal class UserRoundActionSummaryProcessorTest {
 
         @MockK lateinit var service: UserRoundActionSummaryService
 
+        @MockK lateinit var indexerVersionService: IndexerVersionService
+
         private lateinit var processor: TestableProcessor
 
         @BeforeEach
@@ -56,18 +62,24 @@ internal class UserRoundActionSummaryProcessorTest {
             MockKAnnotations.init(this)
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
-                TestableProcessor(repository, archiveService, service = service, startRound = 1)
+                TestableProcessor(
+                    repository,
+                    archiveService,
+                    service = service,
+                    startRound = 1,
+                    indexerVersionService = indexerVersionService,
+                )
         }
 
         @Test
         fun `process empty events doesn't save any records`() {
-            processor.process(emptyList(), null)
+            processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
             // Verify that service.save is not called
             verify(exactly = 0) { service.save(any(), any()) }
 
             // Verify that service.processEvents is not called
-            verify(exactly = 0) { service.processEvents(any(), any(), any()) }
+            verify(exactly = 0) { service.processEvents(any(), 1) }
         }
 
         @Test
@@ -114,195 +126,16 @@ internal class UserRoundActionSummaryProcessorTest {
 
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every { service.processEvents(blockDetailsEvent1, events, roundId = 1) } returns
-                (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 1) } returns
+                (Triple(updatedRecords, archiveRecords, 2))
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(events, null)
+            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
 
-            verify(exactly = 1) { service.processEvents(blockDetailsEvent1, events, 1) }
+            verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
-        }
-
-        @Test
-        fun `process EmissionDistributed event should result in a roundId change`() {
-            val blockDetailsEvent1 =
-                BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
-            val roundChangeEvent =
-                buildIndexedEvent(
-                    id = "e1",
-                    blockId = blockDetailsEvent1.blockId,
-                    blockNumber = blockDetailsEvent1.blockNumber,
-                    blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                    eventType = "EmissionDistributed",
-                    params =
-                        AbiEventParameters(
-                            returnValues =
-                                mapOf(
-                                    "cycle" to "2",
-                                    "totalAmount" to "10000000000000000000",
-                                    "distributor" to "0x0",
-                                )
-                        ),
-                )
-            val rewardEvent =
-                buildIndexedEvent(
-                    id = "e2",
-                    blockId = blockDetailsEvent1.blockId,
-                    blockNumber = blockDetailsEvent1.blockNumber,
-                    blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                    eventType = "B3TR_ActionReward",
-                    params =
-                        AbiEventParameters(
-                            returnValues =
-                                mapOf(
-                                    "appId" to "app-1",
-                                    "receiver" to "user-1",
-                                    "amount" to "10000000000000000000",
-                                    "action" to "",
-                                    "distributor" to "0x0",
-                                )
-                        ),
-                )
-            val events = listOf(roundChangeEvent, rewardEvent)
-
-            val updatedRecords =
-                listOf(
-                    UserRoundActionSummary(
-                        version = 2,
-                        blockId = blockDetailsEvent1.blockId,
-                        blockNumber = blockDetailsEvent1.blockNumber,
-                        blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                        entity = "user-1",
-                        entityType = EntityType.USER,
-                        roundId = 2,
-                        actionsRewarded = 1,
-                        totalRewardAmount = BigDecimal.ONE,
-                        totalImpact = null,
-                    )
-                )
-
-            val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
-
-            every {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), roundId = 2)
-            } returns (updatedRecords to archiveRecords)
-            every { service.save(updatedRecords, archiveRecords) } just Runs
-
-            // Verify that service.save is called with the correct parameters
-            processor.process(events, null)
-
             assertEquals(2, processor.readRoundId())
-            verify(exactly = 1) {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), 2)
-            }
-            verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
-        }
-
-        @Test
-        fun `process EmissionDistributedV2 event should result in a roundId change`() {
-            val blockDetailsEvent1 =
-                BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
-            val roundChangeEvent =
-                buildIndexedEvent(
-                    id = "e1",
-                    blockId = blockDetailsEvent1.blockId,
-                    blockNumber = blockDetailsEvent1.blockNumber,
-                    blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                    eventType = "EmissionDistributedV2",
-                    params =
-                        AbiEventParameters(
-                            returnValues =
-                                mapOf(
-                                    "cycle" to "2",
-                                    "totalAmount" to "10000000000000000000",
-                                    "distributor" to "0x0",
-                                )
-                        ),
-                )
-            val rewardEvent =
-                buildIndexedEvent(
-                    id = "e2",
-                    blockId = blockDetailsEvent1.blockId,
-                    blockNumber = blockDetailsEvent1.blockNumber,
-                    blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                    eventType = "B3TR_ActionReward",
-                    params =
-                        AbiEventParameters(
-                            returnValues =
-                                mapOf(
-                                    "appId" to "app-1",
-                                    "receiver" to "user-1",
-                                    "amount" to "10000000000000000000",
-                                    "action" to "",
-                                    "distributor" to "0x0",
-                                )
-                        ),
-                )
-
-            val events = listOf(roundChangeEvent, rewardEvent)
-
-            val updatedRecords =
-                listOf(
-                    UserRoundActionSummary(
-                        version = 2,
-                        blockId = blockDetailsEvent1.blockId,
-                        blockNumber = blockDetailsEvent1.blockNumber,
-                        blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                        entity = "user-1",
-                        entityType = EntityType.USER,
-                        roundId = 2,
-                        actionsRewarded = 1,
-                        totalRewardAmount = BigDecimal.ONE,
-                        totalImpact = null,
-                    )
-                )
-            val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
-
-            every {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), roundId = 2)
-            } returns (updatedRecords to archiveRecords)
-            every { service.save(updatedRecords, archiveRecords) } just Runs
-
-            // Verify that service.save is called with the correct parameters
-            processor.process(events, null)
-            assertEquals(2, processor.readRoundId())
-            verify(exactly = 1) {
-                service.processEvents(blockDetailsEvent1, listOf(rewardEvent), 2)
-            }
-            verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
-        }
-
-        @Test
-        fun `process only round change event and no reward event should result in a roundId change`() {
-            val blockDetailsEvent1 =
-                BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 10L)
-            val roundChangeEvent =
-                buildIndexedEvent(
-                    id = "e1",
-                    blockId = blockDetailsEvent1.blockId,
-                    blockNumber = blockDetailsEvent1.blockNumber,
-                    blockTimestamp = blockDetailsEvent1.blockTimestamp,
-                    eventType = "EmissionDistributedV2",
-                    params =
-                        AbiEventParameters(
-                            returnValues =
-                                mapOf(
-                                    "cycle" to "2",
-                                    "totalAmount" to "10000000000000000000",
-                                    "distributor" to "0x0",
-                                )
-                        ),
-                )
-
-            val events = listOf(roundChangeEvent)
-
-            // Verify save not called and roundId is updated
-            processor.process(events, null)
-            assertEquals(2, processor.readRoundId())
-            verify(exactly = 0) { service.save(any(), any()) }
-            verify(exactly = 0) { service.processEvents(any(), any(), any()) }
         }
     }
 
@@ -315,6 +148,8 @@ internal class UserRoundActionSummaryProcessorTest {
             ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>
 
         @MockK lateinit var service: UserRoundActionSummaryService
+
+        @MockK lateinit var indexerVersionService: IndexerVersionService
 
         private lateinit var processor: TestableProcessor
 
@@ -337,7 +172,13 @@ internal class UserRoundActionSummaryProcessorTest {
 
             every { repository.findFirstByOrderByBlockNumberDesc() } returns latestRecord
             processor =
-                TestableProcessor(repository, archiveService, service = service, startRound = 1)
+                TestableProcessor(
+                    repository,
+                    archiveService,
+                    service = service,
+                    startRound = 1,
+                    indexerVersionService = indexerVersionService,
+                )
         }
 
         @Test
@@ -384,16 +225,17 @@ internal class UserRoundActionSummaryProcessorTest {
 
             val archiveRecords = listOf(updatedRecords.first().copy(version = 1))
 
-            every { service.processEvents(blockDetailsEvent1, events, roundId = 4) } returns
-                (updatedRecords to archiveRecords)
+            every { service.processEvents(events, roundId = 4) } returns
+                Triple(updatedRecords, archiveRecords, 4)
 
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(events, null)
+            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
 
-            verify(exactly = 1) { service.processEvents(blockDetailsEvent1, events, 4) }
+            verify(exactly = 1) { service.processEvents(events, 4) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
+            assertEquals(4, processor.readRoundId())
         }
     }
 }

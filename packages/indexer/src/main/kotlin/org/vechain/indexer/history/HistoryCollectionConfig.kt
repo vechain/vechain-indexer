@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -28,6 +29,7 @@ open class HistoryCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.HISTORY,
             IndexedHistoryEvent::class.java,
             version,
         )
@@ -42,7 +44,6 @@ open class HistoryCollectionConfig(
                     Index()
                         .on("appId", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC),
-                "eventName_1" to Index().on("eventName", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
                 "contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),
                 "to_1_contractAddress_1_blockTimestamp_-1" to
@@ -60,11 +61,6 @@ open class HistoryCollectionConfig(
                         .on("origin", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC),
-                "from_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("from", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "from_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("from", Sort.Direction.ASC)
@@ -76,17 +72,17 @@ open class HistoryCollectionConfig(
                         .on("to", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC),
+                "tokenId_1_blockTimestamp_-1_eventName_1" to
+                    Index()
+                        .on("tokenId", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC),
                 "to_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("to", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC),
-                "origin_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "origin_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
                         .on("origin", Sort.Direction.ASC)
@@ -98,6 +94,22 @@ open class HistoryCollectionConfig(
                         .on("gasPayer", Sort.Direction.ASC)
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC),
+                "eventName_1_to_1_blockTimestamp_-1" to
+                    Index()
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("to", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC),
+                "owner_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
+                    Index()
+                        .on("owner", Sort.Direction.ASC)
+                        .on("blockTimestamp", Sort.Direction.DESC)
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("contractAddress", Sort.Direction.ASC),
+                "appId_1_eventName_1_to_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("eventName", Sort.Direction.ASC)
+                        .on("to", Sort.Direction.ASC),
             )
         )
     }

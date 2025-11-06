@@ -6,8 +6,10 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class NftProcessorTest {
@@ -17,6 +19,8 @@ internal class NftProcessorTest {
     @MockK lateinit var archiveService: ArchiveService<IndexedNft, NftArchive>
 
     @MockK lateinit var nftService: NftService
+
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var processor: NftProcessor
 
@@ -29,6 +33,7 @@ internal class NftProcessorTest {
                 nftService = nftService,
                 nftArchiveService = archiveService,
                 repository = nftRepository,
+                indexerVersionService = indexerVersionService,
             )
     }
 
@@ -38,11 +43,13 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns emptyList()
         every { nftService.parseRecords(any(), emptyList()) } returns emptyList()
-        every { nftService.update(any(), any()) } just Runs
+        every { nftService.save(any(), any()) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
-        verify(exactly = 0) { nftService.update(any(), any()) }
+        verify(exactly = 0) { nftService.save(any(), any()) }
     }
 
     @Test
@@ -81,11 +88,13 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 
     @Test
@@ -111,11 +120,13 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 
     @Test
@@ -141,10 +152,12 @@ internal class NftProcessorTest {
 
         every { nftService.getExisting(any()) } returns existing
         every { nftService.parseRecords(any(), existing) } returns updated
-        every { nftService.update(updated, existing) } just Runs
+        every { nftService.save(updated, existing) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
-        verify(exactly = 1) { nftService.update(updated, existing) }
+        verify(exactly = 1) { nftService.save(updated, existing) }
     }
 }

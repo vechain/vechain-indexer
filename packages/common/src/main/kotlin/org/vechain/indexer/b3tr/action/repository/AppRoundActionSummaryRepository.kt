@@ -1,6 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
-import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -14,41 +14,41 @@ interface AppRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<AppRoundActionSummary, String> {
     fun findFirstByOrderByBlockNumberDesc(): AppRoundActionSummary?
 
-    fun findAllByRoundId(roundId: Int, pageable: Pageable): Slice<AppRoundActionSummary>
-
     fun findAllByAppIdAndRoundId(
         appId: String,
         roundId: Int,
         pageable: Pageable,
     ): Slice<AppRoundActionSummary>
 
-    fun findAllByUserAndRoundId(
-        user: String,
-        roundId: Int,
-        pageable: Pageable,
-    ): Slice<AppRoundActionSummary>
+    fun findAppIdsByUserAndRoundId(user: String, roundId: Int): List<AppRoundActionSummary>
 
-    fun findAllByAppIdAndUser(
+    fun findByAppIdAndUserAndRoundId(
         appId: String,
         user: String,
-        pageable: Pageable,
-    ): Slice<AppRoundActionSummary>
+        roundId: Int,
+    ): AppRoundActionSummary?
 
-    fun findByIdAndRoundId(id: String, roundId: Int): AppRoundActionSummary?
+    @Cacheable(value = ["app_round_countByAppIdAndRoundId"], key = "#appId + '-' + #roundId")
+    fun countByAppIdAndRoundId(appId: String, roundId: Int): Long
 
+    @Cacheable(
+        value = ["app_round_countByTotalRewardAmountGreaterThanAndAppIdAndRoundId"],
+        key =
+            "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #roundId",
+    )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
-        totalRewardAmount: BigDecimal,
+        totalRewardAmount: java.math.BigDecimal,
         appId: String,
         roundId: Int,
     ): Long
 
+    @Cacheable(
+        value = ["app_round_countByActionsRewardedGreaterThanAndAppIdAndRoundId"],
+        key = "#actionsRewarded + '-' + #appId + '-' + #roundId",
+    )
     fun countByActionsRewardedGreaterThanAndAppIdAndRoundId(
         actionsRewarded: Long,
         appId: String,
         roundId: Int,
     ): Long
-
-    fun findAppIdsByUserAndRoundId(user: String, roundId: Int): List<AppRoundActionSummary>
-
-    fun countByAppIdAndRoundId(appId: String, roundId: Int): Long
 }

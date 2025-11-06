@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
 
@@ -23,7 +24,7 @@ import org.vechain.indexer.validation.ValidAddress
 )
 @Validated
 @RestController
-@RequestMapping("$API_PATH/authority_endorsers", "$API_PATH/authority-endorsers")
+@RequestMapping("$API_PATH/authority-endorsers")
 open class AmnController(private val amnApiEndorserService: AmnApiEndorserService) {
     @GetMapping("endorsers/{user}")
     @Operation(summary = "Check if a user is an endorser of any Authority Master Node.")
@@ -32,9 +33,10 @@ open class AmnController(private val amnApiEndorserService: AmnApiEndorserServic
         name = "user",
         description = "User address to check if they are an endorser.",
         required = true,
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
     )
     @CommonApiResponses
-    open fun checkUserIsEndorser(@ValidAddress @PathVariable user: Address): AmnEndorser? =
+    open fun checkUserIsEndorser(@ValidAddress @PathVariable user: Address): AmnEndorser =
         amnApiEndorserService.findByEndorser(user.value)
+            ?: throw ResourceNotFoundException("No endorser found for ${user.value}")
 }

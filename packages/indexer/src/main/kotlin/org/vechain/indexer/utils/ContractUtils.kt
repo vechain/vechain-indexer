@@ -3,6 +3,7 @@ package org.vechain.indexer.utils
 import org.vechain.devkit.Function
 import org.vechain.indexer.contracts.abi.FunctionDefinition
 import org.vechain.indexer.contracts.specifications.ContractSpecification
+import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.model.Clause
 import org.web3j.abi.EventEncoder
@@ -33,6 +34,12 @@ object ContractUtils {
     }
 
     fun createClause(address: String, function: FunctionDefinition, vararg args: Any): Clause {
+        val func = Function(JsonUtils.mapper.writeValueAsString(function))
+        val encoded = func.encodeToHex(true, *args)
+        return Clause(to = address, data = encoded, value = "0x0")
+    }
+
+    fun createClause(address: String, function: AbiElement, vararg args: Any): Clause {
         val func = Function(JsonUtils.mapper.writeValueAsString(function))
         val encoded = func.encodeToHex(true, *args)
         return Clause(to = address, data = encoded, value = "0x0")

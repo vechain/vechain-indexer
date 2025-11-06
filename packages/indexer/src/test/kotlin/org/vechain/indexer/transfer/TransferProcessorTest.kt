@@ -6,13 +6,16 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {
+    @MockK lateinit var transferService: TransferService
+
     @MockK lateinit var transferEventRepository: TransferEventRepository
 
-    @MockK lateinit var mongoTemplate: MongoTemplate
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var transferProcessor: TransferProcessor
 
@@ -20,15 +23,16 @@ class TransferProcessorTest {
     fun setUp() {
         MockKAnnotations.init(this)
 
-        transferProcessor = TransferProcessor(mongoTemplate, transferEventRepository)
+        transferProcessor =
+            TransferProcessor(transferService, transferEventRepository, indexerVersionService)
     }
 
     @Test
     fun `process - if no events should not do anything`() {
-        transferProcessor.process(emptyList(), null)
+        transferProcessor.process(IndexingResult.EventsOnly(events = emptyList(), endBlock = 100))
 
-        // Verify that no interactions with mongoTemplate occur
-        verify { mongoTemplate wasNot Called }
+        // Verify that no interactions with transferService occur
+        verify { transferService wasNot Called }
     }
 
     //    @Test

@@ -5,18 +5,6 @@
 
 [![Test, Publish & Deploy](https://github.com/vechain/veworld-indexer/actions/workflows/on-main.yml/badge.svg)](https://github.com/vechainfoundation/veworld-indexer/actions/workflows/on-main.yml)
 
-[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=vechain_veworld-indexer&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=bugs&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=vulnerabilities&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=duplicated_lines_density&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=reliability_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=sqale_index&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=ncloc&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=code_smells&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=sqale_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=vechain_veworld-indexer&metric=security_rating&token=0582f95ddc9a13d328efea4a99db7eb3fa95ebaf)](https://sonarcloud.io/summary/new_code?id=vechain_veworld-indexer)
-
 - Coverage Reports:
     - [API](https://ideal-fortnight-7vp33mg.pages.github.io/api/coverage/)
     - [Common](https://ideal-fortnight-7vp33mg.pages.github.io/common/coverage/)
@@ -190,6 +178,13 @@ You can also choose to run specific tests only. We have included some commands i
 ```bash
 make load-test-history
 ```
+
+### API Schema Tests
+
+Use the schema-driven harness when you need to validate the public API in a deployed environment. It fetches the OpenAPI document from `/api-docs`, runs Schemathesis-based checks across every documented operation, and fails if any response exceeds 2 000 ms (override by setting `MAX_RESPONSE_MILLISECONDS`).
+
+- Local run: `scripts/run_api_schema_tests.sh [dead|live|<base-url>] [--base-url <base-url>]` (defaults to the dead environment). Install `schemathesis` locally first, for example `pip install "schemathesis>=3.19,<4"`.
+- GitHub Action: trigger **API Tests** from the Actions tab and choose the target environment, or provide a full base URL override. The workflow uses the same script and publishes Schemathesis logs and JUnit XML as artifacts.
 
 ## Deployment & Testing
 

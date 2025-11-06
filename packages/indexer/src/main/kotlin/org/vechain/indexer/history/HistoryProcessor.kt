@@ -3,25 +3,36 @@ package org.vechain.indexer.history
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("history")
 @Component
 open class HistoryProcessor(
     repository: HistoryRepository,
     private val historyService: HistoryService,
-) : BaseProcessor(repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.HISTORY,
+    ) {
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (block == null) {
+    override fun process(entry: IndexingResult) {
+        if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
         // If no events or transactions, do nothing
-        if (matchedEvents.isEmpty() && block.transactions.isEmpty()) {
+        if (entry.events().isEmpty() && entry.block.transactions.isEmpty()) {
             return
         }
 
-        historyService.processBlockEvents(matchedEvents, block)
+        val records = historyService.processEvents(entry.events(), entry.block)
+
+        if (records.isNotEmpty()) {
+            historyService.save(records)
+        }
     }
 }

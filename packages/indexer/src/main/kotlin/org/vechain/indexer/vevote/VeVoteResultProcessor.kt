@@ -3,23 +3,31 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-results")
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
-    private val repository: VeVoteProposalResultRepository,
+    repository: VeVoteProposalResultRepository,
+    indexerVersionService: IndexerVersionService,
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-) : BaseStatefulProcessor(repository = repository, archiveService = veVoteResultArchiveService) {
+) :
+    BaseStatefulProcessor(
+        repository = repository,
+        archiveService = veVoteResultArchiveService,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.VEVOTE_RESULT,
+    ) {
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (matchedEvents.isEmpty()) return
+    override fun process(entry: IndexingResult) {
+        if (entry.events().isEmpty()) return
 
         // Process votes in the service
-        val (updated, archives) = service.processEvents(matchedEvents)
+        val (updated, archives) = service.processEvents(entry.events())
 
         // Save the results
         service.save(updated, archives)

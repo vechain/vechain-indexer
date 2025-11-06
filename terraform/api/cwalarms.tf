@@ -213,38 +213,6 @@ locals {
     }
   }
 
-  ec2_highcpu_alarm = { for k, v in aws_instance.mongodb_cluster : "${k}_ec2_hicpu" => {
-    alarm_name          = "${k}_ec2_highcpu_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 3
-    threshold           = 75
-    namespace           = "AWS/EC2"
-    period              = 300
-    statistic           = "Average"
-    metric_name         = "CPUUtilization"
-    alarm_description   = "EC2 ${k} hi CPU"
-    dimensions = {
-      InstanceId = v.id
-    }
-    }
-  }
-
-  ec2_failure_alarm = { for k, v in aws_instance.mongodb_cluster : "${k}_ec2_fail" => {
-    alarm_name          = "${k}_ec2_failure_alarm"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods  = 1
-    threshold           = 1
-    namespace           = "AWS/EC2"
-    period              = 180
-    statistic           = "Maximum"
-    metric_name         = "StatusCheckFailed"
-    alarm_description   = "EC2 ${k} StatusCheckFailed"
-    dimensions = {
-      InstanceId = v.id
-    }
-    }
-  }
-
   simple_alarms_map = merge(
     local.waf_alarms,
     local.elb_response_alarms,
@@ -255,8 +223,6 @@ locals {
     local.ecs_highcpu_alarms,
     local.ecs_highmem_alarms,
     local.log_metric_alarm,
-    local.ec2_highcpu_alarm,
-    local.ec2_failure_alarm
   )
 }
 

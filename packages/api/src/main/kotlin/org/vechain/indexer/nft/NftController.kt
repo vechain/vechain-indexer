@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -23,7 +24,9 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Views
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidAddressList
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTokenId
 
 @Profile("nfts")
 @Tag(name = "NFT", description = "Query on chain NFTs")
@@ -53,16 +56,29 @@ open class NftController(private val nftService: NftService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",
-        schema = Schema(type = "string"),
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
         description = "The NFT tokenId",
         required = false,
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "excludeCollections",
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                maxItems = 20,
+            ),
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+        required = false,
+        example = "[\"0x1234567890123456789012345678901234567890\"]",
     )
     @CommonApiResponses
     @PaginationParameters
     open fun getOwnedNFTs(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) tokenId: String?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
+        @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -70,7 +86,13 @@ open class NftController(private val nftService: NftService) {
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         return paginatedResponse(
-            nftService.findOwnedNfts(address, contractAddress, tokenId, pageable)
+            nftService.findOwnedNfts(
+                address,
+                contractAddress,
+                tokenId,
+                excludeCollections,
+                pageable,
+            )
         )
     }
 
@@ -87,15 +109,31 @@ open class NftController(private val nftService: NftService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "excludeCollections",
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                maxItems = 20,
+            ),
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+        required = false,
+        example = "[\"0x1234567890123456789012345678901234567890\"]",
+    )
+    @CommonApiResponses
     @PaginationParameters
     open fun getContractsByNFTOwner(
         @ValidAddress @RequestParam owner: Address,
+        @ValidAddressList @RequestParam(required = false) excludeCollections: List<Address>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<String> {
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
-        return paginatedResponse(nftService.findContractsByNftOwner(owner, pageable))
+        return paginatedResponse(
+            nftService.findContractsByNftOwner(owner, excludeCollections, pageable)
+        )
     }
 }

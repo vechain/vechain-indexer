@@ -45,11 +45,11 @@ class IndexerHealthIndicator(
                     indexerName = indexer.name,
                     status = status,
                     statusDetails = statusDetails,
-                    syncStatus = indexer.status,
+                    syncStatus = indexer.getStatus(),
                     currentBlock =
                         if (indexer is BlockIndexer) {
                             NumberFormat.getNumberInstance(Locale.US)
-                                .format(indexer.currentBlockNumber)
+                                .format(indexer.getCurrentBlockNumber())
                         } else {
                             "N/A"
                         },
@@ -71,15 +71,22 @@ class IndexerHealthIndicator(
      * if it is down
      */
     private fun getIndexerHealth(indexer: Indexer): Pair<HealthStatus, String> {
-
-        if (indexer.status == Status.PRUNING) {
-            return HealthStatus.UP to "Indexer is pruning"
+        when (indexer.getStatus()) {
+            Status.PRUNING -> return HealthStatus.UP to "Indexer is pruning"
+            Status.NOT_INITIALISED -> return HealthStatus.UP to "Indexer is not initialised"
+            Status.INITIALISED -> return HealthStatus.UP to "Indexer is initialised but not started"
+            Status.SHUT_DOWN -> return HealthStatus.DOWN to "Indexer is shut down"
+            else -> {
+                // continue to check last processed time
+            }
         }
 
         val timeNow = LocalDateTime.now(ZoneOffset.UTC)
 
         val timeout =
-            if (indexer.status == Status.SYNCING) {
+            if (
+                indexer.getStatus() == Status.SYNCING || indexer.getStatus() == Status.FAST_SYNCING
+            ) {
                 inactiveThresholdSyncing
             } else {
                 inactiveThresholdNotSyncing

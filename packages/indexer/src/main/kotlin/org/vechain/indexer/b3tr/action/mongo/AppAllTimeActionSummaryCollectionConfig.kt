@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.AppAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.AppAllTimeActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -37,6 +38,7 @@ open class AppAllTimeActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY,
                 AppAllTimeActionSummary::class.java,
                 version,
             )
@@ -52,15 +54,27 @@ open class AppAllTimeActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "user_-1" to Index().on("user", Sort.Direction.DESC),
-                "appId_-1_totalRewardAmount_-1" to
-                    Index()
-                        .on("appId", Sort.Direction.DESC)
-                        .on("totalRewardAmount", Sort.Direction.DESC),
-                "appId_-1_actionsRewarded_-1" to
-                    Index()
-                        .on("appId", Sort.Direction.DESC)
-                        .on("actionsRewarded", Sort.Direction.DESC),
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "appId_1_totalRewardAmount_-1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.DESC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_totalRewardAmount_1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.ASC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_actionsRewarded_-1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.DESC)
+                        .on("user", Sort.Direction.ASC),
+                "appId_1_actionsRewarded_1_user_1" to
+                    Index()
+                        .on("appId", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.ASC)
+                        .on("user", Sort.Direction.ASC),
             )
         )
     }

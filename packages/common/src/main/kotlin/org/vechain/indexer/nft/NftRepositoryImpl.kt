@@ -1,7 +1,6 @@
 package org.vechain.indexer.nft
 
 import org.bson.Document
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.Sort
@@ -9,23 +8,31 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.GroupOperation
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.stereotype.Component
 import org.vechain.indexer.BlacklistableRepository
 import org.vechain.indexer.utils.SliceBuilder
 
-@Profile("nfts")
-@Component
 open class NftRepositoryImpl(
     private val mongoTemplate: MongoTemplate,
     repo: NftBlacklistRepository,
 ) : BlacklistableRepository<IndexedNft>(mongoTemplate, repo, IndexedNft::class.java) {
 
-    open fun findByOwner(owner: String, pageable: Pageable): Slice<IndexedNft> =
-        findNotBlacklisted(Criteria.where(IndexedNft::owner.name).`is`(owner), pageable)
+    open fun findByOwner(
+        owner: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<IndexedNft> =
+        findNotBlacklisted(
+            Criteria.where(IndexedNft::owner.name)
+                .`is`(owner)
+                .and(IndexedNft::contractAddress.name)
+                .`nin`(excludeCollections),
+            pageable,
+        )
 
     open fun findByOwnerAndContractAddress(
         owner: String,
         contractAddress: String,
+        excludeCollections: List<String>,
         pageable: Pageable,
     ): Slice<IndexedNft> =
         findNotBlacklisted(
@@ -52,7 +59,11 @@ open class NftRepositoryImpl(
             pageable,
         )
 
-    open fun findContractsByNftOwner(owner: String, pageable: Pageable): Slice<String> {
+    open fun findContractsByNftOwner(
+        owner: String,
+        excludeCollections: List<String>,
+        pageable: Pageable,
+    ): Slice<String> {
         val matchOperation = Aggregation.match(Criteria.where(OWNER).`is`(owner))
 
         val lookupBlacklistOperation =
@@ -66,6 +77,9 @@ open class NftRepositoryImpl(
                         Criteria.where("blacklistInfo").exists(false),
                     )
             )
+
+        val excludeCollectionsOperation =
+            Aggregation.match(Criteria.where(CONTRACT_ADDRESS).`nin`(excludeCollections))
 
         val groupOperation: GroupOperation =
             Aggregation.group(CONTRACT_ADDRESS)
@@ -81,6 +95,7 @@ open class NftRepositoryImpl(
                 matchOperation,
                 lookupBlacklistOperation,
                 matchBlacklistOperation,
+                excludeCollectionsOperation,
                 groupOperation,
                 Aggregation.sort(
                     Sort.by(

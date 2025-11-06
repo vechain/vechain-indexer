@@ -17,6 +17,12 @@ class ProofUtilsTest {
     val VALID_PROOF_V2 =
         "{\"version\": 2,\"description\": \"Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.\",\"proof\": {\"link\": \"link\", \"image\": \"image link\", \"video\": \"Video link\", \"text\": \"Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.\"},\"impact\": {\"carbon\": 8,\"timber\": 5}}"
 
+    val VALID_PROOF_V2_EMPTY_PROOF_AND_IMPACT =
+        "{\"version\": 2,\"description\": \"Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.\",\"proof\": {},\"impact\": {}}"
+
+    val VALID_PROOF_V2_STRING_FOR_PROOF_AND_IMPACT =
+        "{\"version\": 2,\"description\": \"Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.\",\"proof\": \"{}\",\"impact\": \"{}\"}"
+
     @Test
     fun `parseProofFromJson - Should parse proof from v1 json`() {
 
@@ -36,6 +42,38 @@ class ProofUtilsTest {
                             video = null,
                         ),
                     impact = Impact(carbon = 8, timber = 5),
+                )
+            )
+    }
+
+    @Test
+    fun `parseProofFromJson - Should parse proof from v2 json with empty proof and impact`() {
+        val result = ProofUtils.parseProofFromJson(VALID_PROOF_V2_EMPTY_PROOF_AND_IMPACT)
+
+        expectThat(result)
+            .isEqualTo(
+                SustainabilityProofV2(
+                    version = 2,
+                    description =
+                        "Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.",
+                    proof = null,
+                    impact = null,
+                )
+            )
+    }
+
+    @Test
+    fun `parseProofFromJson - Should parse proof from v2 json with string for proof and impact`() {
+        val result = ProofUtils.parseProofFromJson(VALID_PROOF_V2_STRING_FOR_PROOF_AND_IMPACT)
+
+        expectThat(result)
+            .isEqualTo(
+                SustainabilityProofV2(
+                    version = 2,
+                    description =
+                        "Consumed a chapter of literature sustainably, reducing carbon footprint and timber usage when compared to print.",
+                    proof = null,
+                    impact = null,
                 )
             )
     }

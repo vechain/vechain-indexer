@@ -20,6 +20,7 @@ import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryReposit
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -30,13 +31,17 @@ internal class AppAllTimeActionSummaryServiceTest {
     lateinit var archiveService:
         ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
 
+    @MockK
+    lateinit var pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppAllTimeActionSummaryRepository,
         archive: ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-    ) : AppAllTimeActionSummaryService(repository, archive) {
+        pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
+    ) : AppAllTimeActionSummaryService(repository, archive, pruner) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -52,7 +57,7 @@ internal class AppAllTimeActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService)
+        service = TestableService(repository, archiveService, pruner)
     }
 
     @Test

@@ -3,6 +3,7 @@ package org.vechain.indexer.config
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.math.BigInteger
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -18,6 +19,7 @@ open class JacksonConfig {
             }
 
         return ObjectMapper().apply {
+            registerKotlinModule()
             registerModule(module)
             setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
         }

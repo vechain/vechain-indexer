@@ -6,8 +6,10 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class NftBlacklistProcessorTest {
@@ -17,6 +19,7 @@ internal class NftBlacklistProcessorTest {
     @MockK
     lateinit var nftBlacklistArchiveService: ArchiveService<NftBlacklist, NftBlacklistArchive>
     @MockK lateinit var nftBlacklistRepository: NftBlacklistRepository
+    @MockK lateinit var indexerVersionService: IndexerVersionService
 
     private lateinit var processor: NftBlacklistProcessor
 
@@ -28,17 +31,18 @@ internal class NftBlacklistProcessorTest {
                 nftBlacklistService = nftBlacklistService,
                 nftBlacklistArchiveService = nftBlacklistArchiveService,
                 repository = nftBlacklistRepository,
+                indexerVersionService = indexerVersionService,
             )
     }
 
     @Test
     fun `processLogs - empty data`() {
-        processor.process(emptyList())
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
         // Verify no records updated
         verify(exactly = 0) { nftBlacklistService.getExisting(any()) }
         verify(exactly = 0) { nftBlacklistService.parseRecords(any(), emptyList()) }
-        verify(exactly = 0) { nftBlacklistService.update(any(), any()) }
+        verify(exactly = 0) { nftBlacklistService.save(any(), any()) }
     }
 
     @Test
@@ -60,12 +64,14 @@ internal class NftBlacklistProcessorTest {
 
         every { nftBlacklistService.getExisting(any()) } returns existing
         every { nftBlacklistService.parseRecords(any(), existing) } returns parsedRecords
-        every { nftBlacklistService.update(parsedRecords, existing) } just Runs
+        every { nftBlacklistService.save(parsedRecords, existing) } just Runs
 
-        processor.process(events)
+        processor.process(
+            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+        )
 
         verify(exactly = 1) { nftBlacklistService.getExisting(any()) }
         verify(exactly = 1) { nftBlacklistService.parseRecords(any(), existing) }
-        verify(exactly = 1) { nftBlacklistService.update(parsedRecords, existing) }
+        verify(exactly = 1) { nftBlacklistService.save(parsedRecords, existing) }
     }
 }

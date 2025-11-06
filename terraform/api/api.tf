@@ -100,7 +100,7 @@ module "ecs-cluster" {
 module "ecs-lb-service-api" {
   depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
   for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=v.1.4.24"
+  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
   ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
   region                    = local.env.region
   vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
@@ -122,10 +122,19 @@ module "ecs-lb-service-api" {
   container_port            = 8080
   certificate_arn           = local.env.certificate_arn
   ecs_sg                    = [aws_security_group.alb-sg.id]
-  rule_0_path_pattern       = ["/api/v*", "/api-docs", "/swagger-ui/*"]
+  # Listener Rules Configuration
+  rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
+  is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
+  rule_1_path_pattern        = try(local.env.alb.listener_rules[1].path_patterns, [])
+  is_rule_4_required         = try(local.env.alb.is_rule_4_required, false)
+  default_action             = try(local.env.alb.https_listener.default_action, "fixed-response")
+  use_default_tg_group_for_rule_1 = try(local.env.alb.listener_rules[1].use_default_tg_group, false)
+  # Authentication Configuration
+  okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
+  secret_id                 = try(local.env.alb.authentication.secret_id, "")
   alb_sg                    = [aws_security_group.alb-sg.id]
   namespace_id              = aws_service_discovery_private_dns_namespace.ns.id
-  https_tg_healthcheck_path = "/actuator/health"
+  https_tg_healthcheck_path = try(local.env.alb.healthcheck.path, "/actuator/health")
   environment_variables = [
     {
       name  = "APPLICATION_NAME"
@@ -141,7 +150,135 @@ module "ecs-lb-service-api" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.api.logging.app-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.api.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.api.timing.very-slow-threshold-ms
+    },
+    {
+      name  = "CACHE_MAX_SIZE"
+      value = each.value.api.cache.max-size
+    },
+    {
+      name  = "CACHE_TTL_SECONDS"
+      value = each.value.api.cache.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-app-id.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-round-count.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE"
+      value = each.value.api.cache.official-token-addresses.max-size
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS"
+      value = each.value.api.cache.official-token-addresses.ttl-seconds
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_MAX_SIZE"
+      value = each.value.api.cache.gm-nft-count.max-size
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.gm-nft-count.ttl-seconds
     },
     { name  = "THOR_URL"
       value = each.value.thor_url
@@ -231,7 +368,23 @@ module "ecs-backend-service" {
     },
     {
       name  = "APP_LOG_LEVEL"
-      value = "INFO"
+      value = each.value.indexer.logging.app-log-level
+    },
+    {
+      name  = "TIMING_LOG_LEVEL"
+      value = each.value.indexer.logging.timing-log-level
+    },
+    {
+      name  = "PRUNER_LOG_LEVEL"
+      value = each.value.indexer.logging.pruner-log-level
+    },
+    {
+      name = "TIMING_WARN_THRESHOLD_MS"
+      value = each.value.indexer.timing.warn-threshold-ms
+    },
+    {
+      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
       name  = "MONGO_URI"
@@ -298,44 +451,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.historic-proposals
     },
     {
+        name = "INDEXER_START_BLOCK_VALIDATOR"
+        value = each.value.indexer.start-block.validator
+    },
+    {
+        name = "INDEXER_START_BLOCK_DELEGATION"
+        value = each.value.indexer.start-block.delegation
+    },
+    {
       name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_NFTS"
-      value = each.value.indexer.sync-logger-interval.nfts
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSACTIONS"
-      value = each.value.indexer.sync-logger-interval.transactions
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_TRANSFERS"
-      value = each.value.indexer.sync-logger-interval.transfers
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORY"
-      value = each.value.indexer.sync-logger-interval.history
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_VEVOTE"
-      value = each.value.indexer.sync-logger-interval.vevote
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_AUTHORITY_NODE"
-      value = each.value.indexer.sync-logger-interval.authority-nodes
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_STARGATE"
-        value = each.value.indexer.sync-logger-interval.stargate
-    },
-    {
-      name = "INDEXER_SYNC_LOGGER_INTERVAL_B3TR"
-      value = each.value.indexer.sync-logger-interval.b3tr
-    },
-    {
-      name  = "INDEXER_SYNC_LOGGER_INTERVAL_HISTORIC_PROPOSALS"
-      value = each.value.indexer.sync-logger-interval.historic-proposals
     },
     {
       name  = "PRUNER_INTERVAL"
@@ -366,12 +491,136 @@ module "ecs-backend-service" {
       value = each.value.veworld.contract.historic-proposals.all-stakeholders
     },
     {
+      name  = "CACHE_MAX_SIZE"
+      value = each.value.api.cache.max-size
+    },
+    {
+      name  = "CACHE_TTL_SECONDS"
+      value = each.value.api.cache.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-all-time-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ALL_TIME_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-all-time-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_MAX_SIZE"
+      value = each.value.api.cache.app-all-time-count-by-app-id.max-size
+    },
+    {
+      name  = "CACHE_APP_ALL_TIME_COUNT_BY_APP_ID_TTL_SECONDS"
+      value = each.value.api.cache.app-all-time-count-by-app-id.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-daily-count.max-size
+    },
+    {
+      name  = "CACHE_APP_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_MAX_SIZE"
+      value = each.value.api.cache.app-round-count.max-size
+    },
+    {
+      name  = "CACHE_APP_ROUND_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.app-round-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-daily-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_DAILY_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-daily-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-reward.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_REWARD_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-reward.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-actions.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ACTIONS_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-actions.ttl-seconds
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_MAX_SIZE"
+      value = each.value.api.cache.user-round-count-by-entity-type.max-size
+    },
+    {
+      name  = "CACHE_USER_ROUND_COUNT_BY_ENTITY_TYPE_TTL_SECONDS"
+      value = each.value.api.cache.user-round-count-by-entity-type.ttl-seconds
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_MAX_SIZE"
+      value = each.value.api.cache.official-token-addresses.max-size
+    },
+    {
+      name  = "CACHE_OFFICIAL_TOKEN_ADDRESSES_TTL_SECONDS"
+      value = each.value.api.cache.official-token-addresses.ttl-seconds
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_MAX_SIZE"
+      value = each.value.api.cache.gm-nft-count.max-size
+    },
+    {
+      name  = "CACHE_GM_NFT_COUNT_TTL_SECONDS"
+      value = each.value.api.cache.gm-nft-count.ttl-seconds
+    },
+    {
       name  = "VERSION_NFTS"
       value = each.value.indexer.version.nfts
     },
     {
       name  = "VERSION_TRANSFERS"
       value = each.value.indexer.version.transfers
+    },
+    {
+      name  = "VERSION_FUNGIBLE_TOKEN_INTERACTIONS"
+      value = each.value.indexer.version.fungible-token-interactions
     },
     {
       name  = "VERSION_TRANSACTIONS"
@@ -402,8 +651,24 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
+      name = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vtho-generated-by-block
+    },
+    {
       name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
+    },
+    {
+      name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vet-staked-by-block
+    },
+    {
+      name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
+      value = each.value.indexer.version.stargate-nft-holders-by-block
+    },
+    {
+      name = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
+      value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
       name = "VERSION_HISTORIC_PROPOSALS"
@@ -430,24 +695,16 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
+      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      value = each.value.indexer.version.b3tr-app-daily-action-summary
+    },
+    {
       name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_SUSTAINABILITY_OVERVIEW_ALL"
-      value = each.value.indexer.version.b3tr-sustainability-overview-all
-    },
-    {
       name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
-    },
-    {
-      name = "VERSION_B3TR_SUSTAINABILITY_ACTION"
-      value = each.value.indexer.version.b3tr-sustainability-action
-    },
-    {
-      name = "VERSION_B3TR_USER_TRANSACTIONS"
-      value = each.value.indexer.version.b3tr-user-transactions
     },
     {
       name = "VERSION_B3TR_X_ALLOC_RESULT"
@@ -460,6 +717,30 @@ module "ecs-backend-service" {
     {
       name = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
+    },
+    {
+      name = "VERSION_BLOCK_USAGE"
+      value = each.value.indexer.version.block-usage
+    },
+    {
+      name = "VERSION_VALIDATOR"
+      value = each.value.indexer.version.validator
+    },
+    {
+      name = "VERSION_VALIDATOR_BLOCKS"
+      value = each.value.indexer.version.validator-rewards
+    },
+    {
+      name = "VERSION_STARGATE_TOKEN"
+      value = each.value.indexer.version.stargate-token
+    },
+    {
+      name = "VERSION_TOKEN_REWARDS"
+      value = each.value.indexer.version.token-rewards
+    },
+    {
+      name = "VERSION_DELEGATION"
+      value = each.value.indexer.version.delegation
     },
     {
       name  = "MIN_COMMENT_LEN"
@@ -486,12 +767,20 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.B3TR_GOVERNOR_CONTRACT
     },
     {
+      name  = "B3TR_DBA_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.B3TR_DBA_POOL_CONTRACT
+    },
+    {
       name  = "GM_NFT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
       name = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
+    },
+    {
+      name = "X_ALLOC_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
       name = "X2EARN_REWARDS_POOL_CONTRACT"
@@ -516,6 +805,22 @@ module "ecs-backend-service" {
     {
       name  = "VEVOTE_CONTRACT"
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
+    },
+    {
+      name  = "STARGATE_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.STARGATE_CONTRACT
+    },
+    {
+      name  = "BUILTIN_STAKER_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.BUILTIN_STAKER_CONTRACT
+    },
+    {
+      name  = "GET_ALL_VALIDATORS_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
+    },
+    {
+      name = "INDEXER_SYNC_LOG_INTERVAL"
+      value = each.value.indexer.sync-log-interval
     },
     {
       name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"

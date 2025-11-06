@@ -2,10 +2,9 @@ package org.vechain.indexer.b3tr.action
 
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.plus
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
@@ -17,91 +16,120 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
 import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
+import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Configuration
+@Service
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryService(
     private val repository: UserRoundActionSummaryRepository,
     private val userRoundActionSummaryArchiveService:
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    private val userRoundActionSummaryPruner:
+        TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
 ) {
 
     open fun processEvents(
-        blockDetails: BlockDetails,
         events: List<IndexedEvent>,
         roundId: Int,
-    ): Pair<List<UserRoundActionSummary>, List<UserRoundActionSummary>> {
-        assertEventTypes(events, "B3TR_ActionReward")
+    ): Triple<List<UserRoundActionSummary>, List<UserRoundActionSummary>, Int> {
+        assertEventTypes(
+            events,
+            "B3TR_ActionReward",
+            "EmissionDistributed",
+            "EmissionDistributedV2",
+        )
 
         val updatedResult = mutableMapOf<String, UserRoundActionSummary>()
         val archiveResult = mutableListOf<UserRoundActionSummary>()
+        var updatedRoundId = roundId
 
-        // Process Users
-        groupByReceiver(events).forEach { (userId, eventsPerReceiver) ->
-            val recordId = generateId(userId, "$roundId")
+        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            val roundChangeEvents =
+                blockEvents.filter {
+                    (it.eventType == "EmissionDistributed" ||
+                        it.eventType == "EmissionDistributedV2")
+                }
+            val rewardDistributedEvents = blockEvents.filter { it.eventType == "B3TR_ActionReward" }
+
+            // Ensure no unexpected events are present
+            require(roundChangeEvents.size + rewardDistributedEvents.size == blockEvents.size) {
+                "Unexpected event types found in block ${blockDetails.blockNumber}"
+            }
+            updatedRoundId = discoverRoundId(roundChangeEvents, updatedRoundId)
+
+            if (rewardDistributedEvents.isEmpty()) {
+                // No relevant events to process in this block
+                return@forEach
+            }
+
+            // Process Users
+            groupByReceiver(rewardDistributedEvents).forEach { (userId, eventsPerReceiver) ->
+                val recordId = generateId(userId, "$updatedRoundId")
+                val existing = resolveExisting(recordId, updatedResult)
+                val updated =
+                    createOrUpdateExisting(
+                        userId,
+                        EntityType.USER,
+                        eventsPerReceiver,
+                        blockDetails,
+                        updatedRoundId,
+                        existing,
+                    )
+                existing?.let { archiveResult.add(it) }
+                updatedResult[recordId] = updated
+            }
+
+            // Process Apps
+            groupByAppId(rewardDistributedEvents).forEach { (appId, eventsPerApp) ->
+                val recordId = generateId(appId, "$updatedRoundId")
+                val existing = resolveExisting(recordId, updatedResult)
+                val updated =
+                    createOrUpdateExisting(
+                        appId,
+                        EntityType.APP,
+                        eventsPerApp,
+                        blockDetails,
+                        updatedRoundId,
+                        existing,
+                    )
+                existing?.let { archiveResult.add(it) }
+                updatedResult[recordId] = updated
+            }
+
+            // Process Global
+            val recordId = generateId(EntityType.GLOBAL.name, "$updatedRoundId")
             val existing = resolveExisting(recordId, updatedResult)
             val updated =
                 createOrUpdateExisting(
-                    userId,
-                    EntityType.USER,
-                    eventsPerReceiver,
+                    EntityType.GLOBAL.name,
+                    EntityType.GLOBAL,
+                    rewardDistributedEvents,
                     blockDetails,
-                    roundId,
+                    updatedRoundId,
                     existing,
                 )
             existing?.let { archiveResult.add(it) }
             updatedResult[recordId] = updated
         }
 
-        // Process Apps
-        groupByAppId(events).forEach { (appId, eventsPerApp) ->
-            val recordId = generateId(appId, "$roundId")
-            val existing = resolveExisting(recordId, updatedResult)
-            val updated =
-                createOrUpdateExisting(
-                    appId,
-                    EntityType.APP,
-                    eventsPerApp,
-                    blockDetails,
-                    roundId,
-                    existing,
-                )
-            existing?.let { archiveResult.add(it) }
-            updatedResult[recordId] = updated
-        }
-
-        // Process Global
-        val recordId = generateId(EntityType.GLOBAL.name, "$roundId")
-        val existing = resolveExisting(recordId, updatedResult)
-        val updated =
-            createOrUpdateExisting(
-                EntityType.GLOBAL.name,
-                EntityType.GLOBAL,
-                events,
-                blockDetails,
-                roundId,
-                existing,
-            )
-        existing?.let { archiveResult.add(it) }
-        updatedResult[recordId] = updated
-
-        return updatedResult.values.toList() to archiveResult
+        return Triple(updatedResult.values.toList(), archiveResult.toList(), updatedRoundId)
     }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<UserRoundActionSummary>, existing: List<UserRoundActionSummary>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            userRoundActionSummaryArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            userRoundActionSummaryArchiveService,
+            userRoundActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

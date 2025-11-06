@@ -2,8 +2,8 @@ package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -11,12 +11,14 @@ import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBoolean
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.ParamUtils.getAsLong
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
 @Service
-class HistoryService(private val mongoTemplate: MongoTemplate) {
-    fun processBlockEvents(events: List<IndexedEvent>, block: Block) {
+open class HistoryService(private val historyRepository: HistoryRepository) {
+
+    open fun processEvents(events: List<IndexedEvent>, block: Block): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
@@ -33,7 +35,12 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
 
         historyEvents.addAll(getMissingTransactions(block, processedTxs))
 
-        mongoTemplate.insert(historyEvents, IndexedHistoryEvent::class.java)
+        return historyEvents
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(events: List<IndexedHistoryEvent>) {
+        historyRepository.saveAll(events)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
@@ -77,7 +84,7 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
         val value =
             when (eventName) {
                 HistoryEventName.TRANSFER_VET -> event.params.getAsString("amount")!!
-                HistoryEventName.STARGATE_DELEGATE ->
+                HistoryEventName.STARGATE_DELEGATE_REQUEST ->
                     event.params.getAsString("vetAmountStaked") ?: event.params.getAsString("value")
                 else -> event.params.getAsString("value")
             }
@@ -124,6 +131,9 @@ class HistoryService(private val mongoTemplate: MongoTemplate) {
             levelId = event.params.getAsString("levelId"),
             tokenIds = event.params.getReturnValues()["tokenIds"] as? List<String>,
             validator = event.params.getAsString("validator"),
+            delegationId = event.params.getAsString("delegationId"),
+            periodClaimed = event.params.getAsLong("periodClaimed"),
+            boostedBlocks = event.params.getAsString("boostedBlocks"),
         )
     }
 

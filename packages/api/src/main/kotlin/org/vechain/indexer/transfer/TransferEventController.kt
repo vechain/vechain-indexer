@@ -3,6 +3,7 @@ package org.vechain.indexer.transfer
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
@@ -146,17 +148,19 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "addresses",
-        schema = Schema(type = "array"),
+        array =
+            ArraySchema(
+                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+                minItems = 1,
+                maxItems = 20,
+            ),
         description = "Addresses to query. Max 20 addresses",
         required = true,
         example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Block number to query",
+    @BlockNumberParameter(
         required = true,
+        description = "Block number to query",
         example = "1000000",
     )
     @CommonApiResponses

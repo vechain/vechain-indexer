@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -19,7 +20,30 @@ interface AppDailyActionSummaryRepository :
         pageable: Pageable,
     ): Slice<AppDailyActionSummary>
 
-    fun findAppIdsByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
+    fun findByUserAndDate(user: String, date: String): List<AppDailyActionSummary>
 
+    fun findByAppIdAndUserAndDate(appId: String, user: String, date: String): AppDailyActionSummary?
+
+    @Cacheable(value = ["app_daily_action_countByAppIdAndDate"], key = "#appId + '-' + #date")
     fun countByAppIdAndDate(appId: String, date: String): Long
+
+    @Cacheable(
+        value = ["app_daily_action_countByTotalRewardAmountGreaterThanAndAppIdAndDate"],
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #date",
+    )
+    fun countByTotalRewardAmountGreaterThanAndAppIdAndDate(
+        totalRewardAmount: java.math.BigDecimal,
+        appId: String,
+        date: String,
+    ): Long
+
+    @Cacheable(
+        value = ["app_daily_action_countByActionsRewardedGreaterThanAndAppIdAndDate"],
+        key = "#actionsRewarded + '-' + #appId + '-' + #date",
+    )
+    fun countByActionsRewardedGreaterThanAndAppIdAndDate(
+        actionsRewarded: Long,
+        appId: String,
+        date: String,
+    ): Long
 }

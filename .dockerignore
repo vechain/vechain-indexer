@@ -49,3 +49,7 @@ node_modules/
 **/.env.*
 packages/**/.env
 packages/**/.env.*
+
+.schemathesis/
+.hypothesis/
+.venv-schemathesis/

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
@@ -37,6 +38,7 @@ open class UserAllTimeActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY,
                 UserAllTimeActionSummary::class.java,
                 version,
             )
@@ -52,14 +54,26 @@ open class UserAllTimeActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "entity_-1" to Index().on("entity", Sort.Direction.DESC),
-                "entityType_-1_actionsRewarded_-1" to
+                "entityType_1_actionsRewarded_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.DESC)
-                        .on("actionsRewarded", Sort.Direction.DESC),
-                "entityType_-1_totalRewardAmount_-1" to
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.DESC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_actionsRewarded_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.DESC)
-                        .on("totalRewardAmount", Sort.Direction.DESC),
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("actionsRewarded", Sort.Direction.ASC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_totalRewardAmount_-1_entity_1" to
+                    Index()
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.DESC)
+                        .on("entity", Sort.Direction.ASC),
+                "entityType_1_totalRewardAmount_1_entity_1" to
+                    Index()
+                        .on("entityType", Sort.Direction.ASC)
+                        .on("totalRewardAmount", Sort.Direction.ASC)
+                        .on("entity", Sort.Direction.ASC),
                 "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
             )
         )

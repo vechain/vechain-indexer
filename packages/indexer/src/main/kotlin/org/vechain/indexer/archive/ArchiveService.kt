@@ -15,7 +15,7 @@ import org.springframework.data.util.CloseableIterator
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.timing.WithTiming
+import org.vechain.indexer.timing.TimingContextAware
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
 
@@ -30,9 +30,16 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     private val clazz: Class<T>,
     private val archiveClazz: Class<S>,
     private val queryLimit: Long,
-) {
+) : TimingContextAware {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val timingContextDescription: String by lazy {
+        val documentType = clazz.simpleName ?: clazz.name
+        val archiveType = archiveClazz.simpleName ?: archiveClazz.name
+        "document=$documentType, archive=$archiveType"
+    }
+
+    override fun timingContext(): String = timingContextDescription
 
     open fun getPreviousVersionId(document: VersionedDocument): String =
         IdUtils.buildArchiveId(document, document.version - 1)
@@ -85,10 +92,10 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         )
     }
 
-    /** Get all documents for a given block number from the collection of the given class */
+    /** Get all documents greater than or equal to the block number */
     open fun getCurrentDocuments(blockNumber: Long): List<T> {
         val query =
-            Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).`is`(blockNumber))
+            Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).gte(blockNumber))
 
         return mongoTemplate.find(query, clazz)
     }
@@ -123,12 +130,21 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         return bulkOperations
     }
 
-    @WithTiming("Pruner - findRecordsToPrune")
-    open fun findRecordsToPrune(endBlock: Long, batchSize: Int): CloseableIterator<String> {
+    open fun findRecordsToPrune(
+        endBlock: Long,
+        batchSize: Int,
+        idsToPrune: List<String>? = null,
+    ): CloseableIterator<String> {
         require(batchSize > 0) { "Batch size must be greater than zero" }
-        logger.info("Finding records to prune for {}", clazz.simpleName)
+        logger.debug("Finding records to prune for {}", clazz.simpleName)
 
-        // 1) Rank by recordId/version (desc)
+        // 1) Create the match stage. If ids are provided, filter by them as well.
+        val matchCriteria = Criteria.where("data.blockNumber").lt(endBlock)
+        if (idsToPrune != null && idsToPrune.isNotEmpty()) {
+            matchCriteria.and("data._id").`in`(idsToPrune)
+        }
+
+        // 2) Rank by recordId/version (desc)
         val setWindowFields =
             RawStage(
                 Document(
@@ -140,10 +156,10 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                 )
             )
 
-        // 2) Build pipeline
+        // 3) Build pipeline
         val pipeline =
             Aggregation.newAggregation(
-                    Aggregation.match(Criteria.where("data.blockNumber").lt(endBlock)),
+                    Aggregation.match(matchCriteria),
                     Aggregation.sort(
                         Sort.by(Sort.Order.asc("data._id"), Sort.Order.desc("data.version"))
                     ),

@@ -3,30 +3,34 @@ package org.vechain.indexer.vevote
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-historic-proposals")
 @Component
 open class HistoricProposalsProcessor(
     private val repository: HistoricProposalsRepository,
     private val historicProposalsService: HistoricProposalsService,
-) : BaseProcessor(repository = repository) {
+    indexerVersionService: IndexerVersionService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.HISTORIC_PROPOSALS,
+    ) {
 
-    override fun process(matchedEvents: List<IndexedEvent>, block: Block?) {
-        if (matchedEvents.isEmpty()) {
-            historicProposalsService.processNewProposals(emptyList(), block?.number)
-            return
-        }
+    override fun process(entry: IndexingResult) {
+        // No events to process
+        if (entry.events().isEmpty()) return
+
+        // Process new proposals or events with their descriptions
         val proposals: List<HistoricProposals> =
-            historicProposalsService.processNewProposals(matchedEvents, block?.number)
+            historicProposalsService.processEvents(entry.events())
 
+        // Save the results
         if (proposals.isNotEmpty()) {
-            repository.saveAll(proposals)
+            historicProposalsService.save(proposals)
         }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        repository.deleteAllByBlockNumberBetween(blockNumber - 1, blockNumber + 1)
     }
 }

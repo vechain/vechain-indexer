@@ -4,6 +4,8 @@ import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.transfer.TransferEventType
+import org.vechain.indexer.validator.Status
+import org.vechain.indexer.validator.ValidatorAction
 
 data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
 
@@ -39,14 +41,48 @@ object EventUtils {
             "WOV_Custodial_WOV_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Non_Custodial_Sale" -> HistoryEventName.NFT_SALE
             "WOV_Offer_Accepted_Sale" -> HistoryEventName.NFT_SALE
-            "STARGATE_DELEGATE" -> HistoryEventName.STARGATE_DELEGATE_ONLY
             "STARGATE_STAKE" -> HistoryEventName.STARGATE_STAKE
             "STARGATE_UNSTAKE" -> HistoryEventName.STARGATE_UNSTAKE
-            "STARGATE_CLAIM_REWARDS_BASE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_BASE
-            "STARGATE_CLAIM_REWARDS_DELEGATE" -> HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE
-            "STARGATE_UNDELEGATE" -> HistoryEventName.STARGATE_UNDELEGATE
+            "STARGATE_CLAIM_REWARDS_BASE_LEGACY" ->
+                HistoryEventName.STARGATE_CLAIM_REWARDS_BASE_LEGACY
+            "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY" ->
+                HistoryEventName.STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY
+            "STARGATE_UNDELEGATE_LEGACY" -> HistoryEventName.STARGATE_UNDELEGATE_LEGACY
             "VeVote_VoteCast" -> HistoryEventName.VEVOTE_VOTE_CAST
+            "STARGATE_DELEGATE_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_REQUEST
+            "STARGATE_DELEGATE_LEGACY" -> HistoryEventName.STARGATE_DELEGATE_LEGACY
+            "STARGATE_DELEGATION_EXIT_REQUEST" -> HistoryEventName.STARGATE_DELEGATE_EXIT_REQUEST
+            "STARGATE_DELEGATE_REQUEST_CANCELLED" ->
+                HistoryEventName.STARGATE_DELEGATE_REQUEST_CANCELLED
+            "STARGATE_CLAIM_REWARDS" -> HistoryEventName.STARGATE_CLAIM_REWARDS
+            "STARGATE_BOOST" -> HistoryEventName.STARGATE_BOOST
+            "STARGATE_MANAGER_ADDED" -> HistoryEventName.STARGATE_MANAGER_ADDED
+            "STARGATE_MANAGER_REMOVED" -> HistoryEventName.STARGATE_MANAGER_REMOVED
             else -> null // Other events will not be labeled
+        }
+
+    fun determineDelegationEventType(
+        delegationStatus: Status,
+        forcedExit: Boolean,
+    ): HistoryEventName? =
+        if (delegationStatus == Status.ACTIVE) {
+            HistoryEventName.STARGATE_DELEGATE_ACTIVE
+        } else if (forcedExit && delegationStatus == Status.EXITED) {
+            HistoryEventName.STARGATE_DELEGATION_EXITED_VALIDATOR
+        } else if (delegationStatus == Status.EXITED) {
+            HistoryEventName.STARGATE_DELEGATION_EXITED
+        } else {
+            null
+        }
+
+    fun determineValidatorEventType(params: AbiEventParameters): ValidatorAction? =
+        when (params.getEventType()) {
+            "DelegationAdded" -> ValidatorAction.DELEGATION_APPLIED
+            "DelegationInitiated" -> ValidatorAction.DELEGATION_INITIATED
+            "DelegationWithdrawn" -> ValidatorAction.DELEGATION_REMOVED
+            "DelegationExitRequested" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
+            "Transfer" -> ValidatorAction.DELEGATION_EXIT_REQUESTED
+            else -> null
         }
 
     fun determineTransferType(genericParams: AbiEventParameters): TransferEventType? =
@@ -87,4 +123,20 @@ object EventUtils {
         // Sort by blockNumber and return as a LinkedHashMap to preserve order
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
+
+    /** Determine if a delegation-related event should be processed based on its type and source. */
+    fun shouldProcessDelegationEvent(ev: IndexedEvent, stakerSC: String): Boolean =
+        when (ev.eventType) {
+            // must come from stakerSC
+            "ValidatorExitRequested" -> ev.address.equals(stakerSC, ignoreCase = true)
+
+            // must NOT come from stakerSC
+            "DelegationInitiated",
+            "DelegationExitRequested",
+            "DelegationWithdrawn",
+            "DelegationRewardsClaimed",
+            "Transfer" -> !ev.address.equals(stakerSC, ignoreCase = true)
+
+            else -> false
+        }
 }

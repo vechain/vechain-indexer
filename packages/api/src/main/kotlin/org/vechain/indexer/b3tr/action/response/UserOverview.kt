@@ -13,3 +13,14 @@ data class UserOverview(
     val rankByActionsRewarded: Long?,
     val uniqueXAppInteractions: List<String>,
 )
+
+data class UserAppOverview(
+    val wallet: String,
+    val appId: String,
+    val roundId: Int?,
+    val totalRewardAmount: Double,
+    val actionsRewarded: Long,
+    val totalImpact: Impact?,
+    val rankByReward: Long?,
+    val rankByActionsRewarded: Long?,
+)

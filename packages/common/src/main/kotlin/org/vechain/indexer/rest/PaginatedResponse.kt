@@ -16,13 +16,7 @@ data class PaginatedResponse<T>(val data: List<T>, val pagination: PaginationDet
 
 /** Wrapper that holds pagination data inside a response */
 @JsonView(Views.Public::class)
-data class PaginationDetail(
-    val hasCount: Boolean,
-    val countLimit: Long,
-    val totalPages: Int? = null,
-    val totalElements: Long? = null,
-    val hasNext: Boolean,
-)
+data class PaginationDetail(val hasNext: Boolean, val cursor: String? = null)
 
 /**
  * Builds a paginated API response based on a single results page.
@@ -32,14 +26,24 @@ data class PaginationDetail(
 fun <T : Any> paginatedResponse(slice: Slice<T>): PaginatedResponse<T> {
     return PaginatedResponse(
         data = slice.content,
-        pagination =
-            PaginationDetail(
-                // Count fields deprecated, kept for backwards compatibility only temporarily
-                hasCount = false,
-                countLimit = 0,
-                totalPages = null,
-                totalElements = null,
-                hasNext = slice.hasNext(),
-            ),
+        pagination = PaginationDetail(hasNext = slice.hasNext(), cursor = null),
+    )
+}
+
+/**
+ * Builds a paginated API response with cursor support.
+ *
+ * @param data The list of items to return
+ * @param hasNext Whether there are more items
+ * @param cursor Optional cursor for fetching next page
+ */
+fun <T : Any> paginatedResponse(
+    data: List<T>,
+    hasNext: Boolean,
+    cursor: String? = null,
+): PaginatedResponse<T> {
+    return PaginatedResponse(
+        data = data,
+        pagination = PaginationDetail(hasNext = hasNext, cursor = cursor),
     )
 }

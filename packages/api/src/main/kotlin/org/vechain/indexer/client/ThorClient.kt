@@ -8,18 +8,28 @@ import org.vechain.indexer.thor.model.Block
 
 @Service
 class ThorClient(private val thorRest: WebClient) {
-
     private val projectIdHeader = "X-Project-Id"
     private val projectIdVal = "veworld-indexer"
 
-    fun getBlock(blockNumber: Long, expanded: Boolean = true): Block {
-        return thorRest
+    fun getBlock(blockNumber: Long, expanded: Boolean = true): Block =
+        thorRest
             .get()
-            .uri("/blocks/${blockNumber}?expanded=$expanded")
+            .uri("/blocks/$blockNumber?expanded=$expanded")
             .header(projectIdHeader, projectIdVal)
             .retrieve()
             .bodyToMono(Block::class.java)
             .block() ?: throw NotFoundException("Block not found for block number $blockNumber")
+
+    fun getBestBlock(): Block {
+        val block =
+            thorRest
+                .get()
+                .uri("/blocks/best?expanded=true")
+                .retrieve()
+                .bodyToMono(Block::class.java)
+                .block() ?: throw NotFoundException("Best block not found")
+
+        return block
     }
 
     fun getNetworkType(): NetworkType {

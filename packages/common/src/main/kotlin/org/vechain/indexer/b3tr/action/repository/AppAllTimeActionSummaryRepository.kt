@@ -1,6 +1,6 @@
 package org.vechain.indexer.b3tr.action.repository
 
-import java.math.BigDecimal
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -14,16 +14,25 @@ interface AppAllTimeActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<AppAllTimeActionSummary, String> {
     fun findAllByAppId(appId: String, pageable: Pageable): Slice<AppAllTimeActionSummary>
 
-    fun findAllByUser(user: String, pageable: Pageable): Slice<AppAllTimeActionSummary>
+    fun findAppIdsByUser(user: String): List<AppAllTimeActionSummary>
 
+    fun findByAppIdAndUser(appId: String, user: String): AppAllTimeActionSummary?
+
+    @Cacheable(value = ["app_all_time_action_countByAppId"], key = "#appId")
+    fun countByAppId(appId: String): Long
+
+    @Cacheable(
+        value = ["app_all_time_action_countByTotalRewardAmountGreaterThanAndAppId"],
+        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId",
+    )
     fun countByTotalRewardAmountGreaterThanAndAppId(
-        totalRewardAmount: BigDecimal,
+        totalRewardAmount: java.math.BigDecimal,
         appId: String,
     ): Long
 
+    @Cacheable(
+        value = ["app_all_time_action_countByActionsRewardedGreaterThanAndAppId"],
+        key = "#actionsRewarded + '-' + #appId",
+    )
     fun countByActionsRewardedGreaterThanAndAppId(actionsRewarded: Long, appId: String): Long
-
-    fun findAppIdsByUser(user: String): List<AppAllTimeActionSummary>
-
-    fun countByAppId(appId: String): Long
 }

@@ -7,8 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Parameter(
     `in` = ParameterIn.QUERY,
     name = "page",
-    schema = Schema(type = "Integer"),
-    description = "The results page number",
+    schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
+    description = "The zero-based results page number",
     required = false,
     example = "0",
 )

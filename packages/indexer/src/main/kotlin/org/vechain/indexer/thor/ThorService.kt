@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.vechain.indexer.exception.NotFoundException
+import org.vechain.indexer.rest.ExecuteAccountResponse
 import org.vechain.indexer.rest.ExecuteCodeRequest
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.model.Block
@@ -15,7 +16,6 @@ import org.vechain.indexer.thor.model.Clause
 
 @Service
 class ThorService(private val thorRest: WebClient) {
-
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     fun getBestBlock(): Block {
@@ -48,4 +48,27 @@ class ThorService(private val thorRest: WebClient) {
             .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
             .block() ?: throw Exception("Empty response from Thor")
     }
+
+    fun inspectClausesAtBlock(clauses: List<Clause>, blockID: String): List<ExecuteCodeResponse> {
+        val blockRef = blockID.substring(0, 18)
+        val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
+
+        return thorRest
+            .post()
+            .uri("/accounts/*?revision=$blockID")
+            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .accept(MediaType.APPLICATION_JSON)
+            .body(BodyInserters.fromValue(request))
+            .retrieve()
+            .bodyToMono(object : ParameterizedTypeReference<List<ExecuteCodeResponse>>() {})
+            .block() ?: throw Exception("Empty response from Thor")
+    }
+
+    fun inspectBalanceAtBlock(account: String, blockID: String): ExecuteAccountResponse =
+        thorRest
+            .get()
+            .uri("/accounts/$account?revision=$blockID")
+            .retrieve()
+            .bodyToMono(ExecuteAccountResponse::class.java)
+            .block() ?: throw Exception("Empty response from Thor")
 }

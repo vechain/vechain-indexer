@@ -2,9 +2,9 @@ package org.vechain.indexer.b3tr.action
 
 import kotlin.collections.component1
 import kotlin.collections.component2
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
@@ -17,16 +17,20 @@ import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
-@Configuration
+@Service
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 open class UserDailyActionSummaryService(
     private val repository: UserDailyActionSummaryRepository,
     private val userDailyActionSummaryArchiveService:
         ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+    private val userDailyActionSummaryPruner:
+        TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
 ) {
 
     open fun processEvents(
@@ -92,15 +96,13 @@ open class UserDailyActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<UserDailyActionSummary>, existing: List<UserDailyActionSummary>) {
-        // Apply updates
-        if (updated.isNotEmpty()) {
-            repository.saveAll(updated)
-        }
-
-        // Apply archives
-        if (existing.isNotEmpty()) {
-            userDailyActionSummaryArchiveService.saveAll(existing)
-        }
+        saveVersionedDocuments(
+            updated,
+            existing,
+            repository,
+            userDailyActionSummaryArchiveService,
+            userDailyActionSummaryPruner,
+        )
     }
 
     protected fun createOrUpdateExisting(

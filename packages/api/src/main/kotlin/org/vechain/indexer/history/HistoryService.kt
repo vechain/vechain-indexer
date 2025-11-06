@@ -24,15 +24,28 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
         return historyRepository.findNotBlacklisted(criteria, pageable)
     }
 
+    open fun findTokenIdHistoryByFilters(
+        tokenId: String?,
+        eventNames: List<String>?,
+        contractAddress: Address?,
+        before: Long?,
+        after: Long?,
+        pageable: Pageable,
+    ): Slice<IndexedHistoryEvent> {
+        val criteria =
+            buildCriteria(null, eventNames, null, contractAddress, before, after, tokenId)
+        return historyRepository.findNotBlacklisted(criteria, pageable)
+    }
+
     private fun buildCriteria(
-        account: String,
+        account: String?,
         eventNames: List<String>?,
         searchFields: List<String>?,
         contractAddress: Address?,
         before: Long?,
         after: Long?,
+        tokenId: String? = null,
     ): Criteria {
-
         val criteria = Criteria()
 
         // Add dynamic search fields
@@ -40,13 +53,16 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
             criteria.orOperator(
                 *searchFields.map { Criteria.where(it).`is`(account) }.toTypedArray()
             )
-        } else {
-            // Default to "to", "from", "origin"
+        } else if (!account.isNullOrBlank()) {
             criteria.orOperator(
+                Criteria.where(IndexedHistoryEvent::origin.name).`is`(account),
+                Criteria.where(IndexedHistoryEvent::gasPayer.name).`is`(account),
                 Criteria.where(IndexedHistoryEvent::to.name).`is`(account),
                 Criteria.where(IndexedHistoryEvent::from.name).`is`(account),
-                Criteria.where(IndexedHistoryEvent::origin.name).`is`(account),
+                Criteria.where(IndexedHistoryEvent::owner.name).`is`(account),
             )
+        } else {
+            criteria.and(IndexedHistoryEvent::tokenId.name).`is`(tokenId)
         }
 
         // Add contractAddress filter

@@ -9,16 +9,7 @@ plugins {
     kotlin("plugin.spring") version "2.1.21"
     id("jacoco-report-aggregation")
     id("com.diffplug.spotless") version "7.0.3"
-    id("org.sonarqube") version "6.0.1.5171"
     jacoco
-}
-
-sonar {
-    properties {
-        property("sonar.projectKey", "vechain_veworld-indexer")
-        property("sonar.organization", "vechain")
-        property("sonar.host.url", "https://sonarcloud.io")
-    }
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_21
@@ -224,7 +215,7 @@ allprojects {
         implementation("commons-codec:commons-codec:1.15")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:5.1.0")
+        implementation("org.vechain:indexer-core:6.0.1")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")

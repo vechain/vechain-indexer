@@ -11,6 +11,6 @@ object IdUtils {
 
     fun buildNftId(transferEvent: IndexedEvent): String =
         buildHashedId("${transferEvent.address}-${transferEvent.params.getAsString("tokenId")}")
-}
 
-private fun buildHashedId(plainId: String): String = DigestUtils.sha1Hex(plainId)
+    fun buildHashedId(plainId: String): String = DigestUtils.sha1Hex(plainId)
+}

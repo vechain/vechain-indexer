@@ -11,10 +11,12 @@ import java.math.BigDecimal
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class AppAllTimeActionSummaryProcessorTest {
@@ -26,17 +28,25 @@ internal class AppAllTimeActionSummaryProcessorTest {
 
     @MockK lateinit var service: AppAllTimeActionSummaryService
 
+    @MockK lateinit var indexerVersionService: IndexerVersionService
+
     private lateinit var processor: AppAllTimeActionSummaryProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        processor = AppAllTimeActionSummaryProcessor(repository, archiveService, service = service)
+        processor =
+            AppAllTimeActionSummaryProcessor(
+                repository = repository,
+                appAllTimeActionSummaryArchiveService = archiveService,
+                service = service,
+                indexerVersionService = indexerVersionService,
+            )
     }
 
     @Test
     fun `process empty events doesn't save any records`() {
-        processor.process(emptyList(), null)
+        processor.process(IndexingResult.EventsOnly(100, emptyList()))
 
         // Verify that service.save is not called
         verify(exactly = 0) { service.save(any(), any()) }
@@ -89,7 +99,7 @@ internal class AppAllTimeActionSummaryProcessorTest {
         every { service.save(updatedRecords, archiveRecords) } just Runs
 
         // Verify that service.save is called with the correct parameters
-        processor.process(events, null)
+        processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
 
         verify(exactly = 1) { service.processEvents(events) }
         verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }

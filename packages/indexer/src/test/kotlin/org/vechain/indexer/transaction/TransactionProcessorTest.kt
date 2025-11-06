@@ -12,9 +12,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
+import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionProcessorTest {
@@ -24,6 +26,8 @@ internal class TransactionProcessorTest {
 
     @MockK lateinit var transactionProcessor: TransactionProcessor
 
+    @MockK lateinit var indexerVersionService: IndexerVersionService
+
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
@@ -31,17 +35,23 @@ internal class TransactionProcessorTest {
             TransactionProcessor(
                 transactionService = transactionService,
                 repository = transactionRepository,
+                indexerVersionService = indexerVersionService,
             )
     }
 
     @Test
     fun `process - should throw if block is null`() {
-        assertThrows<IllegalArgumentException> { transactionProcessor.process(emptyList(), null) }
+
+        assertThrows<IllegalArgumentException> {
+            transactionProcessor.process(IndexingResult.EventsOnly(100, emptyList()))
+        }
     }
 
     @Test
     fun `process - If no transactions shouldn't do anything`() {
-        transactionProcessor.process(emptyList(), BlockFixtures.BLOCK_NO_CLAUSES)
+        transactionProcessor.process(
+            IndexingResult.Normal(BlockFixtures.BLOCK_NO_CLAUSES, emptyList(), emptyList())
+        )
 
         verify { transactionService wasNot Called }
     }
@@ -53,7 +63,7 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(events, block)
+        transactionProcessor.process(IndexingResult.Normal(block, events, emptyList()))
 
         verify { transactionService.processBlockTransactions(events, block) }
     }
@@ -65,7 +75,7 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(events, block)
+        transactionProcessor.process(IndexingResult.Normal(block, events, emptyList()))
 
         verify { transactionService.processBlockTransactions(events, block) }
     }

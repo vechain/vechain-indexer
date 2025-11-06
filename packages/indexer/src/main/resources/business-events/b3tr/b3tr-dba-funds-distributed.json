@@ -1,0 +1,37 @@
+{
+  "name": "B3TR_DBAFundsDistributed",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "FundsDistributedToApp",
+      "alias": "fundsDistributed",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_DBA_POOL_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "appId",
+      "eventName": "fundsDistributed",
+      "businessEventName": "appId"
+    },
+    {
+      "name": "roundId",
+      "eventName": "fundsDistributed",
+      "businessEventName": "roundId"
+    },
+    {
+      "name": "amount",
+      "eventName": "fundsDistributed",
+      "businessEventName": "amount"
+    }
+  ]
+}

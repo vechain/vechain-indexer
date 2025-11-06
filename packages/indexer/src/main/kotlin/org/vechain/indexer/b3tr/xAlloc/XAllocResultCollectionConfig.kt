@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -36,6 +37,7 @@ open class XAllocResultCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = IndexerNames.X_ALLOC_RESULT,
                 XAllocResult::class.java,
                 version,
             )
@@ -50,6 +52,7 @@ open class XAllocResultCollectionConfig(
             listOf(
                 "roundId_-1" to Index().on("roundId", Sort.Direction.DESC),
                 "appId_-1" to Index().on("appId", Sort.Direction.DESC),
+                "totalAmount_-1" to Index().on("totalAmount", Sort.Direction.DESC),
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
             )
         )

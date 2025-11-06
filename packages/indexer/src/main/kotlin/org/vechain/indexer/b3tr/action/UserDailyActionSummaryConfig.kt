@@ -7,10 +7,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.Pruner
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -34,7 +35,7 @@ open class UserDailyActionSummaryConfig {
         userDailyActionSummaryArchiveService:
             ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ) =
+    ): TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive> =
         PrunerService(
             klass = UserDailyActionSummaryArchive::class,
             archiveService = userDailyActionSummaryArchiveService,
@@ -45,10 +46,11 @@ open class UserDailyActionSummaryConfig {
     open fun userDailyActionSummaryIndexer(
         thorClient: ThorClient,
         processor: UserDailyActionSummaryProcessor,
-        userDailyActionSummaryPruner: Pruner,
+        userDailyActionSummaryPruner:
+            TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
-        @Value("\${indexer.sync-log-interval.b3tr}") syncLoggerInterval: Long,
+        @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContract: String,
         @Value("\${business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT}")
@@ -56,7 +58,7 @@ open class UserDailyActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name("UserDailyActionSummaryIndexer")
+            .name(IndexerNames.USER_DAILY_ACTION_SUMMARY)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(userDailyActionSummaryPruner)
