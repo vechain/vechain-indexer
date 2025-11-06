@@ -31,18 +31,52 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val sortDir =
             if (direction?.uppercase() == "ASC") Sort.Direction.ASC else Sort.Direction.DESC
 
-        if (cursor != null) {
-            if (sortDir == Sort.Direction.ASC) {
-                criteria.and(cursorField).gt(cursor)
+        var query: Query = Query(criteria)
+
+        // Apply cursor condition if provided
+        // Cursor format: "sortValue|cursorFieldValue"
+        if (cursor != null && cursor.contains("|")) {
+            val parts = cursor.split("|", limit = 2)
+            val sortValue = parts[0]
+            val cursorValue = parts[1]
+
+            // Parse sort value based on the sort field type
+            val parsedSortValue: Any =
+                when {
+                    sortBy.contains("actionsRewarded") -> sortValue.toLongOrNull() ?: sortValue
+                    sortBy.contains("totalRewardAmount") ->
+                        sortValue.toBigDecimalOrNull() ?: sortValue
+                    else -> sortValue
+                }
+
+            // Keyset pagination: fetch records starting from the cursor position
+            // The cursor points to the first record of the next page
+            // We need: (sortField < value) OR (sortField == value AND cursorField <= cursorValue)
+            // This handles ties in the sort field correctly
+            if (sortDir == Sort.Direction.DESC) {
+                // For DESC: (sortField < value) OR (sortField == value AND cursorField <=
+                // cursorValue)
+                val cond1 = Criteria.where(sortBy).lt(parsedSortValue)
+                val cond2 =
+                    Criteria.where(sortBy).`is`(parsedSortValue).and(cursorField).lte(cursorValue)
+                // Create OR condition
+                val orCriteria = Criteria().orOperator(cond1, cond2)
+                query.addCriteria(orCriteria)
             } else {
-                criteria.and(cursorField).lt(cursor)
+                // For ASC: (sortField > value) OR (sortField == value AND cursorField >=
+                // cursorValue)
+                val cond1 = Criteria.where(sortBy).gt(parsedSortValue)
+                val cond2 =
+                    Criteria.where(sortBy).`is`(parsedSortValue).and(cursorField).gte(cursorValue)
+                // Create OR condition
+                val orCriteria = Criteria().orOperator(cond1, cond2)
+                query.addCriteria(orCriteria)
             }
         }
 
-        val query =
-            Query(criteria)
-                .with(Sort.by(sortDir, sortBy).and(Sort.by(Sort.Direction.ASC, cursorField)))
-                .limit(pageSize + 1)
+        // Apply sort and limit - do this AFTER adding cursor criteria
+        query.with(Sort.by(sortDir, sortBy).and(Sort.by(Sort.Direction.ASC, cursorField)))
+        query.limit(pageSize + 1)
 
         return pageSize to query
     }
@@ -68,7 +102,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserAllTimeActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserAllTimeActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserAllTimeActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -96,7 +142,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserDailyActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserDailyActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserDailyActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -124,7 +182,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserRoundActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserRoundActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserRoundActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -150,7 +220,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserAllTimeActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserAllTimeActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserAllTimeActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -178,7 +260,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserDailyActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserDailyActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserDailyActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -206,7 +300,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, UserRoundActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { AppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].entity else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        UserRoundActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        UserRoundActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.entity
+                    }
+                "$sortValue|${nextItem.entity}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -240,7 +346,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, AppAllTimeActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        AppAllTimeActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        AppAllTimeActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.user
+                    }
+                "$sortValue|${nextItem.user}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -277,7 +395,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, AppDailyActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        AppDailyActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        AppDailyActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.user
+                    }
+                "$sortValue|${nextItem.user}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
@@ -314,7 +444,19 @@ open class ActionLeaderboardService(private val mongoTemplate: MongoTemplate) {
         val results = mongoTemplate.find(query, AppRoundActionSummary::class.java)
         val hasNext = results.size > pageSize
         val items = results.take(pageSize).map { UserAppLeaderboardItem.from(it) }
-        val nextCursor = if (hasNext && results.isNotEmpty()) results[pageSize].user else null
+        val nextCursor =
+            if (hasNext && results.isNotEmpty()) {
+                val nextItem = results[pageSize]
+                val sortValue =
+                    when (sortBy) {
+                        AppRoundActionSummary::totalRewardAmount.name ->
+                            nextItem.totalRewardAmount.toString()
+                        AppRoundActionSummary::actionsRewarded.name ->
+                            nextItem.actionsRewarded.toString()
+                        else -> nextItem.user
+                    }
+                "$sortValue|${nextItem.user}"
+            } else null
 
         return paginatedResponse(items, hasNext, nextCursor)
     }
