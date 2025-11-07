@@ -41,10 +41,11 @@ open class VthoClaimedByAccountService(
         )
     }
 
-    /**
-     * Accumulate rewards
-     */
-    private fun accumulateRewards(events: List<IndexedEvent>, prev: VthoClaimedByAccount?): Rewards {
+    /** Accumulate rewards */
+    private fun accumulateRewards(
+        events: List<IndexedEvent>,
+        prev: VthoClaimedByAccount?,
+    ): Rewards {
         // Sum reward values per category
         var legacySum = BigInteger.ZERO
         var delegationSum = BigInteger.ZERO
@@ -96,7 +97,7 @@ open class VthoClaimedByAccountService(
                 delegationRewards = rewards.delegation,
                 account = account,
                 tokenId = null,
-                id = account
+                id = account,
             )
         }
     }
@@ -110,10 +111,12 @@ open class VthoClaimedByAccountService(
         val existingByAccountTokenId = existing.associateBy { "${it.account}_${it.tokenId}" }
         val groupedEvents =
             events.groupBy {
-                val owner = it.params.getAsString("owner")
-                    ?: throw IllegalArgumentException("Missing 'owner' in event")
-                val tokenId = it.params.getAsString("tokenId")
-                    ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
+                val owner =
+                    it.params.getAsString("owner")
+                        ?: throw IllegalArgumentException("Missing 'owner' in event")
+                val tokenId =
+                    it.params.getAsString("tokenId")
+                        ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
                 "${owner}_${tokenId}"
             }
 
@@ -139,7 +142,7 @@ open class VthoClaimedByAccountService(
                 delegationRewards = rewards.delegation,
                 account = account,
                 tokenId = tokenId,
-                id = accountTokenId
+                id = accountTokenId,
             )
         }
     }
@@ -171,10 +174,14 @@ open class VthoClaimedByAccountService(
         val accountTokenIds =
             events
                 .map {
-                    val owner = it.params.getAsString("owner")
-                        ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
-                    val tokenId = it.params.getAsString("tokenId")
-                        ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
+                    val owner =
+                        it.params.getAsString("owner")
+                            ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
+                    val tokenId =
+                        it.params.getAsString("tokenId")
+                            ?: throw IllegalArgumentException(
+                                "Missing 'tokenId' parameter in event"
+                            )
                     "${owner}_${tokenId}"
                 }
                 .distinct()

@@ -92,7 +92,11 @@ open class StargateService(
      * @param tokenId The token ID to retrieve the total VTHO claimed for.
      * @return The total VTHO claimed by the pair account - token ID as a BigInteger.
      */
-    open fun getTotalVthoClaimed(account: String, tokenId: String, rewardType: String?): BigInteger =
+    open fun getTotalVthoClaimed(
+        account: String,
+        tokenId: String,
+        rewardType: String?,
+    ): BigInteger =
         vthoClaimedByAccountRepository
             .findById("${HexUtils.normalise(account)}_${BigInteger(tokenId).toString(10)}")
             .map {
