@@ -35,6 +35,7 @@ import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTimeRangePreset
+import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validation.ValidTokenLevel
 
 @Profile("stargate")
@@ -107,6 +108,50 @@ open class StargateController(private val stargateService: StargateService) {
         }
 
         return stargateService.getTotalVthoClaimed(account.value, rewardsType)
+    }
+
+    @GetMapping("/total-vtho-claimed/{account}/{tokenId}")
+    @Operation(summary = "Get total VTHO claimed by a given account and token ID")
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "account",
+        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+        description = "The account address to query for total VTHO claimed",
+        required = true,
+        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
+    )
+    @Parameter(
+        `in` = ParameterIn.PATH,
+        name = "tokenId",
+        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
+        description = "The token id to query for total VTHO claimed",
+        required = true,
+        example = "1",
+    )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "rewardsType",
+        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
+        description =
+            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
+        required = false,
+    )
+    @CommonApiResponses
+    open fun getTotalVthoClaimed(
+        @ValidAddress @PathVariable account: Address,
+        @ValidTokenId @PathVariable tokenId: String,
+        @RequestParam(required = false) rewardsType: String?,
+    ): BigInteger {
+        val allowed = setOf("LEGACY", "DELEGATION", null, "")
+
+        if (rewardsType !in allowed) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Invalid rewardsType '$rewardsType'. Allowed values are: LEGACY, DELEGATION or empty.",
+            )
+        }
+
+        return stargateService.getTotalVthoClaimed(account.value, tokenId, rewardsType)
     }
 
     @GetMapping("/total-vtho-claimed/historic/{range}")

@@ -38,7 +38,7 @@ internal class VthoClaimByAccountServiceTest {
 
     @Test
     fun `parseRecords returns empty list for empty events`() {
-        val result = service.parseRecords(emptyList(), emptyList())
+        val result = service.parseAccountTokenIdRecords(emptyList(), emptyList())
         expect { that(result.size).isEqualTo(0) }
     }
 
@@ -71,7 +71,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 },
             )
-        val result = service.parseRecords(events, emptyList())
+        val result = service.parseAccountTokenIdRecords(events, emptyList())
         expect {
             that(result.size).isEqualTo(2)
             val abc = result.find { it.account == "0xabc" }
@@ -110,9 +110,11 @@ internal class VthoClaimByAccountServiceTest {
                     version = 1,
                     legacyRewards = BigInteger.ZERO,
                     delegationRewards = BigInteger("300"),
+                    tokenId = null,
+                    id = "0xabc"
                 )
             )
-        val result = service.parseRecords(events, existing)
+        val result = service.parseAccountTokenIdRecords(events, existing)
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].account).isEqualTo("0xabc")
@@ -137,6 +139,8 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("1"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc"
                 )
             )
         val existing =
@@ -150,6 +154,8 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("0"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc"
                 )
             )
         every { repository.saveAll(update) } returns update
@@ -192,11 +198,13 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("1"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc"
                 )
             )
         every { repository.findAllById(listOf("0xabc", "0xdef")) } returns existing
 
-        val result = service.getExisting(events)
+        val result = service.getExistingByAccount(events)
 
         verify(exactly = 1) { repository.findAllById(listOf("0xabc", "0xdef")) }
         expect {

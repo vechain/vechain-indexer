@@ -19,7 +19,10 @@ constructor(
     val total: BigInteger,
     val legacyRewards: BigInteger,
     val delegationRewards: BigInteger,
-    @Id val account: String,
+    val account: String,
+    val tokenId: String?,
+    /** Could either be the `account` or `account_tokenId` */
+    @Id val id: String
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = account
 }

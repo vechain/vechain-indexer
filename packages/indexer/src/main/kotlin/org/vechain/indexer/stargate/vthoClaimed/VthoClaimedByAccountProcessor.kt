@@ -28,15 +28,22 @@ open class VthoClaimedByAccountProcessor(
             return
         }
 
+        //Process account records
+
         // Find any existing records
-        val existing = service.getExisting(entry.events())
+        val existingAccountRecords = service.getExistingByAccount(entry.events())
 
         // Process the updated records
-        val updated = service.parseRecords(entry.events(), existing)
+        val updatedAccountRecords = service.parseAccountRecords(entry.events(), existingAccountRecords)
+
+        //Process account token id records
+        val existingAccountTokenIdRecords = service.getExistingByAccountTokenId(entry.events())
+        val updatedExistingAccountTokenIdRecords = service.parseAccountTokenIdRecords(entry.events(), existingAccountTokenIdRecords)
 
         // Finally save the updated records and archive the existing ones
-        if (updated.isNotEmpty() || existing.isNotEmpty()) {
-            service.save(updated, existing)
+        if (updatedAccountRecords.isNotEmpty() || existingAccountRecords.isNotEmpty()) {
+
+            service.save(updatedAccountRecords.plus(updatedExistingAccountTokenIdRecords), existingAccountRecords.plus(existingAccountTokenIdRecords))
         }
     }
 }

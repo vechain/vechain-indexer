@@ -86,6 +86,31 @@ open class StargateService(
             .orElse(BigInteger.ZERO)
 
     /**
+     * Retrieves the total VTHO claimed by a specific account and token id.
+     *
+     * @param account The account address to retrieve the total VTHO claimed for.
+     * @param tokenId The token ID to retrieve the total VTHO claimed for.
+     * @return The total VTHO claimed by the pair account - token ID as a BigInteger.
+     */
+    open fun getTotalVthoClaimed(account: String, tokenId: String, rewardType: String?): BigInteger =
+        vthoClaimedByAccountRepository
+            .findById("${HexUtils.normalise(account)}_${BigInteger(tokenId).toString(10)}")
+            .map {
+                when (rewardType) {
+                    "LEGACY" -> {
+                        it.legacyRewards
+                    }
+                    "DELEGATION" -> {
+                        it.delegationRewards
+                    }
+                    else -> {
+                        it.total
+                    }
+                }
+            }
+            .orElse(BigInteger.ZERO)
+
+    /**
      * Retrieves the cumulative total of VTHO generated (claimed + balance) up to the given block.
      *
      * Behavior:
