@@ -24,7 +24,8 @@ constructor(
     /** Could either be the `account` or `account_tokenId` */
     @Id val id: String,
 ) : VersionedDocument {
-    @JsonIgnore override fun getDocumentId(): String = account
+    @JsonIgnore
+    override fun getDocumentId(): String = if (tokenId != null) "${account}_${tokenId}" else account
 }
 
 @Document(collection = "stargate_vtho_claimed_by_account_archives")
