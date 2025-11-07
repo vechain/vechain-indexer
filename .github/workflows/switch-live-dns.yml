@@ -85,7 +85,7 @@ jobs:
     needs: [fetch-lb-dns-names, identify-live-color, run-api-tests]
     if: |
       always() &&
-      (github.event.inputs.run_api_tests != 'true' || needs.run-api-tests.result == 'success')
+      (github.event.inputs.run_api_tests != 'true' || contains(fromJSON('["success", "skipped"]'), needs.run-api-tests.result))
     outputs:
       live_color_mainnet: ${{ steps.set-colours.outputs.live_color_mainnet }}
       live_color_testnet: ${{ steps.set-colours.outputs.live_color_testnet }}
