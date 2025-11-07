@@ -69,7 +69,7 @@ jobs:
       ENVIRONMENT: ${{ github.event.inputs.environment || 'dead' }}
       BASE_URL_INPUT: ${{ needs.determine-targets.outputs.base_url_input }}
       MAX_RESPONSE_MILLISECONDS: "2000"
-      HYPOTHESIS_MAX_EXAMPLES: "100"
+      HYPOTHESIS_MAX_EXAMPLES: "250"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
