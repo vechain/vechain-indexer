@@ -11,12 +11,25 @@ on:
           - all
           - mainnet
           - testnet
+      run_api_tests:
+        description: "Run API schema tests before switching?"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   id-token: write  # This is required for requesting the JWT
   contents: read   # This is required for actions/checkout
 
 jobs:
+
+  run-api-tests:
+    name: Run API Schema Tests
+    if: ${{ github.event.inputs.run_api_tests == 'true' }}
+    uses: ./.github/workflows/api-schema-tests.yml
+    with:
+      environment: dead
+    secrets: inherit
 
   identify-live-color:
     name: Identify live color
@@ -69,7 +82,10 @@ jobs:
   deploy-vpc-stack:
     name: Prepare VPC stack & switch DNS
     runs-on: ubuntu-latest
-    needs: [fetch-lb-dns-names, identify-live-color]
+    needs: [fetch-lb-dns-names, identify-live-color, run-api-tests]
+    if: |
+      always() &&
+      (github.event.inputs.run_api_tests != 'true' || contains(fromJSON('["success", "skipped"]'), needs.run-api-tests.result))
     outputs:
       live_color_mainnet: ${{ steps.set-colours.outputs.live_color_mainnet }}
       live_color_testnet: ${{ steps.set-colours.outputs.live_color_testnet }}

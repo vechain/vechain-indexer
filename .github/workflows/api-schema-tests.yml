@@ -1,0 +1,171 @@
+name: API Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to validate via OpenAPI schema"
+        default: dead
+        required: false
+        type: choice
+        options:
+          - dead
+          - live
+      base_url:
+        description: "Override base URL (http/https). Leave blank to use the selected environment"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  determine-targets:
+    name: Determine test targets
+    runs-on: ubuntu-latest
+    outputs:
+      test-targets: ${{ steps.determine.outputs.targets }}
+      base_url_input: ${{ steps.determine.outputs.base_url_input }}
+    steps:
+      - name: Determine test targets
+        id: determine
+        shell: bash
+        run: |
+          base_url="${{ github.event.inputs.base_url }}"
+          environment="${{ github.event.inputs.environment || 'dead' }}"
+
+          # If base_url is provided, test only that URL
+          if [[ -n "$base_url" ]]; then
+            echo "targets=[\"custom\"]" >> "$GITHUB_OUTPUT"
+            echo "base_url_input=$base_url" >> "$GITHUB_OUTPUT"
+          else
+            # If dead or live, test both mainnet and testnet in parallel
+            case "$environment" in
+              dead)
+                echo "targets=[\"mainnet-dead\",\"testnet-dead\"]" >> "$GITHUB_OUTPUT"
+                echo "base_url_input=" >> "$GITHUB_OUTPUT"
+                ;;
+              live)
+                echo "targets=[\"mainnet-live\",\"testnet-live\"]" >> "$GITHUB_OUTPUT"
+                echo "base_url_input=" >> "$GITHUB_OUTPUT"
+                ;;
+              *)
+                echo "targets=[\"unknown\"]" >> "$GITHUB_OUTPUT"
+                echo "base_url_input=" >> "$GITHUB_OUTPUT"
+                ;;
+            esac
+          fi
+
+  schemathesis:
+    name: Run API schema checks - ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: determine-targets
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.determine-targets.outputs.test-targets) }}
+      fail-fast: false
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'dead' }}
+      BASE_URL_INPUT: ${{ needs.determine-targets.outputs.base_url_input }}
+      MAX_RESPONSE_MILLISECONDS: "2000"
+      HYPOTHESIS_MAX_EXAMPLES: "250"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve target endpoints
+        id: resolve
+        shell: bash
+        run: |
+          target="${{ matrix.target }}"
+          base_url="${BASE_URL_INPUT}"
+
+          if [[ -n "$base_url" ]]; then
+            # Custom base URL provided
+            base_url="${base_url%/}"
+            summary_env="custom"
+          else
+            # Determine base URL from target
+            case "$target" in
+              mainnet-dead)
+                base_url="https://mainnet.dead.prod.veworld.vechain.org"
+                summary_env="dead-mainnet"
+                ;;
+              testnet-dead)
+                base_url="https://testnet.dead.prod.veworld.vechain.org"
+                summary_env="dead-testnet"
+                ;;
+              mainnet-live)
+                base_url="https://indexer.mainnet.vechain.org"
+                summary_env="live-mainnet"
+                ;;
+              testnet-live)
+                base_url="https://indexer.testnet.vechain.org"
+                summary_env="live-testnet"
+                ;;
+              custom)
+                base_url="${BASE_URL_INPUT}"
+                summary_env="custom"
+                ;;
+              *)
+                echo "Unsupported target: $target" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          schema_url="$base_url/api-docs"
+
+          echo "base_url=$base_url" >> "$GITHUB_OUTPUT"
+          echo "schema_url=$schema_url" >> "$GITHUB_OUTPUT"
+          {
+            echo "- Target: $summary_env"
+            echo "- Base URL: $base_url"
+            echo "- Schema: $schema_url"
+            echo "- Max response (ms): $MAX_RESPONSE_MILLISECONDS"
+            echo "- Hypothesis examples: $HYPOTHESIS_MAX_EXAMPLES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Schemathesis
+        run: pip install 'schemathesis>=3.19,<4'
+
+      - name: Run schema-driven tests
+        run: |
+          mkdir -p .schemathesis
+          scripts/run_api_schema_tests.sh dead \
+            --base-url "${{ steps.resolve.outputs.base_url }}" \
+            --store-network-log=./.schemathesis/network.log \
+            --junit-xml=./.schemathesis/results.xml
+
+      - name: Attach detailed CLI logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schemathesis-logs-${{ matrix.target }}
+          path: ./.schemathesis
+          if-no-files-found: ignore
+
+  api-tests-result:
+    name: API Tests Result
+    runs-on: ubuntu-latest
+    needs: [determine-targets, schemathesis]
+    if: always()
+    steps:
+      - name: Check API tests status
+        run: |
+          if [[ "${{ needs.schemathesis.result }}" == "success" ]]; then
+            echo "✓ All API tests passed"
+            exit 0
+          elif [[ "${{ needs.schemathesis.result }}" == "skipped" ]]; then
+            echo "✓ API tests skipped (no tests to run)"
+            exit 0
+          else
+            echo "✗ API tests failed"
+            exit 1
+          fi
