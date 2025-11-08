@@ -15,7 +15,6 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
@@ -23,6 +22,7 @@ import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
+import org.vechain.indexer.utils.IdUtils.generateId
 
 @Service
 @Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")

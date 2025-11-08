@@ -8,8 +8,8 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
+import org.vechain.indexer.utils.IdUtils.generateId
 
 /**
  * Sustainable overview This model is used to track how apps are doing in terms of sustainability

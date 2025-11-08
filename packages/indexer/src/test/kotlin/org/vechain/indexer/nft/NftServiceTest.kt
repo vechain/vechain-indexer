@@ -237,7 +237,7 @@ internal class NftServiceTest {
     fun `parseRecords - should throw exception when 'tokenId' parameter is missing`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 
-        assertThrows<NullPointerException> { nftService.parseRecords(events, emptyList()) }
+        assertThrows<IllegalArgumentException> { nftService.parseRecords(events, emptyList()) }
     }
 
     @Test

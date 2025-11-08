@@ -7,8 +7,8 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.utils.IdUtils.generateId
 
 @Document(collection = "b3tr_proposal_results")
 data class ProposalResult

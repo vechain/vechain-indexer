@@ -7,8 +7,8 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
-import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
+import org.vechain.indexer.utils.buildNftId
 
 @Profile("nfts")
 @Service
@@ -30,7 +30,7 @@ open class NftService(
         val latestEventsById =
             data
                 .map { event ->
-                    val nftId = IdUtils.buildNftId(event)
+                    val nftId = buildNftId(event)
                     nftId to event
                 }
                 .groupingBy { it.first }
@@ -57,5 +57,5 @@ open class NftService(
     }
 
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNft> =
-        nftRepository.findAllById(nftTransfers.map { IdUtils.buildNftId(it) }).toList()
+        nftRepository.findAllById(nftTransfers.map { buildNftId(it) }).toList()
 }
