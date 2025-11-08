@@ -47,7 +47,7 @@ open class DelegationHistoryScheduler(
                             IdUtils.generateId(
                                 delegation.id,
                                 eventName.name,
-                                delegation.blockNumber.toString()
+                                delegation.blockNumber.toString(),
                             ),
                         blockNumber = delegation.blockNumber,
                         blockTimestamp = delegation.blockTimestamp,
