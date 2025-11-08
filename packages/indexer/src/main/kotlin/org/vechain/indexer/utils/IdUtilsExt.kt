@@ -13,6 +13,6 @@ fun buildNftId(transferEvent: IndexedEvent): String {
             ?: throw IllegalArgumentException("transferEvent.address cannot be null")
     val tokenId =
         transferEvent.params.getAsString("tokenId")
-            ?: throw IllegalArgumentException("tokenId cannot be null")
+            ?: throw IllegalArgumentException("transferEvent.params.tokenId cannot be null")
     return IdUtils.generateId(address, tokenId)
 }
