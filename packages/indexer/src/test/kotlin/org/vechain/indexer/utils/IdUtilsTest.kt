@@ -42,4 +42,39 @@ class IdUtilsTest {
         val expectedHash = DigestUtils.sha1Hex("a-b-c")
         assertEquals(expectedHash, input1)
     }
+
+    @Test
+    fun `generateId with trailing empty string produces different hash than without`() {
+        // Simulate accidental trailing comma by passing empty string
+        val withTrailingEmpty = IdUtils.generateId("a", "b", "c", "")
+        val withoutTrailing = IdUtils.generateId("a", "b", "c")
+
+        // These should produce DIFFERENT hashes because the joined strings differ
+        // "a-b-c-" vs "a-b-c"
+        assertNotEquals(withTrailingEmpty, withoutTrailing)
+
+        // Verify the actual hashes
+        assertEquals(DigestUtils.sha1Hex("a-b-c-"), withTrailingEmpty)
+        assertEquals(DigestUtils.sha1Hex("a-b-c"), withoutTrailing)
+    }
+
+    @Test
+    fun `generateId with empty strings in middle produces correct hash`() {
+        // Empty strings in the middle should still be joined with dashes
+        val result = IdUtils.generateId("a", "", "c")
+
+        // Should produce "a--c" when joined
+        val expectedHash = DigestUtils.sha1Hex("a--c")
+        assertEquals(expectedHash, result)
+    }
+
+    @Test
+    fun `generateId with only empty strings produces hash of dashes`() {
+        // Multiple empty strings should produce multiple dashes
+        val result = IdUtils.generateId("", "", "")
+
+        // Should produce "--" when joined
+        val expectedHash = DigestUtils.sha1Hex("--")
+        assertEquals(expectedHash, result)
+    }
 }
