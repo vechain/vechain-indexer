@@ -37,13 +37,19 @@ internal class VthoClaimByAccountServiceTest {
     }
 
     @Test
-    fun `parseRecords returns empty list for empty events`() {
-        val result = service.parseRecords(emptyList(), emptyList())
+    fun `parseAccountRecords returns empty list for empty events`() {
+        val result = service.parseAccountRecords(emptyList(), emptyList())
         expect { that(result.size).isEqualTo(0) }
     }
 
     @Test
-    fun `parseRecords creates new records for new accounts`() {
+    fun `parseAccountTokenIdRecords returns empty list for empty events`() {
+        val result = service.parseAccountTokenIdRecords(emptyList(), emptyList())
+        expect { that(result.size).isEqualTo(0) }
+    }
+
+    @Test
+    fun `parseAccountRecords creates new records for new accounts`() {
         val events =
             listOf(
                 mockk<IndexedEvent> {
@@ -71,7 +77,7 @@ internal class VthoClaimByAccountServiceTest {
                     every { eventType } returns "STARGATE_CLAIM_REWARDS"
                 },
             )
-        val result = service.parseRecords(events, emptyList())
+        val result = service.parseAccountRecords(events, emptyList())
         expect {
             that(result.size).isEqualTo(2)
             val abc = result.find { it.account == "0xabc" }
@@ -87,7 +93,84 @@ internal class VthoClaimByAccountServiceTest {
     }
 
     @Test
-    fun `parseRecords increments version and adds to previous total`() {
+    fun `parseAccountTokenIdRecords creates new records for new account token id pair`() {
+        val events =
+            listOf(
+                mockk<IndexedEvent> {
+                    every { blockId } returns "block1"
+                    every { blockNumber } returns 10L
+                    every { blockTimestamp } returns 1000L
+                    every { params.getAsString("owner") } returns "0xabc"
+                    every { params.getAsString("tokenId") } returns "123"
+                    every { params.getAsBigInteger("value") } returns BigInteger("100")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
+                },
+                mockk<IndexedEvent> {
+                    every { blockId } returns "block2"
+                    every { blockNumber } returns 12L
+                    every { blockTimestamp } returns 1200L
+                    every { params.getAsString("owner") } returns "0xabc"
+                    every { params.getAsString("tokenId") } returns "123"
+                    every { params.getAsBigInteger("value") } returns BigInteger("200")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
+                },
+                mockk<IndexedEvent> {
+                    every { blockId } returns "block2"
+                    every { blockNumber } returns 12L
+                    every { blockTimestamp } returns 1200L
+                    every { params.getAsString("owner") } returns "0xabc"
+                    every { params.getAsString("tokenId") } returns "456"
+                    every { params.getAsBigInteger("value") } returns BigInteger("200")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
+                },
+                mockk<IndexedEvent> {
+                    every { blockId } returns "block3"
+                    every { blockNumber } returns 13L
+                    every { blockTimestamp } returns 1300L
+                    every { params.getAsString("owner") } returns "0xdef"
+                    every { params.getAsString("tokenId") } returns "987"
+                    every { params.getAsBigInteger("value") } returns BigInteger("50")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
+                },
+            )
+        val result =
+            service.parseAccountTokenIdRecords(
+                events,
+                listOf(
+                    VthoClaimedByAccount(
+                        blockId = "block3",
+                        blockNumber = 13L,
+                        blockTimestamp = 1300L,
+                        total = BigInteger("300"),
+                        account = "0xdef",
+                        version = 1,
+                        legacyRewards = BigInteger.ZERO,
+                        delegationRewards = BigInteger("300"),
+                        tokenId = "987",
+                        id = "0xdef_987",
+                    )
+                ),
+            )
+        expect {
+            that(result.size).isEqualTo(3)
+            val abc123 = result.find { it.account == "0xabc" && it.tokenId == "123" }
+            val abc456 = result.find { it.account == "0xabc" && it.tokenId == "456" }
+            val def987 = result.find { it.account == "0xdef" && it.tokenId == "987" }
+            that(abc123?.total).isEqualTo(BigInteger("300"))
+            that(abc123?.version).isEqualTo(1)
+            that(abc123?.blockId).isEqualTo("block3")
+            that(abc123?.blockNumber).isEqualTo(13L)
+            that(abc123?.blockTimestamp).isEqualTo(1300L)
+            that(abc456?.total).isEqualTo(BigInteger("200"))
+            that(def987?.version).isEqualTo(2)
+            that(def987?.total).isEqualTo(BigInteger("350"))
+            that(def987?.legacyRewards).isEqualTo(BigInteger("0"))
+            that(def987?.delegationRewards).isEqualTo(BigInteger("350"))
+        }
+    }
+
+    @Test
+    fun `parseAccountRecords increments version and adds to previous total`() {
         val events =
             listOf(
                 mockk<IndexedEvent> {
@@ -110,9 +193,11 @@ internal class VthoClaimByAccountServiceTest {
                     version = 1,
                     legacyRewards = BigInteger.ZERO,
                     delegationRewards = BigInteger("300"),
+                    tokenId = null,
+                    id = "0xabc",
                 )
             )
-        val result = service.parseRecords(events, existing)
+        val result = service.parseAccountRecords(events, existing)
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].account).isEqualTo("0xabc")
@@ -121,6 +206,48 @@ internal class VthoClaimByAccountServiceTest {
             that(result[0].blockId).isEqualTo("block4")
             that(result[0].blockNumber).isEqualTo(20L)
             that(result[0].blockTimestamp).isEqualTo(2000L)
+        }
+    }
+
+    @Test
+    fun `parseAccountTokenIdRecords increments version and adds to previous total`() {
+        val events =
+            listOf(
+                mockk<IndexedEvent> {
+                    every { blockId } returns "block4"
+                    every { blockNumber } returns 20L
+                    every { blockTimestamp } returns 2000L
+                    every { params.getAsString("owner") } returns "0xabc"
+                    every { params.getAsString("tokenId") } returns "123"
+                    every { params.getAsBigInteger("value") } returns BigInteger("10")
+                    every { eventType } returns "STARGATE_CLAIM_REWARDS"
+                }
+            )
+        val existing =
+            listOf(
+                VthoClaimedByAccount(
+                    blockId = "block3",
+                    blockNumber = 13L,
+                    blockTimestamp = 1300L,
+                    total = BigInteger("300"),
+                    account = "0xabc",
+                    version = 1,
+                    legacyRewards = BigInteger.ZERO,
+                    delegationRewards = BigInteger("300"),
+                    tokenId = "123",
+                    id = "0xabc_123",
+                )
+            )
+        val result = service.parseAccountTokenIdRecords(events, existing)
+        expect {
+            that(result.size).isEqualTo(1)
+            that(result[0].account).isEqualTo("0xabc")
+            that(result[0].total).isEqualTo(BigInteger("310"))
+            that(result[0].version).isEqualTo(2)
+            that(result[0].blockId).isEqualTo("block4")
+            that(result[0].blockNumber).isEqualTo(20L)
+            that(result[0].blockTimestamp).isEqualTo(2000L)
+            that(result[0].tokenId).isEqualTo("123")
         }
     }
 
@@ -137,6 +264,8 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("1"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc",
                 )
             )
         val existing =
@@ -150,6 +279,8 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("0"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc",
                 )
             )
         every { repository.saveAll(update) } returns update
@@ -175,7 +306,7 @@ internal class VthoClaimByAccountServiceTest {
     }
 
     @Test
-    fun `getExisting fetches by owner addresses`() {
+    fun `getExistingByAccount fetches by owner addresses`() {
         val events =
             listOf(
                 mockk<IndexedEvent> { every { params.getAsString("owner") } returns "0xabc" },
@@ -192,16 +323,58 @@ internal class VthoClaimByAccountServiceTest {
                     BigInteger("0"),
                     BigInteger("1"),
                     "0xabc",
+                    tokenId = null,
+                    id = "0xabc",
                 )
             )
         every { repository.findAllById(listOf("0xabc", "0xdef")) } returns existing
 
-        val result = service.getExisting(events)
+        val result = service.getExistingByAccount(events)
 
         verify(exactly = 1) { repository.findAllById(listOf("0xabc", "0xdef")) }
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].account).isEqualTo("0xabc")
+        }
+    }
+
+    @Test
+    fun `getExistingByAccountTokenId fetches by owner addresses and token id`() {
+        val events =
+            listOf(
+                mockk<IndexedEvent> {
+                    every { params.getAsString("owner") } returns "0xabc"
+                    every { params.getAsString("tokenId") } returns "123"
+                },
+                mockk<IndexedEvent> {
+                    every { params.getAsString("owner") } returns "0xdef"
+                    every { params.getAsString("tokenId") } returns "456"
+                },
+            )
+        val existing =
+            listOf(
+                VthoClaimedByAccount(
+                    1,
+                    "block1",
+                    1L,
+                    1000L,
+                    BigInteger("1"),
+                    BigInteger("0"),
+                    BigInteger("1"),
+                    "0xabc",
+                    tokenId = "123",
+                    id = "0xabc_123",
+                )
+            )
+        every { repository.findAllById(listOf("0xabc_123", "0xdef_456")) } returns existing
+
+        val result = service.getExistingByAccountTokenId(events)
+
+        verify(exactly = 1) { repository.findAllById(listOf("0xabc_123", "0xdef_456")) }
+        expect {
+            that(result.size).isEqualTo(1)
+            that(result[0].account).isEqualTo("0xabc")
+            that(result[0].tokenId).isEqualTo("123")
         }
     }
 }

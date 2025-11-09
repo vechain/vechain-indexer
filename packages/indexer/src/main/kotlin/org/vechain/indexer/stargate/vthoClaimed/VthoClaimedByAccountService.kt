@@ -26,6 +26,10 @@ open class VthoClaimedByAccountService(
     private val legacyEvents =
         setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")
 
+    private data class Rewards(val legacy: BigInteger, val delegation: BigInteger) {
+        val total = legacy + delegation
+    }
+
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>) {
         saveVersionedDocuments(
@@ -37,7 +41,32 @@ open class VthoClaimedByAccountService(
         )
     }
 
-    open fun parseRecords(
+    /** Accumulate rewards */
+    private fun accumulateRewards(
+        events: List<IndexedEvent>,
+        prev: VthoClaimedByAccount?,
+    ): Rewards {
+        // Sum reward values per category
+        var legacySum = BigInteger.ZERO
+        var delegationSum = BigInteger.ZERO
+
+        for (e in events) {
+            val value = e.params.getAsBigInteger("value") ?: BigInteger.ZERO
+            if (e.eventType in legacyEvents) {
+                legacySum += value
+            } else {
+                delegationSum += value
+            }
+        }
+
+        // Add to previous totals
+        val newLegacyTotal = prev?.legacyRewards?.add(legacySum) ?: legacySum
+        val newDelegationTotal = prev?.delegationRewards?.add(delegationSum) ?: delegationSum
+
+        return Rewards(newLegacyTotal, newDelegationTotal)
+    }
+
+    open fun parseAccountRecords(
         events: List<IndexedEvent>,
         existing: List<VthoClaimedByAccount>,
     ): List<VthoClaimedByAccount> {
@@ -56,38 +85,69 @@ open class VthoClaimedByAccountService(
             val prev = existingByAccount[account]
             val version = (prev?.version ?: 0) + 1
 
-            // Sum reward values per category
-            var legacySum = BigInteger.ZERO
-            var delegationSum = BigInteger.ZERO
-
-            for (e in accountEvents) {
-                val value = e.params.getAsBigInteger("value") ?: BigInteger.ZERO
-                if (e.eventType in legacyEvents) {
-                    legacySum += value
-                } else {
-                    delegationSum += value
-                }
-            }
-
-            // Add to previous totals
-            val newLegacyTotal = prev?.legacyRewards?.add(legacySum) ?: legacySum
-            val newDelegationTotal = prev?.delegationRewards?.add(delegationSum) ?: delegationSum
-            val newTotal = newLegacyTotal + newDelegationTotal
+            val rewards = accumulateRewards(accountEvents, prev)
 
             VthoClaimedByAccount(
                 version = version,
                 blockId = latestEvent.blockId,
                 blockNumber = latestEvent.blockNumber,
                 blockTimestamp = latestEvent.blockTimestamp,
-                total = newTotal,
-                legacyRewards = newLegacyTotal,
-                delegationRewards = newDelegationTotal,
+                total = rewards.total,
+                legacyRewards = rewards.legacy,
+                delegationRewards = rewards.delegation,
                 account = account,
+                tokenId = null,
+                id = account,
             )
         }
     }
 
-    open fun getExisting(events: List<IndexedEvent>): List<VthoClaimedByAccount> {
+    open fun parseAccountTokenIdRecords(
+        events: List<IndexedEvent>,
+        existing: List<VthoClaimedByAccount>,
+    ): List<VthoClaimedByAccount> {
+        if (events.isEmpty()) return emptyList()
+
+        val existingByAccountTokenId = existing.associateBy { "${it.account}_${it.tokenId}" }
+        val groupedEvents =
+            events.groupBy {
+                val owner =
+                    it.params.getAsString("owner")
+                        ?: throw IllegalArgumentException("Missing 'owner' in event")
+                val tokenId =
+                    it.params.getAsString("tokenId")
+                        ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
+                "${owner}_${tokenId}"
+            }
+
+        val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()
+
+        return groupedEvents.map { (accountTokenId, accountEvents) ->
+            val prev = existingByAccountTokenId[accountTokenId]
+            val version = (prev?.version ?: 0) + 1
+
+            val rewards = accumulateRewards(accountEvents, prev)
+
+            val splitText = accountTokenId.split('_')
+            val account = splitText[0]
+            val tokenId = splitText[1]
+
+            VthoClaimedByAccount(
+                version = version,
+                blockId = latestEvent.blockId,
+                blockNumber = latestEvent.blockNumber,
+                blockTimestamp = latestEvent.blockTimestamp,
+                total = rewards.total,
+                legacyRewards = rewards.legacy,
+                delegationRewards = rewards.delegation,
+                account = account,
+                tokenId = tokenId,
+                id = accountTokenId,
+            )
+        }
+    }
+
+    open fun getExistingByAccount(events: List<IndexedEvent>): List<VthoClaimedByAccount> {
         if (events.isEmpty()) {
             return emptyList()
         }
@@ -103,5 +163,30 @@ open class VthoClaimedByAccountService(
 
         // Fetch existing records from the repository
         return vthoClaimedByAccountRepository.findAllById(accounts).toList()
+    }
+
+    open fun getExistingByAccountTokenId(events: List<IndexedEvent>): List<VthoClaimedByAccount> {
+        if (events.isEmpty()) {
+            return emptyList()
+        }
+
+        // Extract account addresses from events
+        val accountTokenIds =
+            events
+                .map {
+                    val owner =
+                        it.params.getAsString("owner")
+                            ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
+                    val tokenId =
+                        it.params.getAsString("tokenId")
+                            ?: throw IllegalArgumentException(
+                                "Missing 'tokenId' parameter in event"
+                            )
+                    "${owner}_${tokenId}"
+                }
+                .distinct()
+
+        // Fetch existing records from the repository
+        return vthoClaimedByAccountRepository.findAllById(accountTokenIds).toList()
     }
 }
