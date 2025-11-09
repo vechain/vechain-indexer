@@ -1,3 +1,4 @@
+import com.diffplug.spotless.LineEnding
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -40,6 +41,7 @@ allprojects {
                 it.setBlockIndent(4)
                 it.setContinuationIndent(4)
             }
+            lineEndings = LineEnding.UNIX
         }
     }
 
