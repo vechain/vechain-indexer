@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
+import org.vechain.indexer.utils.IdUtils.generateId
 
 @Document(collection = "b3tr_x_alloc_results")
 data class XAllocResult

@@ -8,9 +8,9 @@ import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.b3tr.shared.UserActionSummaryDocument
+import org.vechain.indexer.utils.IdUtils.generateId
 
 @Document(collection = "b3tr_user_action_summaries_all_time")
 data class UserAllTimeActionSummary

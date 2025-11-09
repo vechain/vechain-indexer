@@ -44,8 +44,10 @@ open class DelegationHistoryScheduler(
                 val historyEvent =
                     IndexedHistoryEvent(
                         id =
-                            IdUtils.buildHashedId(
-                                "${delegation.id}-$eventName-${delegation.blockNumber}"
+                            IdUtils.generateId(
+                                delegation.id,
+                                eventName.name,
+                                delegation.blockNumber.toString(),
                             ),
                         blockNumber = delegation.blockNumber,
                         blockTimestamp = delegation.blockTimestamp,

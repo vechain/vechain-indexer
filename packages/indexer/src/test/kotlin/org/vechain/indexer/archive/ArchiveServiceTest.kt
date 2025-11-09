@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.utils.IdUtils
+import org.vechain.indexer.utils.buildArchiveId
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -25,7 +25,7 @@ class TestVersionedDocument : VersionedDocument {
 }
 
 class TestArchive(override val data: TestVersionedDocument) : Archive<TestVersionedDocument> {
-    override var id: String = IdUtils.buildArchiveId(data, data.version)
+    override var id: String = buildArchiveId(data, data.version)
 
     constructor(id: String, data: TestVersionedDocument) : this(data) {
         this.id = id
@@ -63,7 +63,7 @@ internal class ArchiveServiceTest {
     @Test
     fun `saveAll - non-empty list should save documents`() {
         val documents = listOf(TestVersionedDocument(), TestVersionedDocument())
-        val archives = documents.map { TestArchive(IdUtils.buildArchiveId(it, it.version), it) }
+        val archives = documents.map { TestArchive(buildArchiveId(it, it.version), it) }
         val slot = slot<List<TestArchive>>()
 
         every { mongoTemplate.insert(capture(slot), TestArchive::class.java) } returns

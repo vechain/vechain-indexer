@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
+import org.vechain.indexer.utils.IdUtils.generateId
 
 /**
  * Used to track fungible token contracts that a wallet has interacted with. If a user has sent or
