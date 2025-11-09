@@ -16,8 +16,8 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.timing.TimingContextAware
-import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.JsonUtils
+import org.vechain.indexer.utils.buildArchiveId
 
 /** Helper to inject a raw aggregation stage (here: $setWindowFields). */
 class RawStage(private val stage: Document) : AggregationOperation {
@@ -42,7 +42,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     override fun timingContext(): String = timingContextDescription
 
     open fun getPreviousVersionId(document: VersionedDocument): String =
-        IdUtils.buildArchiveId(document, document.version - 1)
+        buildArchiveId(document, document.version - 1)
 
     open fun saveAll(documents: List<T>) {
 
@@ -52,7 +52,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
             documents.map {
                 archiveClazz
                     .getConstructor(String::class.java, it::class.java)
-                    .newInstance(IdUtils.buildArchiveId(it, it.version), it)
+                    .newInstance(buildArchiveId(it, it.version), it)
             }
         mongoTemplate.insert(archives, archiveClazz)
     }

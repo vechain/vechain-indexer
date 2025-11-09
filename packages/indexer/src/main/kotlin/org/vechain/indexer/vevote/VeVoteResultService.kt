@@ -7,13 +7,13 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
-import org.vechain.indexer.b3tr.action.IdUtils.generateId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
+import org.vechain.indexer.utils.IdUtils.generateId
 import org.vechain.indexer.vevote.VeVoteEventUtils.getWeight
 import org.vechain.indexer.vevote.VeVoteEventUtils.groupByProposalId
 import org.vechain.indexer.vevote.VeVoteEventUtils.groupBySupport

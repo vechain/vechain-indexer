@@ -1,4 +1,4 @@
-package org.vechain.indexer.b3tr.action
+package org.vechain.indexer.utils
 
 import org.apache.commons.codec.digest.DigestUtils
 
