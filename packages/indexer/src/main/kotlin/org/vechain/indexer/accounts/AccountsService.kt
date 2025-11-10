@@ -91,6 +91,8 @@ open class AccountsService(
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
                     version = 0,
+                    total = 0L,
+                    timeFrame = TimeFrame.ALL,
                 )
 
         // Return ALL and new accounts
@@ -99,7 +101,7 @@ open class AccountsService(
 
     /**
      * @param block The current Thor block.
-     * @param newAccountsCount The number of new accounts discovered in this block.
+     * @param newAccounts The new accounts discovered in this block.
      * @param accountsTracker The "ALL" tracker representing cumulative totals.
      * @return A pair of (list of updated Account records, updated "ALL" tracker).
      * @notice Updates account tracking statistics based on new accounts discovered.
