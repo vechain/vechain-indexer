@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
+import org.vechain.indexer.utils.IdUtils
 
 @Document(collection = "stargate_vtho_claimed_by_account")
 data class VthoClaimedByAccount
@@ -24,8 +25,30 @@ constructor(
     /** Could either be the `account` or `account_tokenId` */
     @Id val id: String,
 ) : VersionedDocument {
-    @JsonIgnore
-    override fun getDocumentId(): String = if (tokenId != null) "${account}_${tokenId}" else account
+    constructor(
+        version: Int,
+        blockId: String,
+        blockNumber: Long,
+        blockTimestamp: Long,
+        total: BigInteger,
+        legacyRewards: BigInteger,
+        delegationRewards: BigInteger,
+        account: String,
+        tokenId: String?,
+    ) : this(
+        id = tokenId?.let { IdUtils.generateId(account, tokenId) } ?: IdUtils.generateId(account),
+        version = version,
+        blockId = blockId,
+        blockNumber = blockNumber,
+        blockTimestamp = blockTimestamp,
+        total = total,
+        legacyRewards = legacyRewards,
+        delegationRewards = delegationRewards,
+        account = account,
+        tokenId = tokenId,
+    )
+
+    @JsonIgnore override fun getDocumentId(): String = id
 }
 
 @Document(collection = "stargate_vtho_claimed_by_account_archives")
