@@ -46,7 +46,7 @@ open class AccountsConfig {
             .name(IndexerNames.ACCOUNTS_INDEXER)
             .thorClient(thorClient)
             .processor(processor)
-            .startBlock(23126021L)
+            .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()

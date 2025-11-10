@@ -743,6 +743,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.delegation
     },
     {
+      name = "VERSION_ACCOUNTS"
+      value = each.value.indexer.version.accounts
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
