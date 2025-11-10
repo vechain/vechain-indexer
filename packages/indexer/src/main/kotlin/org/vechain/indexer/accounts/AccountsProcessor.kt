@@ -6,14 +6,13 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts")
 @Component
 open class AccountsProcessor(
     private val service: AccountsService,
-    repository: TokenRewardRepository,
+    repository: AccountsRepository,
     archiveService: ArchiveService<Accounts, AccountsArchive>,
     indexerVersionService: IndexerVersionService,
 ) :

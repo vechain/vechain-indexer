@@ -16,6 +16,14 @@ open class AccountsService(
     private val repository: AccountsRepository,
     private val archiveService: ArchiveService<Accounts, AccountsArchive>,
 ) {
+    /**
+     * @param block The current Thor block being processed.
+     * @param callResponses The list of call inspection results (unused in current implementation).
+     * @return A pair of (List<Accounts> to save, global tracker Account "ALL").
+     * @notice Processes a single block to identify new accounts and update global tracking info.
+     * @dev Retrieves new accounts from the block, updates totals, and prepares records for
+     *   persistence.
+     */
     open fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
@@ -26,20 +34,31 @@ open class AccountsService(
         // Update reward info for each delegation and handle period rollovers
         return updateAccountsInfo(
             block = block,
-            newAccountsCount = accounts.second.size.toLong(),
+            newAccounts = accounts.second,
             accountsTracker = accounts.first,
         )
     }
 
-    /** @notice Persist a batch of accounts records to MongoDB. */
+    /**
+     * @param accountsInfo The list of Accounts entities to save.
+     * @param archive The current global "ALL" tracker snapshot.
+     * @notice Persists new account records and archives in MongoDB.
+     * @dev Skips persistence when no new accounts exist.
+     */
     @Transactional
     open fun save(accountsInfo: List<Accounts>, archive: Accounts) {
         if (accountsInfo.isEmpty()) return
         repository.saveAll(accountsInfo)
-
         archiveService.saveAll(listOf(archive))
     }
 
+    /**
+     * @param block The current Thor block being processed.
+     * @return A pair of (global "ALL" account, list of new accounts created in this block).
+     * @notice Retrieves new accounts appearing in a given block.
+     * @dev Compares transaction signers and gas payers to existing accounts in the repository.
+     *   Ensures the global account "ALL" is always returned (creates it if missing).
+     */
     fun getNewAccounts(block: Block): Pair<Accounts, List<Accounts>> {
         val txSigners = block.transactions.map { it.origin }.toSet()
         val gasPayers = block.transactions.map { it.gasPayer }.toSet()
@@ -63,7 +82,7 @@ open class AccountsService(
                 )
             }
 
-        // Add "ALL" if it exists
+        // Add "ALL" if it exists, otherwise create it for tracking
         val allAccount =
             existingAccounts.firstOrNull { it.id == "ALL" }
                 ?: Accounts(
@@ -78,14 +97,86 @@ open class AccountsService(
         return Pair(allAccount, newAccountEntities)
     }
 
+    /**
+     * @param block The current Thor block.
+     * @param newAccountsCount The number of new accounts discovered in this block.
+     * @param accountsTracker The "ALL" tracker representing cumulative totals.
+     * @return A pair of (list of updated Account records, updated "ALL" tracker).
+     * @notice Updates account tracking statistics based on new accounts discovered.
+     * @dev Rolls over daily, weekly, monthly, and yearly counters when boundaries change. Creates
+     *   historical period records for completed intervals.
+     */
     fun updateAccountsInfo(
         block: Block,
-        newAccountsCount: Long,
+        newAccounts: List<Accounts>,
         accountsTracker: Accounts,
     ): Pair<List<Accounts>, Accounts> {
         val accountsTracking = mutableListOf<Accounts>()
-        val archive = mutableListOf<Accounts>()
 
+        accountsTracking.addAll(newAccounts)
+
+        val newAccountsCount = newAccounts.count().toLong()
+
+        // Apply rollover logic to update all period totals
+        val (daily, weekly, monthly, yearly) =
+            applyRolloverLogic(
+                block = block,
+                newAccountsCount = newAccountsCount,
+                accountsTracker = accountsTracker,
+                accountsTracking = accountsTracking,
+            )
+
+        // Update main tracker with latest block and total info
+        val updatedTracker =
+            accountsTracker.copy(
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                total = accountsTracker.total?.plus(newAccountsCount),
+                dayTotal = daily,
+                weekTotal = weekly,
+                monthTotal = monthly,
+                yearTotal = yearly,
+                dayOfMonth =
+                    Instant.ofEpochSecond(block.timestamp)
+                        .atZone(ZoneOffset.UTC)
+                        .dayOfMonth
+                        .toLong(),
+                weekOfYear =
+                    Instant.ofEpochSecond(block.timestamp)
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDate()
+                        .get(WeekFields.ISO.weekOfYear())
+                        .toLong(),
+                month =
+                    Instant.ofEpochSecond(block.timestamp)
+                        .atZone(ZoneOffset.UTC)
+                        .monthValue
+                        .toLong(),
+                year = Instant.ofEpochSecond(block.timestamp).atZone(ZoneOffset.UTC).year.toLong(),
+                version = accountsTracker.version + 1,
+            )
+
+        accountsTracking.add(updatedTracker)
+        return accountsTracking to accountsTracker
+    }
+
+    /**
+     * @param block The current Thor block.
+     * @param newAccountsCount Number of new accounts detected in this block.
+     * @param accountsTracker The "ALL" tracker containing existing totals and period info.
+     * @param accountsTracking The mutable list collecting new and updated Accounts entities.
+     * @return A Quadruple (daily, weekly, monthly, yearly) representing updated totals after
+     *   rollover.
+     * @notice Applies rollover logic to determine when to archive previous period totals.
+     * @dev Checks day, week, month, and year boundaries and creates period snapshots when crossed.
+     */
+    private fun applyRolloverLogic(
+        block: Block,
+        newAccountsCount: Long,
+        accountsTracker: Accounts,
+        accountsTracking: MutableList<Accounts>,
+    ): Quadruple<Long, Long, Long, Long> {
         val blockDateTime = Instant.ofEpochSecond(block.timestamp).atZone(ZoneOffset.UTC)
         val blockDate = blockDateTime.toLocalDate()
 
@@ -94,13 +185,11 @@ open class AccountsService(
         val blockMonth = blockDate.monthValue.toLong()
         val blockYear = blockDate.year.toLong()
 
-        // convenience values
         var daily = accountsTracker.dayTotal ?: 0L
         var weekly = accountsTracker.weekTotal ?: 0L
         var monthly = accountsTracker.monthTotal ?: 0L
         var yearly = accountsTracker.yearTotal ?: 0L
 
-        // Check rollover for each period
         fun rollover(condition: Boolean, timeFrame: TimeFrame, oldId: String, total: Long): Long =
             if (condition && total > 0L) {
                 accountsTracking.add(
@@ -113,10 +202,10 @@ open class AccountsService(
                 )
                 newAccountsCount
             } else {
-                total.plus(newAccountsCount)
+                total + newAccountsCount
             }
 
-        // Apply rollover logic
+        // Daily rollover
         daily =
             rollover(
                 accountsTracker.dayOfMonth != blockDay ||
@@ -126,6 +215,8 @@ open class AccountsService(
                 "${accountsTracker.id}-day-${accountsTracker.year}-${accountsTracker.month}-${accountsTracker.dayOfMonth}",
                 daily,
             )
+
+        // Weekly rollover
         weekly =
             rollover(
                 accountsTracker.weekOfYear != blockWeek || accountsTracker.year != blockYear,
@@ -133,6 +224,8 @@ open class AccountsService(
                 "${accountsTracker.id}-week-${accountsTracker.year}-${accountsTracker.weekOfYear}",
                 weekly,
             )
+
+        // Monthly rollover
         monthly =
             rollover(
                 accountsTracker.month != blockMonth || accountsTracker.year != blockYear,
@@ -141,6 +234,7 @@ open class AccountsService(
                 monthly,
             )
 
+        // Yearly rollover
         yearly =
             rollover(
                 accountsTracker.year != blockYear,
@@ -149,28 +243,24 @@ open class AccountsService(
                 yearly,
             )
 
-        // Update main reward tracker
-        val updatedTracker =
-            accountsTracker.copy(
-                blockId = block.id,
-                blockNumber = block.number,
-                blockTimestamp = block.timestamp,
-                total = accountsTracker.total?.plus(newAccountsCount),
-                dayTotal = daily,
-                weekTotal = weekly,
-                monthTotal = monthly,
-                yearTotal = yearly,
-                dayOfMonth = blockDay,
-                weekOfYear = blockWeek,
-                month = blockMonth,
-                year = blockYear,
-                version = accountsTracker.version + 1,
-            )
-
-        accountsTracking.add(updatedTracker)
-        return accountsTracking to accountsTracker
+        return Quadruple(daily, weekly, monthly, yearly)
     }
 
+    /**
+     * @notice Utility data holder for returning four related Long values (daily, weekly, monthly,
+     *   yearly).
+     */
+    data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
+    /**
+     * @param id The unique identifier for this period.
+     * @param period The time frame type (DAY, WEEK, MONTH, YEAR).
+     * @param total The total accounts count for the completed period.
+     * @param mainTracker The global tracker ("ALL") providing context fields.
+     * @return A new Accounts entity for the archived period.
+     * @notice Creates a new Accounts record representing a completed period.
+     * @dev Used to snapshot daily, weekly, monthly, and yearly totals.
+     */
     fun createPeriodAccounts(
         id: String,
         period: TimeFrame,

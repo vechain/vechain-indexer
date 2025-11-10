@@ -24,11 +24,10 @@ data class Accounts(
     val weekOfYear: Long? = null, // 43
     val month: Long? = null, // 10 (October)
     val year: Long? = null, // 2025
-    @JsonIgnore val dayReward: Long? = null,
-    @JsonIgnore val weekReward: Long? = null,
-    @JsonIgnore val monthReward: Long? = null,
-    @JsonIgnore val yearReward: Long? = null,
-    @JsonIgnore val cycleReward: Long? = null,
+    @JsonIgnore val dayTotal: Long? = null,
+    @JsonIgnore val weekTotal: Long? = null,
+    @JsonIgnore val monthTotal: Long? = null,
+    @JsonIgnore val yearTotal: Long? = null,
     @JsonIgnore @JsonView(Views.Internal::class) override val version: Int,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
