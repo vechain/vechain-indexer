@@ -53,6 +53,10 @@ open class StargateTokenCollectionConfig(
                 "manager_1" to Index().on("manager", Sort.Direction.ASC),
                 "owner_1_manager_1" to
                     Index().on("owner", Sort.Direction.ASC).on("manager", Sort.Direction.ASC),
+                "delegationNextPeriod_1_delegationStatus_1" to
+                    Index()
+                        .on("delegationNextPeriod", Sort.Direction.ASC)
+                        .on("delegationStatus", Sort.Direction.ASC),
             )
         )
     }

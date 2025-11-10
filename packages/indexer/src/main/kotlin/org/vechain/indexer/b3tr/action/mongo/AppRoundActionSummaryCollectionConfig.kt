@@ -80,6 +80,8 @@ open class AppRoundActionSummaryCollectionConfig(
                         .on("roundId", Sort.Direction.ASC)
                         .on("actionsRewarded", Sort.Direction.ASC)
                         .on("user", Sort.Direction.ASC),
+                "roundId_1_user_1" to
+                    Index().on("roundId", Sort.Direction.ASC).on("user", Sort.Direction.ASC),
             )
         )
     }
