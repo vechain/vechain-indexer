@@ -1,0 +1,59 @@
+package org.vechain.indexer.accounts
+
+import jakarta.annotation.PostConstruct
+import kotlinx.coroutines.CoroutineScope
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.index.Index
+import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.version.IndexerVersionService
+
+@Profile("accounts")
+@Configuration
+open class AccountsCollectionConfig(
+    mongoTemplate: MongoTemplate,
+    appCoroutineScope: CoroutineScope,
+    private val indexerVersionService: IndexerVersionService,
+) :
+    CollectionConfig(
+        mongoTemplate,
+        appCoroutineScope,
+        Accounts::class.java,
+        AccountsArchive::class.java,
+    ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
+    @Value("\${indexer.version.accounts}") private val version: Int = 1
+
+    @PostConstruct
+    override fun initCollection() {
+        logger.info("Check collection version for ${modelObj.simpleName}")
+
+        val dropped =
+            indexerVersionService.checkAndResetCollectionIfVersionChanged(
+                indexerName = IndexerNames.ACCOUNTS_INDEXER,
+                Accounts::class.java,
+                version,
+            )
+
+        if (dropped) indexerVersionService.dropArchiveCollection(AccountsArchive::class.java)
+
+        ensureCollection()
+
+        logger.info("Initializing indexes for ${modelObj.simpleName}")
+
+        // Ensure indexes
+        ensureIndexes(
+            listOf(
+                "blockTimestamp_-1" to
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC)
+            )
+        )
+    }
+}
