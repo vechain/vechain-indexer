@@ -341,7 +341,8 @@ class CursorPaginationUtilsTest {
                 "entity",
             )
 
-        assertEquals("80|entity3", cursor)
+        // Cursor points to the last record of the current page (pageSize - 1)
+        assertEquals("90|entity2", cursor)
     }
 
     @Test
@@ -394,7 +395,8 @@ class CursorPaginationUtilsTest {
         val cursor =
             CursorPaginationUtils.calculateNextCursor(results, pageSize, "totalReward", "user")
 
-        assertEquals("80.75|user3", cursor)
+        // Cursor points to the last record of the current page (pageSize - 1)
+        assertEquals("90.25|user2", cursor)
     }
 
     @Test
@@ -412,7 +414,8 @@ class CursorPaginationUtilsTest {
 
         val cursor = CursorPaginationUtils.calculateNextCursor(results, pageSize, "score", "userId")
 
-        assertEquals("400|user_gamma", cursor)
+        // Cursor points to the last record of the current page (pageSize - 1)
+        assertEquals("450|user_beta", cursor)
     }
 
     // ==================== isValidCursor Tests ====================
