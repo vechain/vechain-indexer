@@ -72,9 +72,15 @@ object CursorPaginationUtils {
     /**
      * Applies cursor filtering to a MongoDB query for keyset pagination.
      *
-     * Implements proper keyset pagination with tie-breaking:
-     * - For DESC: (sortField < value) OR (sortField == value AND cursorField <= cursorValue)
-     * - For ASC: (sortField > value) OR (sortField == value AND cursorField >= cursorValue)
+     * The cursor points to the LAST record of the previous page. This filter excludes all records
+     * up to and including the cursor record, ensuring proper pagination without duplicates or
+     * skips.
+     *
+     * Implements proper keyset pagination with tie-breaking. Since cursorField is always sorted
+     * ASC, for DESC primary sort we use GT (>) to continue through ties, and for ASC primary sort
+     * we use LT (<).
+     * - For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
+     * - For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
      *
      * @param query The query to apply cursor filtering to
      * @param cursor The cursor string to parse
@@ -94,23 +100,25 @@ object CursorPaginationUtils {
         val parsedSortValue = parseSortValue(cursorInfo.sortValue)
 
         if (sortDirection == Sort.Direction.DESC) {
-            // For DESC: (sortField < value) OR (sortField == value AND cursorField <= cursorValue)
+            // For DESC: (sortField < value) OR (sortField == value AND cursorField > cursorValue)
+            // Use GT (>) for cursorField because it's sorted ASC
             val cond1 = Criteria.where(sortByField).lt(parsedSortValue)
             val cond2 =
                 Criteria.where(sortByField)
                     .`is`(parsedSortValue)
                     .and(cursorField)
-                    .lte(cursorInfo.cursorValue)
+                    .gt(cursorInfo.cursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         } else {
-            // For ASC: (sortField > value) OR (sortField == value AND cursorField >= cursorValue)
+            // For ASC: (sortField > value) OR (sortField == value AND cursorField < cursorValue)
+            // Use LT (<) for cursorField because it's sorted ASC
             val cond1 = Criteria.where(sortByField).gt(parsedSortValue)
             val cond2 =
                 Criteria.where(sortByField)
                     .`is`(parsedSortValue)
                     .and(cursorField)
-                    .gte(cursorInfo.cursorValue)
+                    .lt(cursorInfo.cursorValue)
             val orCriteria = Criteria().orOperator(cond1, cond2)
             query.addCriteria(orCriteria)
         }
@@ -171,6 +179,10 @@ object CursorPaginationUtils {
     /**
      * Calculates the next cursor for pagination based on the results.
      *
+     * The cursor points to the LAST record of the current page (not the first of the next page).
+     * This allows proper tie-breaking: when filtering with the cursor, we exclude records up to and
+     * including the cursor record, ensuring no duplicates or skips.
+     *
      * @param results The list of results returned from the query
      * @param pageSize The current page size
      * @param sortByField The name of the sort field to extract from the result item
@@ -186,7 +198,7 @@ object CursorPaginationUtils {
     ): String? {
         if (results.size <= pageSize) return null
 
-        val nextItem = results[pageSize]
+        val nextItem = results[pageSize - 1]
         val kClass = nextItem!!::class
 
         // Validate that the fields exist on the target object
