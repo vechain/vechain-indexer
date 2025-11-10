@@ -98,7 +98,7 @@ class StargateEventService(
             "TokenManagerAdded" -> handleManagerAdded(event, base!!, tokensToArchive)
             "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, tokensToArchive)
             "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, tokensToArchive)
-            "NodeDelegated" -> handleNodeManagementEvent(event, base!!, tokensToArchive)
+            "NodeDelegated" -> handleNodeManagementEvent(event, base, tokensToArchive)
             "BaseVTHORewardsClaimed",
             "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, tokensToArchive)
             else -> base
@@ -111,10 +111,12 @@ class StargateEventService(
     // Legacy node management event handler
     private fun handleNodeManagementEvent(
         event: IndexedEvent,
-        base: StargateToken,
+        base: StargateToken?,
         tokensToArchive: MutableList<StargateToken>,
-    ): StargateToken =
-        if (event.params.getAsBoolean("delegated") == true) {
+    ): StargateToken? =
+        if (base == null) {
+            null
+        } else if (event.params.getAsBoolean("delegated") == true) {
             handleManagerAdded(event, base, tokensToArchive)
         } else {
             handleManagerRemoved(event, base, tokensToArchive)
