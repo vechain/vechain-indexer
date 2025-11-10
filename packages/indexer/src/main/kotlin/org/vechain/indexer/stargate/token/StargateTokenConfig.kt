@@ -55,6 +55,8 @@ open class StargateTokenConfig {
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsContract: String,
+        @Value("\${business-event.substitutions.NODE_MANAGEMENT_CONTRACT}")
+        nodeManagementContract: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.STARGATE_TOKEN)
@@ -66,7 +68,14 @@ open class StargateTokenConfig {
             .syncLoggerInterval(syncLogInterval)
             .includeFullBlock()
             .abis("abis/stargate")
-            .abiContracts(listOf(stargateNftContract, stargateDelegationContract, stargateContract))
+            .abiContracts(
+                listOf(
+                    stargateNftContract,
+                    stargateDelegationContract,
+                    stargateContract,
+                    nodeManagementContract,
+                )
+            )
             .abiEventNames(
                 listOf(
                     "TokenMinted",
@@ -80,6 +89,7 @@ open class StargateTokenConfig {
                     "ValidationSignaledExit",
                     "DelegationRewardsClaimed",
                     "BaseVTHORewardsClaimed",
+                    "NodeDelegated",
                 )
             )
             .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsContract)[0]))

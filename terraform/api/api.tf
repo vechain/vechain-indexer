@@ -783,6 +783,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
+      name = "NODE_MANAGEMENT_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.NODE_MANAGEMENT_CONTRACT
+    },
+    {
       name = "X_ALLOC_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },

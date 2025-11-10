@@ -40,6 +40,7 @@ class StargateEventService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
         tokensToArchive: MutableList<StargateToken>,
     ) {
+        // Handle validator exit events separately
         val validatorEvents = events.filter { it.eventType == "ValidatorExitRequested" }
         validatorEvents.forEach { event ->
             handleValidatorExitRequested(
@@ -50,10 +51,17 @@ class StargateEventService(
             )
         }
 
+        // Group remaining events by tokenId (fallback to nodeId)
         val groupedEvents =
             events
                 .filter { it.eventType != "ValidatorExitRequested" }
-                .groupBy { it.params.getAsString("tokenId")!! }
+                .groupBy {
+                    it.params.getAsString("tokenId")?.takeIf { id -> id.isNotBlank() }
+                        ?: it.params.getAsString(
+                            "nodeId"
+                        ) // TODO: Remove once Hayabusa live on Mainnet
+                }
+                .filterKeys { it != null } // skip events without either ID
                 .mapValues { (_, tokenEvents) ->
                     tokenEvents.sortedWith(
                         compareByDescending<IndexedEvent> { it.eventType == "TokenMinted" }
@@ -62,7 +70,9 @@ class StargateEventService(
                 }
 
         groupedEvents.forEach { (tokenId, tokenEvents) ->
-            var current: StargateToken? = latestTokenSnapshots[tokenId]
+            val id = tokenId ?: return@forEach // safety check
+            var current: StargateToken? = latestTokenSnapshots[id]
+
             tokenEvents.forEach { event ->
                 current = processEvent(event, tokenId, current, validatorSnapshots, tokensToArchive)
             }
@@ -88,6 +98,7 @@ class StargateEventService(
             "TokenManagerAdded" -> handleManagerAdded(event, base!!, tokensToArchive)
             "TokenManagerRemoved" -> handleManagerRemoved(event, base!!, tokensToArchive)
             "MaturityPeriodBoosted" -> handleTokenBoosted(event, base!!, tokensToArchive)
+            "NodeDelegated" -> handleNodeManagementEvent(event, base, tokensToArchive)
             "BaseVTHORewardsClaimed",
             "DelegationRewardsClaimed" -> handleRewardsClaimed(event, base!!, tokensToArchive)
             else -> base
@@ -96,6 +107,20 @@ class StargateEventService(
     // ------------------------------------------------------------------------
     // Event Handlers
     // ------------------------------------------------------------------------
+
+    // Legacy node management event handler
+    private fun handleNodeManagementEvent(
+        event: IndexedEvent,
+        base: StargateToken?,
+        tokensToArchive: MutableList<StargateToken>,
+    ): StargateToken? =
+        if (base == null) {
+            null
+        } else if (event.params.getAsBoolean("delegated") == true) {
+            handleManagerAdded(event, base, tokensToArchive)
+        } else {
+            handleManagerRemoved(event, base, tokensToArchive)
+        }
 
     // Rewards claimed event
     private fun handleManagerAdded(
@@ -109,7 +134,11 @@ class StargateEventService(
             blockId = event.blockId,
             blockNumber = event.blockNumber,
             blockTimestamp = event.blockTimestamp,
-            manager = event.params.getAsString("manager")!!,
+            manager =
+                event.params.getAsString("manager")
+                    ?: event.params.getAsString(
+                        "delegatee"
+                    ), // TODO: Remove once Hayabusa live on Mainnet
         )
     }
 
