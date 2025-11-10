@@ -203,7 +203,7 @@ enabled_nets:
         historic-proposals: '1'
         validator: '1'
         validator-rewards: '1'
-        stargate-token: '1'
+        stargate-token: '2'
         token-rewards: '1'
         delegation: '1'
       business-event:
@@ -219,6 +219,7 @@ enabled_nets:
           X2EARN_REWARDS_POOL_CONTRACT: '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
           VOTER_REWARDS_CONTRACT: '0x838a33af756a6366f93e201423e1425f67ec0fa7'
           TREASURY_CONTRACT: '0xd5903bcc66e439c753e525f8af2fec7be2429593'
+          NODE_MANAGEMENT_CONTRACT: '0xB0EF9D89C6b49CbA6BBF86Bf2FDf0Eee4968c6AB'
           STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
           STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
           VEVOTE_CONTRACT: '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
@@ -400,7 +401,7 @@ enabled_nets:
         historic-proposals: '1'
         validator: '1'
         validator-rewards: '2'
-        stargate-token: '2'
+        stargate-token: '3'
         token-rewards: '1'
         delegation: '1'
       business-event:
@@ -419,6 +420,7 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x32cb945dc25f4fc4214df63e3825045d6088b096'
           STARGATE_NFT_CONTRACT: '0x887d9102f0003f1724d8fd5d4fe95a11572fcd77'
           VEVOTE_CONTRACT: '0x3f5E298CaEa8843e88D5E1c4F34C7c79387B9ec6'
+          NODE_MANAGEMENT_CONTRACT: '0xde17d0a516c38c168d37685bb71465f656aa256e'
           STARGATE_CONTRACT: '0x1e02b2953adefec225cf0ec49805b1146a4429c1'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x168fc982338b399598c10f8467bc66fb1b49aae7'
