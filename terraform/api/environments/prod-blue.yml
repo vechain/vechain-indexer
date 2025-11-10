@@ -203,7 +203,7 @@ enabled_nets:
         historic-proposals: '1'
         validator: '1'
         validator-rewards: '1'
-        stargate-token: '2'
+        stargate-token: '3'
         token-rewards: '1'
         delegation: '1'
       business-event:
@@ -401,7 +401,7 @@ enabled_nets:
         historic-proposals: '1'
         validator: '1'
         validator-rewards: '2'
-        stargate-token: '3'
+        stargate-token: '4'
         token-rewards: '1'
         delegation: '1'
       business-event:
