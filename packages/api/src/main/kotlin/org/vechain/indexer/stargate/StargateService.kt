@@ -25,6 +25,7 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesRecord
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TimeSeriesUtils
 
 @Profile("stargate")
@@ -69,7 +70,7 @@ open class StargateService(
      */
     open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger =
         vthoClaimedByAccountRepository
-            .findById(HexUtils.normalise(account))
+            .findById(IdUtils.generateId(HexUtils.normalise(account)))
             .map {
                 when (rewardType) {
                     "LEGACY" -> {
@@ -98,7 +99,9 @@ open class StargateService(
         rewardType: String?,
     ): BigInteger =
         vthoClaimedByAccountRepository
-            .findById("${HexUtils.normalise(account)}_${BigInteger(tokenId).toString(10)}")
+            .findById(
+                IdUtils.generateId(HexUtils.normalise(account), BigInteger(tokenId).toString(10))
+            )
             .map {
                 when (rewardType) {
                     "LEGACY" -> {

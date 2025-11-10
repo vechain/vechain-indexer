@@ -14,6 +14,7 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountArchive
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountService
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.expect
@@ -327,11 +328,15 @@ internal class VthoClaimByAccountServiceTest {
                     id = "0xabc",
                 )
             )
-        every { repository.findAllById(listOf("0xabc", "0xdef")) } returns existing
+        every {
+            repository.findAllById(listOf(IdUtils.generateId("0xabc"), IdUtils.generateId("0xdef")))
+        } returns existing
 
         val result = service.getExistingByAccount(events)
 
-        verify(exactly = 1) { repository.findAllById(listOf("0xabc", "0xdef")) }
+        verify(exactly = 1) {
+            repository.findAllById(listOf(IdUtils.generateId("0xabc"), IdUtils.generateId("0xdef")))
+        }
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].account).isEqualTo("0xabc")
@@ -366,11 +371,19 @@ internal class VthoClaimByAccountServiceTest {
                     id = "0xabc_123",
                 )
             )
-        every { repository.findAllById(listOf("0xabc_123", "0xdef_456")) } returns existing
+        every {
+            repository.findAllById(
+                listOf(IdUtils.generateId("0xabc", "123"), IdUtils.generateId("0xdef", "456"))
+            )
+        } returns existing
 
         val result = service.getExistingByAccountTokenId(events)
 
-        verify(exactly = 1) { repository.findAllById(listOf("0xabc_123", "0xdef_456")) }
+        verify(exactly = 1) {
+            repository.findAllById(
+                listOf(IdUtils.generateId("0xabc", "123"), IdUtils.generateId("0xdef", "456"))
+            )
+        }
         expect {
             that(result.size).isEqualTo(1)
             that(result[0].account).isEqualTo("0xabc")

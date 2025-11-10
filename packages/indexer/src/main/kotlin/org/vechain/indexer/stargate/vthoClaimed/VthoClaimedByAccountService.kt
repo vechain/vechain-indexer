@@ -11,6 +11,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -97,7 +98,6 @@ open class VthoClaimedByAccountService(
                 delegationRewards = rewards.delegation,
                 account = account,
                 tokenId = null,
-                id = account,
             )
         }
     }
@@ -142,7 +142,6 @@ open class VthoClaimedByAccountService(
                 delegationRewards = rewards.delegation,
                 account = account,
                 tokenId = tokenId,
-                id = accountTokenId,
             )
         }
     }
@@ -156,7 +155,7 @@ open class VthoClaimedByAccountService(
         val accounts =
             events
                 .map {
-                    it.params.getAsString("owner")
+                    it.params.getAsString("owner")?.let { account -> IdUtils.generateId(account) }
                         ?: throw IllegalArgumentException("Missing 'owner' parameter in event")
                 }
                 .distinct()
@@ -182,7 +181,7 @@ open class VthoClaimedByAccountService(
                             ?: throw IllegalArgumentException(
                                 "Missing 'tokenId' parameter in event"
                             )
-                    "${owner}_${tokenId}"
+                    IdUtils.generateId(owner, tokenId)
                 }
                 .distinct()
 
