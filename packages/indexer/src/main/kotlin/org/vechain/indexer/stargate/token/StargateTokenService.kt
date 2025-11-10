@@ -101,10 +101,16 @@ open class StargateTokenService(
         // 1. Gather candidate snapshots from DB
         val snapshotsByTokenId =
             events
-                .mapNotNull { it.params.getAsString("tokenId") }
+                .mapNotNull {
+                    it.params.getAsString("tokenId")?.takeIf { id -> id.isNotBlank() }
+                        ?: it.params.getAsString(
+                            "nodeId"
+                        ) // TODO: Remove once Hayabusa live on Mainnet
+                }
+                .filter { it.isNotBlank() }
                 .toSet()
                 .takeIf { it.isNotEmpty() }
-                ?.let { stargateTokenRepository.findAllById(it).toList() }
+                ?.let { ids -> stargateTokenRepository.findAllById(ids).toList() }
                 .orEmpty()
 
         val snapshotsByValidatorId =
