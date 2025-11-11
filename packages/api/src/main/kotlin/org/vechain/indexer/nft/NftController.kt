@@ -56,7 +56,7 @@ open class NftController(private val nftService: NftService) {
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
+        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
         description = "The NFT tokenId",
         required = false,
     )

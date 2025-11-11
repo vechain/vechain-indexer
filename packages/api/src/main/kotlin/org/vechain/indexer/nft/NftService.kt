@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.BigIntegerUtils
 
 @Profile("nfts")
 @Service
@@ -18,12 +19,13 @@ open class NftService(private val nftRepository: NftRepository) {
         pageable: Pageable,
     ): Slice<IndexedNft> {
         val excludeCollectionsList = excludeCollections?.map { it.value } ?: emptyList()
+        val parsedTokenId = tokenId?.let { BigIntegerUtils.fromHexOrDecimal(it).toString(10) }
         return if (contractAddress != null) {
-            return if (!tokenId.isNullOrEmpty()) {
+            return if (!parsedTokenId.isNullOrEmpty()) {
                 nftRepository.findByOwnerAndContractAddressAndTokenId(
                     owner.value,
                     contractAddress.value,
-                    tokenId,
+                    parsedTokenId,
                     pageable,
                 )
             } else {
