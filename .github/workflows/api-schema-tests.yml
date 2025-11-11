@@ -15,6 +15,16 @@ on:
         description: "Override base URL (http/https). Leave blank to use the selected environment"
         required: false
         type: string
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment to validate via OpenAPI schema (dead/live)"
+        required: true
+        type: string
+      base_url:
+        description: "Override base URL (http/https). Leave blank to use the selected environment"
+        required: false
+        type: string
 
 permissions:
   contents: read
