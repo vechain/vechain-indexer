@@ -123,7 +123,7 @@ open class StargateController(private val stargateService: StargateService) {
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
+        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
         description = "The token id to query for total VTHO claimed",
         required = true,
         example = "1",
