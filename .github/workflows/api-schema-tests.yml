@@ -15,6 +15,16 @@ on:
         description: "Override base URL (http/https). Leave blank to use the selected environment"
         required: false
         type: string
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment to validate via OpenAPI schema (dead/live)"
+        required: true
+        type: string
+      base_url:
+        description: "Override base URL (http/https). Leave blank to use the selected environment"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -31,8 +41,8 @@ jobs:
         id: determine
         shell: bash
         run: |
-          base_url="${{ github.event.inputs.base_url }}"
-          environment="${{ github.event.inputs.environment || 'dead' }}"
+          base_url="${{ inputs.base_url }}"
+          environment="${{ inputs.environment || 'dead' }}"
 
           # If base_url is provided, test only that URL
           if [[ -n "$base_url" ]]; then
@@ -66,7 +76,7 @@ jobs:
         target: ${{ fromJson(needs.determine-targets.outputs.test-targets) }}
       fail-fast: false
     env:
-      ENVIRONMENT: ${{ github.event.inputs.environment || 'dead' }}
+      ENVIRONMENT: ${{ inputs.environment || 'dead' }}
       BASE_URL_INPUT: ${{ needs.determine-targets.outputs.base_url_input }}
       MAX_RESPONSE_MILLISECONDS: "2000"
       HYPOTHESIS_MAX_EXAMPLES: "250"

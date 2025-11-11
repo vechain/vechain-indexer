@@ -25,6 +25,7 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.timeseries.TimeSeriesRecord
+import org.vechain.indexer.utils.BigIntegerUtils
 import org.vechain.indexer.utils.IdUtils
 import org.vechain.indexer.utils.TimeSeriesUtils
 
@@ -100,7 +101,10 @@ open class StargateService(
     ): BigInteger =
         vthoClaimedByAccountRepository
             .findById(
-                IdUtils.generateId(HexUtils.normalise(account), BigInteger(tokenId).toString(10))
+                IdUtils.generateId(
+                    HexUtils.normalise(account),
+                    BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10),
+                )
             )
             .map {
                 when (rewardType) {
