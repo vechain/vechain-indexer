@@ -35,4 +35,5 @@ object IndexerNames {
     const val VALIDATOR_BLOCK = "ValidatorBlockIndexer"
     const val STARGATE_TOKEN = "StargateTokenIndexer"
     const val TOKEN_REWARD = "TokenRewardIndexer"
+    const val ACCOUNTS_INDEXER = "AccountsIndexer"
 }
