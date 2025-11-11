@@ -49,7 +49,11 @@ open class StargateTokenCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "blockNumber_-1_txId_-1__id_-1" to
+                    Index()
+                        .on("blockNumber", Sort.Direction.DESC)
+                        .on("txId", Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
                 "manager_1" to Index().on("manager", Sort.Direction.ASC),
                 "owner_1_manager_1" to
                     Index().on("owner", Sort.Direction.ASC).on("manager", Sort.Direction.ASC),

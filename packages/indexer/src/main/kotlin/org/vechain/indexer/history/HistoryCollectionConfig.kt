@@ -84,11 +84,6 @@ open class HistoryCollectionConfig(
                         .on("blockTimestamp", Sort.Direction.DESC)
                         .on("eventName", Sort.Direction.ASC)
                         .on("contractAddress", Sort.Direction.ASC),
-                "gasPayer_1_blockTimestamp_-1_eventName_1" to
-                    Index()
-                        .on("gasPayer", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
                 "eventName_1_to_1_blockTimestamp_-1" to
                     Index()
                         .on("eventName", Sort.Direction.ASC)
