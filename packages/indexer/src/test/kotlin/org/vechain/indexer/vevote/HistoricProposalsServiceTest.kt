@@ -20,12 +20,19 @@ internal class HistoricProposalsServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
+
+        val props =
+            TestProposalsProperties().apply {
+                testProposals = mapOf("proposal1" to listOf(1, 2, 3), "proposal2" to listOf(4, 5))
+            }
+
         service =
             HistoricProposalsService(
                 thorService = thorService,
                 repository = mockk(relaxed = true),
                 steeringCommitteeAddress = "0x7e54f0790153647ec0651c35ced28171adb5d44a",
                 allStakeholdersAddress = "0xa6416a72f816d3a69f33d0814700545c8e3fe4be",
+                testProposalsProps = props,
             )
         every { thorService.getBestBlock() } returns mockk { every { number } returns 9999999L }
     }
