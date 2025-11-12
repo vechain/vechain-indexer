@@ -16,21 +16,39 @@ open class HistoricApiService(
     fun findAll(
         proposalId: String?,
         contractAddress: Address?,
+        testProposals: Boolean? = false,
         pageable: Pageable,
-    ): Slice<HistoricProposals> =
-        if (proposalId != null && contractAddress != null) {
-            val id = "${contractAddress.value.lowercase()}-$proposalId"
+    ): Slice<HistoricProposals> {
+        val address = contractAddress?.value?.lowercase()
+
+        // Case 1: Filter by both proposalId and contractAddress
+        if (proposalId != null && address != null) {
+            val id = "$address-$proposalId"
             val proposal = historicProposalsRepository.findByIdOrNull(id)
-            val content: List<HistoricProposals> = proposal?.let { listOf(it) } ?: emptyList()
-            SliceImpl(content, pageable, false)
-        } else if (proposalId != null) {
-            historicProposalsRepository.findByProposalId(proposalId, pageable)
-        } else if (contractAddress != null) {
-            historicProposalsRepository.findByContractAddress(
-                contractAddress.value.lowercase(),
-                pageable,
-            )
-        } else {
-            historicProposalsRepository.findAll(pageable)
+            val content = proposal?.let { listOf(it) } ?: emptyList()
+            return SliceImpl(content, pageable, false)
         }
+
+        // Case 2: Filter by proposalId only
+        if (proposalId != null) {
+            return historicProposalsRepository.findByProposalId(proposalId, pageable)
+        }
+
+        // Case 3: Filter by contractAddress (with or without test flag)
+        if (address != null) {
+            return if (testProposals == true) {
+                historicProposalsRepository.findByContractAddressAndTest(address, true, pageable)
+            } else {
+                historicProposalsRepository.findByContractAddress(address, pageable)
+            }
+        }
+
+        // Case 4: Filter by test flag only
+        if (testProposals != null) {
+            return historicProposalsRepository.findByTest(testProposals, pageable)
+        }
+
+        // Default: return all
+        return historicProposalsRepository.findAll(pageable)
+    }
 }

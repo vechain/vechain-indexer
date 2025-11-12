@@ -1,5 +1,6 @@
 package org.vechain.indexer.vevote
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
@@ -15,6 +16,7 @@ data class HistoricProposals(
     val description: String?,
     val proposalType: Int?,
     val choices: List<String>?,
+    @JsonIgnore val test: Boolean = false,
     val createTime: Long?,
     val votingStartTime: Long?,
     val votingEndTime: Long?,

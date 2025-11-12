@@ -43,15 +43,24 @@ open class HistoricController(private val historicApiService: HistoricApiService
         description = "Filter by legacy contract address.",
         required = false,
     )
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "testProposals",
+        description = "If true, include proposals that were used for testing.",
+        required = false,
+        schema = Schema(type = "boolean"),
+    )
     @CommonApiResponses
     open fun getAllProposals(
         @RequestParam(required = false) proposalId: String?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @PositiveOrZero @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) testProposals: Boolean?,
     ): PaginatedResponse<HistoricProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
-        val result = historicApiService.findAll(proposalId, contractAddress, pageable)
+        val result =
+            historicApiService.findAll(proposalId, contractAddress, testProposals, pageable)
         return paginatedResponse(result)
     }
 }

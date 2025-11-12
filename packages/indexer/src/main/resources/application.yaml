@@ -161,7 +161,10 @@ indexer:
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}
-
+  vevote:
+    test-proposals:
+      "0xa6416a72f816d3a69f33d0814700545c8e3fe4be": [ 33, 32, 30, 29, 28, 27, 26, 24, 23, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 8, 7, 5, 2 ]
+      "0x7e54f0790153647ec0651c35ced28171adb5d44a": [ 2, 1 ]
 comments:
   min-length: ${MIN_COMMENT_LEN:10}
   language:

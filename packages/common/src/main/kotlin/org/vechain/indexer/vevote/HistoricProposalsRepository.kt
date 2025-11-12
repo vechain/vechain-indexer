@@ -14,4 +14,12 @@ interface HistoricProposalsRepository : BaseIndexedRepository<HistoricProposals,
     fun findByProposalId(proposalId: String, pageable: Pageable): Slice<HistoricProposals>
 
     fun findByContractAddress(contractAddress: String, pageable: Pageable): Slice<HistoricProposals>
+
+    fun findByContractAddressAndTest(
+        contractAddress: String,
+        test: Boolean,
+        pageable: Pageable,
+    ): Slice<HistoricProposals>
+
+    fun findByTest(test: Boolean, pageable: Pageable): Slice<HistoricProposals>
 }
