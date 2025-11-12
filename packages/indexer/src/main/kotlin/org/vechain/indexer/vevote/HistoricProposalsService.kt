@@ -23,6 +23,7 @@ open class HistoricProposalsService(
     private val steeringCommitteeAddress: String,
     @param:Value("\${veworld.contract.historic-proposals.all-stakeholders}")
     private val allStakeholdersAddress: String,
+    private val testProposalsProps: TestProposalsProperties,
 ) {
     private val cachedAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
@@ -225,39 +226,6 @@ open class HistoricProposalsService(
 
     private fun isTest(contractAddress: String, proposalId: Int): Boolean {
         val normalized = contractAddress.lowercase()
-        return testProposals[normalized]?.contains(proposalId) == true
+        return testProposalsProps.testProposals[normalized]?.contains(proposalId) == true
     }
-
-    // These are known test proposals to be marked as test data
-    private val testProposals: Map<String, Set<Int>> =
-        mapOf(
-            "0xa6416a72f816d3a69f33d0814700545c8e3fe4be" to
-                setOf(
-                    33,
-                    32,
-                    30,
-                    29,
-                    28,
-                    27,
-                    26,
-                    24,
-                    23,
-                    21,
-                    20,
-                    19,
-                    18,
-                    17,
-                    16,
-                    15,
-                    14,
-                    13,
-                    12,
-                    11,
-                    8,
-                    7,
-                    5,
-                    2,
-                ),
-            "0x7e54f0790153647ec0651c35ced28171adb5d44a" to setOf(2, 1),
-        )
 }
