@@ -41,7 +41,6 @@ internal class VthoClaimByBlockServiceTest {
 
     @Test
     fun `processEvents with no previous record - groups by block and builds cumulative totals`() {
-        // Two events in two different blocks -> two output records, cumulative total
         val events =
             listOf(
                 mockEvent(
@@ -57,33 +56,41 @@ internal class VthoClaimByBlockServiceTest {
                     value = "200",
                 ),
             )
+
         every { repository.getLatestRecord() } returns null
 
         val result = service.processEvents(events)
 
         expectThat(result).hasSize(2)
 
-        // Record for block 10
-        expectThat(result[0])
-            .andBlockRecord(
-                blockId = "block1",
-                blockNumber = 10L,
-                blockTimestamp = 1000L,
-                total = BigInteger("100"),
-            )
+        expectThat(result[0]).andBlockRecord("block1", 10L, 1000L, BigInteger("100"))
 
-        // Record for block 12 (cumulative = 100 + 200)
-        expectThat(result[1])
-            .andBlockRecord(
-                blockId = "block2",
-                blockNumber = 12L,
-                blockTimestamp = 1200L,
-                total = BigInteger("300"),
-            )
+        expectThat(result[1]).andBlockRecord("block2", 12L, 1200L, BigInteger("300"))
     }
 
     @Test
     fun `processEvents adds to previous total when previous record exists`() {
+        val latestRecord =
+            VthoClaimedByBlock(
+                blockId = "block2",
+                blockNumber = 12L,
+                blockTimestamp = 1200L,
+                total = BigInteger("300"),
+                legacyRewards = BigInteger.ZERO,
+                dayOfMonth = 1,
+                weekOfYear = 1,
+                month = 1,
+                year = 1,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+
+        every { repository.getLatestRecord() } returns latestRecord
+
         val events =
             listOf(
                 mockEvent(
@@ -94,38 +101,48 @@ internal class VthoClaimByBlockServiceTest {
                 )
             )
 
+        val result = service.processEvents(events)
+
+        expectThat(result).hasSize(2)
+
+        expectThat(result[1]).andBlockRecord("block3", 15L, 1500L, BigInteger("350"))
+    }
+
+    // ---------------------------------------------------------
+    // BLOCK ORDER VALIDATION
+    // ---------------------------------------------------------
+
+    @Test
+    fun `processEvents fails fast when any incoming blockNumber is same or earlier than last persisted`() {
         val latestRecord =
             VthoClaimedByBlock(
                 blockId = "block2",
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
                 total = BigInteger("300"),
-                legacyRewards = BigInteger("0"),
+                legacyRewards = BigInteger.ZERO,
+                dayOfMonth = 1,
+                weekOfYear = 1,
+                month = 1,
+                year = 1,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
             )
+
         every { repository.getLatestRecord() } returns latestRecord
 
-        val result = service.processEvents(events)
-
-        expectThat(result).hasSize(1)
-        expectThat(result[0])
-            .andBlockRecord(
-                blockId = "block3",
-                blockNumber = 15L,
-                blockTimestamp = 1500L,
-                total = BigInteger("350"), // 300 + 50
-            )
-    }
-
-    @Test
-    fun `processEvents fails fast when any incoming blockNumber is same or earlier than last persisted`() {
         val events =
             listOf(
                 mockEvent(
                     blockId = "block3",
-                    blockNumber = 12L,
+                    blockNumber = 12L, // SAME -> should fail
                     blockTimestamp = 1500L,
                     value = "50",
-                ), // same as latest
+                ),
                 mockEvent(
                     blockId = "block4",
                     blockNumber = 13L,
@@ -134,23 +151,18 @@ internal class VthoClaimByBlockServiceTest {
                 ),
             )
 
-        val latestRecord =
-            VthoClaimedByBlock(
-                blockId = "block2",
-                blockNumber = 12L,
-                blockTimestamp = 1200L,
-                total = BigInteger("300"),
-                legacyRewards = BigInteger("0"),
-            )
-        every { repository.getLatestRecord() } returns latestRecord
-
         val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
         expectThat(ex.message).isEqualTo("Events include block ≤ last persisted block 12")
     }
 
+    // ---------------------------------------------------------
+    // MISSING VALUE PARAM
+    // ---------------------------------------------------------
+
     @Test
     fun `processEvents throws when an event is missing the mandatory value param`() {
-        // Missing value for the only event -> thrown at the point of access
+        every { repository.getLatestRecord() } returns null
+
         val events =
             listOf(
                 mockEvent(
@@ -160,45 +172,40 @@ internal class VthoClaimByBlockServiceTest {
                     value = null,
                 )
             )
-        every { repository.getLatestRecord() } returns null
 
         val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
+
         expectThat(ex.message)
-            .isEqualTo("Event for block 21 (blockId=blockX) is missing required 'value' parameter")
+            .isEqualTo("Event for block 21 (blockId=blockX) is missing required 'value'")
     }
+
+    // ---------------------------------------------------------
+    // MULTIPLE EVENTS — SAME BLOCK
+    // ---------------------------------------------------------
 
     @Test
     fun `processEvents uses the first event as representative within a block`() {
-        // Two events in the same block (same timestamp), different ids, sums values, uses first
-        // event's id
-        val events =
-            listOf(
-                mockEvent(
-                    blockId = "block20a",
-                    blockNumber = 20L,
-                    blockTimestamp = 2000L,
-                    value = "10",
-                ), // should be used
-                mockEvent(
-                    blockId = "block20b",
-                    blockNumber = 20L,
-                    blockTimestamp = 2000L,
-                    value = "20",
-                ),
-            )
         every { repository.getLatestRecord() } returns null
+
+        val events =
+            listOf(mockEvent("block20a", 20L, 2000L, "10"), mockEvent("block20b", 20L, 2000L, "20"))
 
         val result = service.processEvents(events)
 
         expectThat(result).hasSize(1)
+
         expectThat(result[0])
             .andBlockRecord(
-                blockId = "block20a",
+                blockId = "block20a", // FIRST event wins
                 blockNumber = 20L,
                 blockTimestamp = 2000L,
                 total = BigInteger("30"),
             )
     }
+
+    // ---------------------------------------------------------
+    // SAVE RECORDS
+    // ---------------------------------------------------------
 
     @Test
     fun `saveRecord delegates to repository`() {
@@ -210,16 +217,25 @@ internal class VthoClaimByBlockServiceTest {
                     blockTimestamp = 9999L,
                     total = BigInteger("123"),
                     legacyRewards = BigInteger.ZERO,
+                    dayOfMonth = 1,
+                    weekOfYear = 1,
+                    month = 1,
+                    year = 1,
+                    timeFrames = emptyList(),
+                    blockTotal = BigInteger.ZERO,
+                    dayTotal = BigInteger.ZERO,
+                    weekTotal = BigInteger.ZERO,
+                    monthTotal = BigInteger.ZERO,
+                    yearTotal = BigInteger.ZERO,
                 )
             )
+
         every { repository.saveAll(records) } returns records
 
         service.saveRecords(records)
 
         verify(exactly = 1) { repository.saveAll(records) }
     }
-
-    // --- helpers ---
 
     private fun mockEvent(
         blockId: String,
@@ -235,7 +251,6 @@ internal class VthoClaimByBlockServiceTest {
             every { params.getAsBigInteger("value") } returns value?.let { BigInteger(it) }
         }
 
-    // Small Strikt extension to assert a VthoClaimedByBlock in one place
     private fun Assertion.Builder<VthoClaimedByBlock>.andBlockRecord(
         blockId: String,
         blockNumber: Long,
