@@ -1,126 +1,172 @@
 package org.vechain.indexer.stargate.vetDelegated
 
 import java.math.BigInteger
-import kotlin.collections.set
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.RolloverUtils
 
+/**
+ * @title VetDelegatedByBlockService
+ * @notice Indexes all VET delegation and withdrawal events into per-block cumulative snapshots.
+ * @dev Responsibilities:
+ *     - Enforces strictly increasing block order (no duplicates or rewinds).
+ *     - Applies delegation/withdrawal deltas to: • global delegated VET total • per-level delegated
+ *       totals (TokenLevel)
+ *     - Supports missing levelId on devnet (treated as null).
+ *     - Uses `RolloverUtils` for day/week/month/year rollover tracking.
+ *     - Emits one `VetDelegatedByBlock` document per processed block.
+ *
+ * Expected params:
+ *     - `amount` : BigInteger delegated or withdrawn.
+ * - `levelId` : TokenLevel ordinal (may be absent on early devnet blocks).
+ *
+ * Supported event types:
+ *     - DelegationInitiated
+ * - DelegationWithdrawn
+ */
 @Profile("stargate", "vet-delegated-by-block")
 @Service
 open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
     /**
-     * Build per-block cumulative records from the provided events.
+     * @param events Collection of decoded events sorted arbitrarily.
+     * @return Ordered list of `VetDelegatedByBlock` output snapshots.
+     * @notice Process all delegation-related events and convert them into cumulative per-block
+     *   output entries.
+     * @dev For each block:
+     *     1. Compute total + per-level deltas.
+     *     2. Update cumulative state.
+     *     3. Apply rollover (day/week/month/year).
+     *     4. Generate a `VetDelegatedByBlock` snapshot.
      *
-     * Behavior:
-     * - Loads the latest persisted record to get the last processed blockNumber and running totals.
-     * - FAILS FAST if any incoming event has blockNumber <= last persisted blockNumber.
-     * - Groups events by blockNumber (ascending).
-     * - For each block, applies all stake/unstake deltas, updating:
-     *     - cumulative `total`
-     *     - cumulative `byLevel` map
-     * - Returns a list ordered by ascending blockNumber. Each element contains a snapshot of the
-     *   cumulative totals after processing that block.
-     *
-     * Assumptions / Optimizations:
-     * - All events in the same block share the same `blockTimestamp`. We use the first event as the
-     *   representative for `blockId` and `blockTimestamp`.
-     * - The `"amount"` parameter is required; we throw when reading it if missing.
-     * - The `"levelId"` parameter is required and must map to a valid TokenLevel.
-     * - Any **unknown `eventType`** causes an immediate error.
+     *    Enforces:
+     *     - ascending block order
+     *     - required `amount` field
+     *     - optional `levelId` (null allowed on devnet)
      */
     open fun processEvents(events: List<IndexedEvent>): List<VetDelegatedByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latestRecord = repository.getLatestRecord()
-        val lastPersistedBlockNumber = latestRecord?.blockNumber
+        val latest = repository.getLatestRecord()
+        val lastBlock = latest?.blockNumber
 
-        // Fail fast if any incoming block is the same or earlier than the last persisted block.
-        if (lastPersistedBlockNumber != null) {
-            val offending =
-                events
-                    .asSequence()
-                    .map { it.blockNumber }
-                    .filter { it <= lastPersistedBlockNumber }
-                    .minOrNull()
-            if (offending != null) {
-                throw IllegalStateException(
-                    "Provided events include blockNumber $offending which is <= last persisted blockNumber $lastPersistedBlockNumber"
-                )
-            }
+        if (lastBlock != null && events.any { it.blockNumber <= lastBlock }) {
+            throw IllegalStateException("Events include block ≤ last persisted block $lastBlock")
         }
 
-        var runningTotal = latestRecord?.total ?: BigInteger.ZERO
-        val runningByLevel: MutableMap<TokenLevel, BigInteger> =
-            (latestRecord?.byLevel?.toMutableMap() ?: mutableMapOf())
+        var runningTotal = latest?.total ?: BigInteger.ZERO
+        val runningByLevel =
+            latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, BigInteger>()
 
-        // Group by block and process in ascending order
-        val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
-
+        val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetDelegatedByBlock>()
 
-        for ((blockNumber, blockEvents) in eventsByBlock) {
-            // Apply all deltas for this block
-            blockEvents.forEach { e ->
-                val amount = e.requireAmount()
+        for ((blockNum, blockEvents) in grouped) {
+            var blockDelta = BigInteger.ZERO
+            val perLevelDelta = mutableMapOf<TokenLevel, BigInteger>()
 
-                // throws if missing
-                @Suppress("ktlint:standard:max-line-length")
-                val levelId =
-                    e.params.getAsInt("levelId")
-                        ?: 0 // TODO: Update this to not set value to 0 if missing, devnet event is
-                // missing levelId up to a certain block
-                val level = TokenLevel.Companion.fromOrdinal(levelId)
+            blockEvents.forEach { evt ->
+                val amount = evt.requireAmount()
+                val level = evt.safeLevel()
 
-                when (e.eventType) {
+                when (evt.eventType) {
                     "DelegationInitiated" -> {
                         runningTotal += amount
                         if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) + amount
+                            perLevelDelta[level] =
+                                (perLevelDelta[level] ?: BigInteger.ZERO) + amount
                         }
+                        blockDelta += amount
                     }
+
                     "DelegationWithdrawn" -> {
                         runningTotal -= amount
                         if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) - amount
+                            perLevelDelta[level] =
+                                (perLevelDelta[level] ?: BigInteger.ZERO) - amount
                         }
+                        blockDelta -= amount
                     }
-                    else -> {
-                        throw IllegalArgumentException("Unknown eventType: ${e.eventType}")
-                    }
+
+                    else -> throw IllegalArgumentException("Unknown eventType: ${evt.eventType}")
                 }
             }
 
-            // Snapshot after processing this block
-            val representative = blockEvents.first()
-            output +=
-                VetDelegatedByBlock(
-                    blockId = representative.blockId,
-                    blockNumber = blockNumber,
-                    blockTimestamp = representative.blockTimestamp,
-                    total = runningTotal,
-                    byLevel = runningByLevel.toMutableMap(), // snapshot
+            val rep = blockEvents.first()
+
+            val roll =
+                RolloverUtils.calculateRollover(
+                    blockTimestamp = rep.blockTimestamp,
+                    delta = blockDelta,
+                    ctx =
+                        RolloverUtils.Context(
+                            prevDayTotal = latest?.dayTotal ?: BigInteger.ZERO,
+                            prevWeekTotal = latest?.weekTotal ?: BigInteger.ZERO,
+                            prevMonthTotal = latest?.monthTotal ?: BigInteger.ZERO,
+                            prevYearTotal = latest?.yearTotal ?: BigInteger.ZERO,
+                            prevDay = latest?.dayOfMonth,
+                            prevWeek = latest?.weekOfYear,
+                            prevMonth = latest?.month,
+                            prevYear = latest?.year,
+                        ),
                 )
+
+            val doc =
+                VetDelegatedByBlock(
+                    blockId = rep.blockId,
+                    blockNumber = blockNum,
+                    blockTimestamp = rep.blockTimestamp,
+                    total = runningTotal,
+                    byLevel = runningByLevel.toMap(),
+                    dayOfMonth = roll.day,
+                    weekOfYear = roll.week,
+                    month = roll.month,
+                    year = roll.year,
+                    timeFrames = roll.timeFrames,
+                    blockTotal = blockDelta,
+                    dayTotal = roll.dayTotal,
+                    weekTotal = roll.weekTotal,
+                    monthTotal = roll.monthTotal,
+                    yearTotal = roll.yearTotal,
+                )
+
+            output += doc
         }
 
         return output
     }
 
+    /**
+     * @param records List of documents to store.
+     * @notice Persist multiple delegation snapshots.
+     */
     open fun saveRecords(records: List<VetDelegatedByBlock>) {
         repository.saveAll(records)
     }
 }
 
 /**
- * Helper that enforces presence of the required "amount" param and throws with context if missing.
+ * @notice Require the presence of `"amount"` in event parameters.
+ * @dev Throws if missing.
  */
 private fun IndexedEvent.requireAmount(): BigInteger =
     this.params.getAsBigInteger("amount")
         ?: throw IllegalStateException(
             "Event for block $blockNumber (blockId=$blockId) is missing required 'amount' parameter"
         )
+
+/**
+ * @notice Safely decode the TokenLevel for devnet events that may lack `levelId`.
+ * @dev Returns null if missing; otherwise converts ordinal → TokenLevel.
+ */
+private fun IndexedEvent.safeLevel(): TokenLevel? {
+    val id = this.params.getAsInt("levelId") ?: return null
+    return TokenLevel.fromOrdinal(id)
+}
