@@ -19,16 +19,6 @@ interface ValidatorBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): ValidatorBlock?
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockTimestamp': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
-    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): ValidatorBlock?
-
     // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =
