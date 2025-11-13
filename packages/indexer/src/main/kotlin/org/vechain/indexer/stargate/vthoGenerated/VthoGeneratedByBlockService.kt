@@ -32,16 +32,16 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
-    ): List<VthoGeneratedByBlock>? {
+    ): List<VthoGeneratedByBlock> {
         // Skip blocks with nothing to index
-        if (events.isEmpty() && !callResponses[0].hasAbiData()) return null
+        if (events.isEmpty() && !callResponses[0].hasAbiData()) return emptyList()
 
         // Load previous entry & validate ordering
         val latest = validateAndLoadLatest(block)
 
         // Compute this block's totals (claimed + total + delta)
         val totals = calculateTotalsForBlock(events, callResponses, latest)
-        if (totals.blockTotal == BigInteger.ZERO) return null
+        if (totals.blockTotal == BigInteger.ZERO) return emptyList()
 
         // Shared rollover logic
         val roll =
