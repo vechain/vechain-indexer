@@ -26,7 +26,7 @@ open class VthoGeneratedByBlockProcessor(
 
         val newRecord = service.processBlock(entry.events(), entry.block, entry.callResults())
 
-        if (newRecord != null) {
+        if (newRecord.isNotEmpty()) {
             service.save(newRecord)
         }
     }

@@ -1,113 +1,140 @@
 package org.vechain.indexer.stargate.nftHolders
 
+import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.utils.RolloverUtils
 
 @Profile("stargate", "nft-holders-by-block")
 @Service
 open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRepository) {
     /**
-     * Build per-block cumulative records of NFT holders (total and by level).
+     * @param events The decoded on-chain events grouped across arbitrary blocks.
+     * @return A list of `NftHoldersByBlock` documents in ascending block order.
+     * @notice Process raw NFT stake/unstake events across multiple blocks.
+     * @dev Per-block flow:
+     *     1. Compute per-block delta (total + per level).
+     *     2. Update running totals from previous state.
+     *     3. Apply rollover logic relative to *the immediate previous block*.
+     *     4. If rollover occurred, emit an updated copy of the previous row.
+     *     5. Emit the new row for the current block.
      *
-     * Behavior:
-     * - Loads the latest persisted record for the last processed blockNumber and running totals.
-     * - FAILS FAST if any incoming event has blockNumber <= last persisted blockNumber.
-     * - Groups events by blockNumber (ascending).
-     * - For each block, applies all stake/unstake deltas, updating:
-     *     - cumulative `total` (Long)
-     *     - cumulative `byLevel` (MutableMap<TokenLevel, Long>)
-     * - Returns a list ordered by ascending blockNumber. Each element is a snapshot of the
-     *   cumulative totals after processing that block.
+     *    State tracking:
+     *         - `prev` always refers to the most recently emitted record (or the DB record if this
+     *           is the first block).
      *
-     * Assumptions / Optimizations:
-     * - All events in the same block share the same `blockTimestamp`. Use the first event as
-     *   representative for `blockId` and `blockTimestamp`.
-     * - `"levelId"` is required and must map to a valid TokenLevel; we throw on access if
-     *   missing/invalid.
-     * - Any unknown `eventType` causes an immediate error.
+     *   Strict ordering:
+     *         - Throws if any event's block number ≤ last stored block number.
      */
     open fun processEvents(events: List<IndexedEvent>): List<NftHoldersByBlock> {
         if (events.isEmpty()) return emptyList()
 
-        val latestRecord = repository.getLatestRecord()
-        val lastPersistedBlockNumber = latestRecord?.blockNumber
+        val latest = repository.getLatestRecord()
+        val lastBlock = latest?.blockNumber
 
-        // Fail fast if any incoming block is the same or earlier than the last persisted block.
-        if (lastPersistedBlockNumber != null) {
-            val offending =
-                events
-                    .asSequence()
-                    .map { it.blockNumber }
-                    .filter { it <= lastPersistedBlockNumber }
-                    .minOrNull()
-            if (offending != null) {
-                throw IllegalStateException(
-                    "Provided events include blockNumber $offending which is <= last persisted blockNumber $lastPersistedBlockNumber"
-                )
-            }
+        // Enforce strict ascending block ordering
+        if (lastBlock != null && events.any { it.blockNumber <= lastBlock }) {
+            throw IllegalStateException("Events include block ≤ last persisted block $lastBlock")
         }
 
-        var runningTotal = latestRecord?.total ?: 0L
-        val runningByLevel: MutableMap<TokenLevel, Long> =
-            (latestRecord?.byLevel?.toMutableMap() ?: mutableMapOf())
+        var runningTotal = latest?.total ?: 0L
+        val runningByLevel = latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, Long>()
 
-        // Group by block and process in ascending order
-        val eventsByBlock = events.groupBy { it.blockNumber }.toSortedMap()
-
+        val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<NftHoldersByBlock>()
+        var prev: NftHoldersByBlock? = latest
 
-        for ((blockNumber, blockEvents) in eventsByBlock) {
-            // Apply all deltas for this block
-            blockEvents.forEach { e ->
-                val level = e.requireLevel() // throws if missing or invalid
+        for ((blockNum, blockEvents) in grouped) {
+            var blockDelta = 0L
 
-                when (e.eventType) {
+            blockEvents.forEach { evt ->
+                val level = evt.requireLevel()
+
+                when (evt.eventType) {
                     "STARGATE_STAKE" -> {
-                        runningTotal += 1L
-                        runningByLevel[level] = (runningByLevel[level] ?: 0L) + 1L
+                        runningTotal += 1
+                        runningByLevel[level] = (runningByLevel[level] ?: 0L) + 1
+                        blockDelta += 1
                     }
+
                     "STARGATE_UNSTAKE" -> {
-                        runningTotal -= 1L
-                        runningByLevel[level] = (runningByLevel[level] ?: 0L) - 1L
+                        runningTotal -= 1
+                        runningByLevel[level] = (runningByLevel[level] ?: 0L) - 1
+                        blockDelta -= 1
                     }
-                    else -> {
-                        throw IllegalArgumentException("Unknown eventType: ${e.eventType}")
-                    }
+
+                    else -> throw IllegalArgumentException("Unknown eventType: ${evt.eventType}")
                 }
             }
 
-            // Snapshot after processing this block
-            val representative = blockEvents.first()
-            output +=
-                NftHoldersByBlock(
-                    blockId = representative.blockId,
-                    blockNumber = blockNumber,
-                    blockTimestamp = representative.blockTimestamp,
-                    total = runningTotal,
-                    byLevel = runningByLevel.toMutableMap(), // snapshot copy
+            val rep = blockEvents.first()
+
+            val roll =
+                RolloverUtils.calculateRollover(
+                    blockTimestamp = rep.blockTimestamp,
+                    delta = BigInteger.valueOf(blockDelta), // convert delta → BigInteger
+                    ctx =
+                        RolloverUtils.Context(
+                            prevDayTotal = prev?.dayTotal ?: BigInteger.ZERO,
+                            prevWeekTotal = prev?.weekTotal ?: BigInteger.ZERO,
+                            prevMonthTotal = prev?.monthTotal ?: BigInteger.ZERO,
+                            prevYearTotal = prev?.yearTotal ?: BigInteger.ZERO,
+                            prevDay = prev?.dayOfMonth,
+                            prevWeek = prev?.weekOfYear,
+                            prevMonth = prev?.month,
+                            prevYear = prev?.year,
+                        ),
                 )
+
+            if (roll.timeFrames.isNotEmpty() && prev != null) {
+                output += prev.copy(timeFrames = roll.timeFrames)
+            }
+
+            val doc =
+                NftHoldersByBlock(
+                    blockId = rep.blockId,
+                    blockNumber = blockNum,
+                    blockTimestamp = rep.blockTimestamp,
+                    total = runningTotal,
+                    byLevel = runningByLevel.toMap(),
+                    dayOfMonth = roll.day,
+                    weekOfYear = roll.week,
+                    month = roll.month,
+                    year = roll.year,
+                    timeFrames = roll.timeFrames,
+                    blockTotal = BigInteger.valueOf(blockDelta),
+                    dayTotal = roll.dayTotal,
+                    weekTotal = roll.weekTotal,
+                    monthTotal = roll.monthTotal,
+                    yearTotal = roll.yearTotal,
+                )
+
+            output += doc
+            prev = doc
         }
 
         return output
     }
 
+    /** @notice Persist a single per-block NFT holder statistics record. */
     open fun saveRecord(record: NftHoldersByBlock) {
         repository.save(record)
     }
 
+    /** @notice Persist multiple per-block NFT holder statistics records. */
     open fun saveRecords(records: List<NftHoldersByBlock>) {
         repository.saveAll(records)
     }
 }
 
-/** Helper that enforces presence/validity of levelId and returns the TokenLevel. */
+/** Require TokenLevel */
 private fun IndexedEvent.requireLevel(): TokenLevel {
-    val levelId =
+    val id =
         this.params.getAsInt("levelId")
             ?: throw IllegalArgumentException("Missing levelId in event params")
-    return TokenLevel.fromOrdinal(levelId)
-        ?: throw IllegalArgumentException("Invalid levelId: $levelId")
+
+    return TokenLevel.fromOrdinal(id) ?: throw IllegalArgumentException("Invalid levelId: $id")
 }

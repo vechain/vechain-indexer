@@ -1,13 +1,16 @@
 package org.vechain.indexer.stargate.nftHolders
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.vechain.indexer.BaseIndexedRepository
-import org.vechain.indexer.stargate.timeSeries.TimeSeriesRepo
+import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("stargate", "nft-holders-by-block")
 interface NftHoldersByBlockRepository :
-    BaseIndexedRepository<NftHoldersByBlock, Long>, TimeSeriesRepo<NftHoldersByBlock> {
+    BaseIndexedRepository<NftHoldersByBlock, Long>, TimeFrameRepo<NftHoldersByBlock> {
     @Aggregation(
         pipeline =
             [
@@ -18,13 +21,15 @@ interface NftHoldersByBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): NftHoldersByBlock?
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockTimestamp': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
-    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): NftHoldersByBlock?
+    override fun findByTimeFramesContains(
+        timeFrame: TimeFrame,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    override fun findByTimeFramesContainsAndBlockTimestampAfter(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
+    ): List<NftHoldersByBlock>
+
+    override fun findByBlockTimestampAfter(blockTimestamp: Long): List<NftHoldersByBlock>
 }

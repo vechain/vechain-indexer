@@ -6,9 +6,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.stereotype.Service
+import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
@@ -16,18 +16,16 @@ import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
 import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
 import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.HexUtils
+import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.BigIntegerUtils
 import org.vechain.indexer.utils.IdUtils
-import org.vechain.indexer.utils.TimeSeriesUtils
 
 @Profile("stargate")
 @Service
@@ -42,11 +40,12 @@ open class StargateService(
     private val tokenRewardRepository: TokenRewardRepository,
 ) {
     /**
-     * Retrieves the total VTHO claimed up to a specific block number. If no block number is
-     * provided, it retrieves the latest total VTHO claimed.
-     *
-     * @param blockNumber The block number to retrieve the total VTHO claimed for.
-     * @return The total VTHO claimed as a BigInteger.
+     * @param blockNumber The block number to query, or null for the latest.
+     * @param rewardType Optional filter: "LEGACY", "DELEGATION", or null for combined totals.
+     * @return Total VTHO claimed based on the selected reward type.
+     * @notice Returns the cumulative VTHO claimed up to a specific block.
+     * @dev If blockNumber is null, the latest record is returned. rewardType controls whether to
+     *   return LEGACY-only, DELEGATION-only, or combined totals.
      */
     open fun getTotalVthoClaimed(blockNumber: Long?, rewardType: String?): BigInteger {
         val record =
@@ -64,10 +63,11 @@ open class StargateService(
     }
 
     /**
-     * Retrieves the total VTHO claimed by a specific account.
-     *
-     * @param account The account address to retrieve the total VTHO claimed for.
-     * @return The total VTHO claimed by the account as a BigInteger.
+     * @param account Account address in hex format.
+     * @param rewardType Optional filter: "LEGACY", "DELEGATION", or null for combined totals.
+     * @return Total VTHO claimed by the account.
+     * @notice Retrieves the total VTHO claimed by a specific account.
+     * @dev If the account has never claimed rewards, zero is returned.
      */
     open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger =
         vthoClaimedByAccountRepository
@@ -88,11 +88,12 @@ open class StargateService(
             .orElse(BigInteger.ZERO)
 
     /**
-     * Retrieves the total VTHO claimed by a specific account and token id.
-     *
-     * @param account The account address to retrieve the total VTHO claimed for.
-     * @param tokenId The token ID to retrieve the total VTHO claimed for.
-     * @return The total VTHO claimed by the pair account - token ID as a BigInteger.
+     * @param account Owner or delegator address.
+     * @param tokenId Token ID in hex or decimal.
+     * @param rewardType Optional filter selecting LEGACY, DELEGATION, or all rewards.
+     * @return Total VTHO claimed for the given token.
+     * @notice Retrieves total VTHO claimed for an (account, tokenId) pair.
+     * @dev Accounts may have multiple Stargate tokens; this returns the per-token claim total.
      */
     open fun getTotalVthoClaimed(
         account: String,
@@ -122,15 +123,10 @@ open class StargateService(
             .orElse(BigInteger.ZERO)
 
     /**
-     * Retrieves the cumulative total of VTHO generated (claimed + balance) up to the given block.
-     *
-     * Behavior:
-     * - If [blockNumber] is provided, returns the latest total at or before that block.
-     * - If [blockNumber] is null, returns the total from the latest persisted record.
-     * - If no record is found, returns [BigInteger.ZERO].
-     *
-     * @param blockNumber the block number to query, or null to use the latest record
-     * @return the total VTHO generated as a [BigInteger]
+     * @param blockNumber Block number to query.
+     * @return Total VTHO generated at or before the block.
+     * @notice Returns total VTHO generated (claimed + wallet balance) up to a block.
+     * @dev If blockNumber is null, the latest generated total is returned.
      */
     open fun getTotalVthoGenerated(blockNumber: Long?): BigInteger {
         val record =
@@ -143,127 +139,233 @@ open class StargateService(
     }
 
     /**
-     * Retrieves time series records of total VTHO claimed between two timestamps. The time series
-     * is sparsely populated, so it may not contain consistent gaps between records.
-     *
-     * @param after The starting timestamp.
-     * @param before The ending timestamp.
-     * @return A list of TimeSeriesRecord containing the total VTHO claimed at each block timestamp.
+     * @param timeRange Preset defining how far back to query.
+     * @param after Unix timestamp lower bound (exclusive).
+     * @return List of timestamp-value records of VTHO claimed.
+     * @notice Returns a time series of cumulative VTHO claimed values.
+     * @dev Uses block-level granularity unless a timeframe (WEEK/MONTH/YEAR) is applied, in which
+     *   case only blocks that rolled that timeframe are included.
      */
     open fun getTotalVthoClaimedHistoric(
+        timeRange: TimeRangePreset,
         after: Long,
-        before: Long,
-    ): List<TimeSeriesRecord<BigInteger>> =
-        TimeSeriesUtils.getHistoricTimeSeries(
-            after,
-            before,
-            vthoClaimedByBlockRepository::findByBlockTimestampBetween,
-            vthoClaimedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
-        ) {
-            it.total
+    ): List<TimeSeriesRecord<BigInteger>> {
+        val timeFrame = toTimeFrame(timeRange)
+
+        val rows =
+            if (timeFrame == null) {
+                vthoClaimedByBlockRepository.findByBlockTimestampAfter(after)
+            } else {
+                vthoClaimedByBlockRepository.findByTimeFramesContainsAndBlockTimestampAfter(
+                    timeFrame,
+                    after,
+                )
+            }
+
+        return rows.map { rec ->
+            TimeSeriesRecord(timestamp = rec.blockTimestamp, value = rec.total)
         }
+    }
 
     /**
-     * Retrieves time series records of total VTHO generated between two timestamps. The time series
-     * is sparsely populated, so it may not contain consistent gaps between records.
-     *
-     * @param after The starting timestamp.
-     * @param before The ending timestamp.
-     * @return A list of TimeSeriesRecord containing the total VTHO generated at each block
-     *   timestamp.
+     * @param timeRange Range preset to determine timeframe granularity.
+     * @param after Only records strictly after this timestamp are returned.
+     * @return TimeSeries records for VTHO generation totals.
+     * @notice Returns historic cumulative VTHO generation totals.
+     * @dev Uses the same timeFrame logic as VTHO-claimed historic queries.
      */
     open fun getTotalVthoGeneratedHistoric(
+        timeRange: TimeRangePreset,
         after: Long,
-        before: Long,
-    ): List<TimeSeriesRecord<BigInteger>> =
-        TimeSeriesUtils.getHistoricTimeSeries(
-            after,
-            before,
-            vthoGeneratedByBlockRepository::findByBlockTimestampBetween,
-            vthoGeneratedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
-        ) {
-            it.total
+    ): List<TimeSeriesRecord<BigInteger>> {
+        val timeFrame = toTimeFrame(timeRange)
+
+        val rows =
+            if (timeFrame == null) {
+                vthoGeneratedByBlockRepository.findByBlockTimestampAfter(after)
+            } else {
+                vthoGeneratedByBlockRepository.findByTimeFramesContainsAndBlockTimestampAfter(
+                    timeFrame,
+                    after,
+                )
+            }
+
+        return rows.map { rec ->
+            TimeSeriesRecord(timestamp = rec.blockTimestamp, value = rec.total)
         }
+    }
 
     /**
-     * Retrieves the total number of NFT holders in Stargate at a specific block number. If no block
-     * number is provided, it retrieves the latest total number of NFT holders.
-     *
-     * @param blockNumber The block number to retrieve the total NFT holders for.
-     * @return The total number of NFT holders as an instance of NftHoldersByBlock or null if no
-     *   data is found.
+     * @param blockNumber Block number to query or null for latest.
+     * @return DTO containing total holder count and per-level breakdown.
+     * @notice Retrieves the number of Stargate NFT holders at a block.
+     * @dev Returns a DTO; if no record exists, a zeroed default object is returned.
      */
-    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlock? =
-        if (blockNumber != null) {
-            nftHoldersByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
-        } else {
-            nftHoldersByBlockRepository.getLatestRecord()
+    open fun getNftHolders(blockNumber: Long?): NftHoldersByBlockDto {
+        val response =
+            if (blockNumber != null) {
+                nftHoldersByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+            } else {
+                nftHoldersByBlockRepository.getLatestRecord()
+            }
+
+        if (response == null) {
+            return NftHoldersByBlockDto(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = 0L,
+                byLevel = emptyMap(),
+            )
         }
 
+        return NftHoldersByBlockDto(
+            blockId = response.blockId,
+            blockNumber = response.blockNumber,
+            blockTimestamp = response.blockTimestamp,
+            total = response.total,
+            byLevel = response.byLevel,
+        )
+    }
+
+    /**
+     * @param after Only records after this timestamp.
+     * @param timeRange How far back to fetch and which timeframe to use.
+     * @param level Optional NFT level filter; null means total holders.
+     * @return Time series of NFT holder counts.
+     * @notice Returns historic NFT holder counts.
+     * @dev If a timeframe is applied, only the blocks that rolled that timeframe are included.
+     */
     open fun getNftHoldersHistoric(
         after: Long,
-        before: Long,
+        timeRange: TimeRangePreset,
         level: TokenLevel? = null,
-    ): List<TimeSeriesRecord<Long>> =
-        TimeSeriesUtils.getHistoricTimeSeries(
-            after,
-            before,
-            nftHoldersByBlockRepository::findByBlockTimestampBetween,
-            nftHoldersByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
-        ) {
-            it.valueForLevel(level)
+    ): List<TimeSeriesRecord<Long>> {
+        val timeFrame = toTimeFrame(timeRange)
+
+        val rows =
+            if (timeFrame == null) {
+                nftHoldersByBlockRepository.findByBlockTimestampAfter(after)
+            } else {
+                nftHoldersByBlockRepository.findByTimeFramesContainsAndBlockTimestampAfter(
+                    timeFrame,
+                    after,
+                )
+            }
+
+        return rows.map { rec ->
+            TimeSeriesRecord(timestamp = rec.blockTimestamp, value = rec.valueForLevel(level))
+        }
+    }
+
+    fun toTimeFrame(timeRange: TimeRangePreset): TimeFrame? =
+        when (timeRange) {
+            TimeRangePreset.ONE_WEEK -> TimeFrame.WEEK
+            TimeRangePreset.ONE_MONTH -> TimeFrame.MONTH
+            TimeRangePreset.ONE_YEAR -> TimeFrame.YEAR
+            TimeRangePreset.ALL -> TimeFrame.YEAR
+            else -> null
         }
 
     /**
-     * Retrieves the total VET staked in Stargate at a specific block number. If no block number is
-     * provided, it retrieves the latest total VET staked.
-     *
-     * @param blockNumber The block number to retrieve the total VET staked for.
-     * @return The total VET staked as an instance of VetStakedByBlock or null if no data is found.
+     * @param blockNumber Block height or null for latest.
+     * @return DTO containing total staked and per-level values.
+     * @notice Returns total VET staked at a specific block.
+     * @dev If blockNumber is null, returns the latest available record.
      */
-    open fun getTotalVetStaked(blockNumber: Long?): VetStakedByBlock? =
-        if (blockNumber != null) {
-            vetStakedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
-        } else {
-            vetStakedByBlockRepository.getLatestRecord()
+    open fun getTotalVetStaked(blockNumber: Long?): TotalByBlockDto {
+        val response =
+            if (blockNumber != null) {
+                vetStakedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+            } else {
+                vetStakedByBlockRepository.getLatestRecord()
+            }
+
+        if (response == null) {
+            return TotalByBlockDto(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = BigInteger.ZERO,
+                byLevel = emptyMap(),
+            )
         }
 
+        return TotalByBlockDto(
+            blockId = response.blockId,
+            blockNumber = response.blockNumber,
+            blockTimestamp = response.blockTimestamp,
+            total = response.total,
+            byLevel = response.byLevel,
+        )
+    }
+
     /**
-     * Retrieves the total VET delegated in Stargate at a specific block number. If no block number
-     * is provided, it retrieves the latest total VET delegated.
-     *
-     * @param blockNumber The block number to retrieve the total VET delegated for.
-     * @return The total VET delegated as an instance of VetDelegatedByBlock or null if no data is
-     *   found.
+     * @param after Lower timestamp bound.
+     * @param timeRange Range preset controlling timeframe and depth.
+     * @param level Optional NFT level to return only that level's staked amount.
+     * @return Time series of VET staked totals.
+     * @notice Returns historic VET staked snapshots.
+     * @dev Granularity depends on timeRange; DAILY → block-level, WEEK/MONTH/YEAR → rolled periods
+     *   only.
      */
-    open fun getTotalVetDelegated(blockNumber: Long?): VetDelegatedByBlock? =
-        if (blockNumber != null) {
-            vetDelegatedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
-        } else {
-            vetDelegatedByBlockRepository.getLatestRecord()
+    open fun getTotalVetDelegated(blockNumber: Long?): TotalByBlockDto? {
+        val response =
+            if (blockNumber != null) {
+                vetDelegatedByBlockRepository.findLatestBeforeOrAtBlockNumber(blockNumber)
+            } else {
+                vetDelegatedByBlockRepository.getLatestRecord()
+            }
+
+        if (response == null) {
+            return TotalByBlockDto(
+                blockId = "ignoredanyway",
+                blockNumber = 0,
+                blockTimestamp = 0,
+                total = BigInteger.ZERO,
+                byLevel = emptyMap(),
+            )
         }
 
+        return TotalByBlockDto(
+            blockId = response.blockId,
+            blockNumber = response.blockNumber,
+            blockTimestamp = response.blockTimestamp,
+            total = response.total,
+            byLevel = response.byLevel,
+        )
+    }
+
     /**
-     * Retrieves time series records of total VET staked between two timestamps. The time series is
-     * sparsely populated, so it may not contain consistent gaps between records.
-     *
-     * @param after The starting timestamp.
-     * @param before The ending timestamp.
-     * @return A list of TimeSeriesRecord containing the total VET staked at each block timestamp
+     * @param after Lower timestamp bound.
+     * @param timeRange Range preset controlling timeframe and depth.
+     * @param level Optional NFT level to return only that level's staked amount.
+     * @return Time series of VET staked totals.
+     * @notice Returns historic VET staked snapshots.
+     * @dev Granularity depends on timeRange; DAILY → block-level, WEEK/MONTH/YEAR → rolled periods
+     *   only.
      */
     open fun getTotalVetStakedHistoric(
         after: Long,
-        before: Long,
+        timeRange: TimeRangePreset,
         level: TokenLevel? = null,
-    ): List<TimeSeriesRecord<BigInteger>> =
-        TimeSeriesUtils.getHistoricTimeSeries(
-            after,
-            before,
-            vetStakedByBlockRepository::findByBlockTimestampBetween,
-            vetStakedByBlockRepository::findLatestBeforeOrAtBlockTimestamp,
-        ) {
-            it.valueForLevel(level)
+    ): List<TimeSeriesRecord<BigInteger>> {
+        val timeFrame = toTimeFrame(timeRange)
+
+        val rows =
+            if (timeFrame == null) {
+                vetStakedByBlockRepository.findByBlockTimestampAfter(after)
+            } else {
+                vetStakedByBlockRepository.findByTimeFramesContainsAndBlockTimestampAfter(
+                    timeFrame,
+                    after,
+                )
+            }
+
+        return rows.map { rec ->
+            TimeSeriesRecord(timestamp = rec.blockTimestamp, value = rec.valueForLevel(level))
         }
+    }
 
     /**
      * Retrieves Stargate tokens with optional filtering by tokenId, manager, or owner.
@@ -308,6 +410,16 @@ open class StargateService(
         return paginatedResponse(slice)
     }
 
+    /**
+     * @param tokenId ID of the Stargate token.
+     * @param validator Optional validator address.
+     * @param period Optional RewardPeriod; null defaults to ALL.
+     * @param pageable Pagination settings.
+     * @return Slice containing reward records.
+     * @notice Returns reward history for a token, optionally filtered by validator and period.
+     * @dev If a specific period (DAY/WEEK/MONTH/YEAR/CYCLE) is requested, ALL-period records are
+     *   normalized to behave like the requested period.
+     */
     fun getRewards(
         tokenId: String,
         validator: String?,
