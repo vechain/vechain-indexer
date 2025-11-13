@@ -1,4 +1,4 @@
-package org.vechain.indexer.stargate
+package org.vechain.indexer.stargate.vetStaked
 
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -11,254 +11,210 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import strikt.api.Assertion
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
-internal class NftHoldersByBlockServiceTest {
-    @MockK lateinit var repository: NftHoldersByBlockRepository
+internal class VetStakedByBlockServiceTest {
+    @MockK lateinit var repository: VetStakedByBlockRepository
 
-    private lateinit var service: NftHoldersByBlockService
+    private lateinit var service: VetStakedByBlockService
 
     @BeforeEach
-    fun setUp() {
+    fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository)
+        service = VetStakedByBlockService(repository)
     }
 
-    // ------------------------------------------------------------
-    // Helper factory to satisfy NEW required constructor fields
-    // ------------------------------------------------------------
-    private fun nftBlock(
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-        total: Long,
-        byLevel: Map<TokenLevel, Long> = emptyMap(),
-        dayOfMonth: Long = 1,
-        weekOfYear: Long = 1,
-        month: Long = 1,
-        year: Long = 2025,
-        timeFrames: List<org.vechain.indexer.accounts.TimeFrame> = emptyList(),
-        blockTotal: BigInteger = BigInteger.ZERO,
-        dayTotal: BigInteger = BigInteger.ZERO,
-        weekTotal: BigInteger = BigInteger.ZERO,
-        monthTotal: BigInteger = BigInteger.ZERO,
-        yearTotal: BigInteger = BigInteger.ZERO,
-    ): NftHoldersByBlock =
-        NftHoldersByBlock(
-            blockId = blockId,
-            blockNumber = blockNumber,
-            blockTimestamp = blockTimestamp,
-            total = total,
-            byLevel = byLevel,
-            dayOfMonth = dayOfMonth,
-            weekOfYear = weekOfYear,
-            month = month,
-            year = year,
-            timeFrames = timeFrames,
-            blockTotal = blockTotal,
-            dayTotal = dayTotal,
-            weekTotal = weekTotal,
-            monthTotal = monthTotal,
-            yearTotal = yearTotal,
-        )
-
-    // ------------------------------------------------------------
-    // Tests
-    // ------------------------------------------------------------
-
     @Test
-    fun `processEvents returns empty list for empty events`() {
+    fun `processEvents returns empty when given empty input`() {
         val result = service.processEvents(emptyList())
         expectThat(result).isEmpty()
     }
 
     @Test
-    fun `processEvents with no previous record - cumulative per block`() {
-        val events =
-            listOf(
-                mockEvent("block1", 10, 1000, "STARGATE_STAKE", 1),
-                mockEvent("block2", 12, 1200, "STARGATE_STAKE", 2),
-                mockEvent("block3", 13, 1300, "STARGATE_UNSTAKE", 1),
-            )
-
+    fun `processEvents computes block-level and cumulative totals without previous record`() {
         every { repository.getLatestRecord() } returns null
 
-        val result = service.processEvents(events)
-
-        expectThat(result).hasSize(3)
-
-        // Block 10
-        expectThat(result[0])
-            .andBlockRecord(
-                "block1",
-                10,
-                1000,
-                total = 1L,
-                byLevel = mapOf(TokenLevel.Strength to 1L),
-            )
-
-        // Block 12
-        expectThat(result[1])
-            .andBlockRecord(
-                "block2",
-                12,
-                1200,
-                total = 2L,
-                byLevel = mapOf(TokenLevel.Strength to 1L, TokenLevel.Thunder to 1L),
-            )
-
-        // Block 13
-        expectThat(result[2])
-            .andBlockRecord(
-                "block3",
-                13,
-                1300,
-                total = 1L,
-                byLevel = mapOf(TokenLevel.Strength to 0L, TokenLevel.Thunder to 1L),
-            )
-    }
-
-    @Test
-    fun `processEvents continues from previous record`() {
         val events =
             listOf(
-                mockEvent("block10", 10, 1000, "STARGATE_STAKE", 1),
-                mockEvent("block11", 11, 1100, "STARGATE_UNSTAKE", 2),
+                mockEvent("b1", 10L, 1000L, "100", TokenLevel.Strength.ordinal),
+                mockEvent("b2", 12L, 1200L, "200", TokenLevel.Thunder.ordinal),
             )
-
-        val latestRecord =
-            nftBlock(
-                "block9",
-                9,
-                900,
-                total = 5,
-                byLevel = mapOf(TokenLevel.Strength to 2, TokenLevel.Thunder to 3),
-            )
-
-        every { repository.getLatestRecord() } returns latestRecord
 
         val result = service.processEvents(events)
 
-        expectThat(result).hasSize(3)
+        expectThat(result).hasSize(2)
 
-        expectThat(result[0])
-            .andBlockRecord(
-                "block9",
-                9,
-                900,
-                total = 5,
-                byLevel = mapOf(TokenLevel.Strength to 2L, TokenLevel.Thunder to 3L),
-            )
+        expectThat(result[0]).blockMatches("b1", 10L, 1000L, BigInteger("100"))
 
-        // After block 10
-        expectThat(result[1])
-            .andBlockRecord(
-                "block10",
-                10,
-                1000,
-                total = 6L,
-                byLevel = mapOf(TokenLevel.Strength to 3L, TokenLevel.Thunder to 3L),
-            )
-
-        // After block 11
-        expectThat(result[2])
-            .andBlockRecord(
-                "block11",
-                11,
-                1100,
-                total = 5L,
-                byLevel = mapOf(TokenLevel.Strength to 3L, TokenLevel.Thunder to 2L),
-            )
+        expectThat(result[1]).blockMatches("b2", 12L, 1200L, BigInteger("300"))
     }
 
     @Test
-    fun `processEvents fails for same or earlier block`() {
-        val events = listOf(mockEvent("blockX", 9, 950, "STARGATE_STAKE", 1))
-
+    fun `processEvents continues totals from previous record`() {
         val latest =
-            nftBlock("block9", 9, 900, total = 5, byLevel = mapOf(TokenLevel.Strength to 2))
+            VetStakedByBlock(
+                blockId = "prev",
+                blockNumber = 9,
+                blockTimestamp = 900,
+                total = BigInteger("500"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("500")),
+                dayOfMonth = 1,
+                weekOfYear = 1,
+                month = 1,
+                year = 1,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
 
         every { repository.getLatestRecord() } returns latest
 
-        val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
+        val events = listOf(mockEvent("b10", 10L, 1000L, "50", TokenLevel.Strength.ordinal))
 
-        expectThat(ex.message).isEqualTo("Events include block ≤ last persisted block 9")
+        val result = service.processEvents(events)
+
+        expectThat(result).hasSize(2)
+        expectThat(result[1]).blockMatches("b10", 10L, 1000L, BigInteger("550"))
     }
 
     @Test
-    fun `processEvents throws on missing levelId`() {
-        val events = listOf(mockEvent("block1", 10, 1000, "STARGATE_STAKE", null))
+    fun `processEvents throws when blockNumber is same or earlier than latest`() {
+        val latest =
+            VetStakedByBlock(
+                blockId = "prev",
+                blockNumber = 10L,
+                blockTimestamp = 900L,
+                total = BigInteger("100"),
+                byLevel = emptyMap(),
+                dayOfMonth = 1,
+                weekOfYear = 1,
+                month = 1,
+                year = 1,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+
+        every { repository.getLatestRecord() } returns latest
+
+        val events = listOf(mockEvent("bad", 10L, 1100L, "50", TokenLevel.Strength.ordinal))
+
+        val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
+
+        expectThat(ex.message).isEqualTo("Events include block ≤ last persisted block 10")
+    }
+
+    @Test
+    fun `processEvents throws when missing value`() {
         every { repository.getLatestRecord() } returns null
 
-        val ex = assertThrows<IllegalArgumentException> { service.processEvents(events) }
+        val events = listOf(mockEvent("bX", 15L, 1500L, null, TokenLevel.Strength.ordinal))
+
+        val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
+
+        expectThat(ex.message)
+            .isEqualTo("Event for block 15 (blockId=bX) is missing required 'value'")
+    }
+
+    @Test
+    fun `processEvents throws when missing levelId`() {
+        every { repository.getLatestRecord() } returns null
+
+        val event =
+            io.mockk.mockk<IndexedEvent> {
+                every { blockId } returns "bX"
+                every { blockNumber } returns 20L
+                every { blockTimestamp } returns 2000L
+                every { eventType } returns "STARGATE_STAKE"
+                every { params.getAsInt("levelId") } returns null
+                every { params.getAsBigInteger("value") } returns BigInteger("10")
+            }
+
+        val ex = assertThrows<IllegalArgumentException> { service.processEvents(listOf(event)) }
+
         expectThat(ex.message).isEqualTo("Missing levelId in event params")
     }
 
     @Test
-    fun `processEvents throws on invalid levelId`() {
-        val events = listOf(mockEvent("block1", 10, 1000, "STARGATE_STAKE", 999))
+    fun `processEvents throws when invalid levelId`() {
         every { repository.getLatestRecord() } returns null
 
+        val events = listOf(mockEvent("bX", 15L, 1500L, "10", 999))
+
         val ex = assertThrows<IllegalArgumentException> { service.processEvents(events) }
+
         expectThat(ex.message).isEqualTo("Invalid levelId: 999")
     }
 
     @Test
     fun `processEvents throws on unknown eventType`() {
-        val events = listOf(mockEvent("blockU", 42, 4200, "UNKNOWN", 1))
         every { repository.getLatestRecord() } returns null
 
-        val ex = assertThrows<IllegalArgumentException> { service.processEvents(events) }
+        val event =
+            io.mockk.mockk<IndexedEvent> {
+                every { blockId } returns "bX"
+                every { blockNumber } returns 22L
+                every { blockTimestamp } returns 2200L
+                every { eventType } returns "UNKNOWN"
+                every { params.getAsInt("levelId") } returns TokenLevel.Strength.ordinal
+                every { params.getAsBigInteger("value") } returns BigInteger("10")
+            }
+
+        val ex = assertThrows<IllegalArgumentException> { service.processEvents(listOf(event)) }
+
         expectThat(ex.message).isEqualTo("Unknown eventType: UNKNOWN")
     }
 
     @Test
-    fun `processEvents uses first event per block`() {
+    fun `processEvents aggregates multiple events within same block`() {
+        every { repository.getLatestRecord() } returns null
+
         val events =
             listOf(
-                mockEvent("block20a", 20, 2000, "STARGATE_STAKE", 1),
-                mockEvent("block20b", 20, 2000, "STARGATE_UNSTAKE", 2),
+                mockEvent("b10a", 10L, 1000L, "100", TokenLevel.Strength.ordinal),
+                mockEvent("b10b", 10L, 1000L, "50", TokenLevel.Strength.ordinal),
             )
-
-        every { repository.getLatestRecord() } returns null
 
         val result = service.processEvents(events)
 
         expectThat(result).hasSize(1)
+        expectThat(result[0]).blockMatches("b10a", 10L, 1000L, BigInteger("150"))
+    }
 
-        expectThat(result[0])
-            .andBlockRecord(
-                "block20a",
-                20,
-                2000,
-                total = 0L,
-                byLevel = mapOf(TokenLevel.Strength to 1L, TokenLevel.Thunder to -1L),
+    @Test
+    fun `saveRecords delegates to repository`() {
+        val records =
+            listOf(
+                VetStakedByBlock(
+                    blockId = "bX",
+                    blockNumber = 5,
+                    blockTimestamp = 500,
+                    total = BigInteger("10"),
+                    byLevel = emptyMap(),
+                    dayOfMonth = 1,
+                    weekOfYear = 1,
+                    month = 1,
+                    year = 1,
+                    timeFrames = emptyList(),
+                    blockTotal = BigInteger.ZERO,
+                    dayTotal = BigInteger.ZERO,
+                    weekTotal = BigInteger.ZERO,
+                    monthTotal = BigInteger.ZERO,
+                    yearTotal = BigInteger.ZERO,
+                )
             )
-    }
-
-    @Test
-    fun `saveRecord delegates to repository`() {
-        val record = nftBlock("blockX", 99, 9999, 1)
-        every { repository.save(record) } returns record
-
-        service.saveRecord(record)
-
-        verify(exactly = 1) { repository.save(record) }
-    }
-
-    @Test
-    fun `saveRecords delegates to repository saveAll`() {
-        val recA = nftBlock("blockA", 1, 100, 1)
-        val recB = nftBlock("blockB", 2, 200, 2)
-        val records = listOf(recA, recB)
 
         every { repository.saveAll(records) } returns records
 
@@ -267,38 +223,31 @@ internal class NftHoldersByBlockServiceTest {
         verify(exactly = 1) { repository.saveAll(records) }
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private fun mockEvent(
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        eventType: String,
-        levelId: Int?,
+        value: String?,
+        levelId: Int,
     ): IndexedEvent =
         io.mockk.mockk {
             every { this@mockk.blockId } returns blockId
             every { this@mockk.blockNumber } returns blockNumber
             every { this@mockk.blockTimestamp } returns blockTimestamp
-            every { this@mockk.eventType } returns eventType
+            every { this@mockk.eventType } returns "STARGATE_STAKE"
+            every { params.getAsBigInteger("value") } returns value?.let { BigInteger(it) }
             every { params.getAsInt("levelId") } returns levelId
         }
 
-    private fun Assertion.Builder<NftHoldersByBlock>.andBlockRecord(
-        blockId: String,
-        blockNumber: Long,
-        blockTimestamp: Long,
-        total: Long,
-        byLevel: Map<TokenLevel, Long>,
+    private fun Assertion.Builder<VetStakedByBlock>.blockMatches(
+        id: String,
+        num: Long,
+        ts: Long,
+        total: BigInteger,
     ) = and {
-        get(NftHoldersByBlock::blockId).isEqualTo(blockId)
-        get(NftHoldersByBlock::blockNumber).isEqualTo(blockNumber)
-        get(NftHoldersByBlock::blockTimestamp).isEqualTo(blockTimestamp)
-        get(NftHoldersByBlock::total).isEqualTo(total)
-        byLevel.forEach { (lvl, amt) ->
-            get(NftHoldersByBlock::byLevel).and { get { this[lvl] }.isEqualTo(amt) }
-        }
+        get(VetStakedByBlock::blockId).isEqualTo(id)
+        get(VetStakedByBlock::blockNumber).isEqualTo(num)
+        get(VetStakedByBlock::blockTimestamp).isEqualTo(ts)
+        get(VetStakedByBlock::total).isEqualTo(total)
     }
 }
