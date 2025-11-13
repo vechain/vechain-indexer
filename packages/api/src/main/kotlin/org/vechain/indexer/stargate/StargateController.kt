@@ -21,13 +21,10 @@ import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
-import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlock
-import org.vechain.indexer.stargate.vetStaked.VetStakedByBlock
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
@@ -180,9 +177,8 @@ open class StargateController(private val stargateService: StargateService) {
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
-        val before = now.epochSecond
 
-        return stargateService.getTotalVthoClaimedHistoric(after, before)
+        return stargateService.getTotalVthoClaimedHistoric(range, after)
     }
 
     @GetMapping("/nft-holders")
@@ -192,15 +188,9 @@ open class StargateController(private val stargateService: StargateService) {
             "Optional query parameter to get the total number of NFT holders at a specific block number. If not provided, the latest value will be returned."
     )
     @CommonApiResponses
-    open fun getNftHolders(@RequestParam(required = false) blockNumber: Long?): NftHoldersByBlock =
-        stargateService.getNftHolders(blockNumber)
-            ?: NftHoldersByBlock(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
-                total = 0L,
-                byLevel = emptyMap(),
-            )
+    open fun getNftHolders(
+        @RequestParam(required = false) blockNumber: Long?
+    ): NftHoldersByBlockDto = stargateService.getNftHolders(blockNumber)
 
     @GetMapping("/nft-holders/historic/{range}")
     @Operation(
@@ -254,11 +244,10 @@ open class StargateController(private val stargateService: StargateService) {
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
-        val before = now.epochSecond
 
         return stargateService.getNftHoldersHistoric(
             after,
-            before,
+            range,
             TokenLevel.Companion.fromString(level),
         )
     }
@@ -272,15 +261,7 @@ open class StargateController(private val stargateService: StargateService) {
     @CommonApiResponses
     open fun getTotalVetStaked(
         @RequestParam(required = false) blockNumber: Long?
-    ): VetStakedByBlock =
-        stargateService.getTotalVetStaked(blockNumber)
-            ?: VetStakedByBlock(
-                blockId = "ignoredanyway",
-                blockNumber = 0,
-                blockTimestamp = 0,
-                total = BigInteger.ZERO,
-                byLevel = emptyMap(),
-            )
+    ): TotalByBlockDto = stargateService.getTotalVetStaked(blockNumber)
 
     @GetMapping("/total-vet-staked/historic/{range}")
     @Operation(
@@ -335,11 +316,10 @@ open class StargateController(private val stargateService: StargateService) {
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
 
         val after = range.computeAfterTimestamp(now)
-        val before = now.epochSecond
 
         return stargateService.getTotalVetStakedHistoric(
             after,
-            before,
+            range,
             TokenLevel.Companion.fromString(level),
         )
     }
@@ -378,11 +358,9 @@ open class StargateController(private val stargateService: StargateService) {
     ): List<TimeSeriesRecord<BigInteger>> {
         val now = Instant.now()
         val range = TimeRangePreset.Companion.fromPathValue(rangeStr)
-
         val after = range.computeAfterTimestamp(now)
-        val before = now.epochSecond
 
-        return stargateService.getTotalVthoGeneratedHistoric(after, before)
+        return stargateService.getTotalVthoGeneratedHistoric(range, after)
     }
 
     @GetMapping("/total-vet-delegated")
@@ -400,9 +378,9 @@ open class StargateController(private val stargateService: StargateService) {
     @CommonApiResponses
     open fun getTotalVetDelegated(
         @RequestParam(required = false) blockNumber: Long?
-    ): VetDelegatedByBlock =
+    ): TotalByBlockDto =
         stargateService.getTotalVetDelegated(blockNumber)
-            ?: VetDelegatedByBlock(
+            ?: TotalByBlockDto(
                 blockId = "ignoredanyway",
                 blockNumber = 0,
                 blockTimestamp = 0,
