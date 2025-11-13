@@ -4,21 +4,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.BaseIndexedRepository
-import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
 @Profile("validator", "validator-reward")
-interface ValidatorBlockRepository :
-    BaseIndexedRepository<ValidatorBlock, Long>, TimeFrameRepo<ValidatorBlock> {
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'blockNumber': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
-    override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): ValidatorBlock?
-
+interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Long> {
     // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =

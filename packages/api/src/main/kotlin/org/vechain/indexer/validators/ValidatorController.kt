@@ -33,7 +33,6 @@ import org.vechain.indexer.validators.ValidatorService
 @RestController
 @RequestMapping(VALIDATORS_PATH)
 open class ValidatorController(
-    private val validatorRepository: ValidatorRepository,
     private val delegationRepository: DelegationRepository,
     private val service: ValidatorService,
 ) {
