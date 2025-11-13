@@ -5,7 +5,8 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 import org.vechain.indexer.stargate.token.LevelledValue
 import org.vechain.indexer.stargate.token.TokenLevel
 
@@ -18,7 +19,17 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     override val total: BigInteger,
     override val byLevel: Map<TokenLevel, BigInteger>,
-) : IndexedDocument, LevelledValue<BigInteger> {
+    override val dayOfMonth: Long, // 25
+    override val weekOfYear: Long, // 43
+    override val month: Long, // 10 (October)
+    override val year: Long, // 2025
+    override val timeFrames: List<TimeFrame>,
+    @JsonIgnore override val blockTotal: BigInteger? = null,
+    @JsonIgnore override val dayTotal: BigInteger? = null,
+    @JsonIgnore override val weekTotal: BigInteger? = null,
+    @JsonIgnore override val monthTotal: BigInteger? = null,
+    @JsonIgnore override val yearTotal: BigInteger? = null,
+) : TimeFrameDocument, LevelledValue<BigInteger> {
     override fun valueForLevel(level: TokenLevel?): BigInteger =
         if (level == null) total else byLevel[level] ?: BigInteger.ZERO
 }
