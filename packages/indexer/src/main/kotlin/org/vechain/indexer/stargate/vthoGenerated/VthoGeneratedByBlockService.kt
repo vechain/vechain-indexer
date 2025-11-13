@@ -32,7 +32,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
-    ): VthoGeneratedByBlock? {
+    ): List<VthoGeneratedByBlock>? {
         // Skip blocks with nothing to index
         if (events.isEmpty() && !callResponses[0].hasAbiData()) return null
 
@@ -62,7 +62,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
             )
 
         // Map into final Mongo document
-        return mapToDocument(block, totals, roll)
+        return mapToDocument(block, totals, roll, latest)
     }
 
     /**
@@ -130,44 +130,67 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     }
 
     /**
-     * @return VthoGeneratedByBlock properly filled.
-     * @notice Constructs the final MongoDB document for a processed block.
-     * @dev Includes:
-     *     - Running totals
-     *     - Rollover-based period totals
-     *     - Block metadata
-     *     - Timeframes that rolled (DAY/WEEK/MONTH/YEAR)
+     * @param block The current block metadata (id, number, timestamp).
+     * @param totals Aggregated running totals and delta for this block.
+     * @param roll Result of applying rollover logic (new period totals + timeframes crossed).
+     * @param previous The latest persisted record before this block (null if none).
+     * @return A list containing:
+     *         - An updated previous record (only when rollover happens)
+     *         - The new current block record
+     *
+     * @notice Construct one or two MongoDB documents representing VTHO generation state.
+     * @dev This function returns **multiple documents** when a rollover occurs:
+     *     - If no day/week/month/year boundary is crossed: → Only the *current block's* document is
+     *       returned.
+     *     - If a rollover DID occur: → A modified copy of the **previous document** is returned
+     *       first. • Its `timeFrames` field is updated to reflect which periods rolled. → Then the
+     *       *current block's* record is returned.
+     *
+     * Returning both documents ensures that rollover information is persisted exactly at the
+     * boundary where it occurs.
      */
     private fun mapToDocument(
         block: Block,
         totals: TotalsForBlock,
         roll: RolloverUtils.RolloverResult,
-    ): VthoGeneratedByBlock =
-        VthoGeneratedByBlock(
-            blockId = block.id,
-            blockNumber = block.number,
-            blockTimestamp = block.timestamp,
-            total = totals.blockTotal,
-            rewardsClaimed = totals.claimed,
-            // timestamps
-            dayOfMonth = roll.day,
-            weekOfYear = roll.week,
-            month = roll.month,
-            year = roll.year,
-            // which periods rolled over
-            timeFrames = roll.timeFrames,
-            // period totals
-            blockTotal = totals.delta,
-            dayTotal = roll.dayTotal,
-            weekTotal = roll.weekTotal,
-            monthTotal = roll.monthTotal,
-            yearTotal = roll.yearTotal,
-        )
+        previous: VthoGeneratedByBlock?,
+    ): List<VthoGeneratedByBlock> {
+        val result = mutableListOf<VthoGeneratedByBlock>()
 
-    /** @notice Persist a single per-block VTHO generation record. */
+        if (roll.timeFrames.isNotEmpty() && previous != null) {
+            result += previous.copy(timeFrames = roll.timeFrames)
+        }
+
+        result +=
+            VthoGeneratedByBlock(
+                blockId = block.id,
+                blockNumber = block.number,
+                blockTimestamp = block.timestamp,
+                total = totals.blockTotal,
+                rewardsClaimed = totals.claimed,
+                // timestamps
+                dayOfMonth = roll.day,
+                weekOfYear = roll.week,
+                month = roll.month,
+                year = roll.year,
+                // which periods rolled over
+                timeFrames = roll.timeFrames,
+                // period totals
+                blockTotal = totals.delta,
+                dayTotal = roll.dayTotal,
+                weekTotal = roll.weekTotal,
+                monthTotal = roll.monthTotal,
+                yearTotal = roll.yearTotal,
+            )
+
+        return result
+    }
+
+    /** @notice Persist VTHO generation records. */
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(record: VthoGeneratedByBlock) {
-        repository.save(record)
+    open fun save(records: List<VthoGeneratedByBlock>) {
+        if (records.isEmpty()) return
+        repository.saveAll(records)
     }
 
     /**

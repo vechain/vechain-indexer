@@ -63,6 +63,7 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetDelegatedByBlock>()
+        var prev: VetDelegatedByBlock? = latest
 
         for ((blockNum, blockEvents) in grouped) {
             var blockDelta = BigInteger.ZERO
@@ -107,16 +108,20 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                     delta = blockDelta,
                     ctx =
                         RolloverUtils.Context(
-                            prevDayTotal = latest?.dayTotal ?: BigInteger.ZERO,
-                            prevWeekTotal = latest?.weekTotal ?: BigInteger.ZERO,
-                            prevMonthTotal = latest?.monthTotal ?: BigInteger.ZERO,
-                            prevYearTotal = latest?.yearTotal ?: BigInteger.ZERO,
-                            prevDay = latest?.dayOfMonth,
-                            prevWeek = latest?.weekOfYear,
-                            prevMonth = latest?.month,
-                            prevYear = latest?.year,
+                            prevDayTotal = prev?.dayTotal ?: BigInteger.ZERO,
+                            prevWeekTotal = prev?.weekTotal ?: BigInteger.ZERO,
+                            prevMonthTotal = prev?.monthTotal ?: BigInteger.ZERO,
+                            prevYearTotal = prev?.yearTotal ?: BigInteger.ZERO,
+                            prevDay = prev?.dayOfMonth,
+                            prevWeek = prev?.weekOfYear,
+                            prevMonth = prev?.month,
+                            prevYear = prev?.year,
                         ),
                 )
+
+            if (roll.timeFrames.isNotEmpty() && prev != null) {
+                output += prev.copy(timeFrames = roll.timeFrames)
+            }
 
             val doc =
                 VetDelegatedByBlock(
@@ -138,6 +143,7 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                 )
 
             output += doc
+            prev = doc
         }
 
         return output

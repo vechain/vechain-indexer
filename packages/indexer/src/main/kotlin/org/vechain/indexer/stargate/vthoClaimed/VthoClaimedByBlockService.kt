@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate.vthoClaimed
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.RolloverUtils
@@ -59,6 +60,7 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
         var runningLegacy = latest?.legacyRewards ?: BigInteger.ZERO
 
         val output = mutableListOf<VthoClaimedByBlock>()
+        var prev: VthoClaimedByBlock? = latest
 
         for ((blockNum, blockEvents) in grouped) {
             var deltaLatest = BigInteger.ZERO
@@ -84,16 +86,20 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
                     delta = deltaLatest,
                     ctx =
                         RolloverUtils.Context(
-                            prevDayTotal = latest?.dayTotal ?: BigInteger.ZERO,
-                            prevWeekTotal = latest?.weekTotal ?: BigInteger.ZERO,
-                            prevMonthTotal = latest?.monthTotal ?: BigInteger.ZERO,
-                            prevYearTotal = latest?.yearTotal ?: BigInteger.ZERO,
-                            prevDay = latest?.dayOfMonth,
-                            prevWeek = latest?.weekOfYear,
-                            prevMonth = latest?.month,
-                            prevYear = latest?.year,
+                            prevDayTotal = prev?.dayTotal ?: BigInteger.ZERO,
+                            prevWeekTotal = prev?.weekTotal ?: BigInteger.ZERO,
+                            prevMonthTotal = prev?.monthTotal ?: BigInteger.ZERO,
+                            prevYearTotal = prev?.yearTotal ?: BigInteger.ZERO,
+                            prevDay = prev?.dayOfMonth,
+                            prevWeek = prev?.weekOfYear,
+                            prevMonth = prev?.month,
+                            prevYear = prev?.year,
                         ),
                 )
+
+            if (roll.timeFrames.isNotEmpty() && prev != null) {
+                output += prev.copy(timeFrames = roll.timeFrames)
+            }
 
             val record =
                 VthoClaimedByBlock(
@@ -118,6 +124,7 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
                 )
 
             output += record
+            prev = record
         }
 
         return output
@@ -127,6 +134,7 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
      * @param records The list of `VthoClaimedByBlock` rows to store.
      * @notice Persist a batch of per-block claimed-VTHO records.
      */
+    @Transactional(rollbackFor = [Exception::class])
     open fun saveRecords(records: List<VthoClaimedByBlock>) {
         repository.saveAll(records)
     }
