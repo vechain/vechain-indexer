@@ -18,5 +18,6 @@ object BusinessEventParamFixtures {
             "STARGATE_NFT_CONTRACT" to "0x887d9102f0003f1724d8fd5d4fe95a11572fcd77",
             "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
             "STARGATE_CONTRACT" to "0x35ce14062457ef7817e10bbc3815317f5a07d695",
+            "RELAYER_REWARDS_POOL_CONTRACT" to "0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86",
         )
 }
