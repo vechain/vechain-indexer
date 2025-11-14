@@ -655,6 +655,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
+      name  = "RELAYER_REWARDS_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.RELAYER_REWARDS_POOL_CONTRACT
+    },
+    {
       name  = "VOTER_REWARDS_CONTRACT"
       value = each.value.indexer.business-event.substitutions.VOTER_REWARDS_CONTRACT
     },

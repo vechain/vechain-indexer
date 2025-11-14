@@ -201,6 +201,7 @@ enabled_nets:
           STARGATE_CONTRACT: '0xeed63cb62e33c2b087bea5804b5b6166319c0969'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0xef73a32f5f432cfe6482f877374c70d582469642'
+          RELAYER_REWARDS_POOL_CONTRACT: '0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

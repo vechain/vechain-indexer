@@ -811,6 +811,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.STARGATE_NFT_CONTRACT
     },
     {
+      name  = "RELAYER_REWARDS_POOL_CONTRACT"
+      value = each.value.indexer.business-event.substitutions.RELAYER_REWARDS_POOL_CONTRACT
+    },
+    {
       name  = "VEVOTE_CONTRACT"
       value = each.value.indexer.business-event.substitutions.VEVOTE_CONTRACT
     },
