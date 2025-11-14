@@ -307,6 +307,25 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldContractAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newContractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "UnallocatedFundsReceiverSet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "address",
         "name": "implementation",
@@ -427,6 +446,25 @@
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      }
+    ],
+    "name": "allFundsClaimed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -743,6 +781,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "roundIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "initializeV7",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "isQuadraticFundingDisabledForCurrentRound",
     "outputs": [
@@ -898,11 +954,11 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "treasury_",
+        "name": "_receiverAddress",
         "type": "address"
       }
     ],
-    "name": "setTreasuryAddress",
+    "name": "setUnallocatedFundsReceiverAddress",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -960,8 +1016,27 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "roundId",
+        "type": "uint256"
+      }
+    ],
+    "name": "unallocatedFunds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
-    "name": "treasury",
+    "name": "unallocatedFundsReceiver",
     "outputs": [
       {
         "internalType": "contract ITreasury",

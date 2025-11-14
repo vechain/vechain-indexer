@@ -37,11 +37,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "CheckpointUnorderedInsertion",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -333,6 +328,22 @@
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum GovernorTypes.ProposalType",
+        "name": "proposalType",
+        "type": "uint8"
+      }
+    ],
+    "name": "GovernorRestrictedProposal",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "proposer",
         "type": "address"
@@ -402,22 +413,6 @@
   {
     "inputs": [],
     "name": "QueueEmpty",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "bits",
-        "type": "uint8"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      }
-    ],
-    "name": "SafeCastOverflowedUintDowncast",
     "type": "error"
   },
   {
@@ -565,6 +560,19 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProposalCompleted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": true,
         "internalType": "uint256",
         "name": "proposalId",
@@ -676,7 +684,33 @@
         "type": "uint256"
       }
     ],
+    "name": "ProposalDevelopmentStateReset",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
     "name": "ProposalExecuted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ProposalInDevelopment",
     "type": "event"
   },
   {
@@ -1112,6 +1146,19 @@
   {
     "inputs": [],
     "name": "PROPOSAL_EXECUTOR_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PROPOSAL_STATE_MANAGER_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -1690,176 +1737,6 @@
   {
     "inputs": [
       {
-        "components": [
-          {
-            "internalType": "contract IVOT3",
-            "name": "vot3Token",
-            "type": "address"
-          },
-          {
-            "internalType": "contract TimelockControllerUpgradeable",
-            "name": "timelock",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IXAllocationVotingGovernor",
-            "name": "xAllocationVoting",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IB3TR",
-            "name": "b3tr",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "quorumPercentage",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "initialDepositThreshold",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "initialMinVotingDelay",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "initialVotingThreshold",
-            "type": "uint256"
-          },
-          {
-            "internalType": "contract IVoterRewards",
-            "name": "voterRewards",
-            "type": "address"
-          },
-          {
-            "internalType": "bool",
-            "name": "isFunctionRestrictionEnabled",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct GovernorTypes.InitializationData",
-        "name": "data",
-        "type": "tuple"
-      },
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "governorAdmin",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "pauser",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "contractsAddressManager",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "proposalExecutor",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "governorFunctionSettingsRoleAddress",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct GovernorTypes.InitializationRolesData",
-        "name": "rolesData",
-        "type": "tuple"
-      }
-    ],
-    "name": "initialize",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "contract IVeBetterPassport",
-        "name": "_veBetterPassport",
-        "type": "address"
-      }
-    ],
-    "name": "initializeV4",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "grantDepositThreshold",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "grantVotingThreshold",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "grantQuorum",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "grantDepositThresholdCap",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "standardDepositThresholdCap",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "standardGMWeight",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "grantGMWeight",
-            "type": "uint256"
-          },
-          {
-            "internalType": "contract IGalaxyMember",
-            "name": "galaxyMember",
-            "type": "address"
-          },
-          {
-            "internalType": "contract IGrantsManager",
-            "name": "grantsManager",
-            "type": "address"
-          }
-        ],
-        "internalType": "struct GovernorTypes.InitializationDataV7",
-        "name": "initializationDataV7",
-        "type": "tuple"
-      }
-    ],
-    "name": "initializeV7",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "target",
         "type": "address"
@@ -1911,6 +1788,32 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "markAsCompleted",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "markAsInDevelopment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -2622,6 +2525,19 @@
       }
     ],
     "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "proposalId",
+        "type": "uint256"
+      }
+    ],
+    "name": "resetDevelopmentState",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
