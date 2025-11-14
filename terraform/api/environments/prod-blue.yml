@@ -227,6 +227,7 @@ enabled_nets:
           STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
+          RELAYER_REWARDS_POOL_CONTRACT: '0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -426,6 +427,7 @@ enabled_nets:
           STARGATE_CONTRACT: '0x1e02b2953adefec225cf0ec49805b1146a4429c1'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x168fc982338b399598c10f8467bc66fb1b49aae7'
+          RELAYER_REWARDS_POOL_CONTRACT: '0x92b5a7484970d9b2ad981e8135ff14e6f996dc04'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
