@@ -29,22 +29,26 @@ open class AccountsConfig {
         )
 
     @Bean
-    open fun tokenRewardPruner(
+    open fun accountsPruner(
         accountsArchiveService: ArchiveService<Accounts, AccountsArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
     ): TargetedPruner<Accounts, AccountsArchive> =
         PrunerService(AccountsArchive::class, accountsArchiveService, prunerRemovalChunkSize)
 
     @Bean
-    open fun tokenRewardIndexer(
+    open fun accountsIndexer(
         thorClient: ThorClient,
         processor: AccountsProcessor,
+        accountsPruner: TargetedPruner<Accounts, AccountsArchive>,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.ACCOUNTS_INDEXER)
             .thorClient(thorClient)
+            .pruner(accountsPruner)
+            .prunerInterval(prunerInterval)
             .processor(processor)
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
