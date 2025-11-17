@@ -500,9 +500,9 @@ open class StargateController(
     }
 
     @TimeFrameEndpoint
-    @GetMapping("/vtho-generated/{timeFrame}")
+    @GetMapping("/vtho-generated/{period}")
     open fun getVthoGenerated(
-        @PathVariable timeFrame: String,
+        @PathVariable period: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) from: Long?,
         @RequestParam(required = false) to: Long?,
@@ -510,7 +510,7 @@ open class StargateController(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<TotalByPeriodDto> {
-        val tf = parseTimeFrame(timeFrame)
+        val tf = parseTimeFrame(period)
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         val slice =
@@ -535,9 +535,9 @@ open class StargateController(
     }
 
     @TimeFrameEndpoint
-    @GetMapping("/vtho-claimed/{timeFrame}")
+    @GetMapping("/vtho-claimed/{period}")
     open fun getVthoClaimed(
-        @PathVariable timeFrame: String,
+        @PathVariable period: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) from: Long?,
         @RequestParam(required = false) to: Long?,
@@ -545,7 +545,7 @@ open class StargateController(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<TotalByPeriodDto> {
-        val tf = parseTimeFrame(timeFrame)
+        val tf = parseTimeFrame(period)
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         val slice =
@@ -570,16 +570,16 @@ open class StargateController(
     }
 
     @TimeFrameEndpoint
-    @GetMapping("/vet-delegated/{timeFrame}")
+    @GetMapping("/vet-delegated/{period}")
     open fun getVETDelegatedTimeFrame(
-        @PathVariable timeFrame: String,
+        @PathVariable period: String,
         @RequestParam(required = false) from: Long?,
         @RequestParam(required = false) to: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<TotalByPeriodDto> {
-        val tf = parseTimeFrame(timeFrame)
+        val tf = parseTimeFrame(period)
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         val slice =
@@ -604,16 +604,16 @@ open class StargateController(
     }
 
     @TimeFrameEndpoint
-    @GetMapping("/vet-staked/{timeFrame}")
+    @GetMapping("/vet-staked/{period}")
     open fun getVETStakedTimeFrame(
-        @PathVariable timeFrame: String,
+        @PathVariable period: String,
         @RequestParam(required = false) from: Long?,
         @RequestParam(required = false) to: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<TotalByPeriodDto> {
-        val tf = parseTimeFrame(timeFrame)
+        val tf = parseTimeFrame(period)
         val pageable = PaginationUtils.toPageable(page, size, direction)
 
         val slice =
@@ -645,7 +645,7 @@ open class StargateController(
                 null
             } else {
                 throw IllegalArgumentException(
-                    "Invalid timeFrame '$input'. Allowed: BLOCK, ${TimeFrame.entries.joinToString()}"
+                    "Invalid period '$input'. Allowed: BLOCK, ${TimeFrame.entries.joinToString()}"
                 )
             }
         }
@@ -657,26 +657,29 @@ open class StargateController(
     summary = "Get Stargate metrics by time period",
     description =
         """
-        Retrieve Stargate statistics aggregated by a preset time period or by a custom date range.
+    Retrieve Stargate statistics aggregated by a preset time period, optionally filtered by a custom date range.
 
-        ### Modes:
-        **Preset Mode**  
-        Pass `{timeFrame}` as one of: `DAY`, `WEEK`, `MONTH`, `YEAR`, `ALL`, or `BLOCK`.
+    ### Modes:
+    **Preset Mode**  
+    Pass `{period}` as one of: `DAY`, `WEEK`, `MONTH`, `YEAR`, `ALL`, or `BLOCK`.
 
-        **Custom Date Range Mode**  
-        Pass `from` and/or `to` (Unix timestamps).  
-        When a custom range is provided, `{timeFrame}` is *ignored* for filtering.
+    • `DAY`, `WEEK`, `MONTH`, `YEAR` — return aggregated summaries per period  
+    • `BLOCK` — returns raw per-block totals  
+    • `ALL` — returns a single all-time summary
 
-        ### Pagination:
-        Supports `page`, `size`, and `direction`.
+    ### Custom Date Range Mode
+    Pass `from` and/or `to` (Unix timestamps).
 
-        ### Special Notes:
-        • `BLOCK` returns raw per-block totals.  
-        • `ALL` always returns a single rolled-up document.  
-        """,
+    • The `{period}` still controls the aggregation  
+    • `from`/`to` simply filter which summarized records are returned  
+      (e.g., DAY summaries within the range)
+
+    ### Pagination:
+    Supports `page`, `size`, and `direction`.
+    """,
 )
 @Parameter(
-    name = "timeFrame",
+    name = "period",
     `in` = ParameterIn.PATH,
     description = "Preset aggregation period",
     schema =
