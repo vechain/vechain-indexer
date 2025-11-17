@@ -19,9 +19,13 @@ interface VthoGeneratedByBlockRepository :
     override fun findByTimeFramesContainsAndBlockTimestampAfter(
         timeFrame: TimeFrame,
         blockTimestamp: Long,
-    ): List<VthoGeneratedByBlock>
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
 
-    override fun findByBlockTimestampAfter(blockTimestamp: Long): List<VthoGeneratedByBlock>
+    override fun findByBlockTimestampAfter(
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
 
     @Aggregation(
         pipeline =
@@ -32,4 +36,50 @@ interface VthoGeneratedByBlockRepository :
             ]
     )
     override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VthoGeneratedByBlock?
+
+    override fun findByTimeFramesContainsAndBlockTimestampBetween(
+        timeFrame: TimeFrame,
+        from: Long,
+        to: Long,
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
+
+    override fun findByTimeFramesContainsAndBlockTimestampBefore(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
+
+    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
+    override fun getLatestRecord(): VthoGeneratedByBlock?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
+                "{ '\$sort': { 'blockTimestamp': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoGeneratedByBlock?
+
+    override fun findAll(pageable: Pageable): Slice<VthoGeneratedByBlock>
+
+    override fun findByBlockTimestampBefore(
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
+
+    override fun findByBlockTimestampBetween(
+        from: Long,
+        to: Long,
+        pageable: Pageable,
+    ): Slice<VthoGeneratedByBlock>
+
+    fun findByTimeFramesContainsAndBlockTimestampAfter(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
+    ): List<VthoGeneratedByBlock>
+
+    fun findByBlockTimestampAfter(blockTimestamp: Long): List<VthoGeneratedByBlock>
 }
