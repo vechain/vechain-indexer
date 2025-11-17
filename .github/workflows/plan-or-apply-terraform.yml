@@ -163,6 +163,7 @@ jobs:
             echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
           else
             echo "Skipping image tagging - one or more ECR repositories not found"
+            exit 1
           fi
 
       # - name: Slack Notification
