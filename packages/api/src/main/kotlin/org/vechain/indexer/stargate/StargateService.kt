@@ -10,6 +10,8 @@ import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
+import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
+import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -473,6 +475,120 @@ open class StargateService(
         return SliceImpl(adjustedContent, pageable, slice.hasNext())
     }
 
+    open fun <T : TimeFrameDocument> getTimeFrameDataRange(
+        from: Long?,
+        to: Long?,
+        timeFrame: TimeFrame?,
+        pageable: Pageable,
+        repository: TimeFrameRepo<T>,
+    ): Slice<TotalByPeriodDto> {
+        if (timeFrame == TimeFrame.ALL) {
+            val time = to ?: from
+            val latest =
+                repository.findLatestBeforeOrAtBlockTimestamp(time!!)
+                    ?: return SliceImpl(emptyList(), pageable, false)
+
+            val dto = normalizeTimeFrameAs(TimeFrame.DAY, latest)
+
+            return SliceImpl(listOf(dto), pageable, false) // only one result
+        }
+
+        val slice: Slice<T> =
+            when {
+                from != null && to != null ->
+                    if (timeFrame == null) {
+                        repository.findByBlockTimestampBetween(from, to, pageable)
+                    } else {
+                        repository.findByTimeFramesContainsAndBlockTimestampBetween(
+                            timeFrame,
+                            from,
+                            to,
+                            pageable,
+                        )
+                    }
+                from != null ->
+                    if (timeFrame == null) {
+                        repository.findByBlockTimestampAfter(from, pageable)
+                    } else {
+                        repository.findByTimeFramesContainsAndBlockTimestampAfter(
+                            timeFrame,
+                            from,
+                            pageable,
+                        )
+                    }
+
+                to != null ->
+                    if (timeFrame == null) {
+                        repository.findByBlockTimestampBefore(to, pageable)
+                    } else {
+                        repository.findByTimeFramesContainsAndBlockTimestampBefore(
+                            timeFrame,
+                            to,
+                            pageable,
+                        )
+                    }
+
+                else -> SliceImpl(emptyList(), pageable, false)
+            }
+
+        val mappedSlice = slice.map { normalizeTimeFrameAs(timeFrame, it) }
+
+        return SliceImpl(mappedSlice.content, pageable, slice.hasNext())
+    }
+
+    open fun <T : TimeFrameDocument> getTimeFrameData(
+        timeFrame: TimeFrame?,
+        pageable: Pageable,
+        direction: String? = "DESC",
+        repository: TimeFrameRepo<T>,
+    ): Slice<TotalByPeriodDto> {
+        if (timeFrame == TimeFrame.ALL) {
+            val latest =
+                repository.getLatestRecord() ?: return SliceImpl(emptyList(), pageable, false)
+
+            val dto = normalizeTimeFrameAs(TimeFrame.DAY, latest)
+
+            return SliceImpl(listOf(dto), pageable, false) // only one result
+        }
+
+        val slice =
+            if (timeFrame == null) {
+                repository.findAll(pageable)
+            } else {
+                repository.findByTimeFramesContains(timeFrame, pageable)
+            }
+
+        val isDesc = direction.isNullOrBlank() || direction.equals("DESC", ignoreCase = true)
+
+        val shouldInsertLatest =
+            if (isDesc) {
+                pageable.pageNumber == 0 // prepend
+            } else {
+                !slice.hasNext() // append
+            }
+
+        if (!shouldInsertLatest) {
+            return slice.map { normalizeTimeFrameAs(timeFrame, it) }
+        }
+
+        val latest =
+            repository.getLatestRecord() ?: return slice.map { normalizeTimeFrameAs(timeFrame, it) }
+
+        val latestNormalized = normalizeTimeFrameAs(timeFrame, latest)
+        val sliceNormalized = slice.content.map { normalizeTimeFrameAs(timeFrame, it) }
+
+        val merged =
+            if (isDesc) {
+                listOf(latestNormalized) + sliceNormalized // newest first
+            } else {
+                sliceNormalized + latestNormalized // oldest first
+            }
+
+        val hasNext = slice.hasNext()
+
+        return SliceImpl(merged, pageable, hasNext)
+    }
+
     private fun normalizeAllAs(allDoc: TokenReward, target: RewardPeriod): TokenReward {
         val normalized =
             when (target) {
@@ -493,6 +609,32 @@ open class StargateService(
             monthReward = null,
             yearReward = null,
             cycleReward = null,
+        )
+    }
+
+    private fun normalizeTimeFrameAs(target: TimeFrame?, doc: TimeFrameDocument): TotalByPeriodDto {
+        val normalized =
+            when (target) {
+                TimeFrame.DAY -> doc.dayTotal
+                TimeFrame.WEEK -> doc.weekTotal
+                TimeFrame.MONTH -> doc.monthTotal
+                TimeFrame.YEAR -> doc.yearTotal
+                null -> doc.blockTotal
+                else -> null
+            } ?: BigInteger.ZERO
+
+        val timeFrame = target?.name ?: "BLOCK"
+
+        return TotalByPeriodDto(
+            doc.blockId,
+            doc.blockNumber,
+            doc.blockTimestamp,
+            timeFrame = timeFrame,
+            total = normalized,
+            dayOfMonth = doc.dayOfMonth,
+            weekOfYear = doc.weekOfYear,
+            month = doc.month,
+            year = doc.year,
         )
     }
 }
