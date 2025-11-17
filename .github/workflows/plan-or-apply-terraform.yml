@@ -137,7 +137,7 @@ jobs:
         run: terraform apply "apply.plan"
 
       - name: Tag deployed image in ECR to protect from lifecycle expiration
-        if: steps.apply.outcome == 'success' && inputs.mainnet_version && inputs.mainnet_version != 'latest'
+        if: steps.apply.outcome == 'success' && (env.ENVIRONMENT == 'prod-blue' || env.ENVIRONMENT == 'prod-green')
         run: |
           PROTECTION_TAG="${{ env.ENVIRONMENT }}"
 
