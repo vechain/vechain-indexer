@@ -136,6 +136,36 @@ jobs:
         id: apply
         run: terraform apply "apply.plan"
 
+      - name: Tag deployed image in ECR to protect from lifecycle expiration
+        if: steps.apply.outcome == 'success' && (env.ENVIRONMENT == 'prod-blue' || env.ENVIRONMENT == 'prod-green')
+        run: |
+          PROTECTION_TAG="${{ env.ENVIRONMENT }}"
+
+          # Get ECR repository URI
+          ECR_REPO_URI_API=$(aws ecr describe-repositories --repository-names "veworld/api" --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
+          ECR_REPO_URI_INDEXER=$(aws ecr describe-repositories --repository-names "veworld/indexer" --query 'repositories[0].repositoryUri' --output text 2>/dev/null || echo "")
+
+          if [ -n "$ECR_REPO_URI_API" ] && [ -n "$ECR_REPO_URI_INDEXER" ]; then
+            echo "Tagging api image ${{ inputs.mainnet_version }} with protection tag: ${PROTECTION_TAG}-mainnet"
+            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/api" --image-ids imageTag=${{ inputs.mainnet_version }} --query 'images[0].imageManifest' --output text)
+            aws ecr put-image --repository-name "veworld/api" --image-tag "${PROTECTION_TAG}-mainnet" --image-manifest "$MANIFEST"
+            echo "Tagging api image ${{ inputs.testnet_version }} with protection tag: ${PROTECTION_TAG}-testnet"
+            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/api" --image-ids imageTag=${{ inputs.testnet_version }} --query 'images[0].imageManifest' --output text)
+            aws ecr put-image --repository-name "veworld/api" --image-tag "${PROTECTION_TAG}-testnet" --image-manifest "$MANIFEST"
+            
+            echo "Tagging indexer image ${{ inputs.mainnet_version }} with protection tag: ${PROTECTION_TAG}-mainnet"
+            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/indexer" --image-ids imageTag=${{ inputs.mainnet_version }} --query 'images[0].imageManifest' --output text)
+            aws ecr put-image --repository-name "veworld/indexer" --image-tag "${PROTECTION_TAG}-mainnet" --image-manifest "$MANIFEST"
+            echo "Tagging indexer image ${{ inputs.testnet_version }} with protection tag: ${PROTECTION_TAG}-testnet"
+            MANIFEST=$(aws ecr batch-get-image --repository-name "veworld/indexer" --image-ids imageTag=${{ inputs.testnet_version }} --query 'images[0].imageManifest' --output text)
+            aws ecr put-image --repository-name "veworld/indexer" --image-tag "${PROTECTION_TAG}-testnet" --image-manifest "$MANIFEST"
+          
+            echo "Successfully tagged images with protection tag: ${PROTECTION_TAG}"
+          else
+            echo "Skipping image tagging - one or more ECR repositories not found"
+            exit 1
+          fi
+
       # - name: Slack Notification
       #   if: steps.apply.outcome == 'success'
       #   uses: rtCamp/action-slack-notify@v2
