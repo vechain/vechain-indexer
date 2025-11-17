@@ -18,3 +18,15 @@ data class TotalByBlockDto(
     val total: BigInteger,
     val byLevel: Map<TokenLevel, BigInteger>,
 )
+
+data class TotalByPeriodDto(
+    val blockId: String,
+    val blockNumber: Long,
+    val blockTimestamp: Long,
+    val timeFrame: String,
+    val total: BigInteger,
+    val dayOfMonth: Long,
+    val weekOfYear: Long,
+    val month: Long,
+    val year: Long,
+)

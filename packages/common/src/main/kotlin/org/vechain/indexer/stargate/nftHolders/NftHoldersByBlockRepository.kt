@@ -29,7 +29,57 @@ interface NftHoldersByBlockRepository :
     override fun findByTimeFramesContainsAndBlockTimestampAfter(
         timeFrame: TimeFrame,
         blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    override fun findByBlockTimestampAfter(
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    override fun findByTimeFramesContainsAndBlockTimestampBetween(
+        timeFrame: TimeFrame,
+        from: Long,
+        to: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    override fun findByTimeFramesContainsAndBlockTimestampBefore(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
+    override fun getLatestRecord(): NftHoldersByBlock?
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
+                "{ '\$sort': { 'blockTimestamp': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
+    override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): NftHoldersByBlock?
+
+    override fun findAll(pageable: Pageable): Slice<NftHoldersByBlock>
+
+    override fun findByBlockTimestampBefore(
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    override fun findByBlockTimestampBetween(
+        from: Long,
+        to: Long,
+        pageable: Pageable,
+    ): Slice<NftHoldersByBlock>
+
+    fun findByTimeFramesContainsAndBlockTimestampAfter(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
     ): List<NftHoldersByBlock>
 
-    override fun findByBlockTimestampAfter(blockTimestamp: Long): List<NftHoldersByBlock>
+    fun findByBlockTimestampAfter(blockTimestamp: Long): List<NftHoldersByBlock>
 }

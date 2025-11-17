@@ -13,7 +13,31 @@ interface TimeFrameRepo<T : IndexedDocument> {
     fun findByTimeFramesContainsAndBlockTimestampAfter(
         timeFrame: TimeFrame,
         blockTimestamp: Long,
-    ): List<T>
+        pageable: Pageable,
+    ): Slice<T>
 
-    fun findByBlockTimestampAfter(blockTimestamp: Long): List<T>
+    fun findByTimeFramesContainsAndBlockTimestampBetween(
+        timeFrame: TimeFrame,
+        from: Long,
+        to: Long,
+        pageable: Pageable,
+    ): Slice<T>
+
+    fun findByTimeFramesContainsAndBlockTimestampBefore(
+        timeFrame: TimeFrame,
+        blockTimestamp: Long,
+        pageable: Pageable,
+    ): Slice<T>
+
+    fun findByBlockTimestampAfter(blockTimestamp: Long, pageable: Pageable): Slice<T>
+
+    fun getLatestRecord(): T?
+
+    fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): T?
+
+    fun findAll(pageable: Pageable): Slice<T>
+
+    fun findByBlockTimestampBefore(blockTimestamp: Long, pageable: Pageable): Slice<T>
+
+    fun findByBlockTimestampBetween(from: Long, to: Long, pageable: Pageable): Slice<T>
 }

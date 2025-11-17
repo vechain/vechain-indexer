@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
@@ -25,6 +26,10 @@ import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
+import org.vechain.indexer.stargate.vetDelegated.VetDelegatedByBlockRepository
+import org.vechain.indexer.stargate.vetStaked.VetStakedByBlockRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
+import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
@@ -40,7 +45,13 @@ import org.vechain.indexer.validation.ValidTokenLevel
 @Validated
 @RestController
 @RequestMapping(STARGATE_PATH)
-open class StargateController(private val stargateService: StargateService) {
+open class StargateController(
+    private val stargateService: StargateService,
+    private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
+    private val vetStakedByBlockRepository: VetStakedByBlockRepository,
+    private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
+    private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
+) {
     @GetMapping("/total-vtho-claimed")
     @Operation(summary = "Get total VTHO claimed by Stargate users")
     @BlockNumberParameter(
@@ -450,6 +461,12 @@ open class StargateController(private val stargateService: StargateService) {
     """,
     )
     @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "periodType",
+        description = "Reward period to filter by. Options: CYCLE, DAY, WEEK, MONTH, YEAR, ALL.",
+        required = false,
+    )
+    @Parameter(
         `in` = ParameterIn.PATH,
         name = "tokenId",
         schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
@@ -464,12 +481,6 @@ open class StargateController(private val stargateService: StargateService) {
         description = "Optional query parameter to filter by validator address",
         required = false,
         example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "periodType",
-        description = "Reward period to filter by. Options: CYCLE, DAY, WEEK, MONTH, YEAR, ALL.",
-        required = false,
     )
     @CommonApiResponses
     open fun getStargateTokenRewards(
@@ -487,4 +498,203 @@ open class StargateController(private val stargateService: StargateService) {
             stargateService.getRewards(tokenId, validator?.value?.lowercase(), periodType, pageable)
         return paginatedResponse(rewards)
     }
+
+    @TimeFrameEndpoint
+    @GetMapping("/vtho-generated/{period}")
+    open fun getVthoGenerated(
+        @PathVariable period: String,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = vthoGeneratedByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = vthoGeneratedByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    @TimeFrameEndpoint
+    @GetMapping("/vtho-claimed/{period}")
+    open fun getVthoClaimed(
+        @PathVariable period: String,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = vthoClaimedByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = vthoClaimedByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    @TimeFrameEndpoint
+    @GetMapping("/vet-delegated/{period}")
+    open fun getVETDelegatedTimeFrame(
+        @PathVariable period: String,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = vetDelegatedByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = vetDelegatedByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    @TimeFrameEndpoint
+    @GetMapping("/vet-staked/{period}")
+    open fun getVETStakedTimeFrame(
+        @PathVariable period: String,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = vetStakedByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = vetStakedByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    private fun parseTimeFrame(input: String): TimeFrame? =
+        try {
+            TimeFrame.valueOf(input.uppercase())
+        } catch (e: Exception) {
+            if (input.equals("BLOCK", ignoreCase = true)) {
+                null
+            } else {
+                throw IllegalArgumentException(
+                    "Invalid period '$input'. Allowed: BLOCK, ${TimeFrame.entries.joinToString()}"
+                )
+            }
+        }
 }
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@Operation(
+    summary = "Get Stargate metrics by time period",
+    description =
+        """
+    Retrieve Stargate statistics aggregated by a preset time period, optionally filtered by a custom date range.
+
+    ### Modes:
+    **Preset Mode**  
+    Pass `{period}` as one of: `DAY`, `WEEK`, `MONTH`, `YEAR`, `ALL`, or `BLOCK`.
+
+    • `DAY`, `WEEK`, `MONTH`, `YEAR` — return aggregated summaries per period  
+    • `BLOCK` — returns raw per-block totals  
+    • `ALL` — returns a single all-time summary
+
+    ### Custom Date Range Mode
+    Pass `from` and/or `to` (Unix timestamps).
+
+    • The `{period}` still controls the aggregation  
+    • `from`/`to` simply filter which summarized records are returned  
+      (e.g., DAY summaries within the range)
+
+    ### Pagination:
+    Supports `page`, `size`, and `direction`.
+    """,
+)
+@Parameter(
+    name = "period",
+    `in` = ParameterIn.PATH,
+    description = "Preset aggregation period",
+    schema =
+        Schema(type = "string", allowableValues = ["DAY", "WEEK", "MONTH", "YEAR", "ALL", "BLOCK"]),
+    required = true,
+)
+@Parameter(
+    name = "from",
+    `in` = ParameterIn.QUERY,
+    description = "Optional start of custom date range (Unix seconds)",
+)
+@Parameter(
+    name = "to",
+    `in` = ParameterIn.QUERY,
+    description = "Optional end of custom date range (Unix seconds)",
+)
+@CommonApiResponses
+annotation class TimeFrameEndpoint
