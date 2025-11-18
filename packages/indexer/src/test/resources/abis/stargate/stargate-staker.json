@@ -48,27 +48,6 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "requiredAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "providedAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "BoostAmountTooLow",
-    "type": "error"
-  },
-  {
     "inputs": [],
     "name": "CheckpointUnorderedInsertion",
     "type": "error"
@@ -76,17 +55,6 @@
   {
     "inputs": [],
     "name": "DelegationExitAlreadyRequested",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "DelegationIsActive",
     "type": "error"
   },
   {
@@ -132,16 +100,6 @@
     "type": "error"
   },
   {
-    "inputs": [],
-    "name": "FailedToMoveVETFromStargateNFT",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "FailedToTransferVETToStargateNFT",
-    "type": "error"
-  },
-  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -165,44 +123,7 @@
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "requiredAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "providedAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "InsufficientVETAmount",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "requiredAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "InsufficientVTHOAmount",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "enum IStargateStaker.DelegationStatus",
+        "internalType": "enum IStargate.DelegationStatus",
         "name": "status",
         "type": "uint8"
       }
@@ -232,25 +153,8 @@
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "NFTNotDelegated",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "NoVETToMove",
+    "inputs": [],
+    "name": "MaxClaimablePeriodsExceeded",
     "type": "error"
   },
   {
@@ -325,17 +229,6 @@
       }
     ],
     "name": "TokenAlreadyDelegated",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "TokenAlreadyMatured",
     "type": "error"
   },
   {
@@ -435,9 +328,21 @@
       },
       {
         "indexed": true,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
         "internalType": "uint256",
         "name": "delegationId",
         "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint48",
+        "name": "exitBlock",
+        "type": "uint48"
       }
     ],
     "name": "DelegationExitRequested",
@@ -527,6 +432,75 @@
       }
     ],
     "name": "DelegationRewardsClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "delegationId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "DelegationWithdrawn",
+    "type": "event"
+  },
+
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "validator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "delegationId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "levelId",
+        "type": "uint8"
+      }
+    ],
+    "name": "DelegationWithdrawn",
     "type": "event"
   },
   {
@@ -684,6 +658,19 @@
   },
   {
     "inputs": [],
+    "name": "MAX_CLAIMABLE_PERIODS",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "PROB_MULTIPLIER_NODE",
     "outputs": [
       {
@@ -768,44 +755,7 @@
         "type": "uint256"
       }
     ],
-    "name": "accumulatedRewards",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
     "name": "claimRewards",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "_period",
-        "type": "uint32"
-      }
-    ],
-    "name": "claimRewardsForPeriod",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -862,11 +812,11 @@
       },
       {
         "internalType": "uint32",
-        "name": "_period",
+        "name": "_batch",
         "type": "uint32"
       }
     ],
-    "name": "claimableRewardsForPeriod",
+    "name": "claimableRewards",
     "outputs": [
       {
         "internalType": "uint256",
@@ -912,7 +862,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_delegationId",
+        "name": "_tokenId",
         "type": "uint256"
       }
     ],
@@ -922,11 +872,6 @@
         "components": [
           {
             "internalType": "uint256",
-            "name": "tokenId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
             "name": "delegationId",
             "type": "uint256"
           },
@@ -961,78 +906,12 @@
             "type": "bool"
           },
           {
-            "internalType": "enum IStargateStaker.DelegationStatus",
+            "internalType": "enum IStargate.DelegationStatus",
             "name": "status",
             "type": "uint8"
           }
         ],
-        "internalType": "struct IStargateStaker.Delegation",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDelegationDetailsOfToken",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "tokenId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "delegationId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "validator",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "stake",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint8",
-            "name": "probabilityMultiplier",
-            "type": "uint8"
-          },
-          {
-            "internalType": "uint32",
-            "name": "startPeriod",
-            "type": "uint32"
-          },
-          {
-            "internalType": "uint32",
-            "name": "endPeriod",
-            "type": "uint32"
-          },
-          {
-            "internalType": "bool",
-            "name": "isLocked",
-            "type": "bool"
-          },
-          {
-            "internalType": "enum IStargateStaker.DelegationStatus",
-            "name": "status",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct IStargateStaker.Delegation",
+        "internalType": "struct IStargate.Delegation",
         "name": "",
         "type": "tuple"
       }
@@ -1063,33 +942,14 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "_delegationId",
+        "name": "_tokenId",
         "type": "uint256"
       }
     ],
     "name": "getDelegationStatus",
     "outputs": [
       {
-        "internalType": "enum IStargateStaker.DelegationStatus",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_tokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "getDelegationStatusOfToken",
-    "outputs": [
-      {
-        "internalType": "enum IStargateStaker.DelegationStatus",
+        "internalType": "enum IStargate.DelegationStatus",
         "name": "",
         "type": "uint8"
       }
@@ -1240,7 +1100,7 @@
             "type": "address"
           }
         ],
-        "internalType": "struct StargateStaker.InitializeV1Params",
+        "internalType": "struct Stargate.InitializeV1Params",
         "name": "params",
         "type": "tuple"
       }
@@ -1248,6 +1108,25 @@
     "name": "initialize",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "lockedRewards",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
