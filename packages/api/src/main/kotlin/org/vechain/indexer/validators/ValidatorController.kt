@@ -3,10 +3,7 @@ package org.vechain.indexer.validator
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Slice
@@ -16,7 +13,6 @@ import org.vechain.indexer.constants.VALIDATORS_PATH
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
-import org.vechain.indexer.exception.ExceptionResponse
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -54,23 +50,6 @@ open class ValidatorController(
             - `page` and `size`: Controls pagination
             - `direction`: Either `asc` or `desc`
             """,
-    )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Validation errors occurred",
-                    content =
-                        [
-                            Content(
-                                mediaType = "application/json",
-                                schema = Schema(implementation = ExceptionResponse::class),
-                            )
-                        ],
-                ),
-            ]
     )
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -122,6 +101,7 @@ open class ValidatorController(
                     ],
             ),
     )
+    @CommonApiResponses
     @PaginationParameters
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
@@ -163,23 +143,6 @@ open class ValidatorController(
             You can also sort and paginate.
             """,
     )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Validation errors occurred",
-                    content =
-                        [
-                            Content(
-                                mediaType = "application/json",
-                                schema = Schema(implementation = ExceptionResponse::class),
-                            )
-                        ],
-                ),
-            ]
-    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "validator",
@@ -204,6 +167,7 @@ open class ValidatorController(
         required = false,
     )
     @PaginationParameters
+    @CommonApiResponses
     open fun getDelegations(
         @RequestParam(required = false) validator: String?,
         @RequestParam(required = false) tokenId: String?,
@@ -238,23 +202,6 @@ open class ValidatorController(
         description =
             "Returns the block VTHO rewards generated for the specified block number or up to the latest block. " +
                 "You can optionally filter by a specific validator.",
-    )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Validation errors occurred",
-                    content =
-                        [
-                            Content(
-                                mediaType = "application/json",
-                                schema = Schema(implementation = ExceptionResponse::class),
-                            )
-                        ],
-                ),
-            ]
     )
     @BlockNumberParameter(
         description =
@@ -296,24 +243,6 @@ open class ValidatorController(
             "Returns a time series of VTHO rewards between the given timestamps. " +
                 "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
                 "You can filter by validator address.",
-    )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Validation errors occurred",
-                    content =
-                        [
-                            Content(
-                                mediaType = "application/json",
-                                schema = Schema(implementation = ExceptionResponse::class),
-                            ),
-                            Content(mediaType = "text/html", schema = Schema(type = "string")),
-                        ],
-                ),
-            ]
     )
     @Parameter(
         `in` = ParameterIn.PATH,
@@ -359,23 +288,6 @@ open class ValidatorController(
                 "startBlock must be provided. " +
                 "If no endBlock is provided, endBlock defaults to best/latest block.",
     )
-    @ApiResponses(
-        value =
-            [
-                ApiResponse(responseCode = "200", description = "Success"),
-                ApiResponse(
-                    responseCode = "400",
-                    description = "Validation errors occurred",
-                    content =
-                        [
-                            Content(
-                                mediaType = "application/json",
-                                schema = Schema(implementation = ExceptionResponse::class),
-                            )
-                        ],
-                ),
-            ]
-    )
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "validator",
@@ -398,6 +310,7 @@ open class ValidatorController(
         description = "End block (inclusive) defaults to best/latest block if not provided",
         required = false,
     )
+    @CommonApiResponses
     open fun getMissedBlocksPercentage(
         @PathVariable @ValidAddress validator: Address,
         @RequestParam(required = true) startBlock: Long,
