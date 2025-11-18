@@ -23,8 +23,16 @@ open class ProposalService(
      *
      * @param proposalId Proposal ID to filter by.
      */
-    open fun getProposalResult(proposalId: String): List<ProposalResult> =
-        proposalResultRepository.findByProposalId(proposalId)
+    open fun getProposalResult(proposalId: String): ProposalResult? =
+        proposalResultRepository.findById(proposalId).orElse(null)
+
+    /**
+     * Get all proposal results paginated.
+     *
+     * @param pageable Pagination information.
+     */
+    fun getAllProposalResults(pageable: Pageable): Slice<ProposalResult> =
+        proposalResultRepository.findAll(pageable)
 
     /**
      * Get comments for a proposal.
