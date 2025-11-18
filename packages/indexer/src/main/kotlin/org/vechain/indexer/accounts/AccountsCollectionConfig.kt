@@ -52,7 +52,12 @@ open class AccountsCollectionConfig(
         ensureIndexes(
             listOf(
                 "blockTimestamp_-1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC)
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                "timeFrame_1_blockTimestamp_-1" to
+                    Index()
+                        .on(Accounts::timeFrame.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
+                "blockNumber_1" to Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
             )
         )
     }

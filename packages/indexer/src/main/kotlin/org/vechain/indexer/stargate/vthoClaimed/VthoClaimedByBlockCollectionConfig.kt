@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-block")
@@ -41,7 +42,11 @@ open class VthoClaimedByBlockCollectionConfig(
         ensureIndexes(
             listOf(
                 "blockTimestamp_1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC)
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "timeFrames_1_blockTimestamp_1" to
+                    Index()
+                        .on(TimeFrameDocument::timeFrames.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
             )
         )
     }

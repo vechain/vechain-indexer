@@ -41,7 +41,11 @@ open class NftHoldersByBlockCollectionConfig(
         ensureIndexes(
             listOf(
                 "blockTimestamp_1" to
-                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC)
+                    Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "timeFrames_1_blockTimestamp_1" to
+                    Index()
+                        .on(NftHoldersByBlock::timeFrames.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
             )
         )
     }
