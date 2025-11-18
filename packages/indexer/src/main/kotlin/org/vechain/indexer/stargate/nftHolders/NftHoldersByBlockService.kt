@@ -104,7 +104,7 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
                     weekOfYear = roll.week,
                     month = roll.month,
                     year = roll.year,
-                    timeFrames = roll.timeFrames,
+                    timeFrames = emptyList(),
                     blockTotal = BigInteger.valueOf(blockDelta),
                     dayTotal = roll.dayTotal,
                     weekTotal = roll.weekTotal,
