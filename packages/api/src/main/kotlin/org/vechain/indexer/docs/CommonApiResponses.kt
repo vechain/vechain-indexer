@@ -24,6 +24,7 @@ import org.vechain.indexer.exception.ExceptionResponse
                             mediaType = "application/problem+json",
                             schema = Schema(implementation = ExceptionResponse::class),
                         ),
+                        Content(mediaType = "text/html", schema = Schema(type = "string")),
                     ],
             ),
             ApiResponse(
