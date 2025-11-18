@@ -134,7 +134,7 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                     weekOfYear = roll.week,
                     month = roll.month,
                     year = roll.year,
-                    timeFrames = roll.timeFrames,
+                    timeFrames = emptyList(),
                     blockTotal = blockDelta,
                     dayTotal = roll.dayTotal,
                     weekTotal = roll.weekTotal,

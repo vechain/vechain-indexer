@@ -123,7 +123,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                     weekOfYear = roll.week,
                     month = roll.month,
                     year = roll.year,
-                    timeFrames = roll.timeFrames,
+                    timeFrames = emptyList(),
                     blockTotal = blockDelta,
                     dayTotal = roll.dayTotal,
                     weekTotal = roll.weekTotal,

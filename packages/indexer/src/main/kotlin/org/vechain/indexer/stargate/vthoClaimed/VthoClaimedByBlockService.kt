@@ -113,8 +113,7 @@ open class VthoClaimedByBlockService(private val repository: VthoClaimedByBlockR
                     weekOfYear = roll.week,
                     month = roll.month,
                     year = roll.year,
-                    // Rollover timeframes
-                    timeFrames = roll.timeFrames,
+                    timeFrames = emptyList(),
                     // Period totals
                     blockTotal = deltaLatest,
                     dayTotal = roll.dayTotal,

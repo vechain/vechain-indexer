@@ -173,8 +173,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 weekOfYear = roll.week,
                 month = roll.month,
                 year = roll.year,
-                // which periods rolled over
-                timeFrames = roll.timeFrames,
+                timeFrames = emptyList(),
                 // period totals
                 blockTotal = totals.delta,
                 dayTotal = roll.dayTotal,
