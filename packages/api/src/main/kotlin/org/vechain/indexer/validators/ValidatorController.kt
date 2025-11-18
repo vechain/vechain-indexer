@@ -239,6 +239,23 @@ open class ValidatorController(
             "Returns the block VTHO rewards generated for the specified block number or up to the latest block. " +
                 "You can optionally filter by a specific validator.",
     )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "Validation errors occurred",
+                    content =
+                        [
+                            Content(
+                                mediaType = "application/json",
+                                schema = Schema(implementation = ExceptionResponse::class),
+                            )
+                        ],
+                ),
+            ]
+    )
     @BlockNumberParameter(
         description =
             "Optional block number. If provided, returns the total VTHO rewards as of this block."
@@ -279,6 +296,24 @@ open class ValidatorController(
             "Returns a time series of VTHO rewards between the given timestamps. " +
                 "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
                 "You can filter by validator address.",
+    )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "Validation errors occurred",
+                    content =
+                        [
+                            Content(
+                                mediaType = "application/json",
+                                schema = Schema(implementation = ExceptionResponse::class),
+                            ),
+                            Content(mediaType = "text/html", schema = Schema(type = "string")),
+                        ],
+                ),
+            ]
     )
     @Parameter(
         `in` = ParameterIn.PATH,
@@ -323,6 +358,23 @@ open class ValidatorController(
             "Calculates percentage of missed blocks for a validator in a block range. " +
                 "startBlock must be provided. " +
                 "If no endBlock is provided, endBlock defaults to best/latest block.",
+    )
+    @ApiResponses(
+        value =
+            [
+                ApiResponse(responseCode = "200", description = "Success"),
+                ApiResponse(
+                    responseCode = "400",
+                    description = "Validation errors occurred",
+                    content =
+                        [
+                            Content(
+                                mediaType = "application/json",
+                                schema = Schema(implementation = ExceptionResponse::class),
+                            )
+                        ],
+                ),
+            ]
     )
     @Parameter(
         `in` = ParameterIn.PATH,
