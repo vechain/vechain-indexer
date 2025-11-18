@@ -76,6 +76,12 @@ open class ValidatorBlockCollectionConfig(
                         .on(ValidatorBlock::status.name, Sort.Direction.ASC)
                         .on(ValidatorBlock::validator.name, Sort.Direction.ASC)
                         .on(IndexedDocument::blockTimestamp.name, Sort.Direction.ASC),
+                "blockNumber_-1" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
+                "status_1_blockNumber_-1" to
+                    Index()
+                        .on(ValidatorBlock::status.name, Sort.Direction.ASC)
+                        .on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }

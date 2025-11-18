@@ -24,6 +24,7 @@ import org.vechain.indexer.validation.ValidAddress
 )
 @Validated
 @RestController
+@Deprecated("This api is deprecated post hayabusa release")
 @RequestMapping("$API_PATH/authority-endorsers")
 open class AmnController(private val amnApiEndorserService: AmnApiEndorserService) {
     @GetMapping("endorsers/{user}")
