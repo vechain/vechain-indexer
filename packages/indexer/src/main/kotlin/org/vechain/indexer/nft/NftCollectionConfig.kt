@@ -49,38 +49,39 @@ open class NftCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "nft_blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "nft_blockNumber_-1" to
+                    Index().on(IndexedNft::blockNumber.name, Sort.Direction.DESC),
                 "nft_contractAddress_1_tokenId_1" to
                     Index()
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("tokenId", Sort.Direction.DESC)
+                        .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedNft::tokenId.name, Sort.Direction.DESC)
                         .unique(),
                 "nft_owner_1_blockNumber_-1_txId_-1__id_-1" to
                     Index()
-                        .on("owner", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
+                        .on(IndexedNft::owner.name, Sort.Direction.ASC)
+                        .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedNft::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1" to
                     Index()
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
+                        .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedNft::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1" to
                     Index()
-                        .on("owner", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
+                        .on(IndexedNft::owner.name, Sort.Direction.ASC)
+                        .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedNft::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1" to
                     Index()
-                        .on("owner", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("tokenId", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
-                        .on("txId", Sort.Direction.DESC)
+                        .on(IndexedNft::owner.name, Sort.Direction.ASC)
+                        .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedNft::tokenId.name, Sort.Direction.ASC)
+                        .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
+                        .on(IndexedNft::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
             )
         )

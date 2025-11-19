@@ -42,70 +42,72 @@ open class HistoryCollectionConfig(
             listOf(
                 "appId_1_blockTimestamp_-1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
-                "contractAddress_1" to Index().on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
+                "blockNumber_1" to
+                    Index().on(IndexedHistoryEvent::blockNumber.name, Sort.Direction.ASC),
+                "contractAddress_1" to
+                    Index().on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
                 "to_1_contractAddress_1_blockTimestamp_-1" to
                     Index()
-                        .on("to", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC),
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
                 "from_1_contractAddress_1_blockTimestamp_-1" to
                     Index()
-                        .on("from", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC),
+                        .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
                 "origin_1_contractAddress_1_blockTimestamp_-1" to
                     Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC),
+                        .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
                 "from_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
-                        .on("from", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
                 "tokenId_1_blockTimestamp_-1_eventName_1" to
                     Index()
-                        .on("tokenId", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC),
                 "to_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
-                        .on("to", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
                 "origin_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
                 "eventName_1_to_1_blockTimestamp_-1" to
                     Index()
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("to", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC),
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC),
                 "owner_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
-                        .on("owner", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::owner.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
                 "appId_1_eventName_1_to_1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("to", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC),
                 "gasPayer_1_blockTimestamp_-1_eventName_1_contractAddress_1" to
                     Index()
-                        .on("gasPayer", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.DESC)
-                        .on("eventName", Sort.Direction.ASC)
-                        .on("contractAddress", Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
+                        .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC),
             )
         )
     }

@@ -47,8 +47,10 @@ open class NftBlacklistCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "nft_blacklist__id_1_blacklisted_1" to
-                    Index().on("_id", Sort.Direction.ASC).on("blacklisted", Sort.Direction.ASC)
+                "_id_1_isBlacklisted_1" to
+                    Index()
+                        .on("_id", Sort.Direction.ASC)
+                        .on(NftBlacklist::isBlacklisted.name, Sort.Direction.ASC)
             )
         )
     }
