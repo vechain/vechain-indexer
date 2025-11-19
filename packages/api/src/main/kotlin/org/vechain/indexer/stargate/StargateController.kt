@@ -22,6 +22,7 @@ import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
@@ -50,6 +51,7 @@ open class StargateController(
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
+    private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
 ) {
     @GetMapping("/total-vtho-claimed")
@@ -597,6 +599,40 @@ open class StargateController(
                     pageable = pageable,
                     direction = direction,
                     repository = vetDelegatedByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    @TimeFrameEndpoint
+    @GetMapping("/nft-holders/{period}")
+    open fun getNFTHoldersTimeFrame(
+        @PathVariable period: String,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = nftHoldersByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = nftHoldersByBlockRepository,
                 )
             }
 
