@@ -3,7 +3,6 @@ package org.vechain.indexer.history
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -21,19 +20,21 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.ContractAddressParameter
+import org.vechain.indexer.docs.EventNameParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.SearchByParameter
-import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.docs.TokenEventNameParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.utils.ArrayValidationUtils
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidEventName
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidSearchBy
+import org.vechain.indexer.validation.ValidTokenEventName
 
 @RequestMapping(API_ROOT)
 @Profile("history")
@@ -46,57 +47,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Operation(summary = "Get account history")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "eventName",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        allowableValues =
-                            [
-                                "B3TR_SWAP_VOT3_TO_B3TR",
-                                "B3TR_SWAP_B3TR_TO_VOT3",
-                                "B3TR_PROPOSAL_SUPPORT",
-                                "B3TR_CLAIM_REWARD",
-                                "B3TR_UPGRADE_GM",
-                                "B3TR_ACTION",
-                                "B3TR_PROPOSAL_VOTE",
-                                "B3TR_XALLOCATION_VOTE",
-                                "TRANSFER_VET",
-                                "TRANSFER_FT",
-                                "TRANSFER_NFT",
-                                "TRANSFER_SF",
-                                "SWAP_VET_TO_FT",
-                                "SWAP_FT_TO_VET",
-                                "SWAP_FT_TO_FT",
-                                "UNKNOWN_TX",
-                                "NFT_SALE",
-                                "STARGATE_DELEGATE",
-                                "STARGATE_CLAIM_REWARDS_BASE",
-                                "STARGATE_CLAIM_REWARDS_DELEGATE",
-                                "STARGATE_UNDELEGATE",
-                                "STARGATE_STAKE",
-                                "STARGATE_UNSTAKE",
-                                "STARGATE_DELEGATE_ONLY",
-                                "STARGATE_DELEGATE_ACTIVE",
-                                "STARGATE_DELEGATE_REQUEST",
-                                "STARGATE_DELEGATE_EXIT_REQUEST",
-                                "STARGATE_DELEGATION_EXITED_VALIDATOR",
-                                "STARGATE_DELEGATION_EXITED",
-                                "STARGATE_DELEGATE_REQUEST_CANCELLED",
-                                "STARGATE_CLAIM_REWARDS",
-                                "STARGATE_BOOST",
-                                "STARGATE_MANAGER_ADDED",
-                                "STARGATE_MANAGER_REMOVED",
-                                "VEVOTE_VOTE_CAST",
-                            ],
-                    )
-            ),
-        description = "Filter by specific transaction names.",
-        required = false,
-    )
+    @EventNameParameter
     @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
@@ -104,7 +55,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @PaginationParameters
     open fun getUsersHistory(
         @ValidAddress @PathVariable account: Address,
-        @RequestParam(required = false) eventName: List<String>?,
+        @ValidEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
@@ -114,15 +65,6 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<HistoryEventDto> {
         val mappedInputs: List<String>? = HistoryUtils.mapInputToNew(eventName)
-
-        // Validate query parameters
-        val validatedEventNames: List<String> = validateOrBadRequest {
-            ArrayValidationUtils.validateArray(
-                input = mappedInputs,
-                allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
-                fieldName = "eventName",
-            )
-        }
 
         TimeValidationUtils.validateTimestamps(after, before)
 
@@ -137,7 +79,7 @@ open class HistoryController(private val historyService: HistoryService) {
         val slice =
             historyService.findUserHistoryByFilters(
                 account = account.value,
-                eventNames = validatedEventNames, // query on new/canonical names
+                eventNames = mappedInputs, // query on new/canonical names
                 searchFields = searchBy,
                 contractAddress = contractAddress,
                 before = before,
@@ -155,21 +97,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Operation(summary = "Get account history")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "eventName",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        description =
-                            "Filter by specific transaction names. See HistoryEventName for the full list.",
-                    )
-            ),
-        description = "Filter by specific transaction names.",
-        required = false,
-    )
+    @EventNameParameter
     @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
@@ -177,7 +105,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @PaginationParameters
     open fun getUsersHistoryV2(
         @ValidAddress @PathVariable account: Address,
-        @RequestParam(required = false) eventName: List<String>?,
+        @ValidEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
@@ -186,15 +114,6 @@ open class HistoryController(private val historyService: HistoryService) {
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedHistoryEvent> {
-        // Validate query parameters
-        val validatedEventNames = validateOrBadRequest {
-            ArrayValidationUtils.validateArray(
-                input = eventName,
-                allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
-                fieldName = "eventName",
-            )
-        }
-
         TimeValidationUtils.validateTimestamps(after, before)
 
         val pageable =
@@ -208,7 +127,7 @@ open class HistoryController(private val historyService: HistoryService) {
         return paginatedResponse(
             historyService.findUserHistoryByFilters(
                 account = account.value,
-                eventNames = validatedEventNames,
+                eventNames = eventName,
                 searchFields = searchBy,
                 contractAddress = contractAddress,
                 before = before,
@@ -227,38 +146,7 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "A valid account tokenId",
         required = true,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "eventName",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        allowableValues =
-                            [
-                                "STARGATE_DELEGATE_LEGACY",
-                                "STARGATE_STAKE",
-                                "STARGATE_DELEGATE_REQUEST",
-                                "STARGATE_DELEGATE_ACTIVE",
-                                "STARGATE_UNDELEGATE_LEGACY",
-                                "STARGATE_DELEGATE_EXIT_REQUEST",
-                                "STARGATE_DELEGATION_EXITED_VALIDATOR",
-                                "STARGATE_DELEGATION_EXITED",
-                                "STARGATE_CLAIM_REWARDS",
-                                "STARGATE_BOOST",
-                                "STARGATE_MANAGER_ADDED",
-                                "STARGATE_MANAGER_REMOVED",
-                                "VEVOTE_VOTE_CAST",
-                                "NFT_SALE",
-                                "TRANSFER_NFT",
-                                "B3TR_UPGRADE_GM",
-                            ],
-                    )
-            ),
-        description = "Filter by specific transaction names.",
-        required = false,
-    )
+    @TokenEventNameParameter
     @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
@@ -266,7 +154,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @PaginationParameters
     open fun getTokenHistory(
         @PathVariable(required = true) tokenId: String,
-        @RequestParam(required = false) eventName: List<String>?,
+        @ValidTokenEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -274,15 +162,6 @@ open class HistoryController(private val historyService: HistoryService) {
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedHistoryEvent> {
-        // Validate query parameters
-        val validatedEventNames = validateOrBadRequest {
-            ArrayValidationUtils.validateArray(
-                input = eventName,
-                allowedValues = allowedTokenNames,
-                fieldName = "eventName",
-            )
-        }
-
         TimeValidationUtils.validateTimestamps(after, before)
 
         val pageable =
@@ -296,7 +175,7 @@ open class HistoryController(private val historyService: HistoryService) {
         return paginatedResponse(
             historyService.findTokenIdHistoryByFilters(
                 tokenId = tokenId,
-                eventNames = validatedEventNames,
+                eventNames = eventName,
                 contractAddress = contractAddress,
                 before = before,
                 after = after,
@@ -304,34 +183,4 @@ open class HistoryController(private val historyService: HistoryService) {
             )
         )
     }
-
-    private fun <T> validateOrBadRequest(block: () -> T): T =
-        try {
-            block()
-        } catch (ex: RuntimeException) {
-            throw BadRequestException(ex.message ?: "Invalid request parameters")
-        }
-
-    private val allowedTokenNames: Set<String> =
-        setOf(
-            "STARGATE_DELEGATE_LEGACY",
-            "STARGATE_STAKE",
-            "STARGATE_CLAIM_REWARDS_BASE_LEGACY",
-            "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY",
-            "STARGATE_UNSTAKE",
-            "STARGATE_DELEGATE_REQUEST",
-            "STARGATE_DELEGATE_ACTIVE",
-            "STARGATE_UNDELEGATE_LEGACY",
-            "STARGATE_DELEGATE_EXIT_REQUEST",
-            "STARGATE_DELEGATION_EXITED_VALIDATOR",
-            "STARGATE_DELEGATION_EXITED",
-            "STARGATE_CLAIM_REWARDS",
-            "STARGATE_BOOST",
-            "STARGATE_MANAGER_ADDED",
-            "STARGATE_MANAGER_REMOVED",
-            "VEVOTE_VOTE_CAST",
-            "NFT_SALE",
-            "TRANSFER_NFT",
-            "B3TR_UPGRADE_GM",
-        )
 }
