@@ -38,6 +38,7 @@ import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTimeRangePreset
 import org.vechain.indexer.validation.ValidTokenId
@@ -359,19 +360,10 @@ open class StargateController(
 
     @GetMapping("/total-vet-delegated")
     @Operation(summary = "Get total VET delegated in Stargate")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Optional query parameter to get the total VET delegated at a specific block number. If not provided, the" +
-                " latest value will be returned.",
-        required = false,
-        example = "12345678",
-    )
+    @BlockNumberParameter
     @CommonApiResponses
     open fun getTotalVetDelegated(
-        @RequestParam(required = false) blockNumber: Long?
+        @ValidNonNegativeLong @RequestParam(required = false) blockNumber: Long?
     ): TotalByBlockDto =
         stargateService.getTotalVetDelegated(blockNumber)
             ?: TotalByBlockDto(
@@ -390,22 +382,8 @@ open class StargateController(
                 "combination of these parameters. If no filters are provided, all tokens will be returned.",
     )
     @TokenIdParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "manager",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by manager address",
-        required = false,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "owner",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by owner address",
-        required = false,
-        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
-    )
+    @AccountParameter(name = "manager")
+    @AccountParameter(name = "owner")
     @CommonApiResponses
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,

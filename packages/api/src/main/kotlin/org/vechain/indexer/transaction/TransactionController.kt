@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.ExpandedParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
@@ -122,7 +122,7 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/contract")
     @Operation(summary = "Get all transactions for a contract address")
-    @ContractAddressParameter(required = true)
+    @AccountParameter(name = "contractAddress", required = true)
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters

@@ -17,7 +17,6 @@ import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.EventNameParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.SearchByParameter
@@ -48,7 +47,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @ContractAddressParameter
+    @AccountParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -98,7 +97,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @ContractAddressParameter
+    @AccountParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -141,7 +140,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Operation(summary = "Get token history")
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @TokenEventNameParameter
-    @ContractAddressParameter
+    @AccountParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses

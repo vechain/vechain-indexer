@@ -6,8 +6,6 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -16,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
@@ -48,7 +46,7 @@ open class NftController(private val nftService: NftService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
-    @ContractAddressParameter
+    @AccountParameter(name = "contractAddress")
     @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -88,17 +86,7 @@ open class NftController(private val nftService: NftService) {
 
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses by NFT owner")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "owner",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The address of the NFTs owner",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
+    @AccountParameter(name = "owner", required = true)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "excludeCollections",

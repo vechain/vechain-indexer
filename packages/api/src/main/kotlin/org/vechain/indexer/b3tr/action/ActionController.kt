@@ -17,6 +17,7 @@ import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.BeforeParameter
@@ -26,7 +27,6 @@ import org.vechain.indexer.docs.EndDateParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
 import org.vechain.indexer.docs.StartDateParameter
-import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
@@ -46,7 +46,7 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}")
     @Operation(summary = "Get B3TR actions for a user")
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AccountParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter
     @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
     @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
@@ -124,7 +124,7 @@ open class ActionController(private val service: ActionService) {
             - If both roundId and date are provided, a BadRequest error is returned.
         """,
     )
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AccountParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
     open fun getUserOverview(
         @ValidAddress @PathVariable wallet: Address,
@@ -161,7 +161,7 @@ open class ActionController(private val service: ActionService) {
             - If both roundId and date are provided, a BadRequest error is returned.
         """,
     )
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AccountParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @DateParameter
     @CommonApiResponses
@@ -188,7 +188,7 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")
     @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AccountParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @StartDateParameter
     @EndDateParameter
     @CommonApiResponses

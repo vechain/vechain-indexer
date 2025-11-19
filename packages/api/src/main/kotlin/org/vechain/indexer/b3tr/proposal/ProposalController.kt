@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.constants.B3TR_PATH_V2
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
-import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -103,7 +103,7 @@ open class ProposalController(private val proposalService: ProposalService) {
 
     @GetMapping("$B3TR_PATH/users/{wallet}/proposals/comments")
     @Operation(summary = "Get the comments made by a user on proposals.")
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AccountParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @ProposalIdParameter
     @SupportParameter
     @CommonApiResponses
