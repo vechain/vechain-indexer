@@ -1,9 +1,6 @@
 package org.vechain.indexer.explorer
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -13,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.EXPLORER_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.EndTimestampParameter
+import org.vechain.indexer.docs.StartTimestampParameter
 import org.vechain.indexer.exception.BadRequestException
 
 @Profile("explorer", "block-usage")
@@ -46,27 +45,12 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
                 
             In the case where we return hourly/daily/weekly/monthly values only you can calculate an average over the
             block range. If the first record in the returned data is at block n and the next record is at block n + k:
-            
+
                 averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
         """,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "startTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
-        description = "The starting timestamp in seconds since Unix epoch (inclusive)",
-        required = true,
-        example = "1704067200",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "endTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
-        description =
-            "The ending timestamp in seconds since Unix epoch (inclusive). Must be greater than or equal to startTimestamp.",
-        required = true,
-        example = "1704153600",
-    )
+    @StartTimestampParameter
+    @EndTimestampParameter
     @CommonApiResponses
     open fun getBlockUsage(
         @RequestParam startTimestamp: Long,
