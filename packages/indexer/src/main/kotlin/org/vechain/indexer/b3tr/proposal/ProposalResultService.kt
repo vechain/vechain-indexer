@@ -26,6 +26,7 @@ import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
@@ -65,7 +66,7 @@ open class ProposalResultService(
         // Create clauses to fetch current statuses
         val clauses =
             proposals.map { p ->
-                ContractUtils.createClause(governorContract, statusAbi, p.proposalId)
+                ContractUtils.createClause(governorContract, statusAbi, p.proposalId.toBigInteger())
             }
 
         // Execute the clauses and parse the results
@@ -79,7 +80,7 @@ open class ProposalResultService(
             }
 
             // Parse the status from the response data
-            val state = ProposalState.fromOrdinal(response.data.toInt())
+            val state = ProposalState.fromOrdinal(HexUtils.toInt(response.data))
 
             // If the state has changed, archive the existing proposal and create an updated one
             if (state != null && state != proposal.state) {
