@@ -25,9 +25,11 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -63,24 +65,78 @@ open class ProposalResultService(
         val proposals = repository.findByStateIn(nonFinalizedStates)
         if (proposals.isEmpty()) return updatedResult to archiveResult
 
+        // Process proposals in batches
+        val batchSize = 50
+        proposals.chunked(batchSize).forEach { batch ->
+            val (updated, archived) = updateStatusesForBatch(batch, block)
+            updatedResult.addAll(updated)
+            archiveResult.addAll(archived)
+        }
+
+        return updatedResult to archiveResult
+    }
+
+    /**
+     * Updates statuses for a batch of proposals and fetches their updated statuses from the
+     * contract.
+     *
+     * @param batch The batch of proposals to process.
+     * @param block The details of the current block.
+     * @return A pair of lists containing updated and archived proposal results.
+     */
+    protected fun updateStatusesForBatch(
+        batch: List<ProposalResult>,
+        block: BlockDetails,
+    ): Pair<List<ProposalResult>, List<ProposalResult>> {
+        val updatedResult = mutableListOf<ProposalResult>()
+        val archiveResult = mutableListOf<ProposalResult>()
+
         // Create clauses to fetch current statuses
-        val clauses =
-            proposals.map { p ->
-                ContractUtils.createClause(governorContract, statusAbi, p.proposalId.toBigInteger())
-            }
+        val clauses = createStatusClauses(batch)
 
         // Execute the clauses and parse the results
         val responses = thorService.inspectClausesAtBlock(clauses, block.blockId)
 
         // Update the statuses of the proposals
-        proposals.forEachIndexed { index, proposal ->
-            val response = responses.getOrNull(index)
-            if (response == null || response.reverted) {
-                error("Failed to fetch status for proposalId=${proposal.proposalId}")
-            }
+        updateProposalStates(batch, responses, block, updatedResult, archiveResult)
 
-            // Parse the status from the response data
-            val state = ProposalState.fromOrdinal(HexUtils.toInt(response.data))
+        return updatedResult to archiveResult
+    }
+
+    /**
+     * Creates contract clauses for fetching the current status of proposals.
+     *
+     * @param proposals The proposals to create clauses for.
+     * @return A list of contract clauses.
+     */
+    protected fun createStatusClauses(proposals: List<ProposalResult>): List<Clause> {
+        return proposals.map { p ->
+            ContractUtils.createClause(governorContract, statusAbi, p.proposalId.toBigInteger())
+        }
+    }
+
+    /**
+     * Updates the states of proposals based on contract responses.
+     *
+     * @param proposals The original proposals.
+     * @param responses The contract responses.
+     * @param block The current block details.
+     * @param updatedResult The list to accumulate updated proposals.
+     * @param archiveResult The list to accumulate archived proposals.
+     */
+    protected fun updateProposalStates(
+        proposals: List<ProposalResult>,
+        responses: List<ExecuteCodeResponse>,
+        block: BlockDetails,
+        updatedResult: MutableList<ProposalResult>,
+        archiveResult: MutableList<ProposalResult>,
+    ) {
+        proposals.forEachIndexed { index, proposal ->
+            val response =
+                responses.getOrNull(index)
+                    ?: error("Failed to fetch status for proposalId=${proposal.proposalId}")
+
+            val state = parseProposalState(response, proposal.proposalId)
 
             // If the state has changed, archive the existing proposal and create an updated one
             if (state != null && state != proposal.state) {
@@ -96,8 +152,24 @@ open class ProposalResultService(
                 )
             }
         }
+    }
 
-        return updatedResult to archiveResult
+    /**
+     * Parses the proposal state from a contract response.
+     *
+     * @param response The contract response.
+     * @param proposalId The proposal ID (for error messages).
+     * @return The parsed proposal state, or null if the response was reverted.
+     */
+    protected fun parseProposalState(
+        response: ExecuteCodeResponse,
+        proposalId: String,
+    ): ProposalState? {
+        if (response.reverted) {
+            error("Failed to fetch status for proposalId=$proposalId (reverted)")
+        }
+
+        return ProposalState.fromOrdinal(HexUtils.toInt(response.data))
     }
 
     /**

@@ -15,7 +15,9 @@ import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
 internal class ProposalResultServiceTest {
@@ -28,13 +30,46 @@ internal class ProposalResultServiceTest {
 
     @MockK lateinit var thorService: ThorService
 
-    private lateinit var service: ProposalResultService
+    private lateinit var service: TestableProposalResultService
+
+    // A testable subclass to expose protected methods for testing
+    private class TestableProposalResultService(
+        repository: ProposalResultRepository,
+        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+        thorService: ThorService,
+        governorContract: String,
+    ) :
+        ProposalResultService(
+            repository,
+            proposalResultArchiveService,
+            proposalResultPruner,
+            thorService,
+            governorContract,
+        ) {
+        fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
+            updateStatusesForBatch(batch, block)
+
+        fun callCreateStatusClauses(proposals: List<ProposalResult>) =
+            createStatusClauses(proposals)
+
+        fun callUpdateProposalStates(
+            proposals: List<ProposalResult>,
+            responses: List<ExecuteCodeResponse>,
+            block: BlockDetails,
+            updatedResult: MutableList<ProposalResult>,
+            archiveResult: MutableList<ProposalResult>,
+        ) = updateProposalStates(proposals, responses, block, updatedResult, archiveResult)
+
+        fun callParseProposalState(response: ExecuteCodeResponse, proposalId: String) =
+            parseProposalState(response, proposalId)
+    }
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
         service =
-            ProposalResultService(
+            TestableProposalResultService(
                 repository,
                 proposalResultArchiveService,
                 pruner,
@@ -517,5 +552,224 @@ internal class ProposalResultServiceTest {
 
         assertEquals(1, updated.size)
         assertEquals(0, archived.size)
+    }
+
+    // ============================================================================
+    // Batch Processing Tests
+    // ============================================================================
+
+    @Test
+    fun `getUpdatedStatuses should return empty when no non-finalized proposals exist`() {
+        every { repository.findByStateIn(any()) } returns emptyList()
+
+        val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 1000L)
+        val (updated, archived) = service.getUpdatedStatuses(block)
+
+        assertEquals(0, updated.size)
+        assertEquals(0, archived.size)
+    }
+
+    @Test
+    fun `updateStatusesForBatch should fetch and parse proposal statuses`() {
+        val proposals =
+            listOf(
+                ProposalResult(
+                    proposalId = "1",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = 1,
+                    state = ProposalState.Pending,
+                    results = null,
+                ),
+                ProposalResult(
+                    proposalId = "2",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = 2,
+                    state = ProposalState.Pending,
+                    results = null,
+                ),
+            )
+
+        val responses =
+            listOf(
+                ExecuteCodeResponse(
+                    data = "0x01", // Active
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 100,
+                    reverted = false,
+                    vmError = null,
+                ),
+                ExecuteCodeResponse(
+                    data = "0x01", // Active
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 100,
+                    reverted = false,
+                    vmError = null,
+                ),
+            )
+
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns responses
+
+        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
+        val (updated, archived) = service.callUpdateStatusesForBatch(proposals, block)
+
+        // State changed from Pending (0) to Active (1)
+        assertEquals(2, updated.size)
+        assertEquals(2, archived.size)
+        assertEquals("block-2", updated[0].blockId)
+        assertEquals(ProposalState.Active, updated[0].state)
+    }
+
+    @Test
+    fun `updateStatusesForBatch should handle reverted responses`() {
+        val proposals =
+            listOf(
+                ProposalResult(
+                    proposalId = "1",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = 1,
+                    state = ProposalState.Pending,
+                    results = null,
+                )
+            )
+
+        val responses =
+            listOf(
+                ExecuteCodeResponse(
+                    data = "0x00",
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 100,
+                    reverted = true,
+                    vmError = "execution reverted",
+                )
+            )
+
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns responses
+
+        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
+
+        assertThrows(IllegalStateException::class.java) {
+            service.callUpdateStatusesForBatch(proposals, block)
+        }
+    }
+
+    @Test
+    fun `createStatusClauses should create one clause per proposal`() {
+        val proposals =
+            listOf(
+                ProposalResult(
+                    proposalId = "1",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = 1,
+                    state = ProposalState.Pending,
+                    results = null,
+                ),
+                ProposalResult(
+                    proposalId = "2",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = 2,
+                    state = ProposalState.Pending,
+                    results = null,
+                ),
+            )
+
+        val clauses = service.callCreateStatusClauses(proposals)
+
+        assertEquals(2, clauses.size)
+    }
+
+    @Test
+    fun `parseProposalState should parse hex state values correctly`() {
+        val response =
+            ExecuteCodeResponse(
+                data = "0x02", // Canceled
+                events = emptyList(),
+                transfers = emptyList(),
+                gasUsed = 100,
+                reverted = false,
+                vmError = null,
+            )
+
+        val state = service.callParseProposalState(response, "1")
+
+        assertEquals(ProposalState.Canceled, state)
+    }
+
+    @Test
+    fun `parseProposalState should throw on reverted response`() {
+        val response =
+            ExecuteCodeResponse(
+                data = "0x00",
+                events = emptyList(),
+                transfers = emptyList(),
+                gasUsed = 100,
+                reverted = true,
+                vmError = "execution reverted",
+            )
+
+        assertThrows(IllegalStateException::class.java) {
+            service.callParseProposalState(response, "1")
+        }
+    }
+
+    @Test
+    fun `getUpdatedStatuses should process proposals in batches`() {
+        // Create 125 proposals (will be split into 3 batches: 50, 50, 25)
+        val proposals =
+            (1..125).map { i ->
+                ProposalResult(
+                    proposalId = "$i",
+                    version = 1,
+                    blockId = "block-1",
+                    blockNumber = 1L,
+                    blockTimestamp = 1000L,
+                    createdAtBlockNumber = 1L,
+                    startRoundId = i,
+                    state = ProposalState.Pending,
+                    results = null,
+                )
+            }
+
+        every { repository.findByStateIn(any()) } returns proposals
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns
+            List(50) {
+                ExecuteCodeResponse(
+                    data = "0x01", // Active
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 100,
+                    reverted = false,
+                    vmError = null,
+                )
+            }
+
+        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
+        val (updated, archived) = service.getUpdatedStatuses(block)
+
+        // All proposals should be updated (state changed from Pending to Active)
+        assertEquals(125, updated.size)
+        assertEquals(125, archived.size)
     }
 }
