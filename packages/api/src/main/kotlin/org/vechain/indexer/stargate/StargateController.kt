@@ -19,11 +19,14 @@ import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.RewardsTypeParameter
 import org.vechain.indexer.docs.TokenIdParameter
+import org.vechain.indexer.docs.TokenLevelParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -168,29 +171,9 @@ open class StargateController(
                 "so it may not contain consistent gaps between records.",
     )
     @RangeParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "level",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues =
-                    [
-                        "Strength",
-                        "Thunder",
-                        "Mjolnir",
-                        "VeThorX",
-                        "StrengthX",
-                        "ThunderX",
-                        "MjolnirX",
-                        "Dawn",
-                        "Lightning",
-                        "Flash",
-                    ],
-            ),
+    @TokenLevelParameter(
         description =
-            "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included.",
-        required = false,
+            "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
     open fun getNftHolders(
@@ -228,30 +211,9 @@ open class StargateController(
                 "populated, so it may not contain consistent gaps between records.",
     )
     @RangeParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "level",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues =
-                    [
-                        "Strength",
-                        "Thunder",
-                        "Mjolnir",
-                        "VeThorX",
-                        "StrengthX",
-                        "ThunderX",
-                        "MjolnirX",
-                        "Dawn",
-                        "Lightning",
-                        "Flash",
-                    ],
-            ),
+    @TokenLevelParameter(
         description =
-            "Optional query parameter to filter total VET staked by level. If not provided, all levels will be " +
-                "included.",
-        required = false,
+            "Optional query parameter to filter total VET staked by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
     open fun getTotalVetStaked(
@@ -361,14 +323,7 @@ open class StargateController(
         required = false,
     )
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by validator address",
-        required = false,
-        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
-    )
+    @AccountParameter(name = "validator")
     @CommonApiResponses
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
@@ -607,15 +562,7 @@ open class StargateController(
         Schema(type = "string", allowableValues = ["DAY", "WEEK", "MONTH", "YEAR", "ALL", "BLOCK"]),
     required = true,
 )
-@Parameter(
-    name = "from",
-    `in` = ParameterIn.QUERY,
-    description = "Optional start of custom date range (Unix seconds)",
-)
-@Parameter(
-    name = "to",
-    `in` = ParameterIn.QUERY,
-    description = "Optional end of custom date range (Unix seconds)",
-)
+@AfterParameter(name = "from", description = "Optional start of custom date range (Unix seconds)")
+@BeforeParameter(name = "to", description = "Optional start of custom date range (Unix seconds)")
 @CommonApiResponses
 annotation class TimeFrameEndpoint

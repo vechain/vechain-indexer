@@ -24,9 +24,7 @@ import org.springframework.core.annotation.AliasFor
             type = "string",
             allowableValues = ["1-hour", "1-day", "1-week", "1-month", "1-year", "all"],
         ),
-    description = "Time range preset to use for the query.",
     required = true,
-    example = "1-day",
 )
 annotation class RangeParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "description")

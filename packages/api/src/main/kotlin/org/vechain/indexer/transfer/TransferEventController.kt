@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
@@ -34,21 +35,8 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "To or from address of the transfer event",
-        required = false,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AccountParameter(name = "address", description = "To or from address of the transfer event")
+    @AccountParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEvents(
@@ -75,21 +63,12 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/from")
     @Operation(summary = "Get transfer events by from address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AccountParameter(
         name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
         description = "From address of the transfer event",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AccountParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByFrom(
@@ -110,21 +89,12 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/to")
     @Operation(summary = "Get transfer events by to address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AccountParameter(
         name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
         description = "To address of the transfer event",
         required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AccountParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByTo(
@@ -183,13 +153,10 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/fungible-tokens-contracts")
     @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AccountParameter(
         name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
         description = "The address of origin or destination of the fungible tokens transfer events",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,

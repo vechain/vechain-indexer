@@ -21,7 +21,6 @@ import org.springframework.core.annotation.AliasFor
                         "Fields to search by. Defaults to ['to', 'from', 'origin'] if not provided.",
                 )
         ),
-    description = "Array of fields to search by.",
     required = false,
 )
 annotation class SearchByParameter(

@@ -19,18 +19,12 @@ import org.vechain.indexer.validation.ValidTokenId
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
-@Parameter(
-    `in` = ParameterIn.QUERY,
-    name = "tokenId",
-    schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
-    description = "A valid tokenId",
-    required = false,
-)
+@Parameter(name = "tokenId", schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"))
 annotation class TokenIdParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
     @get:AliasFor(annotation = Parameter::class, attribute = "required")
-    val required: Boolean = true,
+    val required: Boolean = false,
     @get:AliasFor(annotation = Parameter::class, attribute = "description")
     val description: String = "A valid tokenId",
     @get:AliasFor(annotation = Parameter::class, attribute = "example") val example: String = "",

@@ -53,32 +53,4 @@ import org.vechain.indexer.history.HistoryEventName
 annotation class TokenEventNameParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "description")
     val description: String = "Filter by specific transaction names."
-) {
-    companion object {
-        private val ALLOWED_VALUES_SET =
-            setOf(
-                "STARGATE_DELEGATE_LEGACY",
-                "STARGATE_STAKE",
-                "STARGATE_DELEGATE_REQUEST",
-                "STARGATE_DELEGATE_ACTIVE",
-                "STARGATE_UNDELEGATE_LEGACY",
-                "STARGATE_DELEGATE_EXIT_REQUEST",
-                "STARGATE_DELEGATION_EXITED_VALIDATOR",
-                "STARGATE_DELEGATION_EXITED",
-                "STARGATE_CLAIM_REWARDS",
-                "STARGATE_BOOST",
-                "STARGATE_MANAGER_ADDED",
-                "STARGATE_MANAGER_REMOVED",
-                "VEVOTE_VOTE_CAST",
-                "NFT_SALE",
-                "TRANSFER_NFT",
-                "B3TR_UPGRADE_GM",
-            )
-
-        val ALLOWED_VALUES =
-            HistoryEventName.entries
-                .filter { it.name in ALLOWED_VALUES_SET }
-                .map { it.name }
-                .toTypedArray()
-    }
-}
+)

@@ -19,8 +19,6 @@ import org.springframework.core.annotation.AliasFor
     `in` = ParameterIn.QUERY,
     name = "rewardsType",
     schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
-    description =
-        "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
     required = false,
 )
 annotation class RewardsTypeParameter(

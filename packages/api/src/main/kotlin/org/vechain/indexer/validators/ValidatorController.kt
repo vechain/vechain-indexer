@@ -10,6 +10,9 @@ import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
+import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
@@ -53,22 +56,8 @@ open class ValidatorController(
             - `direction`: Either `asc` or `desc`
             """,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validatorId",
-        schema = Schema(type = "string"),
-        description = "Filter by validator ID",
-        required = false,
-        example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "endorser",
-        schema = Schema(type = "string"),
-        description = "Filter by endorser address",
-        required = false,
-        example = "0x06c01371bc54c59d5fd9e296c74880324b62c5fe",
-    )
+    @AccountParameter(name = "validatorId", description = "Filter by validator ID")
+    @AccountParameter(name = "endorser", description = "Filter by endorser address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
@@ -145,14 +134,7 @@ open class ValidatorController(
             You can also sort and paginate.
             """,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string"),
-        description = "Filter by validator address",
-        required = false,
-        example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
-    )
+    @AccountParameter(name = "validator", description = "Filter by validator address")
     @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -202,15 +184,7 @@ open class ValidatorController(
         description =
             "Optional block number. If provided, returns the total VTHO rewards as of this block."
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string"),
-        description =
-            "Optional validator address. If provided, returns the block VTHO rewards for this validator. ",
-        required = false,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
-    )
+    @AccountParameter(name = "validator", description = "Optional validator address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
@@ -239,29 +213,21 @@ open class ValidatorController(
                 "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
                 "You can filter by validator address.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
+    @AccountParameter(
         name = "validator",
-        schema = Schema(type = "string"),
+        `in` = ParameterIn.PATH,
         description = "Validator address",
         required = true,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AfterParameter(
         name = "startTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "Start timestamp (inclusive)",
         required = true,
-        example = "1704067200",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BeforeParameter(
         name = "endTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "End timestamp (inclusive)",
         required = true,
-        example = "1704153600",
     )
     @CommonApiResponses
     open fun getHistoricValidatorRewardsRange(
@@ -283,13 +249,11 @@ open class ValidatorController(
                 "startBlock must be provided. " +
                 "If no endBlock is provided, endBlock defaults to best/latest block.",
     )
-    @Parameter(
+    @AccountParameter(
         `in` = ParameterIn.PATH,
         name = "validator",
-        schema = Schema(type = "string"),
         description = "Validator address",
         required = true,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,

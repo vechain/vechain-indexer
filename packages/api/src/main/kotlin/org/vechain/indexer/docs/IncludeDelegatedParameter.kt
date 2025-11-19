@@ -17,7 +17,6 @@ import org.springframework.core.annotation.AliasFor
     `in` = ParameterIn.QUERY,
     name = "includeDelegated",
     schema = Schema(type = "boolean"),
-    description = "Whether to include transactions the address paid gas for",
     required = false,
     example = "false",
 )

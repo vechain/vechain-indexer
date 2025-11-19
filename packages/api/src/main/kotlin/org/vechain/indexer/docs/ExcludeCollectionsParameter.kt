@@ -21,7 +21,6 @@ import org.vechain.indexer.thor.Address
     `in` = ParameterIn.QUERY,
     name = "excludeCollections",
     array = ArraySchema(schema = Schema(type = "string", pattern = Address.REGEX), maxItems = 20),
-    description = "The addresses of the collections to exclude. Max 20 collections.",
     required = false,
     example = "[\"0x1234567890123456789012345678901234567890\"]",
 )

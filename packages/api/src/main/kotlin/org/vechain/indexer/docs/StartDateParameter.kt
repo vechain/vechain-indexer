@@ -9,7 +9,6 @@ import org.vechain.indexer.validation.ISODateString
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
-    `in` = ParameterIn.QUERY,
     name = "startDate",
     schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
     description = "A date to filter by. In UTC, format: yyyy-MM-dd.",

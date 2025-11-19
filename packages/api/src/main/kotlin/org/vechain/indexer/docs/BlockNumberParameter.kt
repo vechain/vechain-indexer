@@ -12,11 +12,12 @@ import org.springframework.core.annotation.AliasFor
 )
 @Retention(AnnotationRetention.RUNTIME)
 @Parameter(
-    name = "blockNumber",
     schema =
-        Schema(type = "integer", format = "int64", minimum = "0", maximum = "9223372036854775807"),
+        Schema(type = "integer", format = "int64", minimum = "0", maximum = "9223372036854775807")
 )
 annotation class BlockNumberParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "name")
+    val name: String = "blockNumber",
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
     @get:AliasFor(annotation = Parameter::class, attribute = "required")
