@@ -19,7 +19,9 @@ import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
+import org.vechain.indexer.docs.AfterMillisParameter
 import org.vechain.indexer.docs.AppIdParameter
+import org.vechain.indexer.docs.BeforeMillisParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.PaginationParameters
@@ -46,20 +48,8 @@ open class ActionController(private val service: ActionService) {
     @Operation(summary = "Get B3TR actions for a user")
     @WalletParameter(required = true, `in` = ParameterIn.PATH)
     @AppIdParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions after this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions before this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
+    @AfterMillisParameter
+    @BeforeMillisParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUserActions(
@@ -97,20 +87,8 @@ open class ActionController(private val service: ActionService) {
     @GetMapping("/actions/apps/{appId}")
     @Operation(summary = "Get B3TR actions for an app")
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions after this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions before this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
+    @AfterMillisParameter
+    @BeforeMillisParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getAppActions(

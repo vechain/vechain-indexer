@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_ROOT
 import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.docs.AfterSecondsParameter
+import org.vechain.indexer.docs.BeforeSecondsParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
@@ -119,22 +121,8 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions after and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions before and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
+    @AfterSecondsParameter
+    @BeforeSecondsParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistory(
@@ -242,22 +230,8 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions after and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions before and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
+    @AfterSecondsParameter
+    @BeforeSecondsParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistoryV2(
@@ -359,22 +333,8 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions after and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Return transactions before and including this timestamp (Unix time in seconds).",
-        required = false,
-    )
+    @AfterSecondsParameter
+    @BeforeSecondsParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTokenHistory(
