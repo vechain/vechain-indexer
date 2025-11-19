@@ -255,19 +255,14 @@ open class ValidatorController(
         description = "Validator address",
         required = true,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BlockNumberParameter(
         name = "startBlock",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "Start block (inclusive)",
         required = true,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BlockNumberParameter(
         name = "endBlock",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "End block (inclusive) defaults to best/latest block if not provided",
-        required = false,
     )
     @CommonApiResponses
     open fun getMissedBlocksPercentage(

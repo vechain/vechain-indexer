@@ -15,6 +15,7 @@ import org.springframework.core.annotation.AliasFor
     schema =
         Schema(type = "integer", format = "int64", minimum = "0", maximum = "9223372036854775807")
 )
+@Repeatable
 annotation class BlockNumberParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "name")
     val name: String = "blockNumber",
