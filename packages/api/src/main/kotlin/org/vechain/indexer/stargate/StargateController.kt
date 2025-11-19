@@ -21,6 +21,7 @@ import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -152,18 +153,7 @@ open class StargateController(
         description =
             "This endpoint returns a time series of total VTHO claimed by all Stargate users (Delegation only).",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
@@ -194,18 +184,7 @@ open class StargateController(
             "This endpoint returns a time series of NFT holders in Stargate. The time series is sparsely populated, " +
                 "so it may not contain consistent gaps between records.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "level",
@@ -265,18 +244,7 @@ open class StargateController(
             "This endpoint returns a time series of total VET staked in Stargate. The time series is sparsely " +
                 "populated, so it may not contain consistent gaps between records.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "level",
@@ -335,18 +303,7 @@ open class StargateController(
         description =
             "This endpoint returns a time series of total VTHO claimed by all Stargate users.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @CommonApiResponses
     open fun getTotalVthoGenerated(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
