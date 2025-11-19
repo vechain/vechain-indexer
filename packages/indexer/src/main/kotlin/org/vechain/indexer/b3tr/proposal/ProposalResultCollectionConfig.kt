@@ -52,7 +52,6 @@ open class ProposalResultCollectionConfig(
                 "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
                 "createdAtBlockNumber_-1" to
                     Index().on("createdAtBlockNumber", Sort.Direction.DESC),
-                "state_1" to Index().on("state", Sort.Direction.ASC),
                 "state_1_createdAtBlockNumber_-1" to
                     Index()
                         .on("state", Sort.Direction.ASC)
