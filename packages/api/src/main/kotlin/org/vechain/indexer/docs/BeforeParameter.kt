@@ -7,15 +7,20 @@ import org.springframework.core.annotation.AliasFor
 
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
+@Repeatable
 @Parameter(
     `in` = ParameterIn.QUERY,
     name = "before",
-    schema = Schema(type = "integer", format = "int64"),
-    description = "Return records before this time (Unix time in seconds).",
+    schema = Schema(type = "integer", format = "int64", minimum = "0"),
 )
-annotation class BeforeSecondsParameter(
+annotation class BeforeParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "name") val name: String = "before",
+    @get:AliasFor(annotation = Parameter::class, attribute = "description")
+    val description: String = "Return records before this time (Unix time in seconds).",
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
     @get:AliasFor(annotation = Parameter::class, attribute = "required")
     val required: Boolean = false,
+    @get:AliasFor(annotation = Parameter::class, attribute = "example")
+    val example: String = "1704153600",
 )

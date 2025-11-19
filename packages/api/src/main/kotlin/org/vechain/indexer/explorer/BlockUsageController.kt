@@ -9,10 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.EXPLORER_PATH
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.EndTimestampParameter
-import org.vechain.indexer.docs.StartTimestampParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.validation.ValidNonNegativeLong
 
 @Profile("explorer", "block-usage")
 @Tag(name = "Explorer", description = "Blockchain explorer analytics")
@@ -49,12 +50,12 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
                 averageGasUsedPerBlock = (gasUsedAtBlock(n+k) - gasUsedAtBlockN) / k
         """,
     )
-    @StartTimestampParameter
-    @EndTimestampParameter
+    @AfterParameter(name = "startTimestamp", required = true)
+    @BeforeParameter(name = "endTimestamp", required = true)
     @CommonApiResponses
     open fun getBlockUsage(
-        @RequestParam startTimestamp: Long,
-        @RequestParam endTimestamp: Long,
+        @ValidNonNegativeLong @RequestParam startTimestamp: Long,
+        @ValidNonNegativeLong @RequestParam endTimestamp: Long,
     ): List<BlockUsage> {
         if (endTimestamp < startTimestamp) {
             throw BadRequestException(

@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_ROOT
 import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
-import org.vechain.indexer.docs.AfterSecondsParameter
-import org.vechain.indexer.docs.BeforeSecondsParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
@@ -28,6 +28,7 @@ import org.vechain.indexer.utils.ArrayValidationUtils
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @RequestMapping(API_ROOT)
@@ -121,8 +122,8 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @AfterSecondsParameter
-    @BeforeSecondsParameter
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistory(
@@ -130,8 +131,8 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
@@ -230,8 +231,8 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @AfterSecondsParameter
-    @BeforeSecondsParameter
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getUsersHistoryV2(
@@ -239,8 +240,8 @@ open class HistoryController(private val historyService: HistoryService) {
         @RequestParam(required = false) eventName: List<String>?,
         @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,
@@ -333,16 +334,16 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "The contract address",
         required = false,
     )
-    @AfterSecondsParameter
-    @BeforeSecondsParameter
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTokenHistory(
         @PathVariable(required = true) tokenId: String,
         @RequestParam(required = false) eventName: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int? = DEFAULT_PAGE_SIZE,
         @RequestParam(required = false) direction: String?,

@@ -17,9 +17,9 @@ import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
-import org.vechain.indexer.docs.AfterMillisParameter
+import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.AppIdParameter
-import org.vechain.indexer.docs.BeforeMillisParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.DateParameter
 import org.vechain.indexer.docs.EndDateParameter
@@ -33,6 +33,7 @@ import org.vechain.indexer.thor.Address
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidISODateString
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageNumber
 import org.vechain.indexer.validation.ValidPageSize
 
@@ -47,15 +48,15 @@ open class ActionController(private val service: ActionService) {
     @Operation(summary = "Get B3TR actions for a user")
     @WalletParameter(required = true, `in` = ParameterIn.PATH)
     @AppIdParameter
-    @AfterMillisParameter
-    @BeforeMillisParameter
+    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
+    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
     @CommonApiResponses
     @PaginationParameters
     open fun getUserActions(
         @ValidAddress @PathVariable(required = true) wallet: Address,
         @ValidAppId @RequestParam(required = false) appId: AppId?,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -86,14 +87,14 @@ open class ActionController(private val service: ActionService) {
     @GetMapping("/actions/apps/{appId}")
     @Operation(summary = "Get B3TR actions for an app")
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
-    @AfterMillisParameter
-    @BeforeMillisParameter
+    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
+    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
     @CommonApiResponses
     @PaginationParameters
     open fun getAppActions(
         @ValidAppId @PathVariable(required = true) appId: AppId,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
