@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_ROOT
 import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
@@ -44,10 +44,10 @@ open class HistoryController(private val historyService: HistoryService) {
     @Deprecated("This api is deprecated post hayabusa release")
     @GetMapping("$API_VERSION/history/{account}")
     @Operation(summary = "Get account history")
-    @AccountParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @AccountParameter(name = "contractAddress")
+    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -94,10 +94,10 @@ open class HistoryController(private val historyService: HistoryService) {
 
     @GetMapping("/v2/history/{account}")
     @Operation(summary = "Get account history")
-    @AccountParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @SearchByParameter
     @EventNameParameter
-    @AccountParameter(name = "contractAddress")
+    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -140,7 +140,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Operation(summary = "Get token history")
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @TokenEventNameParameter
-    @AccountParameter(name = "contractAddress")
+    @AddressParameter(name = "contractAddress")
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses

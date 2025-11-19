@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VEVOTE_PATH
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalIdParameter
@@ -28,7 +28,7 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
     @GetMapping("proposals/comments")
     @Operation(summary = "Get comments for a proposal.")
     @ProposalIdParameter
-    @AccountParameter(name = "voter", description = "Voter address to filter by.")
+    @AddressParameter(name = "voter", description = "Voter address to filter by.")
     @SupportParameter
     @CommonApiResponses
     @PaginationParameters

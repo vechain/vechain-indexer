@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSACTIONS_PATH
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.ExpandedParameter
 import org.vechain.indexer.docs.IncludeDelegatedParameter
@@ -47,7 +47,7 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping
     @Operation(summary = "Get all transactions by an origin or delegator address")
-    @AccountParameter(
+    @AddressParameter(
         name = "origin",
         required = true,
         description = "Address of the transaction origin",
@@ -75,7 +75,7 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/delegated")
     @Operation(summary = "Get all delegated transactions by a delegator address")
-    @AccountParameter(name = "delegator", required = true)
+    @AddressParameter(name = "delegator", required = true)
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters
@@ -96,7 +96,7 @@ open class TransactionController(private val transactionService: TransactionServ
 
     @GetMapping("/contract")
     @Operation(summary = "Get all transactions for a contract address")
-    @AccountParameter(name = "contractAddress", required = true)
+    @AddressParameter(name = "contractAddress", required = true)
     @CommonApiResponses
     @ExpandedParameter
     @PaginationParameters

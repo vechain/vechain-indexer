@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressListParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ExcludeCollectionsParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
@@ -35,10 +35,13 @@ open class NftController(private val nftService: NftService) {
     @GetMapping
     @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
-    @AccountParameter(name = "address", required = true, description = "Address of the NFT owner")
-    @AccountParameter(name = "contractAddress")
+    @AddressParameter(required = true, description = "Address of the NFT owner")
+    @AddressParameter(name = "contractAddress")
     @TokenIdParameter
-    @ExcludeCollectionsParameter
+    @AddressListParameter(
+        name = "excludeCollections",
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+    )
     @CommonApiResponses
     @PaginationParameters
     open fun getOwnedNFTs(
@@ -65,8 +68,11 @@ open class NftController(private val nftService: NftService) {
 
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses by NFT owner")
-    @AccountParameter(name = "owner", required = true)
-    @ExcludeCollectionsParameter
+    @AddressParameter(name = "owner", required = true)
+    @AddressListParameter(
+        name = "excludeCollections",
+        description = "The addresses of the collections to exclude. Max 20 collections.",
+    )
     @CommonApiResponses
     @PaginationParameters
     open fun getContractsByNFTOwner(

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.constants.STARGATE_PATH
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
@@ -91,7 +91,7 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}")
     @Operation(summary = "Get total VTHO claimed by a given account")
-    @AccountParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @RewardsTypeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
@@ -112,7 +112,7 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}/{tokenId}")
     @Operation(summary = "Get total VTHO claimed by a given account and token ID")
-    @AccountParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @RewardsTypeParameter
     @CommonApiResponses
@@ -284,8 +284,8 @@ open class StargateController(
                 "combination of these parameters. If no filters are provided, all tokens will be returned.",
     )
     @TokenIdParameter
-    @AccountParameter(name = "manager")
-    @AccountParameter(name = "owner")
+    @AddressParameter(name = "manager")
+    @AddressParameter(name = "owner")
     @CommonApiResponses
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
@@ -323,7 +323,7 @@ open class StargateController(
         required = false,
     )
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
-    @AccountParameter(name = "validator")
+    @AddressParameter(name = "validator")
     @CommonApiResponses
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,

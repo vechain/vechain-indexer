@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_PATH
-import org.vechain.indexer.docs.AccountParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.thor.Address
@@ -28,7 +28,7 @@ import org.vechain.indexer.validation.ValidAddress
 open class AmnController(private val amnApiEndorserService: AmnApiEndorserService) {
     @GetMapping("endorsers/{user}")
     @Operation(summary = "Check if a user is an endorser of any Authority Master Node.")
-    @AccountParameter(
+    @AddressParameter(
         `in` = ParameterIn.PATH,
         name = "user",
         description = "User address to check if they are an endorser.",

@@ -14,8 +14,8 @@ import org.vechain.indexer.thor.Address
     example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
 )
 @Repeatable
-annotation class AccountParameter(
-    @get:AliasFor(annotation = Parameter::class, attribute = "name") val name: String = "account",
+annotation class AddressParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "name") val name: String = "address",
     @get:AliasFor(annotation = Parameter::class, attribute = "description")
     val description: String = "A valid address",
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
