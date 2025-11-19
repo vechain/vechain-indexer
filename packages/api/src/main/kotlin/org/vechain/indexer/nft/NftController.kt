@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -46,13 +47,7 @@ open class NftController(private val nftService: NftService) {
         required = true,
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The contract address",
-        required = false,
-    )
+    @ContractAddressParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "tokenId",

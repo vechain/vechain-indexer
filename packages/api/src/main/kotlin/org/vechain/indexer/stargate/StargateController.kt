@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.constants.STARGATE_PATH
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.rest.PaginatedResponse
@@ -87,14 +88,7 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}")
     @Operation(summary = "Get total VTHO claimed by a given account")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The account address to query for total VTHO claimed",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
+    @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "rewardsType",
@@ -122,14 +116,7 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}/{tokenId}")
     @Operation(summary = "Get total VTHO claimed by a given account and token ID")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The account address to query for total VTHO claimed",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
+    @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.PATH,
         name = "tokenId",

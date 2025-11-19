@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.API_ROOT
 import org.vechain.indexer.constants.API_VERSION
 import org.vechain.indexer.constants.DEFAULT_PAGE_SIZE
+import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
@@ -40,14 +42,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @Deprecated("This api is deprecated post hayabusa release")
     @GetMapping("$API_VERSION/history/{account}")
     @Operation(summary = "Get account history")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "A valid account address",
-        required = true,
-        example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-    )
+    @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "searchBy",
@@ -115,13 +110,7 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "Filter by specific transaction names.",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The contract address",
-        required = false,
-    )
+    @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -185,14 +174,7 @@ open class HistoryController(private val historyService: HistoryService) {
 
     @GetMapping("/v2/history/{account}")
     @Operation(summary = "Get account history")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "A valid account address",
-        required = true,
-        example = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa",
-    )
+    @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "searchBy",
@@ -224,13 +206,7 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "Filter by specific transaction names.",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The contract address",
-        required = false,
-    )
+    @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -327,13 +303,7 @@ open class HistoryController(private val historyService: HistoryService) {
         description = "Filter by specific transaction names.",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The contract address",
-        required = false,
-    )
+    @ContractAddressParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses

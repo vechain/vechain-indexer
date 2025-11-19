@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -36,13 +37,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
         required = false,
         schema = Schema(type = "string"),
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "Filter by legacy contract address.",
-        required = false,
-    )
+    @ContractAddressParameter(description = "Filter by legacy contract address.")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "testProposals",
