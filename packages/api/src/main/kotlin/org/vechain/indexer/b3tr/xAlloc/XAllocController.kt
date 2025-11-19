@@ -1,9 +1,7 @@
 package org.vechain.indexer.b3tr.xAlloc
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
@@ -11,6 +9,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.X_ALLOC_PATH
+import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.RoundIdParameter
 
@@ -27,15 +26,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
         description = "Returns voting results for a specific round, optionally filtered by appId.",
     )
     @RoundIdParameter(`in` = ParameterIn.PATH, required = true)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "appId",
-        description =
-            "Optional app ID to filter by. If provided, returns results for that app in the specified round.",
-        required = false,
-        schema = Schema(type = "string"),
-        example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
-    )
+    @AppIdParameter
     @CommonApiResponses
     open fun getXAllocResults(
         @PathVariable roundId: Int,
@@ -60,16 +51,7 @@ open class XAllocController(private val xAllocService: XAllocService) {
                 "specific app and round. If only appId is provided, returns earnings for that app across " +
                 "all rounds. If only roundId is provided, returns earnings for all apps in that round.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "appId",
-        description =
-            "Optional app ID to filter by. If omitted, must provide roundId. Returns earnings for " +
-                "the specified app (across all rounds if roundId is also omitted).",
-        required = false,
-        schema = Schema(type = "string"),
-        example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
-    )
+    @AppIdParameter
     @RoundIdParameter
     @CommonApiResponses
     open fun getXAllocEarnings(
