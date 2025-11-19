@@ -13,22 +13,22 @@ import org.vechain.indexer.b3tr.proposal.ProposalState
 @MustBeDocumented
 annotation class ValidProposalStates(
     val message: String =
-        "Invalid proposal states provided. Must be a comma-separated list of valid ProposalState enum values (case-insensitive).",
+        "Invalid proposal states provided. Must be a list of valid ProposalState enum values (case-insensitive).",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = [],
 )
 
-// Validator for comma-separated proposal states
-class ProposalStatesValidator : ConstraintValidator<ValidProposalStates, String?> {
+// Validator for proposal states list
+class ProposalStatesValidator : ConstraintValidator<ValidProposalStates, List<String>?> {
     override fun isValid(
-        value: String?,
+        value: List<String>?,
         constraintValidatorContext: ConstraintValidatorContext,
     ): Boolean {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.isEmpty()) {
             return true // null or empty is valid (optional parameter)
         }
 
-        return value.split(",").map { it.trim() }.all { state -> isValidProposalState(state) }
+        return value.all { state -> isValidProposalState(state.trim()) }
     }
 
     private fun isValidProposalState(state: String): Boolean {

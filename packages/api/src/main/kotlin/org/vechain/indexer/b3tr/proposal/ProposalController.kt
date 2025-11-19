@@ -15,7 +15,7 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.docs.WalletParameter
-import org.vechain.indexer.exception.NotFoundException
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -40,14 +40,18 @@ open class ProposalController(private val proposalService: ProposalService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-        @ValidProposalStates @RequestParam(required = false) states: String?,
+        @ValidProposalStates @RequestParam(required = false) states: List<String>?,
     ): PaginatedResponse<ProposalResult> {
         val pageable = toPageable(page, size, direction, ProposalResult::createdAtBlockNumber.name)
-        val statesList =
-            states?.split(",")?.mapNotNull { state ->
-                ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
-            }
-        return paginatedResponse(proposalService.getAllProposalResults(statesList, pageable))
+        return if (states == null || states.isEmpty()) {
+            paginatedResponse(proposalService.getAllProposalResults(pageable))
+        } else {
+            val statesList =
+                states.mapNotNull { state ->
+                    ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
+                }
+            paginatedResponse(proposalService.getAllProposalResultsByStates(statesList, pageable))
+        }
     }
 
     @GetMapping("$B3TR_PATH_V2/proposals/{proposalId}/results")
@@ -58,7 +62,9 @@ open class ProposalController(private val proposalService: ProposalService) {
         @ValidProposalId @PathVariable(required = true) proposalId: ProposalId
     ): ProposalResult {
         return proposalService.getProposalResult(proposalId.value)
-            ?: throw NotFoundException("Proposal result not found for id: ${proposalId.value}")
+            ?: throw ResourceNotFoundException(
+                "Proposal result not found for id: ${proposalId.value}"
+            )
     }
 
     @GetMapping("$B3TR_PATH/proposals/{proposalId}/results")
@@ -71,7 +77,9 @@ open class ProposalController(private val proposalService: ProposalService) {
     ): List<ProposalResultDeprecated> {
         val result =
             proposalService.getProposalResult(proposalId.value)
-                ?: throw NotFoundException("Proposal result not found for id: ${proposalId.value}")
+                ?: throw ResourceNotFoundException(
+                    "Proposal result not found for id: ${proposalId.value}"
+                )
         return result.toDeprecated()
     }
 
