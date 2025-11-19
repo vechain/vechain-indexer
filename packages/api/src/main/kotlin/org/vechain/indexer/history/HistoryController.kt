@@ -22,6 +22,7 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.SearchByParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -32,6 +33,7 @@ import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidSearchBy
 
 @RequestMapping(API_ROOT)
 @Profile("history")
@@ -43,22 +45,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @GetMapping("$API_VERSION/history/{account}")
     @Operation(summary = "Get account history")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "searchBy",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        allowableValues = ["to", "from", "origin", "gasPayer"],
-                        description =
-                            "Fields to search by. Defaults to ['to', 'from', 'origin'] if not provided.",
-                    )
-            ),
-        description = "Array of fields to search by.",
-        required = false,
-    )
+    @SearchByParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "eventName",
@@ -118,7 +105,7 @@ open class HistoryController(private val historyService: HistoryService) {
     open fun getUsersHistory(
         @ValidAddress @PathVariable account: Address,
         @RequestParam(required = false) eventName: List<String>?,
-        @RequestParam(required = false) searchBy: List<String>?,
+        @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -137,14 +124,6 @@ open class HistoryController(private val historyService: HistoryService) {
             )
         }
 
-        val validatedSearchFields = validateOrBadRequest {
-            ArrayValidationUtils.validateArray(
-                input = searchBy,
-                allowedValues = setOf("to", "from", "origin", "gasPayer"),
-                fieldName = "searchBy",
-            )
-        }
-
         TimeValidationUtils.validateTimestamps(after, before)
 
         val pageable =
@@ -159,7 +138,7 @@ open class HistoryController(private val historyService: HistoryService) {
             historyService.findUserHistoryByFilters(
                 account = account.value,
                 eventNames = validatedEventNames, // query on new/canonical names
-                searchFields = validatedSearchFields,
+                searchFields = searchBy,
                 contractAddress = contractAddress,
                 before = before,
                 after = after,
@@ -175,22 +154,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @GetMapping("/v2/history/{account}")
     @Operation(summary = "Get account history")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "searchBy",
-        array =
-            ArraySchema(
-                schema =
-                    Schema(
-                        type = "string",
-                        allowableValues = ["to", "from", "origin", "gasPayer"],
-                        description =
-                            "Fields to search by. Defaults to ['to', 'from', 'origin'] if not provided.",
-                    )
-            ),
-        description = "Array of fields to search by.",
-        required = false,
-    )
+    @SearchByParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "eventName",
@@ -214,7 +178,7 @@ open class HistoryController(private val historyService: HistoryService) {
     open fun getUsersHistoryV2(
         @ValidAddress @PathVariable account: Address,
         @RequestParam(required = false) eventName: List<String>?,
-        @RequestParam(required = false) searchBy: List<String>?,
+        @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
@@ -228,14 +192,6 @@ open class HistoryController(private val historyService: HistoryService) {
                 input = eventName,
                 allowedValues = HistoryEventName.entries.map { it.name }.toSet(),
                 fieldName = "eventName",
-            )
-        }
-
-        val validatedSearchFields = validateOrBadRequest {
-            ArrayValidationUtils.validateArray(
-                input = searchBy,
-                allowedValues = setOf("to", "from", "origin", "gasPayer"),
-                fieldName = "searchBy",
             )
         }
 
@@ -253,7 +209,7 @@ open class HistoryController(private val historyService: HistoryService) {
             historyService.findUserHistoryByFilters(
                 account = account.value,
                 eventNames = validatedEventNames,
-                searchFields = validatedSearchFields,
+                searchFields = searchBy,
                 contractAddress = contractAddress,
                 before = before,
                 after = after,
