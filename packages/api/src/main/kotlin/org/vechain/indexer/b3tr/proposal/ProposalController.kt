@@ -16,6 +16,7 @@ import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address

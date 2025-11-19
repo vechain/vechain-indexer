@@ -12,6 +12,7 @@ import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils.toPageable
@@ -31,7 +32,7 @@ open class VeVoteResultController(private val resultService: VeVoteResultsServic
     @CommonApiResponses
     @PaginationParameters
     open fun getResults(
-        @ValidProposalId @RequestParam(required = false) proposalId: String?,
+        @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
         @RequestParam(required = false) support: Support?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -46,8 +47,13 @@ open class VeVoteResultController(private val resultService: VeVoteResultsServic
         val result: Slice<VeVoteProposalResult> =
             when {
                 proposalId != null && support != null ->
-                    resultService.getResultsByProposalIdAndSupport(proposalId, support, pageable)
-                proposalId != null -> resultService.getResultsByProposalId(proposalId, pageable)
+                    resultService.getResultsByProposalIdAndSupport(
+                        proposalId.value,
+                        support,
+                        pageable,
+                    )
+                proposalId != null ->
+                    resultService.getResultsByProposalId(proposalId.value, pageable)
                 else -> resultService.getResultsBySupport(support!!, pageable)
             }
 

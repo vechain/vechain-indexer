@@ -27,15 +27,15 @@ open class GmNftController(private val gmNftRepository: GmNftRepository) {
             "Returns the current overview (holders, B3TR donated, etc.) for each Galaxy Member level.",
     )
     @GetMapping("/level-overview")
+    @Parameter(
+        name = "level",
+        `in` = ParameterIn.QUERY,
+        description = "Optional level to filter by",
+        schema = Schema(implementation = GmLevelName::class),
+    )
     @CommonApiResponses
     open fun getLevelOverviews(
-        @Parameter(
-            `in` = ParameterIn.QUERY,
-            description = "Optional level to filter by",
-            schema = Schema(implementation = GmLevelName::class),
-        )
-        @RequestParam(required = false)
-        level: GmLevelName?
+        @RequestParam(required = false) level: GmLevelName?
     ): List<GMLevelOverview> =
         if (level == null || level.name == "ALL") {
             gmNftRepository.levelCounts()
