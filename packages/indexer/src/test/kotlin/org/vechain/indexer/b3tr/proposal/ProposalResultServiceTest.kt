@@ -15,6 +15,7 @@ import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.thor.ThorService
 
 @ExtendWith(MockKExtension::class)
 internal class ProposalResultServiceTest {
@@ -25,12 +26,21 @@ internal class ProposalResultServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
 
+    @MockK lateinit var thorService: ThorService
+
     private lateinit var service: ProposalResultService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = ProposalResultService(repository, proposalResultArchiveService, pruner)
+        service =
+            ProposalResultService(
+                repository,
+                proposalResultArchiveService,
+                pruner,
+                thorService,
+                "0x1234567890123456789012345678901234567890",
+            )
     }
 
     // ============================================================================
@@ -88,6 +98,7 @@ internal class ProposalResultServiceTest {
                 blockTimestamp = 1000L,
                 createdAtBlockNumber = 1L,
                 startRoundId = 1,
+                state = ProposalState.Pending,
                 results = null,
             )
 
@@ -136,6 +147,7 @@ internal class ProposalResultServiceTest {
                 blockTimestamp = 1000L,
                 createdAtBlockNumber = 1L,
                 startRoundId = 1,
+                state = ProposalState.Pending,
                 results = null,
             )
 
@@ -187,6 +199,7 @@ internal class ProposalResultServiceTest {
                 blockTimestamp = 1000L,
                 createdAtBlockNumber = 1L,
                 startRoundId = 1,
+                state = ProposalState.Pending,
                 results = null,
             )
 
@@ -252,6 +265,7 @@ internal class ProposalResultServiceTest {
                 blockTimestamp = 1000L,
                 createdAtBlockNumber = 1L,
                 startRoundId = 1,
+                state = ProposalState.Pending,
                 results = null,
             )
 
@@ -315,6 +329,7 @@ internal class ProposalResultServiceTest {
                 blockTimestamp = 1000L,
                 createdAtBlockNumber = 1L,
                 startRoundId = 1,
+                state = ProposalState.Pending,
                 results = null,
             )
 
@@ -388,9 +403,9 @@ internal class ProposalResultServiceTest {
 
         val result = updated[0]
         // Verify all three support types are being processed
-        assertEquals(result.results?.forResult?.voters ?: 0L >= 0, true)
-        assertEquals(result.results?.againstResult?.voters ?: 0L >= 0, true)
-        assertEquals(result.results?.abstainResult?.voters ?: 0L >= 0, true)
+        assertEquals((result.results?.forResult?.voters ?: 0L) >= 0, true)
+        assertEquals((result.results?.againstResult?.voters ?: 0L) >= 0, true)
+        assertEquals((result.results?.abstainResult?.voters ?: 0L) >= 0, true)
     }
 
     // ============================================================================

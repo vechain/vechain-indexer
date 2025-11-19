@@ -20,6 +20,7 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     val createdAtBlockNumber: Long,
     val startRoundId: Int,
+    val state: ProposalState,
     val results: VoteResults?,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = proposalId
@@ -68,3 +69,29 @@ data class ProposalResultDeprecated(
     val totalWeight: BigInteger,
     val totalPower: BigInteger,
 )
+
+// ProposalState enum to store the state of a proposal
+// Serialized as string in both MongoDB and JSON API responses
+enum class ProposalState {
+    Pending,
+    Active,
+    Canceled,
+    Defeated,
+    Succeeded,
+    Queued,
+    Executed,
+    DepositNotMet,
+    InDevelopment,
+    Completed;
+
+    companion object {
+        fun getOrdinal(state: ProposalState): Int = state.ordinal
+
+        fun fromOrdinal(ordinal: Int): ProposalState? = entries.getOrNull(ordinal)
+
+        val finalizedStates: List<ProposalState> =
+            listOf(Executed, DepositNotMet, Canceled, Defeated, Completed)
+        val nonFinalizedStates: List<ProposalState> =
+            listOf(Pending, Active, Succeeded, Queued, InDevelopment)
+    }
+}

@@ -4,6 +4,7 @@ import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -16,12 +17,18 @@ import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getStartRoundId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
+import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.fromOrdinal
+import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.nonFinalizedStates
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
+import org.vechain.indexer.event.AbiLoader
+import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
@@ -30,7 +37,67 @@ open class ProposalResultService(
     private val repository: ProposalResultRepository,
     private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
     private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+    private val thorService: ThorService,
+    @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
+    private val governorContract: String,
 ) {
+    private val statusAbi: AbiElement
+
+    init {
+        val response = AbiLoader.load(basePath = "abis/b3tr", names = listOf("state"))
+        if (response.size != 1)
+            error("Failed to load ABI for 'state', response size: ${response.size}")
+
+        statusAbi = response.first()
+    }
+
+    open fun getUpdatedStatuses(
+        block: BlockDetails
+    ): Pair<List<ProposalResult>, List<ProposalResult>> {
+
+        val updatedResult = mutableListOf<ProposalResult>()
+        val archiveResult = mutableListOf<ProposalResult>()
+
+        // Fetch all proposals that are not finalized
+        val proposals = repository.findByStateIn(nonFinalizedStates)
+        if (proposals.isEmpty()) return updatedResult to archiveResult
+
+        // Create clauses to fetch current statuses
+        val clauses =
+            proposals.map { p ->
+                ContractUtils.createClause(governorContract, statusAbi, p.proposalId)
+            }
+
+        // Execute the clauses and parse the results
+        val responses = thorService.inspectClausesAtBlock(clauses, block.blockId)
+
+        // Update the statuses of the proposals
+        proposals.forEachIndexed { index, proposal ->
+            val response = responses.getOrNull(index)
+            if (response == null || response.reverted) {
+                error("Failed to fetch status for proposalId=${proposal.proposalId}")
+            }
+
+            // Parse the status from the response data
+            val state = ProposalState.fromOrdinal(response.data.toInt())
+
+            // If the state has changed, archive the existing proposal and create an updated one
+            if (state != null && state != proposal.state) {
+                archiveResult.add(proposal)
+                updatedResult.add(
+                    proposal.copy(
+                        version = proposal.version + 1,
+                        blockId = block.blockId,
+                        blockNumber = block.blockNumber,
+                        blockTimestamp = block.blockTimestamp,
+                        state = state,
+                    )
+                )
+            }
+        }
+
+        return updatedResult to archiveResult
+    }
 
     /**
      * Processes a list of events and returns a pair of lists:
@@ -119,6 +186,7 @@ open class ProposalResultService(
             blockTimestamp = blockDetails.blockTimestamp,
             createdAtBlockNumber = blockDetails.blockNumber,
             startRoundId = getStartRoundId(event),
+            state = ProposalState.Pending,
             results = null,
         )
 
@@ -164,6 +232,7 @@ open class ProposalResultService(
             blockTimestamp = blockDetails.blockTimestamp,
             createdAtBlockNumber = existing.createdAtBlockNumber,
             startRoundId = existing.startRoundId,
+            state = existing.state,
             results = updateResults(existing.results, voteEvents),
         )
     }

@@ -29,10 +29,19 @@ open class ProposalService(
     /**
      * Get all proposal results paginated.
      *
+     * @param states Optional list of ProposalState values to filter by. If null, returns all
+     *   results.
      * @param pageable Pagination information.
      */
-    fun getAllProposalResults(pageable: Pageable): Slice<ProposalResult> =
-        proposalResultRepository.findAll(pageable)
+    fun getAllProposalResults(
+        states: List<ProposalState>?,
+        pageable: Pageable,
+    ): Slice<ProposalResult> =
+        if (states == null || states.isEmpty()) {
+            proposalResultRepository.findAll(pageable)
+        } else {
+            proposalResultRepository.findByStateIn(states, pageable)
+        }
 
     /**
      * Get comments for a proposal.

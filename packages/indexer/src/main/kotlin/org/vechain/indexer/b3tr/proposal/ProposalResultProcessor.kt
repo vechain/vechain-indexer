@@ -7,6 +7,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
+import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
@@ -24,14 +25,42 @@ open class ProposalResultProcessor(
         indexerName = IndexerNames.PROPOSAL_RESULT,
     ) {
     override fun process(entry: IndexingResult) {
-        if (entry.events().isEmpty()) {
-            return
+        val allUpdated = mutableMapOf<String, ProposalResult>()
+        val allArchives = mutableMapOf<String, ProposalResult>()
+
+        // If the block object is available we will assume we're fully synced and attempt to update
+        // the states
+        if (entry is IndexingResult.Normal) {
+            val blockDetails =
+                BlockDetails(
+                    blockId = entry.block.id,
+                    blockNumber = entry.block.number,
+                    blockTimestamp = entry.block.timestamp,
+                )
+            val (u, a) = service.getUpdatedStatuses(blockDetails)
+            u.forEach { allUpdated[it.proposalId] = it }
+            a.forEach { allArchives[it.proposalId] = it }
         }
 
-        // Process the events using the service
-        val (updated, archives) = service.processEvents(entry.events())
+        if (entry.events().isNotEmpty()) {
+            // Process the events using the service
+            val (updated, archives) = service.processEvents(entry.events())
+            updated.forEach { eventResult ->
+                val existing = allUpdated[eventResult.proposalId]
+                if (existing != null) {
+                    // Merge: preserve state from status update, use results and other fields from
+                    // events
+                    allUpdated[eventResult.proposalId] = eventResult.copy(state = existing.state)
+                } else {
+                    allUpdated[eventResult.proposalId] = eventResult
+                }
+            }
+            archives.forEach { allArchives[it.proposalId] = it }
+        }
 
-        // Save the updated NFTs and archives
-        service.save(updated, archives)
+        // Save all updated results and their archives in one call
+        if (allUpdated.isNotEmpty() || allArchives.isNotEmpty()) {
+            service.save(allUpdated.values.toList(), allArchives.values.toList())
+        }
     }
 }

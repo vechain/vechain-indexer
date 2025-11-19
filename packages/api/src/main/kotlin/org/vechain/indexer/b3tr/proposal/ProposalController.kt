@@ -12,6 +12,7 @@ import org.vechain.indexer.constants.B3TR_PATH
 import org.vechain.indexer.constants.B3TR_PATH_V2
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.NotFoundException
@@ -22,6 +23,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidProposalId
+import org.vechain.indexer.validation.ValidProposalStates
 
 @Profile("b3tr", "b3tr-proposal")
 @Tag(name = "B3TR - Governance Proposals", description = "Query voting data on VeBetterDAO.")
@@ -33,13 +35,19 @@ open class ProposalController(private val proposalService: ProposalService) {
     @Operation(summary = "Get all proposal results paginated.")
     @CommonApiResponses
     @PaginationParameters
+    @ProposalStatesParameter
     open fun getAllProposalResults(
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
+        @ValidProposalStates @RequestParam(required = false) states: String?,
     ): PaginatedResponse<ProposalResult> {
         val pageable = toPageable(page, size, direction, ProposalResult::createdAtBlockNumber.name)
-        return paginatedResponse(proposalService.getAllProposalResults(pageable))
+        val statesList =
+            states?.split(",")?.mapNotNull { state ->
+                ProposalState.entries.find { it.name.equals(state.trim(), ignoreCase = true) }
+            }
+        return paginatedResponse(proposalService.getAllProposalResults(statesList, pageable))
     }
 
     @GetMapping("$B3TR_PATH_V2/proposals/{proposalId}/results")
