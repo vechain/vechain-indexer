@@ -13,6 +13,7 @@ import org.vechain.indexer.constants.VALIDATORS_PATH
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -21,6 +22,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -151,14 +153,7 @@ open class ValidatorController(
         required = false,
         example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string"),
-        description = "Filter by tokenId",
-        required = false,
-        example = "123456",
-    )
+    @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "statuses",
@@ -170,7 +165,7 @@ open class ValidatorController(
     @CommonApiResponses
     open fun getDelegations(
         @RequestParam(required = false) validator: String?,
-        @RequestParam(required = false) tokenId: String?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @RequestParam(required = false) statuses: List<Status>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,

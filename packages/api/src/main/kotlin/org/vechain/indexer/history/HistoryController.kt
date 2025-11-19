@@ -1,9 +1,7 @@
 package org.vechain.indexer.history
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -24,6 +22,7 @@ import org.vechain.indexer.docs.EventNameParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.SearchByParameter
 import org.vechain.indexer.docs.TokenEventNameParameter
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -35,6 +34,7 @@ import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidSearchBy
 import org.vechain.indexer.validation.ValidTokenEventName
+import org.vechain.indexer.validation.ValidTokenId
 
 @RequestMapping(API_ROOT)
 @Profile("history")
@@ -139,13 +139,7 @@ open class HistoryController(private val historyService: HistoryService) {
 
     @GetMapping("v2/history/token/{tokenId}")
     @Operation(summary = "Get token history")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
-        description = "A valid account tokenId",
-        required = true,
-    )
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @TokenEventNameParameter
     @ContractAddressParameter
     @AfterParameter
@@ -153,7 +147,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @CommonApiResponses
     @PaginationParameters
     open fun getTokenHistory(
-        @PathVariable(required = true) tokenId: String,
+        @ValidTokenId @PathVariable(required = true) tokenId: String,
         @ValidTokenEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,

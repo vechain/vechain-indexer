@@ -19,6 +19,7 @@ import org.vechain.indexer.constants.NFTS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.ContractAddressParameter
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -48,13 +49,7 @@ open class NftController(private val nftService: NftService) {
         example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @ContractAddressParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
-        description = "The NFT tokenId",
-        required = false,
-    )
+    @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "excludeCollections",

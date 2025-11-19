@@ -21,6 +21,7 @@ import org.vechain.indexer.constants.STARGATE_PATH
 import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -117,14 +118,7 @@ open class StargateController(
     @GetMapping("/total-vtho-claimed/{account}/{tokenId}")
     @Operation(summary = "Get total VTHO claimed by a given account and token ID")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
-        description = "The token id to query for total VTHO claimed",
-        required = true,
-        example = "1",
-    )
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "rewardsType",
@@ -395,14 +389,7 @@ open class StargateController(
             "Retrieve Stargate Token snapshots. You can filter results by tokenId, manager, owner, or any " +
                 "combination of these parameters. If no filters are provided, all tokens will be returned.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
-        description = "Optional query parameter to filter by token ID",
-        required = false,
-        example = "100001",
-    )
+    @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "manager",
@@ -421,7 +408,7 @@ open class StargateController(
     )
     @CommonApiResponses
     open fun getStargateTokens(
-        @RequestParam(required = false) tokenId: String?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,
         @ValidAddress @RequestParam(required = false) owner: Address?,
         @RequestParam(required = false) page: Int?,
@@ -455,14 +442,7 @@ open class StargateController(
         description = "Reward period to filter by. Options: CYCLE, DAY, WEEK, MONTH, YEAR, ALL.",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
-        description = "The tokenId to query for rewards",
-        required = true,
-        example = "10001",
-    )
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "validator",
@@ -473,7 +453,7 @@ open class StargateController(
     )
     @CommonApiResponses
     open fun getStargateTokenRewards(
-        @PathVariable("tokenId") tokenId: String,
+        @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) periodType: RewardPeriod,
         @RequestParam(required = false) page: Int?,
