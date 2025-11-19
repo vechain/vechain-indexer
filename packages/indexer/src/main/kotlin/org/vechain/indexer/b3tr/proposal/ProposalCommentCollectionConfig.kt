@@ -39,8 +39,8 @@ open class ProposalCommentCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "voter_-1" to Index().on("voter", Sort.Direction.DESC),
-                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
+                "voter_-1" to Index().on(ProposalComment::voter.name, Sort.Direction.DESC),
+                "proposalId_-1" to Index().on(ProposalComment::proposalId.name, Sort.Direction.DESC),
             )
         )
     }

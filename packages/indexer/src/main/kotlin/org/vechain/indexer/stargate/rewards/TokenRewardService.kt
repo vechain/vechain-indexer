@@ -42,7 +42,7 @@ open class TokenRewardService(
     private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
     private val thorService: ThorService,
-    @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
+    @param:Value("\${business-event.substitutions.STARGATE_CONTRACT}")
     private val stargateContract: String,
 ) {
     /**

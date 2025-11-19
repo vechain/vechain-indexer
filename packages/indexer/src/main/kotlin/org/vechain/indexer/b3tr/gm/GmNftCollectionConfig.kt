@@ -50,9 +50,9 @@ open class GmNftCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "attachedNodeId_1" to Index().on("attachedNodeId", Sort.Direction.ASC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "attachedNodeId_1" to Index().on(GmNft::attachedNodeId.name, Sort.Direction.ASC),
+                "blockNumber_1" to Index().on(GmNft::blockNumber.name, Sort.Direction.ASC),
+                "blockNumber_-1" to Index().on(GmNft::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }

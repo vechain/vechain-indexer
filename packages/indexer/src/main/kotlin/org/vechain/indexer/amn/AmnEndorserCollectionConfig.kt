@@ -36,6 +36,8 @@ open class AmnEndorserCollectionConfig(
         this.ensureCollection()
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(listOf("endorser_1" to Index().on("endorser", Sort.Direction.ASC)))
+        ensureIndexes(
+            listOf("endorser_1" to Index().on(AmnEndorser::endorser.name, Sort.Direction.ASC))
+        )
     }
 }

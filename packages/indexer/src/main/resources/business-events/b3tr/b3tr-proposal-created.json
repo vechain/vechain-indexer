@@ -1,0 +1,67 @@
+{
+  "name": "B3TR_ProposalCreated",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "ProposalCreated",
+      "alias": "proposalCreated",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${B3TR_GOVERNOR_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "proposalId",
+      "eventName": "proposalCreated",
+      "businessEventName": "proposalId"
+    },
+    {
+      "name": "proposer",
+      "eventName": "proposalCreated",
+      "businessEventName": "proposer"
+    },
+    {
+      "name": "targets",
+      "eventName": "proposalCreated",
+      "businessEventName": "targets"
+    },
+    {
+      "name": "values",
+      "eventName": "proposalCreated",
+      "businessEventName": "values"
+    },
+    {
+        "name": "signatures",
+        "eventName": "proposalCreated",
+        "businessEventName": "signatures"
+    },
+    {
+      "name": "calldatas",
+      "eventName": "proposalCreated",
+      "businessEventName": "calldatas"
+    },
+    {
+      "name": "description",
+      "eventName": "proposalCreated",
+      "businessEventName": "description"
+    },
+    {
+      "name": "roundIdVoteStart",
+      "eventName": "proposalCreated",
+      "businessEventName": "startRoundId"
+    },
+    {
+      "name": "depositThreshold",
+      "eventName": "proposalCreated",
+      "businessEventName": "depositThreshold"
+    }
+  ]
+}

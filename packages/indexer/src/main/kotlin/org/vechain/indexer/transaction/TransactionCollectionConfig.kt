@@ -40,34 +40,37 @@ open class TransactionCollectionConfig(
 
         ensureIndexes(
             listOf(
-                Pair("tx_blockNumber_-1", Index().on("blockNumber", Sort.Direction.DESC)),
+                Pair(
+                    "tx_blockNumber_-1",
+                    Index().on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC),
+                ),
                 Pair(
                     "tx_origin_1_blockNumber_-1__id_-1",
                     Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
+                        .on(IndexedTransaction::origin.name, Sort.Direction.ASC)
+                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 ),
                 Pair(
                     "tx_gasPayer_1_blockNumber_-1__id_-1",
                     Index()
-                        .on("gasPayer", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
+                        .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
+                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 ),
                 Pair(
                     "tx_origin_1_gasPayer_1_blockNumber_-1__id_-1",
                     Index()
-                        .on("origin", Sort.Direction.ASC)
-                        .on("gasPayer", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
+                        .on(IndexedTransaction::origin.name, Sort.Direction.ASC)
+                        .on(IndexedTransaction::gasPayer.name, Sort.Direction.ASC)
+                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 ),
                 Pair(
                     "tx_clauses.to_1_blockNumber_-1__id_-1",
                     Index()
                         .on("clauses.to", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC)
+                        .on(IndexedTransaction::blockNumber.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
                 ),
             )

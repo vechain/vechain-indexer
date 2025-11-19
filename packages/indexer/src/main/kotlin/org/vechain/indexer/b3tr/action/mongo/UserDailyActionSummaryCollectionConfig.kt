@@ -53,53 +53,54 @@ open class UserDailyActionSummaryCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "entity_-1" to Index().on("entity", Sort.Direction.DESC),
-                "date_-1" to Index().on("date", Sort.Direction.DESC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                "entity_-1" to Index().on(UserDailyActionSummary::entity.name, Sort.Direction.DESC),
+                "date_-1" to Index().on(UserDailyActionSummary::date.name, Sort.Direction.DESC),
+                "blockNumber_-1" to
+                    Index().on(UserDailyActionSummary::blockNumber.name, Sort.Direction.DESC),
                 "entityType_1_actionsRewarded_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.DESC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::actionsRewarded.name, Sort.Direction.DESC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_actionsRewarded_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.ASC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::actionsRewarded.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_totalRewardAmount_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.DESC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_totalRewardAmount_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.ASC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_date_1_actionsRewarded_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.DESC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::actionsRewarded.name, Sort.Direction.DESC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_date_1_actionsRewarded_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.ASC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::actionsRewarded.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_date_1_totalRewardAmount_-1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.DESC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
                 "entityType_1_date_1_totalRewardAmount_1_entity_1" to
                     Index()
-                        .on("entityType", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.ASC)
-                        .on("entity", Sort.Direction.ASC),
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
             )
         )
     }

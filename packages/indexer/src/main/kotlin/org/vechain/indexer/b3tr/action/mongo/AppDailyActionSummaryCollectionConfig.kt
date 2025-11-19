@@ -54,32 +54,35 @@ open class AppDailyActionSummaryCollectionConfig(
         ensureIndexes(
             listOf(
                 "user_-1_date_-1" to
-                    Index().on("user", Sort.Direction.DESC).on("date", Sort.Direction.DESC),
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
+                    Index()
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.DESC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.DESC),
+                "blockNumber_-1" to
+                    Index().on(AppDailyActionSummary::blockNumber.name, Sort.Direction.DESC),
                 "appId_1_date_1_totalRewardAmount_-1_user_1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.DESC)
-                        .on("user", Sort.Direction.ASC),
+                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::totalRewardAmount.name, Sort.Direction.DESC)
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_date_1_totalRewardAmount_1_user_1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("totalRewardAmount", Sort.Direction.ASC)
-                        .on("user", Sort.Direction.ASC),
+                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_date_1_actionsRewarded_-1_user_1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.DESC)
-                        .on("user", Sort.Direction.ASC),
+                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::actionsRewarded.name, Sort.Direction.DESC)
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
                 "appId_1_date_1_actionsRewarded_1_user_1" to
                     Index()
-                        .on("appId", Sort.Direction.ASC)
-                        .on("date", Sort.Direction.ASC)
-                        .on("actionsRewarded", Sort.Direction.ASC)
-                        .on("user", Sort.Direction.ASC),
+                        .on(AppDailyActionSummary::appId.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::date.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::actionsRewarded.name, Sort.Direction.ASC)
+                        .on(AppDailyActionSummary::user.name, Sort.Direction.ASC),
             )
         )
     }

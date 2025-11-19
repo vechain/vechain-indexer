@@ -41,31 +41,32 @@ open class BlockUsageCollectionConfig(
         ensureIndexes(
             listOf(
                 // Index for findAllInTimestampRange - range queries on blockTimestamp
-                "blockTimestamp_1" to Index().on("blockTimestamp", Sort.Direction.ASC),
+                "blockTimestamp_1" to
+                    Index().on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
                 // Index for findHourlyInTimestampRange - filter by isHourly, then range by
                 // blockTimestamp
                 "isHourly_1_blockTimestamp_1" to
                     Index()
-                        .on("isHourly", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.ASC),
+                        .on(BlockUsage::isHourly.name, Sort.Direction.ASC)
+                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
                 // Index for findDailyInTimestampRange - filter by isDaily, then range by
                 // blockTimestamp
                 "isDaily_1_blockTimestamp_1" to
                     Index()
-                        .on("isDaily", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.ASC),
+                        .on(BlockUsage::isDaily.name, Sort.Direction.ASC)
+                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
                 // Index for findWeeklyInTimestampRange - filter by isWeekly, then range by
                 // blockTimestamp
                 "isWeekly_1_blockTimestamp_1" to
                     Index()
-                        .on("isWeekly", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.ASC),
+                        .on(BlockUsage::isWeekly.name, Sort.Direction.ASC)
+                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
                 // Index for findMonthlyInTimestampRange - filter by isMonthly, then range by
                 // blockTimestamp
                 "isMonthly_1_blockTimestamp_1" to
                     Index()
-                        .on("isMonthly", Sort.Direction.ASC)
-                        .on("blockTimestamp", Sort.Direction.ASC),
+                        .on(BlockUsage::isMonthly.name, Sort.Direction.ASC)
+                        .on(BlockUsage::blockTimestamp.name, Sort.Direction.ASC),
             )
         )
     }

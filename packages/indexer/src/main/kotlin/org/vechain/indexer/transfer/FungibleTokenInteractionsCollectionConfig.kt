@@ -40,12 +40,14 @@ open class FungibleTokenInteractionsCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "blockNumber_-1" to Index().on("blockNumber", Sort.Direction.DESC),
-                "walletAddress_1" to Index().on("walletAddress", Sort.Direction.ASC),
+                "blockNumber_-1" to
+                    Index().on(FungibleTokenInteraction::blockNumber.name, Sort.Direction.DESC),
+                "walletAddress_1" to
+                    Index().on(FungibleTokenInteraction::walletAddress.name, Sort.Direction.ASC),
                 "contractAddress_1_walletAddress_1" to
                     Index()
-                        .on("contractAddress", Sort.Direction.ASC)
-                        .on("walletAddress", Sort.Direction.ASC),
+                        .on(FungibleTokenInteraction::contractAddress.name, Sort.Direction.ASC)
+                        .on(FungibleTokenInteraction::walletAddress.name, Sort.Direction.ASC),
             )
         )
     }

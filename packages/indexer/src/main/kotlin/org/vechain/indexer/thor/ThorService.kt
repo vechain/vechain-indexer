@@ -50,7 +50,7 @@ class ThorService(private val thorRest: WebClient) {
     }
 
     fun inspectClausesAtBlock(clauses: List<Clause>, blockID: String): List<ExecuteCodeResponse> {
-        val blockRef = blockID.substring(0, 18)
+        val blockRef = blockID.take(18)
         val request = ExecuteCodeRequest(clauses = clauses, blockRef = blockRef)
 
         return thorRest

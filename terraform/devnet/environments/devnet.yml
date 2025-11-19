@@ -161,7 +161,7 @@ enabled_nets:
         stargate-vet-staked-by-block: '6'
         stargate-vet-delegated-by-block: '5'
         b3tr-proposal-comments: '5'
-        b3tr-proposal-results: '5'
+        b3tr-proposal-results: '6'
         b3tr-user-all-time-action-summary: '5'
         b3tr-app-all-time-action-summary: '5'
         b3tr-app-round-action-summary: '5'

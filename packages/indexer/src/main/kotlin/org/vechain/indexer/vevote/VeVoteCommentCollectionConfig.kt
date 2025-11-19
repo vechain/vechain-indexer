@@ -40,8 +40,14 @@ open class VeVoteCommentCollectionConfig(
 
         ensureIndexes(
             listOf(
-                Pair("voter_-1", Index().on("voter", Sort.Direction.DESC)),
-                Pair("proposalId_-1", Index().on("proposalId", Sort.Direction.DESC)),
+                Pair(
+                    "voter_-1",
+                    Index().on(VeVoteProposalComment::voter.name, Sort.Direction.DESC),
+                ),
+                Pair(
+                    "proposalId_-1",
+                    Index().on(VeVoteProposalComment::proposalId.name, Sort.Direction.DESC),
+                ),
             )
         )
     }
