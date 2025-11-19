@@ -1,6 +1,5 @@
 package org.vechain.indexer.b3tr.proposal
 
-import ProposalIdParameter
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -13,6 +12,7 @@ import org.vechain.indexer.constants.B3TR_PATH_V2
 import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.ProposalStatesParameter
 import org.vechain.indexer.docs.SupportParameter
 import org.vechain.indexer.exception.ResourceNotFoundException
