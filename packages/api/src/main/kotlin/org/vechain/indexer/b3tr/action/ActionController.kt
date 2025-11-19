@@ -1,9 +1,7 @@
 package org.vechain.indexer.b3tr.action
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -24,13 +22,14 @@ import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.BeforeMillisParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.DateParameter
+import org.vechain.indexer.docs.EndDateParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
+import org.vechain.indexer.docs.StartDateParameter
 import org.vechain.indexer.docs.WalletParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.validation.ISODateString
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidISODateString
@@ -189,18 +188,8 @@ open class ActionController(private val service: ActionService) {
     @GetMapping("/actions/users/{wallet}/daily-summaries")
     @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
     @WalletParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        name = "startDate",
-        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
-        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
-        required = true,
-    )
-    @Parameter(
-        name = "endDate",
-        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
-        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
-        required = true,
-    )
+    @StartDateParameter
+    @EndDateParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getDailySummariesForRange(
