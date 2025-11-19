@@ -22,6 +22,7 @@ import org.vechain.indexer.docs.AccountParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.RangeParameter
+import org.vechain.indexer.docs.RewardsTypeParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -64,13 +65,9 @@ open class StargateController(
         description =
             "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, the latest value will be returned."
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
+    @RewardsTypeParameter(
         description =
-            "Optional query parameter to filter rewards by type. If not all rewards will be returned.",
-        required = false,
+            "Optional query parameter to filter rewards by type. If not all rewards will be returned."
     )
     @CommonApiResponses
     open fun getTotalVthoClaimed(
@@ -92,14 +89,7 @@ open class StargateController(
     @GetMapping("/total-vtho-claimed/{account}")
     @Operation(summary = "Get total VTHO claimed by a given account")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
-        description =
-            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
-        required = false,
-    )
+    @RewardsTypeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
@@ -121,14 +111,7 @@ open class StargateController(
     @Operation(summary = "Get total VTHO claimed by a given account and token ID")
     @AccountParameter(required = true, `in` = ParameterIn.PATH)
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
-        description =
-            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
-        required = false,
-    )
+    @RewardsTypeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
