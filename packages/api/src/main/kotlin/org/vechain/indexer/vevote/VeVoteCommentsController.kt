@@ -11,6 +11,7 @@ import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.docs.SupportParameter
+import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -33,7 +34,7 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
     @CommonApiResponses
     @PaginationParameters
     open fun getComments(
-        @ValidProposalId @RequestParam(required = false) proposalId: String?,
+        @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
         @ValidAddress @RequestParam(required = false) voter: Address?,
         @RequestParam(required = false) support: Support?,
         @RequestParam(required = false) page: Int?,
@@ -46,16 +47,25 @@ open class VeVoteCommentsController(private val vevoteService: VeVoteService) {
             when {
                 proposalId != null && voter != null && support != null ->
                     vevoteService.getCommentsByProposalAndVoterAndSupport(
-                        proposalId,
+                        proposalId.value,
                         voter.value,
                         support,
                         pageable,
                     )
                 proposalId != null && voter != null ->
-                    vevoteService.getCommentsByProposalAndVoter(proposalId, voter.value, pageable)
+                    vevoteService.getCommentsByProposalAndVoter(
+                        proposalId.value,
+                        voter.value,
+                        pageable,
+                    )
                 proposalId != null && support != null ->
-                    vevoteService.getCommentsByProposalAndSupport(proposalId, support, pageable)
-                proposalId != null -> vevoteService.getCommentsByProposalId(proposalId, pageable)
+                    vevoteService.getCommentsByProposalAndSupport(
+                        proposalId.value,
+                        support,
+                        pageable,
+                    )
+                proposalId != null ->
+                    vevoteService.getCommentsByProposalId(proposalId.value, pageable)
                 voter != null && support != null ->
                     vevoteService.getCommentsByVoterAndSupport(voter.value, support, pageable)
                 voter != null -> vevoteService.getCommentsByVoter(voter.value, pageable)

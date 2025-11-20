@@ -563,6 +563,6 @@ open class StargateController(
     required = true,
 )
 @AfterParameter(name = "from", description = "Optional start of custom date range (Unix seconds)")
-@BeforeParameter(name = "to", description = "Optional start of custom date range (Unix seconds)")
+@BeforeParameter(name = "to", description = "Optional end of custom date range (Unix seconds)")
 @CommonApiResponses
 annotation class TimeFrameEndpoint
