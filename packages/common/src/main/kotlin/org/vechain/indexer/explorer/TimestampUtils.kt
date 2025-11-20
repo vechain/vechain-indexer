@@ -8,6 +8,10 @@ object TimestampUtils {
     private const val ONE_WEEK = 604800L
     private const val ONE_MONTH = 2592000L
 
+    // Solo genesis block timestamp (2018-05-15 23:59:50 UTC) - This should be the earliest valid
+    // timestamp
+    private const val SOLO_GENESIS_TIMESTAMP = 1526399990L
+
     fun isHourly(previousTimestamp: Long, currentTimestamp: Long): Boolean =
         isMultipleOf(previousTimestamp, currentTimestamp, ONE_HOUR)
 
@@ -65,9 +69,11 @@ object TimestampUtils {
         }
     }
 
-    // A valid timestamp is a multiple of SLOT_STEP (10 seconds)
+    // A valid timestamp must be greater than or equal to the testnet genesis block timestamp
     fun checkValidTimestamp(blockTimestamp: Long) =
-        require(blockTimestamp % SLOT_STEP == 0L) { "Invalid block timestamp: $blockTimestamp" }
+        require(blockTimestamp >= SOLO_GENESIS_TIMESTAMP) {
+            "Invalid block timestamp: $blockTimestamp"
+        }
 
     fun calculateTimeBoundary(
         previousTimestamp: Long,

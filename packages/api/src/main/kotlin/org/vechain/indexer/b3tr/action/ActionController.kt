@@ -1,9 +1,7 @@
 package org.vechain.indexer.b3tr.action
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -19,19 +17,23 @@ import org.vechain.indexer.b3tr.action.response.GlobalOverview
 import org.vechain.indexer.b3tr.action.response.UserAppOverview
 import org.vechain.indexer.b3tr.action.response.UserOverview
 import org.vechain.indexer.constants.B3TR_PATH
+import org.vechain.indexer.docs.AddressParameter
+import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.AppIdParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.DateParameter
+import org.vechain.indexer.docs.EndDateParameter
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RoundIdParameter
-import org.vechain.indexer.docs.WalletParameter
+import org.vechain.indexer.docs.StartDateParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.validation.ISODateString
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAppId
 import org.vechain.indexer.validation.ValidISODateString
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageNumber
 import org.vechain.indexer.validation.ValidPageSize
 
@@ -44,29 +46,17 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}")
     @Operation(summary = "Get B3TR actions for a user")
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions after this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions before this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
+    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
+    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
     @CommonApiResponses
     @PaginationParameters
     open fun getUserActions(
         @ValidAddress @PathVariable(required = true) wallet: Address,
         @ValidAppId @RequestParam(required = false) appId: AppId?,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -97,26 +87,14 @@ open class ActionController(private val service: ActionService) {
     @GetMapping("/actions/apps/{appId}")
     @Operation(summary = "Get B3TR actions for an app")
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "after",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions after this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "before",
-        schema = Schema(type = "integer", format = "int64"),
-        description = "Return transactions before this timestamp (Unix time in milliseconds).",
-        required = false,
-    )
+    @AfterParameter(description = "Return records after this time (Unix time in milliseconds)")
+    @BeforeParameter(description = "Return records before this time (Unix time in milliseconds)")
     @CommonApiResponses
     @PaginationParameters
     open fun getAppActions(
         @ValidAppId @PathVariable(required = true) appId: AppId,
-        @RequestParam(required = false) after: Long?,
-        @RequestParam(required = false) before: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @ValidPageNumber @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -146,7 +124,7 @@ open class ActionController(private val service: ActionService) {
             - If both roundId and date are provided, a BadRequest error is returned.
         """,
     )
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @CommonApiResponses
     open fun getUserOverview(
         @ValidAddress @PathVariable wallet: Address,
@@ -183,7 +161,7 @@ open class ActionController(private val service: ActionService) {
             - If both roundId and date are provided, a BadRequest error is returned.
         """,
     )
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
     @AppIdParameter(required = true, `in` = ParameterIn.PATH)
     @DateParameter
     @CommonApiResponses
@@ -210,19 +188,9 @@ open class ActionController(private val service: ActionService) {
 
     @GetMapping("/actions/users/{wallet}/daily-summaries")
     @Operation(summary = "Get daily action summaries for a specific user within a specified range.")
-    @WalletParameter(required = true, `in` = ParameterIn.PATH)
-    @Parameter(
-        name = "startDate",
-        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
-        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
-        required = true,
-    )
-    @Parameter(
-        name = "endDate",
-        schema = Schema(type = "string", format = "date", pattern = ISODateString.REGEX),
-        description = "A date to filter by. In UTC, format: yyyy-MM-dd.",
-        required = true,
-    )
+    @AddressParameter(name = "wallet", required = true, `in` = ParameterIn.PATH)
+    @StartDateParameter
+    @EndDateParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getDailySummariesForRange(

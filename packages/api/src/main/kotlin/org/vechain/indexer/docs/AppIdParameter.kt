@@ -12,6 +12,7 @@ import org.vechain.indexer.b3tr.AppId
     name = "appId",
     description = "App ID to query by.",
     schema = Schema(type = "string", pattern = AppId.REGEX),
+    example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
 )
 annotation class AppIdParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "required")

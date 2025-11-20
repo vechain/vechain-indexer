@@ -1,9 +1,6 @@
 package org.vechain.indexer.b3tr.gm
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -11,6 +8,7 @@ import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.constants.GM_NFT_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.GmNftLevelParameter
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Tag(
@@ -27,15 +25,10 @@ open class GmNftController(private val gmNftRepository: GmNftRepository) {
             "Returns the current overview (holders, B3TR donated, etc.) for each Galaxy Member level.",
     )
     @GetMapping("/level-overview")
+    @GmNftLevelParameter
     @CommonApiResponses
     open fun getLevelOverviews(
-        @Parameter(
-            `in` = ParameterIn.QUERY,
-            description = "Optional level to filter by",
-            schema = Schema(implementation = GmLevelName::class),
-        )
-        @RequestParam(required = false)
-        level: GmLevelName?
+        @RequestParam(required = false) level: GmLevelName?
     ): List<GMLevelOverview> =
         if (level == null || level.name == "ALL") {
             gmNftRepository.levelCounts()

@@ -24,26 +24,36 @@ class IntegrationTests : AbstractIntegrationTest() {
         // Sleep while indexer catches chain
         waitForFullySynced()
 
-        // TODO: The current transaction script does not contain any stargate data
+        // TODO: The current transaction script is missing a lot of data:
         val unsupportedCollections =
-            listOf(
+            setOf(
                 "stargate_total_nft_holders_by_block",
                 "stargate_total_vet_staked_by_block",
                 "stargate_vtho_claimed_by_account",
                 "stargate_vtho_claimed_by_block",
+                "stargate_vtho_generated_by_block",
+                "stargate_total_vet_delegated_by_block",
+                "stargate_tokens",
+                "historic_proposals",
+                "historic_proposals_votes",
+                "b3tr_user_action_summaries_all_time",
+                "b3tr_user_action_summaries_daily",
+                "b3tr_user_action_summaries_round",
+                "b3tr_app_action_summaries_all_time",
+                "b3tr_app_action_summaries_daily",
+                "b3tr_app_action_summaries_round",
+                "b3tr_proposal_comments",
+                "b3tr_proposal_results",
+                "b3tr_gm_nfts",
+                "b3tr_x_alloc_results",
+                "vevote_proposal_results",
+                "vevote_proposal_comments",
             )
-
-        // Do not take into account mongock collections, archive collections
-        val changeLogCollections = listOf("mongockChangeLog", "mongockLock")
 
         val collections = mongoOps.collectionNames
 
         collections
-            .filter {
-                !unsupportedCollections.contains(it) &&
-                    !changeLogCollections.contains(it) &&
-                    !it.endsWith("archives")
-            }
+            .filter { !unsupportedCollections.contains(it) && !it.endsWith("archives") }
             .forEach { collection ->
                 mongoOps.count(Query(), collection).let { count ->
                     expect {

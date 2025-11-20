@@ -11,20 +11,16 @@ import org.springframework.core.annotation.AliasFor
     AnnotationTarget.ANNOTATION_CLASS,
 )
 @Retention(AnnotationRetention.RUNTIME)
-@Parameter(
-    schema =
-        Schema(type = "integer", format = "int64", minimum = "0", maximum = "9223372036854775807")
-)
 @Repeatable
-annotation class BlockNumberParameter(
-    @get:AliasFor(annotation = Parameter::class, attribute = "name")
-    val name: String = "blockNumber",
+@Parameter(schema = Schema(type = "integer", format = "int64", minimum = "0"))
+annotation class AfterParameter(
+    @get:AliasFor(annotation = Parameter::class, attribute = "name") val name: String = "after",
+    @get:AliasFor(annotation = Parameter::class, attribute = "description")
+    val description: String = "Return records after this time (Unix time in seconds).",
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
     val `in`: ParameterIn = ParameterIn.QUERY,
     @get:AliasFor(annotation = Parameter::class, attribute = "required")
     val required: Boolean = false,
-    @get:AliasFor(annotation = Parameter::class, attribute = "description")
-    val description: String = "Optional block number filter.",
     @get:AliasFor(annotation = Parameter::class, attribute = "example")
-    val example: String = "12345678",
+    val example: String = "1704143600",
 )

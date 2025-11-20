@@ -1,9 +1,7 @@
 package org.vechain.indexer.b3tr.xAlloc
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.http.HttpStatus
@@ -11,7 +9,9 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.constants.X_ALLOC_PATH
+import org.vechain.indexer.docs.AppIdParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.RoundIdParameter
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Tag(name = "B3TR - X-Allocations", description = "Query XAllocation voting data on VeBetterDAO.")
@@ -25,23 +25,8 @@ open class XAllocController(private val xAllocService: XAllocService) {
         summary = "Get XAllocation voting results for a round",
         description = "Returns voting results for a specific round, optionally filtered by appId.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "roundId",
-        description = "Round ID to filter by.",
-        required = true,
-        schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
-        example = "2",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "appId",
-        description =
-            "Optional app ID to filter by. If provided, returns results for that app in the specified round.",
-        required = false,
-        schema = Schema(type = "string"),
-        example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
-    )
+    @RoundIdParameter(`in` = ParameterIn.PATH, required = true)
+    @AppIdParameter
     @CommonApiResponses
     open fun getXAllocResults(
         @PathVariable roundId: Int,
@@ -66,26 +51,8 @@ open class XAllocController(private val xAllocService: XAllocService) {
                 "specific app and round. If only appId is provided, returns earnings for that app across " +
                 "all rounds. If only roundId is provided, returns earnings for all apps in that round.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "appId",
-        description =
-            "Optional app ID to filter by. If omitted, must provide roundId. Returns earnings for " +
-                "the specified app (across all rounds if roundId is also omitted).",
-        required = false,
-        schema = Schema(type = "string"),
-        example = "0x2fc30c2ad41a2994061efaf218f1d52dc92bc4a31a0f02a4916490076a7a393a",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "roundId",
-        description =
-            "Optional round ID to filter by. If omitted, must provide appId. Returns earnings for " +
-                "the specified round (across all apps if appId is also omitted).",
-        required = false,
-        schema = Schema(type = "integer", format = "int32", minimum = "0", maximum = "2147483647"),
-        example = "2",
-    )
+    @AppIdParameter
+    @RoundIdParameter
     @CommonApiResponses
     open fun getXAllocEarnings(
         @RequestParam(required = false) appId: String?,

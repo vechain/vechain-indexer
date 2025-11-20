@@ -1,9 +1,6 @@
 package org.vechain.indexer.accounts
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -13,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.ACCOUNTS_PATH
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.TimeFrameParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
@@ -35,13 +33,7 @@ open class AccountsController(private val accountsService: AccountsService) {
             If no `timeFrame` is provided, the response defaults to showing the full cumulative totals (ALL).
         """,
     )
-    @Parameter(
-        name = "timeFrame",
-        `in` = ParameterIn.QUERY,
-        description = "Time frame to query totals for (DAY, WEEK, MONTH, YEAR, ALL).",
-        required = false,
-        schema = Schema(implementation = TimeFrame::class),
-    )
+    @TimeFrameParameter
     @CommonApiResponses
     open fun getTotalAccounts(
         @RequestParam(required = false) timeFrame: TimeFrame?,
