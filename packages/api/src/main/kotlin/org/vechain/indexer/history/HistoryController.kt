@@ -27,6 +27,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.utils.TimeValidationUtils
+import org.vechain.indexer.validation.LegacyValidEventName
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidEventName
 import org.vechain.indexer.validation.ValidNonNegativeLong
@@ -54,7 +55,7 @@ open class HistoryController(private val historyService: HistoryService) {
     @PaginationParameters
     open fun getUsersHistory(
         @ValidAddress @PathVariable account: Address,
-        @ValidEventName @RequestParam(required = false) eventName: List<String>?,
+        @LegacyValidEventName @RequestParam(required = false) eventName: List<String>?,
         @ValidSearchBy @RequestParam(required = false) searchBy: List<String>?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
