@@ -134,9 +134,10 @@ class BlockUsageServiceTest {
 
     // Test calculateCumulativeBaseFeePerGas
     @Test
-    fun `calculateCumulativeBaseFeePerGas returns null when previous is null`() {
-        val previousBlockUsage = createBlockUsage(cumulativeBaseFeePerGas = null)
-        val block = BlockFixtures.BLOCK_NO_CLAUSES
+    fun `calculateCumulativeBaseFeePerGas returns null when current block has no baseFeePerGas`() {
+        val previousBlockUsage =
+            createBlockUsage(cumulativeBaseFeePerGas = BigInteger.valueOf(1000000000))
+        val block = BlockFixtures.BLOCK_NO_CLAUSES // This block has no baseFeePerGas
 
         val result = service.calculateCumulativeBaseFeePerGas(previousBlockUsage, block)
 
@@ -144,16 +145,27 @@ class BlockUsageServiceTest {
     }
 
     @Test
-    fun `calculateCumulativeBaseFeePerGas adds fees correctly when both present`() {
-        val previousBlockUsage =
-            createBlockUsage(cumulativeBaseFeePerGas = BigInteger.valueOf(1000000000))
-        val block = BlockFixtures.BLOCK_SINGLE_CLAUSE // This block has baseFeePerGas
+    fun `calculateCumulativeBaseFeePerGas defaults previous null to zero`() {
+        val previousBlockUsage = createBlockUsage(cumulativeBaseFeePerGas = null)
+        val block = BlockFixtures.BLOCK_RANDOM_TX // This block has baseFeePerGas
 
         val result = service.calculateCumulativeBaseFeePerGas(previousBlockUsage, block)
 
-        // Result may be null if the fixture doesn't have baseFeePerGas
-        // Just verify the method works without throwing
-        assertDoesNotThrow { service.calculateCumulativeBaseFeePerGas(previousBlockUsage, block) }
+        // Should accumulate from zero instead of returning null
+        assertNotNull(result)
+        assertTrue(result!! > BigInteger.ZERO)
+    }
+
+    @Test
+    fun `calculateCumulativeBaseFeePerGas adds fees correctly when both present`() {
+        val previousCumulative = BigInteger.valueOf(1000000000)
+        val previousBlockUsage = createBlockUsage(cumulativeBaseFeePerGas = previousCumulative)
+        val block = BlockFixtures.BLOCK_RANDOM_TX // This block has baseFeePerGas
+
+        val result = service.calculateCumulativeBaseFeePerGas(previousBlockUsage, block)
+
+        assertNotNull(result)
+        assertTrue(result!! > previousCumulative)
     }
 
     // Test calculateCumulativeTransactions
@@ -218,7 +230,7 @@ class BlockUsageServiceTest {
                 blockTimestamp = 1680177320L, // 10 seconds before
                 cumulativeGasLimit = BigInteger.valueOf(1000000),
                 cumulativeGasUsed = BigInteger.valueOf(500000),
-                cumulativeBaseFeePerGas = null, // BLOCK_NO_CLAUSES doesn't have baseFeePerGas
+                cumulativeBaseFeePerGas = BigInteger.valueOf(1000000000),
                 cumulativeNumTransactions = BigInteger.valueOf(50),
                 cumulativeNumClauses = BigInteger.valueOf(75),
             )
@@ -231,6 +243,8 @@ class BlockUsageServiceTest {
         assertTrue(result.cumulativeGasLimit > previousBlockUsage.cumulativeGasLimit)
         // gasUsed is 0 for BLOCK_NO_CLAUSES
         assertEquals(previousBlockUsage.cumulativeGasUsed, result.cumulativeGasUsed)
+        // BLOCK_NO_CLAUSES has no baseFeePerGas, so cumulative should be null
+        assertNull(result.cumulativeBaseFeePerGas)
         assertEquals(
             BigInteger.valueOf(50),
             result.cumulativeNumTransactions,
