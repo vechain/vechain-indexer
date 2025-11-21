@@ -215,10 +215,12 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
     internal fun calculateCumulativeBaseFeePerGas(
         previousBlockUsage: BlockUsage,
         block: Block,
-    ): BigInteger? =
-        previousBlockUsage.cumulativeBaseFeePerGas?.let { prev ->
-            parseBaseFeePerGas(block.baseFeePerGas)?.let { current -> prev + current }
-        }
+    ): BigInteger? {
+        val currentBaseFee = parseBaseFeePerGas(block.baseFeePerGas) ?: return null
+        val previousCumulativeBaseFee =
+            previousBlockUsage.cumulativeBaseFeePerGas ?: BigInteger.ZERO
+        return previousCumulativeBaseFee + currentBaseFee
+    }
 
     /**
      * Calculate cumulative number of transactions.
