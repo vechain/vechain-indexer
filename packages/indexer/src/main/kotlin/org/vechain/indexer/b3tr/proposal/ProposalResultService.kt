@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
+import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getDescription
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getStartRoundId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getWeight
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupByProposalId
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.groupBySupport
-import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.fromOrdinal
 import org.vechain.indexer.b3tr.proposal.ProposalState.Companion.nonFinalizedStates
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.b3tr.voting.Support
@@ -48,8 +48,9 @@ open class ProposalResultService(
 
     init {
         val response = AbiLoader.load(basePath = "abis/b3tr", names = listOf("state"))
-        if (response.size != 1)
+        if (response.size != 1) {
             error("Failed to load ABI for 'state', response size: ${response.size}")
+        }
 
         statusAbi = response.first()
     }
@@ -57,7 +58,6 @@ open class ProposalResultService(
     open fun getUpdatedStatuses(
         block: BlockDetails
     ): Pair<List<ProposalResult>, List<ProposalResult>> {
-
         val updatedResult = mutableListOf<ProposalResult>()
         val archiveResult = mutableListOf<ProposalResult>()
 
@@ -109,11 +109,10 @@ open class ProposalResultService(
      * @param proposals The proposals to create clauses for.
      * @return A list of contract clauses.
      */
-    protected fun createStatusClauses(proposals: List<ProposalResult>): List<Clause> {
-        return proposals.map { p ->
+    protected fun createStatusClauses(proposals: List<ProposalResult>): List<Clause> =
+        proposals.map { p ->
             ContractUtils.createClause(governorContract, statusAbi, p.proposalId.toBigInteger())
         }
-    }
 
     /**
      * Updates the states of proposals based on contract responses.
@@ -259,6 +258,7 @@ open class ProposalResultService(
             blockTimestamp = blockDetails.blockTimestamp,
             createdAtBlockNumber = blockDetails.blockNumber,
             startRoundId = getStartRoundId(event),
+            description = getDescription(event),
             state = ProposalState.Pending,
             results = null,
         )
@@ -307,6 +307,7 @@ open class ProposalResultService(
             startRoundId = existing.startRoundId,
             state = existing.state,
             results = updateResults(existing.results, voteEvents),
+            description = existing.description,
         )
     }
 

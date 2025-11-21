@@ -204,7 +204,7 @@ enabled_nets:
         stargate-token: '3'
         token-rewards: '1'
         delegation: '1'
-        accounts: '2'
+        accounts: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -387,7 +387,7 @@ enabled_nets:
         stargate-vet-staked-by-block: '4'
         stargate-vet-delegated-by-block: '4'
         b3tr-proposal-comments: '2'
-        b3tr-proposal-results: '2'
+        b3tr-proposal-results: '3'
         b3tr-app-all-time-action-summary: '2'
         b3tr-app-round-action-summary: '2'
         b3tr-app-daily-action-summary: '2'

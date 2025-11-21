@@ -22,6 +22,7 @@ constructor(
     val startRoundId: Int,
     val state: ProposalState,
     val results: VoteResults?,
+    val description: String,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = proposalId
 
