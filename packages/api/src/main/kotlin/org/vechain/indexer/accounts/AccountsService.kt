@@ -22,8 +22,16 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
      * @dev When querying for a specific period (e.g., DAY), includes the "ALL" document in the
      *   query and normalizes it to match the requested period.
      */
-    fun getTotal(period: TimeFrame?, pageable: Pageable): Slice<Accounts> {
-        val targetPeriod = period ?: TimeFrame.ALL
+    fun getTotal(period: AccountQueryTimeFrame?, pageable: Pageable): Slice<Accounts> {
+        val targetPeriod =
+            when (period) {
+                AccountQueryTimeFrame.DAY -> TimeFrame.DAY
+                AccountQueryTimeFrame.WEEK -> TimeFrame.WEEK
+                AccountQueryTimeFrame.MONTH -> TimeFrame.MONTH
+                AccountQueryTimeFrame.YEAR -> TimeFrame.YEAR
+                AccountQueryTimeFrame.ALL,
+                null -> TimeFrame.ALL
+            }
 
         // Always include ALL when querying a specific period (for normalization)
         val periods =
@@ -75,6 +83,10 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
                 TimeFrame.MONTH -> allDoc.monthTotal
                 TimeFrame.YEAR -> allDoc.yearTotal
                 TimeFrame.ALL -> allDoc.total
+                else ->
+                    throw IllegalArgumentException(
+                        "Unsupported time frame for normalization: $target"
+                    )
             } ?: 0L
 
         return allDoc.copy(
