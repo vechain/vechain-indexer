@@ -63,7 +63,7 @@ open class ProposalResultConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/b3tr", "abis/b3tr")
-            .businessEventNames(listOf("B3TR_ProposalVote"))
+            .businessEventNames(listOf("B3TR_ProposalCreated", "B3TR_ProposalVote"))
             .businessEventContracts(listOf(b3trGovernorContract))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()

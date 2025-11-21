@@ -39,15 +39,19 @@ open class HistoricProposalsVoteCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "proposalId_-1" to
+                    Index().on(HistoricProposalsVote::proposalId.name, Sort.Direction.DESC),
+                "blockNumber_1" to
+                    Index().on(HistoricProposalsVote::blockNumber.name, Sort.Direction.ASC),
                 "proposalId_contract" to
-                    Index().on("proposalId", Sort.Direction.ASC).on("contract", Sort.Direction.ASC),
+                    Index()
+                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
+                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC),
                 "proposalId_contract_blockNumber" to
                     Index()
-                        .on("proposalId", Sort.Direction.ASC)
-                        .on("contract", Sort.Direction.ASC)
-                        .on("blockNumber", Sort.Direction.DESC),
+                        .on(HistoricProposalsVote::proposalId.name, Sort.Direction.ASC)
+                        .on(HistoricProposalsVote::contract.name, Sort.Direction.ASC)
+                        .on(HistoricProposalsVote::blockNumber.name, Sort.Direction.DESC),
             )
         )
     }

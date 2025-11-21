@@ -18,10 +18,18 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.constants.STARGATE_PATH
+import org.vechain.indexer.docs.AddressParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.RangeParameter
+import org.vechain.indexer.docs.RewardsTypeParameter
+import org.vechain.indexer.docs.TokenIdParameter
+import org.vechain.indexer.docs.TokenLevelParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.token.StargateToken
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
@@ -35,6 +43,7 @@ import org.vechain.indexer.timeseries.TimeRangePreset
 import org.vechain.indexer.timeseries.TimeSeriesRecord
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTimeRangePreset
 import org.vechain.indexer.validation.ValidTokenId
@@ -50,6 +59,7 @@ open class StargateController(
     private val vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository,
     private val vetStakedByBlockRepository: VetStakedByBlockRepository,
     private val vetDelegatedByBlockRepository: VetDelegatedByBlockRepository,
+    private val nftHoldersByBlockRepository: NftHoldersByBlockRepository,
     private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository,
 ) {
     @GetMapping("/total-vtho-claimed")
@@ -58,13 +68,9 @@ open class StargateController(
         description =
             "Optional query parameter to get the total VTHO claimed at a specific block number. If not provided, the latest value will be returned."
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
+    @RewardsTypeParameter(
         description =
-            "Optional query parameter to filter rewards by type. If not all rewards will be returned.",
-        required = false,
+            "Optional query parameter to filter rewards by type. If not all rewards will be returned."
     )
     @CommonApiResponses
     open fun getTotalVthoClaimed(
@@ -85,22 +91,8 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}")
     @Operation(summary = "Get total VTHO claimed by a given account")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The account address to query for total VTHO claimed",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
-        description =
-            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
-        required = false,
-    )
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
+    @RewardsTypeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
@@ -120,30 +112,9 @@ open class StargateController(
 
     @GetMapping("/total-vtho-claimed/{account}/{tokenId}")
     @Operation(summary = "Get total VTHO claimed by a given account and token ID")
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "account",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The account address to query for total VTHO claimed",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
-        description = "The token id to query for total VTHO claimed",
-        required = true,
-        example = "1",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "rewardsType",
-        schema = Schema(type = "string", allowableValues = ["LEGACY", "DELEGATION"]),
-        description =
-            "Optional query parameter to filter rewards by type. If not provided, all types will be included.",
-        required = false,
-    )
+    @AddressParameter(name = "account", required = true, `in` = ParameterIn.PATH)
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
+    @RewardsTypeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidAddress @PathVariable account: Address,
@@ -168,18 +139,7 @@ open class StargateController(
         description =
             "This endpoint returns a time series of total VTHO claimed by all Stargate users (Delegation only).",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @CommonApiResponses
     open fun getTotalVthoClaimed(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
@@ -210,41 +170,10 @@ open class StargateController(
             "This endpoint returns a time series of NFT holders in Stargate. The time series is sparsely populated, " +
                 "so it may not contain consistent gaps between records.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "level",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues =
-                    [
-                        "Strength",
-                        "Thunder",
-                        "Mjolnir",
-                        "VeThorX",
-                        "StrengthX",
-                        "ThunderX",
-                        "MjolnirX",
-                        "Dawn",
-                        "Lightning",
-                        "Flash",
-                    ],
-            ),
+    @RangeParameter
+    @TokenLevelParameter(
         description =
-            "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included.",
-        required = false,
+            "Optional query parameter to filter NFT holders by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
     open fun getNftHolders(
@@ -281,42 +210,10 @@ open class StargateController(
             "This endpoint returns a time series of total VET staked in Stargate. The time series is sparsely " +
                 "populated, so it may not contain consistent gaps between records.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "level",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues =
-                    [
-                        "Strength",
-                        "Thunder",
-                        "Mjolnir",
-                        "VeThorX",
-                        "StrengthX",
-                        "ThunderX",
-                        "MjolnirX",
-                        "Dawn",
-                        "Lightning",
-                        "Flash",
-                    ],
-            ),
+    @RangeParameter
+    @TokenLevelParameter(
         description =
-            "Optional query parameter to filter total VET staked by level. If not provided, all levels will be " +
-                "included.",
-        required = false,
+            "Optional query parameter to filter total VET staked by level. If not provided, all levels will be included."
     )
     @CommonApiResponses
     open fun getTotalVetStaked(
@@ -351,18 +248,7 @@ open class StargateController(
         description =
             "This endpoint returns a time series of total VTHO claimed by all Stargate users.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "range",
-        schema =
-            Schema(
-                type = "string",
-                allowableValues = arrayOf("1-hour", "1-day", "1-week", "1-month", "1-year", "all"),
-            ),
-        description = "Time range preset to use for the query.",
-        required = true,
-        example = "1-day",
-    )
+    @RangeParameter
     @CommonApiResponses
     open fun getTotalVthoGenerated(
         @ValidTimeRangePreset @PathVariable("range") rangeStr: String
@@ -376,19 +262,10 @@ open class StargateController(
 
     @GetMapping("/total-vet-delegated")
     @Operation(summary = "Get total VET delegated in Stargate")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "blockNumber",
-        schema = Schema(type = "integer", format = "int64"),
-        description =
-            "Optional query parameter to get the total VET delegated at a specific block number. If not provided, the" +
-                " latest value will be returned.",
-        required = false,
-        example = "12345678",
-    )
+    @BlockNumberParameter
     @CommonApiResponses
     open fun getTotalVetDelegated(
-        @RequestParam(required = false) blockNumber: Long?
+        @ValidNonNegativeLong @RequestParam(required = false) blockNumber: Long?
     ): TotalByBlockDto =
         stargateService.getTotalVetDelegated(blockNumber)
             ?: TotalByBlockDto(
@@ -406,33 +283,12 @@ open class StargateController(
             "Retrieve Stargate Token snapshots. You can filter results by tokenId, manager, owner, or any " +
                 "combination of these parameters. If no filters are provided, all tokens will be returned.",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
-        description = "Optional query parameter to filter by token ID",
-        required = false,
-        example = "100001",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "manager",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by manager address",
-        required = false,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "owner",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by owner address",
-        required = false,
-        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
-    )
+    @TokenIdParameter
+    @AddressParameter(name = "manager")
+    @AddressParameter(name = "owner")
     @CommonApiResponses
     open fun getStargateTokens(
-        @RequestParam(required = false) tokenId: String?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,
         @ValidAddress @RequestParam(required = false) owner: Address?,
         @RequestParam(required = false) page: Int?,
@@ -466,25 +322,11 @@ open class StargateController(
         description = "Reward period to filter by. Options: CYCLE, DAY, WEEK, MONTH, YEAR, ALL.",
         required = false,
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^[A-Za-z0-9_.:-]+$"),
-        description = "The tokenId to query for rewards",
-        required = true,
-        example = "10001",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string", pattern = Address.REGEX),
-        description = "Optional query parameter to filter by validator address",
-        required = false,
-        example = "0x5cf3550e92971230210f6bfe8ad9dc323f2942f7",
-    )
+    @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
+    @AddressParameter(name = "validator")
     @CommonApiResponses
     open fun getStargateTokenRewards(
-        @PathVariable("tokenId") tokenId: String,
+        @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
         @RequestParam(required = false) periodType: RewardPeriod,
         @RequestParam(required = false) page: Int?,
@@ -604,6 +446,40 @@ open class StargateController(
     }
 
     @TimeFrameEndpoint
+    @GetMapping("/nft-holders/{period}")
+    open fun getNFTHoldersTimeFrame(
+        @PathVariable period: String,
+        @RequestParam(required = false) from: Long?,
+        @RequestParam(required = false) to: Long?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<TotalByPeriodDto> {
+        val tf = parseTimeFrame(period)
+        val pageable = PaginationUtils.toPageable(page, size, direction)
+
+        val slice =
+            if (from != null || to != null) {
+                stargateService.getTimeFrameDataRange(
+                    from = from,
+                    to = to,
+                    timeFrame = tf,
+                    pageable = pageable,
+                    repository = nftHoldersByBlockRepository,
+                )
+            } else {
+                stargateService.getTimeFrameData(
+                    timeFrame = tf,
+                    pageable = pageable,
+                    direction = direction,
+                    repository = nftHoldersByBlockRepository,
+                )
+            }
+
+        return paginatedResponse(slice)
+    }
+
+    @TimeFrameEndpoint
     @GetMapping("/vet-staked/{period}")
     open fun getVETStakedTimeFrame(
         @PathVariable period: String,
@@ -689,15 +565,7 @@ open class StargateController(
         ),
     required = true,
 )
-@Parameter(
-    name = "from",
-    `in` = ParameterIn.QUERY,
-    description = "Optional start of custom date range (Unix seconds)",
-)
-@Parameter(
-    name = "to",
-    `in` = ParameterIn.QUERY,
-    description = "Optional end of custom date range (Unix seconds)",
-)
+@AfterParameter(name = "from", description = "Optional start of custom date range (Unix seconds)")
+@BeforeParameter(name = "to", description = "Optional end of custom date range (Unix seconds)")
 @CommonApiResponses
 annotation class TimeFrameEndpoint

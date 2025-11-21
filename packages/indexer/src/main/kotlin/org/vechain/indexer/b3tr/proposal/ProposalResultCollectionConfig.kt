@@ -47,6 +47,17 @@ open class ProposalResultCollectionConfig(
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
-        ensureIndexes(listOf("proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC)))
+        ensureIndexes(
+            listOf(
+                "blockNumber_-1" to
+                    Index().on(ProposalResult::blockNumber.name, Sort.Direction.DESC),
+                "createdAtBlockNumber_-1" to
+                    Index().on(ProposalResult::createdAtBlockNumber.name, Sort.Direction.DESC),
+                "state_1_createdAtBlockNumber_-1" to
+                    Index()
+                        .on(ProposalResult::state.name, Sort.Direction.ASC)
+                        .on(ProposalResult::createdAtBlockNumber.name, Sort.Direction.DESC),
+            )
+        )
     }
 }

@@ -1,5 +1,6 @@
 package org.vechain.indexer.thor
 
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import strikt.api.expectThat
@@ -49,5 +50,30 @@ internal class HexUtilsTest {
     )
     fun `validate block id`(address: String, valid: Boolean) {
         expectThat(HexUtils.isValidBlockID(address)).isEqualTo(valid)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0x0, 0",
+        "0x1, 1",
+        "0x3, 3",
+        "0x0A, 10",
+        "0xFF, 255",
+        "0xFFFF, 65535",
+        "0, 0",
+        "1, 1",
+        "3, 3",
+        "0a, 10",
+        "ff, 255",
+        "ffff, 65535",
+    )
+    fun `parse hex string to int`(hex: String, expected: Int) {
+        expectThat(HexUtils.toInt(hex)).isEqualTo(expected)
+    }
+
+    @ParameterizedTest
+    @CsvSource("0x", "Hello World!!", "xxxxxxxxxxxxxxxxxx", "hex")
+    fun `parse hex string to int throws on invalid hex`(hex: String) {
+        assertThrows<IllegalArgumentException> { HexUtils.toInt(hex) }
     }
 }

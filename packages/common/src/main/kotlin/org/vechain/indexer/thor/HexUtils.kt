@@ -31,4 +31,10 @@ object HexUtils {
     fun normalise(hex: String): String {
         return addPrefix(hex.lowercase())
     }
+
+    /** Parse hex string to Int, handling optional 0x prefix */
+    fun toInt(hex: String): Int {
+        require(isValid(hex)) { "Invalid hex string: $hex" }
+        return removePrefix(hex).toInt(16)
+    }
 }

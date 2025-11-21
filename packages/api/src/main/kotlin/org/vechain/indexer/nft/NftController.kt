@@ -2,12 +2,6 @@ package org.vechain.indexer.nft
 
 import com.fasterxml.jackson.annotation.JsonView
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.ArraySchema
-import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.responses.ApiResponse
-import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
@@ -16,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.NFTS_PATH
+import org.vechain.indexer.docs.AddressListParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -38,39 +35,12 @@ open class NftController(private val nftService: NftService) {
     @GetMapping
     @JsonView(Views.Public::class)
     @Operation(summary = "Get all NFTs owned by an address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "Address of the NFT owner",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The contract address",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string", pattern = "^(0x)?[A-Fa-f0-9]+$"),
-        description = "The NFT tokenId",
-        required = false,
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AddressParameter(required = true, description = "Address of the NFT owner")
+    @AddressParameter(name = "contractAddress")
+    @TokenIdParameter
+    @AddressListParameter(
         name = "excludeCollections",
-        array =
-            ArraySchema(
-                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-                maxItems = 20,
-            ),
         description = "The addresses of the collections to exclude. Max 20 collections.",
-        required = false,
-        example = "[\"0x1234567890123456789012345678901234567890\"]",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -98,28 +68,10 @@ open class NftController(private val nftService: NftService) {
 
     @GetMapping("/contracts")
     @Operation(summary = "Get all contracts addresses by NFT owner")
-    @ApiResponses(
-        value = [ApiResponse(responseCode = "400", description = "Invalid address supplied")]
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "owner",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The address of the NFTs owner",
-        required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AddressParameter(name = "owner", required = true)
+    @AddressListParameter(
         name = "excludeCollections",
-        array =
-            ArraySchema(
-                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-                maxItems = 20,
-            ),
         description = "The addresses of the collections to exclude. Max 20 collections.",
-        required = false,
-        example = "[\"0x1234567890123456789012345678901234567890\"]",
     )
     @CommonApiResponses
     @PaginationParameters

@@ -10,9 +10,13 @@ import org.springframework.data.domain.Slice
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.vechain.indexer.constants.VALIDATORS_PATH
+import org.vechain.indexer.docs.AddressParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -21,6 +25,7 @@ import org.vechain.indexer.utils.PaginationUtils.toPageable
 import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -51,22 +56,8 @@ open class ValidatorController(
             - `direction`: Either `asc` or `desc`
             """,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validatorId",
-        schema = Schema(type = "string"),
-        description = "Filter by validator ID",
-        required = false,
-        example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "endorser",
-        schema = Schema(type = "string"),
-        description = "Filter by endorser address",
-        required = false,
-        example = "0x06c01371bc54c59d5fd9e296c74880324b62c5fe",
-    )
+    @AddressParameter(name = "validatorId", description = "Filter by validator ID")
+    @AddressParameter(name = "endorser", description = "Filter by endorser address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
@@ -143,22 +134,8 @@ open class ValidatorController(
             You can also sort and paginate.
             """,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string"),
-        description = "Filter by validator address",
-        required = false,
-        example = "0x62cdf7135910dcabe336a0cdfcc3c1b16b774713",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenId",
-        schema = Schema(type = "string"),
-        description = "Filter by tokenId",
-        required = false,
-        example = "123456",
-    )
+    @AddressParameter(name = "validator", description = "Filter by validator address")
+    @TokenIdParameter
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "statuses",
@@ -170,7 +147,7 @@ open class ValidatorController(
     @CommonApiResponses
     open fun getDelegations(
         @RequestParam(required = false) validator: String?,
-        @RequestParam(required = false) tokenId: String?,
+        @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @RequestParam(required = false) statuses: List<Status>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -207,15 +184,7 @@ open class ValidatorController(
         description =
             "Optional block number. If provided, returns the total VTHO rewards as of this block."
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "validator",
-        schema = Schema(type = "string"),
-        description =
-            "Optional validator address. If provided, returns the block VTHO rewards for this validator. ",
-        required = false,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
-    )
+    @AddressParameter(name = "validator", description = "Optional validator address")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
@@ -244,29 +213,21 @@ open class ValidatorController(
                 "Granularity (hourly/daily/weekly/monthly) is automatically chosen based on the time range. " +
                 "You can filter by validator address.",
     )
-    @Parameter(
-        `in` = ParameterIn.PATH,
+    @AddressParameter(
         name = "validator",
-        schema = Schema(type = "string"),
+        `in` = ParameterIn.PATH,
         description = "Validator address",
         required = true,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @AfterParameter(
         name = "startTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "Start timestamp (inclusive)",
         required = true,
-        example = "1704067200",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BeforeParameter(
         name = "endTimestamp",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "End timestamp (inclusive)",
         required = true,
-        example = "1704153600",
     )
     @CommonApiResponses
     open fun getHistoricValidatorRewardsRange(
@@ -288,27 +249,20 @@ open class ValidatorController(
                 "startBlock must be provided. " +
                 "If no endBlock is provided, endBlock defaults to best/latest block.",
     )
-    @Parameter(
+    @AddressParameter(
         `in` = ParameterIn.PATH,
         name = "validator",
-        schema = Schema(type = "string"),
         description = "Validator address",
         required = true,
-        example = "0x5e2d494fcba3e0d5773ca79f2e0a04358351a858",
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BlockNumberParameter(
         name = "startBlock",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "Start block (inclusive)",
         required = true,
     )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
+    @BlockNumberParameter(
         name = "endBlock",
-        schema = Schema(type = "integer", format = "int64", minimum = "0"),
         description = "End block (inclusive) defaults to best/latest block if not provided",
-        required = false,
     )
     @CommonApiResponses
     open fun getMissedBlocksPercentage(

@@ -4,6 +4,7 @@ import kotlin.to
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
@@ -23,8 +24,27 @@ open class ProposalService(
      *
      * @param proposalId Proposal ID to filter by.
      */
-    open fun getProposalResult(proposalId: String): List<ProposalResult> =
-        proposalResultRepository.findByProposalId(proposalId)
+    open fun getProposalResult(proposalId: String): ProposalResult? =
+        proposalResultRepository.findByIdOrNull(proposalId)
+
+    /**
+     * Get all proposal results paginated.
+     *
+     * @param pageable Pagination information.
+     */
+    fun getAllProposalResults(pageable: Pageable): Slice<ProposalResult> =
+        proposalResultRepository.findAll(pageable)
+
+    /**
+     * Get all proposal results paginated, filtered by states.
+     *
+     * @param states List of ProposalState values to filter by.
+     * @param pageable Pagination information.
+     */
+    fun getAllProposalResultsByStates(
+        states: List<ProposalState>,
+        pageable: Pageable,
+    ): Slice<ProposalResult> = proposalResultRepository.findByStateIn(states, pageable)
 
     /**
      * Get comments for a proposal.

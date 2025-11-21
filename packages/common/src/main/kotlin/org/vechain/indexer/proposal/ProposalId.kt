@@ -1,6 +1,4 @@
-package org.vechain.indexer.b3tr.proposal
-
-import kotlin.text.matches
+package org.vechain.indexer.proposal
 
 data class ProposalId(val value: String) {
     companion object {

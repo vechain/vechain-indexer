@@ -3,7 +3,6 @@ package org.vechain.indexer.transfer
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
-import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
@@ -13,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
+import org.vechain.indexer.docs.AddressListParameter
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
@@ -34,21 +35,8 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "To or from address of the transfer event",
-        required = false,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AddressParameter(description = "To or from address of the transfer event")
+    @AddressParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEvents(
@@ -75,21 +63,8 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/from")
     @Operation(summary = "Get transfer events by from address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "From address of the transfer event",
-        required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AddressParameter(description = "From address of the transfer event", required = true)
+    @AddressParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByFrom(
@@ -110,21 +85,8 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/to")
     @Operation(summary = "Get transfer events by to address")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "To address of the transfer event",
-        required = true,
-        example = "0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1",
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "tokenAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "The token contract address",
-        required = false,
-    )
+    @AddressParameter(description = "To address of the transfer event", required = true)
+    @AddressParameter(name = "tokenAddress", description = "The token contract address")
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByTo(
@@ -145,19 +107,7 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/forBlock")
     @Operation(summary = "Get transfer events for a specific block")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "addresses",
-        array =
-            ArraySchema(
-                schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-                minItems = 1,
-                maxItems = 20,
-            ),
-        description = "Addresses to query. Max 20 addresses",
-        required = true,
-        example = "[\"0x995711ADca070C8f6cC9ca98A5B9C5A99b8350b1\"]",
-    )
+    @AddressListParameter(required = true)
     @BlockNumberParameter(
         required = true,
         description = "Block number to query",
@@ -183,13 +133,9 @@ open class TransferEventController(private val transferEventService: TransferEve
 
     @GetMapping("/fungible-tokens-contracts")
     @Operation(summary = "Get all fungible tokens transfers contracts for a given account")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "address",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
+    @AddressParameter(
         description = "The address of origin or destination of the fungible tokens transfer events",
         required = true,
-        example = "0xf077b491b355E64048cE21E3A6Fc4751eEeA77fa",
     )
     @Parameter(
         `in` = ParameterIn.QUERY,

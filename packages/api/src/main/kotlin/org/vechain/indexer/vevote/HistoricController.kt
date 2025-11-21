@@ -13,13 +13,17 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.ProposalIdParameter
+import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidProposalId
 
 @Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
@@ -29,20 +33,8 @@ import org.vechain.indexer.validation.ValidPageSize
 open class HistoricController(private val historicApiService: HistoricApiService) {
     @GetMapping("/historic-proposals")
     @Operation(summary = "Fetch all historic proposals")
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "proposalId",
-        description = "Proposal ID to filter by.",
-        required = false,
-        schema = Schema(type = "string"),
-    )
-    @Parameter(
-        `in` = ParameterIn.QUERY,
-        name = "contractAddress",
-        schema = Schema(type = "string", pattern = Address.Companion.REGEX),
-        description = "Filter by legacy contract address.",
-        required = false,
-    )
+    @ProposalIdParameter
+    @AddressParameter(name = "contractAddress", description = "Filter by legacy contract address.")
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "testProposals",
@@ -52,7 +44,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
     )
     @CommonApiResponses
     open fun getAllProposals(
-        @RequestParam(required = false) proposalId: String?,
+        @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @PositiveOrZero @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -60,7 +52,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
     ): PaginatedResponse<HistoricProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
         val result =
-            historicApiService.findAll(proposalId, contractAddress, testProposals, pageable)
+            historicApiService.findAll(proposalId?.value, contractAddress, testProposals, pageable)
         return paginatedResponse(result)
     }
 }

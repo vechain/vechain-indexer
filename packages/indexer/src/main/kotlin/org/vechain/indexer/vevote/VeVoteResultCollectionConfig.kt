@@ -49,8 +49,9 @@ open class VeVoteResultCollectionConfig(
 
         ensureIndexes(
             listOf(
-                "support_1" to Index().on("support", Sort.Direction.ASC),
-                "proposalId_1" to Index().on("proposalId", Sort.Direction.ASC),
+                "support_1" to Index().on(VeVoteProposalResult::support.name, Sort.Direction.ASC),
+                "proposalId_1" to
+                    Index().on(VeVoteProposalResult::proposalId.name, Sort.Direction.ASC),
             )
         )
     }

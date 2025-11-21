@@ -1,8 +1,10 @@
+package org.vechain.indexer.docs
+
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
 import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.core.annotation.AliasFor
-import org.vechain.indexer.b3tr.proposal.ProposalId
+import org.vechain.indexer.proposal.ProposalId
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)

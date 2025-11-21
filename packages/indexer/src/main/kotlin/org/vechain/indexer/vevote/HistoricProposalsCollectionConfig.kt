@@ -39,8 +39,10 @@ open class HistoricProposalsCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
         ensureIndexes(
             listOf(
-                "proposalId_-1" to Index().on("proposalId", Sort.Direction.DESC),
-                "blockNumber_1" to Index().on("blockNumber", Sort.Direction.ASC),
+                "proposalId_-1" to
+                    Index().on(HistoricProposals::proposalId.name, Sort.Direction.DESC),
+                "blockNumber_1" to
+                    Index().on(HistoricProposals::blockNumber.name, Sort.Direction.ASC),
             )
         )
     }
