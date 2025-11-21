@@ -62,7 +62,14 @@ open class AccountsService(
     fun getNewAccounts(block: Block): Pair<Accounts, List<Accounts>> {
         val txSigners = block.transactions.map { it.origin }.toSet()
         val gasPayers = block.transactions.map { it.gasPayer }.toSet()
-        val accounts = txSigners + gasPayers
+        val vetHolders =
+            block.transactions
+                .flatMap { it.clauses }
+                .filter { it.value.toLong(16) > 1_000_000_000_000_000_000L }
+                .mapNotNull { it.to?.lowercase() }
+                .toSet()
+
+        val accounts = txSigners + gasPayers + vetHolders
 
         // Fetch existing accounts, including the "ALL" one
         val existingAccounts = repository.findAllById(accounts + "ALL").toList()
