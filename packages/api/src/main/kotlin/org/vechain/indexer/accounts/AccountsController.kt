@@ -40,11 +40,11 @@ open class AccountsController(private val accountsService: AccountsService) {
         `in` = ParameterIn.QUERY,
         description = "Time frame to query totals for (DAY, WEEK, MONTH, YEAR, ALL).",
         required = false,
-        schema = Schema(implementation = TimeFrame::class),
+        schema = Schema(implementation = AccountQueryTimeFrame::class),
     )
     @CommonApiResponses
     open fun getTotalAccounts(
-        @RequestParam(required = false) timeFrame: TimeFrame?,
+        @RequestParam(required = false) timeFrame: AccountQueryTimeFrame?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
