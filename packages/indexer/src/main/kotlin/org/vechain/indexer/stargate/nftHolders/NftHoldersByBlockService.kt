@@ -78,10 +78,12 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
                     delta = BigInteger.valueOf(blockDelta), // convert delta → BigInteger
                     ctx =
                         RolloverUtils.Context(
+                            prevHourTotal = prev?.hourTotal ?: BigInteger.ZERO,
                             prevDayTotal = prev?.dayTotal ?: BigInteger.ZERO,
                             prevWeekTotal = prev?.weekTotal ?: BigInteger.ZERO,
                             prevMonthTotal = prev?.monthTotal ?: BigInteger.ZERO,
                             prevYearTotal = prev?.yearTotal ?: BigInteger.ZERO,
+                            prevHour = prev?.hourOfDay,
                             prevDay = prev?.dayOfMonth,
                             prevWeek = prev?.weekOfYear,
                             prevMonth = prev?.month,
@@ -100,12 +102,14 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
                     blockTimestamp = rep.blockTimestamp,
                     total = runningTotal,
                     byLevel = runningByLevel.toMap(),
+                    hourOfDay = roll.hour,
                     dayOfMonth = roll.day,
                     weekOfYear = roll.week,
                     month = roll.month,
                     year = roll.year,
                     timeFrames = emptyList(),
                     blockTotal = BigInteger.valueOf(blockDelta),
+                    hourTotal = roll.hourTotal,
                     dayTotal = roll.dayTotal,
                     weekTotal = roll.weekTotal,
                     monthTotal = roll.monthTotal,

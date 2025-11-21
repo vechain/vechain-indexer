@@ -50,10 +50,12 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 delta = totals.delta,
                 ctx =
                     RolloverUtils.Context(
+                        prevHourTotal = latest?.hourTotal ?: BigInteger.ZERO,
                         prevDayTotal = latest?.dayTotal ?: BigInteger.ZERO,
                         prevWeekTotal = latest?.weekTotal ?: BigInteger.ZERO,
                         prevMonthTotal = latest?.monthTotal ?: BigInteger.ZERO,
                         prevYearTotal = latest?.yearTotal ?: BigInteger.ZERO,
+                        prevHour = latest?.hourOfDay,
                         prevDay = latest?.dayOfMonth,
                         prevWeek = latest?.weekOfYear,
                         prevMonth = latest?.month,
@@ -169,6 +171,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 total = totals.blockTotal,
                 rewardsClaimed = totals.claimed,
                 // timestamps
+                hourOfDay = roll.hour,
                 dayOfMonth = roll.day,
                 weekOfYear = roll.week,
                 month = roll.month,
@@ -176,6 +179,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 timeFrames = emptyList(),
                 // period totals
                 blockTotal = totals.delta,
+                hourTotal = roll.hourTotal,
                 dayTotal = roll.dayTotal,
                 weekTotal = roll.weekTotal,
                 monthTotal = roll.monthTotal,

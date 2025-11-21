@@ -19,12 +19,14 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     override val total: BigInteger,
     override val byLevel: Map<TokenLevel, BigInteger>,
+    override val hourOfDay: Long,
     override val dayOfMonth: Long, // 25
     override val weekOfYear: Long, // 43
     override val month: Long, // 10 (October)
     override val year: Long, // 2025
     override val timeFrames: List<TimeFrame>,
     @JsonIgnore override val blockTotal: BigInteger? = null,
+    @JsonIgnore override val hourTotal: BigInteger? = null,
     @JsonIgnore override val dayTotal: BigInteger? = null,
     @JsonIgnore override val weekTotal: BigInteger? = null,
     @JsonIgnore override val monthTotal: BigInteger? = null,
