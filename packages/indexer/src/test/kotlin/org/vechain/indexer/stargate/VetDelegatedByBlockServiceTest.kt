@@ -59,12 +59,14 @@ class VetDelegatedByBlockServiceTest {
                 1000,
                 total = BigInteger("100"),
                 byLevel = emptyMap(),
+                hourOfDay = 1,
                 dayOfMonth = 1,
                 weekOfYear = 1,
                 month = 1,
                 year = 2025,
                 timeFrames = emptyList(),
                 blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
                 dayTotal = BigInteger.ZERO,
                 weekTotal = BigInteger.ZERO,
                 monthTotal = BigInteger.ZERO,
@@ -81,7 +83,7 @@ class VetDelegatedByBlockServiceTest {
     }
 
     // ---------------------------------------------------------
-    // DAY ROLLOVER
+    // DAY/HOUR ROLLOVER
     // ---------------------------------------------------------
 
     @Test
@@ -101,7 +103,8 @@ class VetDelegatedByBlockServiceTest {
         expectThat(r).hasSize(3)
 
         // r[1] = previous block (block 100) WITH rollover flag
-        expectThat(r[1].timeFrames).containsExactly(TimeFrame.DAY)
+        expectThat(r[1].timeFrames).contains(TimeFrame.DAY)
+        expectThat(r[1].timeFrames).contains(TimeFrame.HOUR)
 
         // r[2] = block 101 new day → no timeFrames
         expectThat(r[2].timeFrames).isEmpty()
@@ -192,12 +195,14 @@ class VetDelegatedByBlockServiceTest {
                     1,
                     total = BigInteger.ONE,
                     byLevel = emptyMap(),
+                    hourOfDay = 1,
                     dayOfMonth = 1,
                     weekOfYear = 1,
                     month = 1,
                     year = 2025,
                     timeFrames = emptyList(),
                     blockTotal = BigInteger.ONE,
+                    hourTotal = BigInteger.ONE,
                     dayTotal = BigInteger.ONE,
                     weekTotal = BigInteger.ONE,
                     monthTotal = BigInteger.ONE,
