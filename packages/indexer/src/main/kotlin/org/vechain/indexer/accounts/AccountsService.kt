@@ -1,5 +1,6 @@
 package org.vechain.indexer.accounts
 
+import java.math.BigInteger
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 
 @Profile("accounts")
 @Service
@@ -16,6 +18,8 @@ open class AccountsService(
     private val repository: AccountsRepository,
     private val archiveService: ArchiveService<Accounts, AccountsArchive>,
 ) {
+    val ONE_VET: BigInteger = BigInteger.TEN.pow(18)
+
     /**
      * @param block The current Thor block being processed.
      * @param callResponses The list of call inspection results (unused in current implementation).
@@ -65,7 +69,7 @@ open class AccountsService(
         val vetHolders =
             block.transactions
                 .flatMap { it.clauses }
-                .filter { it.value.toLong(16) > 1_000_000_000_000_000_000L }
+                .filter { it.value.hexToBigInteger() > ONE_VET }
                 .mapNotNull { it.to?.lowercase() }
                 .toSet()
 

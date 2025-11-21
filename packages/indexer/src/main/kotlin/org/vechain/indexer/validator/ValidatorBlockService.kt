@@ -16,6 +16,7 @@ import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
@@ -216,9 +217,6 @@ open class ValidatorBlockService(
             monthlyCache[it._id.validator] = it.blockTimestamp
         }
     }
-
-    /** Convert hex string (with optional "0x" prefix) into BigInteger. */
-    fun String.hexToBigInteger(): BigInteger = BigInteger(this.removePrefix("0x"), 16)
 
     private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
         if (cachedGetValidatorsAbi.isNotEmpty()) return // already loaded
