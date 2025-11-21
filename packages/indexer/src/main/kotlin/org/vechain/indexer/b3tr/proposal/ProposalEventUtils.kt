@@ -35,6 +35,10 @@ object ProposalEventUtils {
         event.params.getAsInt("startRoundId")
             ?: error("Missing param 'startRoundId' in event: ${event.id}")
 
+    fun getDescription(event: IndexedEvent): String =
+        event.params.getAsString("description")
+            ?: error("Missing param 'description' in event: ${event.id}")
+
     fun groupByProposalId(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
         events
             .map {
