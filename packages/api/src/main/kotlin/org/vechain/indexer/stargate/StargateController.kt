@@ -661,7 +661,7 @@ open class StargateController(
 
     ### Modes:
     **Preset Mode**  
-    Pass `{period}` as one of: `DAY`, `WEEK`, `MONTH`, `YEAR`, `ALL`, or `BLOCK`.
+    Pass `{period}` as one of: `HOUR`, `DAY`, `WEEK`, `MONTH`, `YEAR`, `ALL`, or `BLOCK`.
 
     • `DAY`, `WEEK`, `MONTH`, `YEAR` — return aggregated summaries per period  
     • `BLOCK` — returns raw per-block totals  
@@ -683,7 +683,10 @@ open class StargateController(
     `in` = ParameterIn.PATH,
     description = "Preset aggregation period",
     schema =
-        Schema(type = "string", allowableValues = ["DAY", "WEEK", "MONTH", "YEAR", "ALL", "BLOCK"]),
+        Schema(
+            type = "string",
+            allowableValues = ["HOUR", "DAY", "WEEK", "MONTH", "YEAR", "ALL", "BLOCK"],
+        ),
     required = true,
 )
 @Parameter(
