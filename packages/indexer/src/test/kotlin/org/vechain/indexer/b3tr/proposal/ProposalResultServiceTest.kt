@@ -93,7 +93,12 @@ internal class ProposalResultServiceTest {
                 eventType = "B3TR_ProposalCreated",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("proposalId" to "proposal1", "startRoundId" to 1)
+                        returnValues =
+                            mapOf(
+                                "proposalId" to "proposal1",
+                                "startRoundId" to 1,
+                                "description" to "ABC",
+                            )
                     ),
             )
 
@@ -135,6 +140,7 @@ internal class ProposalResultServiceTest {
                 startRoundId = 1,
                 state = ProposalState.Pending,
                 results = null,
+                description = "ABC",
             )
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
@@ -184,6 +190,7 @@ internal class ProposalResultServiceTest {
                 startRoundId = 1,
                 state = ProposalState.Pending,
                 results = null,
+                description = "ABC",
             )
 
         val event =
@@ -236,6 +243,7 @@ internal class ProposalResultServiceTest {
                 startRoundId = 1,
                 state = ProposalState.Pending,
                 results = null,
+                description = "ABC",
             )
 
         val event1 =
@@ -302,6 +310,7 @@ internal class ProposalResultServiceTest {
                 startRoundId = 1,
                 state = ProposalState.Pending,
                 results = null,
+                description = "ABC",
             )
 
         val event1 =
@@ -366,6 +375,7 @@ internal class ProposalResultServiceTest {
                 startRoundId = 1,
                 state = ProposalState.Pending,
                 results = null,
+                description = "ABC",
             )
 
         val forVote =
@@ -458,7 +468,12 @@ internal class ProposalResultServiceTest {
                 eventType = "B3TR_ProposalCreated",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("proposalId" to "proposal1", "startRoundId" to 1)
+                        returnValues =
+                            mapOf(
+                                "proposalId" to "proposal1",
+                                "startRoundId" to 1,
+                                "description" to "ABC",
+                            )
                     ),
             )
 
@@ -504,7 +519,12 @@ internal class ProposalResultServiceTest {
                 eventType = "B3TR_ProposalCreated",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("proposalId" to "proposal1", "startRoundId" to 1)
+                        returnValues =
+                            mapOf(
+                                "proposalId" to "proposal1",
+                                "startRoundId" to 1,
+                                "description" to "ABC",
+                            )
                     ),
             )
 
@@ -517,7 +537,12 @@ internal class ProposalResultServiceTest {
                 eventType = "B3TR_ProposalCreated",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("proposalId" to "proposal2", "startRoundId" to 2)
+                        returnValues =
+                            mapOf(
+                                "proposalId" to "proposal2",
+                                "startRoundId" to 2,
+                                "description" to "ABC",
+                            )
                     ),
             )
 
@@ -542,7 +567,12 @@ internal class ProposalResultServiceTest {
                 eventType = "B3TR_ProposalCreated",
                 params =
                     AbiEventParameters(
-                        returnValues = mapOf("proposalId" to "proposal1", "startRoundId" to 1)
+                        returnValues =
+                            mapOf(
+                                "proposalId" to "proposal1",
+                                "startRoundId" to 1,
+                                "description" to "ABC",
+                            )
                     ),
             )
 
@@ -583,6 +613,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = 1,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 ),
                 ProposalResult(
                     proposalId = "2",
@@ -594,6 +625,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = 2,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 ),
             )
 
@@ -643,6 +675,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = 1,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 )
             )
 
@@ -681,6 +714,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = 1,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 ),
                 ProposalResult(
                     proposalId = "2",
@@ -692,6 +726,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = 2,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 ),
             )
 
@@ -749,6 +784,7 @@ internal class ProposalResultServiceTest {
                     startRoundId = i,
                     state = ProposalState.Pending,
                     results = null,
+                    description = "ABC",
                 )
             }
 
