@@ -1,6 +1,7 @@
 package org.vechain.indexer.nft
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
@@ -16,10 +17,11 @@ open class NftService(
     private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
     private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
+        saveVersionedDocuments(updated, existing, nftArchiveService, nftPruner, mongoTemplate)
     }
 
     open fun parseRecords(data: List<IndexedEvent>, existing: List<IndexedNft>): List<IndexedNft> {

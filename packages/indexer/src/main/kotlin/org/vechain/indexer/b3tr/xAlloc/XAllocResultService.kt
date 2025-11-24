@@ -8,6 +8,7 @@ import kotlin.collections.component2
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -42,8 +43,8 @@ open class XAllocResultService(
     private val thorService: ThorService,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
+    private val mongoTemplate: MongoTemplate,
 ) {
-
     private val cachedIsQuadraticFundingEnabled: ConcurrentHashMap<Int, Boolean> =
         ConcurrentHashMap()
     private val isQuadraticFundingDisabledAbi: AbiElement by lazy {
@@ -144,8 +145,8 @@ open class XAllocResultService(
         existing: XAllocResult?,
         voters: Long,
         votesReceived: BigInteger,
-    ): XAllocResult {
-        return existing?.copy(
+    ): XAllocResult =
+        existing?.copy(
             version = existing.version + 1,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
@@ -167,7 +168,6 @@ open class XAllocResultService(
                 teamAllocationAmount = null,
                 rewardsAllocationAmount = null,
             )
-    }
 
     protected fun addOrCreateRewardClaimResult(
         roundId: Int,
@@ -178,8 +178,8 @@ open class XAllocResultService(
         unallocatedAmount: BigDecimal,
         teamAllocationAmount: BigDecimal,
         rewardsAllocationAmount: BigDecimal,
-    ): XAllocResult {
-        return existing?.copy(
+    ): XAllocResult =
+        existing?.copy(
             version = existing.version + 1,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
@@ -207,7 +207,6 @@ open class XAllocResultService(
                 teamAllocationAmount = teamAllocationAmount,
                 rewardsAllocationAmount = rewardsAllocationAmount,
             )
-    }
 
     protected fun addOrCreateDbaFundResult(
         roundId: Int,
@@ -215,8 +214,8 @@ open class XAllocResultService(
         blockDetails: BlockDetails,
         existing: XAllocResult?,
         amount: BigDecimal,
-    ): XAllocResult {
-        return existing?.copy(
+    ): XAllocResult =
+        existing?.copy(
             version = existing.version + 1,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
@@ -237,16 +236,15 @@ open class XAllocResultService(
                 teamAllocationAmount = null,
                 rewardsAllocationAmount = null,
             )
-    }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             xAllocResultArchiveService,
             xAllocResultPruner,
+            mongoTemplate,
         )
     }
 

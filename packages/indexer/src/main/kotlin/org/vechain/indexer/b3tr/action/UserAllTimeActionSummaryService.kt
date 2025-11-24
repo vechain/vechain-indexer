@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.action
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,6 +32,7 @@ open class UserAllTimeActionSummaryService(
         ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     private val userAllTimeActionSummaryPruner:
         TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
     private val globalId = generateId(EntityType.GLOBAL.name)
 
@@ -99,9 +101,9 @@ open class UserAllTimeActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             userAllTimeActionSummaryArchiveService,
             userAllTimeActionSummaryPruner,
+            mongoTemplate,
         )
     }
 

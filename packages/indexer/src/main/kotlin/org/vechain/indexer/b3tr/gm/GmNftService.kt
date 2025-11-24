@@ -1,6 +1,7 @@
 package org.vechain.indexer.b3tr.gm
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,8 +20,8 @@ open class GmNftService(
     private val repository: GmNftRepository,
     private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
     private val gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
-
     /**
      * Processes a list of IndexedEvents related to GM NFTs and returns a pair of lists:
      * - The first list contains updated GmNft objects to be saved.
@@ -56,7 +57,7 @@ open class GmNftService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
-        saveVersionedDocuments(updated, existing, repository, gmNftArchiveService, gmNftPruner)
+        saveVersionedDocuments(updated, existing, gmNftArchiveService, gmNftPruner, mongoTemplate)
     }
 
     private fun resolveExistingNft(tokenId: String, cache: Map<String, GmNft>): GmNft? =

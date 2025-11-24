@@ -5,6 +5,7 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.maxByOrNull
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
@@ -23,6 +24,7 @@ open class VthoClaimedByAccountService(
         ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     private val vthoClaimByAccountPruner:
         TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
     private val legacyEvents =
         setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")
@@ -36,9 +38,9 @@ open class VthoClaimedByAccountService(
         saveVersionedDocuments(
             updated,
             existing,
-            vthoClaimedByAccountRepository,
             vthoClaimedByAccountArchiveService,
             vthoClaimByAccountPruner,
+            mongoTemplate,
         )
     }
 
@@ -117,7 +119,7 @@ open class VthoClaimedByAccountService(
                 val tokenId =
                     it.params.getAsString("tokenId")
                         ?: throw IllegalArgumentException("Missing 'tokenId' parameter in event")
-                "${owner}_${tokenId}"
+                "${owner}_$tokenId"
             }
 
         val latestEvent = events.maxByOrNull { it.blockNumber } ?: return emptyList()

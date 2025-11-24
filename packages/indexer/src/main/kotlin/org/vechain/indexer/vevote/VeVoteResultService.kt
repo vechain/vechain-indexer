@@ -3,6 +3,7 @@ package org.vechain.indexer.vevote
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.archive.ArchiveService
@@ -26,6 +27,7 @@ open class VeVoteResultService(
         ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
     private val veVoteResultPruner:
         TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>
@@ -54,9 +56,9 @@ open class VeVoteResultService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             veVoteResultArchiveService,
             veVoteResultPruner,
+            mongoTemplate,
         )
     }
 

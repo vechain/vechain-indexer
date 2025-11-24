@@ -6,6 +6,7 @@ import kotlin.collections.component2
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,6 +44,7 @@ open class ProposalResultService(
     private val thorService: ThorService,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,
+    private val mongoTemplate: MongoTemplate,
 ) {
     private val statusAbi: AbiElement
 
@@ -231,9 +233,9 @@ open class ProposalResultService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             proposalResultArchiveService,
             proposalResultPruner,
+            mongoTemplate,
         )
     }
 

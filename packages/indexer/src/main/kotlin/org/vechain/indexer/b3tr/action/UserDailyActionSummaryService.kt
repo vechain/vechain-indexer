@@ -3,6 +3,7 @@ package org.vechain.indexer.b3tr.action
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,12 +32,11 @@ open class UserDailyActionSummaryService(
         ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
     private val userDailyActionSummaryPruner:
         TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
-
     open fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<UserDailyActionSummary>, List<UserDailyActionSummary>> {
-
         val updatedResult = mutableMapOf<String, UserDailyActionSummary>()
         val archiveResult = mutableListOf<UserDailyActionSummary>()
 
@@ -99,9 +99,9 @@ open class UserDailyActionSummaryService(
         saveVersionedDocuments(
             updated,
             existing,
-            repository,
             userDailyActionSummaryArchiveService,
             userDailyActionSummaryPruner,
+            mongoTemplate,
         )
     }
 
