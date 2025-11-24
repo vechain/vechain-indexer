@@ -4,7 +4,6 @@ import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
 import org.vechain.indexer.explorer.TimestampUtils.isDaily
 import org.vechain.indexer.explorer.TimestampUtils.isHourly
@@ -252,7 +251,6 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      *
      * @param blockUsage The BlockUsage record to save
      */
-    @Transactional(rollbackFor = [Exception::class])
     open fun save(blockUsage: BlockUsage) {
         repository.save(blockUsage)
     }

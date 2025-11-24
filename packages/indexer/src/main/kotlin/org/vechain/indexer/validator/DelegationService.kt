@@ -4,11 +4,13 @@ import java.math.BigInteger
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.rest.ExecuteCodeResponse
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -35,6 +37,8 @@ open class DelegationService(
     private val repository: DelegationRepository,
     private val archiveService: ArchiveService<Delegation, DelegationArchive>,
     private val validatorDelegationService: ValidatorDelegationService,
+    private val mongoTemplate: MongoTemplate,
+    private val delegationPruner: TargetedPruner<Delegation, DelegationArchive>,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
 ) {
     private var cachedValidators: Set<String> = emptySet()
@@ -80,10 +84,8 @@ open class DelegationService(
         return delegations.values.toList() to delegationsToArchive
     }
 
-    @Transactional
     open fun save(updates: List<Delegation>, archive: List<Delegation>) {
-        if (updates.isNotEmpty()) repository.saveAll(updates)
-        if (archive.isNotEmpty()) archiveService.saveAll(archive)
+        saveVersionedDocuments(updates, archive, archiveService, delegationPruner, mongoTemplate)
     }
 
     // ------------------------------

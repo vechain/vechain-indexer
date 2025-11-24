@@ -2,6 +2,7 @@ package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
@@ -16,8 +17,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("history")
 @Service
-open class HistoryService(private val historyRepository: HistoryRepository) {
-
+open class HistoryService(private val mongoTemplate: MongoTemplate) {
     open fun processEvents(events: List<IndexedEvent>, block: Block): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
@@ -40,7 +40,7 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(events: List<IndexedHistoryEvent>) {
-        historyRepository.saveAll(events)
+        mongoTemplate.insert(events)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {

@@ -8,9 +8,9 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildClauses
 
@@ -33,7 +33,7 @@ open class ValidatorConfig {
     open fun validatorPruner(
         validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): TargetedPruner<Validator, ValidatorArchive> =
         PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
 
     @Bean
@@ -41,9 +41,11 @@ open class ValidatorConfig {
         thorClient: ThorClient,
         processor: ValidatorProcessor,
         service: ValidatorService,
+        validatorPruner: TargetedPruner<Validator, ValidatorArchive>,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
@@ -53,6 +55,8 @@ open class ValidatorConfig {
             .name(IndexerNames.VALIDATOR)
             .thorClient(thorClient)
             .processor(processor)
+            .pruner(validatorPruner)
+            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .includeFullBlock()

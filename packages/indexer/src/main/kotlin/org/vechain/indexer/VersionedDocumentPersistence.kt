@@ -52,7 +52,7 @@ fun <T, S> saveVersionedDocuments(
  * Saves documents using UNORDERED bulk operations for maximum performance. Safe for concurrent
  * indexers - uses upsert to prevent duplicates.
  */
-private fun <T : VersionedDocument> saveBulk(
+fun <T : VersionedDocument> saveBulk(
     documents: List<T>,
     mongoTemplate: MongoTemplate,
     batchSize: Int,

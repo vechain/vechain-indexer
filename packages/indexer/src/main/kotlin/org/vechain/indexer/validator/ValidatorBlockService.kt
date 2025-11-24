@@ -4,8 +4,8 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
@@ -29,6 +29,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
     private val thorService: ThorService,
+    private val mongoTemplate: MongoTemplate,
 ) {
     private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
@@ -69,9 +70,8 @@ open class ValidatorBlockService(
         return listOfNotNull(validationInfo) + missedSlots
     }
 
-    @Transactional
     open fun save(records: List<ValidatorBlock>) {
-        repository.saveAll(records)
+        mongoTemplate.insert(records, ValidatorBlock::class.java)
 
         records.forEach {
             if (it.isHourly == true) hourlyCache[it.validator] = it.blockTimestamp

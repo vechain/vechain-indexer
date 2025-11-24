@@ -8,9 +8,9 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.Pruner
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
@@ -33,13 +33,15 @@ open class DelegationConfig {
     open fun delegationPruner(
         delegationArchiveService: ArchiveService<Delegation, DelegationArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
+    ): TargetedPruner<Delegation, DelegationArchive> =
         PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun delegationIndexer(
         thorClient: ThorClient,
         processor: DelegationProcessor,
+        delegationPruner: TargetedPruner<Delegation, DelegationArchive>,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
@@ -55,6 +57,7 @@ open class DelegationConfig {
             .name(IndexerNames.DELEGATION)
             .thorClient(thorClient)
             .processor(processor)
+            .pruner(delegationPruner)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
             .includeFullBlock()

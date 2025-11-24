@@ -5,9 +5,11 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.temporal.WeekFields
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
@@ -17,6 +19,8 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 open class AccountsService(
     private val repository: AccountsRepository,
     private val archiveService: ArchiveService<Accounts, AccountsArchive>,
+    private val pruner: TargetedPruner<Accounts, AccountsArchive>,
+    private val mongoTemplate: MongoTemplate,
 ) {
     val ONE_VET: BigInteger = BigInteger.TEN.pow(18)
 
@@ -49,11 +53,8 @@ open class AccountsService(
      * @notice Persists new account records and archives in MongoDB.
      * @dev Skips persistence when no new accounts exist.
      */
-    @Transactional
     open fun save(accountsInfo: List<Accounts>, archive: Accounts) {
-        if (accountsInfo.isEmpty()) return
-        repository.saveAll(accountsInfo)
-        archiveService.saveAll(listOf(archive))
+        saveVersionedDocuments(accountsInfo, listOf(archive), archiveService, pruner, mongoTemplate)
     }
 
     /**

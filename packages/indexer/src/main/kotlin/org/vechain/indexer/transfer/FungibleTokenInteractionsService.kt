@@ -8,7 +8,6 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
@@ -16,8 +15,8 @@ import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 @Service
 @Profile("transfers")
 open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemplate) {
-    open fun processEvents(events: List<IndexedEvent>): List<FungibleTokenInteraction> {
-        return events
+    open fun processEvents(events: List<IndexedEvent>): List<FungibleTokenInteraction> =
+        events
             .filter { event ->
                 require(event.eventType == "Transfer") {
                     "Event type must be 'Transfer', found '${event.eventType}'"
@@ -42,7 +41,9 @@ open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemp
                             blockTimestamp = event.blockTimestamp,
                             walletAddress = from,
                         )
-                    } else null,
+                    } else {
+                        null
+                    },
                     if (to != Address.ZERO_ADDRESS) {
                         FungibleTokenInteraction(
                             contractAddress = event.address!!,
@@ -51,13 +52,13 @@ open class FungibleTokenInteractionsService(private val mongoTemplate: MongoTemp
                             blockTimestamp = event.blockTimestamp,
                             walletAddress = to,
                         )
-                    } else null,
+                    } else {
+                        null
+                    },
                 )
             }
             .distinctBy { it.contractAddress to it.walletAddress }
-    }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun save(records: List<FungibleTokenInteraction>) {
         if (records.isEmpty()) return
 

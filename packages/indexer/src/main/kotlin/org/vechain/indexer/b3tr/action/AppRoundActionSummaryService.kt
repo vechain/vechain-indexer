@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -93,7 +92,6 @@ open class AppRoundActionSummaryService(
         return Triple(updatedResult.values.toList(), archiveResult.toList(), updatedRoundId)
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<AppRoundActionSummary>, existing: List<AppRoundActionSummary>) {
         saveVersionedDocuments(
             updated,
