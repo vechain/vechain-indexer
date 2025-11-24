@@ -255,7 +255,7 @@ enabled_nets:
       disk_size_gb: 1000
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M50
+      auto_scaling_compute_max_instance_size: M60
       auto_scaling_compute_min_instance_size: M40
   test:
     image_version: latest
@@ -453,5 +453,5 @@ enabled_nets:
       disk_size_gb: 250
       iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M40
+      auto_scaling_compute_max_instance_size: M50
       auto_scaling_compute_min_instance_size: M20
