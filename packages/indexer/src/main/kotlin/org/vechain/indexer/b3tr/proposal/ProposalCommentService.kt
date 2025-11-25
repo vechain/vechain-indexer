@@ -50,7 +50,7 @@ open class ProposalCommentService(
 
     open fun save(comments: List<ProposalComment>) {
         if (comments.isNotEmpty()) {
-            mongoTemplate.insert(comments)
+            mongoTemplate.insert(comments, ProposalComment::class.java)
         }
     }
 

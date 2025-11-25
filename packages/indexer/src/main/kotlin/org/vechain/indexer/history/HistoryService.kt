@@ -38,7 +38,7 @@ open class HistoryService(private val mongoTemplate: MongoTemplate) {
     }
 
     open fun save(events: List<IndexedHistoryEvent>) {
-        mongoTemplate.insert(events)
+        mongoTemplate.insert(events, IndexedHistoryEvent::class.java)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
