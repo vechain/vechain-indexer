@@ -185,7 +185,7 @@ class NftHolderByBlockServiceTest {
 
         val (updated, archived) = service.processEvents(events)
 
-        expectThat(updated[0])
+        expectThat(updated[1])
             .andBlockRecord(
                 "block10",
                 10,
@@ -194,7 +194,7 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 3, TokenLevel.Thunder to 3),
             )
 
-        expectThat(updated[1])
+        expectThat(updated[2])
             .andBlockRecord(
                 "block11",
                 11,

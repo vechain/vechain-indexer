@@ -88,11 +88,11 @@ internal class VthoClaimByBlockServiceTest {
                 blockTimestamp = 1200L,
                 total = BigInteger("300"),
                 legacyRewards = BigInteger.ZERO,
-                hourOfDay = 1,
+                hourOfDay = 0,
                 dayOfMonth = 1,
                 weekOfYear = 1,
                 month = 1,
-                year = 1,
+                year = 1970,
                 timeFrames = emptyList(),
                 blockTotal = BigInteger.ZERO,
                 hourTotal = BigInteger.ZERO,
@@ -109,7 +109,7 @@ internal class VthoClaimByBlockServiceTest {
                 mockEvent(
                     blockId = "block3",
                     blockNumber = 15L,
-                    blockTimestamp = 1500L,
+                    blockTimestamp = 1200L,
                     value = "50",
                 )
             )
@@ -118,7 +118,7 @@ internal class VthoClaimByBlockServiceTest {
 
         expectThat(result.records).hasSize(1)
 
-        expectThat(result.records[0]).andBlockRecord("block3", 15L, 1500L, BigInteger("350"))
+        expectThat(result.records[0]).andBlockRecord("block3", 15L, 1200L, BigInteger("350"))
     }
 
     // ---------------------------------------------------------

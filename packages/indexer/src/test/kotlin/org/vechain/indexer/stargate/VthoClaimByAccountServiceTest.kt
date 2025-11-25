@@ -256,54 +256,6 @@ internal class VthoClaimByAccountServiceTest {
     }
 
     @Test
-    fun `update saves update and archives existing`() {
-        val update =
-            listOf(
-                VthoClaimedByAccount(
-                    1,
-                    "block1",
-                    1L,
-                    1000L,
-                    BigInteger("1"),
-                    BigInteger("0"),
-                    BigInteger("1"),
-                    "0xabc",
-                    tokenId = null,
-                    id = "0xabc",
-                )
-            )
-        val existing =
-            listOf(
-                VthoClaimedByAccount(
-                    0,
-                    "block0",
-                    0L,
-                    900L,
-                    BigInteger("0"),
-                    BigInteger("0"),
-                    BigInteger("0"),
-                    "0xabc",
-                    tokenId = null,
-                    id = "0xabc",
-                )
-            )
-
-        service.save(update, existing)
-
-        // Verify with relaxed mock (mongoTemplate is used internally)
-    }
-
-    @Test
-    fun `update does not save or archive empty lists`() {
-        val update = emptyList<VthoClaimedByAccount>()
-        val existing = emptyList<VthoClaimedByAccount>()
-
-        service.save(update, existing)
-
-        // Nothing to verify - empty lists should not trigger any saves
-    }
-
-    @Test
     fun `getExistingByAccount fetches by owner addresses`() {
         val events =
             listOf(

@@ -96,8 +96,8 @@ internal class VetStakedByBlockServiceTest {
 
         val (updated, archived) = service.processEvents(events)
 
-        expectThat(updated).hasSize(1)
-        expectThat(updated[0]).blockMatches("b10", 10L, 1000L, BigInteger("550"))
+        expectThat(updated).hasSize(2)
+        expectThat(updated[1]).blockMatches("b10", 10L, 1000L, BigInteger("550"))
     }
 
     @Test

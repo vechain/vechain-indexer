@@ -50,12 +50,32 @@ internal class NftBlacklistServiceTest {
         val updated = listOf(NftBlacklist("contract1", 1, true, "block1", 1, 1))
         val existing = listOf(NftBlacklist("contract2", 1, false, "block2", 2, 2))
 
-        every { repository.saveAll(updated) } returns updated
+        // Mock BulkOperations
+        val mockBulkOps =
+            mockk<org.springframework.data.mongodb.core.BulkOperations>(relaxed = true)
+
+        // The class is NftBlacklist
+        every { mongoTemplate.bulkOps(any(), NftBlacklist::class.java) } returns mockBulkOps
+
+        // Mock BulkWriteResult
+        val mockResult = mockk<com.mongodb.bulk.BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), any<NftBlacklist>(), any()) } returns mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
         every { nftBlacklistArchiveService.saveAll(existing) } just Runs
 
+        // Act
         nftBlacklistService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        // Verify bulkOps flow
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), NftBlacklist::class.java) }
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+        verify(exactly = 1) { mockBulkOps.execute() }
+
         verify(exactly = 1) { nftBlacklistArchiveService.saveAll(existing) }
     }
 
@@ -76,15 +96,37 @@ internal class NftBlacklistServiceTest {
     @Test
     fun `update - shouldn't call saveAll if existing is empty`() {
         val updated = listOf(NftBlacklist("contract1", 1, true, "block1", 1, 1))
+
         val existing = emptyList<NftBlacklist>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftBlacklistArchiveService.saveAll(existing) } just Runs
+        // Mock BulkOperations
+        val mockBulkOps =
+            mockk<org.springframework.data.mongodb.core.BulkOperations>(relaxed = true)
 
+        every { mongoTemplate.bulkOps(any(), NftBlacklist::class.java) } returns mockBulkOps
+
+        // Mock BulkWriteResult
+        val mockResult = mockk<com.mongodb.bulk.BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), any<NftBlacklist>(), any()) } returns mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
+        // Call service
         nftBlacklistService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftBlacklistArchiveService.saveAll(existing) }
+        // Verify bulkOps used for updated
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), NftBlacklist::class.java) }
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+        verify(exactly = 1) { mockBulkOps.execute() }
+
+        // Verify archive NOT called
+        verify(exactly = 0) { nftBlacklistArchiveService.saveAll(any<List<NftBlacklist>>()) }
+
+        // Ensure repository is NOT used anymore
+        verify(exactly = 0) { repository.saveAll(any<List<NftBlacklist>>()) }
     }
 
     @Test
@@ -92,13 +134,20 @@ internal class NftBlacklistServiceTest {
         val updated = emptyList<NftBlacklist>()
         val existing = emptyList<NftBlacklist>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftBlacklistArchiveService.saveAll(existing) } just Runs
+        // No bulkOps should be invoked
+        // No calls to archiveService should occur
+        // No calls to repository should occur
 
         nftBlacklistService.save(updated, existing)
 
-        verify(exactly = 0) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftBlacklistArchiveService.saveAll(existing) }
+        // Verify bulkOps NOT called
+        verify(exactly = 0) { mongoTemplate.bulkOps(any(), NftBlacklist::class.java) }
+
+        // Verify archiveService NOT called
+        verify(exactly = 0) { nftBlacklistArchiveService.saveAll(any<List<NftBlacklist>>()) }
+
+        // Verify repository NOT used
+        verify(exactly = 0) { repository.saveAll(any<List<NftBlacklist>>()) }
     }
 
     // parseRecords
