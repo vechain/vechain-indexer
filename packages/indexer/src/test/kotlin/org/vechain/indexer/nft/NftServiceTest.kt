@@ -1,5 +1,6 @@
 package org.vechain.indexer.nft
 
+import com.mongodb.bulk.BulkWriteResult
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER
@@ -70,13 +72,37 @@ internal class NftServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
+        // Mock BulkOperations
+        val mockBulkOps = mockk<BulkOperations>(relaxed = true)
+
+        every { mongoTemplate.bulkOps(any(), IndexedNft::class.java) } returns mockBulkOps
+
+        // Mock BulkWriteResult
+        val mockResult = mockk<BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), updated.first(), any()) } returns mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
         every { nftArchiveService.saveAll(existing) } just Runs
 
+        // Act
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        // Verify bulk update
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), IndexedNft::class.java) }
+
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+
+        verify(exactly = 1) { mockBulkOps.execute() }
+
+        // Verify archiving
         verify(exactly = 1) { nftArchiveService.saveAll(existing) }
+
+        // Verify repository.saveAll is NOT used anymore
+        verify(exactly = 0) { repository.saveAll(any<List<IndexedNft>>()) }
     }
 
     @Test
@@ -122,15 +148,39 @@ internal class NftServiceTest {
                     blockTimestamp = 1L,
                 )
             )
+
         val existing = emptyList<IndexedNft>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
+        // Mock BulkOperations
+        val mockBulkOps = mockk<BulkOperations>(relaxed = true)
 
+        every { mongoTemplate.bulkOps(any(), IndexedNft::class.java) } returns mockBulkOps
+        every { mockBulkOps.replaceOne(any(), updated.first(), any()) } returns mockBulkOps
+
+        // Mock write result
+        val mockResult = mockk<BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.execute() } returns mockResult
+
+        // Existing is empty → archive shouldn't be called
+        every { nftArchiveService.saveAll(any<List<IndexedNft>>()) } just Runs
+
+        // Act
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftArchiveService.saveAll(existing) }
+        // Verify bulkOps used for updates
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), IndexedNft::class.java) }
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+        verify(exactly = 1) { mockBulkOps.execute() }
+
+        // Archive must NOT be called
+        verify(exactly = 0) { nftArchiveService.saveAll(any<List<IndexedNft>>()) }
+
+        // Repository is no longer used at all
+        verify(exactly = 0) { repository.saveAll(any<List<IndexedNft>>()) }
     }
 
     @Test
