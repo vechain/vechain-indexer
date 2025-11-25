@@ -233,9 +233,12 @@ class ValidatorBlockServiceTest {
                 isHourly = true,
             )
 
+        every { mongoTemplate.insert(listOf(block), ValidatorBlock::class.java) } returns
+            listOf(block)
+
         service.save(listOf(block))
 
-        verify { repository.saveAll(listOf(block)) }
+        verify { mongoTemplate.insert(listOf(block), ValidatorBlock::class.java) }
         val hourlyCache =
             service.javaClass
                 .getDeclaredField("hourlyCache")

@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import com.mongodb.bulk.BulkWriteResult
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
@@ -8,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.BulkOperations
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.AbiElement
@@ -194,15 +196,34 @@ class ValidatorServiceTest {
                 version = 1,
             )
 
-        every { repository.saveAll(any<List<Validator>>()) } returns listOf(v1)
         every { repository.deleteAllById(any<List<String>>()) } just Runs
         every { archiveService.saveAll(any<List<Validator>>()) } just Runs
 
+        val mockBulkOps = mockk<BulkOperations>(relaxed = true)
+
+        // BulkOps returned by mongoTemplate
+        every { mongoTemplate.bulkOps(any(), Validator::class.java) } returns mockBulkOps
+
+        // replaceOne for updated record
+        every { mockBulkOps.replaceOne(any(), v1, any()) } returns mockBulkOps
+
+        // Bulk result
+        val mockResult = mockk<BulkWriteResult>()
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.execute() } returns mockResult
+
         service.save(listOf(v1), listOf(v1))
 
-        verify {
-            repository.saveAll(withArg<List<Validator>> { list -> assertThat(list).contains(v1) })
-        }
+        // Verify bulkOps was used to persist updates
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), Validator::class.java) }
+
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), v1, any()) }
+
+        // Verify bulk execution
+        verify(exactly = 1) { mockBulkOps.execute() }
         verify { archiveService.saveAll(match { it.isNotEmpty() }) }
     }
 }
