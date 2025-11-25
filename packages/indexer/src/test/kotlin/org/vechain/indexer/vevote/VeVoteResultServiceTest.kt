@@ -11,6 +11,7 @@ import java.util.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -30,6 +31,8 @@ class VeVoteResultServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableService
 
     private class TestableService(
@@ -37,8 +40,8 @@ class VeVoteResultServiceTest {
         veVoteProposalResultArchive:
             ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
         pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
-
+        mongoTemplate: MongoTemplate,
+    ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner, mongoTemplate) {
         fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
             events: List<IndexedEvent>,
@@ -49,7 +52,7 @@ class VeVoteResultServiceTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, veVoteProposalResultArchive, pruner)
+        service = TestableService(repository, veVoteProposalResultArchive, pruner, mongoTemplate)
     }
 
     @Test

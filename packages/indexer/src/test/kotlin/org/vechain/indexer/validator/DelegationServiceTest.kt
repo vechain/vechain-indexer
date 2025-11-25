@@ -1,13 +1,18 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -15,6 +20,7 @@ import strikt.api.expectThat
 import strikt.assertions.contains
 import strikt.assertions.isEqualTo
 
+@ExtendWith(MockKExtension::class)
 class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
     private val archiveService =
@@ -23,6 +29,10 @@ class DelegationServiceTest {
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
     private lateinit var service: DelegationService
+
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK lateinit var pruner: TargetedPruner<Delegation, DelegationArchive>
 
     @BeforeEach
     fun setup() {
@@ -33,6 +43,8 @@ class DelegationServiceTest {
                     repository,
                     archiveService,
                     validatorDelegationService,
+                    mongoTemplate = mongoTemplate,
+                    pruner,
                     stakerSC = "0xSTAKER",
                 )
             )

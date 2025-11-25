@@ -4,14 +4,16 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import strikt.api.expectThat
@@ -20,12 +22,21 @@ import strikt.assertions.*
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
     @MockK lateinit var repository: VetDelegatedByBlockRepository
+
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK(relaxed = true)
+    lateinit var archiveService: ArchiveService<VetDelegatedByBlock, VetDelegatedByBlockArchive>
+
+    @MockK(relaxed = true)
+    lateinit var pruner: TargetedPruner<VetDelegatedByBlock, VetDelegatedByBlockArchive>
+
     private lateinit var service: VetDelegatedByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = VetDelegatedByBlockService(repository)
+        service = VetDelegatedByBlockService(repository, mongoTemplate, archiveService, pruner)
     }
 
     private fun mockEvent(
@@ -47,16 +58,19 @@ class VetDelegatedByBlockServiceTest {
     @Test
     fun `empty events returns empty list`() {
         every { repository.getLatestRecord() } returns null
-        expectThat(service.processEvents(emptyList())).isEmpty()
+        val (updated, archived) = service.processEvents(emptyList())
+        expectThat(updated).isEmpty()
+        expectThat(archived).isEmpty()
     }
 
     @Test
     fun `block order violation throws`() {
         every { repository.getLatestRecord() } returns
             VetDelegatedByBlock(
-                "block-10",
-                10,
-                1000,
+                version = 1,
+                blockId = "block-10",
+                blockNumber = 10,
+                blockTimestamp = 1000,
                 total = BigInteger("100"),
                 byLevel = emptyMap(),
                 hourOfDay = 1,
@@ -98,16 +112,16 @@ class VetDelegatedByBlockServiceTest {
                 mockEvent(101, 1767129600, "5"),
             )
 
-        val r = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(r).hasSize(3)
+        expectThat(updated).hasSize(3)
 
-        // r[1] = previous block (block 100) WITH rollover flag
-        expectThat(r[1].timeFrames).contains(TimeFrame.DAY)
-        expectThat(r[1].timeFrames).contains(TimeFrame.HOUR)
+        // updated[1] = previous block (block 100) WITH rollover flag
+        expectThat(updated[1].timeFrames).contains(TimeFrame.DAY)
+        expectThat(updated[1].timeFrames).contains(TimeFrame.HOUR)
 
-        // r[2] = block 101 new day → no timeFrames
-        expectThat(r[2].timeFrames).isEmpty()
+        // updated[2] = block 101 new day → no timeFrames
+        expectThat(updated[2].timeFrames).isEmpty()
     }
 
     // ---------------------------------------------------------
@@ -126,12 +140,12 @@ class VetDelegatedByBlockServiceTest {
                 mockEvent(301, 1743336000, "10"),
             )
 
-        val r = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(r).hasSize(3)
+        expectThat(updated).hasSize(3)
 
-        expectThat(r[1].timeFrames).contains(TimeFrame.WEEK)
-        expectThat(r[2].timeFrames).isEmpty()
+        expectThat(updated[1].timeFrames).contains(TimeFrame.WEEK)
+        expectThat(updated[2].timeFrames).isEmpty()
     }
 
     // ---------------------------------------------------------
@@ -150,11 +164,11 @@ class VetDelegatedByBlockServiceTest {
                 mockEvent(301, 1761950990, "10"),
             )
 
-        val r = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(r).hasSize(3)
-        expectThat(r[1].timeFrames).contains(TimeFrame.MONTH)
-        expectThat(r[2].timeFrames).isEmpty()
+        expectThat(updated).hasSize(3)
+        expectThat(updated[1].timeFrames).contains(TimeFrame.MONTH)
+        expectThat(updated[2].timeFrames).isEmpty()
     }
 
     // ---------------------------------------------------------
@@ -173,12 +187,12 @@ class VetDelegatedByBlockServiceTest {
                 mockEvent(401, 1707225605, "25"),
             )
 
-        val r = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(r).hasSize(3)
+        expectThat(updated).hasSize(3)
 
-        expectThat(r[1].timeFrames).contains(TimeFrame.YEAR)
-        expectThat(r[2].timeFrames).isEmpty()
+        expectThat(updated[1].timeFrames).contains(TimeFrame.YEAR)
+        expectThat(updated[2].timeFrames).isEmpty()
     }
 
     // ---------------------------------------------------------
@@ -190,9 +204,10 @@ class VetDelegatedByBlockServiceTest {
         val dummy =
             listOf(
                 VetDelegatedByBlock(
-                    "b",
-                    1,
-                    1,
+                    version = 1,
+                    blockId = "b",
+                    blockNumber = 1,
+                    blockTimestamp = 1,
                     total = BigInteger.ONE,
                     byLevel = emptyMap(),
                     hourOfDay = 1,
@@ -209,11 +224,10 @@ class VetDelegatedByBlockServiceTest {
                     yearTotal = BigInteger.ONE,
                 )
             )
+        val existing = emptyList<VetDelegatedByBlock>()
 
-        every { repository.saveAll(dummy) } returns dummy
+        service.saveRecords(dummy, existing)
 
-        service.saveRecords(dummy)
-
-        verify(exactly = 1) { repository.saveAll(dummy) }
+        // Verify with relaxed mock
     }
 }

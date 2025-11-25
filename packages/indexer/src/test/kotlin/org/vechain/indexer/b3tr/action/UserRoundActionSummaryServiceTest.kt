@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
@@ -36,6 +38,8 @@ internal class UserRoundActionSummaryServiceTest {
     @MockK
     lateinit var pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
@@ -43,7 +47,8 @@ internal class UserRoundActionSummaryServiceTest {
         repository: UserRoundActionSummaryRepository,
         archive: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    ) : UserRoundActionSummaryService(repository, archive, pruner) {
+        mongoTemplate: MongoTemplate,
+    ) : UserRoundActionSummaryService(repository, archive, pruner, mongoTemplate) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserRoundActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -60,7 +65,7 @@ internal class UserRoundActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, archiveService, pruner, mongoTemplate)
     }
 
     @Test
@@ -296,6 +301,7 @@ internal class UserRoundActionSummaryServiceTest {
                     roundId = 1,
                 )
             )
+
         val archived =
             listOf(
                 UserRoundActionSummary(
@@ -312,13 +318,39 @@ internal class UserRoundActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
+        // Mock bulkOps
+        val mockBulkOps =
+            mockk<org.springframework.data.mongodb.core.BulkOperations>(relaxed = true)
+
+        every { mongoTemplate.bulkOps(any(), UserRoundActionSummary::class.java) } returns
+            mockBulkOps
+
+        // Mock bulk write result
+        val mockResult = mockk<com.mongodb.bulk.BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), any<UserRoundActionSummary>(), any()) } returns
+            mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
         every { archiveService.saveAll(archived) } just runs
 
+        // Act
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        // Verify correct persistence behaviour
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), UserRoundActionSummary::class.java) }
+
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+
+        verify(exactly = 1) { mockBulkOps.execute() }
+
         verify(exactly = 1) { archiveService.saveAll(archived) }
+
+        // Ensure repository.saveAll is NOT used anymore
+        verify(exactly = 0) { repository.saveAll(any<List<UserRoundActionSummary>>()) }
     }
 
     @Test

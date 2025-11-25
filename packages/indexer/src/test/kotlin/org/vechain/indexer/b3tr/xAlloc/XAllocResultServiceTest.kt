@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
@@ -28,6 +29,8 @@ internal class XAllocResultServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
 
+    @MockK lateinit var mongoTemplate: MongoTemplate
+
     @MockK lateinit var thorService: ThorService
 
     private val xAllocPoolContract = "0x1234567890abcdef"
@@ -41,7 +44,15 @@ internal class XAllocResultServiceTest {
         pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
         thorService: ThorService,
         xAllocPoolContract: String,
-    ) : XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract) {
+    ) :
+        XAllocResultService(
+            repository,
+            archiveService,
+            pruner,
+            thorService,
+            xAllocPoolContract,
+            mongoTemplate,
+        ) {
         fun testAddOrCreateVoteResult(
             roundId: Int,
             appId: String,
@@ -102,7 +113,14 @@ internal class XAllocResultServiceTest {
                 )
             )
         service =
-            XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract)
+            XAllocResultService(
+                repository,
+                archiveService,
+                pruner,
+                thorService,
+                xAllocPoolContract,
+                mongoTemplate,
+            )
         testableService =
             TestableXAllocResultService(
                 repository,

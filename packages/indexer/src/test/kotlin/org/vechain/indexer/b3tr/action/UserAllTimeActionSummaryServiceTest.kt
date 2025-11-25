@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
@@ -35,6 +37,8 @@ internal class UserAllTimeActionSummaryServiceTest {
     @MockK
     lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
@@ -42,7 +46,8 @@ internal class UserAllTimeActionSummaryServiceTest {
         repository: UserAllTimeActionSummaryRepository,
         archive: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    ) : UserAllTimeActionSummaryService(repository, archive, pruner) {
+        mongoTemplate: MongoTemplate,
+    ) : UserAllTimeActionSummaryService(repository, archive, pruner, mongoTemplate) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -58,7 +63,7 @@ internal class UserAllTimeActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, archiveService, pruner, mongoTemplate)
     }
 
     @Test
@@ -288,6 +293,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                     totalImpact = null,
                 )
             )
+
         val archived =
             listOf(
                 UserAllTimeActionSummary(
@@ -303,13 +309,38 @@ internal class UserAllTimeActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
+        // Mock bulkOps
+        val mockBulkOps =
+            mockk<org.springframework.data.mongodb.core.BulkOperations>(relaxed = true)
+
+        every { mongoTemplate.bulkOps(any(), UserAllTimeActionSummary::class.java) } returns
+            mockBulkOps
+
+        // Mock BulkWriteResult
+        val mockResult = mockk<com.mongodb.bulk.BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), any<UserAllTimeActionSummary>(), any()) } returns
+            mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
         every { archiveService.saveAll(archived) } just runs
 
+        // Act
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        // Verify correct behaviour
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), UserAllTimeActionSummary::class.java) }
+
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+
+        verify(exactly = 1) { mockBulkOps.execute() }
+
         verify(exactly = 1) { archiveService.saveAll(archived) }
+
+        verify(exactly = 0) { repository.saveAll(any<List<UserAllTimeActionSummary>>()) }
     }
 
     @Test

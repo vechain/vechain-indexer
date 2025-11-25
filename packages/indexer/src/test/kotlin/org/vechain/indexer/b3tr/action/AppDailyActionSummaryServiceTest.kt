@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
+import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
@@ -32,6 +34,8 @@ internal class AppDailyActionSummaryServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
@@ -39,7 +43,8 @@ internal class AppDailyActionSummaryServiceTest {
         repository: AppDailyActionSummaryRepository,
         archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-    ) : AppDailyActionSummaryService(repository, archive, pruner) {
+        mongoTemplate: MongoTemplate,
+    ) : AppDailyActionSummaryService(repository, archive, pruner, mongoTemplate) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -56,7 +61,7 @@ internal class AppDailyActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, archiveService, pruner, mongoTemplate)
     }
 
     @Test
@@ -303,6 +308,7 @@ internal class AppDailyActionSummaryServiceTest {
                     date = "2025-09-09",
                 )
             )
+
         val archived =
             listOf(
                 AppDailyActionSummary(
@@ -319,20 +325,47 @@ internal class AppDailyActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
+        // Mock bulkOps
+        val mockBulkOps =
+            mockk<org.springframework.data.mongodb.core.BulkOperations>(relaxed = true)
+
+        every { mongoTemplate.bulkOps(any(), AppDailyActionSummary::class.java) } returns
+            mockBulkOps
+
+        // Mock BulkWriteResult
+        val mockResult = mockk<com.mongodb.bulk.BulkWriteResult>()
+        every { mockResult.insertedCount } returns 0
+        every { mockResult.modifiedCount } returns 1
+        every { mockResult.upserts } returns emptyList()
+
+        every { mockBulkOps.replaceOne(any(), any<AppDailyActionSummary>(), any()) } returns
+            mockBulkOps
+        every { mockBulkOps.execute() } returns mockResult
+
         every { archiveService.saveAll(archived) } just runs
 
+        // Act
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
+        // Verify correct bulk operation
+        verify(exactly = 1) { mongoTemplate.bulkOps(any(), AppDailyActionSummary::class.java) }
+        verify(exactly = 1) { mockBulkOps.replaceOne(any(), updated.first(), any()) }
+        verify(exactly = 1) { mockBulkOps.execute() }
+
+        // Verify archive is saved
         verify(exactly = 1) { archiveService.saveAll(archived) }
+
+        // Ensure repository was never used
+        verify(exactly = 0) { repository.saveAll(any<List<AppDailyActionSummary>>()) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppDailyActionSummary>>()) }
+
+        verify(exactly = 0) { mongoTemplate.save(any<AppDailyActionSummary>()) }
         verify(exactly = 0) { archiveService.saveAll(any<List<AppDailyActionSummary>>()) }
+        verify(exactly = 0) { repository.saveAll(any<List<AppDailyActionSummary>>()) }
     }
 
     @Test
@@ -361,7 +394,7 @@ internal class AppDailyActionSummaryServiceTest {
                 id = "e2",
                 blockId = "block-1",
                 blockNumber = 1L,
-                blockTimestamp = 1757449050, // 2025-09-09
+                blockTimestamp = 1757449050,
                 eventType = "B3TR_ActionReward",
                 params =
                     AbiEventParameters(
@@ -421,7 +454,7 @@ internal class AppDailyActionSummaryServiceTest {
                 id = "e2",
                 blockId = "block-2",
                 blockNumber = 2L,
-                blockTimestamp = 1757449060, // 2025-09-09
+                blockTimestamp = 1757449060,
                 eventType = "B3TR_ActionReward",
                 params =
                     AbiEventParameters(

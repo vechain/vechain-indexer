@@ -1,14 +1,19 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.rest.ExecuteAccountResponse
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
@@ -16,17 +21,33 @@ import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.logic.ValidatorAssembler
 import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidatorInfo
 
+@ExtendWith(MockKExtension::class)
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
     private val archiveService = mockk<ArchiveService<Validator, ValidatorArchive>>(relaxed = true)
     private val thorService = mockk<ThorService>()
+
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK lateinit var pruner: TargetedPruner<Validator, ValidatorArchive>
 
     private lateinit var service: ValidatorService
 
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorService, 25L, "0xcontract"))
+        service =
+            spyk(
+                ValidatorService(
+                    repository,
+                    archiveService,
+                    thorService,
+                    mongoTemplate,
+                    pruner,
+                    25L,
+                    "0xcontract",
+                )
+            )
     }
 
     private fun block(num: Long) =

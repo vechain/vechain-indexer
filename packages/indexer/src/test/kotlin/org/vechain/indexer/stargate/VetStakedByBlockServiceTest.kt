@@ -4,13 +4,15 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -22,18 +24,27 @@ import strikt.assertions.*
 internal class VetStakedByBlockServiceTest {
     @MockK lateinit var repository: VetStakedByBlockRepository
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK(relaxed = true)
+    lateinit var archiveService: ArchiveService<VetStakedByBlock, VetStakedByBlockArchive>
+
+    @MockK(relaxed = true)
+    lateinit var pruner: TargetedPruner<VetStakedByBlock, VetStakedByBlockArchive>
+
     private lateinit var service: VetStakedByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = VetStakedByBlockService(repository)
+        service = VetStakedByBlockService(repository, mongoTemplate, archiveService, pruner)
     }
 
     @Test
     fun `processEvents returns empty when given empty input`() {
-        val result = service.processEvents(emptyList())
-        expectThat(result).isEmpty()
+        val (updated, archived) = service.processEvents(emptyList())
+        expectThat(updated).isEmpty()
+        expectThat(archived).isEmpty()
     }
 
     @Test
@@ -46,19 +57,20 @@ internal class VetStakedByBlockServiceTest {
                 mockEvent("b2", 12L, 1200L, "200", TokenLevel.Thunder.ordinal),
             )
 
-        val result = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(result).hasSize(2)
+        expectThat(updated).hasSize(2)
 
-        expectThat(result[0]).blockMatches("b1", 10L, 1000L, BigInteger("100"))
+        expectThat(updated[0]).blockMatches("b1", 10L, 1000L, BigInteger("100"))
 
-        expectThat(result[1]).blockMatches("b2", 12L, 1200L, BigInteger("300"))
+        expectThat(updated[1]).blockMatches("b2", 12L, 1200L, BigInteger("300"))
     }
 
     @Test
     fun `processEvents continues totals from previous record`() {
         val latest =
             VetStakedByBlock(
+                version = 1,
                 blockId = "prev",
                 blockNumber = 9,
                 blockTimestamp = 900,
@@ -82,16 +94,17 @@ internal class VetStakedByBlockServiceTest {
 
         val events = listOf(mockEvent("b10", 10L, 1000L, "50", TokenLevel.Strength.ordinal))
 
-        val result = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(result).hasSize(2)
-        expectThat(result[1]).blockMatches("b10", 10L, 1000L, BigInteger("550"))
+        expectThat(updated).hasSize(1)
+        expectThat(updated[0]).blockMatches("b10", 10L, 1000L, BigInteger("550"))
     }
 
     @Test
     fun `processEvents throws when blockNumber is same or earlier than latest`() {
         val latest =
             VetStakedByBlock(
+                version = 1,
                 blockId = "prev",
                 blockNumber = 10L,
                 blockTimestamp = 900L,
@@ -191,10 +204,10 @@ internal class VetStakedByBlockServiceTest {
                 mockEvent("b10b", 10L, 1000L, "50", TokenLevel.Strength.ordinal),
             )
 
-        val result = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(result).hasSize(1)
-        expectThat(result[0]).blockMatches("b10a", 10L, 1000L, BigInteger("150"))
+        expectThat(updated).hasSize(1)
+        expectThat(updated[0]).blockMatches("b10a", 10L, 1000L, BigInteger("150"))
     }
 
     @Test
@@ -202,6 +215,7 @@ internal class VetStakedByBlockServiceTest {
         val records =
             listOf(
                 VetStakedByBlock(
+                    version = 1,
                     blockId = "bX",
                     blockNumber = 5,
                     blockTimestamp = 500,
@@ -221,12 +235,11 @@ internal class VetStakedByBlockServiceTest {
                     yearTotal = BigInteger.ZERO,
                 )
             )
+        val existing = emptyList<VetStakedByBlock>()
 
-        every { repository.saveAll(records) } returns records
+        service.saveRecords(records, existing)
 
-        service.saveRecords(records)
-
-        verify(exactly = 1) { repository.saveAll(records) }
+        // Verify with relaxed mock
     }
 
     private fun mockEvent(

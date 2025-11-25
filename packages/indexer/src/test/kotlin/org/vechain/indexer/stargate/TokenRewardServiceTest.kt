@@ -7,8 +7,10 @@ import java.time.ZoneOffset
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -25,7 +27,10 @@ class TokenRewardServiceTest {
     private val archiveService =
         mockk<ArchiveService<TokenReward, TokenRewardArchive>>(relaxed = true)
     private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
+    private val mongoTemplate = mockk<MongoTemplate>(relaxed = true)
     private val thorService = mockk<ThorService>(relaxed = true)
+    private val tokenRewardPruner =
+        mockk<TargetedPruner<TokenReward, TokenRewardArchive>>(relaxed = true)
 
     private lateinit var service: TokenRewardService
 
@@ -38,7 +43,9 @@ class TokenRewardServiceTest {
                     repository,
                     archiveService,
                     delegationRepository,
+                    mongoTemplate,
                     thorService,
+                    tokenRewardPruner,
                     "0xSTARGATE",
                 )
             )

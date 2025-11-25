@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
@@ -30,11 +31,14 @@ internal class ProposalResultServiceTest {
 
     @MockK lateinit var thorService: ThorService
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableProposalResultService
 
     // A testable subclass to expose protected methods for testing
     private class TestableProposalResultService(
         repository: ProposalResultRepository,
+        mongoTemplate: MongoTemplate,
         proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
         proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
         thorService: ThorService,
@@ -46,6 +50,7 @@ internal class ProposalResultServiceTest {
             proposalResultPruner,
             thorService,
             governorContract,
+            mongoTemplate,
         ) {
         fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
             updateStatusesForBatch(batch, block)
@@ -71,6 +76,7 @@ internal class ProposalResultServiceTest {
         service =
             TestableProposalResultService(
                 repository,
+                mongoTemplate,
                 proposalResultArchiveService,
                 pruner,
                 thorService,

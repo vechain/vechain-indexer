@@ -1,6 +1,7 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
+import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
@@ -19,11 +21,13 @@ class ValidatorBlockServiceTest {
     private lateinit var thorService: ThorService
     private lateinit var service: ValidatorBlockService
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     @BeforeEach
     fun setup() {
         repository = mockk(relaxed = true)
         thorService = mockk(relaxed = true)
-        service = spyk(ValidatorBlockService(repository, thorService))
+        service = spyk(ValidatorBlockService(repository, thorService, mongoTemplate))
 
         every { repository.findLatestHourly() } returns emptyList()
         every { repository.findLatestDaily() } returns emptyList()

@@ -9,6 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.SimpleBlockIndexerCoordinator
 import org.vechain.indexer.config.BusinessEventProperties
@@ -26,6 +27,8 @@ class HistoryIndexerTest {
     @MockK lateinit var repository: HistoryRepository
 
     @MockK lateinit var processor: HistoryProcessor
+
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var thorClient: ThorClient
 

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
@@ -34,6 +35,8 @@ internal class AppAllTimeActionSummaryServiceTest {
     @MockK
     lateinit var pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
@@ -41,7 +44,8 @@ internal class AppAllTimeActionSummaryServiceTest {
         repository: AppAllTimeActionSummaryRepository,
         archive: ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
         pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-    ) : AppAllTimeActionSummaryService(repository, archive, pruner) {
+        mongoTemplate: MongoTemplate,
+    ) : AppAllTimeActionSummaryService(repository, archive, pruner, mongoTemplate) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -57,7 +61,7 @@ internal class AppAllTimeActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, archiveService, pruner, mongoTemplate)
     }
 
     @Test
@@ -245,19 +249,16 @@ internal class AppAllTimeActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(archived) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { archiveService.saveAll(archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppAllTimeActionSummary>>()) }
         verify(exactly = 0) { archiveService.saveAll(any<List<AppAllTimeActionSummary>>()) }
     }
 

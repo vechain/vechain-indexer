@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
@@ -24,12 +25,14 @@ internal class GmNftServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<GmNft, GmNftArchive>
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = GmNftService(repository, gmNftArchiveService, pruner)
+        service = GmNftService(repository, gmNftArchiveService, pruner, mongoTemplate)
     }
 
     @Test

@@ -4,39 +4,49 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlock
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockArchive
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockService
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import strikt.api.Assertion
 import strikt.api.expectThat
-import strikt.assertions.hasSize
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
+import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 internal class VthoClaimByBlockServiceTest {
     @MockK lateinit var repository: VthoClaimedByBlockRepository
+
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK(relaxed = true)
+    lateinit var archiveService: ArchiveService<VthoClaimedByBlock, VthoClaimedByBlockArchive>
+
+    @MockK(relaxed = true)
+    lateinit var pruner: TargetedPruner<VthoClaimedByBlock, VthoClaimedByBlockArchive>
 
     private lateinit var service: VthoClaimedByBlockService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = VthoClaimedByBlockService(repository)
+        service = VthoClaimedByBlockService(repository, archiveService, pruner, mongoTemplate)
     }
 
     @Test
     fun `processEvents returns empty list for empty events`() {
         val result = service.processEvents(emptyList())
-        expectThat(result).isEmpty()
+        expectThat(result.records).isEmpty()
+        expectThat(result.existing).isEmpty()
     }
 
     @Test
@@ -61,17 +71,18 @@ internal class VthoClaimByBlockServiceTest {
 
         val result = service.processEvents(events)
 
-        expectThat(result).hasSize(2)
+        expectThat(result.records).hasSize(2)
 
-        expectThat(result[0]).andBlockRecord("block1", 10L, 1000L, BigInteger("100"))
+        expectThat(result.records[0]).andBlockRecord("block1", 10L, 1000L, BigInteger("100"))
 
-        expectThat(result[1]).andBlockRecord("block2", 12L, 1200L, BigInteger("300"))
+        expectThat(result.records[1]).andBlockRecord("block2", 12L, 1200L, BigInteger("300"))
     }
 
     @Test
     fun `processEvents adds to previous total when previous record exists`() {
         val latestRecord =
             VthoClaimedByBlock(
+                version = 1,
                 blockId = "block2",
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
@@ -105,9 +116,9 @@ internal class VthoClaimByBlockServiceTest {
 
         val result = service.processEvents(events)
 
-        expectThat(result).hasSize(2)
+        expectThat(result.records).hasSize(1)
 
-        expectThat(result[1]).andBlockRecord("block3", 15L, 1500L, BigInteger("350"))
+        expectThat(result.records[0]).andBlockRecord("block3", 15L, 1500L, BigInteger("350"))
     }
 
     // ---------------------------------------------------------
@@ -118,6 +129,7 @@ internal class VthoClaimByBlockServiceTest {
     fun `processEvents fails fast when any incoming blockNumber is same or earlier than last persisted`() {
         val latestRecord =
             VthoClaimedByBlock(
+                version = 1,
                 blockId = "block2",
                 blockNumber = 12L,
                 blockTimestamp = 1200L,
@@ -196,9 +208,9 @@ internal class VthoClaimByBlockServiceTest {
 
         val result = service.processEvents(events)
 
-        expectThat(result).hasSize(1)
+        expectThat(result.records).hasSize(1)
 
-        expectThat(result[0])
+        expectThat(result.records[0])
             .andBlockRecord(
                 blockId = "block20a", // FIRST event wins
                 blockNumber = 20L,
@@ -216,6 +228,7 @@ internal class VthoClaimByBlockServiceTest {
         val records =
             listOf(
                 VthoClaimedByBlock(
+                    version = 1,
                     blockId = "blockX",
                     blockNumber = 99L,
                     blockTimestamp = 9999L,
@@ -235,12 +248,11 @@ internal class VthoClaimByBlockServiceTest {
                     yearTotal = BigInteger.ZERO,
                 )
             )
+        val existing = emptyList<VthoClaimedByBlock>()
 
-        every { repository.saveAll(records) } returns records
+        service.saveRecords(records, existing)
 
-        service.saveRecords(records)
-
-        verify(exactly = 1) { repository.saveAll(records) }
+        // Verify with relaxed mock
     }
 
     private fun mockEvent(

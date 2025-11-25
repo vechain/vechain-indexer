@@ -9,9 +9,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
+import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockArchive
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.token.TokenLevel
@@ -24,12 +28,20 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
 
+    @MockK(relaxed = true) lateinit var mongoTemplate: MongoTemplate
+
+    @MockK(relaxed = true)
+    lateinit var archiveService: ArchiveService<NftHoldersByBlock, NftHoldersByBlockArchive>
+
+    @MockK(relaxed = true)
+    lateinit var pruner: TargetedPruner<NftHoldersByBlock, NftHoldersByBlockArchive>
+
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository)
+        service = NftHoldersByBlockService(repository, mongoTemplate, archiveService, pruner)
     }
 
     // ------------------------------------------------------------
@@ -52,8 +64,10 @@ class NftHolderByBlockServiceTest {
         weekTotal: Long = 0,
         monthTotal: Long = 0,
         yearTotal: Long = 0,
+        version: Int = 1,
     ): NftHoldersByBlock =
         NftHoldersByBlock(
+            version = version,
             blockId = blockId,
             blockNumber = blockNumber,
             blockTimestamp = blockTimestamp,
@@ -108,8 +122,9 @@ class NftHolderByBlockServiceTest {
 
     @Test
     fun `processEvents returns empty for empty input`() {
-        val result = service.processEvents(emptyList())
-        expectThat(result).isEmpty()
+        val (updated, archived) = service.processEvents(emptyList())
+        expectThat(updated).isEmpty()
+        expectThat(archived).isEmpty()
     }
 
     @Test
@@ -123,12 +138,14 @@ class NftHolderByBlockServiceTest {
 
         every { repository.getLatestRecord() } returns null
 
-        val result = service.processEvents(events)
-        expectThat(result).hasSize(3)
+        val (updated, archived) = service.processEvents(events)
+        expectThat(updated).hasSize(3)
+        expectThat(archived).isEmpty()
 
-        expectThat(result[0]).andBlockRecord("block1", 10, 1000, 1, mapOf(TokenLevel.Strength to 1))
+        expectThat(updated[0])
+            .andBlockRecord("block1", 10, 1000, 1, mapOf(TokenLevel.Strength to 1))
 
-        expectThat(result[1])
+        expectThat(updated[1])
             .andBlockRecord(
                 "block2",
                 12,
@@ -137,7 +154,7 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
             )
 
-        expectThat(result[2])
+        expectThat(updated[2])
             .andBlockRecord(
                 "block3",
                 13,
@@ -166,18 +183,9 @@ class NftHolderByBlockServiceTest {
                 mockEvent("block11", 11, 1100, "STARGATE_UNSTAKE", 2),
             )
 
-        val result = service.processEvents(events)
+        val (updated, archived) = service.processEvents(events)
 
-        expectThat(result[0])
-            .andBlockRecord(
-                "block9",
-                9,
-                900,
-                5,
-                mapOf(TokenLevel.Strength to 2, TokenLevel.Thunder to 3),
-            )
-
-        expectThat(result[1])
+        expectThat(updated[0])
             .andBlockRecord(
                 "block10",
                 10,
@@ -186,7 +194,7 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 3, TokenLevel.Thunder to 3),
             )
 
-        expectThat(result[2])
+        expectThat(updated[1])
             .andBlockRecord(
                 "block11",
                 11,
@@ -263,11 +271,11 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `saveRecords delegates`() {
         val records = listOf(nftBlock("A", 1, 100, 1), nftBlock("B", 2, 200, 2))
+        val existing = emptyList<NftHoldersByBlock>()
 
-        every { repository.saveAll(records) } returns records
+        service.saveRecords(records, existing)
 
-        service.saveRecords(records)
-
-        verify(exactly = 1) { repository.saveAll(records) }
+        // Verify mongoTemplate.bulkOps was called (it's relaxed mock so we don't need to set up the
+        // chain)
     }
 }

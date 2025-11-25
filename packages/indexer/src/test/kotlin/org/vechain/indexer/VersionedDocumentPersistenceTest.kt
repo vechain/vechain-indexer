@@ -5,15 +5,14 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.CrudRepository
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.TargetedPruner
 
 @ExtendWith(MockKExtension::class)
 internal class VersionedDocumentPersistenceTest {
-
-    @MockK private lateinit var repository: CrudRepository<TestDocument, String>
+    @MockK(relaxed = true) private lateinit var mongoTemplate: MongoTemplate
 
     @MockK private lateinit var archiveService: ArchiveService<TestDocument, TestArchive>
 
@@ -32,11 +31,9 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(any()) } just runs
-        saveVersionedDocuments(updated, emptyList(), repository, archiveService, pruner)
+        saveVersionedDocuments(updated, emptyList(), archiveService, pruner, mongoTemplate)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 0) { archiveService.saveAll(any()) }
         verify { pruner wasNot Called }
     }
@@ -64,12 +61,10 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(existing) } just runs
 
-        saveVersionedDocuments(updated, existing, repository, archiveService, pruner)
+        saveVersionedDocuments(updated, existing, archiveService, pruner, mongoTemplate)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { archiveService.saveAll(existing) }
         verify { pruner wasNot Called }
     }
@@ -97,11 +92,9 @@ internal class VersionedDocumentPersistenceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
         every { archiveService.saveAll(existing) } just runs
-        saveVersionedDocuments(updated, existing, repository, archiveService, pruner)
+        saveVersionedDocuments(updated, existing, archiveService, pruner, mongoTemplate)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
         verify(exactly = 1) { archiveService.saveAll(existing) }
         verify(exactly = 1) { pruner.run(20, listOf("doc-2")) }
     }
