@@ -4,7 +4,6 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -38,7 +37,6 @@ open class HistoryService(private val mongoTemplate: MongoTemplate) {
         return historyEvents
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun save(events: List<IndexedHistoryEvent>) {
         mongoTemplate.insert(events)
     }

@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
+import org.vechain.indexer.pruner.PrunerService
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
@@ -15,9 +19,35 @@ import org.vechain.indexer.thor.client.ThorClient
 @Profile("stargate", "vtho-claimed-by-block")
 open class VthoClaimedByBlockConfig {
     @Bean
+    open fun vthoClaimedByBlockArchiveService(
+        mongoTemplate: MongoTemplate,
+        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
+    ): ArchiveService<VthoClaimedByBlock, VthoClaimedByBlockArchive> =
+        ArchiveService(
+            mongoTemplate,
+            VthoClaimedByBlock::class.java,
+            VthoClaimedByBlockArchive::class.java,
+            recordLimit,
+        )
+
+    @Bean
+    open fun vthoClaimedByBlockPruner(
+        vthoClaimedByBlockArchiveService:
+            ArchiveService<VthoClaimedByBlock, VthoClaimedByBlockArchive>,
+        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
+    ): TargetedPruner<VthoClaimedByBlock, VthoClaimedByBlockArchive> =
+        PrunerService(
+            VthoClaimedByBlockArchive::class,
+            vthoClaimedByBlockArchiveService,
+            prunerRemovalChunkSize,
+        )
+
+    @Bean
     open fun vthoClaimedByBlockIndexer(
         thorClient: ThorClient,
         processor: VthoClaimedByBlockProcessor,
+        vthoClaimedByBlockPruner: TargetedPruner<VthoClaimedByBlock, VthoClaimedByBlockArchive>,
+        @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
@@ -32,6 +62,8 @@ open class VthoClaimedByBlockConfig {
             .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
+            .pruner(vthoClaimedByBlockPruner)
+            .prunerInterval(prunerInterval)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)

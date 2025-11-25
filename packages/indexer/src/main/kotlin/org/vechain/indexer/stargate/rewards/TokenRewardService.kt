@@ -10,14 +10,16 @@ import kotlin.collections.isNotEmpty
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.rest.ExecuteCodeResponse
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
@@ -41,7 +43,9 @@ open class TokenRewardService(
     private val repository: TokenRewardRepository,
     private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
+    private val mongoTemplate: MongoTemplate,
     private val thorService: ThorService,
+    private val tokenRewardPruner: TargetedPruner<TokenReward, TokenRewardArchive>,
     @param:Value("\${business-event.substitutions.STARGATE_CONTRACT}")
     private val stargateContract: String,
 ) {
@@ -125,14 +129,8 @@ open class TokenRewardService(
     }
 
     /** @notice Persist a batch of reward records to MongoDB. */
-    @Transactional
     open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        if (rewards.isEmpty()) return
-        repository.saveAll(rewards)
-
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+        saveVersionedDocuments(rewards, archive, archiveService, tokenRewardPruner, mongoTemplate)
     }
 
     /**

@@ -2,8 +2,12 @@ package org.vechain.indexer.stargate.vetDelegated
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -30,7 +34,14 @@ import org.vechain.indexer.utils.RolloverUtils
  */
 @Profile("stargate", "vet-delegated-by-block")
 @Service
-open class VetDelegatedByBlockService(private val repository: VetDelegatedByBlockRepository) {
+open class VetDelegatedByBlockService(
+    private val repository: VetDelegatedByBlockRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val vetDelegatedByBlockArchiveService:
+        ArchiveService<VetDelegatedByBlock, VetDelegatedByBlockArchive>,
+    private val vetDelegatedByBlockPruner:
+        TargetedPruner<VetDelegatedByBlock, VetDelegatedByBlockArchive>,
+) {
     /**
      * @param events Collection of decoded events sorted arbitrarily.
      * @return Ordered list of `VetDelegatedByBlock` output snapshots.
@@ -47,8 +58,10 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
      *     - required `amount` field
      *     - optional `levelId` (null allowed on devnet)
      */
-    open fun processEvents(events: List<IndexedEvent>): List<VetDelegatedByBlock> {
-        if (events.isEmpty()) return emptyList()
+    open fun processEvents(
+        events: List<IndexedEvent>
+    ): Pair<List<VetDelegatedByBlock>, List<VetDelegatedByBlock>> {
+        if (events.isEmpty()) return Pair(emptyList(), emptyList())
 
         val latest = repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
@@ -63,6 +76,7 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetDelegatedByBlock>()
+        val archive = mutableListOf<VetDelegatedByBlock>()
         var prev: VetDelegatedByBlock? = latest
 
         for ((blockNum, blockEvents) in grouped) {
@@ -122,7 +136,8 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                 )
 
             if (roll.timeFrames.isNotEmpty() && prev != null) {
-                output += prev.copy(timeFrames = roll.timeFrames)
+                archive += prev
+                output += prev.copy(timeFrames = roll.timeFrames, version = prev.version + 1)
             }
 
             val doc =
@@ -144,21 +159,28 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                     weekTotal = roll.weekTotal,
                     monthTotal = roll.monthTotal,
                     yearTotal = roll.yearTotal,
+                    version = 1,
                 )
 
             output += doc
             prev = doc
         }
 
-        return output
+        return Pair(output, archive)
     }
 
     /**
      * @param records List of documents to store.
      * @notice Persist multiple delegation snapshots.
      */
-    open fun saveRecords(records: List<VetDelegatedByBlock>) {
-        repository.saveAll(records)
+    open fun saveRecords(records: List<VetDelegatedByBlock>, existing: List<VetDelegatedByBlock>) {
+        saveVersionedDocuments(
+            records,
+            existing,
+            vetDelegatedByBlockArchiveService,
+            vetDelegatedByBlockPruner,
+            mongoTemplate,
+        )
     }
 }
 

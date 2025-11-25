@@ -5,16 +5,19 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 
 @Document(collection = "stargate_vtho_generated_by_block")
 data class VthoGeneratedByBlock
 @ConstructorBinding
 constructor(
-    override val blockId: String,
-    @Id override val blockNumber: Long,
-    override val blockTimestamp: Long,
+    override val version: Int,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore @Id override val blockNumber: Long,
+    @JsonIgnore override val blockTimestamp: Long,
     @JsonIgnore val rewardsClaimed: BigInteger,
     override val hourOfDay: Long,
     override val dayOfMonth: Long, // 25
@@ -29,4 +32,12 @@ constructor(
     @JsonIgnore override val monthTotal: BigInteger? = null,
     @JsonIgnore override val yearTotal: BigInteger? = null,
     val total: BigInteger,
-) : TimeFrameDocument
+) : TimeFrameDocument, VersionedDocument {
+    @JsonIgnore override fun getDocumentId(): String = blockNumber.toString()
+}
+
+@Document(collection = "stargate_vtho_generated_by_block_archives")
+data class VthoGeneratedByBlockArchive(
+    @Id override val id: String,
+    override val data: VthoGeneratedByBlock,
+) : Archive<VthoGeneratedByBlock>

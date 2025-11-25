@@ -2,11 +2,14 @@ package org.vechain.indexer.stargate.vthoGenerated
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -15,7 +18,14 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
 @Profile("stargate", "vtho-generated-by-block")
 @Service
-open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBlockRepository) {
+open class VthoGeneratedByBlockService(
+    private val repository: VthoGeneratedByBlockRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val vthoGeneratedByBlockArchiveService:
+        ArchiveService<VthoGeneratedByBlock, VthoGeneratedByBlockArchive>,
+    private val vthoGeneratedByBlockPruner:
+        TargetedPruner<VthoGeneratedByBlock, VthoGeneratedByBlockArchive>,
+) {
     /**
      * @param events List of decoded blockchain events for the block.
      * @param block Block metadata (timestamp, number, id).
@@ -32,16 +42,17 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
-    ): List<VthoGeneratedByBlock> {
+    ): Pair<List<VthoGeneratedByBlock>, List<VthoGeneratedByBlock>> {
         // Skip blocks with nothing to index
-        if (events.isEmpty() && !callResponses[0].hasAbiData()) return emptyList()
+        if (events.isEmpty() && !callResponses[0].hasAbiData())
+            return Pair(emptyList(), emptyList())
 
         // Load previous entry & validate ordering
         val latest = validateAndLoadLatest(block)
 
         // Compute this block's totals (claimed + total + delta)
         val totals = calculateTotalsForBlock(events, callResponses, latest)
-        if (totals.blockTotal == BigInteger.ZERO) return emptyList()
+        if (totals.blockTotal == BigInteger.ZERO) return Pair(emptyList(), emptyList())
 
         // Shared rollover logic
         val roll =
@@ -156,44 +167,49 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         totals: TotalsForBlock,
         roll: RolloverUtils.RolloverResult,
         previous: VthoGeneratedByBlock?,
-    ): List<VthoGeneratedByBlock> {
-        val result = mutableListOf<VthoGeneratedByBlock>()
+    ): Pair<List<VthoGeneratedByBlock>, List<VthoGeneratedByBlock>> {
+        val output = mutableListOf<VthoGeneratedByBlock>()
+        val archive = mutableListOf<VthoGeneratedByBlock>()
 
         if (roll.timeFrames.isNotEmpty() && previous != null) {
-            result += previous.copy(timeFrames = roll.timeFrames)
+            archive += previous
+            output += previous.copy(timeFrames = roll.timeFrames, version = previous.version + 1)
         }
 
-        result +=
+        output +=
             VthoGeneratedByBlock(
+                version = 1,
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                total = totals.blockTotal,
                 rewardsClaimed = totals.claimed,
-                // timestamps
                 hourOfDay = roll.hour,
                 dayOfMonth = roll.day,
                 weekOfYear = roll.week,
                 month = roll.month,
                 year = roll.year,
                 timeFrames = emptyList(),
-                // period totals
                 blockTotal = totals.delta,
                 hourTotal = roll.hourTotal,
                 dayTotal = roll.dayTotal,
                 weekTotal = roll.weekTotal,
                 monthTotal = roll.monthTotal,
                 yearTotal = roll.yearTotal,
+                total = totals.blockTotal,
             )
 
-        return result
+        return Pair(output, archive)
     }
 
-    /** @notice Persist VTHO generation records. */
-    @Transactional(rollbackFor = [Exception::class])
-    open fun save(records: List<VthoGeneratedByBlock>) {
+    open fun save(records: List<VthoGeneratedByBlock>, existing: List<VthoGeneratedByBlock>) {
         if (records.isEmpty()) return
-        repository.saveAll(records)
+        saveVersionedDocuments(
+            records,
+            existing,
+            vthoGeneratedByBlockArchiveService,
+            vthoGeneratedByBlockPruner,
+            mongoTemplate,
+        )
     }
 
     /**

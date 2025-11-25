@@ -2,15 +2,25 @@ package org.vechain.indexer.stargate.nftHolders
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
 import org.vechain.indexer.utils.RolloverUtils
 
 @Profile("stargate", "nft-holders-by-block")
 @Service
-open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRepository) {
+open class NftHoldersByBlockService(
+    private val repository: NftHoldersByBlockRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val nftHoldersByBlockArchiveService:
+        ArchiveService<NftHoldersByBlock, NftHoldersByBlockArchive>,
+    private val nftHoldersByBlockPruner: TargetedPruner<NftHoldersByBlock, NftHoldersByBlockArchive>,
+) {
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.
      * @return A list of `NftHoldersByBlock` documents in ascending block order.
@@ -29,8 +39,10 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
      *   Strict ordering:
      *         - Throws if any event's block number ≤ last stored block number.
      */
-    open fun processEvents(events: List<IndexedEvent>): List<NftHoldersByBlock> {
-        if (events.isEmpty()) return emptyList()
+    open fun processEvents(
+        events: List<IndexedEvent>
+    ): Pair<List<NftHoldersByBlock>, List<NftHoldersByBlock>> {
+        if (events.isEmpty()) return Pair(emptyList(), emptyList())
 
         val latest = repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
@@ -45,6 +57,7 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<NftHoldersByBlock>()
+        val archive = mutableListOf<NftHoldersByBlock>()
         var prev: NftHoldersByBlock? = latest
 
         for ((blockNum, blockEvents) in grouped) {
@@ -92,11 +105,13 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
                 )
 
             if (roll.timeFrames.isNotEmpty() && prev != null) {
-                output += prev.copy(timeFrames = roll.timeFrames)
+                archive += prev
+                output += prev.copy(timeFrames = roll.timeFrames, version = prev.version + 1)
             }
 
             val doc =
                 NftHoldersByBlock(
+                    version = 1,
                     blockId = rep.blockId,
                     blockNumber = blockNum,
                     blockTimestamp = rep.blockTimestamp,
@@ -120,7 +135,7 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
             prev = doc
         }
 
-        return output
+        return Pair(output, archive)
     }
 
     /** @notice Persist a single per-block NFT holder statistics record. */
@@ -129,8 +144,14 @@ open class NftHoldersByBlockService(private val repository: NftHoldersByBlockRep
     }
 
     /** @notice Persist multiple per-block NFT holder statistics records. */
-    open fun saveRecords(records: List<NftHoldersByBlock>) {
-        repository.saveAll(records)
+    open fun saveRecords(records: List<NftHoldersByBlock>, existing: List<NftHoldersByBlock>) {
+        saveVersionedDocuments(
+            records,
+            existing,
+            nftHoldersByBlockArchiveService,
+            nftHoldersByBlockPruner,
+            mongoTemplate,
+        )
     }
 }
 

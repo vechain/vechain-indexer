@@ -2,8 +2,12 @@ package org.vechain.indexer.stargate.vetStaked
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -28,7 +32,13 @@ import org.vechain.indexer.utils.RolloverUtils
  */
 @Profile("stargate", "vet-staked-by-block")
 @Service
-open class VetStakedByBlockService(private val repository: VetStakedByBlockRepository) {
+open class VetStakedByBlockService(
+    private val repository: VetStakedByBlockRepository,
+    private val mongoTemplate: MongoTemplate,
+    private val vetStakedByBlockArchiveService:
+        ArchiveService<VetStakedByBlock, VetStakedByBlockArchive>,
+    private val vetStakedByBlockPruner: TargetedPruner<VetStakedByBlock, VetStakedByBlockArchive>,
+) {
     /**
      * @param events A list of decoded `IndexedEvent`s for multiple blocks.
      * @return Ordered list of `VetStakedByBlock` documents.
@@ -44,8 +54,10 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
      *     - Strict ascending blockNumber.
      *     - Required params (`value`, `levelId`).
      */
-    open fun processEvents(events: List<IndexedEvent>): List<VetStakedByBlock> {
-        if (events.isEmpty()) return emptyList()
+    open fun processEvents(
+        events: List<IndexedEvent>
+    ): Pair<List<VetStakedByBlock>, List<VetStakedByBlock>> {
+        if (events.isEmpty()) return Pair(emptyList(), emptyList())
 
         val latest = repository.getLatestRecord()
         val lastBlock = latest?.blockNumber
@@ -60,6 +72,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetStakedByBlock>()
+        val archive = mutableListOf<VetStakedByBlock>()
         var prev: VetStakedByBlock? = latest
 
         for ((blockNum, blockEvents) in grouped) {
@@ -111,7 +124,8 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                 )
 
             if (roll.timeFrames.isNotEmpty() && prev != null) {
-                output += prev.copy(timeFrames = roll.timeFrames)
+                archive += prev
+                output += prev.copy(timeFrames = roll.timeFrames, version = prev.version + 1)
             }
 
             val doc =
@@ -133,29 +147,28 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                     weekTotal = roll.weekTotal,
                     monthTotal = roll.monthTotal,
                     yearTotal = roll.yearTotal,
+                    version = 1,
                 )
 
             output += doc
             prev = doc
         }
 
-        return output
-    }
-
-    /**
-     * @param record A fully prepared `VetStakedByBlock` document.
-     * @notice Persist a single per-block staking record.
-     */
-    open fun saveRecord(record: VetStakedByBlock) {
-        repository.save(record)
+        return Pair(output, archive)
     }
 
     /**
      * @param records List of `VetStakedByBlock` entries.
      * @notice Persist a batch of per-block staking records.
      */
-    open fun saveRecords(records: List<VetStakedByBlock>) {
-        repository.saveAll(records)
+    open fun saveRecords(records: List<VetStakedByBlock>, existing: List<VetStakedByBlock>) {
+        saveVersionedDocuments(
+            records,
+            existing,
+            vetStakedByBlockArchiveService,
+            vetStakedByBlockPruner,
+            mongoTemplate,
+        )
     }
 }
 

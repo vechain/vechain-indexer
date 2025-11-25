@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
@@ -28,6 +29,7 @@ open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val thorService: ThorService,
+    private val mongoTemplate: MongoTemplate,
     private val validatorPruner: TargetedPruner<Validator, ValidatorArchive>,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,

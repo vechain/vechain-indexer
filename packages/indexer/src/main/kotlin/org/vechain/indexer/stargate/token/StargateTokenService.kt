@@ -2,11 +2,13 @@ package org.vechain.indexer.stargate.token
 
 import kotlin.collections.plus
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.rest.ExecuteCodeResponse
+import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -32,6 +34,8 @@ open class StargateTokenService(
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
     private val archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    private val mongoTemplate: MongoTemplate,
+    private val stargateTokenPruner: TargetedPruner<StargateToken, StargateTokenArchive>,
 ) {
     private var cachedValidators: Set<String> = emptySet()
 
@@ -77,14 +81,8 @@ open class StargateTokenService(
     }
 
     /** Persist updated token snapshots. */
-    @Transactional
-    open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
-        if (tokens.isEmpty()) return
-        stargateTokenRepository.saveAll(tokens)
-
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
-        }
+    open fun save(tokens: List<StargateToken>, archive: List<StargateToken>) {
+        saveVersionedDocuments(tokens, archive, archiveService, stargateTokenPruner, mongoTemplate)
     }
 
     // ------------------------------------------------------------------------

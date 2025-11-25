@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.EnableScheduling
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.utils.EventUtils
@@ -71,9 +70,8 @@ open class DelegationHistoryScheduler(
         this.save(historyEvents, updatedDelegations)
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun save(historyEvents: List<IndexedHistoryEvent>, delegations: List<Delegation>) {
-        // save hsitory events
+        // save history events
         historyRepository.saveAll(historyEvents)
 
         // save updated delegations

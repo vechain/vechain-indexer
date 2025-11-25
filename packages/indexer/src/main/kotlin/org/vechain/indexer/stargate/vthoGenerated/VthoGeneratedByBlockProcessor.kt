@@ -26,8 +26,8 @@ open class VthoGeneratedByBlockProcessor(
 
         val newRecord = service.processBlock(entry.events(), entry.block, entry.callResults())
 
-        if (newRecord.isNotEmpty()) {
-            service.save(newRecord)
+        if (newRecord.first.isNotEmpty()) {
+            service.save(newRecord.first, newRecord.second)
         }
     }
 }

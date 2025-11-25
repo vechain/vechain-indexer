@@ -26,8 +26,8 @@ open class VetStakedByBlockProcessor(
 
         val newRecords = service.processEvents(entry.events())
 
-        if (newRecords.isNotEmpty()) {
-            service.saveRecords(newRecords)
+        if (newRecords.first.isNotEmpty()) {
+            service.saveRecords(newRecords.first, newRecords.second)
         }
     }
 }
