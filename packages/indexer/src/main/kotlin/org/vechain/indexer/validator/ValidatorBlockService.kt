@@ -169,7 +169,7 @@ open class ValidatorBlockService(
 
         return ids.indices.mapNotNull { i ->
             if (
-                !online[i] && statuses[i].toInt() != 2 && offlineBlocks[i].toLong() <= block.number
+                !online[i] && statuses[i].toInt() == 2 && offlineBlocks[i].toLong() <= block.number
             ) {
                 ValidatorBlock(
                     id = "${block.number}-${ids[i]}",
