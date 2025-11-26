@@ -191,7 +191,7 @@ class ValidatorBlockServiceTest {
                         "masters" to listOf("0xA", "0xB"),
                         "onlines" to listOf(false, true),
                         "offlineBlocks" to listOf(BigInteger.valueOf(50), BigInteger.ZERO),
-                        "statuses" to listOf(BigInteger.ONE, BigInteger.TWO),
+                        "statuses" to listOf(BigInteger.TWO, BigInteger.ONE),
                     ),
                 vthoTotalSupply = BigInteger.ZERO,
                 vthoBurned = BigInteger.ZERO,
