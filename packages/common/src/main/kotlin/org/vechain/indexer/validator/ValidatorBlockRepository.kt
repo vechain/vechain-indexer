@@ -108,4 +108,20 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
 
     @Query("{ 'status': 'MISSED', 'blocksOffline': null }")
     fun findLatestMissed(): List<ValidatorBlock>
+
+    @Query(
+        value =
+            "{ 'validator': ?0, 'status': 'MISSED', " +
+                "'\$and': [" +
+                // offlineStart <= endBlock
+                "{ 'blockNumber': { '\$lte': ?2 } }," +
+                // offlineEnd >= startBlock
+                "{ '\$or': [" +
+                "   { 'onlineBlock': { '\$gte': ?1 } }," + // ended after startBlock
+                "   { 'onlineBlock': null }" + // still offline
+                "] }" +
+                "] }",
+        sort = "{ 'blockNumber': 1 }",
+    )
+    fun findMissedInRange(validator: String, startBlock: Long, endBlock: Long): List<ValidatorBlock>
 }

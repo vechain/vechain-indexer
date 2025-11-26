@@ -196,7 +196,8 @@ open class ValidatorBlockService(
                     val offlineDocId = "$offlineStartBlock-$validatorId"
                     val offlineDoc = repository.findByIdOrNull(offlineDocId)
                     return@mapNotNull offlineDoc?.copy(
-                        blocksOffline = block.number - offlineDoc.blockNumber
+                        blocksOffline = block.number - offlineDoc.blockNumber,
+                        onlineBlock = block.number,
                     )
                 }
             }
