@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("validator", "validator-reward")
-interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Long> {
+interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, String> {
     // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =
@@ -105,4 +105,7 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Long>
         endTimestamp: Long,
         validator: String,
     ): List<ValidatorBlock>
+
+    @Query("{ 'status': 'MISSED', 'blocksOffline': null }")
+    fun findLatestMissed(): List<ValidatorBlock>
 }
