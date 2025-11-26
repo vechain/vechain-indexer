@@ -121,7 +121,7 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 4096
+      cpu: 8192
       memory: 8192
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,b3tr,vevote-results,vevote-historic-proposals,explorer,accounts
@@ -251,7 +251,7 @@ enabled_nets:
       fqdn: mainnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M40
+      cluster_tier: M50
       disk_size_gb: 1000
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
@@ -321,7 +321,7 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 2048
+      cpu: 4096
       memory: 4096
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,token-reward,validator,accounts
@@ -449,7 +449,7 @@ enabled_nets:
       fqdn: testnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M20
+      cluster_tier: M30
       disk_size_gb: 250
       iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
