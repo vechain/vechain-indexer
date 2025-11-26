@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ProposalIdParameter
 import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -33,7 +32,11 @@ import org.vechain.indexer.validation.ValidProposalId
 open class HistoricController(private val historicApiService: HistoricApiService) {
     @GetMapping("/historic-proposals")
     @Operation(summary = "Fetch all historic proposals")
-    @ProposalIdParameter
+    @Parameter(
+        name = "proposalId",
+        description = "Proposal ID to filter by.",
+        schema = Schema(type = "string", pattern = "^[0-9]+$"),
+    )
     @AddressParameter(name = "contractAddress", description = "Filter by legacy contract address.")
     @Parameter(
         `in` = ParameterIn.QUERY,
