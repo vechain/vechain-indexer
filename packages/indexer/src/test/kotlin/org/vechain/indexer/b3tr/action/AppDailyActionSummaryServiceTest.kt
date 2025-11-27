@@ -39,7 +39,8 @@ internal class AppDailyActionSummaryServiceTest {
         repository: AppDailyActionSummaryRepository,
         archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-    ) : AppDailyActionSummaryService(repository, archive, pruner) {
+        impactConfig: ActionImpactConfig = ActionImpactConfig(),
+    ) : AppDailyActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
             resolveExisting(recordId, cache)
 

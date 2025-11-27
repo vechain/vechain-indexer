@@ -41,7 +41,8 @@ internal class AppAllTimeActionSummaryServiceTest {
         repository: AppAllTimeActionSummaryRepository,
         archive: ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
         pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-    ) : AppAllTimeActionSummaryService(repository, archive, pruner) {
+        impactConfig: ActionImpactConfig = ActionImpactConfig(),
+    ) : AppAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
 
@@ -574,5 +575,248 @@ internal class AppAllTimeActionSummaryServiceTest {
         every { repository.findByIdOrNull("app-1:user-2") } returns cached.copy(user = "user-2")
         val fromRepo = service.callResolveExisting("app-1:user-2", emptyMap())
         assertEquals("user-2", fromRepo?.user)
+    }
+
+    @Test
+    fun `createOrUpdateExisting filters out impacts that exceed threshold`() {
+        // Create events with both valid and invalid impacts
+        val validEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = "block-1",
+                blockNumber = 1L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"normal impact\",\"impact\": {\"carbon\": 100,\"water\": 500}}",
+                            )
+                    ),
+            )
+
+        // This impact exceeds the default threshold of 1,000,000
+        val invalidEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = "block-1",
+                blockNumber = 1L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "20000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"excessive impact\",\"impact\": {\"carbon\": 2000000,\"water\": 100}}",
+                            )
+                    ),
+            )
+
+        val result =
+            service.callCreateOrUpdateExisting(
+                appId = "app-1",
+                receiverId = "user-1",
+                events = listOf(validEvent, invalidEvent),
+                blockDetails =
+                    BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
+                existing = null,
+            )
+
+        // Should only include the valid impact (carbon: 100, water: 500)
+        // The invalid impact (carbon: 2000000, water: 100) should be filtered out
+        assertEquals(100, result.totalImpact?.carbon)
+        assertEquals(500, result.totalImpact?.water)
+        assertEquals(null, result.totalImpact?.energy)
+    }
+
+    @Test
+    fun `createOrUpdateExisting with all impacts exceeding threshold results in null totalImpact`() {
+        val event1 =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = "block-1",
+                blockNumber = 1L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"excessive impact 1\",\"impact\": {\"carbon\": 5000000}}",
+                            )
+                    ),
+            )
+        val event2 =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = "block-1",
+                blockNumber = 1L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "20000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"excessive impact 2\",\"impact\": {\"water\": 10000000}}",
+                            )
+                    ),
+            )
+
+        val result =
+            service.callCreateOrUpdateExisting(
+                appId = "app-1",
+                receiverId = "user-1",
+                events = listOf(event1, event2),
+                blockDetails =
+                    BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
+                existing = null,
+            )
+
+        // All impacts exceeded threshold, so totalImpact should be null
+        assertEquals(null, result.totalImpact)
+        // But actions should still be rewarded and amount counted
+        assertEquals(2L, result.actionsRewarded)
+        assertEquals(0, result.totalRewardAmount.compareTo(BigDecimal(30)))
+    }
+
+    @Test
+    fun `createOrUpdateExisting with custom threshold filters appropriately`() {
+        // Create service with lower threshold for carbon
+        val customService =
+            TestableService(
+                repository,
+                archiveService,
+                pruner,
+                ActionImpactConfig().apply { carbon = 1000 },
+            )
+
+        val event =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = "block-1",
+                blockNumber = 1L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"moderate impact\",\"impact\": {\"carbon\": 1500}}",
+                            )
+                    ),
+            )
+
+        val result =
+            customService.callCreateOrUpdateExisting(
+                appId = "app-1",
+                receiverId = "user-1",
+                events = listOf(event),
+                blockDetails =
+                    BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
+                existing = null,
+            )
+
+        // Impact of 1500 exceeds threshold of 1000, so should be filtered
+        assertEquals(null, result.totalImpact)
+    }
+
+    @Test
+    fun `createOrUpdateExisting accumulates existing impact with new valid impacts only`() {
+        val existing =
+            AppAllTimeActionSummary(
+                version = 1,
+                blockId = "b1",
+                blockNumber = 1L,
+                blockTimestamp = 100L,
+                user = "user-1",
+                appId = "app-1",
+                actionsRewarded = 1,
+                totalRewardAmount = BigDecimal.ONE,
+                totalImpact = Impact(carbon = 500, water = 300),
+            )
+
+        val validEvent =
+            buildIndexedEvent(
+                id = "e1",
+                blockId = "block-2",
+                blockNumber = 2L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "10000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"valid\",\"impact\": {\"carbon\": 100,\"energy\": 50}}",
+                            )
+                    ),
+            )
+
+        val invalidEvent =
+            buildIndexedEvent(
+                id = "e2",
+                blockId = "block-2",
+                blockNumber = 2L,
+                eventType = "B3TR_ActionReward",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "appId" to "app-1",
+                                "receiver" to "user-1",
+                                "amount" to "20000000000000000000",
+                                "action" to "",
+                                "distributor" to "0x0",
+                                "proof" to
+                                    "{\"version\": 2,\"description\": \"invalid\",\"impact\": {\"water\": 5000000}}",
+                            )
+                    ),
+            )
+
+        val result =
+            service.callCreateOrUpdateExisting(
+                appId = "app-1",
+                receiverId = "user-1",
+                events = listOf(validEvent, invalidEvent),
+                blockDetails =
+                    BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 200L),
+                existing = existing,
+            )
+
+        // Should accumulate existing (500, 300, null) with valid new (100, null, 50)
+        // Invalid impact (null, 5000000, null) should be filtered out
+        assertEquals(600, result.totalImpact?.carbon) // 500 + 100
+        assertEquals(300, result.totalImpact?.water) // 300 + 0 (invalid was filtered)
+        assertEquals(50, result.totalImpact?.energy) // 0 + 50
     }
 }

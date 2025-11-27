@@ -39,7 +39,8 @@ internal class AppRoundActionSummaryServiceTest {
         repository: AppRoundActionSummaryRepository,
         archive: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
-    ) : AppRoundActionSummaryService(repository, archive, pruner) {
+        impactConfig: ActionImpactConfig = ActionImpactConfig(),
+    ) : AppRoundActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, AppRoundActionSummary>) =
             resolveExisting(recordId, cache)
 
