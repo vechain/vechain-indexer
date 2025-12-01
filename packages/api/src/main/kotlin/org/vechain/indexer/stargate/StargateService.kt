@@ -262,6 +262,7 @@ open class StargateService(
 
     fun toTimeFrame(timeRange: TimeRangePreset): TimeFrame? =
         when (timeRange) {
+            TimeRangePreset.ONE_DAY -> TimeFrame.HOUR
             TimeRangePreset.ONE_WEEK -> TimeFrame.HOUR
             TimeRangePreset.ONE_MONTH -> TimeFrame.DAY
             TimeRangePreset.ONE_YEAR -> TimeFrame.DAY
