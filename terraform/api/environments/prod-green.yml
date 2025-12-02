@@ -147,7 +147,7 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19036184'
-        validator:                   '0'
+        validator:                  '23414400'
         delegation:                  '0'
       start-round:
         b3tr-sustainable-actions:   '4'
