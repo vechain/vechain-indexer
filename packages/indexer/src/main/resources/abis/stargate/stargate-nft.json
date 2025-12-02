@@ -47,6 +47,11 @@
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "ArraysLengthMismatch",
+        "type": "error"
+    },
+    {
         "inputs": [
             {
                 "internalType": "address",
@@ -390,6 +395,31 @@
             }
         ],
         "name": "Initialized",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint8",
+                "name": "levelId",
+                "type": "uint8"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "oldBoostPricePerBlock",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "newBoostPricePerBlock",
+                "type": "uint256"
+            }
+        ],
+        "name": "LevelBoostPricePerBlockUpdated",
         "type": "event"
     },
     {
@@ -781,19 +811,6 @@
         "type": "event"
     },
     {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "address",
-                "name": "owner",
-                "type": "address"
-            }
-        ],
-        "name": "WhitelistEntryRemoved",
-        "type": "event"
-    },
-    {
         "inputs": [],
         "name": "CLOCK_MODE",
         "outputs": [
@@ -873,6 +890,19 @@
     },
     {
         "inputs": [],
+        "name": "TOKEN_MANAGER_MIGRATOR_ROLE",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "UPGRADER_ROLE",
         "outputs": [
             {
@@ -892,19 +922,6 @@
                 "internalType": "string",
                 "name": "",
                 "type": "string"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "WHITELISTER_ROLE",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
             }
         ],
         "stateMutability": "view",
@@ -996,6 +1013,11 @@
                 "internalType": "struct DataTypes.LevelAndSupply",
                 "name": "_levelAndSupply",
                 "type": "tuple"
+            },
+            {
+                "internalType": "uint256",
+                "name": "_boostPricePerBlock",
+                "type": "uint256"
             }
         ],
         "name": "addLevel",
@@ -1138,6 +1160,25 @@
         "name": "boostOnBehalfOf",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint8",
+                "name": "_levelId",
+                "type": "uint8"
+            }
+        ],
+        "name": "boostPricePerBlock",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -1407,6 +1448,19 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "getStargate",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "uint256",
@@ -1506,30 +1560,6 @@
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "_owner",
-                "type": "address"
-            }
-        ],
-        "name": "getWhitelistEntry",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "tokenId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint8",
-                "name": "levelId",
-                "type": "uint8"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
                 "internalType": "bytes32",
                 "name": "role",
                 "type": "bytes32"
@@ -1559,25 +1589,6 @@
             }
         ],
         "name": "hasRole",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_tokenId",
-                "type": "uint256"
-            }
-        ],
-        "name": "hasTokenManager",
         "outputs": [
             {
                 "internalType": "bool",
@@ -1786,6 +1797,16 @@
                 "internalType": "address",
                 "name": "stargate",
                 "type": "address"
+            },
+            {
+                "internalType": "uint8[]",
+                "name": "levelIds",
+                "type": "uint8[]"
+            },
+            {
+                "internalType": "uint256[]",
+                "name": "boostPricesPerBlock",
+                "type": "uint256[]"
             }
         ],
         "name": "initializeV3",
@@ -1807,6 +1828,25 @@
             }
         ],
         "name": "isApprovedForAll",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "isManagedByOwner",
         "outputs": [
             {
                 "internalType": "bool",
@@ -2321,6 +2361,93 @@
                 "internalType": "string",
                 "name": "",
                 "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_user",
+                "type": "address"
+            }
+        ],
+        "name": "tokensManagedBy",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "tokenId",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "levelId",
+                        "type": "uint8"
+                    },
+                    {
+                        "internalType": "uint64",
+                        "name": "mintedAtBlock",
+                        "type": "uint64"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "vetAmountStaked",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint48",
+                        "name": "lastVetGeneratedVthoClaimTimestamp_deprecated",
+                        "type": "uint48"
+                    }
+                ],
+                "internalType": "struct DataTypes.Token[]",
+                "name": "",
+                "type": "tuple[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_user",
+                "type": "address"
+            }
+        ],
+        "name": "tokensOverview",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "id",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "manager",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint8",
+                        "name": "levelId",
+                        "type": "uint8"
+                    }
+                ],
+                "internalType": "struct DataTypes.TokenOverview[]",
+                "name": "",
+                "type": "tuple[]"
             }
         ],
         "stateMutability": "view",

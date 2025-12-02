@@ -7,7 +7,7 @@ spring:
   application:
     name: vechain-indexer
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:indexer,validator-reward}
+    active: ${SPRING_PROFILES_ACTIVE:indexer,nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts}
   output:
     ansi:
       enabled: always
@@ -48,7 +48,7 @@ spring.data:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
-  url: ${THOR_URL:https://testnet.vechain.org}
+  url: ${THOR_URL:https://mainnet.vechain.org}
 
 abis:
   path: ${ABI_PATH:abis}
@@ -67,7 +67,7 @@ business-event:
     VOTER_REWARDS_CONTRACT: ${VOTER_REWARDS_CONTRACT:0x838a33af756a6366f93e201423e1425f67ec0fa7}
     TREASURY_CONTRACT: ${TREASURY_CONTRACT:0xd5903bcc66e439c753e525f8af2fec7be2429593}
     STARGATE_DELEGATION_CONTRACT: ${STARGATE_DELEGATION_CONTRACT:0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e}
-    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x887d9102f0003f1724d8fd5d4fe95a11572fcd77}
+    STARGATE_NFT_CONTRACT: ${STARGATE_NFT_CONTRACT:0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7}
     VEVOTE_CONTRACT: ${VEVOTE_CONTRACT:0x7d812e8e544bb0c7898ea656b70173e7ef426b4c}
     STARGATE_CONTRACT: ${STARGATE_CONTRACT:0x03c557be98123fdb6fad325328ac6eb77de7248c}
     BUILTIN_STAKER_CONTRACT: ${BUILTIN_STAKER_CONTRACT:0x00000000000000000000000000005374616B6572}
@@ -95,14 +95,14 @@ indexer:
     transfers: ${INDEXER_START_BLOCK_TRANSFERS:0}
     history: ${INDEXER_START_BLOCK_HISTORY:0}
     vevote: ${INDEXER_START_BLOCK_VEVOTE:0}
-    stargate: ${INDEXER_START_BLOCK_STARGATE:23342960}
+    stargate: ${INDEXER_START_BLOCK_STARGATE:0}
     b3tr: ${INDEXER_START_BLOCK_B3TR:0}
     b3tr-x-alloc-result: ${INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT:0}
     b3tr-proposal: ${INDEXER_START_BLOCK_B3TR_PROPOSAL:0}
     b3tr-sustainable-actions: ${INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS:0}
     historic-proposals: ${INDEXER_START_BLOCK_HISTORIC_PROPOSALS:0}
-    validator: ${INDEXER_START_BLOCK_VALIDATOR:23342960}
-    delegation: ${INDEXER_START_BLOCK_DELEGATION:23342960}
+    validator: ${INDEXER_START_BLOCK_VALIDATOR:0}
+    delegation: ${INDEXER_START_BLOCK_DELEGATION:0}
   validator-stats-threshold-blocks: ${INDEXER_VALIDATOR_STATS_THRESHOLD_BLOCKS:25}
   stop-block:
     historic-proposals: ${INDEXER_STOP_BLOCK_HISTORIC_PROPOSALS:22948372}
