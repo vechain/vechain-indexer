@@ -133,7 +133,7 @@ class TokenRewardServiceTest {
         val result = service.getDelegatorsBlockReward(b, decoded)
 
         // (total=1100, prev=500, delta=600) * 0.7 = 420
-        assertThat(result).isEqualTo(BigInteger.valueOf(420))
+        assertThat(result).isEqualTo(BigInteger.valueOf(350))
     }
 
     @Test

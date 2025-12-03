@@ -38,7 +38,7 @@ object ValidatorAssembler {
         val decodedInfo: DecodedValidatorInfo =
             decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
 
-        val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
+        val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply
         val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
         totalVTHOIssued = totalVTHOIssuedAtBlock
         totalVTHOIssuedBlock = vthoIssuedBlock
