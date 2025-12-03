@@ -211,7 +211,7 @@ open class ValidatorBlockService(
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
         }
-        return decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
+        return decodedInfo.vthoTotalSupply
     }
 
     fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
