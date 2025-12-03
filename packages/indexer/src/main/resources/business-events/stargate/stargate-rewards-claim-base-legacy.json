@@ -7,13 +7,6 @@
       "alias": "BaseVTHORewardsClaimed",
       "conditions": [
         {
-          "firstOperand": "owner",
-          "isFirstStatic": false,
-          "secondOperand": "origin",
-          "isSecondStatic": false,
-          "operator": "EQ"
-        },
-        {
           "firstOperand": "amount",
           "isFirstStatic": false,
           "secondOperand": 0,

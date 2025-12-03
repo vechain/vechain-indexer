@@ -70,16 +70,10 @@ object ValidatorDecoder {
                 responses[0].data,
                 listOf(InputOutput("uint256", "vthoTotalSupply", "uint256")),
             )
-        val decodedBurned =
-            FunctionReturnDecoder.decode(
-                responses[1].data,
-                listOf(InputOutput("uint256", "vthoBurned", "uint256")),
-            )
 
         val totalSupply = decodedTotalSupply["vthoTotalSupply"] as? BigInteger ?: BigInteger.ZERO
-        val burned = decodedBurned["vthoBurned"] as? BigInteger ?: BigInteger.ZERO
 
-        return totalSupply.add(burned)
+        return totalSupply
     }
 
     /** ABI clauses for fetching validator contract data. */

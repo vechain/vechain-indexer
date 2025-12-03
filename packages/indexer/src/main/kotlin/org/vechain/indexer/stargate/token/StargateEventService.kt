@@ -80,6 +80,7 @@ class StargateEventService(
         }
     }
 
+    // Process a single event for a token
     private fun processEvent(
         event: IndexedEvent,
         tokenId: String,

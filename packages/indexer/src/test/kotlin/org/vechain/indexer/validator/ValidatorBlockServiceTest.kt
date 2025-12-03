@@ -156,9 +156,9 @@ class ValidatorBlockServiceTest {
         val result = service.getValidationInfo(block, decodedInfo)!!
 
         assertEquals("100-0xVAL1", result.id)
-        assertEquals(BigInteger.valueOf(200), result.blockReward) // (1000+100) - 900
+        assertEquals(BigInteger.valueOf(100), result.blockReward) // (1000+100) - 900
         assertEquals(BigInteger.valueOf(21), result.priorityReward) // 16+5
-        assertEquals(BigInteger.valueOf(221), result.total)
+        assertEquals(BigInteger.valueOf(121), result.total)
         assertEquals(BlockStatus.VALIDATED, result.status)
     }
 
@@ -210,7 +210,7 @@ class ValidatorBlockServiceTest {
     fun `getTotalVTHOIssued uses decoded info if available`() {
         val decodedInfo = createDecoded(500, 100)
         val total = service.getTotalVTHOIssued(decodedInfo, "block-1")
-        assertEquals(BigInteger.valueOf(600), total)
+        assertEquals(BigInteger.valueOf(500), total)
     }
 
     @Test
