@@ -78,6 +78,158 @@ class EventUtilsTest {
     }
 
     @Nested
+    inner class PartitionBlacklistEventsTests {
+        @Test
+        fun `partitionBlacklistEvents separates blacklist and whitelist events`() {
+            val blacklistEvent =
+                buildIndexedEvent(
+                    id = "event-1",
+                    eventType = "NFT_Blacklist",
+                    blockNumber = 1L,
+                    params =
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                )
+            val whitelistEvent =
+                buildIndexedEvent(
+                    id = "event-2",
+                    eventType = "NFT_Whitelist",
+                    blockNumber = 2L,
+                    params =
+                        AbiEventParameters(mapOf("contractAddress" to "0x456"), "NFT_Whitelist"),
+                )
+
+            val (blacklist, whitelist) =
+                EventUtils.partitionBlacklistEvents(listOf(blacklistEvent, whitelistEvent))
+
+            assertEquals(listOf("0x123"), blacklist)
+            assertEquals(listOf("0x456"), whitelist)
+        }
+
+        @Test
+        fun `partitionBlacklistEvents deduplicates by contract address keeping latest event`() {
+            val event1 =
+                buildIndexedEvent(
+                    id = "event-1",
+                    eventType = "NFT_Blacklist",
+                    blockNumber = 1L,
+                    params =
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                )
+            val event2 =
+                buildIndexedEvent(
+                    id = "event-2",
+                    eventType = "NFT_Whitelist",
+                    blockNumber = 2L,
+                    params =
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Whitelist"),
+                )
+
+            val (blacklist, whitelist) = EventUtils.partitionBlacklistEvents(listOf(event1, event2))
+
+            assertEquals(emptyList<String>(), blacklist)
+            assertEquals(listOf("0x123"), whitelist)
+        }
+
+        @Test
+        fun `partitionBlacklistEvents handles multiple addresses`() {
+            val events =
+                listOf(
+                    buildIndexedEvent(
+                        id = "event-1",
+                        eventType = "NFT_Blacklist",
+                        blockNumber = 1L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x111"), "NFT_Blacklist"),
+                    ),
+                    buildIndexedEvent(
+                        id = "event-2",
+                        eventType = "NFT_Blacklist",
+                        blockNumber = 2L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x222"), "NFT_Blacklist"),
+                    ),
+                    buildIndexedEvent(
+                        id = "event-3",
+                        eventType = "NFT_Whitelist",
+                        blockNumber = 3L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x333"), "NFT_Whitelist"),
+                    ),
+                    buildIndexedEvent(
+                        id = "event-4",
+                        eventType = "NFT_Whitelist",
+                        blockNumber = 4L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x444"), "NFT_Whitelist"),
+                    ),
+                )
+
+            val (blacklist, whitelist) = EventUtils.partitionBlacklistEvents(events)
+
+            assertEquals(setOf("0x111", "0x222"), blacklist.toSet())
+            assertEquals(setOf("0x333", "0x444"), whitelist.toSet())
+        }
+
+        @Test
+        fun `partitionBlacklistEvents returns empty lists for empty input`() {
+            val (blacklist, whitelist) = EventUtils.partitionBlacklistEvents(emptyList())
+
+            assertEquals(emptyList<String>(), blacklist)
+            assertEquals(emptyList<String>(), whitelist)
+        }
+
+        @Test
+        fun `partitionBlacklistEvents keeps only latest event per contract address`() {
+            val events =
+                listOf(
+                    buildIndexedEvent(
+                        id = "event-1",
+                        eventType = "NFT_Blacklist",
+                        blockNumber = 1L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                    ),
+                    buildIndexedEvent(
+                        id = "event-2",
+                        eventType = "NFT_Blacklist",
+                        blockNumber = 3L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                    ),
+                    buildIndexedEvent(
+                        id = "event-3",
+                        eventType = "NFT_Blacklist",
+                        blockNumber = 2L,
+                        params =
+                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                    ),
+                )
+
+            val (blacklist, whitelist) = EventUtils.partitionBlacklistEvents(events)
+
+            assertEquals(listOf("0x123"), blacklist)
+            assertEquals(emptyList<String>(), whitelist)
+        }
+
+        @Test
+        fun `partitionBlacklistEvents throws error when contractAddress is missing`() {
+            val event =
+                buildIndexedEvent(
+                    id = "event-1",
+                    eventType = "NFT_Blacklist",
+                    blockNumber = 1L,
+                    params = AbiEventParameters(emptyMap(), "NFT_Blacklist"),
+                )
+
+            val exception =
+                assertThrows(IllegalStateException::class.java) {
+                    EventUtils.partitionBlacklistEvents(listOf(event))
+                }
+            assertTrue(exception.message?.contains("No contract address in event") == true)
+        }
+    }
+
+    @Nested
     inner class GroupByBlockTests {
         @Test
         fun `groupByBlock groups events by blockId`() {

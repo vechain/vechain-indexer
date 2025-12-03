@@ -1,12 +1,19 @@
 package org.vechain.indexer.nft
 
 import org.springframework.context.annotation.Profile
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
+import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.utils.BlockDetails
+import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.buildNftId
 
@@ -16,6 +23,8 @@ open class NftService(
     private val nftRepository: NftRepository,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
     private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+    private val blacklistClient: NftBlacklistClient,
+    private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
@@ -41,21 +50,67 @@ open class NftService(
 
         return latestEventsById.map { (nftId, event) ->
             val version = existingById[nftId]?.version?.plus(1) ?: 1
-
+            val contractAddress =
+                event.address ?: error("No contract address in event ${event.txId}")
             IndexedNft(
                 id = nftId,
                 version = version,
                 owner = event.params.getAsString("to")!!,
-                contractAddress = event.address!!,
+                contractAddress = contractAddress,
                 tokenId = event.params.getAsString("tokenId")!!,
                 txId = event.txId,
                 blockId = event.blockId,
                 blockNumber = event.blockNumber,
                 blockTimestamp = event.blockTimestamp,
+                isBlacklisted =
+                    blacklistClient.isBlacklisted(
+                        contractAddress,
+                        BlockDetails(event.blockId, event.blockNumber, event.blockTimestamp),
+                    ),
             )
         }
     }
 
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNft> =
         nftRepository.findAllById(nftTransfers.map { buildNftId(it) }).toList()
+
+    @Transactional(rollbackFor = [Exception::class])
+    open fun processBlacklistEvents(events: List<IndexedEvent>) {
+        // Should only contain blacklist and whitelist events
+        assertEventTypes(events, "NFT_Blacklist", "NFT_Whitelist")
+
+        val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
+
+        if (blacklistAddresses.isNotEmpty()) blacklist(blacklistAddresses)
+        if (whitelistAddresses.isNotEmpty()) whitelist(whitelistAddresses)
+    }
+
+    /** Sets isBlacklisted to true for all history events related to the given contract addresses */
+    protected fun blacklist(contractAddresses: List<String>) {
+        contractAddresses.forEach { contractAddress ->
+            val query =
+                Query().apply {
+                    addCriteria(
+                        Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
+                    )
+                    addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).`is`(false))
+                }
+            val update = Update().set(IndexedNft::isBlacklisted.name, true)
+            mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
+        }
+    }
+
+    protected fun whitelist(contractAddresses: List<String>) {
+        contractAddresses.forEach { contractAddress ->
+            val query =
+                Query().apply {
+                    addCriteria(
+                        Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
+                    )
+                    addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).`is`(true))
+                }
+            val update = Update().set(IndexedNft::isBlacklisted.name, false)
+            mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
+        }
+    }
 }

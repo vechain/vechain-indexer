@@ -4,12 +4,38 @@ import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryEventName
 import org.vechain.indexer.transfer.TransferEventType
+import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.ValidatorAction
 
 data class BlockDetails(val blockId: String, val blockNumber: Long, val blockTimestamp: Long)
 
 object EventUtils {
+    /**
+     * Partitions blacklist/whitelist events by type, deduplicating by contract address and keeping
+     * only the latest event. Returns a pair of (blacklistAddresses, whitelistAddresses).
+     */
+    fun partitionBlacklistEvents(events: List<IndexedEvent>): Pair<List<String>, List<String>> {
+        val latestEvents =
+            events
+                .groupBy {
+                    it.params.getAsString("contractAddress")
+                        ?: error("No contract address in event ${it.txId}")
+                }
+                .mapValues { it.value.maxByOrNull { e -> e.blockNumber }!! }
+                .values
+
+        val (blacklist, whitelist) =
+            latestEvents
+                .partition { it.eventType == "NFT_Blacklist" }
+                .let { (b, w) ->
+                    b.mapNotNull { it.params.getAsString("contractAddress") } to
+                        w.mapNotNull { it.params.getAsString("contractAddress") }
+                }
+
+        return blacklist to whitelist
+    }
+
     fun determineEventType(params: AbiEventParameters): HistoryEventName? =
         when (params.getEventType()) {
             "B3TR_Vot3ToB3trSwap" -> HistoryEventName.B3TR_SWAP_VOT3_TO_B3TR
