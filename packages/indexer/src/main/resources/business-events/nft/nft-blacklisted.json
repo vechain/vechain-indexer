@@ -1,0 +1,27 @@
+{
+  "name": "NFT_Blacklisted",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "NFTBlacklisted",
+      "alias": "nftBlacklisted",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${BLACKLIST_CONTRACT_ADDRESS}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "nft",
+      "eventName": "nftBlacklisted",
+      "businessEventName": "contractAddress"
+    }
+  ]
+}

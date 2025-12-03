@@ -16,7 +16,7 @@ data class IndexedNft
 constructor(
     /** sha1 hash of `${contractAddress}-${tokenId}` */
     @Id val id: String,
-    @JsonView(Views.Internal::class) override val version: Int,
+    @param:JsonView(Views.Internal::class) override val version: Int,
     val tokenId: String,
     val contractAddress: String,
     val owner: String,
@@ -24,6 +24,7 @@ constructor(
     override val blockNumber: Long,
     override val blockId: String,
     override val blockTimestamp: Long,
+    @JsonIgnore var isBlacklisted: Boolean? = null,
 ) : VersionedDocument {
 
     @JsonIgnore
