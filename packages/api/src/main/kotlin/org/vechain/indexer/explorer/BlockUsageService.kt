@@ -19,9 +19,9 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
      * Granularity rules:
      * - Range <= 1 hour: All blocks (~360 data points)
      * - Range <= 1 week: Hourly aggregates (~168 data points)
-     * - Range <= 1 month: Daily aggregates (~30 data points)
-     * - Range <= 1 year: Weekly aggregates (~52 data points)
-     * - Range > 1 year: Monthly aggregates
+     * - Range <= 1 month: Daily aggregates (~60 data points)
+     * - Range <= 1 year: Daily aggregates (~400 data points)
+     * - Range > 1 year: Weekly aggregates
      *
      * @param startTimestamp The starting timestamp in seconds (inclusive)
      * @param endTimestamp The ending timestamp in seconds (inclusive)
@@ -50,11 +50,11 @@ open class BlockUsageService(private val blockUsageRepository: BlockUsageReposit
             }
             timeRange <= MONTHLY_THRESHOLD -> {
                 // Return weekly aggregates
-                blockUsageRepository.findWeeklyInTimestampRange(startTimestamp, endTimestamp)
+                blockUsageRepository.findDailyInTimestampRange(startTimestamp, endTimestamp)
             }
             else -> {
                 // Return monthly aggregates
-                blockUsageRepository.findMonthlyInTimestampRange(startTimestamp, endTimestamp)
+                blockUsageRepository.findWeeklyInTimestampRange(startTimestamp, endTimestamp)
             }
         }
     }
