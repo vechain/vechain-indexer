@@ -36,4 +36,6 @@ object NumberUtils {
         val scaled = value.setScale(scale, RoundingMode.HALF_UP)
         return Decimal128(scaled)
     }
+
+    fun String.hexToBigInteger(): BigInteger = BigInteger(this.removePrefix("0x"), 16)
 }

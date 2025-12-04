@@ -15,15 +15,12 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.VEVOTE_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
-import org.vechain.indexer.docs.ProposalIdParameter
-import org.vechain.indexer.proposal.ProposalId
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
-import org.vechain.indexer.validation.ValidProposalId
 
 @Tag(name = "VeVote Historic Proposals", description = "Query VeVote Historic Proposals")
 @Validated
@@ -33,7 +30,11 @@ import org.vechain.indexer.validation.ValidProposalId
 open class HistoricController(private val historicApiService: HistoricApiService) {
     @GetMapping("/historic-proposals")
     @Operation(summary = "Fetch all historic proposals")
-    @ProposalIdParameter
+    @Parameter(
+        name = "proposalId",
+        description = "Proposal ID to filter by.",
+        schema = Schema(type = "string", pattern = "\\d"),
+    )
     @AddressParameter(name = "contractAddress", description = "Filter by legacy contract address.")
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -44,7 +45,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
     )
     @CommonApiResponses
     open fun getAllProposals(
-        @ValidProposalId @RequestParam(required = false) proposalId: ProposalId?,
+        @RequestParam(required = false) proposalId: String?,
         @ValidAddress @RequestParam(required = false) contractAddress: Address?,
         @PositiveOrZero @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
@@ -52,7 +53,7 @@ open class HistoricController(private val historicApiService: HistoricApiService
     ): PaginatedResponse<HistoricProposals> {
         val pageable = PaginationUtils.toPageable(page, size)
         val result =
-            historicApiService.findAll(proposalId?.value, contractAddress, testProposals, pageable)
+            historicApiService.findAll(proposalId, contractAddress, testProposals, pageable)
         return paginatedResponse(result)
     }
 }

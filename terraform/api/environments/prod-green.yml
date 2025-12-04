@@ -64,7 +64,7 @@ enabled_nets:
       cpu: 1024
       memory: 2048
       max_capacity: 8
-      spring_profile:               nfts,transactions,transfers,history,stargate,authority-nodes,vevote-results,vevote-historic-proposals,b3tr,explorer,accounts
+      spring_profile:               nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator,accounts
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -121,10 +121,10 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 4096
-      memory: 8192
+      cpu: 8192
+      memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,stargate,authority-nodes,b3tr,vevote-results,vevote-historic-proposals,explorer,accounts
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts,vevote-historic-proposals
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -147,19 +147,19 @@ enabled_nets:
         b3tr-x-alloc-result:        '18926115'
         b3tr-sustainable-actions:   '19122233'
         b3tr-proposal:              '19036184'
-        validator:                   '0'
-        delegation:                  '0'
+        validator:                  '23414400'
+        delegation:                 '23415258'
       start-round:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
       sync-block-batch-size:
-        nfts:                       '500'
-        transfers:                  '500'
-        vevote:                     '500'
-        stargate:                   '500'
-        authority-nodes:            '500'
-        b3tr:                       '500'
-        historic-proposals:       '500'
+        nfts:                       '250'
+        transfers:                  '250'
+        vevote:                     '250'
+        stargate:                   '250'
+        authority-nodes:            '250'
+        b3tr:                       '250'
+        historic-proposals:       '250'
       channel-batch-size:           '100'
       pruner:
         interval: '60480'
@@ -180,14 +180,14 @@ enabled_nets:
         vevote-comments: '1'
         vevote-results: '1'
         authority-node-endorser: '1'
-        stargate-vtho-claimed-by-block: '3'
-        stargate-vtho-generated-by-block: '3'
-        stargate-vtho-claimed-by-account: '2'
-        stargate-nft-holders-by-block: '3'
-        stargate-vet-staked-by-block: '3'
-        stargate-vet-delegated-by-block: '3'
+        stargate-vtho-claimed-by-block: '4'
+        stargate-vtho-generated-by-block: '4'
+        stargate-vtho-claimed-by-account: '3'
+        stargate-nft-holders-by-block: '4'
+        stargate-vet-staked-by-block: '4'
+        stargate-vet-delegated-by-block: '4'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '2'
+        b3tr-proposal-results: '3'
         b3tr-app-all-time-action-summary: '1'
         b3tr-app-round-action-summary: '1'
         b3tr-app-daily-action-summary: '1'
@@ -200,7 +200,7 @@ enabled_nets:
         block-usage: '1'
         historic-proposals: '2'
         validator: '1'
-        validator-rewards: '1'
+        validator-rewards: '3'
         stargate-token: '3'
         token-rewards: '1'
         delegation: '1'
@@ -222,9 +222,9 @@ enabled_nets:
           STARGATE_DELEGATION_CONTRACT: '0x4cb1c9ef05b529c093371264fab2c93cc6cddb0e'
           STARGATE_NFT_CONTRACT: '0x1856c533ac2d94340aaa8544d35a5c1d4a21dee7'
           VEVOTE_CONTRACT: '0x7d812e8e544bb0c7898ea656b70173e7ef426b4c'
-          STARGATE_CONTRACT: '0x35ce14062457ef7817e10bbc3815317f5a07d695'
+          STARGATE_CONTRACT: '0x03c557be98123fdb6fad325328ac6eb77de7248c'
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
-          GET_ALL_VALIDATORS_CONTRACT: '0x1fb856dc120b0333c864615869a02521fe9c06a7'
+          GET_ALL_VALIDATORS_CONTRACT: '0xcf9daaa9e3c0385b4c55846501ac3545f58d68ad'
           RELAYER_REWARDS_POOL_CONTRACT: '0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86'
       log_metric_filters:
         - name: "AppUnhealthy"
@@ -251,11 +251,11 @@ enabled_nets:
       fqdn: mainnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M40
+      cluster_tier: M50
       disk_size_gb: 1000
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M50
+      auto_scaling_compute_max_instance_size: M60
       auto_scaling_compute_min_instance_size: M40
   test:
     image_version: latest
@@ -321,8 +321,8 @@ enabled_nets:
           pattern: "Application is UNHEALTHY"
           threshold: 2
     indexer:
-      cpu: 2048
-      memory: 4096
+      cpu: 4096
+      memory: 8192
       enabled: true
       spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,token-reward,validator,accounts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
@@ -380,14 +380,14 @@ enabled_nets:
         vevote-comments: '1'
         vevote-results: '1'
         authority-node-endorser: '1'
-        stargate-vtho-claimed-by-block: '5'
-        stargate-vtho-generated-by-block: '3'
-        stargate-vtho-claimed-by-account: '4'
-        stargate-nft-holders-by-block: '3'
-        stargate-vet-staked-by-block: '3'
-        stargate-vet-delegated-by-block: '3'
+        stargate-vtho-claimed-by-block: '6'
+        stargate-vtho-generated-by-block: '4'
+        stargate-vtho-claimed-by-account: '5'
+        stargate-nft-holders-by-block: '4'
+        stargate-vet-staked-by-block: '4'
+        stargate-vet-delegated-by-block: '4'
         b3tr-proposal-comments: '1'
-        b3tr-proposal-results: '2'
+        b3tr-proposal-results: '3'
         b3tr-app-all-time-action-summary: '1'
         b3tr-app-round-action-summary: '1'
         b3tr-app-daily-action-summary: '1'
@@ -400,7 +400,7 @@ enabled_nets:
         block-usage: '1'
         historic-proposals: '1'
         validator: '1'
-        validator-rewards: '2'
+        validator-rewards: '3'
         stargate-token: '4'
         token-rewards: '1'
         delegation: '1'
@@ -449,9 +449,9 @@ enabled_nets:
       fqdn: testnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M20
+      cluster_tier: M30
       disk_size_gb: 250
       iops: 1000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M40
+      auto_scaling_compute_max_instance_size: M50
       auto_scaling_compute_min_instance_size: M20

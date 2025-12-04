@@ -25,6 +25,7 @@ data class TotalByPeriodDto(
     val blockTimestamp: Long,
     val timeFrame: String,
     val total: BigInteger,
+    val hourOfDay: Long,
     val dayOfMonth: Long,
     val weekOfYear: Long,
     val month: Long,

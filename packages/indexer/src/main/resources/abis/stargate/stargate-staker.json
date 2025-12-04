@@ -142,6 +142,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "InvalidMaxClaimablePeriods",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -155,27 +160,6 @@
   {
     "inputs": [],
     "name": "MaxClaimablePeriodsExceeded",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint32",
-        "name": "nextClaimablePeriod",
-        "type": "uint32"
-      },
-      {
-        "internalType": "uint32",
-        "name": "period",
-        "type": "uint32"
-      }
-    ],
-    "name": "NonSequentialClaimPeriod",
     "type": "error"
   },
   {
@@ -341,7 +325,7 @@
       {
         "indexed": false,
         "internalType": "uint48",
-        "name": "exitBlock",
+        "name": "exitPeriod",
         "type": "uint48"
       }
     ],
@@ -460,38 +444,6 @@
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
-      }
-    ],
-    "name": "DelegationWithdrawn",
-    "type": "event"
-  },
-
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "tokenId",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "validator",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "delegationId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
       },
       {
         "indexed": false,
@@ -514,6 +466,19 @@
       }
     ],
     "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "maxClaimablePeriods",
+        "type": "uint32"
+      }
+    ],
+    "name": "MaxClaimablePeriodsSet",
     "type": "event"
   },
   {
@@ -658,12 +623,12 @@
   },
   {
     "inputs": [],
-    "name": "MAX_CLAIMABLE_PERIODS",
+    "name": "PAUSER_ROLE",
     "outputs": [
       {
-        "internalType": "uint32",
+        "internalType": "bytes32",
         "name": "",
-        "type": "uint32"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -690,19 +655,6 @@
         "internalType": "uint8",
         "name": "",
         "type": "uint8"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "REWARDS_PRECISION",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1001,6 +953,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getMaxClaimablePeriods",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getProtocolStakerContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "bytes32",
@@ -1014,6 +992,19 @@
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStargateNFTContract",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -1098,6 +1089,11 @@
             "internalType": "address",
             "name": "stargateNFTContract",
             "type": "address"
+          },
+          {
+            "internalType": "uint32",
+            "name": "maxClaimablePeriods",
+            "type": "uint32"
           }
         ],
         "internalType": "struct Stargate.InitializeV1Params",
@@ -1225,6 +1221,19 @@
       }
     ],
     "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "_maxClaimablePeriods",
+        "type": "uint32"
+      }
+    ],
+    "name": "setMaxClaimablePeriods",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

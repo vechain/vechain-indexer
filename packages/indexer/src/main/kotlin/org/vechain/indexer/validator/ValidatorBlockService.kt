@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
@@ -16,6 +17,7 @@ import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
+import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
@@ -35,12 +37,15 @@ open class ValidatorBlockService(
     private val dailyCache = ConcurrentHashMap<String, Long>()
     private val weeklyCache = ConcurrentHashMap<String, Long>()
     private val monthlyCache = ConcurrentHashMap<String, Long>()
+    private val offlineValidators = ConcurrentHashMap<String, Long>()
 
     /** Cached VTHO total supply from the previous block to calculate deltas. */
     @Volatile private var vthoTotalSupply: BigInteger = BigInteger.ZERO
 
     init {
         preloadLatestAggregates()
+
+        preLoadOfflineValidators()
     }
 
     open fun processBlock(
@@ -167,20 +172,37 @@ open class ValidatorBlockService(
         val offlineBlocks = decodedValidators.listOf<BigInteger>("offlineBlocks")
 
         return ids.indices.mapNotNull { i ->
-            if (
-                !online[i] && statuses[i].toInt() != 2 && offlineBlocks[i].toLong() <= block.number
-            ) {
-                ValidatorBlock(
-                    id = "${block.number}-${ids[i]}",
+            val validatorId = ids[i]
+            val status = statuses[i].toInt()
+            val wentOfflineAt = offlineBlocks[i].toLong()
+
+            val isMissed = !online[i] && status == 2 && wentOfflineAt == block.number
+
+            if (isMissed) {
+                offlineValidators[validatorId] = block.number
+                return@mapNotNull ValidatorBlock(
+                    id = "${block.number}-$validatorId",
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    validator = ids[i],
+                    validator = validatorId,
                     status = BlockStatus.MISSED,
                 )
-            } else {
-                null
             }
+
+            if (online[i] && offlineValidators.containsKey(validatorId)) {
+                val offlineStartBlock = offlineValidators.remove(validatorId)
+                if (offlineStartBlock != null) {
+                    val offlineDocId = "$offlineStartBlock-$validatorId"
+                    val offlineDoc = repository.findByIdOrNull(offlineDocId)
+                    return@mapNotNull offlineDoc?.copy(
+                        blocksOffline = block.number - offlineDoc.blockNumber,
+                        onlineBlock = block.number,
+                    )
+                }
+            }
+
+            return@mapNotNull null
         }
     }
 
@@ -189,7 +211,7 @@ open class ValidatorBlockService(
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
         }
-        return decodedInfo.vthoTotalSupply.add(decodedInfo.vthoBurned)
+        return decodedInfo.vthoTotalSupply
     }
 
     fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
@@ -217,8 +239,9 @@ open class ValidatorBlockService(
         }
     }
 
-    /** Convert hex string (with optional "0x" prefix) into BigInteger. */
-    fun String.hexToBigInteger(): BigInteger = BigInteger(this.removePrefix("0x"), 16)
+    private fun preLoadOfflineValidators() {
+        repository.findLatestMissed().forEach { offlineValidators[it.validator] = it.blockNumber }
+    }
 
     private fun loadAllValidatorAbiFunctions(functionNames: List<String>) {
         if (cachedGetValidatorsAbi.isNotEmpty()) return // already loaded

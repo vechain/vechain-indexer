@@ -186,16 +186,36 @@ open class ValidatorService(
             throw BadRequestException(ERROR_INVALID_START_AND_END_BLOCK_NUMBERS)
         }
 
-        val criteria = mutableListOf<Criteria>()
-        criteria.add(Criteria.where("validator").`is`(validator))
-        criteria.add(Criteria.where("status").`is`(BlockStatus.MISSED))
-        criteria.add(Criteria.where("blockNumber").gte(startBlock))
-        criteria.add(Criteria.where("blockNumber").lte(actualEnd))
+        // 1. Pull all MISSED docs overlapping the range
+        val missedDocs =
+            validatorBlockRepository.findMissedInRange(validator, startBlock, actualEnd)
 
-        val query = Query(Criteria().andOperator(*criteria.toTypedArray()))
-        val missedCount = mongoTemplate.count(query, ValidatorBlock::class.java)
+        var missedBlocks = 0L
+
+        for (doc in missedDocs) {
+            // Determine offlineStart
+            val offlineStart = if (doc.blockNumber < startBlock) startBlock else doc.blockNumber
+
+            // Determine offlineEnd
+            val offlineEnd =
+                if (doc.onlineBlock != null) {
+                    doc.onlineBlock!!
+                } else {
+                    actualEnd // still offline at end of range
+                }
+
+            // Add missed block count for this offline burst
+            if (offlineEnd >= offlineStart) {
+                missedBlocks += (offlineEnd - offlineStart + 1)
+            }
+        }
 
         val totalBlocks = (actualEnd - startBlock + 1).toDouble()
-        return if (totalBlocks > 0) (missedCount.toDouble() / totalBlocks) * 100.0 else 0.0
+
+        return if (totalBlocks > 0) {
+            (missedBlocks.toDouble() / totalBlocks) * 100.0
+        } else {
+            0.0
+        }
     }
 }

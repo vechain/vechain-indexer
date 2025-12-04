@@ -262,10 +262,11 @@ open class StargateService(
 
     fun toTimeFrame(timeRange: TimeRangePreset): TimeFrame? =
         when (timeRange) {
-            TimeRangePreset.ONE_WEEK -> TimeFrame.WEEK
-            TimeRangePreset.ONE_MONTH -> TimeFrame.MONTH
-            TimeRangePreset.ONE_YEAR -> TimeFrame.YEAR
-            TimeRangePreset.ALL -> TimeFrame.YEAR
+            TimeRangePreset.ONE_DAY -> TimeFrame.HOUR
+            TimeRangePreset.ONE_WEEK -> TimeFrame.HOUR
+            TimeRangePreset.ONE_MONTH -> TimeFrame.DAY
+            TimeRangePreset.ONE_YEAR -> TimeFrame.DAY
+            TimeRangePreset.ALL -> TimeFrame.WEEK
             else -> null
         }
 
@@ -615,6 +616,7 @@ open class StargateService(
     private fun normalizeTimeFrameAs(target: TimeFrame?, doc: TimeFrameDocument): TotalByPeriodDto {
         val normalized =
             when (target) {
+                TimeFrame.HOUR -> doc.hourTotal
                 TimeFrame.DAY -> doc.dayTotal
                 TimeFrame.WEEK -> doc.weekTotal
                 TimeFrame.MONTH -> doc.monthTotal
@@ -631,6 +633,7 @@ open class StargateService(
             doc.blockTimestamp,
             timeFrame = timeFrame,
             total = normalized,
+            hourOfDay = doc.hourOfDay,
             dayOfMonth = doc.dayOfMonth,
             weekOfYear = doc.weekOfYear,
             month = doc.month,

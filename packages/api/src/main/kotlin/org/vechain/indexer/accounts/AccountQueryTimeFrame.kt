@@ -1,7 +1,6 @@
 package org.vechain.indexer.accounts
 
-enum class TimeFrame {
-    HOUR,
+enum class AccountQueryTimeFrame {
     DAY,
     WEEK,
     MONTH,

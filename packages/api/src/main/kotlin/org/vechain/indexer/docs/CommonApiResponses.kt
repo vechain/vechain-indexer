@@ -28,6 +28,19 @@ import org.vechain.indexer.exception.ExceptionResponse
                     ],
             ),
             ApiResponse(
+                responseCode = "403",
+                description = "Access to the requested resource is forbidden",
+                content =
+                    [
+                        Content(mediaType = "application/json", schema = Schema(type = "string")),
+                        Content(
+                            mediaType = "application/problem+json",
+                            schema = Schema(type = "string"),
+                        ),
+                        Content(mediaType = "text/html", schema = Schema(type = "string")),
+                    ],
+            ),
+            ApiResponse(
                 responseCode = "404",
                 description = "Requested resource was not found",
                 content =

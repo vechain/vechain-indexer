@@ -32,7 +32,7 @@ open class BlockUsageController(private val blockUsageService: BlockUsageService
             The API automatically determines the appropriate data granularity based on the size of the time range:
             - Range ≤ 4,000 seconds: Returns all blocks (~360 data points)
             - Range ≤ 700,000 seconds: Returns hourly values (~168 data points)
-            - Range ≤ 3,000,000 seconds: Returns daily values (~30 data points)
+            - Range ≤ 6,000,000 seconds: Returns daily values (~60 data points)
             - Range ≤ 35,000,000 seconds: Returns weekly values (~52 data points)
             - Range > 35,000,000 seconds: Returns monthly values
 
