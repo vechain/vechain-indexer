@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.transaction.TransactionUtils.isSuccessWithData
 import org.vechain.indexer.utils.BlockDetails
@@ -44,7 +45,12 @@ open class NftBlacklistClient(
             return false
         }
 
-        val clause = ContractUtils.createClause(blacklistContract, functionAbi, address)
+        val clause =
+            ContractUtils.createClause(
+                blacklistContract,
+                functionAbi,
+                AddressUtils.toBigInt(address),
+            )
 
         val responses = thorService.inspectClausesAtBlock(listOf(clause), block.blockId)
 

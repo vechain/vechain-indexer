@@ -56,7 +56,7 @@ constructor(
     val delegationId: String? = null,
     val periodClaimed: Long? = null,
     val boostedBlocks: String? = null,
-    @JsonIgnore var isBlacklisted: Boolean? = null,
+    @JsonIgnore val isBlacklisted: Boolean? = null,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {
