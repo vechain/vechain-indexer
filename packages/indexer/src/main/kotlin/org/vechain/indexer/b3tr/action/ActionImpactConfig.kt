@@ -25,25 +25,25 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConfigurationProperties("b3tr-impact-thresholds")
 open class ActionImpactConfig {
-    /** Carbon footprint in grams of CO2 (default: 100 kg) */
+    /** Carbon footprint in grams of CO2 (default: 100,000 g || 100kg) */
     var carbon: Long = 100_000
 
-    /** Water conservation in milliliters (default: 1,000 L) */
+    /** Water conservation in milliliters (default: 1,000,000 ml || 1,000 L) */
     var water: Long = 1_000_000
 
-    /** Energy conservation in watt-hours (default: 1 MWh) */
+    /** Energy conservation in watt-hours (default: 1,000,000 Wh || 1 MWh) */
     var energy: Long = 1_000_000
 
-    /** Waste mass in grams (default: 100 kg) */
+    /** Waste mass in grams (default: 100,000 g || 100kg) */
     var wasteMass: Long = 100_000
 
-    /** Timber conservation in grams (default: 100 kg) */
+    /** Timber conservation in grams (default: 100,000 g || 100kg) */
     var timber: Long = 100_000
 
-    /** Plastic reduction in grams (default: 100 kg) */
+    /** Plastic reduction in grams (default: 100,000 g || 100kg) */
     var plastic: Long = 100_000
 
-    /** Education time in seconds (default: 24 hrs) */
+    /** Education time in seconds (default: 86,400 s || 24 hrs) */
     var educationTime: Long = 86_400
 
     /** Trees planted count (default: 10,000 trees) */
@@ -55,7 +55,7 @@ open class ActionImpactConfig {
     /** Sleep quality percentage (default: 100%) */
     var sleepQualityPercentage: Long = 100
 
-    /** Clean energy production in watt-hours (default: 1 MWh) */
+    /** Clean energy production in watt-hours (default: 1,000,000 Wh || 1 MWh) */
     var cleanEnergyProductionWh: Long = 1_000_000
 
     /** Legacy/deprecated fields, using high defaults to be permissive */
