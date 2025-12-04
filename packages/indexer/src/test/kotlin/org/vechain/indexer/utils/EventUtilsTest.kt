@@ -84,18 +84,18 @@ class EventUtilsTest {
             val blacklistEvent =
                 buildIndexedEvent(
                     id = "event-1",
-                    eventType = "NFT_Blacklist",
+                    eventType = "NFT_Blacklisted",
                     blockNumber = 1L,
                     params =
-                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklisted"),
                 )
             val whitelistEvent =
                 buildIndexedEvent(
                     id = "event-2",
-                    eventType = "NFT_Whitelist",
+                    eventType = "NFT_Whitelisted",
                     blockNumber = 2L,
                     params =
-                        AbiEventParameters(mapOf("contractAddress" to "0x456"), "NFT_Whitelist"),
+                        AbiEventParameters(mapOf("contractAddress" to "0x456"), "NFT_Whitelisted"),
                 )
 
             val (blacklist, whitelist) =
@@ -110,18 +110,18 @@ class EventUtilsTest {
             val event1 =
                 buildIndexedEvent(
                     id = "event-1",
-                    eventType = "NFT_Blacklist",
+                    eventType = "NFT_Blacklisted",
                     blockNumber = 1L,
                     params =
-                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklisted"),
                 )
             val event2 =
                 buildIndexedEvent(
                     id = "event-2",
-                    eventType = "NFT_Whitelist",
+                    eventType = "NFT_Whitelisted",
                     blockNumber = 2L,
                     params =
-                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Whitelist"),
+                        AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Whitelisted"),
                 )
 
             val (blacklist, whitelist) = EventUtils.partitionBlacklistEvents(listOf(event1, event2))
@@ -136,31 +136,43 @@ class EventUtilsTest {
                 listOf(
                     buildIndexedEvent(
                         id = "event-1",
-                        eventType = "NFT_Blacklist",
+                        eventType = "NFT_Blacklisted",
                         blockNumber = 1L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x111"), "NFT_Blacklist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x111"),
+                                "NFT_Blacklisted",
+                            ),
                     ),
                     buildIndexedEvent(
                         id = "event-2",
-                        eventType = "NFT_Blacklist",
+                        eventType = "NFT_Blacklisted",
                         blockNumber = 2L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x222"), "NFT_Blacklist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x222"),
+                                "NFT_Blacklisted",
+                            ),
                     ),
                     buildIndexedEvent(
                         id = "event-3",
-                        eventType = "NFT_Whitelist",
+                        eventType = "NFT_Whitelisted",
                         blockNumber = 3L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x333"), "NFT_Whitelist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x333"),
+                                "NFT_Whitelisted",
+                            ),
                     ),
                     buildIndexedEvent(
                         id = "event-4",
-                        eventType = "NFT_Whitelist",
+                        eventType = "NFT_Whitelisted",
                         blockNumber = 4L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x444"), "NFT_Whitelist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x444"),
+                                "NFT_Whitelisted",
+                            ),
                     ),
                 )
 
@@ -184,24 +196,33 @@ class EventUtilsTest {
                 listOf(
                     buildIndexedEvent(
                         id = "event-1",
-                        eventType = "NFT_Blacklist",
+                        eventType = "NFT_Blacklisted",
                         blockNumber = 1L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x123"),
+                                "NFT_Blacklisted",
+                            ),
                     ),
                     buildIndexedEvent(
                         id = "event-2",
-                        eventType = "NFT_Blacklist",
+                        eventType = "NFT_Blacklisted",
                         blockNumber = 3L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x123"),
+                                "NFT_Blacklisted",
+                            ),
                     ),
                     buildIndexedEvent(
                         id = "event-3",
-                        eventType = "NFT_Blacklist",
+                        eventType = "NFT_Blacklisted",
                         blockNumber = 2L,
                         params =
-                            AbiEventParameters(mapOf("contractAddress" to "0x123"), "NFT_Blacklist"),
+                            AbiEventParameters(
+                                mapOf("contractAddress" to "0x123"),
+                                "NFT_Blacklisted",
+                            ),
                     ),
                 )
 
@@ -216,9 +237,9 @@ class EventUtilsTest {
             val event =
                 buildIndexedEvent(
                     id = "event-1",
-                    eventType = "NFT_Blacklist",
+                    eventType = "NFT_Blacklisted",
                     blockNumber = 1L,
-                    params = AbiEventParameters(emptyMap(), "NFT_Blacklist"),
+                    params = AbiEventParameters(emptyMap(), "NFT_Blacklisted"),
                 )
 
             val exception =

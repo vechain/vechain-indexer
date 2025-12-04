@@ -24,7 +24,7 @@ constructor(
     override val blockNumber: Long,
     override val blockId: String,
     override val blockTimestamp: Long,
-    @JsonIgnore val isBlacklisted: Boolean,
+    @JsonIgnore var isBlacklisted: Boolean? = null,
 ) : VersionedDocument {
 
     @JsonIgnore

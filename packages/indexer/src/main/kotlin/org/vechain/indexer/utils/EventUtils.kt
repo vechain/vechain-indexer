@@ -27,7 +27,7 @@ object EventUtils {
 
         val (blacklist, whitelist) =
             latestEvents
-                .partition { it.eventType == "NFT_Blacklist" }
+                .partition { it.eventType == "NFT_Blacklisted" }
                 .let { (b, w) ->
                     b.mapNotNull { it.params.getAsString("contractAddress") } to
                         w.mapNotNull { it.params.getAsString("contractAddress") }

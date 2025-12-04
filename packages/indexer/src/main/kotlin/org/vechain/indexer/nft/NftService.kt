@@ -77,7 +77,7 @@ open class NftService(
     @Transactional(rollbackFor = [Exception::class])
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
-        assertEventTypes(events, "NFT_Blacklist", "NFT_Whitelist")
+        assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
 
         val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
 
@@ -93,7 +93,6 @@ open class NftService(
                     addCriteria(
                         Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
                     )
-                    addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).`is`(false))
                 }
             val update = Update().set(IndexedNft::isBlacklisted.name, true)
             mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
@@ -107,7 +106,6 @@ open class NftService(
                     addCriteria(
                         Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
                     )
-                    addCriteria(Criteria.where(IndexedNft::isBlacklisted.name).`is`(true))
                 }
             val update = Update().set(IndexedNft::isBlacklisted.name, false)
             mongoTemplate.updateMulti(query, update, IndexedNft::class.java)

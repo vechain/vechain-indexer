@@ -57,7 +57,7 @@ open class HistoryService(
     @Transactional(rollbackFor = [Exception::class])
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
-        assertEventTypes(events, "NFT_Blacklist", "NFT_Whitelist")
+        assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
 
         val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
 
@@ -74,7 +74,6 @@ open class HistoryService(
                         Criteria.where(IndexedHistoryEvent::contractAddress.name)
                             .`is`(contractAddress)
                     )
-                    addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).`is`(false))
                 }
             val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
             mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
@@ -89,7 +88,6 @@ open class HistoryService(
                         Criteria.where(IndexedHistoryEvent::contractAddress.name)
                             .`is`(contractAddress)
                     )
-                    addCriteria(Criteria.where(IndexedHistoryEvent::isBlacklisted.name).`is`(true))
                 }
             val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
             mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
