@@ -35,21 +35,26 @@ object ActionSummaryUtils {
      * @return true if any field exceeds its threshold, false otherwise
      */
     fun isImpactAboveThreshold(impact: Impact, config: ActionImpactConfig): Boolean {
-        return exceeds(impact.carbon, config.carbon) ||
-            exceeds(impact.water, config.water) ||
-            exceeds(impact.energy, config.energy) ||
-            exceeds(impact.waste_mass, config.wasteMass) ||
-            exceeds(impact.timber, config.timber) ||
-            exceeds(impact.plastic, config.plastic) ||
-            exceeds(impact.education_time, config.educationTime) ||
-            exceeds(impact.trees_planted, config.treesPlanted) ||
-            exceeds(impact.calories_burned, config.caloriesBurned) ||
-            exceeds(impact.clean_energy_production_wh, config.cleanEnergyProductionWh) ||
-            exceeds(impact.sleep_quality_percentage, config.sleepQualityPercentage) ||
-            exceeds(impact.waste_items, config.wasteItems) ||
-            exceeds(impact.waste_reduction, config.wasteReduction) ||
-            exceeds(impact.biodiversity, config.biodiversity) ||
-            exceeds(impact.people, config.people)
+        val checks =
+            listOf(
+                impact.carbon to config.carbon,
+                impact.water to config.water,
+                impact.energy to config.energy,
+                impact.waste_mass to config.wasteMass,
+                impact.timber to config.timber,
+                impact.plastic to config.plastic,
+                impact.education_time to config.educationTime,
+                impact.trees_planted to config.treesPlanted,
+                impact.calories_burned to config.caloriesBurned,
+                impact.clean_energy_production_wh to config.cleanEnergyProductionWh,
+                impact.sleep_quality_percentage to config.sleepQualityPercentage,
+                impact.waste_items to config.wasteItems,
+                impact.waste_reduction to config.wasteReduction,
+                impact.biodiversity to config.biodiversity,
+                impact.people to config.people,
+            )
+
+        return checks.any { (value, threshold) -> exceeds(value, threshold) }
     }
 
     /**
