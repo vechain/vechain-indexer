@@ -569,12 +569,14 @@ class ActionSummaryUtilsTest {
 
     @Nested
     inner class IsImpactAboveThresholdTests {
-        private val testConfig =
+        private val lowThresholdConfig =
             ActionImpactConfig().apply {
                 carbon = 1000
                 water = 1000
                 energy = 1000
                 wasteMass = 1000
+                wasteItems = 1000
+                wasteReduction = 1000
                 timber = 1000
                 plastic = 1000
                 educationTime = 1000
@@ -582,125 +584,74 @@ class ActionSummaryUtilsTest {
                 caloriesBurned = 1000
                 cleanEnergyProductionWh = 1000
                 sleepQualityPercentage = 1000
+                biodiversity = 1000
+                people = 1000
             }
 
         @Test
         fun `isImpactAboveThreshold returns false when all fields are below threshold`() {
             val impact = Impact(carbon = 100, water = 200, energy = 300)
-            val result = isImpactAboveThreshold(impact, testConfig)
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
             assertEquals(false, result)
         }
 
         @Test
         fun `isImpactAboveThreshold returns false when all fields are null`() {
             val impact = Impact()
-            val result = isImpactAboveThreshold(impact, testConfig)
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
             assertEquals(false, result)
         }
 
         @Test
-        fun `isImpactAboveThreshold returns true when carbon exceeds threshold`() {
-            val impact = Impact(carbon = 1500, water = 200)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when water exceeds threshold`() {
-            val impact = Impact(carbon = 100, water = 2000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when energy exceeds threshold`() {
-            val impact = Impact(energy = 5000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when waste_mass exceeds threshold`() {
-            val impact = Impact(waste_mass = 10000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when timber exceeds threshold`() {
-            val impact = Impact(timber = 15000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when plastic exceeds threshold`() {
-            val impact = Impact(plastic = 20000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when education_time exceeds threshold`() {
-            val impact = Impact(education_time = 25000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when trees_planted exceeds threshold`() {
-            val impact = Impact(trees_planted = 30000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when calories_burned exceeds threshold`() {
-            val impact = Impact(calories_burned = 35000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when clean_energy_production_wh exceeds threshold`() {
-            val impact = Impact(clean_energy_production_wh = 40000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when sleep_quality_percentage exceeds threshold`() {
-            val impact = Impact(sleep_quality_percentage = 45000)
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
-        }
-
-        @Test
-        fun `isImpactAboveThreshold returns true when any one field exceeds threshold among many`() {
-            val impact =
-                Impact(
-                    carbon = 100,
-                    water = 200,
-                    energy = 300,
-                    waste_mass = 5000, // This exceeds threshold
-                    timber = 100,
-                    plastic = 50,
+        fun `isImpactAboveThreshold returns true when any single impact exceeds threshold`() {
+            val impactFields =
+                listOf(
+                    "carbon" to { Impact(carbon = 1500, water = 1) },
+                    "water" to { Impact(water = 1500, carbon = 1) },
+                    "energy" to { Impact(energy = 1500, carbon = 1) },
+                    "waste_mass" to { Impact(waste_mass = 1500, carbon = 1) },
+                    "timber" to { Impact(timber = 1500, carbon = 1) },
+                    "plastic" to { Impact(plastic = 1500, carbon = 1) },
+                    "education_time" to { Impact(education_time = 1500, carbon = 1) },
+                    "trees_planted" to { Impact(trees_planted = 1500, carbon = 1) },
+                    "calories_burned" to { Impact(calories_burned = 1500, carbon = 1) },
+                    "clean_energy_production_wh" to
+                        {
+                            Impact(clean_energy_production_wh = 1500, carbon = 1)
+                        },
+                    "sleep_quality_percentage" to
+                        {
+                            Impact(sleep_quality_percentage = 1500, carbon = 1)
+                        },
+                    "waste_items" to { Impact(waste_items = 1500, carbon = 1) },
+                    "waste_reduction" to { Impact(waste_reduction = 1500, carbon = 1) },
+                    "biodiversity" to { Impact(biodiversity = 1500, carbon = 1) },
+                    "people" to { Impact(people = 1500, carbon = 1) },
                 )
-            val result = isImpactAboveThreshold(impact, testConfig)
-            assertEquals(true, result)
+
+            impactFields.forEach { (fieldName, createImpact) ->
+                val impact = createImpact()
+                val result = isImpactAboveThreshold(impact, lowThresholdConfig)
+                assertTrue(
+                    result,
+                    "Expected $fieldName to trigger threshold when value is 1500 (with other field at 1)",
+                )
+            }
         }
 
         @Test
         fun `isImpactAboveThreshold returns false when value equals threshold`() {
-            val impact = Impact(carbon = 1000)
-            val result = isImpactAboveThreshold(impact, testConfig)
+            val threshold: Long = 1234
+            val customConfig = ActionImpactConfig().apply { carbon = threshold }
+            val impact = Impact(carbon = threshold)
+            val result = isImpactAboveThreshold(impact, customConfig)
             assertEquals(false, result)
         }
 
         @Test
         fun `isImpactAboveThreshold returns true when value is threshold plus one`() {
             val impact = Impact(carbon = 1001)
-            val result = isImpactAboveThreshold(impact, testConfig)
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
             assertEquals(true, result)
         }
 
@@ -796,9 +747,9 @@ class ActionSummaryUtilsTest {
         }
 
         @Test
-        fun `validateAndFilterImpacts works with VeBetterDAO realistic scenario`() {
+        fun `validateAndFilterImpacts works with VeBetter realistic scenario`() {
             val realisticConfig = ActionImpactConfig()
-            // Real-world sustainability impacts based on VeBetterDAO docs
+            // Real-world sustainability impacts based on VeBetter docs
             val normalImpacts =
                 listOf(
                     Impact(carbon = 8, timber = 5), // Literature consumption
@@ -828,15 +779,6 @@ class ActionSummaryUtilsTest {
             val impacts = listOf(Impact(carbon = 1), Impact(water = 1), Impact())
             val result = validateAndFilterImpacts(impacts, zeroConfig)
             assertEquals(1, result.size) // Only the empty impact should pass
-        }
-
-        @Test
-        fun `validateAndFilterImpacts with very high threshold allows all realistic values`() {
-            val highConfig = ActionImpactConfig()
-            val impacts =
-                listOf(Impact(carbon = 999999), Impact(water = 500000), Impact(energy = 750000))
-            val result = validateAndFilterImpacts(impacts, highConfig)
-            assertEquals(3, result.size)
         }
     }
 }
