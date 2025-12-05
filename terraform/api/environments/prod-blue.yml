@@ -173,7 +173,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts: '1'
+        nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
@@ -374,7 +374,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts: '1'
+        nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
