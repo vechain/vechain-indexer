@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
@@ -26,6 +27,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var delegationService: DelegationService
     @Autowired lateinit var archiveService: ArchiveService<Delegation, DelegationArchive>
+    @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired
     lateinit var validatorDelegationService:
         org.vechain.indexer.validator.ValidatorDelegationService
@@ -46,7 +48,10 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
         delegationRepository.deleteAll()
-        archiveService.deleteAll()
+        mongoTemplate.remove(
+            org.springframework.data.mongodb.core.query.Query(),
+            DelegationArchive::class.java,
+        )
         println("✓ Cleared delegation database and archives")
 
         // Create profiler for detailed timing analysis

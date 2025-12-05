@@ -4,6 +4,7 @@ import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
@@ -25,12 +26,16 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var accountsRepository: AccountsRepository
     @Autowired lateinit var accountsService: AccountsService
     @Autowired lateinit var archiveService: ArchiveService<Accounts, AccountsArchive>
+    @Autowired lateinit var mongoTemplate: MongoTemplate
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
         accountsRepository.deleteAll()
-        archiveService.deleteAll()
+        mongoTemplate.remove(
+            org.springframework.data.mongodb.core.query.Query(),
+            AccountsArchive::class.java,
+        )
         println("✓ Cleared accounts database and archives")
 
         // Create profiler for detailed timing analysis
