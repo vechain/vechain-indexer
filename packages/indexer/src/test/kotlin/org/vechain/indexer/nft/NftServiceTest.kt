@@ -34,6 +34,7 @@ internal class NftServiceTest {
         MockKAnnotations.init(this)
         nftService =
             NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
+        every { blacklistClient.isBlacklisted(any(), any()) } returns false
     }
 
     // Update tests
