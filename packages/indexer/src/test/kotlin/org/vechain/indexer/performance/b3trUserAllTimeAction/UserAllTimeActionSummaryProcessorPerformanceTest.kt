@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.b3trUserAllTimeAction
 
 import io.mockk.every
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -19,6 +20,7 @@ import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.pruner.TargetedPruner
 
+@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("b3tr-user-all-time-action-summary")
 class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 

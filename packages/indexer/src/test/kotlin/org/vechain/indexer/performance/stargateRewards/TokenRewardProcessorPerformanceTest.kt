@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.stargateRewards
 
 import io.mockk.every
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -21,6 +22,7 @@ import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
+@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("token-reward", "delegation")
 class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 

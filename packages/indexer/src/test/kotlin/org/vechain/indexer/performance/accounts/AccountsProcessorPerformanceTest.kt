@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.accounts
 
 import io.mockk.every
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
@@ -17,6 +18,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 
+@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("accounts")
 class AccountsProcessorPerformanceTest : BasePerformanceTest() {
 

@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.transaction
 
 import io.mockk.every
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -15,6 +16,7 @@ import org.vechain.indexer.transaction.TransactionProcessor
 import org.vechain.indexer.transaction.TransactionRepository
 import org.vechain.indexer.transaction.TransactionService
 
+@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("transactions")
 class TransactionProcessorPerformanceTest : BasePerformanceTest() {
 
