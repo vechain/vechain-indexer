@@ -39,7 +39,6 @@ interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, Stri
             [
                 "{ \$match: { 'owner': ?0, 'contractAddress': { \$nin: ?1 }, isBlacklisted: { \$ne: true } } }",
                 "{ \$group: { _id: '\$contractAddress', blockNumber: { \$first: '\$blockNumber' } } }",
-                "{ \$sort: { blockNumber: -1 } }",
                 "{ \$project: { _id: 1 } }",
             ]
     )
