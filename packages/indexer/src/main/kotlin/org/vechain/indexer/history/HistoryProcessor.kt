@@ -37,12 +37,10 @@ open class HistoryProcessor(
                     it.eventType == "NFT_Blacklisted" || it.eventType == "NFT_Whitelisted"
                 })
 
-        if (historyEvents.isNotEmpty()) {
-            val records = historyService.processEvents(historyEvents, entry.block)
+        val records = historyService.processEvents(historyEvents, entry.block)
 
-            if (records.isNotEmpty()) {
-                historyService.save(records)
-            }
+        if (records.isNotEmpty()) {
+            historyService.save(records)
         }
 
         if (blacklistEvents.isNotEmpty()) {
