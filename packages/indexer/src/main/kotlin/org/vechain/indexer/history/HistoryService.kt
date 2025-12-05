@@ -67,31 +67,31 @@ open class HistoryService(
 
     /** Sets isBlacklisted to true for all history events related to the given contract addresses */
     protected fun blacklist(contractAddresses: List<String>) {
-        contractAddresses.forEach { contractAddress ->
-            val query =
-                Query().apply {
-                    addCriteria(
-                        Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                            .`is`(contractAddress)
-                    )
-                }
-            val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
-            mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-        }
+        if (contractAddresses.isEmpty()) return
+
+        val query =
+            Query().apply {
+                addCriteria(
+                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
+                        .`in`(contractAddresses)
+                )
+            }
+        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
+        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
     }
 
     protected fun whitelist(contractAddresses: List<String>) {
-        contractAddresses.forEach { contractAddress ->
-            val query =
-                Query().apply {
-                    addCriteria(
-                        Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                            .`is`(contractAddress)
-                    )
-                }
-            val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
-            mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-        }
+        if (contractAddresses.isEmpty()) return
+
+        val query =
+            Query().apply {
+                addCriteria(
+                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
+                        .`in`(contractAddresses)
+                )
+            }
+        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
+        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
     }
 
     private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {

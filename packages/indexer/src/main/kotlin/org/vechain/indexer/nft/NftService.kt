@@ -87,28 +87,28 @@ open class NftService(
 
     /** Sets isBlacklisted to true for all history events related to the given contract addresses */
     protected fun blacklist(contractAddresses: List<String>) {
-        contractAddresses.forEach { contractAddress ->
-            val query =
-                Query().apply {
-                    addCriteria(
-                        Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
-                    )
-                }
-            val update = Update().set(IndexedNft::isBlacklisted.name, true)
-            mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
-        }
+        if (contractAddresses.isEmpty()) return
+
+        val query =
+            Query().apply {
+                addCriteria(
+                    Criteria.where(IndexedNft::contractAddress.name).`in`(contractAddresses)
+                )
+            }
+        val update = Update().set(IndexedNft::isBlacklisted.name, true)
+        mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
     }
 
     protected fun whitelist(contractAddresses: List<String>) {
-        contractAddresses.forEach { contractAddress ->
-            val query =
-                Query().apply {
-                    addCriteria(
-                        Criteria.where(IndexedNft::contractAddress.name).`is`(contractAddress)
-                    )
-                }
-            val update = Update().set(IndexedNft::isBlacklisted.name, false)
-            mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
-        }
+        if (contractAddresses.isEmpty()) return
+
+        val query =
+            Query().apply {
+                addCriteria(
+                    Criteria.where(IndexedNft::contractAddress.name).`in`(contractAddresses)
+                )
+            }
+        val update = Update().set(IndexedNft::isBlacklisted.name, false)
+        mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
     }
 }
