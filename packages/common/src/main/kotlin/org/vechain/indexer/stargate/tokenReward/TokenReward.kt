@@ -34,7 +34,7 @@ data class TokenReward(
     @JsonIgnore val monthReward: BigInteger? = null,
     @JsonIgnore val yearReward: BigInteger? = null,
     @JsonIgnore val cycleReward: BigInteger? = null,
-    @JsonIgnore @JsonView(Views.Internal::class) override val version: Int,
+    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }

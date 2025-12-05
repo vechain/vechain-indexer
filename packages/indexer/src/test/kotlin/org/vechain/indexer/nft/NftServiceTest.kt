@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
@@ -23,13 +24,17 @@ internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
     @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
     @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
+    @MockK lateinit var blacklistClient: NftBlacklistClient
+    @MockK lateinit var mongoTemplate: MongoTemplate
 
     private lateinit var nftService: NftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftService = NftService(repository, nftArchiveService, pruner)
+        nftService =
+            NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
+        every { blacklistClient.isBlacklisted(any(), any()) } returns false
     }
 
     // Update tests

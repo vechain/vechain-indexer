@@ -19,5 +19,6 @@ object BusinessEventParamFixtures {
             "VEVOTE_CONTRACT" to "0x1c65c25fabe2fc1bcb82f253fa0c916a322f777c",
             "STARGATE_CONTRACT" to "0x35ce14062457ef7817e10bbc3815317f5a07d695",
             "RELAYER_REWARDS_POOL_CONTRACT" to "0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86",
+            "BLACKLIST_CONTRACT_ADDRESS" to "0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5",
         )
 }

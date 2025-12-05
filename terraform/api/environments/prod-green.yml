@@ -171,7 +171,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts: '1'
+        nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
@@ -226,6 +226,7 @@ enabled_nets:
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0xcf9daaa9e3c0385b4c55846501ac3545f58d68ad'
           RELAYER_REWARDS_POOL_CONTRACT: '0x34b56f892c9e977b9ba2e43ba64c27d368ab3c86'
+          BLACKLIST_CONTRACT_ADDRESS: '0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"
@@ -371,7 +372,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
-        nfts: '1'
+        nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
         transactions: '1'
@@ -426,6 +427,7 @@ enabled_nets:
           BUILTIN_STAKER_CONTRACT: '0x00000000000000000000000000005374616B6572'
           GET_ALL_VALIDATORS_CONTRACT: '0x168fc982338b399598c10f8467bc66fb1b49aae7'
           RELAYER_REWARDS_POOL_CONTRACT: '0x92b5a7484970d9b2ad981e8135ff14e6f996dc04'
+          BLACKLIST_CONTRACT_ADDRESS: '0x9405c18c384dd448f82c11136e188a147186ea3a'
       log_metric_filters:
         - name: "AppUnhealthy"
           pattern: "Application is UNHEALTHY"

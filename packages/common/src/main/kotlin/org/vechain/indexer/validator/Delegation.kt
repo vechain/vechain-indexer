@@ -16,7 +16,7 @@ data class Delegation
 @ConstructorBinding
 constructor(
     @Id val id: String,
-    @JsonIgnore @JsonView(Views.Internal::class) override val version: Int,
+    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     val validator: String,
     val tokenId: String,
     val owner: String,

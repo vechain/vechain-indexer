@@ -40,6 +40,7 @@ open class NftConfig() {
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.nfts}") syncBlockBatchSize: Long,
+        @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
     ): Indexer =
         IndexerFactory()
             .name(IndexerNames.NFT)
@@ -52,6 +53,12 @@ open class NftConfig() {
             .blockBatchSize(syncBlockBatchSize)
             .abis("abis/nft")
             .abiEventNames(listOf("Transfer"))
+            .businessEvents("business-events/nft", "abis/nft")
+            .businessEventNames(listOf("NFT_Blacklisted", "NFT_Whitelisted"))
+            .businessEventContracts(listOf(blacklistContract))
+            .businessEventSubstitutionParams(
+                mapOf("BLACKLIST_CONTRACT_ADDRESS" to blacklistContract)
+            )
             .excludeVetTransfers()
             .build()
 }

@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.history.IndexedHistoryEvent
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts")
@@ -51,38 +52,44 @@ open class NftCollectionConfig(
             listOf(
                 "nft_blockNumber_-1" to
                     Index().on(IndexedNft::blockNumber.name, Sort.Direction.DESC),
+                "isBlacklisted_1" to
+                    Index().on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "nft_contractAddress_1_tokenId_1" to
                     Index()
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedNft::tokenId.name, Sort.Direction.DESC)
                         .unique(),
-                "nft_owner_1_blockNumber_-1_txId_-1__id_-1" to
+                "nft_owner_1_blockNumber_-1_txId_-1__id_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedNft::owner.name, Sort.Direction.ASC)
                         .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
                         .on(IndexedNft::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1" to
+                        .on("_id", Sort.Direction.DESC)
+                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                "nft_contractAddress_1_blockNumber_-1_txId_-1__id_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
                         .on(IndexedNft::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1" to
+                        .on("_id", Sort.Direction.DESC)
+                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                "nft_owner_1_contractAddress_1_blockNumber_-1_txId_-1__id_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedNft::owner.name, Sort.Direction.ASC)
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
                         .on(IndexedNft::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
-                "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1" to
+                        .on("_id", Sort.Direction.DESC)
+                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                "nft_owner_1_contractAddress_1_tokenId_1_blockNumber_-1_txId_-1__id_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedNft::owner.name, Sort.Direction.ASC)
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedNft::tokenId.name, Sort.Direction.ASC)
                         .on(IndexedNft::blockNumber.name, Sort.Direction.DESC)
                         .on(IndexedNft::txId.name, Sort.Direction.DESC)
-                        .on("_id", Sort.Direction.DESC),
+                        .on("_id", Sort.Direction.DESC)
+                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
             )
         )
     }
