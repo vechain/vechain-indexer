@@ -15,6 +15,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
@@ -32,6 +33,7 @@ open class AppDailyActionSummaryService(
         ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
     private val appDailyActionSummaryPruner:
         TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+    private val impactConfig: ActionImpactConfig,
 ) {
 
     open fun processEvents(
@@ -103,7 +105,10 @@ open class AppDailyActionSummaryService(
 
         val rewardAmountIncrease = events.sumOf { getAmount(it) }
         val proofs = events.mapNotNull { getAction(it).proof }
-        val impacts = proofs.mapNotNull { it.impact }
+        val allImpacts = proofs.mapNotNull { it.impact }
+
+        // Validate and filter impacts based on threshold
+        val impacts = validateAndFilterImpacts(allImpacts, impactConfig)
 
         return if (existing != null) {
             require(existing.user == receiverId) { "User mismatch" }

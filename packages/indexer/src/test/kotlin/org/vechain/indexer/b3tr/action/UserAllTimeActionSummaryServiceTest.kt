@@ -42,7 +42,8 @@ internal class UserAllTimeActionSummaryServiceTest {
         repository: UserAllTimeActionSummaryRepository,
         archive: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    ) : UserAllTimeActionSummaryService(repository, archive, pruner) {
+        impactConfig: ActionImpactConfig = ActionImpactConfig(),
+    ) : UserAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserAllTimeActionSummary>) =
             resolveExisting(recordId, cache)
 

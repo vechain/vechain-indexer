@@ -40,7 +40,8 @@ internal class UserDailyActionSummaryServiceTest {
         repository: UserDailyActionSummaryRepository,
         archive: ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
         pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-    ) : UserDailyActionSummaryService(repository, archive, pruner) {
+        impactConfig: ActionImpactConfig = ActionImpactConfig(),
+    ) : UserDailyActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserDailyActionSummary>) =
             resolveExisting(recordId, cache)
 

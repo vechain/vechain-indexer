@@ -14,6 +14,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getEntity
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByReceiver
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.b3tr.shared.EntityType
@@ -32,6 +33,7 @@ open class UserRoundActionSummaryService(
         ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
     private val userRoundActionSummaryPruner:
         TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    private val impactConfig: ActionImpactConfig,
 ) {
 
     open fun processEvents(
@@ -148,7 +150,10 @@ open class UserRoundActionSummaryService(
 
         val rewardAmountIncrease = events.sumOf { getAmount(it) }
         val proofs = events.mapNotNull { getAction(it).proof }
-        val impacts = proofs.mapNotNull { it.impact }
+        val allImpacts = proofs.mapNotNull { it.impact }
+
+        // Validate and filter impacts based on threshold
+        val impacts = validateAndFilterImpacts(allImpacts, impactConfig)
 
         return if (existing != null) {
             require(existing.entity == entity) { "Entity mismatch" }

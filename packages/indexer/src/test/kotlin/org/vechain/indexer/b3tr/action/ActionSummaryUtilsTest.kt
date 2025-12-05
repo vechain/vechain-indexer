@@ -15,6 +15,8 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getDistributor
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getProof
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getReceiver
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.groupByAppId
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.isImpactAboveThreshold
+import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpacts
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -562,6 +564,221 @@ class ActionSummaryUtilsTest {
             assertThrows(IllegalStateException::class.java) {
                 ActionSummaryUtils.assertEventTypes(listOf(event1, event2), "B3TR_ActionReward")
             }
+        }
+    }
+
+    @Nested
+    inner class IsImpactAboveThresholdTests {
+        private val lowThresholdConfig =
+            ActionImpactConfig().apply {
+                carbon = 1000
+                water = 1000
+                energy = 1000
+                wasteMass = 1000
+                wasteItems = 1000
+                wasteReduction = 1000
+                timber = 1000
+                plastic = 1000
+                educationTime = 1000
+                treesPlanted = 1000
+                caloriesBurned = 1000
+                cleanEnergyProductionWh = 1000
+                sleepQualityPercentage = 1000
+                biodiversity = 1000
+                people = 1000
+            }
+
+        @Test
+        fun `isImpactAboveThreshold returns false when all fields are below threshold`() {
+            val impact = Impact(carbon = 100, water = 200, energy = 300)
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
+            assertEquals(false, result)
+        }
+
+        @Test
+        fun `isImpactAboveThreshold returns false when all fields are null`() {
+            val impact = Impact()
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
+            assertEquals(false, result)
+        }
+
+        @Test
+        fun `isImpactAboveThreshold returns true when any single impact exceeds threshold`() {
+            val impactFields =
+                listOf(
+                    "carbon" to { Impact(carbon = 1500, water = 1) },
+                    "water" to { Impact(water = 1500, carbon = 1) },
+                    "energy" to { Impact(energy = 1500, carbon = 1) },
+                    "waste_mass" to { Impact(waste_mass = 1500, carbon = 1) },
+                    "timber" to { Impact(timber = 1500, carbon = 1) },
+                    "plastic" to { Impact(plastic = 1500, carbon = 1) },
+                    "education_time" to { Impact(education_time = 1500, carbon = 1) },
+                    "trees_planted" to { Impact(trees_planted = 1500, carbon = 1) },
+                    "calories_burned" to { Impact(calories_burned = 1500, carbon = 1) },
+                    "clean_energy_production_wh" to
+                        {
+                            Impact(clean_energy_production_wh = 1500, carbon = 1)
+                        },
+                    "sleep_quality_percentage" to
+                        {
+                            Impact(sleep_quality_percentage = 1500, carbon = 1)
+                        },
+                    "waste_items" to { Impact(waste_items = 1500, carbon = 1) },
+                    "waste_reduction" to { Impact(waste_reduction = 1500, carbon = 1) },
+                    "biodiversity" to { Impact(biodiversity = 1500, carbon = 1) },
+                    "people" to { Impact(people = 1500, carbon = 1) },
+                )
+
+            impactFields.forEach { (fieldName, createImpact) ->
+                val impact = createImpact()
+                val result = isImpactAboveThreshold(impact, lowThresholdConfig)
+                assertTrue(
+                    result,
+                    "Expected $fieldName to trigger threshold when value is 1500 (with other field at 1)",
+                )
+            }
+        }
+
+        @Test
+        fun `isImpactAboveThreshold returns false when value equals threshold`() {
+            val threshold: Long = 1234
+            val customConfig = ActionImpactConfig().apply { carbon = threshold }
+            val impact = Impact(carbon = threshold)
+            val result = isImpactAboveThreshold(impact, customConfig)
+            assertEquals(false, result)
+        }
+
+        @Test
+        fun `isImpactAboveThreshold returns true when value is threshold plus one`() {
+            val impact = Impact(carbon = 1001)
+            val result = isImpactAboveThreshold(impact, lowThresholdConfig)
+            assertEquals(true, result)
+        }
+
+        @Test
+        fun `isImpactAboveThreshold handles realistic VeBetterDAO values`() {
+            val realisticConfig = ActionImpactConfig()
+            // Based on
+            // https://docs.vebetterdao.org/developer-guides/sustainability-proof-and-impacts
+            // 1 liter of water = 1000 ml
+            val waterImpact = Impact(water = 1000)
+            assertEquals(false, isImpactAboveThreshold(waterImpact, realisticConfig))
+
+            // 100 grams of carbon
+            val carbonImpact = Impact(carbon = 100)
+            assertEquals(false, isImpactAboveThreshold(carbonImpact, realisticConfig))
+
+            // Unrealistic: 1 million liters (1 billion ml) of water saved
+            val unrealisticWaterImpact = Impact(water = 1_000_000_000)
+            assertEquals(true, isImpactAboveThreshold(unrealisticWaterImpact, realisticConfig))
+        }
+    }
+
+    @Nested
+    inner class ValidateAndFilterImpactsTests {
+        private val testConfig =
+            ActionImpactConfig().apply {
+                carbon = 1000
+                water = 1000
+                energy = 1000
+                wasteMass = 1000
+            }
+
+        @Test
+        fun `validateAndFilterImpacts returns empty list when all impacts exceed threshold`() {
+            val impacts = listOf(Impact(carbon = 2000), Impact(water = 3000), Impact(energy = 4000))
+            val result = validateAndFilterImpacts(impacts, testConfig)
+            assertEquals(0, result.size)
+        }
+
+        @Test
+        fun `validateAndFilterImpacts returns all impacts when none exceed threshold`() {
+            val impacts = listOf(Impact(carbon = 100), Impact(water = 200), Impact(energy = 300))
+            val result = validateAndFilterImpacts(impacts, testConfig)
+            assertEquals(3, result.size)
+        }
+
+        @Test
+        fun `validateAndFilterImpacts filters out only impacts that exceed threshold`() {
+            val impact1 = Impact(carbon = 100, water = 200)
+            val impact2 = Impact(carbon = 5000) // Exceeds threshold
+            val impact3 = Impact(energy = 300)
+            val impact4 = Impact(water = 10000) // Exceeds threshold
+
+            val impacts = listOf(impact1, impact2, impact3, impact4)
+            val result = validateAndFilterImpacts(impacts, testConfig)
+
+            assertEquals(2, result.size)
+            assertTrue(result.contains(impact1))
+            assertTrue(result.contains(impact3))
+            assertEquals(false, result.contains(impact2))
+            assertEquals(false, result.contains(impact4))
+        }
+
+        @Test
+        fun `validateAndFilterImpacts handles empty list`() {
+            val result = validateAndFilterImpacts(emptyList(), testConfig)
+            assertEquals(0, result.size)
+        }
+
+        @Test
+        fun `validateAndFilterImpacts handles impacts with null fields`() {
+            val impacts =
+                listOf(
+                    Impact(carbon = null, water = 100),
+                    Impact(carbon = 200, water = null),
+                    Impact(),
+                )
+            val result = validateAndFilterImpacts(impacts, testConfig)
+            assertEquals(3, result.size)
+        }
+
+        @Test
+        fun `validateAndFilterImpacts preserves impact objects that pass validation`() {
+            val impact = Impact(carbon = 100, water = 200, energy = 300, timber = 50)
+            val result = validateAndFilterImpacts(listOf(impact), testConfig)
+
+            assertEquals(1, result.size)
+            assertEquals(impact, result.first())
+            assertEquals(100, result.first().carbon)
+            assertEquals(200, result.first().water)
+            assertEquals(300, result.first().energy)
+            assertEquals(50, result.first().timber)
+        }
+
+        @Test
+        fun `validateAndFilterImpacts works with VeBetter realistic scenario`() {
+            val realisticConfig = ActionImpactConfig()
+            // Real-world sustainability impacts based on VeBetter docs
+            val normalImpacts =
+                listOf(
+                    Impact(carbon = 8, timber = 5), // Literature consumption
+                    Impact(water = 500, plastic = 10), // Recycling
+                    Impact(waste_mass = 300, biodiversity = 1), // Litter picking
+                    Impact(trees_planted = 1), // Tree planting
+                    Impact(education_time = 3600), // 1 hour of education (seconds)
+                )
+
+            // One unrealistic impact: 1 billion grams of carbon (1 million kg!)
+            val unrealisticImpact = Impact(carbon = 1_000_000_000)
+
+            val allImpacts = normalImpacts + unrealisticImpact
+            val result = validateAndFilterImpacts(allImpacts, realisticConfig)
+
+            assertEquals(5, result.size) // Should filter out the unrealistic one
+            assertEquals(false, result.contains(unrealisticImpact))
+        }
+
+        @Test
+        fun `validateAndFilterImpacts with zero threshold filters all non-zero impacts`() {
+            val zeroConfig =
+                ActionImpactConfig().apply {
+                    carbon = 0
+                    water = 0
+                }
+            val impacts = listOf(Impact(carbon = 1), Impact(water = 1), Impact())
+            val result = validateAndFilterImpacts(impacts, zeroConfig)
+            assertEquals(1, result.size) // Only the empty impact should pass
         }
     }
 }
