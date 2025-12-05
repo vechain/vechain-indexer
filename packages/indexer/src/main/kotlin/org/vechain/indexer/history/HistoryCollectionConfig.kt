@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.nft.IndexedNft
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("history")
@@ -56,72 +55,72 @@ open class HistoryCollectionConfig(
                         .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "from_1_contractAddress_1_blockTimestamp_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "origin_1_contractAddress_1_blockTimestamp_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "from_1_blockTimestamp_-1_eventName_1_contractAddress_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::from.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "tokenId_1_blockTimestamp_-1_eventName_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::tokenId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "to_1_blockTimestamp_-1_eventName_1_contractAddress_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "origin_1_blockTimestamp_-1_eventName_1_contractAddress_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::origin.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "eventName_1_to_1_blockTimestamp_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "owner_1_blockTimestamp_-1_eventName_1_contractAddress_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::owner.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "appId_1_eventName_1_to_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::appId.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::to.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
                 "gasPayer_1_blockTimestamp_-1_eventName_1_contractAddress_1_isBlacklisted_1" to
                     Index()
                         .on(IndexedHistoryEvent::gasPayer.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::blockTimestamp.name, Sort.Direction.DESC)
                         .on(IndexedHistoryEvent::eventName.name, Sort.Direction.ASC)
                         .on(IndexedHistoryEvent::contractAddress.name, Sort.Direction.ASC)
-                        .on(IndexedNft::isBlacklisted.name, Sort.Direction.ASC),
+                        .on(IndexedHistoryEvent::isBlacklisted.name, Sort.Direction.ASC),
             )
         )
     }
