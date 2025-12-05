@@ -3,13 +3,19 @@ package org.vechain.indexer.history
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
+import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 
 @Profile("history")
 @Service
-open class HistoryService(private val historyRepository: HistoryRepository) {
+open class HistoryService(
+    private val historyRepository: HistoryRepository,
+    private val mongoTemplate: MongoTemplate,
+) {
     open fun findUserHistoryByFilters(
         account: String,
         eventNames: List<String>?,
@@ -21,7 +27,8 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
     ): Slice<IndexedHistoryEvent> {
         val criteria =
             buildCriteria(account, eventNames, searchFields, contractAddress, before, after)
-        return historyRepository.findNotBlacklisted(criteria, pageable)
+
+        return runQuery(criteria, pageable)
     }
 
     open fun findTokenIdHistoryByFilters(
@@ -34,7 +41,18 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
     ): Slice<IndexedHistoryEvent> {
         val criteria =
             buildCriteria(null, eventNames, null, contractAddress, before, after, tokenId)
-        return historyRepository.findNotBlacklisted(criteria, pageable)
+        return runQuery(criteria, pageable)
+    }
+
+    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<IndexedHistoryEvent> {
+        val query = Query(criteria).with(pageable)
+        query.limit(pageable.pageSize + 1)
+        val raw = mongoTemplate.find(query, IndexedHistoryEvent::class.java)
+
+        val hasNext = raw.size > pageable.pageSize
+        val content = if (hasNext) raw.dropLast(1) else raw
+
+        return SliceImpl(content, pageable, hasNext)
     }
 
     private fun buildCriteria(
@@ -83,6 +101,9 @@ open class HistoryService(private val historyRepository: HistoryRepository) {
         } else if (after != null) {
             criteria.and(IndexedHistoryEvent::blockTimestamp.name).gte(after)
         }
+
+        // Add isBlacklisted filter
+        criteria.and(IndexedHistoryEvent::isBlacklisted.name).ne(true)
 
         return criteria
     }

@@ -28,7 +28,7 @@ data class Accounts(
     @JsonIgnore val weekTotal: Long? = null,
     @JsonIgnore val monthTotal: Long? = null,
     @JsonIgnore val yearTotal: Long? = null,
-    @JsonIgnore @JsonView(Views.Internal::class) override val version: Int,
+    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }

@@ -1,5 +1,6 @@
 package org.vechain.indexer.history
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
@@ -55,6 +56,7 @@ constructor(
     val delegationId: String? = null,
     val periodClaimed: Long? = null,
     val boostedBlocks: String? = null,
+    @JsonIgnore val isBlacklisted: Boolean? = null,
 ) : IndexedDocument {
     companion object {
         fun getAppVotes(appIds: Any?, voteWeights: Any?): List<AppVote>? {

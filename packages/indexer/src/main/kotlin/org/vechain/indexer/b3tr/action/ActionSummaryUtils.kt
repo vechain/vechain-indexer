@@ -9,6 +9,7 @@ import kotlin.collections.mapNotNull
 import kotlin.collections.mapValues
 import kotlin.collections.sumOf
 import kotlin.takeIf
+import org.slf4j.LoggerFactory
 import org.vechain.indexer.b3tr.ProofUtils
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -18,6 +19,64 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 import org.vechain.indexer.utils.scaleDown
 
 object ActionSummaryUtils {
+    private val logger = LoggerFactory.getLogger(ActionSummaryUtils::class.java)
+
+    private fun exceeds(value: Long?, threshold: Long): Boolean {
+        return value != null && value > threshold
+    }
+
+    /**
+     * Validates if any field in the impact exceeds its specific threshold. Based on VeBetterDAO
+     * documentation:
+     * https://docs.vebetterdao.org/developer-guides/sustainability-proof-and-impacts#categories
+     *
+     * @param impact The impact to validate
+     * @param config The configuration with specific thresholds for each impact type
+     * @return true if any field exceeds its threshold, false otherwise
+     */
+    fun isImpactAboveThreshold(impact: Impact, config: ActionImpactConfig): Boolean {
+        val checks =
+            listOf(
+                impact.carbon to config.carbon,
+                impact.water to config.water,
+                impact.energy to config.energy,
+                impact.waste_mass to config.wasteMass,
+                impact.timber to config.timber,
+                impact.plastic to config.plastic,
+                impact.education_time to config.educationTime,
+                impact.trees_planted to config.treesPlanted,
+                impact.calories_burned to config.caloriesBurned,
+                impact.clean_energy_production_wh to config.cleanEnergyProductionWh,
+                impact.sleep_quality_percentage to config.sleepQualityPercentage,
+                impact.waste_items to config.wasteItems,
+                impact.waste_reduction to config.wasteReduction,
+                impact.biodiversity to config.biodiversity,
+                impact.people to config.people,
+            )
+
+        return checks.any { (value, threshold) -> exceeds(value, threshold) }
+    }
+
+    /**
+     * Validates and filters impacts based on specific thresholds per impact type. Logs a warning
+     * for any impact exceeding its threshold. Based on VeBetterDAO documentation:
+     * https://docs.vebetterdao.org/developer-guides/sustainability-proof-and-impacts#categories
+     *
+     * @param impacts List of impacts to validate
+     * @param config The configuration with specific thresholds for each impact type
+     * @return List of valid impacts that don't exceed their thresholds
+     */
+    fun validateAndFilterImpacts(impacts: List<Impact>, config: ActionImpactConfig): List<Impact> {
+        return impacts.filter { impact ->
+            val isValid = !isImpactAboveThreshold(impact, config)
+
+            if (!isValid) {
+                logger.warn("⚠️  Impact exceeds threshold. Impact $impact")
+            }
+
+            isValid
+        }
+    }
 
     // Accumulates impacts from a list of Impact objects.
     fun accumulateImpacts(impacts: List<Impact>): Impact? {

@@ -43,7 +43,7 @@ abstract class AbstractIntegrationTest {
             MongoDBContainer("mongo:8").withExposedPorts(27017).withReuse(true)
 
         val thorContainer: GenericContainer<*> =
-            GenericContainer("vechain/thor:v2.3.0")
+            GenericContainer(DockerImageName.parse("vechain/thor:v2.4.0"))
                 .withCommand(
                     "solo --on-demand --api-addr 0.0.0.0:8669 --data-dir /data/thor --api-cors '*'"
                 )
