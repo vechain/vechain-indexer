@@ -29,7 +29,7 @@ data class StargateToken(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockTimestamp: Long,
-    @JsonIgnore @JsonView(Views.Internal::class) override val version: Int,
+    @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     @JsonIgnore val delegationNextPeriod: Long? = null,
     @JsonIgnore val delegationPeriodLength: Long? = null,
     @JsonIgnore val validatorExiting: Boolean? = null,

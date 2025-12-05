@@ -27,7 +27,7 @@ constructor(
     val chainTag: Long,
     val blockRef: String,
     val expiration: Long,
-    @JsonView(Views.Expanded::class) val clauses: List<Clause>,
+    @field:JsonView(Views.Expanded::class) val clauses: List<Clause>,
     val gasPriceCoef: Long?,
     val gas: Long,
     val maxFeePerGas: String?,
@@ -40,7 +40,7 @@ constructor(
     val reward: String,
     val reverted: Boolean,
     val origin: String,
-    @JsonView(Views.Expanded::class) val outputs: List<DecodedOutputs>,
+    @field:JsonView(Views.Expanded::class) val outputs: List<DecodedOutputs>,
 ) : IndexedDocument {
     constructor(
         block: Block,
