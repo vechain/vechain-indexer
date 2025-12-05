@@ -34,13 +34,13 @@ interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, Stri
         pageable: Pageable,
     ): Slice<IndexedNft>
 
-    // TODO: check if pagination is working correctly with aggregation
     @Aggregation(
         pipeline =
             [
                 "{ \$match: { 'owner': ?0, 'contractAddress': { \$nin: ?1 }, isBlacklisted: { \$ne: true } } }",
-                "{ \$group: { _id: '\$contractAddress', blockNumber: { \$first: '\$blockNumber' }, txId: { \$first: '\$txId' }, id: { \$first: '\$id' } } }",
-                "{ \$sort: { blockNumber: -1, txId: -1, id: -1 } }",
+                "{ \$group: { _id: '\$contractAddress', blockNumber: { \$first: '\$blockNumber' } } }",
+                "{ \$sort: { blockNumber: -1 } }",
+                "{ \$project: { _id: 1 } }",
             ]
     )
     fun findContractsByNftOwner(
