@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.history
 
 import io.mockk.every
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
@@ -14,8 +15,8 @@ import org.vechain.indexer.history.HistoryService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 
-// @Disabled("Manual performance test - run explicitly when needed")
-@ActiveProfiles("history") // Activate history profile to get beans, but IndexManager is mocked
+@Disabled("Performance test - run explicitly with --tests when needed")
+@ActiveProfiles("history")
 class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var historyRepository: HistoryRepository
