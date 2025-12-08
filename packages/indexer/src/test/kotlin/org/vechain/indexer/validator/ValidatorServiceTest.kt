@@ -1,7 +1,6 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
-import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -83,10 +82,9 @@ class ValidatorServiceTest {
 
     @Test
     fun `skip old irrelevant blocks when no events`() {
-        every { thorService.getBestBlock() } returns block(100)
         val oldBlock = block(50)
 
-        val result = service.processBlock(oldBlock, emptyList(), emptyList())
+        val result = service.processBlock(oldBlock, emptyList(), emptyList(), isFullySynced = false)
 
         assertThat(result.first).isEmpty()
         assertThat(result.second).isEmpty()
@@ -94,8 +92,6 @@ class ValidatorServiceTest {
 
     @Test
     fun `apply beneficiary changes for old blocks`() {
-        every { thorService.getBestBlock() } returns block(100)
-
         val ev = makeEvent(7, "0xVAL1", "0xBEN")
 
         every { repository.findAllById(any<List<String>>()) } returns
@@ -111,7 +107,7 @@ class ValidatorServiceTest {
                 )
             )
 
-        val result = service.processBlock(block(7), listOf(ev), emptyList())
+        val result = service.processBlock(block(7), listOf(ev), emptyList(), isFullySynced = false)
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
@@ -121,15 +117,12 @@ class ValidatorServiceTest {
 
     @Test
     fun `recent blocks load ABIs and update chain state`() {
-        every { thorService.getBestBlock() } returns block(200)
         every { repository.findByStatusNot(any()) } returns emptyList()
 
         // Fake ABI + responses
         val abi = AbiElement(name = "getValidators", type = "function")
         mockkObject(ValidatorAssembler)
-        every {
-            getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO)
-        } returns
+        every { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) } returns
             listOf(
                 Validator(
                     id = "0xVAL1",
@@ -153,11 +146,17 @@ class ValidatorServiceTest {
                 vmError = "",
             )
 
-        val result = service.processBlock(block(190), emptyList(), listOf(inspectionResult))
+        val result =
+            service.processBlock(
+                block(190),
+                emptyList(),
+                listOf(inspectionResult),
+                isFullySynced = true,
+            )
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
-        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO) }
+        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
     }
 
     // --- saveAndDelete tests ---

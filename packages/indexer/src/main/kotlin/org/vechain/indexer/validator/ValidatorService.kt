@@ -49,11 +49,11 @@ open class ValidatorService(
         block: Block,
         matchedEvents: List<IndexedEvent>,
         callResponses: List<InspectionResult>,
+        isFullySynced: Boolean,
     ): Pair<List<Validator>, List<Validator>> {
-        val threshold = getThreshold()
 
         // Load docs once
-        val existingDocs = loadExistingDocs(block, matchedEvents, threshold)
+        val existingDocs = loadExistingDocs(matchedEvents, isFullySynced)
         val working = existingDocs.toMutableMap()
 
         // Load ABIs if not cached
@@ -68,21 +68,12 @@ open class ValidatorService(
             )
         )
 
-        // Determine if old block
-        val isOldBlock = block.number < threshold
-
         // Apply event changes from blockchain logs
-        applyEventChanges(matchedEvents, working, callResponses, isOldBlock)
+        applyEventChanges(matchedEvents, working, callResponses, !isFullySynced)
 
         // For old blocks → only beneficiary changes matter or if responses have no ABI data
-        if (isOldBlock || callResponses.none { it.hasAbiData() }) {
+        if (!isFullySynced || callResponses.none { it.hasAbiData() }) {
             return working.values.toList() to emptyList()
-        }
-
-        // If VTHO issued is zero, fetch total VET staked from chain to calculate rewards properly
-        var stakerVetBalance = BigInteger.ZERO
-        if (ValidatorAssembler.totalVTHOIssuedBlock == BigInteger.ZERO) {
-            stakerVetBalance = getTotalVETStaked(block.id)
         }
 
         // Decode and calculate full validator updates
@@ -94,7 +85,6 @@ open class ValidatorService(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                stakerVetBalance = stakerVetBalance,
             )
 
         // Merge into working set
@@ -129,11 +119,10 @@ open class ValidatorService(
      * @return Map of validatorId → Validator document.
      */
     private fun loadExistingDocs(
-        block: Block,
         matchedEvents: List<IndexedEvent>,
-        threshold: Long,
+        isFullySynced: Boolean,
     ): Map<String, Validator> =
-        if (block.number < threshold) {
+        if (!isFullySynced) {
             // For old blocks → only fetch docs for validators in events
             val ids = matchedEvents.mapNotNull { it.params.getAsString("validator") }.distinct()
 
@@ -246,19 +235,6 @@ open class ValidatorService(
                         base.cyclePeriodLength ?: periodInfo?.get(validatorId)?.second,
                 )
         }
-    }
-
-    /**
-     * Calculates the threshold block number for validator processing.
-     * - Defined as: bestBlock.number - 25
-     * - Used to distinguish "old" blocks (requires reduced processing) from recent blocks (full
-     *   processing).
-     *
-     * @return The block threshold.
-     */
-    private fun getThreshold(): Long {
-        val bestBlock = thorService.getBestBlock()
-        return bestBlock.number - statsStartThreshold
     }
 
     /**

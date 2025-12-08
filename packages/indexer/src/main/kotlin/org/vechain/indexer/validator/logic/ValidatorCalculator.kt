@@ -311,9 +311,9 @@ object ValidatorCalculator {
      * Calculates expected NFT-level APYs if they delegate to this validator from the next cycle.
      *
      * @param nextPeriodWeight validator's next-period weight
+     * @param nextPeriodVET validator's next-period VET stake
      * @param nextCycleEffectiveDelegationStake delegator stake for the next cycle
      * @param totalNextPeriodWeight total validator weight in next period
-     * @param vthoIssued amount of VTHO issued per block
      * @param vthoPriceUsd VTHO price in USD
      * @param vetPriceUsd VET price in USD
      * @param status current validator status
@@ -321,29 +321,37 @@ object ValidatorCalculator {
      */
     fun calculateNftLevelYields(
         nextPeriodWeight: BigDecimal,
+        nextPeriodVET: BigDecimal,
         nextCycleEffectiveDelegationStake: BigDecimal,
         totalNextPeriodWeight: BigDecimal,
-        vthoIssued: BigDecimal,
         vthoPriceUsd: BigDecimal,
         vetPriceUsd: BigDecimal,
         status: Status,
     ): Map<TokenLevel, Decimal128> {
-        if (status == Status.EXITING) return emptyMap()
+        if (status == Status.EXITING) {
+            return emptyMap()
+        }
         return TokenLevel.entries
             .filter { it != TokenLevel.All }
             .mapNotNull { level ->
                 val requiredUSD = level.staked * vetPriceUsd
 
-                if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) return@mapNotNull null
+                val totalVET = nextPeriodVET + level.staked
+                val vthoIssued = determineVTHOIssuedPerBlock(totalVET)
 
-                val nftWeight = level.staked * BigDecimal(2)
-                val adjustedTotal = totalNextPeriodWeight + nftWeight
+                if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) {
+                    return@mapNotNull null
+                }
+
+                val nftWeight = level.effectiveWeight
                 val adjustedValidator =
                     if (nextCycleEffectiveDelegationStake > BigDecimal.ZERO) {
                         nextPeriodWeight + nftWeight
                     } else {
                         nextPeriodWeight * BigDecimal(2) + nftWeight
                     }
+
+                val adjustedTotal = totalNextPeriodWeight - nextPeriodWeight + adjustedValidator
 
                 val blockProbabilityNextCycle =
                     adjustedValidator.divide(adjustedTotal, 6, RoundingMode.HALF_UP)
@@ -361,11 +369,11 @@ object ValidatorCalculator {
                     }
 
                 val yieldPct =
-                    annualIssuanceUsd // total rewards pool (USD/year)
-                        .multiply(nftDelegationShare) // share for this NFT
-                        .multiply(BigDecimal("0.7")) // delegator split
-                        .divide(requiredUSD, 12, RoundingMode.HALF_UP) // normalize per USD staked
-                        .multiply(BigDecimal(100)) // convert to %
+                    annualIssuanceUsd
+                        .multiply(nftDelegationShare)
+                        .multiply(BigDecimal("0.7"))
+                        .divide(requiredUSD, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
 
                 level to NumberUtils.toSafeDecimal128(yieldPct)
             }
@@ -420,27 +428,20 @@ object ValidatorCalculator {
      * @notice Calculate VTHO issued per block using VeChain formula: annual = 1200 * 64 *
      *   sqrt(VET_staked)
      */
-    fun determineVTHOIssuedPerBlock(totalVetStaked: BigInteger?): BigInteger {
-        if (totalVetStaked == null || totalVetStaked <= BigInteger.ZERO) {
-            return BigInteger.ZERO
+    fun determineVTHOIssuedPerBlock(totalVetStaked: BigDecimal?): BigDecimal {
+        if (totalVetStaked == null || totalVetStaked <= BigDecimal.ZERO) {
+            return BigDecimal.ZERO
         }
 
         val mc = MathContext(30, RoundingMode.HALF_UP)
 
-        // Convert staked amount from Wei → VET (decimal)
-        val stakedVET = BigDecimal(totalVetStaked).divide(BigDecimal.TEN.pow(18), mc)
-
         // Apply formula: 1200 * 64 * sqrt(VET_staked)
-        val annualVTHO = BigDecimal(76800).multiply(stakedVET.sqrt(mc), mc)
+        val annualVTHO = BigDecimal(76800).multiply(totalVetStaked.sqrt(mc), mc)
 
         // Blocks per year (365 days, 10s per block)
         val blocksPerYear = BigDecimal("3153600")
 
-        // VTHO per block (as decimal in VTHO)
-        val vthoPerBlock = annualVTHO.divide(blocksPerYear, mc)
-
-        // Convert back to Wei (×10^18) and return BigInteger
-        return vthoPerBlock.multiply(BigDecimal.TEN.pow(18)).toBigInteger()
+        return annualVTHO.divide(blocksPerYear, mc)
     }
 
     // ------------------------------

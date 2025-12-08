@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -71,7 +72,7 @@ internal class AppRoundActionSummaryProcessorTest {
 
         @Test
         fun `process empty events doesn't save any records`() {
-            processor.process(IndexingResult.EventsOnly(100, emptyList()))
+            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
 
             // Verify that service.save is not called
             verify(exactly = 0) { service.save(any(), any()) }
@@ -129,7 +130,9 @@ internal class AppRoundActionSummaryProcessorTest {
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
 
             verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
@@ -200,7 +203,9 @@ internal class AppRoundActionSummaryProcessorTest {
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
 
             assertEquals(2, processor.readRoundId())
             verify(exactly = 1) { service.processEvents(events, 1) }
@@ -272,7 +277,9 @@ internal class AppRoundActionSummaryProcessorTest {
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
             assertEquals(2, processor.readRoundId())
             verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
@@ -310,7 +317,9 @@ internal class AppRoundActionSummaryProcessorTest {
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify roundId is updated and empty results are saved
-            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
             assertEquals(2, processor.readRoundId())
             verify(exactly = 1) { service.processEvents(events, 1) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
@@ -408,7 +417,9 @@ internal class AppRoundActionSummaryProcessorTest {
             every { service.save(updatedRecords, archiveRecords) } just Runs
 
             // Verify that service.save is called with the correct parameters
-            processor.process(IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events))
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
 
             verify(exactly = 1) { service.processEvents(events, 5) }
             verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }

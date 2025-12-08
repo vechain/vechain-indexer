@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
 import org.vechain.indexer.version.IndexerVersionService
@@ -46,7 +47,11 @@ internal class NftProcessorTest {
         every { nftService.save(any(), any()) } just Runs
 
         processor.process(
-            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+            IndexingResult.EventsOnly(
+                events.maxBy { it.blockNumber }.blockNumber,
+                events,
+                Status.SYNCING,
+            )
         )
 
         verify(exactly = 0) { nftService.save(any(), any()) }
@@ -91,7 +96,11 @@ internal class NftProcessorTest {
         every { nftService.save(updated, existing) } just Runs
 
         processor.process(
-            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+            IndexingResult.EventsOnly(
+                events.maxBy { it.blockNumber }.blockNumber,
+                events,
+                Status.SYNCING,
+            )
         )
 
         verify(exactly = 1) { nftService.save(updated, existing) }
@@ -123,7 +132,11 @@ internal class NftProcessorTest {
         every { nftService.save(updated, existing) } just Runs
 
         processor.process(
-            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+            IndexingResult.EventsOnly(
+                events.maxBy { it.blockNumber }.blockNumber,
+                events,
+                Status.SYNCING,
+            )
         )
 
         verify(exactly = 1) { nftService.save(updated, existing) }
@@ -155,7 +168,11 @@ internal class NftProcessorTest {
         every { nftService.save(updated, existing) } just Runs
 
         processor.process(
-            IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+            IndexingResult.EventsOnly(
+                events.maxBy { it.blockNumber }.blockNumber,
+                events,
+                Status.SYNCING,
+            )
         )
 
         verify(exactly = 1) { nftService.save(updated, existing) }

@@ -24,7 +24,6 @@ import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import org.vechain.indexer.validators.ErrorMessages.ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME
-import org.vechain.indexer.validators.ErrorMessages.ERROR_INVALID_START_AND_END_BLOCK_NUMBERS
 import org.vechain.indexer.validators.ErrorMessages.ERROR_START_TIME_CANNOT_BE_NEGATIVE
 
 @Profile("validator")
@@ -145,7 +144,7 @@ open class ValidatorService(
     open fun getValidators(
         validatorId: String?,
         endorser: String?,
-        status: Status?,
+        statuses: List<Status>?,
         pageable: Pageable,
         sortField: String,
         direction: String?,
@@ -154,7 +153,7 @@ open class ValidatorService(
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
         endorser?.let { criteriaList.add(Criteria.where("endorser").`is`(it.lowercase())) }
-        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
+        statuses?.let { criteriaList.add(Criteria.where("status").`in`(it)) }
 
         val query =
             if (criteriaList.isNotEmpty()) {
@@ -176,46 +175,61 @@ open class ValidatorService(
     }
 
     open fun getMissedBlocksPercentage(
-        validator: String,
-        startBlock: Long,
-        endBlock: Long?,
-    ): Double {
-        val actualEnd = endBlock ?: thorClient.getBestBlock().number
+        timeframe: MissedBlocksTimeframe,
+        validator: String? = null,
+    ): AllValidatorsMissedBlocksResponse {
+        val currentBlock = thorClient.getBestBlock().number
+        val blocksPerSecond = 10L // VeChain produces ~1 block per 10 seconds
 
-        if (actualEnd <= startBlock) {
-            throw BadRequestException(ERROR_INVALID_START_AND_END_BLOCK_NUMBERS)
-        }
+        val startBlock =
+            when (timeframe) {
+                MissedBlocksTimeframe.DAY -> currentBlock - (86400 / blocksPerSecond)
+                MissedBlocksTimeframe.WEEK -> currentBlock - (7 * 86400 / blocksPerSecond)
+                MissedBlocksTimeframe.MONTH -> currentBlock - (30 * 86400 / blocksPerSecond)
+                MissedBlocksTimeframe.YEAR -> currentBlock - (365 * 86400 / blocksPerSecond)
+            }.coerceAtLeast(0)
 
-        // 1. Pull all MISSED docs overlapping the range
         val missedDocs =
-            validatorBlockRepository.findMissedInRange(validator, startBlock, actualEnd)
+            if (validator != null) {
+                validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
+            } else {
+                validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
+            }
 
-        var missedBlocks = 0L
+        // Group by validator and calculate missed blocks for each
+        val validatorMissedMap = mutableMapOf<String, Long>()
 
         for (doc in missedDocs) {
-            // Determine offlineStart
+            val validatorAddr = doc.validator
             val offlineStart = if (doc.blockNumber < startBlock) startBlock else doc.blockNumber
+            val offlineEnd = doc.onlineBlock ?: currentBlock
 
-            // Determine offlineEnd
-            val offlineEnd =
-                if (doc.onlineBlock != null) {
-                    doc.onlineBlock!!
-                } else {
-                    actualEnd // still offline at end of range
-                }
-
-            // Add missed block count for this offline burst
             if (offlineEnd >= offlineStart) {
-                missedBlocks += (offlineEnd - offlineStart + 1)
+                val missedCount = offlineEnd - offlineStart + 1
+                validatorMissedMap[validatorAddr] =
+                    (validatorMissedMap[validatorAddr] ?: 0L) + missedCount
             }
         }
 
-        val totalBlocks = (actualEnd - startBlock + 1).toDouble()
+        val totalBlocks = (currentBlock - startBlock + 1).toDouble()
 
-        return if (totalBlocks > 0) {
-            (missedBlocks.toDouble() / totalBlocks) * 100.0
-        } else {
-            0.0
-        }
+        val validatorStats =
+            validatorMissedMap
+                .map { (validatorAddr, missedBlocks) ->
+                    ValidatorMissedBlocksPercentage(
+                        validator = validatorAddr,
+                        missedPercentage =
+                            if (totalBlocks > 0) (missedBlocks.toDouble() / totalBlocks) * 100.0
+                            else 0.0,
+                    )
+                }
+                .sortedByDescending { it.missedPercentage }
+
+        return AllValidatorsMissedBlocksResponse(
+            timeframe = timeframe,
+            startBlock = startBlock,
+            endBlock = currentBlock,
+            validators = validatorStats,
+        )
     }
 }

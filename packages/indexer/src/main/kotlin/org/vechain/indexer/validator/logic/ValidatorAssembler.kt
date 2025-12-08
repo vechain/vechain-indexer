@@ -23,9 +23,6 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 object ValidatorAssembler {
-    private var totalVTHOIssued: BigInteger = BigInteger.ZERO
-    var totalVTHOIssuedBlock: BigInteger = BigInteger.ZERO
-
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
@@ -33,27 +30,19 @@ object ValidatorAssembler {
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        stakerVetBalance: BigInteger,
     ): List<Validator> {
         val decodedInfo: DecodedValidatorInfo =
             decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
-
-        val totalVTHOIssuedAtBlock = decodedInfo.vthoTotalSupply
-        val vthoIssuedBlock = totalVTHOIssuedAtBlock.minus(totalVTHOIssued)
-        totalVTHOIssued = totalVTHOIssuedAtBlock
-        totalVTHOIssuedBlock = vthoIssuedBlock
 
         return unpackValidators(
             decodedInfo.decodedValidators,
             existingDocs,
             decodedInfo.totalWeight,
-            vthoIssuedBlock,
             decodedInfo.vetPriceUsd,
             decodedInfo.vthoPriceUsd,
             blockId,
             blockNumber,
             blockTimestamp,
-            stakerVetBalance,
         )
     }
 
@@ -61,17 +50,18 @@ object ValidatorAssembler {
         decoded: Map<String, Any?>,
         existingDocs: Map<String, Validator>,
         totalWeight: BigInteger,
-        vthoIssuedBlock: BigInteger,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        stakerVetBalance: BigInteger,
     ): List<Validator> {
         val ids = decoded.listOf<String>("masters")
         val endorsers = decoded.listOf<String>("endorsors")
         val statuses = decoded.listOf<BigInteger>("statuses")
+        val stakes = decoded.listOf<BigInteger>("validatorLockedStakes")
+        val totalQueuedStakes = decoded.listOf<BigInteger>("totalQueuedStakes")
+        val totalExitingStakes = decoded.listOf<BigInteger>("totalExitingStakes")
         val onlines = decoded.listOf<Boolean>("onlines")
         val offlineBlocks = decoded.listOf<BigInteger>("offlineBlocks")
         val stakingPeriodLengths = decoded.listOf<Int>("stakingPeriodLengths")
@@ -113,6 +103,17 @@ object ValidatorAssembler {
         val nextPeriodTotalWeight =
             totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
+        val totalVETStaked =
+            stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
+        val totalVETStakedDecimal = NumberUtils.toVET(totalVETStaked)
+        val vthoIssued = determineVTHOIssuedPerBlock(totalVETStakedDecimal)
+
+        val totalNextPeriodVET =
+            stakes.indices.fold(BigInteger.ZERO) { acc, i ->
+                acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] + totalExitingStakes[i]
+            }
+        val vthoIssuedNextCycle = determineVTHOIssuedPerBlock(NumberUtils.toVET(totalNextPeriodVET))
+
         val active =
             rows.mapNotNull { row ->
                 val candidate =
@@ -120,13 +121,15 @@ object ValidatorAssembler {
                         row,
                         existingDocs[row.id],
                         totalWeight,
-                        vthoIssued(vthoIssuedBlock, stakerVetBalance),
+                        vthoIssued,
                         vetPriceUsd,
                         vthoPriceUsd,
                         blockId,
                         blockNumber,
                         blockTimestamp,
                         nextPeriodTotalWeight,
+                        totalNextPeriodVET,
+                        vthoIssuedNextCycle,
                     )
 
                 val existing = existingDocs[row.id]
@@ -170,18 +173,18 @@ object ValidatorAssembler {
         row: DecodedValidatorRow,
         existingDoc: Validator?,
         totalWeight: BigInteger,
-        vthoIssued: BigInteger,
+        vthoIssued: BigDecimal,
         vetPriceUsd: BigInteger,
         vthoPriceUsd: BigInteger,
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
         nextPeriodTotalWeight: BigInteger,
+        totalNextPeriodVET: BigInteger,
+        vthoIssuedNextCycle: BigDecimal,
     ): Validator {
         val vetPrice = NumberUtils.toUSD(vetPriceUsd)
         val vthoPrice = NumberUtils.toUSD(vthoPriceUsd)
-        val vthoIssuedBD = NumberUtils.toVET(vthoIssued)
-
         val stakes = computeStakes(row, existingDoc, blockNumber)
         val tvl = computeTVL(stakes, vetPrice)
         val offline = computeOffline(existingDoc, row, blockNumber)
@@ -193,7 +196,7 @@ object ValidatorAssembler {
                 tvl.delegatorTvl,
                 row.delegatorsStake > BigInteger.ZERO,
                 probabilities.blocksPerYear,
-                vthoIssuedBD,
+                vthoIssued,
                 vthoPrice,
             )
 
@@ -211,7 +214,7 @@ object ValidatorAssembler {
                     stakes.nextCycleDelegationStake * vetPrice,
                     stakes.nextCycleDelegationStake > BigDecimal.ZERO,
                     blocksPerYear(probabilities.blockProbabilityNextCycle),
-                    vthoIssuedBD,
+                    vthoIssuedNextCycle,
                     vthoPrice,
                 )
             }
@@ -252,9 +255,9 @@ object ValidatorAssembler {
             nftYieldsNextCycle =
                 calculateNftLevelYields(
                     NumberUtils.toVET(row.totalNextPeriodWeight),
+                    NumberUtils.toVET(totalNextPeriodVET),
                     NumberUtils.toVET(row.nextPeriodDelegationStake),
                     NumberUtils.toVET(nextPeriodTotalWeight),
-                    vthoIssuedBD,
                     vthoPrice,
                     vetPrice,
                     status,
@@ -264,14 +267,6 @@ object ValidatorAssembler {
             cycleEndBlock = cycleEndBlock,
         )
     }
-
-    /** Determine VTHO issued per block, using staker's VET balance if total is zero */
-    fun vthoIssued(vthoIssued: BigInteger, vetBalance: BigInteger): BigInteger =
-        if (vthoIssued != BigInteger.ZERO) {
-            vthoIssued
-        } else {
-            determineVTHOIssuedPerBlock(vetBalance)
-        }
 
     @Suppress("UNCHECKED_CAST")
     inline fun <reified T> Map<String, Any?>.listOf(key: String): List<T> =

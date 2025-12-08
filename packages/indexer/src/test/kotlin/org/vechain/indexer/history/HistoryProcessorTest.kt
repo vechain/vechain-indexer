@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
@@ -44,7 +45,12 @@ internal class HistoryProcessorTest {
     @Test
     fun `process - if no events or transaction ar present then historyService shouldn't be called`() {
         processor.process(
-            IndexingResult.Normal(BlockFixtures.BLOCK_NO_CLAUSES, emptyList(), emptyList())
+            IndexingResult.Normal(
+                BlockFixtures.BLOCK_NO_CLAUSES,
+                emptyList(),
+                emptyList(),
+                Status.FULLY_SYNCED,
+            )
         )
 
         verify { historyService wasNot Called }
@@ -57,7 +63,7 @@ internal class HistoryProcessorTest {
 
         every { historyService.processEvents(events, block) } returns emptyList()
 
-        processor.process(IndexingResult.Normal(block, events, emptyList()))
+        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
 
         verify(exactly = 1) { historyService.processEvents(events, BlockFixtures.BLOCK_NO_CLAUSES) }
     }
@@ -69,7 +75,7 @@ internal class HistoryProcessorTest {
 
         every { historyService.processEvents(events, block) } returns emptyList()
 
-        processor.process(IndexingResult.Normal(block, events, emptyList()))
+        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
 
         verify(exactly = 1) { historyService.processEvents(events, block) }
     }
@@ -80,7 +86,11 @@ internal class HistoryProcessorTest {
 
         try {
             processor.process(
-                IndexingResult.EventsOnly(events.maxBy { it.blockNumber }.blockNumber, events)
+                IndexingResult.EventsOnly(
+                    events.maxBy { it.blockNumber }.blockNumber,
+                    events,
+                    Status.SYNCING,
+                )
             )
         } catch (e: IllegalArgumentException) {
             expect { that(e.message).isEqualTo("Block cannot be null") }
@@ -98,7 +108,7 @@ internal class HistoryProcessorTest {
         every { historyService.processEvents(events, block) } returns records
         every { historyService.save(records) } returns Unit
 
-        processor.process(IndexingResult.Normal(block, events, emptyList()))
+        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
 
         verify(exactly = 1) { historyService.processEvents(events, block) }
         verify(exactly = 1) { historyService.save(records) }

@@ -117,7 +117,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                 service = serviceToUse,
                 startBlock = startBlock,
                 syncLogInterval = 100L,
-                channelBatchSize = 1,
+                syncBlockBatchSize = 50L,
                 builtinStakerAddress = builtinStakerAddress,
                 getAllValidatorsAddress = getAllValidatorsAddress,
             )

@@ -26,6 +26,8 @@ import org.vechain.indexer.utils.SortFieldUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTokenId
+import org.vechain.indexer.validators.AllValidatorsMissedBlocksResponse
+import org.vechain.indexer.validators.MissedBlocksTimeframe
 import org.vechain.indexer.validators.ValidatorService
 
 @Profile("validator")
@@ -61,8 +63,8 @@ open class ValidatorController(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
-        schema = Schema(implementation = Status::class),
-        description = "Filter by validator status",
+        schema = Schema(type = "array", implementation = Status::class),
+        description = "Filter by one or more validator statuses",
         required = false,
     )
     @Parameter(
@@ -97,7 +99,7 @@ open class ValidatorController(
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
-        @RequestParam(required = false) status: Status?,
+        @RequestParam(required = false) status: List<Status>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -110,7 +112,7 @@ open class ValidatorController(
             service.getValidators(
                 validatorId = validatorId?.let { HexUtils.normalise(it) },
                 endorser = endorser?.let { HexUtils.normalise(it) },
-                status = status,
+                statuses = status,
                 pageable = pageable,
                 sortField = sortField,
                 direction = direction,
@@ -241,33 +243,25 @@ open class ValidatorController(
             validator.value.lowercase(),
         )
 
-    @GetMapping("/blocks/missed/{validator}")
+    @GetMapping("/blocks/missed")
     @Operation(
-        summary = "Get percentage of missed blocks",
+        summary = "Get missed blocks percentage for validators",
         description =
-            "Calculates percentage of missed blocks for a validator in a block range. " +
-                "startBlock must be provided. " +
-                "If no endBlock is provided, endBlock defaults to best/latest block.",
+            "Returns missed block percentages for all validators or a specific validator within a specified timeframe. " +
+                "Timeframe options: DAY (last 24h), WEEK (last 7 days), MONTH (last 30 days), YEAR (last 365 days).",
     )
-    @AddressParameter(
-        `in` = ParameterIn.PATH,
-        name = "validator",
-        description = "Validator address",
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "timeframe",
+        schema = Schema(implementation = MissedBlocksTimeframe::class),
+        description = "Time period to calculate missed blocks for",
         required = true,
     )
-    @BlockNumberParameter(
-        name = "startBlock",
-        description = "Start block (inclusive)",
-        required = true,
-    )
-    @BlockNumberParameter(
-        name = "endBlock",
-        description = "End block (inclusive) defaults to best/latest block if not provided",
-    )
+    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
     open fun getMissedBlocksPercentage(
-        @PathVariable @ValidAddress validator: Address,
-        @RequestParam(required = true) startBlock: Long,
-        @RequestParam(required = false) endBlock: Long?,
-    ): Double = service.getMissedBlocksPercentage(validator.value.lowercase(), startBlock, endBlock)
+        @RequestParam timeframe: MissedBlocksTimeframe,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+    ): AllValidatorsMissedBlocksResponse =
+        service.getMissedBlocksPercentage(timeframe, validator?.value?.lowercase())
 }

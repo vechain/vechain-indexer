@@ -124,4 +124,18 @@ interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, Strin
         sort = "{ 'blockNumber': 1 }",
     )
     fun findMissedInRange(validator: String, startBlock: Long, endBlock: Long): List<ValidatorBlock>
+
+    @Query(
+        value =
+            "{ 'status': 'MISSED', " +
+                "'\$and': [" +
+                "{ 'blockNumber': { '\$lte': ?1 } }," +
+                "{ '\$or': [" +
+                "   { 'onlineBlock': { '\$gte': ?0 } }," +
+                "   { 'onlineBlock': null }" +
+                "] }" +
+                "] }",
+        sort = "{ 'validator': 1, 'blockNumber': 1 }",
+    )
+    fun findAllMissedInRange(startBlock: Long, endBlock: Long): List<ValidatorBlock>
 }
