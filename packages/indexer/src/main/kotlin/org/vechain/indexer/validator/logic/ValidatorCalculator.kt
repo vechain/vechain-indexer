@@ -311,13 +311,12 @@ object ValidatorCalculator {
      * Calculates expected NFT-level APYs if they delegate to this validator from the next cycle.
      *
      * @param nextPeriodWeight validator's next-period weight
+     * @param nextPeriodVET validator's next-period VET stake
      * @param nextCycleEffectiveDelegationStake delegator stake for the next cycle
      * @param totalNextPeriodWeight total validator weight in next period
-     * @param vthoIssued amount of VTHO issued per block
      * @param vthoPriceUsd VTHO price in USD
      * @param vetPriceUsd VET price in USD
      * @param status current validator status
-     * @param validatorAddress optional validator address for debug logging
      * @return map of TokenLevel → yield (Decimal128)
      */
     fun calculateNftLevelYields(
@@ -328,21 +327,7 @@ object ValidatorCalculator {
         vthoPriceUsd: BigDecimal,
         vetPriceUsd: BigDecimal,
         status: Status,
-        validatorAddress: String? = null,
     ): Map<TokenLevel, Decimal128> {
-        val debugValidator = "0x3970329d7964b9eaa7244c936d18b0846522cd96"
-        val shouldLog = validatorAddress?.lowercase() == debugValidator
-
-        if (shouldLog) {
-            println("=== calculateNftLevelYields DEBUG for $validatorAddress ===")
-            println("INPUT: nextPeriodWeight=$nextPeriodWeight")
-            println("INPUT: nextCycleEffectiveDelegationStake=$nextCycleEffectiveDelegationStake")
-            println("INPUT: totalNextPeriodWeight=$totalNextPeriodWeight")
-            println("INPUT: vthoPriceUsd=$vthoPriceUsd")
-            println("INPUT: vetPriceUsd=$vetPriceUsd")
-            println("INPUT: status=$status")
-        }
-
         if (status == Status.EXITING) {
             return emptyMap()
         }
@@ -353,95 +338,42 @@ object ValidatorCalculator {
 
                 val totalVET = nextPeriodVET + level.staked
                 val vthoIssued = determineVTHOIssuedPerBlock(totalVET)
-                println("INPUT: vthoIssued=$vthoIssued")
-
-                if (shouldLog) {
-                    println("--- Level: ${level.name} ---")
-                    println("  level.staked=${level.staked}")
-                    println("  requiredUSD=$requiredUSD")
-                }
 
                 if (requiredUSD.compareTo(BigDecimal.ZERO) == 0) {
-                    if (shouldLog) println("  SKIP: requiredUSD is zero")
                     return@mapNotNull null
                 }
 
                 val nftWeight = level.effectiveWeight
-                if (shouldLog) println("  nftWeight (level.effectiveWeight)=$nftWeight")
-
                 val adjustedValidator =
                     if (nextCycleEffectiveDelegationStake > BigDecimal.ZERO) {
-                        if (shouldLog)
-                            println(
-                                "  BRANCH: nextCycleEffectiveDelegationStake > 0, using nextPeriodWeight + nftWeight"
-                            )
                         nextPeriodWeight + nftWeight
                     } else {
-                        if (shouldLog)
-                            println(
-                                "  BRANCH: nextCycleEffectiveDelegationStake <= 0, using nextPeriodWeight * 2 + nftWeight"
-                            )
                         nextPeriodWeight * BigDecimal(2) + nftWeight
                     }
-                if (shouldLog) println("  adjustedValidator=$adjustedValidator")
 
                 val adjustedTotal = totalNextPeriodWeight - nextPeriodWeight + adjustedValidator
-                if (shouldLog)
-                    println(
-                        "  adjustedTotal=$adjustedTotal (totalNextPeriodWeight - nextPeriodWeight + adjustedValidator)"
-                    )
 
                 val blockProbabilityNextCycle =
                     adjustedValidator.divide(adjustedTotal, 6, RoundingMode.HALF_UP)
-                if (shouldLog) println("  blockProbabilityNextCycle=$blockProbabilityNextCycle")
-
                 val bpy = blocksPerYear(blockProbabilityNextCycle)
-                if (shouldLog) println("  blocksPerYear=$bpy")
 
                 val issuanceUsd = vthoIssued.multiply(vthoPriceUsd)
-                if (shouldLog) println("  issuanceUsd=$issuanceUsd (vthoIssued * vthoPriceUsd)")
-
                 val annualIssuanceUsd = bpy.multiply(issuanceUsd)
-                if (shouldLog) println("  annualIssuanceUsd=$annualIssuanceUsd (bpy * issuanceUsd)")
 
                 val denom = nextCycleEffectiveDelegationStake + level.effectiveStake
-                if (shouldLog) println("  level.effectiveStake=${level.effectiveStake}")
-                if (shouldLog)
-                    println(
-                        "  denom=$denom (nextCycleEffectiveDelegationStake + level.effectiveStake)"
-                    )
-
                 val nftDelegationShare =
                     if (denom.compareTo(BigDecimal.ZERO) == 0) {
-                        if (shouldLog) println("  BRANCH: denom is zero, nftDelegationShare=0")
                         BigDecimal.ZERO
                     } else {
-                        val share = level.effectiveStake.divide(denom, 12, RoundingMode.HALF_UP)
-                        if (shouldLog) println("  nftDelegationShare=$share")
-                        share
+                        level.effectiveStake.divide(denom, 12, RoundingMode.HALF_UP)
                     }
 
                 val yieldPct =
-                    annualIssuanceUsd // total rewards pool (USD/year)
-                        .multiply(nftDelegationShare) // share for this NFT
-                        .multiply(BigDecimal("0.7")) // delegator split
-                        .divide(requiredUSD, 12, RoundingMode.HALF_UP) // normalize per USD staked
-                        .multiply(BigDecimal(100)) // convert to %
-
-                if (shouldLog) {
-                    println("  YIELD CALCULATION:")
-                    println(
-                        "    annualIssuanceUsd * nftDelegationShare = ${annualIssuanceUsd.multiply(nftDelegationShare)}"
-                    )
-                    println(
-                        "    * 0.7 (delegator split) = ${annualIssuanceUsd.multiply(nftDelegationShare).multiply(BigDecimal("0.7"))}"
-                    )
-                    println(
-                        "    / requiredUSD ($requiredUSD) = ${annualIssuanceUsd.multiply(nftDelegationShare).multiply(BigDecimal("0.7")).divide(requiredUSD, 12, RoundingMode.HALF_UP)}"
-                    )
-                    println("    * 100 = $yieldPct")
-                    println("  FINAL yieldPct=$yieldPct")
-                }
+                    annualIssuanceUsd
+                        .multiply(nftDelegationShare)
+                        .multiply(BigDecimal("0.7"))
+                        .divide(requiredUSD, 12, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal(100))
 
                 level to NumberUtils.toSafeDecimal128(yieldPct)
             }
@@ -509,11 +441,7 @@ object ValidatorCalculator {
         // Blocks per year (365 days, 10s per block)
         val blocksPerYear = BigDecimal("3153600")
 
-        // VTHO per block (as decimal in VTHO)
-        val vthoPerBlock = annualVTHO.divide(blocksPerYear, mc)
-
-        // Convert back to Wei (×10^18) and return BigInteger
-        return vthoPerBlock.multiply(BigDecimal.TEN.pow(18))
+        return annualVTHO.divide(blocksPerYear, mc)
     }
 
     // ------------------------------

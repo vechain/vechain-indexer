@@ -23,9 +23,6 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
 
 object ValidatorAssembler {
-    private var totalVTHOIssued: BigInteger = BigInteger.ZERO
-    var totalVTHOIssuedBlock: BigInteger = BigInteger.ZERO
-
     fun getLatestValidatorInfo(
         responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
@@ -108,13 +105,14 @@ object ValidatorAssembler {
 
         val totalVETStaked =
             stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
-        val totalVETStakedDecimal = BigDecimal(totalVETStaked).divide(BigDecimal.TEN.pow(18))
+        val totalVETStakedDecimal = NumberUtils.toVET(totalVETStaked)
         val vthoIssued = determineVTHOIssuedPerBlock(totalVETStakedDecimal)
 
         val totalNextPeriodVET =
             stakes.indices.fold(BigInteger.ZERO) { acc, i ->
                 acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] + totalExitingStakes[i]
             }
+        val vthoIssuedNextCycle = determineVTHOIssuedPerBlock(NumberUtils.toVET(totalNextPeriodVET))
 
         val active =
             rows.mapNotNull { row ->
@@ -131,6 +129,7 @@ object ValidatorAssembler {
                         blockTimestamp,
                         nextPeriodTotalWeight,
                         totalNextPeriodVET,
+                        vthoIssuedNextCycle,
                     )
 
                 val existing = existingDocs[row.id]
@@ -182,6 +181,7 @@ object ValidatorAssembler {
         blockTimestamp: Long,
         nextPeriodTotalWeight: BigInteger,
         totalNextPeriodVET: BigInteger,
+        vthoIssuedNextCycle: BigDecimal,
     ): Validator {
         val vetPrice = NumberUtils.toUSD(vetPriceUsd)
         val vthoPrice = NumberUtils.toUSD(vthoPriceUsd)
@@ -214,7 +214,7 @@ object ValidatorAssembler {
                     stakes.nextCycleDelegationStake * vetPrice,
                     stakes.nextCycleDelegationStake > BigDecimal.ZERO,
                     blocksPerYear(probabilities.blockProbabilityNextCycle),
-                    vthoIssued,
+                    vthoIssuedNextCycle,
                     vthoPrice,
                 )
             }
@@ -261,7 +261,6 @@ object ValidatorAssembler {
                     vthoPrice,
                     vetPrice,
                     status,
-                    row.id,
                 ),
             percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
