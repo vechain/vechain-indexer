@@ -1,6 +1,7 @@
 package org.vechain.indexer.performance.b3trUserAllTimeAction
 
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
@@ -25,8 +26,9 @@ class ProfiledUserAllTimeActionSummaryService(
     repository: UserAllTimeActionSummaryRepository,
     archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+    impactConfig: ActionImpactConfig,
     private val profiler: DetailedProfiler,
-) : UserAllTimeActionSummaryService(repository, archiveService, pruner) {
+) : UserAllTimeActionSummaryService(repository, archiveService, pruner, impactConfig) {
 
     override fun processEvents(
         events: List<IndexedEvent>

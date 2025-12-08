@@ -11,6 +11,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryProcessor
@@ -31,6 +32,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
         ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
     @Autowired
     lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
+    @Autowired lateinit var impactConfig: ActionImpactConfig
 
     @Value("\${business-event.substitutions.B3TR_CONTRACT}") lateinit var b3trContract: String
 
@@ -82,6 +84,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = repository,
                     archiveService = archiveService,
                     pruner = pruner,
+                    impactConfig = impactConfig,
                     profiler = profiler,
                 )
             } else {
