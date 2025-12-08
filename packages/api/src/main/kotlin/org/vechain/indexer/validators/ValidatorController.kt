@@ -63,8 +63,8 @@ open class ValidatorController(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
-        schema = Schema(implementation = Status::class),
-        description = "Filter by validator status",
+        schema = Schema(type = "array", implementation = Status::class),
+        description = "Filter by one or more validator statuses",
         required = false,
     )
     @Parameter(
@@ -99,7 +99,7 @@ open class ValidatorController(
     open fun getValidators(
         @RequestParam(required = false) endorser: String?,
         @RequestParam(required = false) validatorId: String?,
-        @RequestParam(required = false) status: Status?,
+        @RequestParam(required = false) status: List<Status>?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -112,7 +112,7 @@ open class ValidatorController(
             service.getValidators(
                 validatorId = validatorId?.let { HexUtils.normalise(it) },
                 endorser = endorser?.let { HexUtils.normalise(it) },
-                status = status,
+                statuses = status,
                 pageable = pageable,
                 sortField = sortField,
                 direction = direction,

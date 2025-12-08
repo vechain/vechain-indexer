@@ -144,7 +144,7 @@ open class ValidatorService(
     open fun getValidators(
         validatorId: String?,
         endorser: String?,
-        status: Status?,
+        statuses: List<Status>?,
         pageable: Pageable,
         sortField: String,
         direction: String?,
@@ -153,7 +153,7 @@ open class ValidatorService(
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
         endorser?.let { criteriaList.add(Criteria.where("endorser").`is`(it.lowercase())) }
-        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
+        statuses?.let { criteriaList.add(Criteria.where("status").`in`(it)) }
 
         val query =
             if (criteriaList.isNotEmpty()) {
