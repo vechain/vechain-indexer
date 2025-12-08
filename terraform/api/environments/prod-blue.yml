@@ -43,7 +43,7 @@ alb:
       use_default_tg_group: true
 
   # Target Groups Configuration
- 
+
 
   # Authentication Configuration
   authentication:
@@ -186,8 +186,8 @@ enabled_nets:
         stargate-vtho-generated-by-block: '4'
         stargate-vtho-claimed-by-account: '3'
         stargate-nft-holders-by-block: '4'
-        stargate-vet-staked-by-block: '4'
-        stargate-vet-delegated-by-block: '4'
+        stargate-vet-staked-by-block: '5'
+        stargate-vet-delegated-by-block: '5'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '3'
         b3tr-app-all-time-action-summary: '2'
@@ -387,8 +387,8 @@ enabled_nets:
         stargate-vtho-generated-by-block: '4'
         stargate-vtho-claimed-by-account: '5'
         stargate-nft-holders-by-block: '4'
-        stargate-vet-staked-by-block: '4'
-        stargate-vet-delegated-by-block: '4'
+        stargate-vet-staked-by-block: '5'
+        stargate-vet-delegated-by-block: '5'
         b3tr-proposal-comments: '1'
         b3tr-proposal-results: '3'
         b3tr-app-all-time-action-summary: '2'

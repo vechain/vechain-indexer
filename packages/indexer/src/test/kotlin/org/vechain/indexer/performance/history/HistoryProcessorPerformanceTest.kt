@@ -27,7 +27,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var mongoTemplate: MongoTemplate
 
-    @Autowired lateinit var nftBlacklistClient: NftBlacklistClient
+    @Autowired lateinit var blacklistClient: NftBlacklistClient
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -80,7 +80,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                     ProfiledHistoryService(
                         historyRepository,
                         mongoTemplate,
-                        nftBlacklistClient,
+                        blacklistClient,
                         profiler,
                     )
                 ProfiledHistoryProcessor(

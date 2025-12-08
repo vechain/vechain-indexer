@@ -19,6 +19,8 @@ constructor(
     @JsonIgnore override val blockTimestamp: Long,
     override val total: BigInteger,
     override val byLevel: Map<TokenLevel, BigInteger>,
+    val totalNftCount: Long = 0,
+    val nftCountByLevel: Map<TokenLevel, Long> = emptyMap(),
     override val hourOfDay: Long,
     override val dayOfMonth: Long, // 25
     override val weekOfYear: Long, // 43
@@ -34,4 +36,7 @@ constructor(
 ) : TimeFrameDocument, LevelledValue<BigInteger> {
     override fun valueForLevel(level: TokenLevel?): BigInteger =
         if (level == null) total else byLevel[level] ?: BigInteger.ZERO
+
+    fun nftCountForLevel(level: TokenLevel?): Long =
+        if (level == null) totalNftCount else nftCountByLevel[level] ?: 0L
 }
