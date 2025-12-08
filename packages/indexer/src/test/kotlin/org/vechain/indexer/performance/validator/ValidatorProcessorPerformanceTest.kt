@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.validator
 
 import io.mockk.every
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -19,7 +18,6 @@ import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validator.ValidatorService
 
-@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("validator")
 class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
 
@@ -117,7 +115,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                 service = serviceToUse,
                 startBlock = startBlock,
                 syncLogInterval = 100L,
-                channelBatchSize = 1,
+                syncBlockBatchSize = 50L,
                 builtinStakerAddress = builtinStakerAddress,
                 getAllValidatorsAddress = getAllValidatorsAddress,
             )

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.version.IndexerVersionService
@@ -71,7 +72,7 @@ class AmnProcessorTest {
         every { amnService.syncEndorsersForAllNodes() } just Runs
         every { amnService.processCandidateEvents(any()) } just Runs
 
-        processor.process(IndexingResult.EventsOnly(100, emptyList()))
+        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
 
         verify { amnService.syncEndorsersForAllNodes() }
         verify { amnService.processCandidateEvents(any()) }
@@ -83,8 +84,8 @@ class AmnProcessorTest {
         every { amnService.syncEndorsersForAllNodes() } just Runs
         every { amnService.processCandidateEvents(any()) } just Runs
 
-        processor.process(IndexingResult.EventsOnly(100, emptyList()))
-        processor.process(IndexingResult.EventsOnly(100, emptyList()))
+        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
 
         verify(exactly = 1) { amnService.syncEndorsersForAllNodes() }
     }

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -28,7 +29,12 @@ open class ValidatorProcessor(
         }
 
         val (updated, existing) =
-            service.processBlock(entry.block, entry.events(), entry.callResults)
+            service.processBlock(
+                entry.block,
+                entry.events(),
+                entry.callResults,
+                entry.status == Status.FULLY_SYNCED,
+            )
 
         if (updated.isNotEmpty()) {
             service.save(updated, existing)

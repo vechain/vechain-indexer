@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -43,6 +44,7 @@ class VeVoteCommentProcessorTest {
                 events = emptyList(),
                 block = BLOCK_NO_CLAUSES,
                 callResults = emptyList(),
+                status = Status.FULLY_SYNCED,
             )
         )
 

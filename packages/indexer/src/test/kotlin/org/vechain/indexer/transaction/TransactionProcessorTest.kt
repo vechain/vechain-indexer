@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
@@ -43,14 +44,21 @@ internal class TransactionProcessorTest {
     fun `process - should throw if block is null`() {
 
         assertThrows<IllegalArgumentException> {
-            transactionProcessor.process(IndexingResult.EventsOnly(100, emptyList()))
+            transactionProcessor.process(
+                IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING)
+            )
         }
     }
 
     @Test
     fun `process - If no transactions shouldn't do anything`() {
         transactionProcessor.process(
-            IndexingResult.Normal(BlockFixtures.BLOCK_NO_CLAUSES, emptyList(), emptyList())
+            IndexingResult.Normal(
+                BlockFixtures.BLOCK_NO_CLAUSES,
+                emptyList(),
+                emptyList(),
+                Status.FULLY_SYNCED,
+            )
         )
 
         verify { transactionService wasNot Called }
@@ -63,7 +71,9 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(IndexingResult.Normal(block, events, emptyList()))
+        transactionProcessor.process(
+            IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+        )
 
         verify { transactionService.processBlockTransactions(events, block) }
     }
@@ -75,7 +85,9 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(IndexingResult.Normal(block, events, emptyList()))
+        transactionProcessor.process(
+            IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+        )
 
         verify { transactionService.processBlockTransactions(events, block) }
     }

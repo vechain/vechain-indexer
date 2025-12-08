@@ -37,14 +37,13 @@ class ProfiledValidatorService(
         block: Block,
         matchedEvents: List<IndexedEvent>,
         callResponses: List<InspectionResult>,
+        isFullySynced: Boolean,
     ): Pair<List<Validator>, List<Validator>> {
         return profiler.time("      ValidatorService.processBlock") {
-            val threshold = profiler.time("        - getThreshold") { getThresholdInternal() }
-
             // Load docs once
             val existingDocs =
                 profiler.time("        - loadExistingDocs") {
-                    loadExistingDocsInternal(block, matchedEvents, threshold)
+                    loadExistingDocsInternal(matchedEvents, isFullySynced)
                 }
             val working = existingDocs.toMutableMap()
 
@@ -62,16 +61,13 @@ class ProfiledValidatorService(
                 )
             }
 
-            // Determine if old block
-            val isOldBlock = block.number < threshold
-
             // Apply event changes from blockchain logs
             profiler.time("        - applyEventChanges") {
-                applyEventChangesInternal(matchedEvents, working, callResponses, isOldBlock)
+                applyEventChangesInternal(matchedEvents, working, callResponses, !isFullySynced)
             }
 
             // For old blocks → only beneficiary changes matter or if responses have no ABI data
-            if (isOldBlock || callResponses.none { it.hasAbiData() }) {
+            if (!isFullySynced || callResponses.none { it.hasAbiData() }) {
                 return@time working.values.toList() to emptyList()
             }
 
@@ -110,29 +106,17 @@ class ProfiledValidatorService(
     }
 
     // Private method accessors using reflection
-    private fun getThresholdInternal(): Long {
-        val method = ValidatorService::class.java.getDeclaredMethod("getThreshold")
-        method.isAccessible = true
-        return method.invoke(this) as Long
-    }
-
     private fun loadExistingDocsInternal(
-        block: Block,
         matchedEvents: List<IndexedEvent>,
-        threshold: Long,
+        isFullySynced: Boolean,
     ): Map<String, Validator> {
         val method =
             ValidatorService::class
                 .java
-                .getDeclaredMethod(
-                    "loadExistingDocs",
-                    Block::class.java,
-                    List::class.java,
-                    Long::class.java,
-                )
+                .getDeclaredMethod("loadExistingDocs", List::class.java, Boolean::class.java)
         method.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return method.invoke(this, block, matchedEvents, threshold) as Map<String, Validator>
+        return method.invoke(this, matchedEvents, isFullySynced) as Map<String, Validator>
     }
 
     private fun loadAllValidatorAbiFunctionsInternal(functionNames: List<String>) {

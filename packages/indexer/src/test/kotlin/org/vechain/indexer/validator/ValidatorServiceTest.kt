@@ -83,10 +83,9 @@ class ValidatorServiceTest {
 
     @Test
     fun `skip old irrelevant blocks when no events`() {
-        every { thorService.getBestBlock() } returns block(100)
         val oldBlock = block(50)
 
-        val result = service.processBlock(oldBlock, emptyList(), emptyList())
+        val result = service.processBlock(oldBlock, emptyList(), emptyList(), isFullySynced = false)
 
         assertThat(result.first).isEmpty()
         assertThat(result.second).isEmpty()
@@ -94,8 +93,6 @@ class ValidatorServiceTest {
 
     @Test
     fun `apply beneficiary changes for old blocks`() {
-        every { thorService.getBestBlock() } returns block(100)
-
         val ev = makeEvent(7, "0xVAL1", "0xBEN")
 
         every { repository.findAllById(any<List<String>>()) } returns
@@ -111,7 +108,7 @@ class ValidatorServiceTest {
                 )
             )
 
-        val result = service.processBlock(block(7), listOf(ev), emptyList())
+        val result = service.processBlock(block(7), listOf(ev), emptyList(), isFullySynced = false)
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
@@ -121,7 +118,6 @@ class ValidatorServiceTest {
 
     @Test
     fun `recent blocks load ABIs and update chain state`() {
-        every { thorService.getBestBlock() } returns block(200)
         every { repository.findByStatusNot(any()) } returns emptyList()
 
         // Fake ABI + responses
@@ -153,7 +149,13 @@ class ValidatorServiceTest {
                 vmError = "",
             )
 
-        val result = service.processBlock(block(190), emptyList(), listOf(inspectionResult))
+        val result =
+            service.processBlock(
+                block(190),
+                emptyList(),
+                listOf(inspectionResult),
+                isFullySynced = true,
+            )
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")

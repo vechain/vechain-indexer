@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.Status
 import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
@@ -29,7 +30,9 @@ class TransferProcessorTest {
 
     @Test
     fun `process - if no events should not do anything`() {
-        transferProcessor.process(IndexingResult.EventsOnly(events = emptyList(), endBlock = 100))
+        transferProcessor.process(
+            IndexingResult.EventsOnly(events = emptyList(), endBlock = 100, status = Status.SYNCING)
+        )
 
         // Verify that no interactions with transferService occur
         verify { transferService wasNot Called }
