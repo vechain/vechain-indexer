@@ -57,6 +57,9 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
         var runningTotal = latest?.total ?: BigInteger.ZERO
         val runningByLevel =
             latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, BigInteger>()
+        var runningNftCount = latest?.totalNftCount ?: 0L
+        val runningNftCountByLevel =
+            latest?.nftCountByLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, Long>()
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetStakedByBlock>()
@@ -76,6 +79,8 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                         runningByLevel[level] = (runningByLevel[level] ?: BigInteger.ZERO) + amount
                         perLevelDelta[level] = (perLevelDelta[level] ?: BigInteger.ZERO) + amount
                         blockDelta += amount
+                        runningNftCount += 1
+                        runningNftCountByLevel[level] = (runningNftCountByLevel[level] ?: 0L) + 1
                     }
 
                     "STARGATE_UNSTAKE" -> {
@@ -83,6 +88,8 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                         runningByLevel[level] = (runningByLevel[level] ?: BigInteger.ZERO) - amount
                         perLevelDelta[level] = (perLevelDelta[level] ?: BigInteger.ZERO) - amount
                         blockDelta -= amount
+                        runningNftCount -= 1
+                        runningNftCountByLevel[level] = (runningNftCountByLevel[level] ?: 0L) - 1
                     }
 
                     else -> throw IllegalArgumentException("Unknown eventType: ${evt.eventType}")
@@ -121,6 +128,8 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
                     blockTimestamp = rep.blockTimestamp,
                     total = runningTotal,
                     byLevel = runningByLevel.toMap(),
+                    totalNftCount = runningNftCount,
+                    nftCountByLevel = runningNftCountByLevel.toMap(),
                     hourOfDay = roll.hour,
                     dayOfMonth = roll.day,
                     weekOfYear = roll.week,
