@@ -37,13 +37,11 @@ class ValidatorAssemblerTest {
                 decoded = decoded,
                 existingDocs = emptyMap(),
                 totalWeight = BigInteger.valueOf(100),
-                vthoIssuedBlock = BigInteger.valueOf(1_000),
                 vetPriceUsd = BigInteger("1000000000000"),
                 vthoPriceUsd = BigInteger("1000000000000"),
                 blockId = "0xBLOCK",
                 blockNumber = 20,
                 blockTimestamp = 1234567890,
-                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators).hasSize(1)
@@ -80,11 +78,9 @@ class ValidatorAssemblerTest {
                 BigInteger.valueOf(100),
                 BigInteger.valueOf(2000),
                 BigInteger.valueOf(100),
-                BigInteger("1000000000000"),
                 "0xBLOCK",
                 20,
                 1234567890,
-                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators.first().offlineBlocks).isEqualTo(2L)
@@ -104,11 +100,9 @@ class ValidatorAssemblerTest {
                 BigInteger.TEN,
                 BigInteger("1000000000000"),
                 BigInteger.TEN,
-                BigInteger.ZERO,
                 "0xBLOCK",
                 20,
                 1234567890,
-                stakerVetBalance = BigInteger("0"),
             )
 
         assertThat(validators.first().status).isEqualTo(Status.fromCode(4))
@@ -134,11 +128,9 @@ class ValidatorAssemblerTest {
                 BigInteger.ONE,
                 BigInteger("1000000000000"),
                 BigInteger.ONE,
-                BigInteger.ZERO,
                 "0xBLOCK",
                 20,
                 1234567890,
-                stakerVetBalance = BigInteger("0"),
             )
 
         val disappeared = validators.firstOrNull { it.id == "0xOLD" }

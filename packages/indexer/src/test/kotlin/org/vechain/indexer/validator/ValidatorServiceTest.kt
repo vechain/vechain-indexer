@@ -1,7 +1,6 @@
 package org.vechain.indexer.validator
 
 import io.mockk.*
-import java.math.BigInteger
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -123,9 +122,7 @@ class ValidatorServiceTest {
         // Fake ABI + responses
         val abi = AbiElement(name = "getValidators", type = "function")
         mockkObject(ValidatorAssembler)
-        every {
-            getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO)
-        } returns
+        every { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) } returns
             listOf(
                 Validator(
                     id = "0xVAL1",
@@ -159,7 +156,7 @@ class ValidatorServiceTest {
 
         val updated = result.first.single()
         assertThat(updated.id).isEqualTo("0xVAL1")
-        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any(), BigInteger.ZERO) }
+        verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
     }
 
     // --- saveAndDelete tests ---

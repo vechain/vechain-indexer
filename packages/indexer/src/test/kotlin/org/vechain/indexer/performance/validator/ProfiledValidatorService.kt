@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.validator
 
-import java.math.BigInteger
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
@@ -22,7 +21,6 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler
  * - applyEventChanges (event processing)
  * - applyChainUpdates (contract call processing)
  * - ValidatorAssembler.getLatestValidatorInfo (decode chain data)
- * - getTotalVETStaked (Thor API call)
  */
 class ProfiledValidatorService(
     repository: ValidatorRepository,
@@ -71,14 +69,6 @@ class ProfiledValidatorService(
                 return@time working.values.toList() to emptyList()
             }
 
-            // If VTHO issued is zero, fetch total VET staked from chain to calculate rewards
-            // properly
-            var stakerVetBalance = BigInteger.ZERO
-            if (ValidatorAssembler.totalVTHOIssuedBlock == BigInteger.ZERO) {
-                stakerVetBalance =
-                    profiler.time("        - getTotalVETStaked") { getTotalVETStaked(block.id) }
-            }
-
             // Decode and calculate full validator updates
             val chainUpdates =
                 profiler.time("        - ValidatorAssembler.getLatestValidatorInfo") {
@@ -88,7 +78,6 @@ class ProfiledValidatorService(
                         block.id,
                         block.number,
                         block.timestamp,
-                        stakerVetBalance,
                     )
                 }
 
@@ -166,7 +155,6 @@ class ProfiledValidatorService(
         blockId: String,
         blockNumber: Long,
         blockTimestamp: Long,
-        stakerVetBalance: BigInteger,
     ): List<Validator> {
         // Access the cached ABI field
         val abiField = ValidatorService::class.java.getDeclaredField("cachedGetValidatorsAbi")
@@ -187,7 +175,6 @@ class ProfiledValidatorService(
             blockId = blockId,
             blockNumber = blockNumber,
             blockTimestamp = blockTimestamp,
-            stakerVetBalance = stakerVetBalance,
         )
     }
 }
