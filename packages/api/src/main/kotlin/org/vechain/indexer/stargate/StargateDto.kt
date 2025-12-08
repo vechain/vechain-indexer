@@ -17,6 +17,8 @@ data class TotalByBlockDto(
     val blockTimestamp: Long,
     val total: BigInteger,
     val byLevel: Map<TokenLevel, BigInteger>,
+    val totalNftCount: Long = 0,
+    val nftCountByLevel: Map<TokenLevel, Long> = emptyMap(),
 )
 
 data class TotalByPeriodDto(

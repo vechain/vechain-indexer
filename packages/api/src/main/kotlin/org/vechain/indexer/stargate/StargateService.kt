@@ -291,6 +291,8 @@ open class StargateService(
                 blockTimestamp = 0,
                 total = BigInteger.ZERO,
                 byLevel = emptyMap(),
+                totalNftCount = 0,
+                nftCountByLevel = emptyMap(),
             )
         }
 
@@ -300,6 +302,8 @@ open class StargateService(
             blockTimestamp = response.blockTimestamp,
             total = response.total,
             byLevel = response.byLevel,
+            totalNftCount = response.totalNftCount,
+            nftCountByLevel = response.nftCountByLevel,
         )
     }
 
@@ -327,6 +331,8 @@ open class StargateService(
                 blockTimestamp = 0,
                 total = BigInteger.ZERO,
                 byLevel = emptyMap(),
+                totalNftCount = 0,
+                nftCountByLevel = emptyMap(),
             )
         }
 
@@ -336,6 +342,8 @@ open class StargateService(
             blockTimestamp = response.blockTimestamp,
             total = response.total,
             byLevel = response.byLevel,
+            totalNftCount = response.totalNftCount,
+            nftCountByLevel = response.nftCountByLevel,
         )
     }
 

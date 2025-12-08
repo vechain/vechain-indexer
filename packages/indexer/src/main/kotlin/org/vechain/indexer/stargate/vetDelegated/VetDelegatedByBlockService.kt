@@ -60,6 +60,9 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
         var runningTotal = latest?.total ?: BigInteger.ZERO
         val runningByLevel =
             latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, BigInteger>()
+        var runningNftCount = latest?.totalNftCount ?: 0L
+        val runningNftCountByLevel =
+            latest?.nftCountByLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, Long>()
 
         val grouped = events.groupBy { it.blockNumber }.toSortedMap()
         val output = mutableListOf<VetDelegatedByBlock>()
@@ -76,22 +79,28 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                 when (evt.eventType) {
                     "DelegationInitiated" -> {
                         runningTotal += amount
+                        runningNftCount += 1
                         if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) + amount
                             perLevelDelta[level] =
                                 (perLevelDelta[level] ?: BigInteger.ZERO) + amount
+                            runningNftCountByLevel[level] =
+                                (runningNftCountByLevel[level] ?: 0L) + 1
                         }
                         blockDelta += amount
                     }
 
                     "DelegationWithdrawn" -> {
                         runningTotal -= amount
+                        runningNftCount -= 1
                         if (level != null) {
                             runningByLevel[level] =
                                 (runningByLevel[level] ?: BigInteger.ZERO) - amount
                             perLevelDelta[level] =
                                 (perLevelDelta[level] ?: BigInteger.ZERO) - amount
+                            runningNftCountByLevel[level] =
+                                (runningNftCountByLevel[level] ?: 0L) - 1
                         }
                         blockDelta -= amount
                     }
@@ -132,6 +141,8 @@ open class VetDelegatedByBlockService(private val repository: VetDelegatedByBloc
                     blockTimestamp = rep.blockTimestamp,
                     total = runningTotal,
                     byLevel = runningByLevel.toMap(),
+                    totalNftCount = runningNftCount,
+                    nftCountByLevel = runningNftCountByLevel.toMap(),
                     hourOfDay = roll.hour,
                     dayOfMonth = roll.day,
                     weekOfYear = roll.week,
