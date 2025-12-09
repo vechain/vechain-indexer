@@ -74,7 +74,6 @@ open class NftService(
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNft> =
         nftRepository.findAllById(nftTransfers.map { buildNftId(it) }).toList()
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
         assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
