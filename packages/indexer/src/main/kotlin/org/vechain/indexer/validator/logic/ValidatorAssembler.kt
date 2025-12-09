@@ -34,10 +34,15 @@ object ValidatorAssembler {
         val decodedInfo: DecodedValidatorInfo =
             decodeResponseInfo(responses, validatorsAbi) ?: return emptyList()
 
+        // Calculate totalWeight from decoded validators
+        val lockedWeights =
+            decodedInfo.decodedValidators.listOf<BigInteger>("validatorLockedWeights")
+        val totalWeight = lockedWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
+
         return unpackValidators(
             decodedInfo.decodedValidators,
             existingDocs,
-            decodedInfo.totalWeight,
+            totalWeight,
             decodedInfo.vetPriceUsd,
             decodedInfo.vthoPriceUsd,
             blockId,

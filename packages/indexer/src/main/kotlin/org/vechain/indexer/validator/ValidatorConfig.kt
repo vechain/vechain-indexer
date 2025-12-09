@@ -44,6 +44,7 @@ open class ValidatorConfig {
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
+        @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
         builtinStakerAddress: String,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
@@ -60,7 +61,15 @@ open class ValidatorConfig {
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress))
             .abiEventNames(listOf("BeneficiarySet", "StakeDecreased"))
-            .callDataClauses(buildClauses(getAllValidatorsAddress))
             .excludeVetTransfers()
+            .callDataClauses(
+                buildClauses(getAllValidatorsAddress).let { clauses ->
+                    listOf(
+                        clauses[0],
+                        clauses[1],
+                        clauses[2],
+                    ) // getValidators, getVetPriceUsd, getVthoPriceUsd
+                }
+            )
             .build()
 }

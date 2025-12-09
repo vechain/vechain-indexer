@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.vthoGenerated
 
 import io.mockk.every
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -18,7 +17,6 @@ import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 
-@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("vtho-generated-by-block")
 class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
 
@@ -106,13 +104,13 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
-            .blockBatchSize(1L)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(listOf("STARGATE_CLAIM_REWARDS"))
             .businessEventContracts(listOf(stargateContract, VTHO_CONTRACT_ADDRESS))
             .businessEventSubstitutionParams(businessEventProperties.substitutions)
             .callDataClauses(StargateUtils.buildBalanceOfClause(stargateContract))
             .includeFullBlock()
+            .excludeVetTransfers()
             .build()
     }
 

@@ -57,16 +57,7 @@ open class ValidatorService(
         val working = existingDocs.toMutableMap()
 
         // Load ABIs if not cached
-        loadAllValidatorAbiFunctions(
-            listOf(
-                "getValidators",
-                "totalStake",
-                "vthoTotalSupply",
-                "getVetPriceUsd",
-                "getVthoPriceUsd",
-                "totalBurned",
-            )
-        )
+        loadAllValidatorAbiFunctions(listOf("getValidators", "getVetPriceUsd", "getVthoPriceUsd"))
 
         // Apply event changes from blockchain logs
         applyEventChanges(matchedEvents, working, callResponses, !isFullySynced)
@@ -194,6 +185,7 @@ open class ValidatorService(
             }
 
         events.forEach { ev ->
+            println("ev $ev")
             val validatorId = ev.params.getAsString("validator")!!
             val base =
                 if (working[validatorId] != null) {

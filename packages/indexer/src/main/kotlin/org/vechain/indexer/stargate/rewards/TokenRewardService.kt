@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.rewards
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
@@ -27,12 +28,12 @@ import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
+import org.vechain.indexer.utils.NumberUtils.toVET
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.Status
-import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
+import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssuedPerBlock
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 @Profile("token-reward")
@@ -60,12 +61,6 @@ open class TokenRewardService(
     val validatorCycleCache: MutableMap<String, CycleCache> = ConcurrentHashMap()
 
     /**
-     * @notice Cached VTHO total supply from the previous block.
-     * @dev Used to calculate deltas in block rewards between consecutive blocks.
-     */
-    private var vthoTotalSupply: BigInteger = BigInteger.ZERO
-
-    /**
      * @notice Initialize contract ABI cache at service startup.
      * @dev Loads required Stargate ABI function definitions from resources into {@link
      *   cachedGetValidatorsAbi}. Ensures they are available for all subsequent decode operations.
@@ -74,11 +69,8 @@ open class TokenRewardService(
         loadAllValidatorAbiFunctions(
             listOf(
                 "getValidators",
-                "totalStake",
-                "vthoTotalSupply",
                 "getVetPriceUsd",
                 "getVthoPriceUsd",
-                "totalBurned",
                 "getEffectiveStake",
                 "getDelegatorsEffectiveStake",
             )
@@ -140,22 +132,36 @@ open class TokenRewardService(
      * @param decodedInfo Optional decoded validator state info (saves RPC calls if present).
      * @return Total delegators' reward as BigInteger, or null if unavailable.
      * @notice Compute total delegators' reward share for a block.
-     * @dev Calculates block reward as the delta in VTHO supply, then applies a 70% weighting to
-     *   delegators.
+     * @dev Calculates block reward from total staked VET using formula, then applies a 70%
+     *   weighting to delegators.
      */
     fun getDelegatorsBlockReward(block: Block, decodedInfo: DecodedValidatorInfo?): BigInteger? {
-        // Get total VTHO issued at this block
-        val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
+        if (decodedInfo == null) return null
 
-        // Initialize cache on restart using the previous block’s reward
-        if (vthoTotalSupply == BigInteger.ZERO) {
-            vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
-        }
+        // Calculate total VET staked from decoded validator info
+        val totalVetStaked = getTotalVetStaked(decodedInfo)
 
-        val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
-        vthoTotalSupply = blockTotalSupply // update cache
+        // Calculate VTHO block reward using formula
+        val blockRewardDecimal = determineVTHOIssuedPerBlock(totalVetStaked)
+        // Convert from VTHO units to Wei (multiply by 10^18)
+        val blockReward = blockRewardDecimal.multiply(BigDecimal.TEN.pow(18)).toBigInteger()
 
         return (blockReward * BigInteger.valueOf(7)).divide(BigInteger.TEN)
+    }
+
+    /**
+     * @param decodedInfo Decoded validator state from contract call.
+     * @return Total VET staked across all validators and delegators.
+     * @notice Calculate total VET staked from decoded validator info.
+     */
+    private fun getTotalVetStaked(decodedInfo: DecodedValidatorInfo): BigDecimal {
+        val stakes = decodedInfo.decodedValidators.listOf<BigInteger>("validatorLockedStakes")
+        val delegatorsStake = decodedInfo.decodedValidators.listOf<BigInteger>("delegatorsStake")
+
+        val totalStaked =
+            stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
+
+        return toVET(totalStaked)
     }
 
     /**
@@ -300,6 +306,8 @@ open class TokenRewardService(
         val startBlocks = decodedInfo.decodedValidators.listOf<BigInteger>("startBlocks")
         val completedPeriods = decodedInfo.decodedValidators.listOf<BigInteger>("completedPeriods")
         val delegatorsStake = decodedInfo.decodedValidators.listOf<BigInteger>("delegatorsStake")
+        val validatorStake =
+            decodedInfo.decodedValidators.listOf<BigInteger>("validatorLockedStakes")
 
         val idx = ids.indexOf(validatorId)
         if (idx != -1) {
@@ -490,42 +498,6 @@ open class TokenRewardService(
             year = mainTracker.year,
             version = 0,
         )
-
-    /**
-     * @param decodedInfo Optional decoded validator info (saves Thor RPC calls).
-     * @param blockId Block ID.
-     * @return Total VTHO issued at this block.
-     * @notice Get total VTHO issued at a block.
-     * @dev Adds totalSupply + burned, optionally using decodedInfo if present.
-     */
-    fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
-        if (decodedInfo == null) {
-            return getTotalVTHOIssuedAtBlock(blockId)
-        }
-        return decodedInfo.vthoTotalSupply
-    }
-
-    /**
-     * @param blockId Block ID.
-     * @return Total VTHO issued.
-     * @notice Get total VTHO issued at a specific block via Thor calls.
-     * @dev Calls vthoTotalSupply + totalBurned contract functions and decodes result.
-     */
-    fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
-
-        if (response.size < 2) {
-            return BigInteger.ZERO
-        }
-
-        val inspectionResults =
-            listOf(
-                InspectionResult(response[0].data, emptyList(), emptyList(), false, null),
-                InspectionResult(response[1].data, emptyList(), emptyList(), false, null),
-            )
-
-        return decodeVTHOIssued(inspectionResults)
-    }
 
     /**
      * @param data Hex-encoded response string.

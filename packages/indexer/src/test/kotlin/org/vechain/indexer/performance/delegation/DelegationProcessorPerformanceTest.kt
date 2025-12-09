@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.delegation
 
 import io.mockk.every
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -20,7 +19,6 @@ import org.vechain.indexer.validator.DelegationProcessor
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationService
 
-@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("delegation")
 class DelegationProcessorPerformanceTest : BasePerformanceTest() {
 
@@ -129,11 +127,12 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                 processor = processor,
                 startBlock = startBlock,
                 syncLogInterval = 100L,
-                channelBatchSize = 1,
+                channelBatchSize = 10,
                 builtinStakerAddress = builtinStakerAddress,
                 stargateContract = stargateContract,
                 stargateNftContract = stargateNftContract,
                 getAllValidatorsAddress = getAllValidatorsAddress,
+                syncBlockBatchSize = 500L,
             )
     }
 

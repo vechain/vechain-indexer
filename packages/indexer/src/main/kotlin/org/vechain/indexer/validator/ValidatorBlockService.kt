@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
@@ -14,23 +15,19 @@ import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isMonthlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
-import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
-import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
+import org.vechain.indexer.utils.NumberUtils.toVET
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
-import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasDelegations
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
+import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssuedPerBlock
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 @Profile("validator", "validator-reward")
 @Service
-open class ValidatorBlockService(
-    private val repository: ValidatorBlockRepository,
-    private val thorService: ThorService,
-) {
+open class ValidatorBlockService(private val repository: ValidatorBlockRepository) {
     private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
     private val hourlyCache = ConcurrentHashMap<String, Long>()
@@ -38,9 +35,6 @@ open class ValidatorBlockService(
     private val weeklyCache = ConcurrentHashMap<String, Long>()
     private val monthlyCache = ConcurrentHashMap<String, Long>()
     private val offlineValidators = ConcurrentHashMap<String, Long>()
-
-    /** Cached VTHO total supply from the previous block to calculate deltas. */
-    @Volatile private var vthoTotalSupply: BigInteger = BigInteger.ZERO
 
     init {
         preloadLatestAggregates()
@@ -52,17 +46,8 @@ open class ValidatorBlockService(
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<ValidatorBlock> {
-        // Fetch ABIs for decoding
-        loadAllValidatorAbiFunctions(
-            listOf(
-                "getValidators",
-                "totalStake",
-                "vthoTotalSupply",
-                "getVetPriceUsd",
-                "getVthoPriceUsd",
-                "totalBurned",
-            )
-        )
+        // Fetch ABI for decoding getValidators response
+        loadAllValidatorAbiFunctions(listOf("getValidators", "getVetPriceUsd", "getVthoPriceUsd"))
 
         val decodedInfo = decodeResponseInfo(callResponses, cachedGetValidatorsAbi)
 
@@ -86,22 +71,21 @@ open class ValidatorBlockService(
     }
 
     fun getValidationInfo(block: Block, decodedInfo: DecodedValidatorInfo?): ValidatorBlock? {
-        // Get total VTHO issued at this block
-        val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
-
-        // Initialize cache on restart using the previous block’s reward
-        if (vthoTotalSupply == BigInteger.ZERO) {
-            vthoTotalSupply = getTotalVTHOIssuedAtBlock(block.parentID)
-        }
-
-        val hasDelegations = decodedInfo?.hasDelegations(block.signer)
-
-        if (hasDelegations == null || hasDelegations == -1) {
+        if (decodedInfo == null) {
             return null
         }
 
-        val blockReward = blockTotalSupply.subtract(vthoTotalSupply)
-        vthoTotalSupply = blockTotalSupply // update cache
+        val hasDelegations = decodedInfo.hasDelegations(block.signer)
+
+        if (hasDelegations == -1) {
+            return null
+        }
+
+        // Calculate VTHO block reward from total staked VET using formula
+        val totalVetStaked = getTotalVetStaked(decodedInfo)
+        val blockRewardDecimal = determineVTHOIssuedPerBlock(totalVetStaked)
+        // Convert from VTHO units to Wei (multiply by 10^18)
+        val blockReward = blockRewardDecimal.multiply(BigDecimal.TEN.pow(18)).toBigInteger()
 
         // Sum all transaction rewards in this block
         val priorityRewards: BigInteger =
@@ -206,28 +190,15 @@ open class ValidatorBlockService(
         }
     }
 
-    /** Resolve total VTHO issued = totalSupply + burned */
-    fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
-        if (decodedInfo == null) {
-            return getTotalVTHOIssuedAtBlock(blockId)
-        }
-        return decodedInfo.vthoTotalSupply
-    }
+    /** Calculate total VET staked from decoded validator info */
+    private fun getTotalVetStaked(decodedInfo: DecodedValidatorInfo): BigDecimal {
+        val stakes = decodedInfo.decodedValidators.listOf<BigInteger>("validatorLockedStakes")
+        val delegatorsStake = decodedInfo.decodedValidators.listOf<BigInteger>("delegatorsStake")
 
-    fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
+        val totalStaked =
+            stakes.indices.fold(BigInteger.ZERO) { acc, i -> acc + stakes[i] + delegatorsStake[i] }
 
-        if (response.size < 2) {
-            return BigInteger.ZERO
-        }
-
-        val inspectionResults =
-            listOf(
-                InspectionResult(response[0].data, emptyList(), emptyList(), false, null),
-                InspectionResult(response[1].data, emptyList(), emptyList(), false, null),
-            )
-
-        return decodeVTHOIssued(inspectionResults)
+        return toVET(totalStaked)
     }
 
     private fun preloadLatestAggregates() {

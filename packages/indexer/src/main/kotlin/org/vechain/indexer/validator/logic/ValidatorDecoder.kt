@@ -20,7 +20,10 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 object ValidatorDecoder {
     // --- Public API ---
 
-    /** Decode all validator info in one go from inspection responses. */
+    /**
+     * Decode all validator info in one go from inspection responses. Expects responses in order:
+     * [getValidators, getVetPriceUsd, getVthoPriceUsd]
+     */
     fun decodeResponseInfo(
         responses: List<InspectionResult>,
         validatorsAbi: Map<String, AbiElement>,
@@ -34,23 +37,11 @@ object ValidatorDecoder {
                 responses[0].data,
                 validatorsAbi["getValidators"]!!.outputs,
             )
-
-        val totalWeight = decodeSingle(responses, validatorsAbi, 1, "totalStake", "totalWeight")
-        val vthoTotalSupply =
-            decodeSingle(responses, validatorsAbi, 2, "vthoTotalSupply", "vthoTotalSupply")
-        val vetPriceUsd = decodeSingle(responses, validatorsAbi, 3, "getVetPriceUsd", "vetPriceUsd")
+        val vetPriceUsd = decodeSingle(responses, validatorsAbi, 1, "getVetPriceUsd", "vetPriceUsd")
         val vthoPriceUsd =
-            decodeSingle(responses, validatorsAbi, 4, "getVthoPriceUsd", "vthoPriceUsd")
-        val vthoBurned = decodeSingle(responses, validatorsAbi, 5, "totalBurned", "totalBurned")
+            decodeSingle(responses, validatorsAbi, 2, "getVthoPriceUsd", "vthoPriceUsd")
 
-        return DecodedValidatorInfo(
-            decodedValidators,
-            totalWeight,
-            vthoTotalSupply,
-            vetPriceUsd,
-            vthoPriceUsd,
-            vthoBurned,
-        )
+        return DecodedValidatorInfo(decodedValidators, vetPriceUsd, vthoPriceUsd)
     }
 
     /** Decode raw validator list from ABI output. */
@@ -106,24 +97,6 @@ object ValidatorDecoder {
                         ),
                     stateMutability = "view",
                 ),
-                // totalStake
-                FunctionDefinition(
-                    name = "totalStake",
-                    inputs = emptyList(),
-                    outputs =
-                        listOf(
-                            FunctionParameter("totalStake", "uint256"),
-                            FunctionParameter("totalWeight", "uint256"),
-                        ),
-                    stateMutability = "view",
-                ),
-                // vthoTotalSupply
-                FunctionDefinition(
-                    name = "vthoTotalSupply",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("vthoTotalSupply", "uint256")),
-                    stateMutability = "view",
-                ),
                 // getVetPriceUsd
                 FunctionDefinition(
                     name = "getVetPriceUsd",
@@ -136,13 +109,6 @@ object ValidatorDecoder {
                     name = "getVthoPriceUsd",
                     inputs = emptyList(),
                     outputs = listOf(FunctionParameter("vthoPriceUsd", "uint128")),
-                    stateMutability = "view",
-                ),
-                // totalBurned
-                FunctionDefinition(
-                    name = "totalBurned",
-                    inputs = emptyList(),
-                    outputs = listOf(FunctionParameter("totalBurned", "uint256")),
                     stateMutability = "view",
                 ),
             )

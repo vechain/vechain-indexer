@@ -48,14 +48,7 @@ class ProfiledValidatorService(
             // Load ABIs if not cached
             profiler.time("        - loadAllValidatorAbiFunctions") {
                 loadAllValidatorAbiFunctionsInternal(
-                    listOf(
-                        "getValidators",
-                        "totalStake",
-                        "vthoTotalSupply",
-                        "getVetPriceUsd",
-                        "getVthoPriceUsd",
-                        "totalBurned",
-                    )
+                    listOf("getValidators", "getVetPriceUsd", "getVthoPriceUsd")
                 )
             }
 

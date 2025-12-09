@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
@@ -20,8 +19,6 @@ open class ValidatorBlockConfig {
         processor: ValidatorBlockProcessor,
         @Value("\${indexer.start-block.validator}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
-        bEProperties: BusinessEventProperties,
         @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
         getAllValidatorsAddress: String,
     ): BlockIndexer =
@@ -31,8 +28,8 @@ open class ValidatorBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(ValidatorDecoder.buildClauses(getAllValidatorsAddress))
+            .callDataClauses(listOf(ValidatorDecoder.buildClauses(getAllValidatorsAddress)[0]))
             .includeFullBlock()
+            .excludeVetTransfers()
             .build()
 }

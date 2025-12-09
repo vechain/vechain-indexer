@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.history
 
 import io.mockk.every
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -17,7 +16,6 @@ import org.vechain.indexer.nft.NftBlacklistClient
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 
-@Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("history")
 class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 

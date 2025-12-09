@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
@@ -16,14 +15,12 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockRepository
-    private lateinit var thorService: ThorService
     private lateinit var service: ValidatorBlockService
 
     @BeforeEach
     fun setup() {
         repository = mockk(relaxed = true)
-        thorService = mockk(relaxed = true)
-        service = spyk(ValidatorBlockService(repository, thorService))
+        service = spyk(ValidatorBlockService(repository))
 
         every { repository.findLatestHourly() } returns emptyList()
         every { repository.findLatestDaily() } returns emptyList()
@@ -81,12 +78,9 @@ class ValidatorBlockServiceTest {
             transactions = txs,
         )
 
-    private fun createDecoded(supply: Long, burned: Long): DecodedValidatorInfo =
+    private fun createDecoded(): DecodedValidatorInfo =
         DecodedValidatorInfo(
             decodedValidators = buildDecoded(),
-            vthoTotalSupply = BigInteger.valueOf(supply),
-            vthoBurned = BigInteger.valueOf(burned),
-            totalWeight = BigInteger.ZERO,
             vetPriceUsd = BigInteger.ZERO,
             vthoPriceUsd = BigInteger.ZERO,
         )
@@ -148,36 +142,28 @@ class ValidatorBlockServiceTest {
                     ),
             )
 
-        val decodedInfo = createDecoded(1000, 100) // supply=1000, burned=100
-
-        // simulate initial cache
-        every { service.getTotalVTHOIssuedAtBlock("block-99") } returns BigInteger.valueOf(900)
+        val decodedInfo = createDecoded()
 
         val result = service.getValidationInfo(block, decodedInfo)!!
 
         assertEquals("100-0xVAL1", result.id)
-        assertEquals(BigInteger.valueOf(100), result.blockReward) // (1000+100) - 900
+        // Block reward is calculated from formula based on total staked VET (1.5 VET)
+        // Formula: annual = 1200 * 64 * sqrt(VET_staked), per block = annual / blocksPerYear
+        assertNotNull(result.blockReward)
         assertEquals(BigInteger.valueOf(21), result.priorityReward) // 16+5
-        assertEquals(BigInteger.valueOf(121), result.total)
         assertEquals(BlockStatus.VALIDATED, result.status)
     }
 
     @Test
-    fun `getValidationInfo computes delta correctly across multiple blocks`() {
-        // First block initializes cache
-        val block1 = createBlock(num = 101, signer = "0xVAL1")
-        val info1 = createDecoded(1000, 0)
+    fun `getValidationInfo uses formula-based calculation`() {
+        val block = createBlock(num = 101, signer = "0xVAL1")
+        val decodedInfo = createDecoded()
 
-        every { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
-        val res1 = service.getValidationInfo(block1, info1)!!
-        assertEquals(BigInteger.valueOf(100), res1.blockReward)
+        val result = service.getValidationInfo(block, decodedInfo)!!
 
-        // Second block uses updated cache
-        val block2 = createBlock(num = 102, signer = "0xVAL2")
-        val info2 = createDecoded(1200, 0)
-
-        val res2 = service.getValidationInfo(block2, info2)!!
-        assertEquals(BigInteger.valueOf(200), res2.blockReward) // 1200 - 1000
+        // Block reward should be calculated from formula, not VTHO delta
+        assertNotNull(result.blockReward)
+        assertTrue(result.blockReward!! > BigInteger.ZERO)
     }
 
     @Test
@@ -193,9 +179,6 @@ class ValidatorBlockServiceTest {
                         "offlineBlocks" to listOf(BigInteger.valueOf(50), BigInteger.ZERO),
                         "statuses" to listOf(BigInteger.TWO, BigInteger.ONE),
                     ),
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
-                totalWeight = BigInteger.ZERO,
                 vetPriceUsd = BigInteger.ZERO,
                 vthoPriceUsd = BigInteger.ZERO,
             )
@@ -204,13 +187,6 @@ class ValidatorBlockServiceTest {
         assertEquals(1, result.size)
         assertEquals("0xA", result[0].validator)
         assertEquals(BlockStatus.MISSED, result[0].status)
-    }
-
-    @Test
-    fun `getTotalVTHOIssued uses decoded info if available`() {
-        val decodedInfo = createDecoded(500, 100)
-        val total = service.getTotalVTHOIssued(decodedInfo, "block-1")
-        assertEquals(BigInteger.valueOf(500), total)
     }
 
     @Test

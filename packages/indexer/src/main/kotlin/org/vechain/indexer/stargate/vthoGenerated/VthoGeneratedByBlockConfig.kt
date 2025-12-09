@@ -21,7 +21,6 @@ open class VthoGeneratedByBlockConfig {
         processor: VthoGeneratedByBlockProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
@@ -31,12 +30,12 @@ open class VthoGeneratedByBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .businessEvents("business-events/stargate", "abis/stargate")
             .businessEventNames(listOf("STARGATE_CLAIM_REWARDS"))
             .businessEventContracts(listOf(stargateContract, VTHO_CONTRACT_ADDRESS))
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .callDataClauses(StargateUtils.buildBalanceOfClause(stargateContract))
             .includeFullBlock()
+            .excludeVetTransfers()
             .build()
 }

@@ -75,7 +75,6 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledValidatorBlockService(
                     repository = validatorBlockRepository,
-                    thorService = thorService,
                     profiler = profiler,
                 )
             } else {
@@ -106,8 +105,6 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                 processor = processor,
                 startBlock = startBlock,
                 syncLoggerInterval = 100L,
-                syncBlockBatchSize = 1L,
-                bEProperties = businessEventProperties,
                 getAllValidatorsAddress = getAllValidatorsAddress,
             )
     }

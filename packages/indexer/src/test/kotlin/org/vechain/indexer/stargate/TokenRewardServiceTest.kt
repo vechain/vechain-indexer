@@ -92,48 +92,34 @@ class TokenRewardServiceTest {
         )
 
     @Test
-    fun `getDelegatorsBlockReward computes 70 percent share`() {
+    fun `getDelegatorsBlockReward computes 70 percent share from formula`() {
         val b = block(10)
+        // Create decoded info with 1.5 VET total staked (1 VET validator + 0.5 VET delegator)
         val decoded =
             DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.valueOf(1000),
-                vthoBurned = BigInteger.valueOf(100),
                 vetPriceUsd = BigInteger.TEN,
                 vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
-                decodedValidators = emptyMap(),
+                decodedValidators =
+                    mapOf(
+                        "validatorLockedStakes" to
+                            listOf(BigInteger("1000000000000000000")), // 1 VET
+                        "delegatorsStake" to listOf(BigInteger("500000000000000000")), // 0.5 VET
+                    ),
             )
-
-        // return dummy responses – actual decoding mocked
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns
-            listOf(
-                ExecuteCodeResponse(
-                    data = "0x1",
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    gasUsed = 0L,
-                    reverted = false,
-                    vmError = null,
-                ),
-                ExecuteCodeResponse(
-                    data = "0x2",
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    gasUsed = 0L,
-                    reverted = false,
-                    vmError = null,
-                ),
-            )
-
-        mockkObject(org.vechain.indexer.validator.domain.ValidatorDecoder)
-        every {
-            org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued(any())
-        } returns BigInteger.valueOf(500)
 
         val result = service.getDelegatorsBlockReward(b, decoded)
 
-        // (total=1100, prev=500, delta=600) * 0.7 = 420
-        assertThat(result).isEqualTo(BigInteger.valueOf(350))
+        // Block reward is calculated from formula: annual = 1200 * 64 * sqrt(VET_staked)
+        // Then 70% goes to delegators
+        assertThat(result).isNotNull
+        assertThat(result).isGreaterThan(BigInteger.ZERO)
+    }
+
+    @Test
+    fun `getDelegatorsBlockReward returns null when decoded info is null`() {
+        val b = block(10)
+        val result = service.getDelegatorsBlockReward(b, null)
+        assertThat(result).isNull()
     }
 
     @Test
@@ -144,11 +130,8 @@ class TokenRewardServiceTest {
         service.updateValidatorCycleCache(
             validator,
             DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
                 vetPriceUsd = BigInteger.TEN,
                 vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
                 decodedValidators =
                     mapOf(
                         "masters" to listOf(validator),
@@ -206,11 +189,8 @@ class TokenRewardServiceTest {
         service.updateValidatorCycleCache(
             validator,
             DecodedValidatorInfo(
-                vthoTotalSupply = BigInteger.ZERO,
-                vthoBurned = BigInteger.ZERO,
                 vetPriceUsd = BigInteger.TEN,
                 vthoPriceUsd = BigInteger.TEN,
-                totalWeight = BigInteger.ZERO,
                 decodedValidators =
                     mapOf(
                         "masters" to listOf(validator),

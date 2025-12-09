@@ -18,7 +18,6 @@ open class VetDelegatedByBlockConfig {
         processor: VetDelegatedByBlockProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
     ): BlockIndexer =
         IndexerFactory()
@@ -27,7 +26,6 @@ open class VetDelegatedByBlockConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .abis("abis/stargate")
             .abiContracts(listOf(stargateContract))
             .abiEventNames(listOf("DelegationInitiated", "DelegationWithdrawn"))

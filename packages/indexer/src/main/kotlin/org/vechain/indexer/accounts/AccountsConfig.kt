@@ -42,7 +42,6 @@ open class AccountsConfig {
         accountsPruner: TargetedPruner<Accounts, AccountsArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
-        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
             .name(IndexerNames.ACCOUNTS_INDEXER)
@@ -52,7 +51,7 @@ open class AccountsConfig {
             .processor(processor)
             .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
-            .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
+            .excludeVetTransfers()
             .build()
 }

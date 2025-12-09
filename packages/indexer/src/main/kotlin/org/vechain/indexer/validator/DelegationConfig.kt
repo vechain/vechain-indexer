@@ -41,6 +41,7 @@ open class DelegationConfig {
         thorClient: ThorClient,
         processor: DelegationProcessor,
         @Value("\${indexer.start-block.delegation}") startBlock: Long,
+        @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
         @Value("\${indexer.channel-batch-size}") channelBatchSize: Int,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -57,6 +58,7 @@ open class DelegationConfig {
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLogInterval)
+            .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
             .abis("abis/stargate")
             .abiContracts(listOf(builtinStakerAddress, stargateContract, stargateNftContract))
