@@ -153,7 +153,7 @@ enabled_nets:
         delegation:                 '23415258'
       start-round:
         b3tr-sustainable-actions:   '4'
-      sync-log-interval: '100'
+      sync-log-interval: '20'
       sync-block-batch-size:
         nfts:                       '250'
         transfers:                  '250'
