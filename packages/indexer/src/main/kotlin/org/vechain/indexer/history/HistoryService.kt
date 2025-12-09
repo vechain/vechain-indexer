@@ -54,7 +54,6 @@ open class HistoryService(
         historyRepository.saveAll(events)
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
         assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
