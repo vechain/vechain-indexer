@@ -98,6 +98,8 @@ metrics-clean: #@ Stop and remove all metrics data.
 	$(METRICS_COMMAND) down -v --remove-orphans
 metrics-logs: #@ Attach to the metrics logs.
 	$(METRICS_COMMAND) logs -f
+metrics-restart-grafana: #@ Restart only Grafana service.
+	docker kill grafana; docker rm grafana; docker volume rm metrics_grafana_data; make metrics-up
 
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
