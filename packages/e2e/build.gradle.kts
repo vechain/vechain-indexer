@@ -99,5 +99,5 @@ val postE2e = tasks.register<Exec>("postE2e") {
 
 tasks.named<Test>("test") {
     dependsOn(preE2e)
-    finalizedBy(postE2e)
+//    finalizedBy(postE2e)
 }
