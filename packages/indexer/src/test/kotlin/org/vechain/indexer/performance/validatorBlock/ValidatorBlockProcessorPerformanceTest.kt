@@ -124,7 +124,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
             repository = repository,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {
                 super.process(entry)
             }

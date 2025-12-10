@@ -23,7 +23,7 @@ open class AmnProcessor(
 
     private var hasSynced = false
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (!hasSynced && repository.count() == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")
             amnService.syncEndorsersForAllNodes()

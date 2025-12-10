@@ -140,7 +140,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("    TokenRewardProcessor.process (per block)") { super.process(entry) }
         }
     }

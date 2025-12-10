@@ -21,7 +21,7 @@ open class BlockUsageProcessor(
         indexerName = IndexerNames.BLOCK_USAGE,
     ) {
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }

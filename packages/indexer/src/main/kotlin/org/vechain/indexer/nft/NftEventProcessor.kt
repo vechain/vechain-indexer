@@ -22,7 +22,7 @@ open class NftProcessor(
         indexerName = IndexerNames.NFT,
     ) {
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         // Filter out blacklist and whitelist events and handle them separately

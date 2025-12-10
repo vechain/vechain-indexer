@@ -85,6 +85,20 @@ app-down: #@ Stop the application.
 app-logs: #@ Attach to the application logs.
 	docker compose logs -f
 
+# Metrics
+METRICS_COMMAND=docker compose -f metrics/compose.yaml
+
+metrics-up: #@ Start Prometheus and Grafana.
+	$(METRICS_COMMAND) up -d --wait
+	@echo "Prometheus: http://localhost:9090"
+	@echo "Grafana: http://localhost:3000 (admin/admin)"
+metrics-down: #@ Stop Prometheus and Grafana.
+	$(METRICS_COMMAND) down
+metrics-clean: #@ Stop and remove all metrics data.
+	$(METRICS_COMMAND) down -v --remove-orphans
+metrics-logs: #@ Attach to the metrics logs.
+	$(METRICS_COMMAND) logs -f
+
 # Database
 DB_COMMAND=docker compose -f database/docker-compose-mongo.yaml
 DB_MAKE_KEY=mkdir -p database/keys && [ -f database/keys/keyfile ] || openssl rand -base64 756 > database/keys/keyfile

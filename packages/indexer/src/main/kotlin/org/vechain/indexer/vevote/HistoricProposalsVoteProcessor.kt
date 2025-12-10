@@ -24,7 +24,7 @@ open class HistoricProposalsVoteProcessor(
     ) {
     private var aggregationRan: Boolean = false
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (aggregationRan) return
 
         val blockNumber = entry.latestBlockNumber()

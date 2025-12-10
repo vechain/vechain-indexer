@@ -139,7 +139,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             service = service,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("    UserAllTimeActionSummaryProcessor.process (per block)") {
                 super.process(entry)
             }

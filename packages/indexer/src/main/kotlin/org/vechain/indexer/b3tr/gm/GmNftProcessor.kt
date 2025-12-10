@@ -24,7 +24,7 @@ open class GmNftProcessor(
         indexerName = IndexerNames.GM_NFT,
     ) {
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

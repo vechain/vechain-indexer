@@ -123,7 +123,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
             historyService = historyService,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("HistoryProcessor.process (per block)") {
                 profiler.time("  Event processing logic") {
                     // The actual processing happens here
