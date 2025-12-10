@@ -1,10 +1,14 @@
 import java.io.ByteArrayOutputStream
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.support.serviceOf
+import org.gradle.process.ExecOperations
 
 dependencies {
     implementation(project(":packages:common"))
 }
 
-val contractAddress = project.extra
+val execOperations = serviceOf<ExecOperations>()
+val blacklistContractAddress = objects.property<String>()
 
 val dbSetup = tasks.register<Exec>("dbSetup") {
     workingDir(rootDir)
@@ -25,7 +29,7 @@ val extractContractAddress = tasks.register("extractContractAddress") {
 
         // Wait for the container to finish
         println("⏳ Waiting for $containerName to finish seeding...")
-        exec {
+        execOperations.exec {
             workingDir(rootDir)
             commandLine("docker", "wait", containerName)
         }
@@ -33,7 +37,7 @@ val extractContractAddress = tasks.register("extractContractAddress") {
 
         // Now extract the contract address from its logs
         val output = ByteArrayOutputStream()
-        exec {
+        execOperations.exec {
             workingDir(rootDir)
             commandLine("docker", "logs", containerName)
             standardOutput = output
@@ -47,7 +51,7 @@ val extractContractAddress = tasks.register("extractContractAddress") {
             ?: throw GradleException("❌ Failed to extract contract address from logs")
 
         println("✅ Extracted contract address: $address")
-        contractAddress["BLACKLIST_CONTRACT_ADDRESS"] = address
+        blacklistContractAddress.set(address)
     }
 }
 
@@ -56,8 +60,8 @@ val startApp = tasks.register<Exec>("startApp") {
     workingDir(rootDir)
 
     doFirst {
-        val address = contractAddress["BLACKLIST_CONTRACT_ADDRESS"] as? String
-            ?: throw GradleException("Contract address is missing in project.extra")
+        val address = blacklistContractAddress.orNull
+            ?: throw GradleException("Contract address is missing from the Gradle property")
 
         println("ℹ️  Setting BLACKLIST_CONTRACT_ADDRESS=$address")
         environment("BLACKLIST_CONTRACT_ADDRESS", address)
@@ -83,17 +87,17 @@ val stopApp = tasks.register<Exec>("stopApp") {
     )
 }
 
-tasks.register("preE2e") {
+val preE2e = tasks.register("preE2e") {
     dependsOn(startApp)
 }
 
-task<Exec>("postE2e") {
+val postE2e = tasks.register<Exec>("postE2e") {
     dependsOn(stopApp)
     workingDir(rootDir)
     commandLine("make", "db-clean")
 }
 
-tasks.test {
-    dependsOn("preE2e")
-//    finalizedBy("postE2e")
+tasks.named<Test>("test") {
+    dependsOn(preE2e)
+    finalizedBy(postE2e)
 }
