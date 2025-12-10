@@ -148,7 +148,7 @@ jobs:
 
   e2e-tests:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: docker-build-arm64
     needs: detect-code-changes
     steps:
       - name: No code changes detected
