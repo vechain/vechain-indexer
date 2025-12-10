@@ -1,18 +1,16 @@
 package org.vechain.indexer.thor.client
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.result.Result
 import io.prometheus.metrics.core.metrics.Counter
+import io.prometheus.metrics.core.metrics.Histogram
+import java.lang.Exception
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.thor.model.*
 import org.vechain.indexer.utils.JsonUtils
-import java.lang.Exception
-import io.prometheus.metrics.core.metrics.Histogram;
 
 private const val TIP_POLL_MIN_DELAY_MS = 1_000L
 private const val TIP_POLL_INITIAL_DELAY_MS = 4_000L
@@ -33,17 +31,19 @@ class MonitoredThorClient(
     private val logger = LoggerFactory.getLogger(DefaultThorClient::class.java)
     private val objectMapper = JsonUtils.mapper
 
-    private val requestDurationBucket = Histogram.builder()
-        .name("thor_client_get_block_duration_seconds")
-        .help("Duration of getBlock calls in seconds")
-        .labelNames("endpoint")
-        .register()
+    private val requestDurationBucket =
+        Histogram.builder()
+            .name("thor_client_get_block_duration_seconds")
+            .help("Duration of getBlock calls in seconds")
+            .labelNames("endpoint")
+            .register()
 
-    private val responseCodeCounter = Counter.builder()
-        .name("thor_client_response_codes_total")
-        .help("Count of response codes from Thor client")
-        .labelNames("endpoint", "code")
-        .register()
+    private val responseCodeCounter =
+        Counter.builder()
+            .name("thor_client_response_codes_total")
+            .help("Count of response codes from Thor client")
+            .labelNames("endpoint", "code")
+            .register()
 
     override suspend fun getBlock(blockNumber: Long): Block =
         withContext(Dispatchers.IO) {
@@ -65,10 +65,12 @@ class MonitoredThorClient(
                         responseCodeCounter.labelValues("getBlock", "200").inc()
                         result.get().toString(Charsets.UTF_8)
                     }
-                    is Result.Failure ->{
-                        responseCodeCounter.labelValues("getBlock", result.error.response.statusCode.toString()).inc()
+                    is Result.Failure -> {
+                        responseCodeCounter
+                            .labelValues("getBlock", result.error.response.statusCode.toString())
+                            .inc()
                         throw Exception(
-                            "Get block $blockNumber request failed with error: ${result.error}",
+                            "Get block $blockNumber request failed with error: ${result.error}"
                         )
                     }
                 }
@@ -106,7 +108,7 @@ class MonitoredThorClient(
 
     override suspend fun inspectClauses(
         clauses: List<Clause>,
-        blockID: String
+        blockID: String,
     ): List<InspectionResult> {
         throw NotImplementedError("inspectClauses is not implemented in MonitoredThorClient")
     }

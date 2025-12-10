@@ -25,9 +25,8 @@ open class ValidatorProcessor(
         IndexerNames.VALIDATOR,
     ) {
 
-    private val processerDuration = Counter.builder()
-        .name("validator-processor-duration-counter")
-        .build()
+    private val processerDuration =
+        Counter.builder().name("validator-processor-duration-counter").build()
 
     override fun process(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
