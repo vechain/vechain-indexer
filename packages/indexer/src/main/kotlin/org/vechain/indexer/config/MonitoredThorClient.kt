@@ -2,6 +2,7 @@ package org.vechain.indexer.thor.client
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.result.Result
 import io.prometheus.metrics.core.metrics.Counter
 import io.prometheus.metrics.core.metrics.Histogram
@@ -50,7 +51,16 @@ class MonitoredThorClient(
     private inline fun <T> withMetrics(endpoint: String, block: () -> T): T {
         val start = System.nanoTime()
         try {
-            return block()
+            val result = block()
+            recordResponseCode(endpoint, "200")
+            return result
+        } catch (fuelErr: FuelError) {
+            val statusCode = fuelErr.response.statusCode
+            recordResponseCode(endpoint, statusCode.toString())
+            throw fuelErr
+        } catch (ex: Exception) {
+            recordResponseCode(endpoint, "unknown-exception")
+            throw ex
         } finally {
             val durationMs = (System.nanoTime() - start) / 1_000_000.0
             requestDurationHistogram.labelValues(endpoint).observe(durationMs)
@@ -71,18 +81,13 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("getBlock", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
                         is Result.Failure -> {
                             recordResponseCode(
                                 "getBlock",
                                 result.error.response.statusCode.toString(),
                             )
-                            throw Exception(
-                                "Get block $blockNumber request failed with error: ${result.error}"
-                            )
+                            throw result.error
                         }
                     }
 
@@ -117,19 +122,8 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("getBestBlock", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "getBestBlock",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw Exception(
-                                "Get best block request failed with error: ${result.error}"
-                            )
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
+                        is Result.Failure -> throw result.error
                     }
 
                 objectMapper.readValue(responseBody, Block::class.java)
@@ -146,19 +140,8 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("getFinalizedBlock", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "getFinalizedBlock",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw Exception(
-                                "Get finalized block request failed with error: ${result.error}"
-                            )
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
+                        is Result.Failure -> throw result.error
                     }
 
                 objectMapper.readValue(responseBody, Block::class.java)
@@ -176,19 +159,8 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("getEventLogs", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "getEventLogs",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw Exception(
-                                "Get event logs request failed with error: ${result.error}"
-                            )
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
+                        is Result.Failure -> throw result.error
                     }
 
                 objectMapper.readValue(responseBody, object : TypeReference<List<EventLog>>() {})
@@ -206,19 +178,8 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("getVetTransfers", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "getVetTransfers",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw Exception(
-                                "Get transfer logs request failed with error: ${result.error}"
-                            )
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
+                        is Result.Failure -> throw result.error
                     }
 
                 objectMapper.readValue(responseBody, object : TypeReference<List<TransferLog>>() {})
@@ -241,19 +202,8 @@ class MonitoredThorClient(
 
                 val responseBody =
                     when (result) {
-                        is Result.Success -> {
-                            recordResponseCode("inspectClauses", response.statusCode.toString())
-                            result.get().toString(Charsets.UTF_8)
-                        }
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "inspectClauses",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw Exception(
-                                "Inspect clauses request failed with error: ${result.error}"
-                            )
-                        }
+                        is Result.Success -> result.get().toString(Charsets.UTF_8)
+                        is Result.Failure -> throw result.error
                     }
 
                 objectMapper.readValue(
