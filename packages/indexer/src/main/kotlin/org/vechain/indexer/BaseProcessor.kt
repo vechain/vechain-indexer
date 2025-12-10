@@ -36,7 +36,7 @@ abstract class BaseProcessor(
         try {
             processEntry(entry)
             eventsCounter.labelValues(indexerName).inc(entry.events().size.toLong())
-            bestBlockGauge.labelValues(indexerName).inc()
+            bestBlockGauge.labelValues(indexerName).set(entry.latestBlockNumber().toDouble())
         } finally {
             val duration = Time.nanoTime() - start
             val durationMS = duration.toDouble() / 1_000_000.0
