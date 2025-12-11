@@ -19,7 +19,8 @@ private const val TIP_POLL_DELAY_STEP_MS = 500L
 private const val TIP_POLL_ERROR_DELAY_MS = 10_000L
 
 /**
- * Monitored implementation of the [ThorClient] using the Fuel HTTP library and Jackson JSON mapper with Prometheus metrics.
+ * Monitored implementation of the [ThorClient] using the Fuel HTTP library and Jackson JSON mapper
+ * with Prometheus metrics.
  *
  * @see <a href="https://github.com/kittinunf/fuel">Fuel Library</a>
  */
