@@ -42,6 +42,9 @@ class MonitoredThorClient(
             val statusCode = fuelErr.response.statusCode
             Metrics.recordResponseCode(method, path, statusCode.toString())
             throw fuelErr
+        } catch (ex: BlockNotFoundException) {
+            Metrics.recordResponseCode(method, path, "200")
+            throw ex
         } catch (ex: Exception) {
             Metrics.recordResponseCode(method, path, "unknown-exception")
             throw ex
