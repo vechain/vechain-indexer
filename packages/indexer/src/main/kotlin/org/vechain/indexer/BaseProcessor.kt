@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import com.mongodb.internal.connection.Time
 import org.vechain.indexer.metrics.Metrics
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.version.IndexerVersionService
@@ -14,13 +13,13 @@ abstract class BaseProcessor(
     abstract fun processEntry(entry: IndexingResult)
 
     override fun process(entry: IndexingResult) {
-        val start = Time.nanoTime()
+        val start = System.nanoTime()
         try {
             processEntry(entry)
             Metrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
             Metrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
         } finally {
-            val duration = Time.nanoTime() - start
+            val duration = System.nanoTime() - start
             val durationMs = duration.toDouble() / 1_000_000.0
             Metrics.observeProcessingDuration(indexerName, durationMs)
         }
