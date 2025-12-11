@@ -23,7 +23,7 @@ class Metrics(private val registry: MeterRegistry) {
 
     @PostConstruct
     fun init() {
-        instance = this
+        setInstance(this)
     }
 
     // Thor client metrics
@@ -122,25 +122,36 @@ class Metrics(private val registry: MeterRegistry) {
         private val numberRegex = Regex("""[0-9]+""")
         private val hexRegex = Regex("""0x[0-9a-fA-F]+""")
 
-        @Volatile private lateinit var instance: Metrics
+        @Volatile private var instance: Metrics? = null
+
+        internal fun setInstance(metrics: Metrics) {
+            instance = metrics
+        }
 
         // Static accessors for non-Spring classes
-        fun recordResponseCode(method: String, path: String, code: String) =
-            instance.recordResponseCode(method, path, code)
+        // These are no-ops when instance is not initialized (e.g., in unit tests)
+        fun recordResponseCode(method: String, path: String, code: String) {
+            instance?.recordResponseCode(method, path, code)
+        }
 
-        fun observeRequestDuration(method: String, path: String, durationMs: Double) =
-            instance.observeRequestDuration(method, path, durationMs)
+        fun observeRequestDuration(method: String, path: String, durationMs: Double) {
+            instance?.observeRequestDuration(method, path, durationMs)
+        }
 
-        fun setBestBlock(indexerName: String, blockNumber: Double) =
-            instance.setBestBlock(indexerName, blockNumber)
+        fun setBestBlock(indexerName: String, blockNumber: Double) {
+            instance?.setBestBlock(indexerName, blockNumber)
+        }
 
-        fun observeProcessingDuration(indexerName: String, durationMs: Double) =
-            instance.observeProcessingDuration(indexerName, durationMs)
+        fun observeProcessingDuration(indexerName: String, durationMs: Double) {
+            instance?.observeProcessingDuration(indexerName, durationMs)
+        }
 
-        fun incrementEventsCounter(indexerName: String, count: Double) =
-            instance.incrementEventsCounter(indexerName, count)
+        fun incrementEventsCounter(indexerName: String, count: Double) {
+            instance?.incrementEventsCounter(indexerName, count)
+        }
 
-        fun setComponentHealth(name: String, type: String, value: Double) =
-            instance.setComponentHealth(name, type, value)
+        fun setComponentHealth(name: String, type: String, value: Double) {
+            instance?.setComponentHealth(name, type, value)
+        }
     }
 }
