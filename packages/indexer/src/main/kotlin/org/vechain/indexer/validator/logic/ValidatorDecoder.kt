@@ -57,7 +57,12 @@ object ValidatorDecoder {
     fun decodeValidators(
         responses: List<InspectionResult>,
         validatorsAbi: AbiElement,
-    ): Map<String, Any?> = FunctionReturnDecoder.decode(responses[0].data, validatorsAbi.outputs)
+    ): Map<String, Any?> {
+        if (responses.isEmpty() || !responses[0].hasAbiData()) {
+            return emptyMap()
+        }
+        return FunctionReturnDecoder.decode(responses[0].data, validatorsAbi.outputs)
+    }
 
     /** Resolve total VTHO issued = totalSupply + burned. */
     fun decodeVTHOIssued(responses: List<InspectionResult>): BigInteger {
