@@ -12,6 +12,7 @@ import org.springframework.boot.actuate.health.Status
 import org.springframework.boot.actuate.health.SystemHealth
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import org.vechain.indexer.metrics.Metrics
 
 const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 
@@ -36,6 +37,23 @@ open class ApplicationHealth(
                 health.components.filter { it.value.status != Status.UP },
             )
             sendSlackMessage(health)
+        }
+
+        health.components.forEach { (name, component) ->
+            if (component.status != Status.UP) {
+                logger.error("Component $name is UNHEALTHY: {}", component)
+            } else {
+                logger.info("Component $name is healthy")
+            }
+            Metrics.setComponentHealth(
+                name,
+                "component",
+                when (component.status) {
+                    Status.UP -> 1.0
+                    Status.DOWN -> 0.0
+                    else -> -1.0
+                },
+            )
         }
     }
 

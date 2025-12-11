@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.metrics.Metrics
 
 enum class HealthStatus() {
     UP,
@@ -41,6 +42,15 @@ class IndexerHealthIndicator(
         val indexerHealths =
             indexers.map { indexer ->
                 val (status, statusDetails) = getIndexerHealth(indexer)
+                Metrics.setComponentHealth(
+                    indexer.name,
+                    "indexer",
+                    when (status) {
+                        HealthStatus.UP -> 1.0
+                        HealthStatus.DOWN -> 0.0
+                        HealthStatus.UNKNOWN -> -1.0
+                    },
+                )
                 IndexerHealth(
                     indexerName = indexer.name,
                     status = status,

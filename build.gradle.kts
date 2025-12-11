@@ -219,6 +219,9 @@ allprojects {
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
         implementation("commons-codec:commons-codec:1.15")
 
+        // Monitoring dependencies
+        implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+
         // Core indexer dependency
         implementation("org.vechain:indexer-core:6.0.2")
 

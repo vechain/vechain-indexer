@@ -5,10 +5,10 @@ global:
 scrape_configs:
   - job_name: 'indexer'
     static_configs:
-      - targets: ['vechain-indexer:2112']
-    metrics_path: /metrics
+      - targets: ['vechain-indexer:8081']
+    metrics_path: /actuator/prometheus
 
   - job_name: 'indexer-local'
     static_configs:
-      - targets: [ 'host.docker.internal:2112' ]
-    metrics_path: /metrics
+      - targets: [ 'host.docker.internal:8080' ]
+    metrics_path: /actuator/prometheus

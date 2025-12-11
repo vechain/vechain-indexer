@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.github.kittinunf.fuel.Fuel
 import com.github.kittinunf.fuel.core.FuelError
 import com.github.kittinunf.result.Result
-import io.prometheus.metrics.core.metrics.Counter
-import io.prometheus.metrics.core.metrics.Histogram
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.exception.BlockNotFoundException
+import org.vechain.indexer.metrics.Metrics
 import org.vechain.indexer.thor.model.*
 import org.vechain.indexer.utils.JsonUtils
 
@@ -18,21 +17,6 @@ private const val TIP_POLL_MIN_DELAY_MS = 1_000L
 private const val TIP_POLL_INITIAL_DELAY_MS = 4_000L
 private const val TIP_POLL_DELAY_STEP_MS = 500L
 private const val TIP_POLL_ERROR_DELAY_MS = 10_000L
-
-private val requestDurationHistogram =
-    Histogram.builder()
-        .name("thor_client_request_duration")
-        .help("Duration of Thor client requests in milliseconds")
-        .labelNames("endpoint")
-        .classicUpperBounds(0.01, 1.0, 5.0, 10.0, 50.0, 100.0, 250.0, 500.0, 1000.0) // milliseconds
-        .register()
-
-private val responseCodeCounter =
-    Counter.builder()
-        .name("thor_client_response_codes_total")
-        .help("Count of response codes from Thor client")
-        .labelNames("endpoint", "code")
-        .register()
 
 /**
  * Monitored implementation of the {@link org.vechain.indexer.thor.client.ThorClient.class
@@ -48,32 +32,28 @@ class MonitoredThorClient(
     private val logger = LoggerFactory.getLogger(MonitoredThorClient::class.java)
     private val objectMapper = JsonUtils.mapper
 
-    private inline fun <T> withMetrics(endpoint: String, block: () -> T): T {
+    private inline fun <T> withMetrics(method: String, path: String, block: () -> T): T {
         val start = System.nanoTime()
         try {
             val result = block()
-            recordResponseCode(endpoint, "200")
+            Metrics.recordResponseCode(method, path, "200")
             return result
         } catch (fuelErr: FuelError) {
             val statusCode = fuelErr.response.statusCode
-            recordResponseCode(endpoint, statusCode.toString())
+            Metrics.recordResponseCode(method, path, statusCode.toString())
             throw fuelErr
         } catch (ex: Exception) {
-            recordResponseCode(endpoint, "unknown-exception")
+            Metrics.recordResponseCode(method, path, "unknown-exception")
             throw ex
         } finally {
             val durationMs = (System.nanoTime() - start) / 1_000_000.0
-            requestDurationHistogram.labelValues(endpoint).observe(durationMs)
+            Metrics.observeRequestDuration(method, path, durationMs)
         }
-    }
-
-    private fun recordResponseCode(endpoint: String, code: String) {
-        responseCodeCounter.labelValues(endpoint, code).inc()
     }
 
     override suspend fun getBlock(blockNumber: Long): Block =
         withContext(Dispatchers.IO) {
-            withMetrics("getBlock") {
+            withMetrics("GET", "/blocks/{number}") {
                 val (_, response, result) =
                     Fuel.get("$baseUrl/blocks/$blockNumber?expanded=true")
                         .appendHeader(*headers)
@@ -82,13 +62,7 @@ class MonitoredThorClient(
                 val responseBody =
                     when (result) {
                         is Result.Success -> result.get().toString(Charsets.UTF_8)
-                        is Result.Failure -> {
-                            recordResponseCode(
-                                "getBlock",
-                                result.error.response.statusCode.toString(),
-                            )
-                            throw result.error
-                        }
+                        is Result.Failure -> throw result.error
                     }
 
                 if (responseBody.isEmpty() || responseBody.trim() == "null") {
@@ -116,7 +90,7 @@ class MonitoredThorClient(
 
     override suspend fun getBestBlock(): Block =
         withContext(Dispatchers.IO) {
-            withMetrics("getBestBlock") {
+            withMetrics("GET", "/blocks/best") {
                 val (_, response, result) =
                     Fuel.get("$baseUrl/blocks/best?expanded=true").appendHeader(*headers).response()
 
@@ -132,7 +106,7 @@ class MonitoredThorClient(
 
     override suspend fun getFinalizedBlock(): Block =
         withContext(Dispatchers.IO) {
-            withMetrics("getFinalizedBlock") {
+            withMetrics("GET", "/blocks/finalized") {
                 val (_, response, result) =
                     Fuel.get("$baseUrl/blocks/finalized?expanded=true")
                         .appendHeader(*headers)
@@ -150,7 +124,7 @@ class MonitoredThorClient(
 
     override suspend fun getEventLogs(req: EventLogsRequest): List<EventLog> =
         withContext(Dispatchers.IO) {
-            withMetrics("getEventLogs") {
+            withMetrics("POST", "/logs/event") {
                 val (_, response, result) =
                     Fuel.post("$baseUrl/logs/event")
                         .body(JsonUtils.mapper.writeValueAsBytes(req))
@@ -169,7 +143,7 @@ class MonitoredThorClient(
 
     override suspend fun getVetTransfers(req: TransferLogsRequest): List<TransferLog> =
         withContext(Dispatchers.IO) {
-            withMetrics("getVetTransfers") {
+            withMetrics("POST", "/logs/transfer") {
                 val (_, response, result) =
                     Fuel.post("$baseUrl/logs/transfer")
                         .body(JsonUtils.mapper.writeValueAsBytes(req))
@@ -191,7 +165,7 @@ class MonitoredThorClient(
         blockID: String,
     ): List<InspectionResult> =
         withContext(Dispatchers.IO) {
-            withMetrics("inspectClauses") {
+            withMetrics("POST", "/accounts/*") {
                 val req = InspectionRequest(clauses)
                 val body = JsonUtils.mapper.writeValueAsBytes(req)
                 val (_, response, result) =

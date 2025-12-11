@@ -114,7 +114,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(thor_client_request_duration_sum{endpoint=~\"$endpoint\"}[$__range])) / sum(increase(thor_client_request_duration_count{endpoint=~\"$endpoint\"}[$__range]))",
+          "expr": "1000 * sum(increase(thor_client_request_duration_seconds_sum{endpoint=~\"$endpoint\"}[$__range])) / sum(increase(thor_client_request_duration_seconds_count{endpoint=~\"$endpoint\"}[$__range]))",
           "instant": true,
           "legendFormat": "__auto"
         }
@@ -394,7 +394,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by(endpoint) (rate(thor_client_request_duration_sum{endpoint=~\"$endpoint\"}[$__rate_interval])) / sum by(endpoint) (rate(thor_client_request_duration_count{endpoint=~\"$endpoint\"}[$__rate_interval]))",
+          "expr": "1000 * sum by(endpoint) (rate(thor_client_request_duration_seconds_sum{endpoint=~\"$endpoint\"}[$__rate_interval])) / sum by(endpoint) (rate(thor_client_request_duration_seconds_count{endpoint=~\"$endpoint\"}[$__rate_interval]))",
           "legendFormat": "{{endpoint}}",
           "range": true
         }
@@ -624,7 +624,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by(le, endpoint) (rate(thor_client_request_duration_bucket{endpoint=~\"$endpoint\"}[$__rate_interval])))",
+          "expr": "1000 * histogram_quantile(0.95, sum by(le, endpoint) (rate(thor_client_request_duration_seconds_bucket{endpoint=~\"$endpoint\"}[$__rate_interval])))",
           "legendFormat": "{{endpoint}}",
           "range": true
         }
@@ -770,7 +770,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sort_desc(sum by(endpoint) (increase(thor_client_request_duration_sum{endpoint=~\"$endpoint\"}[$__range])) / sum by(endpoint) (increase(thor_client_request_duration_count{endpoint=~\"$endpoint\"}[$__range])))",
+          "expr": "sort_desc(1000 * sum by(endpoint) (increase(thor_client_request_duration_seconds_sum{endpoint=~\"$endpoint\"}[$__range])) / sum by(endpoint) (increase(thor_client_request_duration_seconds_count{endpoint=~\"$endpoint\"}[$__range])))",
           "instant": true,
           "legendFormat": "{{endpoint}}"
         }
