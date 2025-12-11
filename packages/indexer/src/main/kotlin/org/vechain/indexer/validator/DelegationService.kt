@@ -438,6 +438,7 @@ open class DelegationService(
         validatorsSnapshots: Map<String, ValidatorSnapshot>
     ): Set<String> {
         val currentValidators = validatorsSnapshots.keys
+        if (currentValidators.isEmpty()) return emptySet()
 
         if (cachedValidators.isEmpty()) {
             cachedValidators = repository.findValidatorIdsByStatusNot(Status.EXITED).toSet()
