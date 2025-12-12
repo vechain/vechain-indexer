@@ -27,6 +27,10 @@ data class Validator(
     val validatorVetStaked: Decimal128? = null,
     val delegatorVetStaked: Decimal128? = null,
     val queuedVetStaked: Decimal128? = null,
+    val validatorQueuedVetStaked: Decimal128? = null,
+    val delegatorQueuedVetStaked: Decimal128? = null,
+    val validatorExitingVetStaked: Decimal128? = null,
+    val delegatorExitingVetStaked: Decimal128? = null,
     val exitingVetStaked: Decimal128? = null,
     @JsonIgnore
     val exitingValidatorVetStaked: BigDecimal =
