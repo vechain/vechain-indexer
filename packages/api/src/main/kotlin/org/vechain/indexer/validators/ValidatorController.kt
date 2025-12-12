@@ -27,6 +27,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 import org.vechain.indexer.validation.ValidTokenId
 import org.vechain.indexer.validators.AllValidatorsMissedBlocksResponse
+import org.vechain.indexer.validators.DelegationCountsResponse
 import org.vechain.indexer.validators.MissedBlocksTimeframe
 import org.vechain.indexer.validators.ValidatorService
 
@@ -264,4 +265,36 @@ open class ValidatorController(
         @ValidAddress @RequestParam(required = false) validator: Address?,
     ): AllValidatorsMissedBlocksResponse =
         service.getMissedBlocksPercentage(timeframe, validator?.value?.lowercase())
+
+    @GetMapping("/delegations/count")
+    @Operation(
+        summary = "Get delegation counts by status for all validators",
+        description =
+            "Returns the count of delegations grouped by status (QUEUED, ACTIVE, EXITING) for all validators, " +
+                "or optionally filtered to a specific validator.",
+    )
+    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @CommonApiResponses
+    open fun getDelegationCounts(
+        @ValidAddress @RequestParam(required = false) validator: Address?
+    ): List<DelegationCountsResponse> {
+        val results =
+            if (validator != null) {
+                delegationRepository.aggregateDelegationCountsByValidator(
+                    validator.value.lowercase()
+                )
+            } else {
+                delegationRepository.aggregateDelegationCountsByValidator()
+            }
+
+        return results.map { result ->
+            val countsByStatus = result.counts.associateBy { it.status }
+            DelegationCountsResponse(
+                validator = result._id,
+                queued = countsByStatus["QUEUED"]?.count ?: 0L,
+                active = countsByStatus["ACTIVE"]?.count ?: 0L,
+                exiting = countsByStatus["EXITING"]?.count ?: 0L,
+            )
+        }
+    }
 }
