@@ -176,12 +176,38 @@ open class TokenRewardService(
             // Need to update cycle info
             updateValidatorCycleCache(validatorId, decodedInfo)
             newCycle = true
-            cached = validatorCycleCache[validatorId] ?: return emptyList()
+            cached = validatorCycleCache[validatorId]
+
+            // If cache still null, validator not in masters list - check if they have delegations
+            // anyway
+            if (cached == null) {
+                val ids = decodedInfo.decodedValidators.listOf<String>("masters")
+                val delegatorsStake =
+                    decodedInfo.decodedValidators.listOf<BigInteger>("delegatorsStake")
+                val idx = ids.indexOf(validatorId)
+
+                if (idx == -1 || delegatorsStake[idx] == BigInteger.ZERO) {
+                    return emptyList()
+                }
+                // Validator has delegations but wasn't cached - fetch rewards directly
+                return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
+            }
         }
 
-        // If delegations is false return empty list
+        // If cache says no delegations, verify against decodedInfo in case of race condition
         if (!cached.hasDelegations) {
-            return emptyList() // Validator has no delegations in this cycle
+            // Double-check using the actual delegatorsStake from decodedInfo
+            val ids = decodedInfo.decodedValidators.listOf<String>("masters")
+            val delegatorsStake =
+                decodedInfo.decodedValidators.listOf<BigInteger>("delegatorsStake")
+            val idx = ids.indexOf(validatorId)
+
+            if (idx == -1 || delegatorsStake[idx] == BigInteger.ZERO) {
+                return emptyList() // Confirmed: no delegations
+            }
+            // Cache was stale - update it and fetch rewards (need to get effective stakes)
+            cached.hasDelegations = true
+            return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
         }
 
         // If new cycle, ensure we have up-to-date delegations
@@ -189,18 +215,26 @@ open class TokenRewardService(
             return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
         }
 
-        // Otherwise return saved delegations for current cycle
-        return repository.findAllByValidatorAndRewardPeriodAndCycle(
-            validatorId,
-            RewardPeriod.ALL,
-            cached.currentCycle,
-        )
+        // Otherwise try to return saved delegations for current cycle
+        val rewards =
+            repository.findAllByValidatorAndRewardPeriodAndCycle(
+                validatorId,
+                RewardPeriod.ALL,
+                cached.currentCycle,
+            )
+
+        // If we have delegations but no rewards in DB, or totalEffectiveDelegations not set,
+        // fall back to fetching (handles restarts and race conditions)
+        if (rewards.isEmpty() || cached.totalEffectiveDelegations == BigInteger.ZERO) {
+            return getOrFetchRewardsNewCycle(validatorId, block, getTimeInfo(block.timestamp))
+        }
+
+        return rewards
     }
 
     /**
      * @param validatorId Validator address (signer).
-     * @param contractAddress Stargate contract address.
-     * @param blockBlock for inspection.
+     * @param block Block for inspection.
      * @param time LocalDate derived from block timestamp.
      * @return Combined list of existing + new TokenReward docs.
      * @notice Fetch or create reward trackers for a validator in a new cycle.
