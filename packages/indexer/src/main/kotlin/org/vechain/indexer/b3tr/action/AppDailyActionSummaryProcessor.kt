@@ -24,7 +24,7 @@ open class AppDailyActionSummaryProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.APP_DAILY_ACTION_SUMMARY,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

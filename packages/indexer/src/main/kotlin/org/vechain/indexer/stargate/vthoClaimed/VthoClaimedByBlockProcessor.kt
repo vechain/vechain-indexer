@@ -19,7 +19,7 @@ open class VthoClaimedByBlockProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

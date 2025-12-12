@@ -109,7 +109,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
             indexerVersionService = indexerVersionService,
             indexerName = IndexerNames.TRANSACTION,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {
                 if (entry !is IndexingResult.Normal) {
                     throw IllegalArgumentException("Block must be a normal block.")

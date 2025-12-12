@@ -128,9 +128,9 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
             repository = repository,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
+        override fun processEntry(entry: IndexingResult) {
             profiler.time("    VthoGeneratedByBlockProcessor.process (per block)") {
-                super.process(entry)
+                super.processEntry(entry)
             }
         }
     }

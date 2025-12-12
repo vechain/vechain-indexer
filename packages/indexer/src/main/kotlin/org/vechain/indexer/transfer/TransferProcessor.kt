@@ -20,7 +20,7 @@ open class TransferProcessor(
         indexerName = IndexerNames.TRANSFER,
     ) {
 
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         val transferEvents = service.processEvents(entry.events())
