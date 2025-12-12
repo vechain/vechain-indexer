@@ -21,7 +21,7 @@ open class VeVoteCommentProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VEVOTE_COMMENT,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         // Filter events to only those related to VeVote comments

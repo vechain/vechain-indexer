@@ -19,7 +19,7 @@ open class VetDelegatedByBlockProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

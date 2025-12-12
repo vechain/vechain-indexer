@@ -13,7 +13,10 @@ plugins {
     jacoco
 }
 
-java.sourceCompatibility = JavaVersion.VERSION_21
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
 allprojects {
     apply {
@@ -201,7 +204,6 @@ allprojects {
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
-        implementation("org.springframework.boot:spring-boot-starter-aop:3.4.5")
         implementation("org.springframework:spring-webflux")
         implementation("org.springframework:spring-core")
         implementation("org.springframework:spring-web")
@@ -216,8 +218,11 @@ allprojects {
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
         implementation("commons-codec:commons-codec:1.15")
 
+        // Monitoring dependencies
+        implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:6.0.4")
+        implementation("org.vechain:indexer-core:6.0.7")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")

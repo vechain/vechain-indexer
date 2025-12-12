@@ -38,10 +38,14 @@ management:
     web:
       base-path: /actuator
       exposure:
-        include: 'health'
+        include: health,prometheus,metrics
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: ${INDEXER_MONITORING_ENABLED:true}
 
 spring.data:
   mongodb:
@@ -87,6 +91,10 @@ scheduler:
   delegationHistory:
     initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
     interval: ${DELEGATION_HISTORY_INTERVAL:30s}
+
+monitoring:
+  enabled: ${INDEXER_MONITORING_ENABLED:true}
+  port: ${INDEXER_MONITORING_PORT:2112}
 
 indexer:
   start-block:

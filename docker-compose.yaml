@@ -9,6 +9,7 @@ services:
     container_name: vechain-indexer
     restart: "no"
     env_file: ${INDEXER_ENV_FILE_NAME:-packages/indexer/.env}
+    hostname: vechain-indexer
     healthcheck:
       test: "curl --fail localhost:8080/actuator/health"
       interval: 5s

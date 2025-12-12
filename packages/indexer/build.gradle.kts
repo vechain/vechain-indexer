@@ -6,6 +6,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("com.github.pemistahl:lingua:1.2.2")
     implementation("com.github.vechain:thor-devkit.java:v1.0.0")
+    implementation("com.github.kittinunf.fuel:fuel:2.3.1")
+    implementation("com.github.kittinunf.fuel:fuel-coroutines:2.3.1")
 }
 
 tasks.getByName<BootJar>("bootJar") { enabled = true }

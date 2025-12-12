@@ -2,6 +2,7 @@ package org.vechain.indexer.validator
 
 import java.math.BigInteger
 import kotlin.collections.set
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
@@ -37,6 +38,7 @@ open class DelegationService(
     private val validatorDelegationService: ValidatorDelegationService,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
 ) {
+    private val logger = LoggerFactory.getLogger(DelegationService::class.java)
     private var cachedValidators: Set<String> = emptySet()
 
     open fun processBlock(
@@ -52,21 +54,15 @@ open class DelegationService(
         val eventDelegations = findDelegationsFromEvents(events)
         val validatorExitDelegations = findDelegationsFromExits(events, disappeared)
 
-        // 2. Build working set (deduped by delegation ID)
+        // 2. Build working set (deduped by delegation ID) - excludes unknownStart initially
         val delegations =
-            (unknownStart + due + eventDelegations + validatorExitDelegations)
-                .associateBy { it.id }
-                .toMutableMap()
+            (due + eventDelegations + validatorExitDelegations).associateBy { it.id }.toMutableMap()
         val delegationsToArchive = mutableListOf<Delegation>()
 
-        // 3. Check status on delegations with unknown start blocks
-        checkForUpdatesOnUnknown(
-            unknownStart,
-            block,
-            delegations,
-            delegationsToArchive,
-            validatorSnapshots,
-        )
+        // 3. Check status on delegations with unknown start blocks, merge only if updated
+        val updatedUnknown = checkForUpdatesOnUnknown(unknownStart, block, validatorSnapshots)
+        delegationsToArchive.addAll(updatedUnknown.first)
+        delegations.putAll(updatedUnknown.second.associateBy { it.id })
 
         // 4. Apply lifecycle transitions + event mutations
         applyScheduledTransitions(block, delegations, delegationsToArchive)
@@ -158,16 +154,18 @@ open class DelegationService(
      * Uses validator snapshots if available, otherwise queries the chain
      * (`getValidationPeriodDetails`). When a non-zero start block is found, the delegation is
      * archived and updated with the new cycle info.
+     *
+     * @return Pair of (delegations to archive, updated delegations)
      */
     private fun checkForUpdatesOnUnknown(
         unknown: List<Delegation>,
         block: Block,
-        delegations: MutableMap<String, Delegation>,
-        archive: MutableList<Delegation>,
         validatorsSnapshots: Map<String, ValidatorSnapshot>,
-    ) {
-        if (unknown.isEmpty()) return
+    ): Pair<List<Delegation>, List<Delegation>> {
+        if (unknown.isEmpty()) return emptyList<Delegation>() to emptyList()
 
+        val archive = mutableListOf<Delegation>()
+        val updated = mutableListOf<Delegation>()
         val validators = unknown.groupBy { it.validator }
 
         val snapshotEmpty = validatorsSnapshots.isEmpty()
@@ -189,7 +187,7 @@ open class DelegationService(
             if (startBlock != 0L) {
                 validators[validatorId]?.forEach { existing ->
                     archive.add(existing)
-                    delegations[existing.id] =
+                    updated.add(
                         existing.copy(
                             validatorNextCycle = startBlock,
                             blockId = block.id,
@@ -197,9 +195,12 @@ open class DelegationService(
                             blockTimestamp = block.timestamp,
                             version = existing.version + 1,
                         )
+                    )
                 }
             }
         }
+
+        return archive to updated
     }
 
     // ------------------------------

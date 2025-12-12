@@ -23,7 +23,7 @@ open class XAllocResultProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.X_ALLOC_RESULT,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

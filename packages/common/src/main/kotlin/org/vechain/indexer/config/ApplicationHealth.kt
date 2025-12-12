@@ -18,6 +18,7 @@ const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 @Component
 open class ApplicationHealth(
     private val healthEndpoint: HealthEndpoint,
+    private val metrics: ApplicationHealthMetrics,
     @param:Value("\${spring.application.name}") private val applicationName: String,
     @param:Value("\${slack.webhook.url}") private val slackWebhookUrl: String? = null,
 ) {
@@ -36,6 +37,23 @@ open class ApplicationHealth(
                 health.components.filter { it.value.status != Status.UP },
             )
             sendSlackMessage(health)
+        }
+
+        health.components.forEach { (name, component) ->
+            if (component.status != Status.UP) {
+                logger.error("Component $name is UNHEALTHY: {}", component)
+            } else {
+                logger.info("Component $name is healthy")
+            }
+            metrics.setComponentHealth(
+                name,
+                "component",
+                when (component.status) {
+                    Status.UP -> 1.0
+                    Status.DOWN -> 0.0
+                    else -> -1.0
+                },
+            )
         }
     }
 

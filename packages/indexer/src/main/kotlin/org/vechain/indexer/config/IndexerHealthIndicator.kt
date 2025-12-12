@@ -21,6 +21,7 @@ enum class HealthStatus() {
 @Component
 class IndexerHealthIndicator(
     private val indexers: List<Indexer>,
+    private val metrics: IndexerHealthMetrics,
     @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
     private val inactiveThresholdSyncing: Long,
     @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
@@ -41,6 +42,15 @@ class IndexerHealthIndicator(
         val indexerHealths =
             indexers.map { indexer ->
                 val (status, statusDetails) = getIndexerHealth(indexer)
+                metrics.setComponentHealth(
+                    indexer.name,
+                    "indexer",
+                    when (status) {
+                        HealthStatus.UP -> 1.0
+                        HealthStatus.DOWN -> 0.0
+                        HealthStatus.UNKNOWN -> -1.0
+                    },
+                )
                 IndexerHealth(
                     indexerName = indexer.name,
                     status = status,
