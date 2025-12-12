@@ -24,7 +24,7 @@ open class ProposalResultProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.PROPOSAL_RESULT,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         val allUpdated = mutableMapOf<String, ProposalResult>()
         val allArchives = mutableMapOf<String, ProposalResult>()
 

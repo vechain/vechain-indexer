@@ -23,7 +23,7 @@ open class VthoClaimedByAccountProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

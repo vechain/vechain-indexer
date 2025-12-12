@@ -151,8 +151,10 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
             service = service,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun process(entry: IndexingResult) {
-            profiler.time("    DelegationProcessor.process (per block)") { super.process(entry) }
+        override fun processEntry(entry: IndexingResult) {
+            profiler.time("    DelegationProcessor.process (per block)") {
+                super.processEntry(entry)
+            }
         }
     }
 }

@@ -19,7 +19,7 @@ open class VthoGeneratedByBlockProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
     ) {
-    override fun process(entry: IndexingResult) {
+    override fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }

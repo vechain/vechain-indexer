@@ -1,0 +1,58 @@
+package org.vechain.indexer.config
+
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Timer
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import org.springframework.http.HttpMethod
+import org.springframework.stereotype.Component
+
+@Component
+class ThorRestMetrics(private val registry: MeterRegistry) {
+
+    private val responseCodeCounters = ConcurrentHashMap<String, Counter>()
+    private val requestDurationTimers = ConcurrentHashMap<String, Timer>()
+
+    fun recordResponseCode(method: String, path: String, code: String) {
+        val endpoint = endpointName(method, path)
+        val key = "$endpoint:$code"
+        responseCodeCounters
+            .computeIfAbsent(key) {
+                Counter.builder("thor_client_response_codes_total")
+                    .description("Count of response codes from Thor client")
+                    .tag("endpoint", endpoint)
+                    .tag("code", code)
+                    .register(registry)
+            }
+            .increment()
+    }
+
+    fun observeRequestDuration(method: String, path: String, durationMs: Double) {
+        val endpoint = endpointName(method, path)
+        requestDurationTimers
+            .computeIfAbsent(endpoint) {
+                Timer.builder("thor_client_request_duration")
+                    .description("Duration of Thor client requests")
+                    .tag("endpoint", endpoint)
+                    .publishPercentileHistogram()
+                    .register(registry)
+            }
+            .record(durationMs.toLong(), TimeUnit.MILLISECONDS)
+    }
+
+    private fun endpointName(method: String, path: String): String {
+        if (method == HttpMethod.POST.toString()) {
+            return "POST $path"
+        }
+        var cleanPath = path
+        cleanPath = hexRegex.replace(cleanPath, "{hex}")
+        cleanPath = numberRegex.replace(cleanPath, "{number}")
+        return "$method $cleanPath"
+    }
+
+    companion object {
+        private val numberRegex = Regex("""[0-9]+""")
+        private val hexRegex = Regex("""0x[0-9a-fA-F]+""")
+    }
+}
