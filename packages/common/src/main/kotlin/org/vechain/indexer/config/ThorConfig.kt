@@ -7,12 +7,11 @@ import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
-import org.vechain.indexer.metrics.Metrics
 
 @Configuration
 open class ThorConfig(
     @Value("\${thor.url}") private val thorUrl: String,
-    private val metrics: Metrics,
+    private val metrics: ThorRestMetrics,
 ) {
 
     @Bean

@@ -8,6 +8,8 @@ import org.vechain.indexer.thor.client.ThorClient
 @Configuration
 open class IndexerConfig() {
     @Bean
-    open fun thorClient(@Value("\${thor.url}") thorUrl: String): ThorClient =
-        MonitoredThorClient(thorUrl, Pair("X-Project-Id", "veworld-indexer"))
+    open fun thorClient(
+        @Value("\${thor.url}") thorUrl: String,
+        metrics: ThorClientMetrics,
+    ): ThorClient = MonitoredThorClient(metrics, thorUrl, Pair("X-Project-Id", "veworld-indexer"))
 }

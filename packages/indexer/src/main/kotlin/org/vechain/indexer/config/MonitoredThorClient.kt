@@ -3,37 +3,39 @@ package org.vechain.indexer.config
 import com.github.kittinunf.fuel.core.FuelError
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.RateLimitException
-import org.vechain.indexer.metrics.Metrics
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.*
 
 /** Metrics decorator for [ThorClient]. */
-class MonitoredThorClient(baseUrl: String, private vararg val headers: Pair<String, Any>) :
-    DefaultThorClient(baseUrl, *headers) {
+class MonitoredThorClient(
+    private val metrics: ThorClientMetrics,
+    baseUrl: String,
+    vararg headers: Pair<String, Any>,
+) : DefaultThorClient(baseUrl, *headers) {
 
     private suspend fun <T> withMetrics(method: String, path: String, block: suspend () -> T): T {
         val start = System.nanoTime()
         try {
             val result = block()
-            Metrics.recordResponseCode(method, path, "200")
+            metrics.recordResponseCode(method, path, "200")
             return result
         } catch (fuelErr: FuelError) {
             val statusCode = fuelErr.response.statusCode
-            Metrics.recordResponseCode(method, path, statusCode.toString())
+            metrics.recordResponseCode(method, path, statusCode.toString())
             throw fuelErr
         } catch (ex: BlockNotFoundException) {
-            Metrics.recordResponseCode(method, path, "200")
+            metrics.recordResponseCode(method, path, "200")
             throw ex
         } catch (ex: RateLimitException) {
-            Metrics.recordResponseCode(method, path, "429")
+            metrics.recordResponseCode(method, path, "429")
             throw ex
         } catch (ex: Exception) {
-            Metrics.recordResponseCode(method, path, "unknown-exception")
+            metrics.recordResponseCode(method, path, "unknown-exception")
             throw ex
         } finally {
             val durationMs = (System.nanoTime() - start) / 1_000_000.0
-            Metrics.observeRequestDuration(method, path, durationMs)
+            metrics.observeRequestDuration(method, path, durationMs)
         }
     }
 

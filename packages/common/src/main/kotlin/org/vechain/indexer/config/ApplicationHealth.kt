@@ -12,13 +12,13 @@ import org.springframework.boot.actuate.health.Status
 import org.springframework.boot.actuate.health.SystemHealth
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import org.vechain.indexer.metrics.Metrics
 
 const val SLACK_MESSAGE_INTERVAL_MINUTES: Long = 30
 
 @Component
 open class ApplicationHealth(
     private val healthEndpoint: HealthEndpoint,
+    private val metrics: ApplicationHealthMetrics,
     @param:Value("\${spring.application.name}") private val applicationName: String,
     @param:Value("\${slack.webhook.url}") private val slackWebhookUrl: String? = null,
 ) {
@@ -45,7 +45,7 @@ open class ApplicationHealth(
             } else {
                 logger.info("Component $name is healthy")
             }
-            Metrics.setComponentHealth(
+            metrics.setComponentHealth(
                 name,
                 "component",
                 when (component.status) {

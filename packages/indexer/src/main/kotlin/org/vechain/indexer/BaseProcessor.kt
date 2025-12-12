@@ -1,6 +1,5 @@
 package org.vechain.indexer
 
-import org.vechain.indexer.metrics.Metrics
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -16,12 +15,12 @@ abstract class BaseProcessor(
         val start = System.nanoTime()
         try {
             processEntry(entry)
-            Metrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
-            Metrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
+            ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
+            ProcessorMetrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
         } finally {
             val duration = System.nanoTime() - start
             val durationMs = duration.toDouble() / 1_000_000.0
-            Metrics.observeProcessingDuration(indexerName, durationMs)
+            ProcessorMetrics.observeProcessingDuration(indexerName, durationMs)
         }
     }
 

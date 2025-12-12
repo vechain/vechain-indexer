@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
-import org.vechain.indexer.metrics.Metrics
 
 enum class HealthStatus() {
     UP,
@@ -22,6 +21,7 @@ enum class HealthStatus() {
 @Component
 class IndexerHealthIndicator(
     private val indexers: List<Indexer>,
+    private val metrics: IndexerHealthMetrics,
     @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
     private val inactiveThresholdSyncing: Long,
     @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
@@ -42,7 +42,7 @@ class IndexerHealthIndicator(
         val indexerHealths =
             indexers.map { indexer ->
                 val (status, statusDetails) = getIndexerHealth(indexer)
-                Metrics.setComponentHealth(
+                metrics.setComponentHealth(
                     indexer.name,
                     "indexer",
                     when (status) {
