@@ -154,6 +154,10 @@ object ValidatorAssembler {
                         totalTvl = Decimal128(0),
                         delegatorTvl = Decimal128(0),
                         validatorTvl = Decimal128(0),
+                        validatorQueuedVetStaked = Decimal128(0),
+                        delegatorQueuedVetStaked = Decimal128(0),
+                        validatorExitingVetStaked = Decimal128(0),
+                        delegatorExitingVetStaked = Decimal128(0),
                         queuedVetStaked = Decimal128(0),
                         exitingVetStaked = Decimal128(0),
                         blockProbability = Decimal128(0),
@@ -236,6 +240,14 @@ object ValidatorAssembler {
             validatorVetStaked = NumberUtils.toSafeDecimal128(stakes.validatorVET),
             delegatorVetStaked = NumberUtils.toSafeDecimal128(stakes.delegatorVET),
             queuedVetStaked = NumberUtils.toSafeDecimal128(stakes.queuedStake),
+            validatorQueuedVetStaked =
+                NumberUtils.toSafeDecimal128(stakes.queuedValidatorVetStaked),
+            delegatorQueuedVetStaked =
+                NumberUtils.toSafeDecimal128(stakes.queuedDelegationVetStaked),
+            validatorExitingVetStaked =
+                NumberUtils.toSafeDecimal128(stakes.exitingValidatorVetStaked),
+            delegatorExitingVetStaked =
+                NumberUtils.toSafeDecimal128(stakes.exitingDelegationVetStaked),
             exitingVetStaked = NumberUtils.toSafeDecimal128(stakes.exitingStake),
             totalWeight =
                 NumberUtils.toSafeDecimal128(NumberUtils.toVET(row.validatorLockedWeight)),

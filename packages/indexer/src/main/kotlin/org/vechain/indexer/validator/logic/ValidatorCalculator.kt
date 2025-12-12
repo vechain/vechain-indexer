@@ -67,6 +67,10 @@ object ValidatorCalculator {
             nextCycleStake,
             nextCycleValidatorStake,
             nextCycleDelegationStake,
+            exitingValidatorVetStaked,
+            exitingDelegationVetStaked,
+            queuedValidatorVetStaked,
+            queuedDelegationVetStaked,
         )
     }
 
@@ -458,6 +462,10 @@ object ValidatorCalculator {
         val nextCycleStake: BigDecimal,
         val nextCycleValidatorStake: BigDecimal,
         val nextCycleDelegationStake: BigDecimal,
+        val exitingValidatorVetStaked: BigDecimal = BigDecimal.ZERO,
+        val exitingDelegationVetStaked: BigDecimal = BigDecimal.ZERO,
+        val queuedValidatorVetStaked: BigDecimal = BigDecimal.ZERO,
+        val queuedDelegationVetStaked: BigDecimal = BigDecimal.ZERO,
     )
 
     /** Represents total value locked (TVL) distribution between validator and delegators. */
