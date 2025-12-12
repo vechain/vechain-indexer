@@ -222,7 +222,7 @@ allprojects {
         implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
 
         // Core indexer dependency
-        implementation("org.vechain:indexer-core:6.0.4")
+        implementation("org.vechain:indexer-core:6.0.5")
 
         // Test dependencies
         testImplementation("org.springframework.boot:spring-boot-starter-test:3.4.5")
