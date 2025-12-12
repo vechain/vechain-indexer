@@ -15,7 +15,6 @@ import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
-import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 import org.vechain.indexer.validator.logic.ValidatorAssembler.listOf
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleStart
 
@@ -133,13 +132,9 @@ class ValidatorDelegationService(
     fun decodeValidatorSnapshots(
         callResponses: List<InspectionResult>
     ): Map<String, ValidatorSnapshot> {
-        val usable = callResponses.filter { it.hasAbiData() }
-        if (usable.isEmpty()) {
-            // nothing returned from the chain for this block; treat as no validators
-            return emptyMap()
-        }
-
         val decoded = decodeValidators(callResponses, getDelegationsAbiFunctions("getValidators"))
+        if (decoded.isEmpty()) return emptyMap()
+
         val masters = decoded.listOf<String>("masters")
         val periods = decoded.listOf<BigInteger>("stakingPeriodLengths")
         val starts = decoded.listOf<BigInteger>("startBlocks")
