@@ -127,7 +127,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
             profiler.time("HistoryProcessor.process (per block)") {
                 profiler.time("  Event processing logic") {
                     // The actual processing happens here
-                    super.process(entry)
+                    super.processEntry(entry)
                 }
             }
         }

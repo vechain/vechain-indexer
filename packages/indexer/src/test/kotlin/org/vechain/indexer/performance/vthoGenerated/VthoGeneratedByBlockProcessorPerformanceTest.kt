@@ -130,7 +130,7 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
         ) {
         override fun processEntry(entry: IndexingResult) {
             profiler.time("    VthoGeneratedByBlockProcessor.process (per block)") {
-                super.process(entry)
+                super.processEntry(entry)
             }
         }
     }

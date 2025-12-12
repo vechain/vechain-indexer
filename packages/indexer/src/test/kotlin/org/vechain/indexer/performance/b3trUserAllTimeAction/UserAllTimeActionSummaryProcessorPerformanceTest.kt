@@ -141,7 +141,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
         ) {
         override fun processEntry(entry: IndexingResult) {
             profiler.time("    UserAllTimeActionSummaryProcessor.process (per block)") {
-                super.process(entry)
+                super.processEntry(entry)
             }
         }
     }

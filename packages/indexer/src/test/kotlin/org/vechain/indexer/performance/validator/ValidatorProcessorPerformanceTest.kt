@@ -138,7 +138,9 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             indexerVersionService = indexerVersionService,
         ) {
         override fun processEntry(entry: IndexingResult) {
-            profiler.time("    ValidatorProcessor.process (per block)") { super.process(entry) }
+            profiler.time("    ValidatorProcessor.process (per block)") {
+                super.processEntry(entry)
+            }
         }
     }
 }

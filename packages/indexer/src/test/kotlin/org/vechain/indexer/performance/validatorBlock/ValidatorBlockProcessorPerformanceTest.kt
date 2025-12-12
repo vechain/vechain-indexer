@@ -126,7 +126,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
         ) {
         override fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {
-                super.process(entry)
+                super.processEntry(entry)
             }
         }
     }

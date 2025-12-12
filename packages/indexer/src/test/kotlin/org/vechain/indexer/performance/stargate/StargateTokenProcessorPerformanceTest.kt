@@ -174,7 +174,9 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
             indexerVersionService = indexerVersionService,
         ) {
         override fun processEntry(entry: IndexingResult) {
-            profiler.time("    StargateTokenProcessor.process (per block)") { super.process(entry) }
+            profiler.time("    StargateTokenProcessor.process (per block)") {
+                super.processEntry(entry)
+            }
         }
     }
 }
