@@ -3,6 +3,7 @@ package org.vechain.indexer.validator
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
@@ -37,4 +38,30 @@ interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegatio
     fun findByTokenIdIn(tokenIds: List<String>): List<Delegation>
 
     fun findByStatusIn(statuses: Collection<Status>, pageable: Pageable): Slice<Delegation>
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'status': { '\$in': ['QUEUED', 'ACTIVE', 'EXITING'] } } }",
+                "{ '\$group': { '_id': { 'validator': '\$validator', 'status': '\$status' }, 'count': { '\$sum': 1 } } }",
+                "{ '\$group': { '_id': '\$_id.validator', 'counts': { '\$push': { 'status': '\$_id.status', 'count': '\$count' } } } }",
+            ]
+    )
+    fun aggregateDelegationCountsByValidator(): List<DelegationCountAggregateResult>
+
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'status': { '\$in': ['QUEUED', 'ACTIVE', 'EXITING'] } } }",
+                "{ '\$group': { '_id': { 'validator': '\$validator', 'status': '\$status' }, 'count': { '\$sum': 1 } } }",
+                "{ '\$group': { '_id': '\$_id.validator', 'counts': { '\$push': { 'status': '\$_id.status', 'count': '\$count' } } } }",
+            ]
+    )
+    fun aggregateDelegationCountsByValidator(
+        validator: String
+    ): List<DelegationCountAggregateResult>
 }
+
+data class DelegationStatusCount(val status: String, val count: Long)
+
+data class DelegationCountAggregateResult(val _id: String, val counts: List<DelegationStatusCount>)
