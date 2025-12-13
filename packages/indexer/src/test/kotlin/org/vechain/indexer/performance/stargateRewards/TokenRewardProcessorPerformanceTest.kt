@@ -32,9 +32,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var thorService: ThorService
 
-    @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
-    lateinit var stargateContract: String
-
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsContract: String
 
@@ -87,7 +84,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     archiveService = archiveService,
                     delegationRepository = delegationRepository,
                     thorService = thorService,
-                    stargateContract = stargateContract,
                     profiler = profiler,
                 )
             } else {
