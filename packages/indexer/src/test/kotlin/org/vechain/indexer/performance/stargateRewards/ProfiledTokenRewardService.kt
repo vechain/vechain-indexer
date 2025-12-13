@@ -32,16 +32,8 @@ class ProfiledTokenRewardService(
     archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     delegationRepository: DelegationRepository,
     thorService: ThorService,
-    stargateContract: String,
     private val profiler: DetailedProfiler,
-) :
-    TokenRewardService(
-        repository,
-        archiveService,
-        delegationRepository,
-        thorService,
-        stargateContract,
-    ) {
+) : TokenRewardService(repository, archiveService, delegationRepository, thorService) {
 
     override fun processBlock(
         block: Block,

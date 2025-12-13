@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
@@ -33,15 +32,7 @@ class TokenRewardServiceTest {
     fun setup() {
         clearAllMocks()
         service =
-            spyk(
-                TokenRewardService(
-                    repository,
-                    archiveService,
-                    delegationRepository,
-                    thorService,
-                    "0xSTARGATE",
-                )
-            )
+            spyk(TokenRewardService(repository, archiveService, delegationRepository, thorService))
     }
 
     private fun block(num: Long, signer: String = "0xVALIDATOR") =
@@ -184,24 +175,21 @@ class TokenRewardServiceTest {
     fun `getOrFetchRewardsNewCycle creates new docs for missing delegations`() {
         val validator = "0x00000000000000000000000000000000000000a1"
 
+        // Mock delegation with tokenLevel that has effectiveStake
+        val mockDelegation =
+            mockk<org.vechain.indexer.validator.Delegation> {
+                every { tokenId } returns "10001"
+                every { tokenLevel } returns org.vechain.indexer.stargate.token.TokenLevel.Dawn
+            }
+
         every {
             delegationRepository.findByValidatorAndStatusIn(
                 validator,
                 listOf(Status.ACTIVE, Status.EXITING),
             )
-        } returns listOf(mockk { every { tokenId } returns "10001" })
+        } returns listOf(mockDelegation)
 
         every { repository.findAllById(any<List<String>>()) } returns emptyList()
-
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns
-            listOf(
-                ExecuteCodeResponse("0x1", emptyList(), emptyList(), 0, false, null),
-                ExecuteCodeResponse("0x2", emptyList(), emptyList(), 0, false, null),
-            )
-
-        mockkObject(FunctionReturnDecoder)
-        every { FunctionReturnDecoder.decode(any(), any()) } returns
-            mapOf("effectiveStake" to BigInteger.TEN)
 
         service.updateValidatorCycleCache(
             validator,
@@ -229,7 +217,11 @@ class TokenRewardServiceTest {
                 Instant.now().atZone(ZoneOffset.UTC).toLocalDate(),
             )
 
+        // Dawn level has effectiveStake of 10000 (staked) * 1 (rewardMultiplier) = 10000
+        // Converted to wei: 10000 * 10^18
+        val expectedStakeWei =
+            java.math.BigDecimal("10000").multiply(java.math.BigDecimal.TEN.pow(18)).toBigInteger()
         assertThat(result).hasSize(1)
-        assertThat(result.first().effectiveStake).isEqualTo(BigInteger.TEN)
+        assertThat(result.first().effectiveStake).isEqualTo(expectedStakeWei)
     }
 }
