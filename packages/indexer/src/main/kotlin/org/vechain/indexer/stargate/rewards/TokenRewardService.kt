@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.rewards
 
+import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
@@ -8,25 +9,18 @@ import java.time.temporal.WeekFields
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.isNotEmpty
 import kotlin.collections.set
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
-import org.vechain.indexer.event.model.abi.InputOutput
-import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
@@ -42,8 +36,6 @@ open class TokenRewardService(
     private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
     private val thorService: ThorService,
-    @param:Value("\${business-event.substitutions.STARGATE_CONTRACT}")
-    private val stargateContract: String,
 ) {
     /**
      * @notice Cache of Stargate contract ABI functions.
@@ -125,7 +117,6 @@ open class TokenRewardService(
     }
 
     /** @notice Persist a batch of reward records to MongoDB. */
-    @Transactional
     open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
         if (rewards.isEmpty()) return
         repository.saveAll(rewards)
@@ -232,57 +223,55 @@ open class TokenRewardService(
         time: LocalDate,
     ): List<TokenReward> {
         // 1. Get active/exiting delegations for validator
-        val tokenIds =
-            delegationRepository
-                .findByValidatorAndStatusIn(validatorId, listOf(Status.ACTIVE, Status.EXITING))
-                .map { it.tokenId }
+        val delegations =
+            delegationRepository.findByValidatorAndStatusIn(
+                validatorId,
+                listOf(Status.ACTIVE, Status.EXITING),
+            )
 
-        if (tokenIds.isEmpty()) return emptyList()
+        if (delegations.isEmpty()) return emptyList()
 
         // 2. Build reward doc IDs
-        val rewardIds = tokenIds.map { "$validatorId-$it" }
+        val rewardIds = delegations.map { "$validatorId-${it.tokenId}" }
 
-        // 3. Fetch existing reward docs from DB
+        // 4. Fetch existing reward docs from DB
         val rewardsFromDb = repository.findAllById(rewardIds)
         val existingIds = rewardsFromDb.map { it.id }.toSet()
 
-        // 4. Find missing delegations
-        val missingIds = rewardIds.filterNot { it in existingIds }
+        // 5. Find missing delegations
+        val missingDelegations = delegations.filter { "$validatorId-${it.tokenId}" !in existingIds }
 
-        // 5. Need to call Thor for effective stakes
-        val inspectionResults =
-            getEffectiveStakes(
-                validatorId,
-                missingIds,
-                block.id,
-                validatorCycleCache[validatorId]!!.currentCycle,
-            )
+        val currentCycle = validatorCycleCache[validatorId]!!.currentCycle
 
-        // 6. Decode results & build new TokenReward docs
-        val newDocs = mutableListOf<TokenReward>()
-        var resultIndex = 0
-
-        val validatorStake = decodeEffectiveStake(inspectionResults[resultIndex++].data)
-        validatorCycleCache[validatorId]!!.totalEffectiveDelegations = validatorStake
+        // 6. Calculate total effective stake from delegations (no Thor call needed)
+        // TokenLevel.effectiveStake is in VET, need to convert to wei (multiply by 10^18)
+        val weiMultiplier = BigDecimal.TEN.pow(18)
+        val totalEffectiveStake =
+            delegations
+                .map { it.tokenLevel.effectiveStake.multiply(weiMultiplier) }
+                .fold(BigDecimal.ZERO) { acc, stake -> acc.add(stake) }
+                .toBigInteger()
+        validatorCycleCache[validatorId]!!.totalEffectiveDelegations = totalEffectiveStake
 
         // 7. If nothing is missing, just return what we have
-        if (missingIds.isEmpty()) {
+        if (missingDelegations.isEmpty()) {
             return rewardsFromDb.toList()
         }
 
-        // Each missing delegation effective stake
-        missingIds.forEach { rewardId ->
-            val tokenId = rewardId.substringAfter("$validatorId-")
-            val stake = decodeEffectiveStake(inspectionResults[resultIndex++].data)
+        // 8. Create new docs from delegation data (no Thor calls needed)
+        val newDocs =
+            missingDelegations.map { delegation ->
+                val rewardId = "$validatorId-${delegation.tokenId}"
+                val stake =
+                    delegation.tokenLevel.effectiveStake.multiply(weiMultiplier).toBigInteger()
 
-            val doc =
                 TokenReward(
                     id = rewardId,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    tokenId = tokenId,
-                    cycle = validatorCycleCache[validatorId]!!.currentCycle, // from context
+                    tokenId = delegation.tokenId,
+                    cycle = currentCycle,
                     validator = validatorId,
                     rewards = BigInteger.ZERO,
                     effectiveStake = stake,
@@ -298,10 +287,8 @@ open class TokenRewardService(
                     cycleReward = null,
                     version = 0,
                 )
-            newDocs.add(doc)
-        }
+            }
 
-        // 9. Return union of old + new
         return rewardsFromDb + newDocs
     }
 
@@ -544,66 +531,6 @@ open class TokenRewardService(
             )
 
         return decodeVTHOIssued(inspectionResults)
-    }
-
-    /**
-     * @param data Hex-encoded response string.
-     * @return Effective stake as BigInteger.
-     * @notice Decode effective stake from Thor call response.
-     * @dev Parses ABI return value into a BigInteger. Returns 0 if empty.
-     */
-    private fun decodeEffectiveStake(data: String): BigInteger {
-        if (data.isBlank() || data == "0x") return BigInteger.ZERO
-        val decoded =
-            FunctionReturnDecoder.decode(
-                data,
-                listOf(InputOutput("uint256", "effectiveStake", "uint256")),
-            )
-        return decoded["effectiveStake"] as? BigInteger ?: BigInteger.ZERO
-    }
-
-    /**
-     * @param validatorId The address of the validator.
-     * @param missingIds List of delegation reward document IDs (validatorId-tokenId) not yet
-     *   present in DB.
-     * @param blockId The block hash or number to perform inspection at.
-     * @return Pair of validator total effective stake and a map of tokenId -> effective stake.
-     * @notice Fetch effective stake values for a validator and its missing delegations.
-     * @dev Builds Thor call clauses for validator total delegations and each missing token ID.
-     *   Executes inspection at the given block and decodes the ABI responses into BigIntegers. Also
-     *   updates the cycle cache with the validator's total effective delegations.
-     */
-    private fun getEffectiveStakes(
-        validatorId: String,
-        missingIds: List<String>,
-        blockId: String,
-        cycle: Long = 0L,
-    ): List<ExecuteCodeResponse> {
-        val clauses = buildList {
-            // Validator effective stake (cache it for the cycle)
-            add(
-                ContractUtils.createClause(
-                    stargateContract,
-                    cachedGetValidatorsAbi["getDelegatorsEffectiveStake"]!!,
-                    AddressUtils.toBigInt(validatorId),
-                    cycle,
-                )
-            )
-
-            // Add each missing delegation effective stake clause
-            missingIds.forEach { rewardId ->
-                val tokenId = rewardId.substringAfter("$validatorId-")
-                add(
-                    ContractUtils.createClause(
-                        stargateContract,
-                        cachedGetValidatorsAbi["getEffectiveStake"]!!,
-                        tokenId.toBigInteger(),
-                    )
-                )
-            }
-        }
-
-        return thorService.inspectClausesAtBlock(clauses, blockId)
     }
 
     /**
