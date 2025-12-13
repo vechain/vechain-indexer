@@ -202,8 +202,8 @@ enabled_nets:
         validator: '1'
         validator-rewards: '3'
         stargate-token: '3'
-        token-rewards: '1'
-        delegation: '1'
+        token-rewards: '2'
+        delegation: '2'
         accounts: '1'
       business-event:
         substitutions:
