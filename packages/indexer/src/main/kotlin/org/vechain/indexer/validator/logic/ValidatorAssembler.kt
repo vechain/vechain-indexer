@@ -110,7 +110,7 @@ object ValidatorAssembler {
 
         val totalNextPeriodVET =
             stakes.indices.fold(BigInteger.ZERO) { acc, i ->
-                acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] + totalExitingStakes[i]
+                acc + stakes[i] + delegatorsStake[i] + totalQueuedStakes[i] - totalExitingStakes[i]
             }
         val vthoIssuedNextCycle = determineVTHOIssuedPerBlock(NumberUtils.toVET(totalNextPeriodVET))
 
