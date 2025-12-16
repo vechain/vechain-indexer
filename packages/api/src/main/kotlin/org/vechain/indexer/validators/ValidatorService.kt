@@ -160,7 +160,6 @@ open class ValidatorService(
                 Query()
             }
 
-        // pageable already contains sort from toPageable()
         query.with(pageable)
 
         val results = mongoTemplate.find(query, Validator::class.java)
