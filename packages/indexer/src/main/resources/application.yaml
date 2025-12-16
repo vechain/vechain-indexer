@@ -42,10 +42,23 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: ${INDEXER_MONITORING_ENABLED:true}
+  datadog:
+    metrics:
+      export:
+        enabled: ${DATADOG_METRICS_ENABLED:false}
+        apiKey: ${DATADOG_API_KEY}
+        applicationKey: ${DATADOG_APP_KEY}
+        uri: ${DATADOG_API_URL:https://api.datadoghq.eu}
+        # how often to send metrics
+        step: 10s
+        # make this unique like prod-green-indexer, etc.
+        hostTag: ${DATADOG_HOST_TAG:vechain-indexer}
+  prometheus:
+    metrics:
+      export:
+        # should not be enabled together with datadog, set this env var to false if datadog is enabled
+        enabled: ${PROMETHEUS_METRICS_ENABLED:true}
+        step: 10s
 
 spring.data:
   mongodb:
