@@ -14,11 +14,8 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
-import org.vechain.indexer.stargate.nftHolders.NftOwnerBalance
-import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
-import org.vechain.indexer.utils.ParamUtils.getAsString
 import strikt.api.Assertion
 import strikt.api.expectThat
 import strikt.assertions.*
@@ -26,14 +23,13 @@ import strikt.assertions.*
 @ExtendWith(MockKExtension::class)
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
-    @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
 
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository, ownerBalanceRepository)
+        service = NftHoldersByBlockService(repository)
     }
 
     // ------------------------------------------------------------
@@ -83,7 +79,6 @@ class NftHolderByBlockServiceTest {
         blockTimestamp: Long,
         eventType: String,
         levelId: Int?,
-        owner: String = "0xdefault",
     ): IndexedEvent =
         io.mockk.mockk {
             every { this@mockk.blockId } returns blockId
@@ -91,7 +86,6 @@ class NftHolderByBlockServiceTest {
             every { this@mockk.blockTimestamp } returns blockTimestamp
             every { this@mockk.eventType } returns eventType
             every { params.getAsInt("levelId") } returns levelId
-            every { params.getAsString("owner") } returns owner
         }
 
     private fun Assertion.Builder<NftHoldersByBlock>.andBlockRecord(
@@ -119,24 +113,21 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `processEvents with no previous record - different owners`() {
+    fun `processEvents with no previous record`() {
         val events =
             listOf(
-                mockEvent("block1", 10, 1000, "STARGATE_STAKE", 1, "0xowner1"),
-                mockEvent("block2", 12, 1200, "STARGATE_STAKE", 2, "0xowner2"),
-                mockEvent("block3", 13, 1300, "STARGATE_UNSTAKE", 1, "0xowner1"),
+                mockEvent("block1", 10, 1000, "STARGATE_STAKE", 1),
+                mockEvent("block2", 12, 1200, "STARGATE_STAKE", 2),
+                mockEvent("block3", 13, 1300, "STARGATE_UNSTAKE", 1),
             )
 
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
 
         val result = service.processEvents(events)
         expectThat(result).hasSize(3)
 
-        // Owner1 stakes - 1 unique holder
         expectThat(result[0]).andBlockRecord("block1", 10, 1000, 1, mapOf(TokenLevel.Strength to 1))
 
-        // Owner2 stakes - 2 unique holders
         expectThat(result[1])
             .andBlockRecord(
                 "block2",
@@ -146,7 +137,6 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
             )
 
-        // Owner1 unstakes (had only 1 NFT) - back to 1 unique holder
         expectThat(result[2])
             .andBlockRecord(
                 "block3",
@@ -158,97 +148,7 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `processEvents same owner multiple stakes counts as one unique holder`() {
-        val events =
-            listOf(
-                mockEvent("block1", 10, 1000, "STARGATE_STAKE", 1, "0xowner1"),
-                mockEvent("block2", 12, 1200, "STARGATE_STAKE", 2, "0xowner1"),
-                mockEvent("block3", 13, 1300, "STARGATE_STAKE", 1, "0xowner1"),
-            )
-
-        every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
-
-        val result = service.processEvents(events)
-        expectThat(result).hasSize(3)
-
-        // Owner1 stakes first NFT - 1 unique holder
-        expectThat(result[0]).andBlockRecord("block1", 10, 1000, 1, mapOf(TokenLevel.Strength to 1))
-
-        // Owner1 stakes second NFT - still 1 unique holder (same owner), but now holder of Thunder
-        // level too
-        expectThat(result[1])
-            .andBlockRecord(
-                "block2",
-                12,
-                1200,
-                1,
-                mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
-            )
-
-        // Owner1 stakes third NFT (Strength again) - still 1 unique holder, Strength level holder
-        // count unchanged (already a holder)
-        expectThat(result[2])
-            .andBlockRecord(
-                "block3",
-                13,
-                1300,
-                1,
-                mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
-            )
-    }
-
-    @Test
-    fun `processEvents owner only removed when all NFTs unstaked`() {
-        val events =
-            listOf(
-                mockEvent("block1", 10, 1000, "STARGATE_UNSTAKE", 1, "0xowner1"),
-                mockEvent("block2", 12, 1200, "STARGATE_UNSTAKE", 2, "0xowner1"),
-            )
-
-        // Owner1 has 2 NFTs before
-        val existingBalance =
-            NftOwnerBalance(
-                owner = "0xowner1",
-                total = 2,
-                byLevel = mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
-            )
-
-        every { repository.getLatestRecord() } returns
-            nftBlock(
-                blockId = "block0",
-                blockNumber = 9,
-                blockTimestamp = 900,
-                total = 1,
-                by = mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
-            )
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns listOf(existingBalance)
-
-        val result = service.processEvents(events)
-
-        // First unstake: owner still has 1 NFT, still a unique holder
-        expectThat(result[1])
-            .andBlockRecord(
-                "block1",
-                10,
-                1000,
-                1,
-                mapOf(TokenLevel.Strength to 0, TokenLevel.Thunder to 1),
-            )
-
-        // Second unstake: owner has 0 NFTs, no longer a unique holder
-        expectThat(result[2])
-            .andBlockRecord(
-                "block2",
-                12,
-                1200,
-                0,
-                mapOf(TokenLevel.Strength to 0, TokenLevel.Thunder to 0),
-            )
-    }
-
-    @Test
-    fun `processEvents continues from previous record with new owners`() {
+    fun `processEvents continues from previous record`() {
         val latestRecord =
             nftBlock(
                 blockId = "block9",
@@ -259,13 +159,11 @@ class NftHolderByBlockServiceTest {
             )
 
         every { repository.getLatestRecord() } returns latestRecord
-        // New owners with no existing balance
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
 
         val events =
             listOf(
-                mockEvent("block10", 10, 1000, "STARGATE_STAKE", 1, "0xnewowner1"),
-                mockEvent("block11", 11, 1100, "STARGATE_STAKE", 2, "0xnewowner2"),
+                mockEvent("block10", 10, 1000, "STARGATE_STAKE", 1),
+                mockEvent("block11", 11, 1100, "STARGATE_UNSTAKE", 2),
             )
 
         val result = service.processEvents(events)
@@ -279,7 +177,6 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 2, TokenLevel.Thunder to 3),
             )
 
-        // New unique holder
         expectThat(result[1])
             .andBlockRecord(
                 "block10",
@@ -289,14 +186,13 @@ class NftHolderByBlockServiceTest {
                 mapOf(TokenLevel.Strength to 3, TokenLevel.Thunder to 3),
             )
 
-        // Another new unique holder
         expectThat(result[2])
             .andBlockRecord(
                 "block11",
                 11,
                 1100,
-                7,
-                mapOf(TokenLevel.Strength to 3, TokenLevel.Thunder to 4),
+                5,
+                mapOf(TokenLevel.Strength to 3, TokenLevel.Thunder to 2),
             )
     }
 
@@ -323,7 +219,6 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on missing levelId`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "STARGATE_STAKE", null))
 
@@ -335,7 +230,6 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on invalid levelId`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "STARGATE_STAKE", 999))
 
@@ -347,7 +241,6 @@ class NftHolderByBlockServiceTest {
     @Test
     fun `throws on unknown event type`() {
         every { repository.getLatestRecord() } returns null
-        every { ownerBalanceRepository.findByOwnerIn(any()) } returns emptyList()
 
         val events = listOf(mockEvent("b1", 10, 1000, "WTF", 1))
 
@@ -357,12 +250,10 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `saveRecord delegates and saves owner balances`() {
+    fun `saveRecord delegates`() {
         val record = nftBlock("id", 1, 100, 1)
 
         every { repository.save(record) } returns record
-        // No owner balances to save after direct saveRecord call
-        every { ownerBalanceRepository.saveAll(emptyList<NftOwnerBalance>()) } returns emptyList()
 
         service.saveRecord(record)
 
@@ -370,12 +261,10 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `saveRecords delegates and saves owner balances`() {
+    fun `saveRecords delegates`() {
         val records = listOf(nftBlock("A", 1, 100, 1), nftBlock("B", 2, 200, 2))
 
         every { repository.saveAll(records) } returns records
-        // No owner balances to save after direct saveRecords call
-        every { ownerBalanceRepository.saveAll(emptyList<NftOwnerBalance>()) } returns emptyList()
 
         service.saveRecords(records)
 
