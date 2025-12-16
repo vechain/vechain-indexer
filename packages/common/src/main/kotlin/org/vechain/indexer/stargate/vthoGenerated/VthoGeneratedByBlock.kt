@@ -15,7 +15,6 @@ constructor(
     override val blockId: String,
     @Id override val blockNumber: Long,
     override val blockTimestamp: Long,
-    @JsonIgnore val rewardsClaimed: BigInteger,
     override val hourOfDay: Long,
     override val dayOfMonth: Long, // 25
     override val weekOfYear: Long, // 43
