@@ -9,7 +9,6 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.stargate.StargateUtils
-import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -22,7 +21,7 @@ open class VthoGeneratedByBlockConfig {
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
-        @Value("\${business-event.substitutions.STARGATE_CONTRACT}") stargateContract: String,
+        @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") stakerSC: String,
         bEProperties: BusinessEventProperties,
     ): BlockIndexer =
         IndexerFactory()
@@ -32,11 +31,7 @@ open class VthoGeneratedByBlockConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(listOf("STARGATE_CLAIM_REWARDS"))
-            .businessEventContracts(listOf(stargateContract, VTHO_CONTRACT_ADDRESS))
-            .businessEventSubstitutionParams(bEProperties.substitutions)
-            .callDataClauses(StargateUtils.buildBalanceOfClause(stargateContract))
+            .callDataClauses(StargateUtils.buildIssuanceClause(stakerSC))
             .includeFullBlock()
             .build()
 }

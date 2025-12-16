@@ -40,14 +40,14 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
         val latest = validateAndLoadLatest(block)
 
         // Compute this block's totals (claimed + total + delta)
-        val totals = calculateTotalsForBlock(events, callResponses, latest)
-        if (totals.blockTotal == BigInteger.ZERO) return emptyList()
+        val blockTotal = vthoIssued(callResponses)
+        if (blockTotal == BigInteger.ZERO) return emptyList()
 
         // Shared rollover logic
         val roll =
             RolloverUtils.calculateRollover(
                 blockTimestamp = block.timestamp,
-                delta = totals.delta,
+                delta = blockTotal,
                 ctx =
                     RolloverUtils.Context(
                         prevHourTotal = latest?.hourTotal ?: BigInteger.ZERO,
@@ -64,7 +64,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
             )
 
         // Map into final Mongo document
-        return mapToDocument(block, totals, roll, latest)
+        return mapToDocument(block, blockTotal, roll, latest)
     }
 
     /**
@@ -97,41 +97,6 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     )
 
     /**
-     * @param events Blockchain events for this block.
-     * @param callResponses ABI results for retrieving VTHO balance.
-     * @param latest Previously persisted record (null if none).
-     * @return Computed totals for the block.
-     * @notice Calculate the updated cumulative VTHO totals for the block.
-     * @dev
-     *     - Reads VTHO balance from call response.
-     *     - Adds every event.value to both claimed and total.
-     *     - Computes delta = blockTotal - previousTotal.
-     */
-    private fun calculateTotalsForBlock(
-        events: List<IndexedEvent>,
-        callResponses: List<InspectionResult>,
-        latest: VthoGeneratedByBlock?,
-    ): TotalsForBlock {
-        val prevClaimed = latest?.rewardsClaimed ?: BigInteger.ZERO
-        val prevBlockTotal = latest?.total ?: BigInteger.ZERO
-
-        val vthoBalance = getBalanceOf(callResponses)
-
-        var claimed = prevClaimed
-        var blockTotal = vthoBalance + prevClaimed
-
-        events.forEach { evt ->
-            val value = evt.requireValue()
-            claimed += value
-            blockTotal += value
-        }
-
-        val delta = blockTotal - prevBlockTotal
-
-        return TotalsForBlock(claimed = claimed, blockTotal = blockTotal, delta = delta)
-    }
-
-    /**
      * @param block The current block metadata (id, number, timestamp).
      * @param totals Aggregated running totals and delta for this block.
      * @param roll Result of applying rollover logic (new period totals + timeframes crossed).
@@ -153,7 +118,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      */
     private fun mapToDocument(
         block: Block,
-        totals: TotalsForBlock,
+        blockTotal: BigInteger,
         roll: RolloverUtils.RolloverResult,
         previous: VthoGeneratedByBlock?,
     ): List<VthoGeneratedByBlock> {
@@ -163,13 +128,14 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
             result += previous.copy(timeFrames = roll.timeFrames)
         }
 
+        val total = (previous?.total ?: BigInteger.ZERO) + blockTotal
+
         result +=
             VthoGeneratedByBlock(
                 blockId = block.id,
                 blockNumber = block.number,
                 blockTimestamp = block.timestamp,
-                total = totals.blockTotal,
-                rewardsClaimed = totals.claimed,
+                total = total,
                 // timestamps
                 hourOfDay = roll.hour,
                 dayOfMonth = roll.day,
@@ -178,7 +144,7 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 year = roll.year,
                 timeFrames = emptyList(),
                 // period totals
-                blockTotal = totals.delta,
+                blockTotal = blockTotal,
                 hourTotal = roll.hourTotal,
                 dayTotal = roll.dayTotal,
                 weekTotal = roll.weekTotal,
@@ -197,19 +163,19 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
     }
 
     /**
-     * @notice Extract VTHO balance from ABI call responses.
+     * @notice Extract VTHO Issued from ABI call responses.
      * @dev Returns zero if ABI data is missing.
      */
-    fun getBalanceOf(responses: List<InspectionResult>): BigInteger {
+    fun vthoIssued(responses: List<InspectionResult>): BigInteger {
         if (responses.isEmpty() || !responses[0].hasAbiData()) return BigInteger.ZERO
 
         val decoded =
             FunctionReturnDecoder.decode(
                 responses[0].data,
-                listOf(InputOutput("uint256", "balance", "uint256")),
+                listOf(InputOutput("uint256", "issued", "uint256")),
             )
 
-        return decoded["balance"] as BigInteger
+        return decoded["issued"] as BigInteger
     }
 
     /**
