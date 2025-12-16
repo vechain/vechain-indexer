@@ -1,7 +1,11 @@
 package org.vechain.indexer.stargate.nftHolders
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.VersionedDocument
+import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
 
 /**
@@ -13,4 +17,16 @@ data class NftOwnerBalance(
     @Id val owner: String,
     val total: Long,
     val byLevel: Map<TokenLevel, Long>,
-)
+    @JsonIgnore override val blockNumber: Long,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockTimestamp: Long,
+    @JsonIgnore override val version: Int = 1,
+) : VersionedDocument {
+    @JsonIgnore override fun getDocumentId(): String = owner
+}
+
+@Document("stargate_nft_owner_balances_archives")
+data class NftOwnerBalanceArchive
+@ConstructorBinding
+constructor(@Id override val id: String, override val data: NftOwnerBalance) :
+    Archive<NftOwnerBalance>
