@@ -9,6 +9,7 @@ import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.RolloverUtils
+import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
 /**
  * Extended VthoGeneratedByBlockService that profiles EVERY internal method call Tracks performance
@@ -16,8 +17,7 @@ import org.vechain.indexer.utils.RolloverUtils
  * - processBlock (main processing)
  * - save (MongoDB writes)
  * - validateAndLoadLatest (DB reads and validation)
- * - calculateTotalsForBlock (total calculations)
- * - getBalanceOf (balance decoding)
+ * - vthoIssued (issuance decoding)
  * - calculateRollover (rollover calculations)
  * - mapToDocument (document mapping)
  */
@@ -33,7 +33,7 @@ class ProfiledVthoGeneratedByBlockService(
     ): List<VthoGeneratedByBlock> {
         return profiler.time("      VthoGeneratedByBlockService.processBlock") {
             // Skip blocks with nothing to index
-            if (events.isEmpty() && !callResponses[0].data.hasAbiData()) {
+            if (events.isEmpty() && !callResponses[0].hasAbiData()) {
                 return@time emptyList()
             }
 
@@ -43,13 +43,10 @@ class ProfiledVthoGeneratedByBlockService(
                     validateAndLoadLatestInternal(block)
                 }
 
-            // Compute this block's totals (claimed + total + delta)
-            val totals =
-                profiler.time("        - calculateTotalsForBlock") {
-                    calculateTotalsForBlockInternal(events, callResponses, latest)
-                }
+            // Compute this block's totals
+            val blockTotal = profiler.time("        - vthoIssued") { vthoIssued(callResponses) }
 
-            if (totals.blockTotal == BigInteger.ZERO) {
+            if (blockTotal == BigInteger.ZERO) {
                 return@time emptyList()
             }
 
@@ -58,7 +55,7 @@ class ProfiledVthoGeneratedByBlockService(
                 profiler.time("        - calculateRollover") {
                     RolloverUtils.calculateRollover(
                         blockTimestamp = block.timestamp,
-                        delta = totals.delta,
+                        delta = blockTotal,
                         ctx =
                             RolloverUtils.Context(
                                 prevHourTotal = latest?.hourTotal ?: BigInteger.ZERO,
@@ -77,7 +74,7 @@ class ProfiledVthoGeneratedByBlockService(
 
             // Map into final Mongo document
             profiler.time("        - mapToDocument") {
-                mapToDocumentInternal(block, totals, roll, latest)
+                mapToDocumentInternal(block, blockTotal, roll, latest)
             }
         }
     }
@@ -96,92 +93,24 @@ class ProfiledVthoGeneratedByBlockService(
         return method.invoke(this, block) as? VthoGeneratedByBlock
     }
 
-    private fun calculateTotalsForBlockInternal(
-        events: List<IndexedEvent>,
-        callResponses: List<InspectionResult>,
-        latest: VthoGeneratedByBlock?,
-    ): TotalsForBlock {
-        // Get the inner class from the service
-        val innerClass =
-            VthoGeneratedByBlockService::class.java.declaredClasses.first {
-                it.simpleName == "TotalsForBlock"
-            }
-
-        val method =
-            VthoGeneratedByBlockService::class
-                .java
-                .getDeclaredMethod(
-                    "calculateTotalsForBlock",
-                    List::class.java,
-                    List::class.java,
-                    VthoGeneratedByBlock::class.java,
-                )
-        method.isAccessible = true
-        val result = method.invoke(this, events, callResponses, latest)
-
-        // Extract fields from the result
-        val claimedField = innerClass.getDeclaredField("claimed")
-        claimedField.isAccessible = true
-        val blockTotalField = innerClass.getDeclaredField("blockTotal")
-        blockTotalField.isAccessible = true
-        val deltaField = innerClass.getDeclaredField("delta")
-        deltaField.isAccessible = true
-
-        return TotalsForBlock(
-            claimed = claimedField.get(result) as BigInteger,
-            blockTotal = blockTotalField.get(result) as BigInteger,
-            delta = deltaField.get(result) as BigInteger,
-        )
-    }
-
     private fun mapToDocumentInternal(
         block: Block,
-        totals: TotalsForBlock,
+        blockTotal: BigInteger,
         roll: RolloverUtils.RolloverResult,
         previous: VthoGeneratedByBlock?,
     ): List<VthoGeneratedByBlock> {
-        // Get the inner class from the service
-        val innerClass =
-            VthoGeneratedByBlockService::class.java.declaredClasses.first {
-                it.simpleName == "TotalsForBlock"
-            }
-
-        // Create an instance of TotalsForBlock using reflection
-        val constructor =
-            innerClass.getDeclaredConstructor(
-                BigInteger::class.java,
-                BigInteger::class.java,
-                BigInteger::class.java,
-            )
-        constructor.isAccessible = true
-        val totalsInstance =
-            constructor.newInstance(totals.claimed, totals.blockTotal, totals.delta)
-
         val method =
             VthoGeneratedByBlockService::class
                 .java
                 .getDeclaredMethod(
                     "mapToDocument",
                     Block::class.java,
-                    innerClass,
+                    BigInteger::class.java,
                     RolloverUtils.RolloverResult::class.java,
                     VthoGeneratedByBlock::class.java,
                 )
         method.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return method.invoke(this, block, totalsInstance, roll, previous)
-            as List<VthoGeneratedByBlock>
-    }
-
-    // Helper data class to match the service's inner class
-    data class TotalsForBlock(
-        val claimed: BigInteger,
-        val blockTotal: BigInteger,
-        val delta: BigInteger,
-    )
-
-    // Extension function to check ABI data
-    private fun String.hasAbiData(): Boolean {
-        return this.isNotBlank() && this != "0x"
+        return method.invoke(this, block, blockTotal, roll, previous) as List<VthoGeneratedByBlock>
     }
 }

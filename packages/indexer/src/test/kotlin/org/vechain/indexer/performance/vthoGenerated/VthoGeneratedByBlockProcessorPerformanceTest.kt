@@ -16,7 +16,6 @@ import org.vechain.indexer.stargate.StargateUtils
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockProcessor
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockService
-import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("vtho-generated-by-block")
@@ -25,8 +24,8 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var vthoGeneratedByBlockRepository: VthoGeneratedByBlockRepository
     @Autowired lateinit var vthoGeneratedByBlockService: VthoGeneratedByBlockService
 
-    @Value("\${business-event.substitutions.STARGATE_CONTRACT}")
-    lateinit var stargateContract: String
+    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    lateinit var stakerContract: String
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -107,11 +106,7 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
             .startBlock(startBlock)
             .syncLoggerInterval(100L)
             .blockBatchSize(1L)
-            .businessEvents("business-events/stargate", "abis/stargate")
-            .businessEventNames(listOf("STARGATE_CLAIM_REWARDS"))
-            .businessEventContracts(listOf(stargateContract, VTHO_CONTRACT_ADDRESS))
-            .businessEventSubstitutionParams(businessEventProperties.substitutions)
-            .callDataClauses(StargateUtils.buildBalanceOfClause(stargateContract))
+            .callDataClauses(StargateUtils.buildIssuanceClause(stakerContract))
             .includeFullBlock()
             .build()
     }
