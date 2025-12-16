@@ -3,6 +3,7 @@ package org.vechain.indexer.stargate.nftHolders
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -14,6 +15,7 @@ import org.vechain.indexer.utils.RolloverUtils
 open class NftHoldersByBlockService(
     private val repository: NftHoldersByBlockRepository,
     private val ownerBalanceRepository: NftOwnerBalanceRepository,
+    private val archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
 ) {
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.
@@ -48,7 +50,11 @@ open class NftHoldersByBlockService(
         // Load existing owner balances for all owners in this batch
         val allOwners = events.mapNotNull { it.params.getAsString("owner") }.toSet()
         val existingBalances = ownerBalanceRepository.findByOwnerIn(allOwners)
-        val ownerBalances = existingBalances.associateBy { it.owner }.toMutableMap()
+        val existingBalancesByOwner = existingBalances.associateBy { it.owner }
+        val ownerBalances = existingBalancesByOwner.toMutableMap()
+
+        // Track balances to archive (existing balances that will be updated)
+        val balancesToArchive = mutableListOf<NftOwnerBalance>()
 
         var runningTotal = latest?.total ?: 0L
         val runningByLevel = latest?.byLevel?.toMutableMap() ?: mutableMapOf<TokenLevel, Long>()
@@ -69,6 +75,13 @@ open class NftHoldersByBlockService(
                 val currentTotal = currentBalance?.total ?: 0L
                 val currentByLevel = currentBalance?.byLevel?.toMutableMap() ?: mutableMapOf()
 
+                val currentVersion = currentBalance?.version ?: 0
+
+                // Archive existing balance if it will be updated
+                if (currentBalance != null && !balancesToArchive.any { it.owner == owner }) {
+                    balancesToArchive += currentBalance
+                }
+
                 when (evt.eventType) {
                     "STARGATE_STAKE" -> {
                         // New unique holder if they had 0 NFTs before
@@ -88,6 +101,10 @@ open class NftHoldersByBlockService(
                                 owner = owner,
                                 total = currentTotal + 1,
                                 byLevel = currentByLevel.toMap(),
+                                blockNumber = evt.blockNumber,
+                                blockId = evt.blockId,
+                                blockTimestamp = evt.blockTimestamp,
+                                version = currentVersion + 1,
                             )
                     }
 
@@ -112,6 +129,10 @@ open class NftHoldersByBlockService(
                                 owner = owner,
                                 total = newTotal,
                                 byLevel = currentByLevel.toMap(),
+                                blockNumber = evt.blockNumber,
+                                blockId = evt.blockId,
+                                blockTimestamp = evt.blockTimestamp,
+                                version = currentVersion + 1,
                             )
                     }
 
@@ -169,14 +190,16 @@ open class NftHoldersByBlockService(
             prev = doc
         }
 
-        // Persist updated owner balances
+        // Store updated owner balances and those to archive
         updatedOwnerBalances = ownerBalances.values.toList()
+        ownerBalancesToArchive = balancesToArchive
 
         return output
     }
 
     // Temporary storage for updated balances to be saved with records
     private var updatedOwnerBalances: List<NftOwnerBalance> = emptyList()
+    private var ownerBalancesToArchive: List<NftOwnerBalance> = emptyList()
 
     /** @notice Persist a single per-block NFT holder statistics record. */
     open fun saveRecord(record: NftHoldersByBlock) {
@@ -191,6 +214,12 @@ open class NftHoldersByBlockService(
     }
 
     private fun saveOwnerBalances() {
+        // Archive previous versions before saving new ones
+        if (ownerBalancesToArchive.isNotEmpty()) {
+            archiveService.saveAll(ownerBalancesToArchive)
+            ownerBalancesToArchive = emptyList()
+        }
+
         if (updatedOwnerBalances.isNotEmpty()) {
             ownerBalanceRepository.saveAll(updatedOwnerBalances)
             updatedOwnerBalances = emptyList()

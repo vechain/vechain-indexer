@@ -43,13 +43,9 @@ open class IndexerVersionService(
             }
 
             if (storedVersion < newVersion) {
-                logger.info(
-                    "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
-                )
-                mongoTemplate.dropCollection(collectionName)
-
                 updateIndexerVersion(indexerName, collectionName, newVersion)
-                return true
+
+                return dropCollection(collectionName)
             }
 
             return false
@@ -75,6 +71,15 @@ open class IndexerVersionService(
                 "Failed to drop archive collection: $archiveCollectionName. Exception: ${e.message}"
             )
         }
+    }
+
+    fun dropCollection(collectionName: String): Boolean {
+        logger.info(
+            "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
+        )
+        mongoTemplate.dropCollection(collectionName)
+
+        return true
     }
 
     /**
