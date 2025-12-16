@@ -34,7 +34,7 @@ class StargateEventService(
     private val stargateDelegationContract: String,
 ) {
     /** Apply event-driven mutations to token snapshots. */
-    fun handleStargateEvents(
+    suspend fun handleStargateEvents(
         events: List<IndexedEvent>,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
@@ -81,7 +81,7 @@ class StargateEventService(
     }
 
     // Process a single event for a token
-    private fun processEvent(
+    private suspend fun processEvent(
         event: IndexedEvent,
         tokenId: String,
         base: StargateToken?,
@@ -205,7 +205,7 @@ class StargateEventService(
     }
 
     // Token delegation event
-    private fun handleDelegate(
+    private suspend fun handleDelegate(
         event: IndexedEvent,
         base: StargateToken,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
@@ -337,7 +337,7 @@ class StargateEventService(
             boosted = false,
         )
 
-    private fun handleValidatorExitRequested(
+    private suspend fun handleValidatorExitRequested(
         event: IndexedEvent,
         latestTokenSnapshots: MutableMap<String, StargateToken>,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
@@ -378,7 +378,7 @@ class StargateEventService(
     // Helpers
     // ------------------------------------------------------------------------
 
-    private fun resolveCycleInfo(
+    private suspend fun resolveCycleInfo(
         validatorId: String,
         blockNumber: Long,
         validatorSnapshots: Map<String, ValidatorSnapshot>,

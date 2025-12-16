@@ -1,12 +1,12 @@
 package org.vechain.indexer.amn
 
 import io.mockk.MockKAnnotations
-import io.mockk.Runs
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.just
-import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -14,7 +14,9 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.fixtures.BlockFixtures
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.BlockUnexpanded
 import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
@@ -23,7 +25,7 @@ class AmnProcessorTest {
 
     @MockK lateinit var amnService: AmnService
 
-    @MockK lateinit var thorService: ThorService
+    @MockK lateinit var thorClient: ThorClient
 
     @MockK lateinit var indexerVersionService: IndexerVersionService
 
@@ -37,7 +39,7 @@ class AmnProcessorTest {
             AmnProcessor(
                 repository = amnRepository,
                 amnService = amnService,
-                thorService = thorService,
+                thorClient = thorClient,
                 indexerVersionService = indexerVersionService,
             )
     }
@@ -45,12 +47,13 @@ class AmnProcessorTest {
     @Test
     fun `getLastSyncedBlock - returns best block if DB is empty`() {
         every { amnRepository.count() } returns 0L
-        every { thorService.getBestBlock() } returns BlockFixtures.BLOCK_MP_SALES
+        coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) } returns
+            asUnexpanded(BlockFixtures.BLOCK_MP_SALES)
 
         val result = processor.getLastSyncedBlock()
 
         assert(result!!.number == BlockFixtures.BLOCK_MP_SALES.number)
-        verify { thorService.getBestBlock() }
+        coVerify { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) }
     }
 
     @Test
@@ -69,24 +72,53 @@ class AmnProcessorTest {
     @Test
     fun `process - calls sync and process when DB is empty`() {
         every { amnRepository.count() } returns 0L
-        every { amnService.syncEndorsersForAllNodes() } just Runs
-        every { amnService.processCandidateEvents(any()) } just Runs
+        coEvery { amnService.syncEndorsersForAllNodes() } returns Unit
+        coEvery { amnService.processCandidateEvents(any()) } returns emptyList()
 
-        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        runBlocking {
+            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        }
 
-        verify { amnService.syncEndorsersForAllNodes() }
-        verify { amnService.processCandidateEvents(any()) }
+        coVerify { amnService.syncEndorsersForAllNodes() }
+        coVerify { amnService.processCandidateEvents(any()) }
     }
 
     @Test
     fun `process - skips sync when already synced`() {
         every { amnRepository.count() } returnsMany listOf(0L, 1L)
-        every { amnService.syncEndorsersForAllNodes() } just Runs
-        every { amnService.processCandidateEvents(any()) } just Runs
+        coEvery { amnService.syncEndorsersForAllNodes() } returns Unit
+        coEvery { amnService.processCandidateEvents(any()) } returns emptyList()
 
-        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
-        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        runBlocking {
+            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        }
+        runBlocking {
+            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        }
 
-        verify(exactly = 1) { amnService.syncEndorsersForAllNodes() }
+        coVerify(exactly = 1) { amnService.syncEndorsersForAllNodes() }
     }
+
+    private fun asUnexpanded(block: org.vechain.indexer.thor.model.Block): BlockUnexpanded =
+        BlockUnexpanded(
+            number = block.number,
+            id = block.id,
+            size = block.size,
+            parentID = block.parentID,
+            timestamp = block.timestamp,
+            gasLimit = block.gasLimit,
+            baseFeePerGas = block.baseFeePerGas,
+            beneficiary = block.beneficiary,
+            gasUsed = block.gasUsed,
+            totalScore = block.totalScore,
+            txsRoot = block.txsRoot,
+            txsFeatures = block.txsFeatures,
+            stateRoot = block.stateRoot,
+            receiptsRoot = block.receiptsRoot,
+            com = block.com,
+            signer = block.signer,
+            isTrunk = block.isTrunk,
+            isFinalized = block.isFinalized,
+            transactions = emptyList(),
+        )
 }

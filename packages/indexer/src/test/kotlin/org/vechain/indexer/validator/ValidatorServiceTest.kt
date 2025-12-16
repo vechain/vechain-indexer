@@ -8,8 +8,8 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.rest.ExecuteAccountResponse
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ExecuteAccountResponse
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.logic.ValidatorAssembler
@@ -18,14 +18,14 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidator
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
     private val archiveService = mockk<ArchiveService<Validator, ValidatorArchive>>(relaxed = true)
-    private val thorService = mockk<ThorService>()
+    private val thorClient = mockk<ThorClient>()
 
     private lateinit var service: ValidatorService
 
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorService, 25L, "0xcontract"))
+        service = spyk(ValidatorService(repository, archiveService, thorClient, 25L, "0xcontract"))
     }
 
     private fun block(num: Long) =
@@ -133,7 +133,7 @@ class ValidatorServiceTest {
                     version = 1,
                 )
             )
-        every { thorService.inspectBalanceAtBlock(any(), any()) } returns
+        coEvery { thorClient.getAccountState(any(), any()) } returns
             ExecuteAccountResponse(balance = "0x0", energy = "0x0", hasCode = false)
 
         // FIX: InspectionResult must get a List<TxEvent>, not a BigInteger
@@ -142,6 +142,7 @@ class ValidatorServiceTest {
                 data = "0xDATA",
                 events = emptyList(),
                 transfers = emptyList(),
+                0,
                 reverted = false,
                 vmError = "",
             )

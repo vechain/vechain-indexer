@@ -130,7 +130,7 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
             archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    AccountsProcessor.process (per block)") { super.processEntry(entry) }
         }
     }

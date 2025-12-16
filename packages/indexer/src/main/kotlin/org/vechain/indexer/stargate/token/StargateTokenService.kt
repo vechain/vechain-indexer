@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -36,7 +35,7 @@ open class StargateTokenService(
     private var cachedValidators: Set<String> = emptySet()
 
     /** Main entry point for processing a block. */
-    open fun processBlock(
+    open suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
         events: List<IndexedEvent>,
@@ -91,7 +90,7 @@ open class StargateTokenService(
     // Snapshot Loading
     // ------------------------------------------------------------------------
 
-    private fun loadRelevantTokenSnapshots(
+    private suspend fun loadRelevantTokenSnapshots(
         block: Block,
         events: List<IndexedEvent>,
         removedValidators: Set<String>,
@@ -184,7 +183,7 @@ open class StargateTokenService(
      *
      * Uses validator snapshots if available, otherwise queries the chain.
      */
-    private fun resolveUnknownDelegations(
+    private suspend fun resolveUnknownDelegations(
         unknown: List<StargateToken>,
         block: Block,
         validatorsSnapshots: Map<String, ValidatorSnapshot>,
@@ -195,7 +194,7 @@ open class StargateTokenService(
             unknown.filter { it.validatorId != null }.groupBy { it.validatorId!! }
 
         val snapshotEmpty = validatorsSnapshots.isEmpty()
-        val responses: List<ExecuteCodeResponse> =
+        val responses: List<InspectionResult> =
             if (snapshotEmpty) {
                 validatorDelegationService.fetchValidationPeriodDetails(validators.keys.toList())
             } else {

@@ -1,7 +1,7 @@
 package org.vechain.indexer.performance.validatorBlock
 
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.ValidatorBlock
@@ -21,11 +21,11 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
  */
 class ProfiledValidatorBlockService(
     repository: ValidatorBlockRepository,
-    thorService: ThorService,
+    thorClient: ThorClient,
     private val profiler: DetailedProfiler,
-) : ValidatorBlockService(repository, thorService) {
+) : ValidatorBlockService(repository, thorClient) {
 
-    override fun processBlock(
+    override suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<ValidatorBlock> {

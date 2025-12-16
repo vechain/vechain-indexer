@@ -2,6 +2,7 @@ package org.vechain.indexer.validator
 
 import io.mockk.*
 import java.math.BigInteger
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -95,7 +96,7 @@ class DelegationServiceTest {
     // --- processBlock orchestration ---
 
     @Test
-    fun `processBlock returns due delegations`() {
+    fun `processBlock returns due delegations`(): Unit = runBlocking {
         val due =
             Delegation(
                 id = "d1",
@@ -123,7 +124,7 @@ class DelegationServiceTest {
             service.processBlock(
                 block(10),
                 emptyList(),
-                listOf(InspectionResult("0x", emptyList(), emptyList(), false, "")),
+                listOf(InspectionResult("0x", emptyList(), emptyList(), 0, false, "")),
             )
 
         assertThat(updates).hasSize(1)
@@ -132,9 +133,9 @@ class DelegationServiceTest {
     }
 
     @Test
-    fun `DelegationInitiated creates new delegation`() {
+    fun `DelegationInitiated creates new delegation`(): Unit = runBlocking {
         // stub validator cycle resolution
-        every { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } returns
+        coEvery { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } returns
             (5L to 10L)
 
         val ev =
@@ -156,7 +157,7 @@ class DelegationServiceTest {
     }
 
     @Test
-    fun `DelegationExitRequested moves to EXITING`() {
+    fun `DelegationExitRequested moves to EXITING`(): Unit = runBlocking {
         val existing =
             Delegation(
                 id = "d2",
@@ -191,7 +192,7 @@ class DelegationServiceTest {
     }
 
     @Test
-    fun `DelegationWithdrawn marks delegation EXITED`() {
+    fun `DelegationWithdrawn marks delegation EXITED`(): Unit = runBlocking {
         val existing =
             Delegation(
                 id = "d3",
@@ -222,7 +223,7 @@ class DelegationServiceTest {
     }
 
     @Test
-    fun `DelegationRewardsClaimed adds to total rewards`() {
+    fun `DelegationRewardsClaimed adds to total rewards`(): Unit = runBlocking {
         val existing =
             Delegation(
                 id = "d4",
@@ -257,7 +258,7 @@ class DelegationServiceTest {
     }
 
     @Test
-    fun `ValidatorExitRequested sets delegations to EXITING`() {
+    fun `ValidatorExitRequested sets delegations to EXITING`(): Unit = runBlocking {
         val existing =
             Delegation(
                 id = "d5",
@@ -278,7 +279,7 @@ class DelegationServiceTest {
             )
 
         every { repository.findByValidatorIn(any()) } returns listOf(existing)
-        every { validatorDelegationService.getValidatorExitBlock("0xVEXIT", any()) } returns 20L
+        coEvery { validatorDelegationService.getValidatorExitBlock("0xVEXIT", any()) } returns 20L
 
         val ev =
             event("ValidatorExitRequested", mapOf("validator" to "0xVEXIT"), address = "0xSTAKER")

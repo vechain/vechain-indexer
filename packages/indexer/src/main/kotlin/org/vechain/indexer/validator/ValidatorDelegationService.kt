@@ -9,9 +9,8 @@ import org.springframework.stereotype.Service
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.thor.AddressUtils
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeValidators
@@ -21,7 +20,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycl
 @Profile("validator", "delegation", "stargate", "stargate-token")
 @Service
 class ValidatorDelegationService(
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
 ) {
@@ -49,14 +48,14 @@ class ValidatorDelegationService(
      * @return Pair of (periodLength, nextCycleStart). If the validator has not started, returns
      *   (periodLength, 0).
      */
-    fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
+    suspend fun getValidatorPeriodInfo(validatorId: String, currentBlock: Long): Pair<Long, Long> {
         val clause =
             ContractUtils.createClause(
                 stakerSC,
                 getDelegationsAbiFunctions("getValidationPeriodDetails"),
                 AddressUtils.toBigInt(validatorId),
             )
-        val response = thorService.executeReadOnlyCode(listOf(clause))
+        val response = thorClient.inspectClauses(listOf(clause))
         val (startBlock, periodLength) = decodeValidationPeriodDetails(response[0].data)
 
         if (startBlock == 0L) return periodLength to 0L
@@ -75,10 +74,10 @@ class ValidatorDelegationService(
      * @param response The chain execution response.
      * @return The decoded start block.
      */
-    fun determineStartBlock(response: ExecuteCodeResponse): Long =
+    fun determineStartBlock(response: InspectionResult): Long =
         decodeValidationPeriodDetails(response.data).first
 
-    fun resolveCycleInfo(
+    suspend fun resolveCycleInfo(
         validatorId: String,
         blockNumber: Long,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
@@ -100,7 +99,7 @@ class ValidatorDelegationService(
      * @param validatorSnapshots Cached validator snapshots.
      * @return The exit block number.
      */
-    fun getValidatorExitBlock(
+    suspend fun getValidatorExitBlock(
         validatorId: String,
         validatorSnapshots: Map<String, ValidatorSnapshot>,
     ): Long =
@@ -112,7 +111,7 @@ class ValidatorDelegationService(
                         getDelegationsAbiFunctions("getValidationPeriodDetails"),
                         AddressUtils.toBigInt(validatorId),
                     )
-                val response = thorService.executeReadOnlyCode(listOf(clause))
+                val response = thorClient.inspectClauses(listOf(clause))
                 val decoded =
                     FunctionReturnDecoder.decode(
                         response[0].data,
@@ -159,9 +158,9 @@ class ValidatorDelegationService(
      * Performs a batch chain call for efficiency.
      *
      * @param validatorIds List of validator identifiers.
-     * @return List of [ExecuteCodeResponse] with ABI-encoded results.
+     * @return List of [InspectionResult] with ABI-encoded results.
      */
-    fun fetchValidationPeriodDetails(validatorIds: List<String>): List<ExecuteCodeResponse> {
+    suspend fun fetchValidationPeriodDetails(validatorIds: List<String>): List<InspectionResult> {
         if (validatorIds.isEmpty()) return emptyList()
 
         val clauses =
@@ -172,7 +171,17 @@ class ValidatorDelegationService(
                     AddressUtils.toBigInt(validatorId),
                 )
             }
-        return thorService.executeReadOnlyCode(clauses)
+        val results = thorClient.inspectClauses(clauses)
+        return results.map { result ->
+            InspectionResult(
+                data = result.data,
+                events = emptyList(),
+                transfers = emptyList(),
+                gasUsed = 0,
+                reverted = false,
+                vmError = null,
+            )
+        }
     }
 
     /**

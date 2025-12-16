@@ -1,9 +1,9 @@
 package org.vechain.indexer.b3tr.proposal
 
-import io.mockk.MockKAnnotations
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -15,8 +15,9 @@ import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.rest.ExecuteCodeResponse
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 
 @ExtendWith(MockKExtension::class)
@@ -28,26 +29,28 @@ internal class ProposalResultServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
 
-    @MockK lateinit var thorService: ThorService
+    @MockK lateinit var thorClient: ThorClient
 
     private lateinit var service: TestableProposalResultService
+
+    private fun blockId(num: Long): String = "0x" + num.toString(16).padStart(64, '0')
 
     // A testable subclass to expose protected methods for testing
     private class TestableProposalResultService(
         repository: ProposalResultRepository,
         proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
         proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
-        thorService: ThorService,
+        thorClient: ThorClient,
         governorContract: String,
     ) :
         ProposalResultService(
             repository,
             proposalResultArchiveService,
             proposalResultPruner,
-            thorService,
+            thorClient,
             governorContract,
         ) {
-        fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
+        suspend fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
             updateStatusesForBatch(batch, block)
 
         fun callCreateStatusClauses(proposals: List<ProposalResult>) =
@@ -55,13 +58,13 @@ internal class ProposalResultServiceTest {
 
         fun callUpdateProposalStates(
             proposals: List<ProposalResult>,
-            responses: List<ExecuteCodeResponse>,
+            responses: List<InspectionResult>,
             block: BlockDetails,
             updatedResult: MutableList<ProposalResult>,
             archiveResult: MutableList<ProposalResult>,
         ) = updateProposalStates(proposals, responses, block, updatedResult, archiveResult)
 
-        fun callParseProposalState(response: ExecuteCodeResponse, proposalId: String) =
+        fun callParseProposalState(response: InspectionResult, proposalId: String) =
             parseProposalState(response, proposalId)
     }
 
@@ -73,7 +76,7 @@ internal class ProposalResultServiceTest {
                 repository,
                 proposalResultArchiveService,
                 pruner,
-                thorService,
+                thorClient,
                 "0x1234567890123456789012345678901234567890",
             )
     }
@@ -593,7 +596,7 @@ internal class ProposalResultServiceTest {
         every { repository.findByStateIn(any()) } returns emptyList()
 
         val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 1000L)
-        val (updated, archived) = service.getUpdatedStatuses(block)
+        val (updated, archived) = runBlocking { service.getUpdatedStatuses(block) }
 
         assertEquals(0, updated.size)
         assertEquals(0, archived.size)
@@ -631,33 +634,34 @@ internal class ProposalResultServiceTest {
 
         val responses =
             listOf(
-                ExecuteCodeResponse(
+                InspectionResult(
                     data = "0x01", // Active
                     events = emptyList(),
                     transfers = emptyList(),
-                    gasUsed = 100,
+                    gasUsed = 0,
                     reverted = false,
                     vmError = null,
                 ),
-                ExecuteCodeResponse(
+                InspectionResult(
                     data = "0x01", // Active
                     events = emptyList(),
                     transfers = emptyList(),
-                    gasUsed = 100,
+                    gasUsed = 0,
                     reverted = false,
                     vmError = null,
                 ),
             )
 
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns responses
+        coEvery { thorClient.inspectClauses(any(), any()) } returns responses
 
-        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
-        val (updated, archived) = service.callUpdateStatusesForBatch(proposals, block)
+        val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
+        val (updated, archived) =
+            runBlocking { service.callUpdateStatusesForBatch(proposals, block) }
 
         // State changed from Pending (0) to Active (1)
         assertEquals(2, updated.size)
         assertEquals(2, archived.size)
-        assertEquals("block-2", updated[0].blockId)
+        assertEquals(blockId(2), updated[0].blockId)
         assertEquals(ProposalState.Active, updated[0].state)
     }
 
@@ -681,22 +685,22 @@ internal class ProposalResultServiceTest {
 
         val responses =
             listOf(
-                ExecuteCodeResponse(
+                InspectionResult(
                     data = "0x00",
                     events = emptyList(),
                     transfers = emptyList(),
-                    gasUsed = 100,
+                    gasUsed = 0,
                     reverted = true,
                     vmError = "execution reverted",
                 )
             )
 
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns responses
+        coEvery { thorClient.inspectClauses(any(), any()) } returns responses
 
-        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
+        val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
 
         assertThrows(IllegalStateException::class.java) {
-            service.callUpdateStatusesForBatch(proposals, block)
+            runBlocking { service.callUpdateStatusesForBatch(proposals, block) }
         }
     }
 
@@ -738,11 +742,11 @@ internal class ProposalResultServiceTest {
     @Test
     fun `parseProposalState should parse hex state values correctly`() {
         val response =
-            ExecuteCodeResponse(
+            InspectionResult(
                 data = "0x02", // Canceled
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 100,
+                gasUsed = 0,
                 reverted = false,
                 vmError = null,
             )
@@ -755,11 +759,11 @@ internal class ProposalResultServiceTest {
     @Test
     fun `parseProposalState should throw on reverted response`() {
         val response =
-            ExecuteCodeResponse(
+            InspectionResult(
                 data = "0x00",
                 events = emptyList(),
                 transfers = emptyList(),
-                gasUsed = 100,
+                gasUsed = 0,
                 reverted = true,
                 vmError = "execution reverted",
             )
@@ -789,20 +793,23 @@ internal class ProposalResultServiceTest {
             }
 
         every { repository.findByStateIn(any()) } returns proposals
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns
-            List(50) {
-                ExecuteCodeResponse(
-                    data = "0x01", // Active
-                    events = emptyList(),
-                    transfers = emptyList(),
-                    gasUsed = 100,
-                    reverted = false,
-                    vmError = null,
-                )
+        coEvery { thorClient.inspectClauses(any(), any()) } coAnswers
+            {
+                val clauses = firstArg<List<Clause>>()
+                List(clauses.size) {
+                    InspectionResult(
+                        data = "0x01", // Active
+                        events = emptyList(),
+                        transfers = emptyList(),
+                        gasUsed = 0,
+                        reverted = false,
+                        vmError = null,
+                    )
+                }
             }
 
-        val block = BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 2000L)
-        val (updated, archived) = service.getUpdatedStatuses(block)
+        val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
+        val (updated, archived) = runBlocking { service.getUpdatedStatuses(block) }
 
         // All proposals should be updated (state changed from Pending to Active)
         assertEquals(125, updated.size)

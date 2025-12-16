@@ -4,17 +4,21 @@ import com.github.kittinunf.fuel.core.FuelError
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.RateLimitException
 import org.vechain.indexer.thor.client.DefaultThorClient
-import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.model.*
 
-/** Metrics decorator for [ThorClient]. Uses composition instead of inheritance. */
+/**
+ * Metrics decorator for [DefaultThorClient].
+ *
+ * Overrides `getBlock`/`getBlockUnexpanded` so the inherited
+ * `waitForBlock`/`waitForBlockUnexpanded` (which retry internally) record metrics for each
+ * underlying `/blocks/{revision}` call without separate "wait" metrics.
+ */
 class MonitoredThorClient(
     private val metrics: ThorClientMetrics,
     baseUrl: String,
     vararg headers: Pair<String, Any>,
-) : ThorClient {
-
-    private val delegate = DefaultThorClient(baseUrl, *headers)
+) : DefaultThorClient(baseUrl, *headers) {
 
     private suspend fun <T> withMetrics(method: String, path: String, block: suspend () -> T): T {
         val start = System.nanoTime()
@@ -41,27 +45,29 @@ class MonitoredThorClient(
         }
     }
 
-    override suspend fun getBlock(blockNumber: Long): Block =
-        withMetrics("GET", "/blocks/{number}") { delegate.getBlock(blockNumber) }
+    override suspend fun getBlock(revision: BlockRevision): Block =
+        withMetrics("GET", "/blocks/{revision}") { super.getBlock(revision) }
 
-    override suspend fun getBestBlock(): Block =
-        withMetrics("GET", "/blocks/best") { delegate.getBestBlock() }
-
-    override suspend fun getFinalizedBlock(): Block =
-        withMetrics("GET", "/blocks/finalized") { delegate.getFinalizedBlock() }
+    override suspend fun getBlockUnexpanded(revision: BlockRevision): BlockUnexpanded =
+        withMetrics("GET", "/blocks/{revision}?expanded=false") {
+            super.getBlockUnexpanded(revision)
+        }
 
     override suspend fun getEventLogs(req: EventLogsRequest): List<EventLog> =
-        withMetrics("POST", "/logs/event") { delegate.getEventLogs(req) }
+        withMetrics("POST", "/logs/event") { super.getEventLogs(req) }
 
     override suspend fun getVetTransfers(req: TransferLogsRequest): List<TransferLog> =
-        withMetrics("POST", "/logs/transfer") { delegate.getVetTransfers(req) }
+        withMetrics("POST", "/logs/transfer") { super.getVetTransfers(req) }
 
     override suspend fun inspectClauses(
         clauses: List<Clause>,
-        blockID: String,
+        revision: BlockRevision?,
     ): List<InspectionResult> =
-        withMetrics("POST", "/accounts/*") { delegate.inspectClauses(clauses, blockID) }
+        withMetrics("POST", "/accounts/*") { super.inspectClauses(clauses, revision) }
 
-    override suspend fun waitForBlock(blockNumber: Long): Block =
-        withMetrics("GET", "/blocks/{number}/wait") { delegate.waitForBlock(blockNumber) }
+    override suspend fun getAccountState(
+        address: String,
+        revision: BlockRevision?,
+    ): ExecuteAccountResponse =
+        withMetrics("GET", "/accounts/{address}") { super.getAccountState(address, revision) }
 }

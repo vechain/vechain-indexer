@@ -30,7 +30,7 @@ open class AppRoundActionSummaryProcessor(
     protected var roundId: Int =
         repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

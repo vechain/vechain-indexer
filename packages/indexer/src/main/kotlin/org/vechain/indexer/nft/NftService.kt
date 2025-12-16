@@ -31,7 +31,10 @@ open class NftService(
         saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
     }
 
-    open fun parseRecords(data: List<IndexedEvent>, existing: List<IndexedNft>): List<IndexedNft> {
+    open suspend fun parseRecords(
+        data: List<IndexedEvent>,
+        existing: List<IndexedNft>,
+    ): List<IndexedNft> {
         // Pre-index existing records for faster lookup
         val existingById = existing.associateBy { it.id }
 

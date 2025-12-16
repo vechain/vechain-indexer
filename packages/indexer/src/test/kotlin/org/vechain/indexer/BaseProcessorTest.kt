@@ -114,7 +114,7 @@ class BaseProcessorTest {
         indexerVersionService: IndexerVersionService,
     ) : BaseProcessor(repository, indexerVersionService, TEST_INDEXER_NAME) {
 
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             // no-op for tests
         }
     }

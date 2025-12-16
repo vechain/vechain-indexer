@@ -66,7 +66,7 @@ class BaseStatefulProcessorTest {
             TEST_INDEXER_NAME,
         ) {
 
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             // does nothing
         }
     }

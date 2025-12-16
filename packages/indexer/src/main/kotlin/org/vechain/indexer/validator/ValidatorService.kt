@@ -10,8 +10,9 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -26,7 +27,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
 ) {
@@ -113,9 +114,8 @@ open class ValidatorService(
      * - For older blocks: only fetch docs for validators present in events.
      * - For newer blocks: fetch all non-exited validators.
      *
-     * @param block Current block being processed.
      * @param matchedEvents Events in this block.
-     * @param threshold Block threshold separating old vs new logic.
+     * @param isFullySynced Whether the block is recent enough to consider full sync.
      * @return Map of validatorId → Validator document.
      */
     private fun loadExistingDocs(
@@ -243,8 +243,8 @@ open class ValidatorService(
      * @notice Get total VET staked at a specific block.
      * @dev Reads account balance from Thor and converts hex to BigInteger (Wei).
      */
-    fun getTotalVETStaked(blockId: String): BigInteger {
-        val res = thorService.inspectBalanceAtBlock(stakerSC, blockId)
+    suspend fun getTotalVETStaked(blockId: String): BigInteger {
+        val res = thorClient.getAccountState(address = stakerSC, BlockRevision.Id(blockId))
         return res.balance.removePrefix("0x").ifEmpty { "0" }.toBigInteger(16)
     }
 
