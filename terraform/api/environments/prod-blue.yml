@@ -53,6 +53,15 @@ alb:
   # Health Check Configuration
   healthcheck:
     path: "/actuator/health"
+  waf:
+    waf_rate_limit: 3000
+    waf_rate_limit_exception_list:
+      - "37.187.71.209/32"
+      - "49.12.121.61/32"
+      - "83.34.211.88/32"
+      - "162.19.91.134/32"
+      - "136.243.78.172/32"
+      - "141.94.193.149/32"
 
 mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
@@ -60,7 +69,7 @@ datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
 enabled_nets:
   main:
-    image_version:                  latest
+    image_version:                  v.5.1.5
     thor_url:                       https://mainnet.vechain.org
     api:
       cpu:                          1024
