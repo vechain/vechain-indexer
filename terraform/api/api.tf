@@ -951,10 +951,11 @@ module "vpc-endpoints" {
 }
 
 ################################################################################
-# WAF for Explore Frontend Load Balancers
+# WAF for API Load Balancers
 ################################################################################
 
 module "waf" {
+  count  = startswith(local.env.environment, "prod") ? 1 : 0
   source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=v.3.1.27"
 
   env          = local.env.environment
@@ -964,7 +965,7 @@ module "waf" {
   # Enable regional WAF for ALB protection
   waf_regional_enable = true
 
-  # Associate WAF with all explore ALBs
+  # Associate WAF with all API ALBs
   associate_waf = true
   resource_arn  = [for service in module.ecs-lb-service-api : service.alb_arn]
 
