@@ -74,12 +74,15 @@ open class IndexerVersionService(
     }
 
     fun dropCollection(collectionName: String): Boolean {
-        logger.info(
-            "Indexer version for $collectionName has changed. Dropping and recreating collection $collectionName."
-        )
-        mongoTemplate.dropCollection(collectionName)
-
-        return true
+        logger.info("Dropping collection $collectionName if it exists.")
+        try {
+            mongoTemplate.dropCollection(collectionName)
+            logger.info("Successfully dropped collection: $collectionName.")
+            return true
+        } catch (e: Exception) {
+            logger.warn("Failed to drop collection: $collectionName. Exception: ${e.message}")
+            return false
+        }
     }
 
     /**
