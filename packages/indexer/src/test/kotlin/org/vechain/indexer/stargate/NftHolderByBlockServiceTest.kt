@@ -364,19 +364,6 @@ class NftHolderByBlockServiceTest {
     }
 
     @Test
-    fun `saveRecord delegates and saves owner balances`() {
-        val record = nftBlock("id", 1, 100, 1)
-
-        every { repository.save(record) } returns record
-        // No owner balances to save after direct saveRecord call
-        every { ownerBalanceRepository.saveAll(emptyList<NftOwnerBalance>()) } returns emptyList()
-
-        service.saveRecord(record)
-
-        verify(exactly = 1) { repository.save(record) }
-    }
-
-    @Test
     fun `saveRecords delegates and saves owner balances`() {
         val records = listOf(nftBlock("A", 1, 100, 1), nftBlock("B", 2, 200, 2))
 

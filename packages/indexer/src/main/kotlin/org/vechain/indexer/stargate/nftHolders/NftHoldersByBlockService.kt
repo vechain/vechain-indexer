@@ -201,12 +201,6 @@ open class NftHoldersByBlockService(
     private var updatedOwnerBalances: List<NftOwnerBalance> = emptyList()
     private var ownerBalancesToArchive: List<NftOwnerBalance> = emptyList()
 
-    /** @notice Persist a single per-block NFT holder statistics record. */
-    open fun saveRecord(record: NftHoldersByBlock) {
-        repository.save(record)
-        saveOwnerBalances()
-    }
-
     /** @notice Persist multiple per-block NFT holder statistics records. */
     open fun saveRecords(records: List<NftHoldersByBlock>) {
         repository.saveAll(records)
