@@ -10,11 +10,13 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.TimeFrame
+import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalance
+import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceArchive
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -27,13 +29,14 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
     @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
+    @MockK lateinit var archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>
 
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository, ownerBalanceRepository)
+        service = NftHoldersByBlockService(repository, ownerBalanceRepository, archiveService)
     }
 
     // ------------------------------------------------------------
@@ -212,6 +215,10 @@ class NftHolderByBlockServiceTest {
                 owner = "0xowner1",
                 total = 2,
                 byLevel = mapOf(TokenLevel.Strength to 1, TokenLevel.Thunder to 1),
+                blockNumber = 8,
+                blockId = "block8",
+                blockTimestamp = 800,
+                version = 2,
             )
 
         every { repository.getLatestRecord() } returns
