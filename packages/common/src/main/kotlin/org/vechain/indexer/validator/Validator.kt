@@ -58,6 +58,9 @@ data class Validator(
     val blocksPerYear: Decimal128? = null,
     val percentageOffline: Decimal128? = null,
     val offlineBlocks: Long? = null,
+    val exitBlock: Long? = null, // Block at which validator will exit (for EXITING status)
+    val queuePosition: Long? = null, // Position in queue (1-based), null if not QUEUED
+    val availableStartBlock: Long? = null, // Block at which queued validator can become active
     @JsonIgnore override val version: Int = 0,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
