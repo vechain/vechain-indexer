@@ -18,7 +18,7 @@ open class VthoGeneratedByBlockConfig {
     open fun vthoGeneratedByBlockIndexer(
         thorClient: ThorClient,
         processor: VthoGeneratedByBlockProcessor,
-        @Value("\${indexer.start-block.stargate}") startBlock: Long,
+        @Value("\${indexer.start-block.delegation}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") stakerSC: String,
