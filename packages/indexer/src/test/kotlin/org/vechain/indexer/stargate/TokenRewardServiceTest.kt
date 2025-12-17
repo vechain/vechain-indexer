@@ -13,6 +13,7 @@ import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
+import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -29,7 +30,7 @@ class TokenRewardServiceTest {
 
     private lateinit var service: TokenRewardService
 
-    private fun blockId(num: Long): String = "0x" + num.toString(16).padStart(64, '0')
+    private fun blockId(num: Long): String = toHex(num, 64)
 
     @BeforeEach
     fun setup() {

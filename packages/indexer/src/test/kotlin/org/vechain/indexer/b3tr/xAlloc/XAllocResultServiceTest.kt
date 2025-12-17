@@ -21,6 +21,7 @@ import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.BlockUnexpanded
@@ -40,7 +41,7 @@ internal class XAllocResultServiceTest {
 
     private lateinit var service: XAllocResultService
 
-    private fun blockId(num: Long): String = "0x" + num.toString(16).padStart(64, '0')
+    private fun blockId(num: Long): String = toHex(num, 64)
 
     // Test wrapper to access protected functions directly
     private inner class TestableXAllocResultService(

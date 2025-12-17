@@ -45,15 +45,15 @@ class AmnProcessorTest {
     }
 
     @Test
-    fun `getLastSyncedBlock - returns best block if DB is empty`() {
+    fun `getLastSyncedBlock - returns finalized block if DB is empty`() {
         every { amnRepository.count() } returns 0L
-        coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) } returns
+        coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.FINALIZED) } returns
             asUnexpanded(BlockFixtures.BLOCK_MP_SALES)
 
         val result = processor.getLastSyncedBlock()
 
         assert(result!!.number == BlockFixtures.BLOCK_MP_SALES.number)
-        coVerify { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) }
+        coVerify { thorClient.getBlockUnexpanded(BlockRevision.Keyword.FINALIZED) }
     }
 
     @Test

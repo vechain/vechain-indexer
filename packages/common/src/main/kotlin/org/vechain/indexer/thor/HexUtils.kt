@@ -32,6 +32,12 @@ object HexUtils {
         return addPrefix(hex.lowercase())
     }
 
+    fun toHex(num: Long, padToLength: Int? = null): String {
+        val hex = num.toString(16)
+        val paddedHex = padToLength?.let { hex.padStart(it, '0') } ?: hex
+        return addPrefix(paddedHex)
+    }
+
     /** Parse hex string to Int, handling optional 0x prefix */
     fun toInt(hex: String): Int {
         require(isValid(hex)) { "Invalid hex string: $hex" }
