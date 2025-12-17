@@ -42,6 +42,9 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: ${METRICS_ID:vechain-indexer}
   datadog:
     metrics:
       export:
@@ -59,9 +62,6 @@ management:
         # should not be enabled together with datadog, set this env var to false if datadog is enabled
         enabled: ${PROMETHEUS_METRICS_ENABLED:false}
         step: 10s
-
-metrics:
-  id: ${METRICS_ID:vechain-indexer}
 
 spring.data:
   mongodb:
