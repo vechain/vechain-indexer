@@ -18,7 +18,7 @@ import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("accounts")
+@Profile("accounts", "total-accounts")
 @Tag(name = "Accounts", description = "VeChain Thor Accounts Overview")
 @Validated
 @RestController
@@ -48,9 +48,9 @@ open class AccountsController(private val accountsService: AccountsService) {
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
-    ): PaginatedResponse<Accounts> {
+    ): PaginatedResponse<TotalAccounts> {
         val pageable =
-            PaginationUtils.toPageable(page, size, direction, Accounts::blockTimestamp.name)
+            PaginationUtils.toPageable(page, size, direction, TotalAccounts::blockTimestamp.name)
         val accounts = accountsService.getTotal(timeFrame, pageable)
         return paginatedResponse(accounts)
     }

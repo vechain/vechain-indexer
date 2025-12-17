@@ -14,9 +14,9 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
-@Profile("accounts")
+@Profile("accounts", "total-accounts")
 @Configuration
-open class AccountsCollectionConfig(
+open class TotalAccountsCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
@@ -24,12 +24,12 @@ open class AccountsCollectionConfig(
     CollectionConfig(
         mongoTemplate,
         appCoroutineScope,
-        Accounts::class.java,
-        AccountsArchive::class.java,
+        TotalAccounts::class.java,
+        TotalAccountsArchive::class.java,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    @Value("\${indexer.version.accounts}") private val version: Int = 1
+    @Value("\${indexer.version.total-accounts}") private val version: Int = 1
 
     @PostConstruct
     override fun initCollection() {
@@ -37,12 +37,12 @@ open class AccountsCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.ACCOUNTS_INDEXER,
-                Accounts::class.java,
+                indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
+                TotalAccounts::class.java,
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(AccountsArchive::class.java)
+        if (dropped) indexerVersionService.dropArchiveCollection(TotalAccountsArchive::class.java)
 
         ensureCollection()
 
@@ -55,7 +55,7 @@ open class AccountsCollectionConfig(
                     Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
                 "timeFrame_1_blockTimestamp_-1" to
                     Index()
-                        .on(Accounts::timeFrame.name, Sort.Direction.ASC)
+                        .on(TotalAccounts::timeFrame.name, Sort.Direction.ASC)
                         .on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
                 "blockNumber_1" to Index().on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
             )

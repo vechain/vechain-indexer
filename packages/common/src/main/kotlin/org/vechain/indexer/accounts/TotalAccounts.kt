@@ -13,7 +13,7 @@ import org.vechain.indexer.thor.model.Views
 @Document(collection = "total_accounts")
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Accounts(
+data class TotalAccounts(
     @JsonIgnore @Id val id: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
@@ -35,6 +35,6 @@ data class Accounts(
 
 @Document("total_accounts_archives")
 @JsonView(Views.Public::class)
-data class AccountsArchive
+data class TotalAccountsArchive
 @ConstructorBinding
-constructor(@Id override val id: String, override val data: Accounts) : Archive<Accounts>
+constructor(@Id override val id: String, override val data: TotalAccounts) : Archive<TotalAccounts>

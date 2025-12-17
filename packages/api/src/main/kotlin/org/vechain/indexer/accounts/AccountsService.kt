@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service
  * @dev Ensures that period-based queries always include the "ALL" document, and normalizes it to
  *   reflect the requested time frame when necessary.
  */
-@Profile("accounts")
+@Profile("accounts", "total-accounts")
 @Service
-open class AccountsService(private val accountsRepository: AccountsRepository) {
+open class AccountsService(private val totalAccountsRepository: TotalAccountsRepository) {
     /**
      * @param period The reward period to query. Defaults to ALL if not provided.
      * @param pageable Spring pageable object controlling pagination and sorting.
@@ -22,7 +22,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
      * @dev When querying for a specific period (e.g., DAY), includes the "ALL" document in the
      *   query and normalizes it to match the requested period.
      */
-    fun getTotal(period: AccountQueryTimeFrame?, pageable: Pageable): Slice<Accounts> {
+    fun getTotal(period: AccountQueryTimeFrame?, pageable: Pageable): Slice<TotalAccounts> {
         val targetPeriod =
             when (period) {
                 AccountQueryTimeFrame.DAY -> TimeFrame.DAY
@@ -41,7 +41,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
                 listOf(targetPeriod, TimeFrame.ALL)
             }
 
-        val slice = accountsRepository.findByTimeFrameIn(periods, pageable)
+        val slice = totalAccountsRepository.findByTimeFrameIn(periods, pageable)
 
         // If querying ALL directly or no data exists, return as-is
         if (targetPeriod == TimeFrame.ALL || slice.isEmpty) {
@@ -75,7 +75,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
      * @notice Normalizes an "ALL" period TokenReward to mimic a specific time frame.
      * @dev This allows the "ALL" record to reflect the target period’s cumulative rewards.
      */
-    private fun normalizeAllAs(allDoc: Accounts, target: TimeFrame): Accounts {
+    private fun normalizeAllAs(allDoc: TotalAccounts, target: TimeFrame): TotalAccounts {
         val normalized =
             when (target) {
                 TimeFrame.DAY -> allDoc.dayTotal

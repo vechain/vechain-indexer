@@ -1,9 +1,9 @@
 package org.vechain.indexer.performance.accounts
 
-import org.vechain.indexer.accounts.Accounts
-import org.vechain.indexer.accounts.AccountsArchive
-import org.vechain.indexer.accounts.AccountsRepository
-import org.vechain.indexer.accounts.AccountsService
+import org.vechain.indexer.accounts.TotalAccounts
+import org.vechain.indexer.accounts.TotalAccountsArchive
+import org.vechain.indexer.accounts.TotalAccountsRepository
+import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
@@ -18,16 +18,16 @@ import org.vechain.indexer.thor.model.InspectionResult
  * - applyRolloverLogic (rollover calculations)
  * - createPeriodAccounts (period account creation)
  */
-class ProfiledAccountsService(
-    repository: AccountsRepository,
-    archiveService: ArchiveService<Accounts, AccountsArchive>,
+class ProfiledTotalAccountsService(
+    repository: TotalAccountsRepository,
+    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
     private val profiler: DetailedProfiler,
-) : AccountsService(repository, archiveService) {
+) : TotalAccountsService(repository, archiveService) {
 
     override fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
-    ): Pair<List<Accounts>, Accounts> {
+    ): Pair<List<TotalAccounts>, TotalAccounts> {
         return profiler.time("      AccountsService.processBlock") {
             // Get new accounts from block
             val accounts =
@@ -38,42 +38,44 @@ class ProfiledAccountsService(
                 updateAccountsInfoInternal(
                     block = block,
                     newAccounts = accounts.second,
-                    accountsTracker = accounts.first,
+                    totalAccountsTracker = accounts.first,
                 )
             }
         }
     }
 
-    override fun save(accountsInfo: List<Accounts>, archive: Accounts) {
-        profiler.time("      AccountsService.save (MongoDB)") { super.save(accountsInfo, archive) }
+    override fun save(totalAccountsInfo: List<TotalAccounts>, archive: TotalAccounts) {
+        profiler.time("      AccountsService.save (MongoDB)") {
+            super.save(totalAccountsInfo, archive)
+        }
     }
 
     // Private method accessors using reflection
-    private fun getNewAccountsInternal(block: Block): Pair<Accounts, List<Accounts>> {
+    private fun getNewAccountsInternal(block: Block): Pair<TotalAccounts, List<TotalAccounts>> {
         val method =
-            AccountsService::class.java.getDeclaredMethod("getNewAccounts", Block::class.java)
+            TotalAccountsService::class.java.getDeclaredMethod("getNewAccounts", Block::class.java)
         method.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return method.invoke(this, block) as Pair<Accounts, List<Accounts>>
+        return method.invoke(this, block) as Pair<TotalAccounts, List<TotalAccounts>>
     }
 
     private fun updateAccountsInfoInternal(
         block: Block,
-        newAccounts: List<Accounts>,
-        accountsTracker: Accounts,
-    ): Pair<List<Accounts>, Accounts> {
+        newAccounts: List<TotalAccounts>,
+        totalAccountsTracker: TotalAccounts,
+    ): Pair<List<TotalAccounts>, TotalAccounts> {
         val method =
-            AccountsService::class
+            TotalAccountsService::class
                 .java
                 .getDeclaredMethod(
                     "updateAccountsInfo",
                     Block::class.java,
                     List::class.java,
-                    Accounts::class.java,
+                    TotalAccounts::class.java,
                 )
         method.isAccessible = true
         @Suppress("UNCHECKED_CAST")
-        return method.invoke(this, block, newAccounts, accountsTracker)
-            as Pair<List<Accounts>, Accounts>
+        return method.invoke(this, block, newAccounts, totalAccountsTracker)
+            as Pair<List<TotalAccounts>, TotalAccounts>
     }
 }

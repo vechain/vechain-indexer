@@ -14,40 +14,44 @@ import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
-@Profile("accounts")
-open class AccountsConfig {
+@Profile("accounts", "total-accounts")
+open class TotalAccountsConfig {
     @Bean
-    open fun accountsArchiveService(
+    open fun totalAccountsArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<Accounts, AccountsArchive> =
+    ): ArchiveService<TotalAccounts, TotalAccountsArchive> =
         ArchiveService(
             mongoTemplate,
-            Accounts::class.java,
-            AccountsArchive::class.java,
+            TotalAccounts::class.java,
+            TotalAccountsArchive::class.java,
             recordLimit,
         )
 
     @Bean
-    open fun accountsPruner(
-        accountsArchiveService: ArchiveService<Accounts, AccountsArchive>,
+    open fun totalAccountsPruner(
+        totalTotalAccountsArchiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<Accounts, AccountsArchive> =
-        PrunerService(AccountsArchive::class, accountsArchiveService, prunerRemovalChunkSize)
+    ): TargetedPruner<TotalAccounts, TotalAccountsArchive> =
+        PrunerService(
+            TotalAccountsArchive::class,
+            totalTotalAccountsArchiveService,
+            prunerRemovalChunkSize,
+        )
 
     @Bean
-    open fun accountsIndexer(
+    open fun totalAccountsIndexer(
         thorClient: ThorClient,
-        processor: AccountsProcessor,
-        accountsPruner: TargetedPruner<Accounts, AccountsArchive>,
+        processor: TotalAccountsProcessor,
+        totalAccountsPruner: TargetedPruner<TotalAccounts, TotalAccountsArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.ACCOUNTS_INDEXER)
+            .name(IndexerNames.TOTAL_ACCOUNTS_INDEXER)
             .thorClient(thorClient)
-            .pruner(accountsPruner)
+            .pruner(totalAccountsPruner)
             .prunerInterval(prunerInterval)
             .processor(processor)
             .startBlock(0L)

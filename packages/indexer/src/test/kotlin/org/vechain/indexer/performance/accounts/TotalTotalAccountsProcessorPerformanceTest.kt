@@ -10,31 +10,31 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.accounts.Accounts
-import org.vechain.indexer.accounts.AccountsArchive
-import org.vechain.indexer.accounts.AccountsProcessor
-import org.vechain.indexer.accounts.AccountsRepository
-import org.vechain.indexer.accounts.AccountsService
+import org.vechain.indexer.accounts.TotalAccounts
+import org.vechain.indexer.accounts.TotalAccountsArchive
+import org.vechain.indexer.accounts.TotalAccountsProcessor
+import org.vechain.indexer.accounts.TotalAccountsRepository
+import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 
 @Disabled("Performance test - run explicitly with --tests when needed")
-@ActiveProfiles("accounts")
-class AccountsProcessorPerformanceTest : BasePerformanceTest() {
+@ActiveProfiles("total-accounts")
+class TotalTotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
-    @Autowired lateinit var accountsRepository: AccountsRepository
-    @Autowired lateinit var accountsService: AccountsService
-    @Autowired lateinit var archiveService: ArchiveService<Accounts, AccountsArchive>
+    @Autowired lateinit var totalAccountsRepository: TotalAccountsRepository
+    @Autowired lateinit var totalAccountsService: TotalAccountsService
+    @Autowired lateinit var archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>
     @Autowired lateinit var mongoTemplate: MongoTemplate
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        accountsRepository.deleteAll()
+        totalAccountsRepository.deleteAll()
         mongoTemplate.remove(
             org.springframework.data.mongodb.core.query.Query(),
-            AccountsArchive::class.java,
+            TotalAccountsArchive::class.java,
         )
         println("✓ Cleared accounts database and archives")
 
@@ -43,7 +43,7 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.ACCOUNTS_INDEXER,
+                indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -76,28 +76,28 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
         // Create profiled service and processor when profiler is provided
         val serviceToUse =
             if (profiler != null) {
-                ProfiledAccountsService(
-                    repository = accountsRepository,
+                ProfiledTotalAccountsService(
+                    repository = totalAccountsRepository,
                     archiveService = archiveService,
                     profiler = profiler,
                 )
             } else {
-                accountsService
+                totalAccountsService
             }
 
         val processor =
             if (profiler != null) {
-                ProfiledAccountsProcessor(
+                ProfiledTotalAccountsProcessor(
                     service = serviceToUse,
-                    repository = accountsRepository,
+                    repository = totalAccountsRepository,
                     archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
-                AccountsProcessor(
+                TotalAccountsProcessor(
                     service = serviceToUse,
-                    repository = accountsRepository,
+                    repository = totalAccountsRepository,
                     archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                 )
@@ -106,7 +106,7 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
         every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
-            .name(IndexerNames.ACCOUNTS_INDEXER)
+            .name(IndexerNames.TOTAL_ACCOUNTS_INDEXER)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -117,14 +117,14 @@ class AccountsProcessorPerformanceTest : BasePerformanceTest() {
     }
 
     /** Profiled wrapper for AccountsProcessor */
-    private class ProfiledAccountsProcessor(
-        service: AccountsService,
-        repository: AccountsRepository,
-        archiveService: ArchiveService<Accounts, AccountsArchive>,
+    private class ProfiledTotalAccountsProcessor(
+        service: TotalAccountsService,
+        repository: TotalAccountsRepository,
+        archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
         indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
-        AccountsProcessor(
+        TotalAccountsProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
