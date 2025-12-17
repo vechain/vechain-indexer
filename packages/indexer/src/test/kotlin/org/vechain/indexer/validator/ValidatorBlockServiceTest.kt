@@ -4,11 +4,12 @@ import io.mockk.*
 import io.mockk.junit5.MockKExtension
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
@@ -16,14 +17,14 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @ExtendWith(MockKExtension::class)
 class ValidatorBlockServiceTest {
     private lateinit var repository: ValidatorBlockRepository
-    private lateinit var thorService: ThorService
+    private lateinit var thorClient: ThorClient
     private lateinit var service: ValidatorBlockService
 
     @BeforeEach
     fun setup() {
         repository = mockk(relaxed = true)
-        thorService = mockk(relaxed = true)
-        service = spyk(ValidatorBlockService(repository, thorService))
+        thorClient = mockk(relaxed = true)
+        service = spyk(ValidatorBlockService(repository, thorClient))
 
         every { repository.findLatestHourly() } returns emptyList()
         every { repository.findLatestDaily() } returns emptyList()
@@ -92,7 +93,7 @@ class ValidatorBlockServiceTest {
         )
 
     @Test
-    fun `getValidationInfo calculates rewards correctly`() {
+    fun `getValidationInfo calculates rewards correctly`() = runBlocking {
         val block =
             createBlock(
                 num = 100,
@@ -151,7 +152,7 @@ class ValidatorBlockServiceTest {
         val decodedInfo = createDecoded(1000, 100) // supply=1000, burned=100
 
         // simulate initial cache
-        every { service.getTotalVTHOIssuedAtBlock("block-99") } returns BigInteger.valueOf(900)
+        coEvery { service.getTotalVTHOIssuedAtBlock("block-99") } returns BigInteger.valueOf(900)
 
         val result = service.getValidationInfo(block, decodedInfo)!!
 
@@ -163,12 +164,12 @@ class ValidatorBlockServiceTest {
     }
 
     @Test
-    fun `getValidationInfo computes delta correctly across multiple blocks`() {
+    fun `getValidationInfo computes delta correctly across multiple blocks`() = runBlocking {
         // First block initializes cache
         val block1 = createBlock(num = 101, signer = "0xVAL1")
         val info1 = createDecoded(1000, 0)
 
-        every { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
+        coEvery { service.getTotalVTHOIssuedAtBlock("block-100") } returns BigInteger.valueOf(900)
         val res1 = service.getValidationInfo(block1, info1)!!
         assertEquals(BigInteger.valueOf(100), res1.blockReward)
 
@@ -207,7 +208,7 @@ class ValidatorBlockServiceTest {
     }
 
     @Test
-    fun `getTotalVTHOIssued uses decoded info if available`() {
+    fun `getTotalVTHOIssued uses decoded info if available`() = runBlocking {
         val decodedInfo = createDecoded(500, 100)
         val total = service.getTotalVTHOIssued(decodedInfo, "block-1")
         assertEquals(BigInteger.valueOf(500), total)

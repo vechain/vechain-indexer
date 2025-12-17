@@ -1,7 +1,7 @@
 package org.vechain.indexer.transaction
 
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.rest.ExecuteCodeResponse
+import org.vechain.indexer.thor.model.InspectionResult
 import strikt.api.expectThat
 import strikt.assertions.isFalse
 import strikt.assertions.isTrue
@@ -11,7 +11,7 @@ internal class TransactionUtilsTest {
     @Test
     fun `response has vm error`() {
         val data =
-            ExecuteCodeResponse(
+            InspectionResult(
                 vmError = "internal error",
                 data = "0x",
                 reverted = false,
@@ -28,7 +28,7 @@ internal class TransactionUtilsTest {
     @Test
     fun `response is reverted`() {
         val data =
-            ExecuteCodeResponse(
+            InspectionResult(
                 vmError = null,
                 data = "0x",
                 reverted = true,
@@ -45,7 +45,7 @@ internal class TransactionUtilsTest {
     @Test
     fun `response has no data`() {
         val data =
-            ExecuteCodeResponse(
+            InspectionResult(
                 vmError = null,
                 data = "0x",
                 reverted = false,
@@ -62,7 +62,7 @@ internal class TransactionUtilsTest {
     @Test
     fun `res has healthy data`() {
         val data =
-            ExecuteCodeResponse(
+            InspectionResult(
                 vmError = null,
                 data = "0x123",
                 reverted = false,

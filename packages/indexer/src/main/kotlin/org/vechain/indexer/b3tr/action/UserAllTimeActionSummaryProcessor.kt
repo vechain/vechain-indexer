@@ -24,7 +24,7 @@ open class UserAllTimeActionSummaryProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

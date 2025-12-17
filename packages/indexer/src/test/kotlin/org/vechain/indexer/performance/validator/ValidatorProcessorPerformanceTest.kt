@@ -26,7 +26,6 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var validatorRepository: ValidatorRepository
     @Autowired lateinit var validatorService: ValidatorService
     @Autowired lateinit var archiveService: ArchiveService<Validator, ValidatorArchive>
-    @Autowired lateinit var thorService: org.vechain.indexer.thor.ThorService
 
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     lateinit var builtinStakerAddress: String
@@ -81,7 +80,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledValidatorService(
                     repository = validatorRepository,
                     archiveService = archiveService,
-                    thorService = thorService,
+                    thorClient = thorClient,
                     statsStartThreshold = 25L, // Same as validatorStatsThresholdBlocks
                     stakerSC = builtinStakerAddress,
                     profiler = profiler,
@@ -137,7 +136,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
             archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorProcessor.process (per block)") {
                 super.processEntry(entry)
             }

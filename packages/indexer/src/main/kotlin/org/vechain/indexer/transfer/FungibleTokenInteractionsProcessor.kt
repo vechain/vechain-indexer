@@ -20,7 +20,7 @@ open class FungibleTokenInteractionsProcessor(
         indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         val transferEvents = service.processEvents(entry.events())

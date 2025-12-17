@@ -23,7 +23,7 @@ open class VeVoteResultProcessor(
         indexerName = IndexerNames.VEVOTE_RESULT,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         // Process votes in the service

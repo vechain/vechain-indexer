@@ -20,7 +20,7 @@ open class HistoricProposalsProcessor(
         indexerName = IndexerNames.HISTORIC_PROPOSALS,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         // No events to process
         if (entry.events().isEmpty()) return
 

@@ -1,12 +1,15 @@
 package org.vechain.indexer.b3tr.xAlloc
 
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import io.mockk.verify
 import java.math.BigDecimal
 import java.math.BigInteger
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -15,10 +18,14 @@ import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
+import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.rest.ExecuteCodeResponse
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.HexUtils.toHex
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.BlockUnexpanded
+import org.vechain.indexer.thor.model.InspectionResult
 
 @ExtendWith(MockKExtension::class)
 internal class XAllocResultServiceTest {
@@ -28,20 +35,22 @@ internal class XAllocResultServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
 
-    @MockK lateinit var thorService: ThorService
+    @MockK lateinit var thorClient: ThorClient
 
     private val xAllocPoolContract = "0x1234567890abcdef"
 
     private lateinit var service: XAllocResultService
+
+    private fun blockId(num: Long): String = toHex(num, 64)
 
     // Test wrapper to access protected functions directly
     private inner class TestableXAllocResultService(
         repository: XAllocResultRepository,
         archiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
         pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
-        thorService: ThorService,
+        thorClient: ThorClient,
         xAllocPoolContract: String,
-    ) : XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract) {
+    ) : XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract) {
         fun testAddOrCreateVoteResult(
             roundId: Int,
             appId: String,
@@ -87,11 +96,15 @@ internal class XAllocResultServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        // Mock thorService to return that quadratic funding is disabled (true = disabled, so QF is
+
+        val bestBlock = mockk<BlockUnexpanded> { every { id } returns blockId(999) }
+        coEvery { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST) } returns bestBlock
+
+        // Mock thorClient to return that quadratic funding is disabled (true = disabled, so QF is
         // NOT used)
-        every { thorService.executeReadOnlyCode(any()) } returns
+        coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(
-                ExecuteCodeResponse(
+                InspectionResult(
                     vmError = null,
                     data =
                         "0x0000000000000000000000000000000000000000000000000000000000000001", // represents true (disabled = not enabled)
@@ -102,19 +115,25 @@ internal class XAllocResultServiceTest {
                 )
             )
         service =
-            XAllocResultService(repository, archiveService, pruner, thorService, xAllocPoolContract)
+            XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract)
         testableService =
             TestableXAllocResultService(
                 repository,
                 archiveService,
                 pruner,
-                thorService,
+                thorClient,
                 xAllocPoolContract,
             )
     }
 
+    private fun processEvents(
+        vararg events: IndexedEvent
+    ): Pair<List<XAllocResult>, List<XAllocResult>> = runBlocking {
+        service.processEvents(events.toList())
+    }
+
     private fun createBlockDetails(
-        blockId: String = "block-1",
+        blockId: String = blockId(1),
         blockNumber: Long = 1L,
         blockTimestamp: Long = 100L,
     ): org.vechain.indexer.utils.BlockDetails =
@@ -144,7 +163,7 @@ internal class XAllocResultServiceTest {
         assertEquals(1, result.roundId)
         assertEquals(5, result.voters)
         assertEquals(BigInteger.valueOf(100), result.votesReceived)
-        assertEquals("block-1", result.blockId)
+        assertEquals(blockId(1), result.blockId)
         assertEquals(1L, result.blockNumber)
         assertEquals(100L, result.blockTimestamp)
         // Allocation amounts should be null when creating new
@@ -434,7 +453,7 @@ internal class XAllocResultServiceTest {
         // Mock repository to return null for first lookup
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(event1, event2))
+        val (updated, archived) = processEvents(event1, event2)
 
         // Should be two new updated records and no archives
         assertEquals(2, updated.size)
@@ -477,7 +496,7 @@ internal class XAllocResultServiceTest {
             )
         every { repository.findByIdOrNull(any()) } returns existing
 
-        val (updated, archived) = service.processEvents(listOf(event1))
+        val (updated, archived) = processEvents(event1)
 
         // Should be one updated record and one archived
         assertEquals(1, updated.size)
@@ -533,7 +552,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(e1, e2))
+        val (updated, archived) = processEvents(e1, e2)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -586,7 +605,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(b1, b2))
+        val (updated, archived) = processEvents(b1, b2)
 
         // Final updated aggregate
         assertEquals(1, updated.size)
@@ -667,7 +686,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(e1, e2, e3))
+        val (updated, archived) = processEvents(e1, e2, e3)
 
         assertEquals(3, updated.size)
         // All are fresh records
@@ -719,7 +738,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(b1, b2))
+        val (updated, archived) = processEvents(b1, b2)
 
         assertEquals(1, updated.size)
         assertEquals(1, archived.size)
@@ -756,7 +775,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(claimEvent))
+        val (updated, archived) = processEvents(claimEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -812,7 +831,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns existingRecord
 
-        val (updated, archived) = service.processEvents(listOf(claimEvent))
+        val (updated, archived) = processEvents(claimEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -877,7 +896,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns existingRecord
 
-        val (updated, archived) = service.processEvents(listOf(claimEvent))
+        val (updated, archived) = processEvents(claimEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -936,7 +955,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(voteEvent, claimEvent))
+        val (updated, archived) = processEvents(voteEvent, claimEvent)
 
         // Should be two entries: one from vote processing, one updated from claim processing
         assertEquals(1, updated.size)
@@ -983,7 +1002,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(dbaEvent))
+        val (updated, archived) = processEvents(dbaEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -1037,7 +1056,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns existingRecord
 
-        val (updated, archived) = service.processEvents(listOf(dbaEvent))
+        val (updated, archived) = processEvents(dbaEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()
@@ -1115,7 +1134,7 @@ internal class XAllocResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(voteEvent, claimEvent, dbaEvent))
+        val (updated, archived) = processEvents(voteEvent, claimEvent, dbaEvent)
 
         assertEquals(1, updated.size)
         val u = updated.first()

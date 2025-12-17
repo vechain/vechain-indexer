@@ -8,6 +8,7 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.just
 import io.mockk.verify
 import java.math.BigDecimal
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -48,7 +49,9 @@ internal class UserDailyActionSummaryProcessorTest {
 
     @Test
     fun `process empty events doesn't save any records`() {
-        processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        runBlocking {
+            processor.process(IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING))
+        }
 
         // Verify that service.save is not called
         verify(exactly = 0) { service.save(any(), any()) }
@@ -102,9 +105,11 @@ internal class UserDailyActionSummaryProcessorTest {
         every { service.save(updatedRecords, archiveRecords) } just Runs
 
         // Verify that service.save is called with the correct parameters
-        processor.process(
-            IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
-        )
+        runBlocking {
+            processor.process(
+                IndexingResult.EventsOnly(events.maxOf { it.blockNumber }, events, Status.SYNCING)
+            )
+        }
 
         verify(exactly = 1) { service.processEvents(events) }
         verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }

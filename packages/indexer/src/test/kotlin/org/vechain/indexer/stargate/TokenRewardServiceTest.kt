@@ -4,17 +4,19 @@ import io.mockk.*
 import java.math.BigInteger
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.HexUtils.toHex
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
@@ -24,23 +26,25 @@ class TokenRewardServiceTest {
     private val archiveService =
         mockk<ArchiveService<TokenReward, TokenRewardArchive>>(relaxed = true)
     private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
-    private val thorService = mockk<ThorService>(relaxed = true)
+    private val thorClient = mockk<ThorClient>(relaxed = true)
 
     private lateinit var service: TokenRewardService
+
+    private fun blockId(num: Long): String = toHex(num, 64)
 
     @BeforeEach
     fun setup() {
         clearAllMocks()
         service =
-            spyk(TokenRewardService(repository, archiveService, delegationRepository, thorService))
+            spyk(TokenRewardService(repository, archiveService, delegationRepository, thorClient))
     }
 
     private fun block(num: Long, signer: String = "0xVALIDATOR") =
         Block(
-            id = "0xBLOCK$num",
+            id = blockId(num),
             number = num,
             timestamp = 1234567890,
-            parentID = "0xPARENT$num",
+            parentID = blockId(num - 1),
             size = 0,
             gasLimit = 0,
             baseFeePerGas = null,
@@ -96,21 +100,21 @@ class TokenRewardServiceTest {
             )
 
         // return dummy responses – actual decoding mocked
-        every { thorService.inspectClausesAtBlock(any(), any()) } returns
+        coEvery { thorClient.inspectClauses(any(), any()) } returns
             listOf(
-                ExecuteCodeResponse(
+                InspectionResult(
                     data = "0x1",
                     events = emptyList(),
                     transfers = emptyList(),
-                    gasUsed = 0L,
+                    0,
                     reverted = false,
                     vmError = null,
                 ),
-                ExecuteCodeResponse(
+                InspectionResult(
                     data = "0x2",
                     events = emptyList(),
                     transfers = emptyList(),
-                    gasUsed = 0L,
+                    0,
                     reverted = false,
                     vmError = null,
                 ),
@@ -121,9 +125,9 @@ class TokenRewardServiceTest {
             org.vechain.indexer.validator.domain.ValidatorDecoder.decodeVTHOIssued(any())
         } returns BigInteger.valueOf(500)
 
-        val result = service.getDelegatorsBlockReward(b, decoded)
+        val result = runBlocking { service.getDelegatorsBlockReward(b, decoded) }
 
-        // (total=1100, prev=500, delta=600) * 0.7 = 420
+        // (total=1000, prev=500, delta=500) * 0.7 = 350
         assertThat(result).isEqualTo(BigInteger.valueOf(350))
     }
 

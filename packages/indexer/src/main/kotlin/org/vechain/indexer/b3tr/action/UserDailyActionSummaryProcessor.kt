@@ -1,5 +1,7 @@
 package org.vechain.indexer.b3tr.action
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -24,7 +26,7 @@ open class UserDailyActionSummaryProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.USER_DAILY_ACTION_SUMMARY,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }
@@ -33,6 +35,6 @@ open class UserDailyActionSummaryProcessor(
         val (updated, archives) = service.processEvents(entry.events())
 
         // Save the updated NFTs and archives
-        service.save(updated, archives)
+        withContext(Dispatchers.IO) { service.save(updated, archives) }
     }
 }

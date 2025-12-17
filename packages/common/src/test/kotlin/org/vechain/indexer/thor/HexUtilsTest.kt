@@ -1,5 +1,6 @@
 package org.vechain.indexer.thor
 
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -75,5 +76,23 @@ internal class HexUtilsTest {
     @CsvSource("0x", "Hello World!!", "xxxxxxxxxxxxxxxxxx", "hex")
     fun `parse hex string to int throws on invalid hex`(hex: String) {
         assertThrows<IllegalArgumentException> { HexUtils.toInt(hex) }
+    }
+
+    @Test
+    fun `toHex does not pad by default`() {
+        expectThat(HexUtils.toHex(10)).isEqualTo("0xa")
+        expectThat(HexUtils.toHex(10, null)).isEqualTo("0xa")
+    }
+
+    @ParameterizedTest
+    @CsvSource("10, 4, 0x000a", "0, 1, 0x0", "255, 4, 0x00ff")
+    fun `toHex pads when pad length provided`(num: Long, padToLength: Int, expected: String) {
+        expectThat(HexUtils.toHex(num, padToLength)).isEqualTo(expected)
+    }
+
+    @ParameterizedTest
+    @CsvSource("0", "-1", "-10")
+    fun `toHex throws when pad length is not positive`(padToLength: Int) {
+        assertThrows<IllegalArgumentException> { HexUtils.toHex(10, padToLength) }
     }
 }

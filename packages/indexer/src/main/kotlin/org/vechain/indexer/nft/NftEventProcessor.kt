@@ -1,5 +1,7 @@
 package org.vechain.indexer.nft
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -22,7 +24,7 @@ open class NftProcessor(
         indexerName = IndexerNames.NFT,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         // Filter out blacklist and whitelist events and handle them separately
@@ -43,7 +45,7 @@ open class NftProcessor(
 
             // Finally save the updated records and archive the existing ones
             if (updated.isNotEmpty() || existing.isNotEmpty()) {
-                nftService.save(updated, existing)
+                withContext(Dispatchers.IO) { nftService.save(updated, existing) }
             }
         }
 

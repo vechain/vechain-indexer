@@ -18,8 +18,9 @@ import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.Status
@@ -35,7 +36,7 @@ open class TokenRewardService(
     private val repository: TokenRewardRepository,
     private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     private val delegationRepository: DelegationRepository,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
 ) {
     /**
      * @notice Cache of Stargate contract ABI functions.
@@ -85,7 +86,7 @@ open class TokenRewardService(
      * @dev Decodes validator info, fetches or creates reward trackers, calculates block reward
      *   distribution, and updates ongoing rewards.
      */
-    open fun processBlock(
+    open suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
     ): Pair<List<TokenReward>, List<TokenReward>> {
@@ -134,7 +135,10 @@ open class TokenRewardService(
      * @dev Calculates block reward as the delta in VTHO supply, then applies a 70% weighting to
      *   delegators.
      */
-    fun getDelegatorsBlockReward(block: Block, decodedInfo: DecodedValidatorInfo?): BigInteger? {
+    suspend fun getDelegatorsBlockReward(
+        block: Block,
+        decodedInfo: DecodedValidatorInfo?,
+    ): BigInteger? {
         // Get total VTHO issued at this block
         val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
 
@@ -504,7 +508,10 @@ open class TokenRewardService(
      * @notice Get total VTHO issued at a block.
      * @dev Adds totalSupply + burned, optionally using decodedInfo if present.
      */
-    fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
+    suspend fun getTotalVTHOIssued(
+        decodedInfo: DecodedValidatorInfo?,
+        blockId: String,
+    ): BigInteger {
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
         }
@@ -517,8 +524,9 @@ open class TokenRewardService(
      * @notice Get total VTHO issued at a specific block via Thor calls.
      * @dev Calls vthoTotalSupply + totalBurned contract functions and decodes result.
      */
-    fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
+    suspend fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
+        val response =
+            thorClient.inspectClauses(buildVTHOTotalsClauses(), BlockRevision.Id(blockId))
 
         if (response.size < 2) {
             return BigInteger.ZERO
@@ -526,8 +534,22 @@ open class TokenRewardService(
 
         val inspectionResults =
             listOf(
-                InspectionResult(response[0].data, emptyList(), emptyList(), false, null),
-                InspectionResult(response[1].data, emptyList(), emptyList(), false, null),
+                InspectionResult(
+                    data = response[0].data,
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 0,
+                    reverted = false,
+                    vmError = null,
+                ),
+                InspectionResult(
+                    data = response[1].data,
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 0,
+                    reverted = false,
+                    vmError = null,
+                ),
             )
 
         return decodeVTHOIssued(inspectionResults)

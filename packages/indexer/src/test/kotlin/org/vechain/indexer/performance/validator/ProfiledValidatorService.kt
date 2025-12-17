@@ -3,7 +3,7 @@ package org.vechain.indexer.performance.validator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Validator
@@ -25,11 +25,11 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler
 class ProfiledValidatorService(
     repository: ValidatorRepository,
     archiveService: ArchiveService<Validator, ValidatorArchive>,
-    thorService: ThorService,
+    thorClient: ThorClient,
     statsStartThreshold: Long,
     stakerSC: String,
     private val profiler: DetailedProfiler,
-) : ValidatorService(repository, archiveService, thorService, statsStartThreshold, stakerSC) {
+) : ValidatorService(repository, archiveService, thorClient, statsStartThreshold, stakerSC) {
 
     override fun processBlock(
         block: Block,

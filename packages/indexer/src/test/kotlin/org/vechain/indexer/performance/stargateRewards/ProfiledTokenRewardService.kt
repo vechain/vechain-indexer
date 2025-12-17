@@ -7,7 +7,7 @@ import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.DelegationRepository
@@ -31,11 +31,11 @@ class ProfiledTokenRewardService(
     repository: TokenRewardRepository,
     archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     delegationRepository: DelegationRepository,
-    thorService: ThorService,
+    thorClient: ThorClient,
     private val profiler: DetailedProfiler,
-) : TokenRewardService(repository, archiveService, delegationRepository, thorService) {
+) : TokenRewardService(repository, archiveService, delegationRepository, thorClient) {
 
-    override fun processBlock(
+    override suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
     ): Pair<List<TokenReward>, List<TokenReward>> {

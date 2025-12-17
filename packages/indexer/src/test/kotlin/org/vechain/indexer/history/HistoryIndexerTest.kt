@@ -1,10 +1,8 @@
 package org.vechain.indexer.history
 
-import io.mockk.MockKAnnotations
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -46,8 +44,8 @@ class HistoryIndexerTest {
             every { processor.getLastSyncedBlock() } returns null
 
             val indexingResult = slot<IndexingResult>()
-            every { processor.rollback(20614874) } returns Unit
-            every { processor.process(capture(indexingResult)) } returns Unit
+            coEvery { processor.rollback(20614874) } returns Unit
+            coEvery { processor.process(capture(indexingResult)) } returns Unit
 
             val indexer =
                 HistoryConfig()
@@ -93,8 +91,8 @@ class HistoryIndexerTest {
         every { processor.getLastSyncedBlock() } returns null
 
         val indexingResult = slot<IndexingResult>()
-        every { processor.rollback(20056658) } returns Unit
-        every { processor.process(capture(indexingResult)) } returns Unit
+        coEvery { processor.rollback(20056658) } returns Unit
+        coEvery { processor.process(capture(indexingResult)) } returns Unit
 
         val indexer =
             HistoryConfig()
@@ -138,8 +136,8 @@ class HistoryIndexerTest {
         every { processor.getLastSyncedBlock() } returns null
 
         val indexingResult = slot<IndexingResult>()
-        every { processor.rollback(20849467) } returns Unit
-        every { processor.process(capture(indexingResult)) } returns Unit
+        coEvery { processor.rollback(20849467) } returns Unit
+        coEvery { processor.process(capture(indexingResult)) } returns Unit
 
         val indexer =
             HistoryConfig()
@@ -189,8 +187,8 @@ class HistoryIndexerTest {
         val startBlock = BlockFixtures.BLOCK_STARGATE_STAKER_DELEGATION
         every { processor.getLastSyncedBlock() } returns null
         val capturedResults = mutableListOf<IndexingResult>()
-        every { processor.rollback(any()) } returns Unit
-        every { processor.process(any()) } answers
+        coEvery { processor.rollback(any()) } returns Unit
+        coEvery { processor.process(any()) } coAnswers
             {
                 val result = firstArg<IndexingResult>()
                 capturedResults.add(result)
@@ -249,8 +247,8 @@ class HistoryIndexerTest {
         val startBlock = BlockFixtures.BLOCK_STARGATE_STAKE
         every { processor.getLastSyncedBlock() } returns null
         val capturedResults = mutableListOf<IndexingResult>()
-        every { processor.rollback(any()) } returns Unit
-        every { processor.process(any()) } answers
+        coEvery { processor.rollback(any()) } returns Unit
+        coEvery { processor.process(any()) } coAnswers
             {
                 val result = firstArg<IndexingResult>()
                 capturedResults.add(result)

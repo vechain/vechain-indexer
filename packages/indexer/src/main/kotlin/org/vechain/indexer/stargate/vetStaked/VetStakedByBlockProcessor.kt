@@ -19,7 +19,7 @@ open class VetStakedByBlockProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VET_STAKED_BY_BLOCK,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

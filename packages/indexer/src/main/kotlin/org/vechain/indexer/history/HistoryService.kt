@@ -29,12 +29,15 @@ open class HistoryService(
     private val blacklistClient: NftBlacklistClient,
 ) {
 
-    open fun processEvents(events: List<IndexedEvent>, block: Block): List<IndexedHistoryEvent> {
+    open suspend fun processEvents(
+        events: List<IndexedEvent>,
+        block: Block,
+    ): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
         val processedTxs = mutableSetOf<String>()
 
-        events.forEach { event ->
-            val eventName = EventUtils.determineEventType(event.params) ?: return@forEach
+        for (event in events) {
+            val eventName = EventUtils.determineEventType(event.params) ?: continue
 
             if (event.params.getEventType() == "TransferBatch") {
                 historyEvents.addAll(processBatchTransferEvents(event))
@@ -93,7 +96,7 @@ open class HistoryService(
         mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
     }
 
-    private fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
+    private suspend fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {
         val historyEvents = mutableListOf<IndexedHistoryEvent>()
 
         val tokenIds = event.params.getReturnValues()["ids"] as? List<*> ?: emptyList<Any>()
@@ -128,7 +131,7 @@ open class HistoryService(
         return historyEvents
     }
 
-    private fun createIndexedHistoryEvent(
+    private suspend fun createIndexedHistoryEvent(
         event: IndexedEvent,
         eventName: HistoryEventName,
     ): IndexedHistoryEvent {

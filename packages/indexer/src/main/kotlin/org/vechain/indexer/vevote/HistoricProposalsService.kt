@@ -10,14 +10,14 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("vevote-historic-proposals")
 @Service
 open class HistoricProposalsService(
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     private val repository: HistoricProposalsRepository,
     @param:Value("\${veworld.contract.historic-proposals.steering-committee}")
     private val steeringCommitteeAddress: String,
@@ -27,7 +27,7 @@ open class HistoricProposalsService(
 ) {
     private val cachedAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
-    open fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
+    open suspend fun processEvents(events: List<IndexedEvent>): List<HistoricProposals> {
         if (events.isEmpty()) return emptyList()
 
         val updates = events.filter { it.eventType == "LegacyVeVoteDescription" }
@@ -38,7 +38,7 @@ open class HistoricProposalsService(
         return updatedProposals + newProposals
     }
 
-    fun processNewProposals(events: List<IndexedEvent>): List<HistoricProposals> {
+    suspend fun processNewProposals(events: List<IndexedEvent>): List<HistoricProposals> {
         if (events.isEmpty()) return emptyList()
 
         return events.mapNotNull { extractNewProposalEvent(it) }
@@ -71,7 +71,7 @@ open class HistoricProposalsService(
         repository.saveAll(events)
     }
 
-    fun extractNewProposalEvent(event: IndexedEvent): HistoricProposals? {
+    suspend fun extractNewProposalEvent(event: IndexedEvent): HistoricProposals? {
         try {
             val contractAddress = event.address ?: return null
             if (!isValidContractAddress(contractAddress)) {
@@ -121,7 +121,7 @@ open class HistoricProposalsService(
         val tally: Map<String, Any?>?,
     )
 
-    private fun fetchContractData(
+    private suspend fun fetchContractData(
         contractAddress: String,
         proposalId: String,
         isSteeringCommittee: Boolean,
@@ -161,7 +161,7 @@ open class HistoricProposalsService(
                 ),
             )
 
-        val responses = thorService.executeReadOnlyCode(clauses)
+        val responses = thorClient.inspectClauses(clauses)
 
         return ContractData(
             basicInfo = decodeResponse(responses.getOrNull(0)?.data, basicInfoFunction),

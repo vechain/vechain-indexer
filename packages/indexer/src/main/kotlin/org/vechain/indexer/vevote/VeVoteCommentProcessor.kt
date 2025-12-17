@@ -2,6 +2,7 @@ package org.vechain.indexer.vevote
 
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.insert
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
@@ -21,7 +22,7 @@ open class VeVoteCommentProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VEVOTE_COMMENT,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         // Filter events to only those related to VeVote comments
@@ -29,7 +30,7 @@ open class VeVoteCommentProcessor(
 
         // Save the results
         if (allowedReason.isNotEmpty()) {
-            mongoTemplate.insert(allowedReason, VeVoteProposalComment::class.java)
+            mongoTemplate.insert<VeVoteProposalComment>(allowedReason)
         }
     }
 }
