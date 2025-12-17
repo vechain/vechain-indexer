@@ -44,7 +44,7 @@ management:
       show-details: always
   metrics:
     tags:
-      indexer-id: ${METRICS_ID:vechain-indexer}
+      indexer-id: ${METRICS_ID:local-indexer}
   datadog:
     metrics:
       export:
