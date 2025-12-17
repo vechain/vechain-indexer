@@ -31,9 +31,11 @@ open class XAllocResultProcessor(
         }
 
         // Process the events using the service
-        val (updated, archives) = service.processEvents(entry.events())
+        val (updated, existing) = service.processEvents(entry.events())
 
         // Save the updated NFTs and archives
-        withContext(Dispatchers.IO) { service.save(updated, archives) }
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
+        }
     }
 }

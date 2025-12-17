@@ -32,7 +32,7 @@ open class DelegationProcessor(
         val (updated, existing) =
             service.processBlock(entry.block, entry.events(), entry.callResults)
 
-        if (updated.isNotEmpty()) {
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
             withContext(Dispatchers.IO) { service.save(updated, existing) }
         }
     }

@@ -29,10 +29,10 @@ open class TokenRewardProcessor(
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
-        val newRecords = service.processBlock(entry.block, entry.callResults())
+        val (updated, existing) = service.processBlock(entry.block, entry.callResults())
 
-        if (newRecords.first.isNotEmpty()) {
-            service.save(newRecords.first, newRecords.second)
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            service.save(updated, existing)
         }
     }
 }

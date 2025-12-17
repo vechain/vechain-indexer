@@ -1,5 +1,7 @@
 package org.vechain.indexer.stargate.vthoClaimed
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -45,10 +47,12 @@ open class VthoClaimedByAccountProcessor(
         // Finally save the updated records and archive the existing ones
         if (updatedAccountRecords.isNotEmpty() || existingAccountRecords.isNotEmpty()) {
 
-            service.save(
-                updatedAccountRecords.plus(updatedExistingAccountTokenIdRecords),
-                existingAccountRecords.plus(existingAccountTokenIdRecords),
-            )
+            withContext(Dispatchers.IO) {
+                service.save(
+                    updatedAccountRecords.plus(updatedExistingAccountTokenIdRecords),
+                    existingAccountRecords.plus(existingAccountTokenIdRecords),
+                )
+            }
         }
     }
 }

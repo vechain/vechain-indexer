@@ -1,5 +1,7 @@
 package org.vechain.indexer.b3tr.proposal
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -60,7 +62,9 @@ open class ProposalResultProcessor(
 
         // Save all updated results and their archives in one call
         if (allUpdated.isNotEmpty() || allArchives.isNotEmpty()) {
-            service.save(allUpdated.values.toList(), allArchives.values.toList())
+            withContext(Dispatchers.IO) {
+                service.save(allUpdated.values.toList(), allArchives.values.toList())
+            }
         }
     }
 }

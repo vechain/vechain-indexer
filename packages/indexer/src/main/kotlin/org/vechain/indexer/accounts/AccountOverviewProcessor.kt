@@ -1,5 +1,7 @@
 package org.vechain.indexer.accounts
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -27,10 +29,10 @@ open class AccountOverviewProcessor(
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
-        val newRecords = service.processBlock(entry.block)
+        val (updated, existing) = service.processBlock(entry.block)
 
-        if (newRecords.first.isNotEmpty() || newRecords.second.isNotEmpty()) {
-            service.save(newRecords.first, newRecords.second)
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.vechain.indexer.b3tr.action
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -35,11 +37,13 @@ open class AppRoundActionSummaryProcessor(
             return
         }
 
-        val (updated, archives, updatedRoundId) = service.processEvents(entry.events(), roundId)
+        val (updated, existing, updatedRoundId) = service.processEvents(entry.events(), roundId)
 
         roundId = updatedRoundId
 
         // Save the updated NFTs and archives
-        service.save(updated, archives)
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
+        }
     }
 }
