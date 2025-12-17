@@ -21,7 +21,7 @@ import org.vechain.indexer.performance.DetailedProfiler
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("total-accounts")
-class TotalTotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
+class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var totalAccountsRepository: TotalAccountsRepository
     @Autowired lateinit var totalAccountsService: TotalAccountsService
