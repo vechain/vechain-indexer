@@ -873,6 +873,10 @@ module "ecs-backend-service" {
     {
       name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
+    },
+    {
+      name = "METRICS_ID"
+      value = "${local.env.environment}-${each.key}"
     }
   ]
 }

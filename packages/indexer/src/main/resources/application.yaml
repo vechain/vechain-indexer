@@ -60,6 +60,9 @@ management:
         enabled: ${PROMETHEUS_METRICS_ENABLED:false}
         step: 10s
 
+metrics:
+  id: ${METRICS_ID:vechain-indexer}
+
 spring.data:
   mongodb:
     uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
@@ -104,10 +107,6 @@ scheduler:
   delegationHistory:
     initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
     interval: ${DELEGATION_HISTORY_INTERVAL:30s}
-
-monitoring:
-  enabled: ${INDEXER_MONITORING_ENABLED:true}
-  port: ${INDEXER_MONITORING_PORT:2112}
 
 indexer:
   start-block:
