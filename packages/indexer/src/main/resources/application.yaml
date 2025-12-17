@@ -59,7 +59,6 @@ management:
   prometheus:
     metrics:
       export:
-        # should not be enabled together with datadog, set this env var to false if datadog is enabled
         enabled: ${PROMETHEUS_METRICS_ENABLED:false}
         step: 10s
 
