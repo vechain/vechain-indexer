@@ -56,6 +56,10 @@ mongoatlas_project_id:           64d6337acba67e1132a3a4e1
 slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:905964754131:secret:veworld-mongodb-alerts/slack/api-token-NvxUZd
 datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
+  indexer:
+    api_key_arn:                 arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-api-key-YHxcKv
+    app_key_arn:                 arn:aws:secretsmanager:eu-west-1:905964754131:secret:/prod/indexer/datadog-application-key-jZB5jk
+
 enabled_nets:
   main:
     image_version:                  latest

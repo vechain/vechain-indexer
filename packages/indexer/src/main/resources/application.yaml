@@ -43,9 +43,24 @@ management:
     health:
       show-details: always
   metrics:
-    export:
-      prometheus:
-        enabled: ${INDEXER_MONITORING_ENABLED:true}
+    tags:
+      indexer-id: ${METRICS_ID:local-indexer}
+  datadog:
+    metrics:
+      export:
+        enabled: ${DD_METRICS_ENABLED:false}
+        apiKey: ${DD_API_KEY:#{null}}
+        applicationKey: ${DD_APP_KEY:#{null}}
+        uri: ${DD_API_URL:https://api.datadoghq.eu}
+        # how often to send metrics
+        step: 10s
+        # make this unique like prod-green-indexer, etc.
+        hostTag: ${DD_HOST_TAG:#{null}}
+  prometheus:
+    metrics:
+      export:
+        enabled: ${PROMETHEUS_METRICS_ENABLED:false}
+        step: 10s
 
 spring.data:
   mongodb:
@@ -91,10 +106,6 @@ scheduler:
   delegationHistory:
     initial-delay: ${DELEGATION_HISTORY_INITIAL_DELAY:30s}
     interval: ${DELEGATION_HISTORY_INTERVAL:30s}
-
-monitoring:
-  enabled: ${INDEXER_MONITORING_ENABLED:true}
-  port: ${INDEXER_MONITORING_PORT:2112}
 
 indexer:
   start-block:

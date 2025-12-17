@@ -220,6 +220,7 @@ allprojects {
 
         // Monitoring dependencies
         implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+        implementation("io.micrometer:micrometer-registry-datadog:1.14.5")
 
         // Core indexer dependency
         implementation("org.vechain:indexer-core:6.1.0")

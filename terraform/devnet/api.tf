@@ -145,11 +145,11 @@ module "ecs-lb-service-api" {
       value = each.value.api.logging.app-log-level
     },
     {
-      name = "TIMING_WARN_THRESHOLD_MS"
+      name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.api.timing.warn-threshold-ms
     },
     {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      name  = "TIMING_VERY_SLOW_THRESHOLD_MS"
       value = each.value.api.timing.very-slow-threshold-ms
     },
     {
@@ -371,11 +371,11 @@ module "ecs-backend-service" {
       value = each.value.indexer.logging.pruner-log-level
     },
     {
-      name = "TIMING_WARN_THRESHOLD_MS"
+      name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.indexer.timing.warn-threshold-ms
     },
     {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      name  = "TIMING_VERY_SLOW_THRESHOLD_MS"
       value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
@@ -419,23 +419,23 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.vevote
     },
     {
-      name = "INDEXER_START_BLOCK_STARGATE"
+      name  = "INDEXER_START_BLOCK_STARGATE"
       value = each.value.indexer.start-block.stargate
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR"
+      name  = "INDEXER_START_BLOCK_B3TR"
       value = each.value.indexer.start-block.b3tr
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
+      name  = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
       value = each.value.indexer.start-block.b3tr-proposal
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
+      name  = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
       value = each.value.indexer.start-block.b3tr-x-alloc-result
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
+      name  = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
@@ -443,15 +443,15 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.historic-proposals
     },
     {
-        name = "INDEXER_START_BLOCK_VALIDATOR"
-        value = each.value.indexer.start-block.validator
+      name  = "INDEXER_START_BLOCK_VALIDATOR"
+      value = each.value.indexer.start-block.validator
     },
     {
-        name = "INDEXER_START_BLOCK_DELEGATION"
-        value = each.value.indexer.start-block.delegation
+      name  = "INDEXER_START_BLOCK_DELEGATION"
+      value = each.value.indexer.start-block.delegation
     },
     {
-      name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
+      name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
@@ -515,95 +515,95 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote-results
     },
     {
-      name = "VERSION_AUTHORITY_NODE_ENDORSER"
+      name  = "VERSION_AUTHORITY_NODE_ENDORSER"
       value = each.value.indexer.version.authority-node-endorser
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
-      name = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vtho-generated-by-block
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
-      name = "VERSION_HISTORIC_PROPOSALS"
+      name  = "VERSION_HISTORIC_PROPOSALS"
       value = each.value.indexer.version.historic-proposals
     },
     {
-      name = "VERSION_B3TR_PROPOSAL_COMMENTS"
+      name  = "VERSION_B3TR_PROPOSAL_COMMENTS"
       value = each.value.indexer.version.b3tr-proposal-comments
     },
     {
-      name = "VERSION_B3TR_PROPOSAL_RESULTS"
+      name  = "VERSION_B3TR_PROPOSAL_RESULTS"
       value = each.value.indexer.version.b3tr-proposal-results
     },
     {
-      name = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
     },
     {
-      name = "VERSION_B3TR_X_ALLOC_RESULT"
+      name  = "VERSION_B3TR_X_ALLOC_RESULT"
       value = each.value.indexer.version.b3tr-x-alloc-result
     },
     {
-      name = "VERSION_B3TR_GM_NFT"
+      name  = "VERSION_B3TR_GM_NFT"
       value = each.value.indexer.version.b3tr-gm-nft
     },
     {
-      name = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
+      name  = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
-      name = "VERSION_BLOCK_USAGE"
+      name  = "VERSION_BLOCK_USAGE"
       value = each.value.indexer.version.block-usage
     },
     {
-      name = "VERSION_VALIDATOR"
+      name  = "VERSION_VALIDATOR"
       value = each.value.indexer.version.validator
     },
     {
-      name = "VERSION_VALIDATOR_BLOCKS"
+      name  = "VERSION_VALIDATOR_BLOCKS"
       value = each.value.indexer.version.validator-rewards
     },
     {
-      name = "VERSION_STARGATE_TOKEN"
+      name  = "VERSION_STARGATE_TOKEN"
       value = each.value.indexer.version.stargate-token
     },
     {
-      name = "VERSION_TOKEN_REWARDS"
+      name  = "VERSION_TOKEN_REWARDS"
       value = each.value.indexer.version.token-rewards
     },
     {
-      name = "VERSION_DELEGATION"
+      name  = "VERSION_DELEGATION"
       value = each.value.indexer.version.delegation
     },
     {
@@ -647,15 +647,15 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
-      name = "X_ALLOC_VOTING_CONTRACT"
+      name  = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
-      name = "X2EARN_REWARDS_POOL_CONTRACT"
+      name  = "X2EARN_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
     },
     {
-      name = "X_ALLOC_POOL_CONTRACT"
+      name  = "X_ALLOC_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
@@ -695,31 +695,31 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
     },
     {
-      name = "INDEXER_SYNC_LOG_INTERVAL"
+      name  = "INDEXER_SYNC_LOG_INTERVAL"
       value = each.value.indexer.sync-log-interval
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
       value = each.value.indexer.sync-block-batch-size.nfts
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
       value = each.value.indexer.sync-block-batch-size.transfers
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
       value = each.value.indexer.sync-block-batch-size.vevote
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
       value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
       value = each.value.indexer.sync-block-batch-size.stargate
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
       value = each.value.indexer.sync-block-batch-size.authority-nodes
     },
     {
@@ -727,15 +727,15 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-block-batch-size.b3tr
     },
     {
-      name = "INDEXER_CHANNEL_BATCH_SIZE"
+      name  = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
     },
     {
-      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      name  = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-syncing
     },
     {
-      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      name  = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
     }
   ]

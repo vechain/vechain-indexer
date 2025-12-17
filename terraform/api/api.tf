@@ -98,36 +98,36 @@ module "ecs-cluster" {
 ################################################################################
 
 module "ecs-lb-service-api" {
-  depends_on                = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
-  for_each                  = local.env.enabled_nets
-  source                    = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
-  ssl_policy                = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  region                    = local.env.region
-  vpc_id                    = data.terraform_remote_state.vpc.outputs.vpc_id
-  cluster_name              = module.ecs-cluster.name
-  autoscale_cluster_name    = module.ecs-cluster.name
-  lb_subnets                = data.terraform_remote_state.vpc.outputs.public_subnets
-  app_subnets               = data.terraform_remote_state.vpc.outputs.private_subnets
-  env                       = local.env.environment
-  is_create_repo            = false
-  secrets_enable            = false
-  assign_public_ip          = false
-  ecr_repo_uri              = each.value.api.ecr_common_repo
-  app_name                  = "${each.key}-api"
-  ecr_image_tag             = each.value.image_version
-  project                   = var.project
-  cpu                       = each.value.api.cpu
-  memory                    = each.value.api.memory
-  cidr                      = local.env.cidr
-  container_port            = 8080
-  certificate_arn           = local.env.certificate_arn
-  ecs_sg                    = [aws_security_group.alb-sg.id]
+  depends_on             = [module.ecs-cluster, resource.aws_security_group.ecs_service_sg, resource.aws_security_group.alb-sg]
+  for_each               = local.env.enabled_nets
+  source                 = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecs-loadbalanced-webservice?ref=hotfix/1.4.25"
+  ssl_policy             = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  region                 = local.env.region
+  vpc_id                 = data.terraform_remote_state.vpc.outputs.vpc_id
+  cluster_name           = module.ecs-cluster.name
+  autoscale_cluster_name = module.ecs-cluster.name
+  lb_subnets             = data.terraform_remote_state.vpc.outputs.public_subnets
+  app_subnets            = data.terraform_remote_state.vpc.outputs.private_subnets
+  env                    = local.env.environment
+  is_create_repo         = false
+  secrets_enable         = false
+  assign_public_ip       = false
+  ecr_repo_uri           = each.value.api.ecr_common_repo
+  app_name               = "${each.key}-api"
+  ecr_image_tag          = each.value.image_version
+  project                = var.project
+  cpu                    = each.value.api.cpu
+  memory                 = each.value.api.memory
+  cidr                   = local.env.cidr
+  container_port         = 8080
+  certificate_arn        = local.env.certificate_arn
+  ecs_sg                 = [aws_security_group.alb-sg.id]
   # Listener Rules Configuration
-  rule_0_path_pattern       = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
-  is_rule_1_required         = try(local.env.alb.listener_rules[1].enabled, false)
-  rule_1_path_pattern        = try(local.env.alb.listener_rules[1].path_patterns, [])
-  is_rule_4_required         = try(local.env.alb.is_rule_4_required, false)
-  default_action             = try(local.env.alb.https_listener.default_action, "fixed-response")
+  rule_0_path_pattern             = try(local.env.alb.listener_rules[0].path_patterns, ["/api/v*"])
+  is_rule_1_required              = try(local.env.alb.listener_rules[1].enabled, false)
+  rule_1_path_pattern             = try(local.env.alb.listener_rules[1].path_patterns, [])
+  is_rule_4_required              = try(local.env.alb.is_rule_4_required, false)
+  default_action                  = try(local.env.alb.https_listener.default_action, "fixed-response")
   use_default_tg_group_for_rule_1 = try(local.env.alb.listener_rules[1].use_default_tg_group, false)
   # Authentication Configuration
   okta_auth_server_base_url = try(local.env.alb.authentication.okta_auth_server_base_url, "https://vechaineu.okta.com")
@@ -153,11 +153,11 @@ module "ecs-lb-service-api" {
       value = each.value.api.logging.app-log-level
     },
     {
-      name = "TIMING_WARN_THRESHOLD_MS"
+      name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.api.timing.warn-threshold-ms
     },
     {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      name  = "TIMING_VERY_SLOW_THRESHOLD_MS"
       value = each.value.api.timing.very-slow-threshold-ms
     },
     {
@@ -379,11 +379,11 @@ module "ecs-backend-service" {
       value = each.value.indexer.logging.pruner-log-level
     },
     {
-      name = "TIMING_WARN_THRESHOLD_MS"
+      name  = "TIMING_WARN_THRESHOLD_MS"
       value = each.value.indexer.timing.warn-threshold-ms
     },
     {
-      name = "TIMING_VERY_SLOW_THRESHOLD_MS"
+      name  = "TIMING_VERY_SLOW_THRESHOLD_MS"
       value = each.value.indexer.timing.very-slow-threshold-ms
     },
     {
@@ -427,23 +427,23 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.vevote
     },
     {
-      name = "INDEXER_START_BLOCK_STARGATE"
+      name  = "INDEXER_START_BLOCK_STARGATE"
       value = each.value.indexer.start-block.stargate
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR"
+      name  = "INDEXER_START_BLOCK_B3TR"
       value = each.value.indexer.start-block.b3tr
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
+      name  = "INDEXER_START_BLOCK_B3TR_PROPOSAL"
       value = each.value.indexer.start-block.b3tr-proposal
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
+      name  = "INDEXER_START_BLOCK_B3TR_X_ALLOC_RESULT"
       value = each.value.indexer.start-block.b3tr-x-alloc-result
     },
     {
-      name = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
+      name  = "INDEXER_START_BLOCK_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-block.b3tr-sustainable-actions
     },
     {
@@ -451,15 +451,15 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.historic-proposals
     },
     {
-        name = "INDEXER_START_BLOCK_VALIDATOR"
-        value = each.value.indexer.start-block.validator
+      name  = "INDEXER_START_BLOCK_VALIDATOR"
+      value = each.value.indexer.start-block.validator
     },
     {
-        name = "INDEXER_START_BLOCK_DELEGATION"
-        value = each.value.indexer.start-block.delegation
+      name  = "INDEXER_START_BLOCK_DELEGATION"
+      value = each.value.indexer.start-block.delegation
     },
     {
-      name = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
+      name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
     {
@@ -643,103 +643,103 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.vevote-results
     },
     {
-      name = "VERSION_AUTHORITY_NODE_ENDORSER"
+      name  = "VERSION_AUTHORITY_NODE_ENDORSER"
       value = each.value.indexer.version.authority-node-endorser
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vtho-claimed-by-block
     },
     {
-      name = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VTHO_GENERATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vtho-generated-by-block
     },
     {
-      name = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
+      name  = "VERSION_STARGATE_VTHO_CLAIMED_BY_ACCOUNT"
       value = each.value.indexer.version.stargate-vtho-claimed-by-account
     },
     {
-      name = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VET_STAKED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vet-staked-by-block
     },
     {
-      name = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
+      name  = "VERSION_STARGATE_NFT_HOLDERS_BY_BLOCK"
       value = each.value.indexer.version.stargate-nft-holders-by-block
     },
     {
-      name = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
+      name  = "VERSION_STARGATE_VET_DELEGATED_BY_BLOCK"
       value = each.value.indexer.version.stargate-vet-delegated-by-block
     },
     {
-      name = "VERSION_HISTORIC_PROPOSALS"
+      name  = "VERSION_HISTORIC_PROPOSALS"
       value = each.value.indexer.version.historic-proposals
     },
     {
-      name = "VERSION_B3TR_PROPOSAL_COMMENTS"
+      name  = "VERSION_B3TR_PROPOSAL_COMMENTS"
       value = each.value.indexer.version.b3tr-proposal-comments
     },
     {
-      name = "VERSION_B3TR_PROPOSAL_RESULTS"
+      name  = "VERSION_B3TR_PROPOSAL_RESULTS"
       value = each.value.indexer.version.b3tr-proposal-results
     },
     {
-      name = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_ALL_TIME_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_ALL_TIME_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-all-time-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-round-action-summary
     },
     {
-      name = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_APP_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-app-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_DAILY_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-daily-action-summary
     },
     {
-      name = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
+      name  = "VERSION_B3TR_USER_ROUND_ACTION_SUMMARY"
       value = each.value.indexer.version.b3tr-user-round-action-summary
     },
     {
-      name = "VERSION_B3TR_X_ALLOC_RESULT"
+      name  = "VERSION_B3TR_X_ALLOC_RESULT"
       value = each.value.indexer.version.b3tr-x-alloc-result
     },
     {
-      name = "VERSION_B3TR_GM_NFT"
+      name  = "VERSION_B3TR_GM_NFT"
       value = each.value.indexer.version.b3tr-gm-nft
     },
     {
-      name = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
+      name  = "VERSION_B3TR_GM_NFT_LEVEL_OVERVIEW"
       value = each.value.indexer.version.b3tr-gm-nft-level-overview
     },
     {
-      name = "VERSION_BLOCK_USAGE"
+      name  = "VERSION_BLOCK_USAGE"
       value = each.value.indexer.version.block-usage
     },
     {
-      name = "VERSION_VALIDATOR"
+      name  = "VERSION_VALIDATOR"
       value = each.value.indexer.version.validator
     },
     {
-      name = "VERSION_VALIDATOR_BLOCKS"
+      name  = "VERSION_VALIDATOR_BLOCKS"
       value = each.value.indexer.version.validator-rewards
     },
     {
-      name = "VERSION_STARGATE_TOKEN"
+      name  = "VERSION_STARGATE_TOKEN"
       value = each.value.indexer.version.stargate-token
     },
     {
-      name = "VERSION_TOKEN_REWARDS"
+      name  = "VERSION_TOKEN_REWARDS"
       value = each.value.indexer.version.token-rewards
     },
     {
-      name = "VERSION_DELEGATION"
+      name  = "VERSION_DELEGATION"
       value = each.value.indexer.version.delegation
     },
     {
@@ -783,19 +783,19 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GM_NFT_CONTRACT
     },
     {
-      name = "X_ALLOC_VOTING_CONTRACT"
+      name  = "X_ALLOC_VOTING_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_VOTING_CONTRACT
     },
     {
-      name = "NODE_MANAGEMENT_CONTRACT"
+      name  = "NODE_MANAGEMENT_CONTRACT"
       value = each.value.indexer.business-event.substitutions.NODE_MANAGEMENT_CONTRACT
     },
     {
-      name = "X_ALLOC_POOL_CONTRACT"
+      name  = "X_ALLOC_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X_ALLOC_POOL_CONTRACT
     },
     {
-      name = "X2EARN_REWARDS_POOL_CONTRACT"
+      name  = "X2EARN_REWARDS_POOL_CONTRACT"
       value = each.value.indexer.business-event.substitutions.X2EARN_REWARDS_POOL_CONTRACT
     },
     {
@@ -835,31 +835,31 @@ module "ecs-backend-service" {
       value = each.value.indexer.business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT
     },
     {
-      name = "INDEXER_SYNC_LOG_INTERVAL"
+      name  = "INDEXER_SYNC_LOG_INTERVAL"
       value = each.value.indexer.sync-log-interval
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS"
       value = each.value.indexer.sync-block-batch-size.nfts
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS"
       value = each.value.indexer.sync-block-batch-size.transfers
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE"
       value = each.value.indexer.sync-block-batch-size.vevote
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_HISTORIC_PROPOSALS"
       value = each.value.indexer.sync-block-batch-size.historic-proposals
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_STARGATE"
       value = each.value.indexer.sync-block-batch-size.stargate
     },
     {
-      name = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_AUTHORITY_NODES"
       value = each.value.indexer.sync-block-batch-size.authority-nodes
     },
     {
@@ -867,18 +867,54 @@ module "ecs-backend-service" {
       value = each.value.indexer.sync-block-batch-size.b3tr
     },
     {
-      name = "INDEXER_CHANNEL_BATCH_SIZE"
+      name  = "INDEXER_CHANNEL_BATCH_SIZE"
       value = each.value.indexer.channel-batch-size
     },
     {
-      name = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
+      name  = "HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-syncing
     },
     {
-      name = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
+      name  = "HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING"
       value = each.value.indexer.healthcheck.inactive-threshold-not-syncing
+    },
+    {
+      name  = "METRICS_ID"
+      value = "${local.env.environment}-${each.key}"
+    },
+    {
+      name  = "DD_HOST_TAG"
+      value = "${local.env.environment}-${each.key}"
+    },
+    {
+      name  = "DD_METRICS_ENABLED"
+      value = "true"
+    },
+    {
+      name  = "DD_API_KEY"
+      value = data.aws_secretsmanager_secret_version.dd_api_key.secret_string
+    },
+    {
+      name  = "DD_APP_KEY"
+      value = data.aws_secretsmanager_secret_version.dd_app_key.secret_string
+    },
+    {
+      name  = "DD_API_URL"
+      value = "https://api.datadoghq.eu"
     }
   ]
+}
+
+################################################################################
+# Datadog Secrets
+################################################################################
+
+data "aws_secretsmanager_secret_version" "dd_api_key" {
+  secret_id = local.env.datadog.indexer.api_key_arn
+}
+
+data "aws_secretsmanager_secret_version" "dd_app_key" {
+  secret_id = local.env.datadog.indexer.app_key_arn
 }
 
 data "aws_security_groups" "ecs_sg_list" {
