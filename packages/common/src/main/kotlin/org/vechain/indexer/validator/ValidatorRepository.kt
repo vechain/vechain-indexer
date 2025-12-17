@@ -12,4 +12,6 @@ interface ValidatorRepository : BasePagingAndSortingIndexedRepository<Validator,
     fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator>
 
     fun findByStatusNot(status: Status): List<Validator>
+
+    fun findByStatus(status: Status): List<Validator>
 }

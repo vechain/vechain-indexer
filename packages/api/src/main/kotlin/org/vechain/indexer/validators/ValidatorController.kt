@@ -115,8 +115,6 @@ open class ValidatorController(
                 endorser = endorser?.let { HexUtils.normalise(it) },
                 statuses = status,
                 pageable = pageable,
-                sortField = sortField,
-                direction = direction,
             )
 
         return paginatedResponse(results)

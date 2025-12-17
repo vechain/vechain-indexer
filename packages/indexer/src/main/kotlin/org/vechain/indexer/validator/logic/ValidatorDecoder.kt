@@ -6,6 +6,7 @@ import org.vechain.indexer.contracts.abi.FunctionParameter
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.abi.InputOutput
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
+import org.vechain.indexer.thor.AddressUtils
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
@@ -238,4 +239,58 @@ object ValidatorDecoder {
     }
 
     fun InspectionResult.hasAbiData(): Boolean = this.data.isNotBlank() && this.data != "0x"
+
+    // --- Queue Functions ---
+
+    /** ABI definition for firstQueued function */
+    val firstQueuedFunction =
+        FunctionDefinition(
+            name = "firstQueued",
+            inputs = emptyList(),
+            outputs = listOf(FunctionParameter("first", "address")),
+            stateMutability = "view",
+        )
+
+    /** ABI definition for next function to iterate through queue */
+    val nextQueuedFunction =
+        FunctionDefinition(
+            name = "next",
+            inputs = listOf(FunctionParameter("prev", "address")),
+            outputs = listOf(FunctionParameter("nextValidation", "address")),
+            stateMutability = "view",
+        )
+
+    /** Build clause to get first queued validator */
+    fun buildFirstQueuedClause(stakerContract: String): Clause =
+        ContractUtils.createClause(stakerContract, firstQueuedFunction)
+
+    /** Build clause to get next queued validator after prev */
+    fun buildNextQueuedClause(stakerContract: String, prev: String): Clause =
+        ContractUtils.createClause(stakerContract, nextQueuedFunction, AddressUtils.toBigInt(prev))
+
+    /** Decode first queued validator address from response */
+    fun decodeFirstQueued(response: InspectionResult): String? {
+        if (!response.hasAbiData()) return null
+        val decoded =
+            FunctionReturnDecoder.decode(
+                response.data,
+                listOf(InputOutput("address", "first", "address")),
+            )
+        val address = decoded["first"] as? String
+        return if (address == null || address == ZERO_ADDRESS) null else address
+    }
+
+    /** Decode next queued validator address from response */
+    fun decodeNextQueued(response: InspectionResult): String? {
+        if (!response.hasAbiData()) return null
+        val decoded =
+            FunctionReturnDecoder.decode(
+                response.data,
+                listOf(InputOutput("address", "nextValidation", "address")),
+            )
+        val address = decoded["nextValidation"] as? String
+        return if (address == null || address == ZERO_ADDRESS) null else address
+    }
+
+    private const val ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 }
