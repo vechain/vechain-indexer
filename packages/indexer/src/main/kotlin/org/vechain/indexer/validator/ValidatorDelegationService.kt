@@ -175,11 +175,11 @@ class ValidatorDelegationService(
         return results.map { result ->
             InspectionResult(
                 data = result.data,
-                events = emptyList(),
-                transfers = emptyList(),
-                gasUsed = 0,
-                reverted = false,
-                vmError = null,
+                events = result.events,
+                transfers = result.transfers,
+                gasUsed = result.gasUsed,
+                reverted = result.reverted,
+                vmError = result.vmError,
             )
         }
     }
