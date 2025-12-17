@@ -888,17 +888,29 @@ module "ecs-backend-service" {
     },
     {
       name = "DD_API_KEY"
-      value = "TODO: Secrets Manager from ${local.env.datadog.indexer.api_key_arn}"
+      value = data.aws_secretsmanager_secret_version.dd_api_key.secret_string
     },
     {
       name = "DD_APP_KEY"
-      value = "TODO: Secrets Manager from ${local.env.datadog.indexer.app_key_arn}"
+      value = data.aws_secretsmanager_secret_version.dd_app_key.secret_string
     },
     {
       name = "DD_API_URL"
       value = "https://api.datadoghq.eu"
     }
   ]
+}
+
+################################################################################
+# Datadog Secrets
+################################################################################
+
+data "aws_secretsmanager_secret_version" "dd_api_key" {
+  secret_id = each.value.datadog.indexer.api_key_arn
+}
+
+data "aws_secretsmanager_secret_version" "dd_app_key" {
+  secret_id = each.value.datadog.indexer.app_key_arn
 }
 
 data "aws_security_groups" "ecs_sg_list" {
