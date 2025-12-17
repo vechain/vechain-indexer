@@ -320,7 +320,7 @@ class ValidatorServiceTest {
     }
 
     @Test
-    fun `initializeQueuePositionsIfNeeded increments version when updating`() {
+    fun `initializeQueuePositionsIfNeeded preserves version when updating`() {
         val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
         val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -347,7 +347,7 @@ class ValidatorServiceTest {
         service.initializeQueuePositionsIfNeeded("0xBLOCK")
 
         val saved = savedSlot.captured
-        assertThat(saved[0].version).isEqualTo(6) // incremented from 5
+        assertThat(saved[0].version).isEqualTo(5) // version unchanged during queue initialization
     }
 
     @Test
