@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import kotlin.time.TimeSource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -34,14 +35,14 @@ open class ThorConfig(
 
     private fun metricsFilter(): ExchangeFilterFunction {
         return ExchangeFilterFunction { request, next ->
-            val startTime = System.nanoTime()
+            val start = TimeSource.Monotonic.markNow()
             val method = request.method().toString()
             val path = request.url().path
 
             next
                 .exchange(request)
                 .doOnNext { response ->
-                    val durationMs = (System.nanoTime() - startTime) / 1_000_000.0
+                    val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
                     metrics.observeRequestDuration(method, path, durationMs)
                     metrics.recordResponseCode(
                         method,
@@ -50,7 +51,7 @@ open class ThorConfig(
                     )
                 }
                 .doOnError { _ ->
-                    val durationMs = (System.nanoTime() - startTime) / 1_000_000.0
+                    val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
                     metrics.observeRequestDuration(method, path, durationMs)
                     metrics.recordResponseCode(method, path, "unknown-exception")
                 }

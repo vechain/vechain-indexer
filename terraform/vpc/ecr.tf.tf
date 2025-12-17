@@ -1,13 +1,13 @@
 # ECR Repository for backend service
 
 module "ecr-api" {
-  source                     = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecr?ref=v.3.1.21"
-  project                    = local.env.application
-  app_name                   = "api"
-  image_tag_mutability       = "MUTABLE"
-  scan_on_push               = false
-  encryption_type            = "KMS"
-  max_image_count            = 50
+  source               = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//ecr?ref=v.3.1.21"
+  project              = local.env.application
+  app_name             = "api"
+  image_tag_mutability = "MUTABLE"
+  scan_on_push         = false
+  encryption_type      = "KMS"
+  max_image_count      = 50
 }
 
 # ECR Repository for frontend service

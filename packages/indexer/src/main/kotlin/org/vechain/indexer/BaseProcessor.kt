@@ -1,5 +1,6 @@
 package org.vechain.indexer
 
+import kotlin.time.TimeSource
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -12,15 +13,14 @@ abstract class BaseProcessor(
     abstract suspend fun processEntry(entry: IndexingResult)
 
     override suspend fun process(entry: IndexingResult) {
-        val start = System.nanoTime()
+        val start = TimeSource.Monotonic.markNow()
         try {
             processEntry(entry)
             ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
             ProcessorMetrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
         } finally {
-            val duration = System.nanoTime() - start
-            val durationMs = duration.toDouble() / 1_000_000.0
-            ProcessorMetrics.observeProcessingDuration(indexerName, durationMs)
+            val elapsed = start.elapsedNow().inWholeMilliseconds.toDouble()
+            ProcessorMetrics.observeProcessingDuration(indexerName, elapsed)
         }
     }
 

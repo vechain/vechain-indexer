@@ -1,0 +1,1117 @@
+{
+  "title": "Indexer :: JVM Metrics",
+  "description": "JVM performance metrics including memory, threads, and garbage collection",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "Heap Usage %",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "100 * query1 / query2"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{area:heap}",
+                "aggregator": "last"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:jvm.memory.max{area:heap}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 1
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Heap Used",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{area:heap}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2,
+        "custom_unit": "bytes"
+      },
+      "layout": {
+        "x": 3,
+        "y": 0,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Active Threads",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.threads.live{*}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "x": 6,
+        "y": 0,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Loaded Classes",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.classes.loaded{*}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "x": 9,
+        "y": 0,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Heap Memory",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1",
+                "alias": "Used"
+              },
+              {
+                "formula": "query2",
+                "alias": "Committed"
+              },
+              {
+                "formula": "query3",
+                "alias": "Max"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{area:heap}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:jvm.memory.committed{area:heap}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query3",
+                "query": "avg:jvm.memory.max{area:heap}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 2,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Non-Heap Memory (Metaspace)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1",
+                "alias": "Used"
+              },
+              {
+                "formula": "query2",
+                "alias": "Committed"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{area:nonheap}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:jvm.memory.committed{area:nonheap}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 2,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "Memory Pools by ID",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{*} by {id}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 5,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Thread Count",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1",
+                "alias": "Live"
+              },
+              {
+                "formula": "query2",
+                "alias": "Daemon"
+              },
+              {
+                "formula": "query3",
+                "alias": "Peak"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.threads.live{*}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:jvm.threads.daemon{*}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query3",
+                "query": "avg:jvm.threads.peak{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 5,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Thread States",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.threads.states{*} by {state}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "area"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "GC Pause Rate",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.gc.pause.count{*} by {action}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 8,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 11,
+      "definition": {
+        "title": "GC Pause Time (ms)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1 / query2"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.gc.pause.sum{*} by {action}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "sum:jvm.gc.pause.count{*} by {action}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 11,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 12,
+      "definition": {
+        "title": "GC Overhead %",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "100 * query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.gc.overhead{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 11,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 13,
+      "definition": {
+        "title": "Total GC Pauses",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.gc.pause.count{*}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "x": 0,
+        "y": 14,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 14,
+      "definition": {
+        "title": "Avg GC Pause (ms)",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.gc.pause.avg{*}",
+                "aggregator": "avg"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2
+      },
+      "layout": {
+        "x": 3,
+        "y": 14,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 15,
+      "definition": {
+        "title": "Max GC Pause (ms)",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:jvm.gc.pause.max{*}",
+                "aggregator": "max"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 2
+      },
+      "layout": {
+        "x": 6,
+        "y": 14,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 16,
+      "definition": {
+        "title": "Buffer Count",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.buffer.count{*}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": true,
+        "precision": 0
+      },
+      "layout": {
+        "x": 9,
+        "y": 14,
+        "width": 3,
+        "height": 2
+      }
+    },
+    {
+      "id": 17,
+      "definition": {
+        "title": "Buffer Memory",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.buffer.memory.used{*} by {id}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 16,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 18,
+      "definition": {
+        "title": "Buffer Total Capacity",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.buffer.total.capacity{*} by {id}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 16,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 19,
+      "definition": {
+        "title": "Live Data Size vs Max",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1",
+                "alias": "Live Data Size"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.gc.live.data.size{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 19,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 20,
+      "definition": {
+        "title": "Memory Usage After GC",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.usage.after.gc{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 19,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 21,
+      "definition": {
+        "title": "Memory Promoted to Old Gen",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.gc.memory.promoted{*}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 22,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 22,
+      "definition": {
+        "title": "Classes Loaded/Unloaded",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1",
+                "alias": "Loaded"
+              },
+              {
+                "formula": "query2",
+                "alias": "Unloaded"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.classes.loaded{*}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "sum:jvm.classes.unloaded{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 22,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 23,
+      "definition": {
+        "title": "Threads Started",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:jvm.threads.started{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 25,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 24,
+      "definition": {
+        "title": "GC Concurrent Phase Time",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.gc.concurrent.phase.time.avg{*}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 25,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 25,
+      "definition": {
+        "title": "Memory Used by Pool",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{*} by {id}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "sort": {
+              "count": 20,
+              "order_by": [
+                {
+                  "type": "formula",
+                  "index": 0,
+                  "order": "desc"
+                }
+              ]
+            }
+          }
+        ],
+        "style": {
+          "display": {
+            "type": "stacked",
+            "legend": "automatic"
+          },
+          "scaling": "relative"
+        }
+      },
+      "layout": {
+        "x": 0,
+        "y": 28,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "id": 26,
+      "definition": {
+        "title": "Thread States Distribution",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.threads.states{*} by {state}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "sort": {
+              "count": 20,
+              "order_by": [
+                {
+                  "type": "formula",
+                  "index": 0,
+                  "order": "desc"
+                }
+              ]
+            }
+          }
+        ],
+        "style": {
+          "display": {
+            "type": "stacked",
+            "legend": "automatic"
+          },
+          "scaling": "relative"
+        }
+      },
+      "layout": {
+        "x": 6,
+        "y": 28,
+        "width": 6,
+        "height": 4
+      }
+    }
+  ],
+  "template_variables": [],
+  "layout_type": "ordered",
+  "notify_list": [],
+  "reflow_type": "fixed"
+}

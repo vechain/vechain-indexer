@@ -41,6 +41,14 @@ management:
   endpoint:
     health:
       show-details: always
+  datadog:
+    metrics:
+      export:
+        enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: false
 
 spring.data:
   mongodb:

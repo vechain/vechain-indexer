@@ -1,6 +1,7 @@
 package org.vechain.indexer.config
 
 import com.github.kittinunf.fuel.core.FuelError
+import kotlin.time.TimeSource
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.RateLimitException
 import org.vechain.indexer.thor.client.DefaultThorClient
@@ -21,7 +22,7 @@ class MonitoredThorClient(
 ) : DefaultThorClient(baseUrl, *headers) {
 
     private suspend fun <T> withMetrics(method: String, path: String, block: suspend () -> T): T {
-        val start = System.nanoTime()
+        val start = TimeSource.Monotonic.markNow()
         try {
             val result = block()
             metrics.recordResponseCode(method, path, "200")
@@ -40,7 +41,7 @@ class MonitoredThorClient(
             metrics.recordResponseCode(method, path, "unknown-exception")
             throw ex
         } finally {
-            val durationMs = (System.nanoTime() - start) / 1_000_000.0
+            val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
             metrics.observeRequestDuration(method, path, durationMs)
         }
     }
