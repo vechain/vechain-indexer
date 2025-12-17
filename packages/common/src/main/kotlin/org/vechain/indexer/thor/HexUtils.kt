@@ -33,6 +33,7 @@ object HexUtils {
     }
 
     fun toHex(num: Long, padToLength: Int? = null): String {
+        require(padToLength == null || padToLength > 0) { "padToLength must be a positive number" }
         val hex = num.toString(16)
         val paddedHex = padToLength?.let { hex.padStart(it, '0') } ?: hex
         return addPrefix(paddedHex)

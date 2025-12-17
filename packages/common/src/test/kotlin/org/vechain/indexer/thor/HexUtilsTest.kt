@@ -89,4 +89,10 @@ internal class HexUtilsTest {
     fun `toHex pads when pad length provided`(num: Long, padToLength: Int, expected: String) {
         expectThat(HexUtils.toHex(num, padToLength)).isEqualTo(expected)
     }
+
+    @ParameterizedTest
+    @CsvSource("0", "-1", "-10")
+    fun `toHex throws when pad length is not positive`(padToLength: Int) {
+        assertThrows<IllegalArgumentException> { HexUtils.toHex(10, padToLength) }
+    }
 }
