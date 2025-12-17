@@ -4,16 +4,23 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.accounts.repository.AccountOverviewRepository
+import org.vechain.indexer.accounts.repository.TotalAccountsRepository
+import org.vechain.indexer.thor.Address
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
  * @dev Ensures that period-based queries always include the "ALL" document, and normalizes it to
  *   reflect the requested time frame when necessary.
  */
-@Profile("accounts", "total-accounts")
+@Profile("accounts")
 @Service
-open class AccountsService(private val totalAccountsRepository: TotalAccountsRepository) {
+open class AccountsService(
+    private val totalAccountsRepository: TotalAccountsRepository,
+    private val accountOverviewRepository: AccountOverviewRepository,
+) {
     /**
      * @param period The reward period to query. Defaults to ALL if not provided.
      * @param pageable Spring pageable object controlling pagination and sorting.
@@ -99,4 +106,7 @@ open class AccountsService(private val totalAccountsRepository: TotalAccountsRep
             yearTotal = null,
         )
     }
+
+    fun getOverview(address: Address): AccountOverview? =
+        accountOverviewRepository.findByIdOrNull(address.value)
 }

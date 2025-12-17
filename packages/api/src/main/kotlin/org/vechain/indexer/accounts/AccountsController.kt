@@ -8,17 +8,22 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.context.annotation.Profile
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.ACCOUNTS_PATH
+import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
+import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidPageSize
 
-@Profile("accounts", "total-accounts")
+@Profile("accounts")
 @Tag(name = "Accounts", description = "VeChain Thor Accounts Overview")
 @Validated
 @RestController
@@ -54,4 +59,16 @@ open class AccountsController(private val accountsService: AccountsService) {
         val accounts = accountsService.getTotal(timeFrame, pageable)
         return paginatedResponse(accounts)
     }
+
+    @GetMapping("/overview/{address}")
+    @AddressParameter(
+        name = "address",
+        `in` = ParameterIn.PATH,
+        required = true,
+        description = "Address of the transaction origin",
+    )
+    @CommonApiResponses
+    open fun getOverview(@ValidAddress @PathVariable address: Address): AccountOverview =
+        accountsService.getOverview(address)
+            ?: throw ResourceNotFoundException("Account overview not found for address $address")
 }

@@ -611,6 +611,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.total-accounts
     },
     {
+      name = "VERSION_ACCOUNT_OVERVIEW"
+      value = each.value.indexer.version.account-overview
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },

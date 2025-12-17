@@ -36,4 +36,5 @@ object IndexerNames {
     const val STARGATE_TOKEN = "StargateTokenIndexer"
     const val TOKEN_REWARD = "TokenRewardIndexer"
     const val TOTAL_ACCOUNTS_INDEXER = "TotalAccountsIndexer"
+    const val ACCOUNT_OVERVIEW_INDEXER = "AccountOverviewIndexer"
 }

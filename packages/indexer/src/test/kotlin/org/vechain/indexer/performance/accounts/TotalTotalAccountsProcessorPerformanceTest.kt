@@ -13,8 +13,8 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.TotalAccounts
 import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsProcessor
-import org.vechain.indexer.accounts.TotalAccountsRepository
 import org.vechain.indexer.accounts.TotalAccountsService
+import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler

@@ -7,6 +7,7 @@ import java.time.temporal.WeekFields
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
