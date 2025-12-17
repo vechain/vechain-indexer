@@ -1,5 +1,7 @@
 package org.vechain.indexer.stargate.token
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseStatefulProcessor
@@ -22,13 +24,13 @@ open class StargateTokenProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.STARGATE_TOKEN,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
 
         val updates = service.processBlock(entry.block, entry.callResults, entry.events())
 
-        service.save(updates.first, updates.second)
+        withContext(Dispatchers.IO) { service.save(updates.first, updates.second) }
     }
 }

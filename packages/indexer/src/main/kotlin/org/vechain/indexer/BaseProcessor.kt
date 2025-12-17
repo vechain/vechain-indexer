@@ -9,9 +9,9 @@ abstract class BaseProcessor(
     private val indexerName: String,
 ) : IndexerProcessor {
 
-    abstract fun processEntry(entry: IndexingResult)
+    abstract suspend fun processEntry(entry: IndexingResult)
 
-    override fun process(entry: IndexingResult) {
+    override suspend fun process(entry: IndexingResult) {
         val start = System.nanoTime()
         try {
             processEntry(entry)

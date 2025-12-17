@@ -8,6 +8,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -44,22 +45,26 @@ internal class TransactionProcessorTest {
     fun `process - should throw if block is null`() {
 
         assertThrows<IllegalArgumentException> {
-            transactionProcessor.process(
-                IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING)
-            )
+            runBlocking {
+                transactionProcessor.process(
+                    IndexingResult.EventsOnly(100, emptyList(), Status.SYNCING)
+                )
+            }
         }
     }
 
     @Test
     fun `process - If no transactions shouldn't do anything`() {
-        transactionProcessor.process(
-            IndexingResult.Normal(
-                BlockFixtures.BLOCK_NO_CLAUSES,
-                emptyList(),
-                emptyList(),
-                Status.FULLY_SYNCED,
+        runBlocking {
+            transactionProcessor.process(
+                IndexingResult.Normal(
+                    BlockFixtures.BLOCK_NO_CLAUSES,
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
             )
-        )
+        }
 
         verify { transactionService wasNot Called }
     }
@@ -71,9 +76,11 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(
-            IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
-        )
+        runBlocking {
+            transactionProcessor.process(
+                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
 
         verify { transactionService.processBlockTransactions(events, block) }
     }
@@ -85,9 +92,11 @@ internal class TransactionProcessorTest {
 
         every { transactionService.processBlockTransactions(events, block) } just Runs
 
-        transactionProcessor.process(
-            IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
-        )
+        runBlocking {
+            transactionProcessor.process(
+                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
 
         verify { transactionService.processBlockTransactions(events, block) }
     }

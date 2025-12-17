@@ -4,6 +4,8 @@ import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
@@ -25,11 +27,12 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.Clause
+import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -40,7 +43,7 @@ open class ProposalResultService(
     private val repository: ProposalResultRepository,
     private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
     private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,
 ) {
@@ -55,14 +58,14 @@ open class ProposalResultService(
         statusAbi = response.first()
     }
 
-    open fun getUpdatedStatuses(
+    open suspend fun getUpdatedStatuses(
         block: BlockDetails
     ): Pair<List<ProposalResult>, List<ProposalResult>> {
         val updatedResult = mutableListOf<ProposalResult>()
         val archiveResult = mutableListOf<ProposalResult>()
 
         // Fetch all proposals that are not finalized
-        val proposals = repository.findByStateIn(nonFinalizedStates)
+        val proposals = withContext(Dispatchers.IO) { repository.findByStateIn(nonFinalizedStates) }
         if (proposals.isEmpty()) return updatedResult to archiveResult
 
         // Process proposals in batches
@@ -84,7 +87,7 @@ open class ProposalResultService(
      * @param block The details of the current block.
      * @return A pair of lists containing updated and archived proposal results.
      */
-    protected fun updateStatusesForBatch(
+    protected suspend fun updateStatusesForBatch(
         batch: List<ProposalResult>,
         block: BlockDetails,
     ): Pair<List<ProposalResult>, List<ProposalResult>> {
@@ -95,7 +98,7 @@ open class ProposalResultService(
         val clauses = createStatusClauses(batch)
 
         // Execute the clauses and parse the results
-        val responses = thorService.inspectClausesAtBlock(clauses, block.blockId)
+        val responses = thorClient.inspectClauses(clauses, BlockRevision.Id(block.blockId))
 
         // Update the statuses of the proposals
         updateProposalStates(batch, responses, block, updatedResult, archiveResult)
@@ -125,7 +128,7 @@ open class ProposalResultService(
      */
     protected fun updateProposalStates(
         proposals: List<ProposalResult>,
-        responses: List<ExecuteCodeResponse>,
+        responses: List<InspectionResult>,
         block: BlockDetails,
         updatedResult: MutableList<ProposalResult>,
         archiveResult: MutableList<ProposalResult>,
@@ -161,7 +164,7 @@ open class ProposalResultService(
      * @return The parsed proposal state, or null if the response was reverted.
      */
     protected fun parseProposalState(
-        response: ExecuteCodeResponse,
+        response: InspectionResult,
         proposalId: String,
     ): ProposalState? {
         if (response.reverted) {

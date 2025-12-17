@@ -23,7 +23,7 @@ open class TransactionProcessor(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block must be a normal block.")
         }

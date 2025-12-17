@@ -12,6 +12,7 @@ class ValidatorDecoderTest {
             data = data,
             events = emptyList(),
             transfers = emptyList(),
+            gasUsed = 0,
             reverted = reverted,
             vmError = "",
         )

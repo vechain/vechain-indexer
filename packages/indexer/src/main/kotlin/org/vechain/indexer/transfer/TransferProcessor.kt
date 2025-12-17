@@ -1,5 +1,7 @@
 package org.vechain.indexer.transfer
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -20,13 +22,13 @@ open class TransferProcessor(
         indexerName = IndexerNames.TRANSFER,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 
         val transferEvents = service.processEvents(entry.events())
 
         if (transferEvents.isNotEmpty()) {
-            service.save(transferEvents)
+            withContext(Dispatchers.IO) { service.save(transferEvents) }
         }
     }
 }

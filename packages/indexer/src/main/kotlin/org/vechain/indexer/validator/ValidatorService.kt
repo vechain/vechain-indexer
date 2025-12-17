@@ -10,9 +10,9 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.rest.ExecuteCodeResponse
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -27,7 +27,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 open class ValidatorService(
     private val repository: ValidatorRepository,
     private val archiveService: ArchiveService<Validator, ValidatorArchive>,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
 ) {
@@ -117,9 +117,8 @@ open class ValidatorService(
      * - For older blocks: only fetch docs for validators present in events.
      * - For newer blocks: fetch all non-exited validators.
      *
-     * @param block Current block being processed.
      * @param matchedEvents Events in this block.
-     * @param threshold Block threshold separating old vs new logic.
+     * @param isFullySynced Whether the block is recent enough to consider full sync.
      * @return Map of validatorId → Validator document.
      */
     private fun loadExistingDocs(
@@ -248,7 +247,12 @@ open class ValidatorService(
      *
      * @param blockId The current block ID to use for contract calls.
      */
-    open fun initializeQueuePositionsIfNeeded(blockId: String) {
+    suspend fun getTotalVETStaked(blockId: String): BigInteger {
+        val res = thorClient.getAccountState(address = stakerSC, BlockRevision.Id(blockId))
+        return res.balance.removePrefix("0x").ifEmpty { "0" }.toBigInteger(16)
+    }
+
+    open suspend fun initializeQueuePositionsIfNeeded(blockId: String) {
         if (queueInitialized) return
 
         // Always fetch queue order from contract on restart
@@ -268,32 +272,32 @@ open class ValidatorService(
      * @param blockId Block ID for the contract calls.
      * @return Ordered list of validator addresses in queue.
      */
-    private fun fetchQueueOrderFromContract(blockId: String): List<String> {
+    private suspend fun fetchQueueOrderFromContract(blockId: String): List<String> {
         val queueOrder = mutableListOf<String>()
 
         // Get first queued validator
         val firstClause = ValidatorDecoder.buildFirstQueuedClause(stakerSC)
-        val firstResponse = thorService.inspectClausesAtBlock(listOf(firstClause), blockId)
+        val firstResponse =
+            thorClient.inspectClauses(listOf(firstClause), BlockRevision.Id(blockId))
 
         if (firstResponse.isEmpty()) return emptyList()
 
         // decodeFirstQueued returns null if zero address (empty queue)
         var current =
-            ValidatorDecoder.decodeFirstQueued(firstResponse[0].toInspectionResult())
-                ?: return emptyList()
+            ValidatorDecoder.decodeFirstQueued(firstResponse.first()) ?: return emptyList()
 
         queueOrder.add(current)
 
         // Iterate through queue with next() until zero address
         while (true) {
             val nextClause = ValidatorDecoder.buildNextQueuedClause(stakerSC, current)
-            val nextResponse = thorService.inspectClausesAtBlock(listOf(nextClause), blockId)
+            val nextResponse =
+                thorClient.inspectClauses(listOf(nextClause), BlockRevision.Id(blockId))
 
             if (nextResponse.isEmpty()) break
 
             // decodeNextQueued returns null if zero address (end of queue)
-            val next =
-                ValidatorDecoder.decodeNextQueued(nextResponse[0].toInspectionResult()) ?: break
+            val next = ValidatorDecoder.decodeNextQueued(nextResponse.first()) ?: break
 
             queueOrder.add(next)
             current = next
@@ -320,16 +324,6 @@ open class ValidatorService(
             repository.saveAll(updates)
         }
     }
-
-    /** Convert ExecuteCodeResponse to InspectionResult */
-    private fun ExecuteCodeResponse.toInspectionResult() =
-        InspectionResult(
-            data = this.data,
-            events = emptyList(),
-            transfers = emptyList(),
-            reverted = this.reverted,
-            vmError = this.vmError ?: "",
-        )
 
     /**
      * Loads and caches ABI function definitions needed for validator processing.

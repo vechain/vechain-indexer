@@ -22,7 +22,6 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
-    @Autowired lateinit var thorService: org.vechain.indexer.thor.ThorService
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsAddress: String
@@ -75,7 +74,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledValidatorBlockService(
                     repository = validatorBlockRepository,
-                    thorService = thorService,
+                    thorClient = thorClient,
                     profiler = profiler,
                 )
             } else {
@@ -124,7 +123,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
             repository = repository,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {
                 super.processEntry(entry)
             }

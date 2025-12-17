@@ -37,6 +37,19 @@ class DetailedProfiler {
         }
     }
 
+    /** Time a suspend block of code */
+    suspend inline fun <T> timeSuspend(
+        operationName: String,
+        crossinline block: suspend () -> T,
+    ): T {
+        start(operationName)
+        return try {
+            block()
+        } finally {
+            stop(operationName)
+        }
+    }
+
     /** Get profiling results in milliseconds */
     fun getResults(): ProfilingResults {
         val operations =

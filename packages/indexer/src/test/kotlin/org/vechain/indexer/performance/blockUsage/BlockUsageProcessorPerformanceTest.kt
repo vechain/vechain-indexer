@@ -111,7 +111,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
             service = service,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    BlockUsageProcessor.process (per block)") {
                 super.processEntry(entry)
             }

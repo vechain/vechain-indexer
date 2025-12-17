@@ -3,6 +3,7 @@ package org.vechain.indexer.nft
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -43,16 +44,18 @@ internal class NftProcessorTest {
         val events = INDEXED_EVENTS_NFT_MINT
 
         every { nftService.getExisting(any()) } returns emptyList()
-        every { nftService.parseRecords(any(), emptyList()) } returns emptyList()
+        coEvery { nftService.parseRecords(any(), emptyList()) } returns emptyList()
         every { nftService.save(any(), any()) } just Runs
 
-        processor.process(
-            IndexingResult.EventsOnly(
-                events.maxBy { it.blockNumber }.blockNumber,
-                events,
-                Status.SYNCING,
+        runBlocking {
+            processor.process(
+                IndexingResult.EventsOnly(
+                    events.maxBy { it.blockNumber }.blockNumber,
+                    events,
+                    Status.SYNCING,
+                )
             )
-        )
+        }
 
         verify(exactly = 0) { nftService.save(any(), any()) }
     }
@@ -92,16 +95,18 @@ internal class NftProcessorTest {
             )
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), existing) } returns updated
+        coEvery { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.save(updated, existing) } just Runs
 
-        processor.process(
-            IndexingResult.EventsOnly(
-                events.maxBy { it.blockNumber }.blockNumber,
-                events,
-                Status.SYNCING,
+        runBlocking {
+            processor.process(
+                IndexingResult.EventsOnly(
+                    events.maxBy { it.blockNumber }.blockNumber,
+                    events,
+                    Status.SYNCING,
+                )
             )
-        )
+        }
 
         verify(exactly = 1) { nftService.save(updated, existing) }
     }
@@ -128,16 +133,18 @@ internal class NftProcessorTest {
             )
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), existing) } returns updated
+        coEvery { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.save(updated, existing) } just Runs
 
-        processor.process(
-            IndexingResult.EventsOnly(
-                events.maxBy { it.blockNumber }.blockNumber,
-                events,
-                Status.SYNCING,
+        runBlocking {
+            processor.process(
+                IndexingResult.EventsOnly(
+                    events.maxBy { it.blockNumber }.blockNumber,
+                    events,
+                    Status.SYNCING,
+                )
             )
-        )
+        }
 
         verify(exactly = 1) { nftService.save(updated, existing) }
     }
@@ -164,16 +171,18 @@ internal class NftProcessorTest {
         val updated = emptyList<IndexedNft>()
 
         every { nftService.getExisting(any()) } returns existing
-        every { nftService.parseRecords(any(), existing) } returns updated
+        coEvery { nftService.parseRecords(any(), existing) } returns updated
         every { nftService.save(updated, existing) } just Runs
 
-        processor.process(
-            IndexingResult.EventsOnly(
-                events.maxBy { it.blockNumber }.blockNumber,
-                events,
-                Status.SYNCING,
+        runBlocking {
+            processor.process(
+                IndexingResult.EventsOnly(
+                    events.maxBy { it.blockNumber }.blockNumber,
+                    events,
+                    Status.SYNCING,
+                )
             )
-        )
+        }
 
         verify(exactly = 1) { nftService.save(updated, existing) }
     }

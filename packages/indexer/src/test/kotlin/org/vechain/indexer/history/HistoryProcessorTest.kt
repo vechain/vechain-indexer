@@ -2,11 +2,14 @@ package org.vechain.indexer.history
 
 import io.mockk.Called
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -44,14 +47,16 @@ internal class HistoryProcessorTest {
 
     @Test
     fun `process - if no events or transaction ar present then historyService shouldn't be called`() {
-        processor.process(
-            IndexingResult.Normal(
-                BlockFixtures.BLOCK_NO_CLAUSES,
-                emptyList(),
-                emptyList(),
-                Status.FULLY_SYNCED,
+        runBlocking {
+            processor.process(
+                IndexingResult.Normal(
+                    BlockFixtures.BLOCK_NO_CLAUSES,
+                    emptyList(),
+                    emptyList(),
+                    Status.FULLY_SYNCED,
+                )
             )
-        )
+        }
 
         verify { historyService wasNot Called }
     }
@@ -61,11 +66,17 @@ internal class HistoryProcessorTest {
         val events = INDEXED_EVENTS_BLACKLIST
         val block = BlockFixtures.BLOCK_NO_CLAUSES
 
-        every { historyService.processEvents(events, block) } returns emptyList()
+        coEvery { historyService.processEvents(events, block) } returns emptyList()
 
-        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
+        runBlocking {
+            processor.process(
+                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
 
-        verify(exactly = 1) { historyService.processEvents(events, BlockFixtures.BLOCK_NO_CLAUSES) }
+        coVerify(exactly = 1) {
+            historyService.processEvents(events, BlockFixtures.BLOCK_NO_CLAUSES)
+        }
     }
 
     @Test
@@ -73,11 +84,15 @@ internal class HistoryProcessorTest {
         val block = BLOCK_SINGLE_CLAUSE
         val events = emptyList<IndexedEvent>()
 
-        every { historyService.processEvents(events, block) } returns emptyList()
+        coEvery { historyService.processEvents(events, block) } returns emptyList()
 
-        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
+        runBlocking {
+            processor.process(
+                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
 
-        verify(exactly = 1) { historyService.processEvents(events, block) }
+        coVerify(exactly = 1) { historyService.processEvents(events, block) }
     }
 
     @Test
@@ -85,13 +100,15 @@ internal class HistoryProcessorTest {
         val events = INDEXED_EVENTS_BLACKLIST
 
         try {
-            processor.process(
-                IndexingResult.EventsOnly(
-                    events.maxBy { it.blockNumber }.blockNumber,
-                    events,
-                    Status.SYNCING,
+            runBlocking {
+                processor.process(
+                    IndexingResult.EventsOnly(
+                        events.maxBy { it.blockNumber }.blockNumber,
+                        events,
+                        Status.SYNCING,
+                    )
                 )
-            )
+            }
         } catch (e: IllegalArgumentException) {
             expect { that(e.message).isEqualTo("Block cannot be null") }
         }
@@ -105,12 +122,16 @@ internal class HistoryProcessorTest {
         val block = BlockFixtures.BLOCK_NO_CLAUSES
         val records = listOf<IndexedHistoryEvent>(mockk<IndexedHistoryEvent>())
 
-        every { historyService.processEvents(events, block) } returns records
+        coEvery { historyService.processEvents(events, block) } returns records
         every { historyService.save(records) } returns Unit
 
-        processor.process(IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED))
+        runBlocking {
+            processor.process(
+                IndexingResult.Normal(block, events, emptyList(), Status.FULLY_SYNCED)
+            )
+        }
 
-        verify(exactly = 1) { historyService.processEvents(events, block) }
+        coVerify(exactly = 1) { historyService.processEvents(events, block) }
         verify(exactly = 1) { historyService.save(records) }
     }
 }

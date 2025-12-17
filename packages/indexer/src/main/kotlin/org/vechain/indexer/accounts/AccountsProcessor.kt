@@ -22,7 +22,7 @@ open class AccountsProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.ACCOUNTS_INDEXER,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
