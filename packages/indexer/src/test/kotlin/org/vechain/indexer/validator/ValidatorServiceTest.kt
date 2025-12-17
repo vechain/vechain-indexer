@@ -142,7 +142,7 @@ class ValidatorServiceTest {
                 data = "0xDATA",
                 events = emptyList(),
                 transfers = emptyList(),
-                0,
+                gasUsed = 0,
                 reverted = false,
                 vmError = "",
             )
