@@ -65,7 +65,7 @@ open class AccountsController(private val accountsService: AccountsService) {
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "Address of the transaction origin",
+        description = "The address of the account to retrieve the overview for.",
     )
     @CommonApiResponses
     open fun getOverview(@ValidAddress @PathVariable address: Address): AccountOverview =
