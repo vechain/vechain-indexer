@@ -877,6 +877,26 @@ module "ecs-backend-service" {
     {
       name = "METRICS_ID"
       value = "${local.env.environment}-${each.key}"
+    },
+    {
+      name = "DD_HOST_TAG"
+      value = "${local.env.environment}-${each.key}"
+    },
+    {
+      name = "DD_METRICS_ENABLED"
+      value = "true"
+    },
+    {
+      name = "DD_API_KEY"
+      value = "TODO: Secrets Manager from ${local.env.datadog.indexer.api_key_arn}"
+    },
+    {
+      name = "DD_APP_KEY"
+      value = "TODO: Secrets Manager from ${local.env.datadog.indexer.app_key_arn}"
+    },
+    {
+      name = "DD_API_URL"
+      value = "https://api.datadoghq.eu"
     }
   ]
 }
