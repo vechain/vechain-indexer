@@ -146,8 +146,6 @@ open class ValidatorService(
         endorser: String?,
         statuses: List<Status>?,
         pageable: Pageable,
-        sortField: String,
-        direction: String?,
     ): Slice<Validator> {
         val criteriaList = mutableListOf<Criteria>()
 
@@ -162,16 +160,10 @@ open class ValidatorService(
                 Query()
             }
 
-        // build Sort from the resolved field + direction
-        val dir = Sort.Direction.fromString(direction ?: "desc")
-        val sort = Sort.by(dir, sortField)
-
-        query.with(pageable).with(sort)
+        query.with(pageable)
 
         val results = mongoTemplate.find(query, Validator::class.java)
-        val slice = SliceImpl(results, pageable, results.size == pageable.pageSize)
-
-        return slice
+        return SliceImpl(results, pageable, results.size == pageable.pageSize)
     }
 
     open fun getMissedBlocksPercentage(

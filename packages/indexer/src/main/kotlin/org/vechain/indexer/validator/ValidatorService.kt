@@ -33,6 +33,9 @@ open class ValidatorService(
 ) {
     private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
+    /** Flag to track if queue positions have been initialized */
+    @Volatile private var queueInitialized: Boolean = false
+
     /**
      * Processes a block to update validator state.
      * - Loads existing validator documents (from DB or cache).
@@ -238,15 +241,98 @@ open class ValidatorService(
     }
 
     /**
-     * @param blockId Block number or revision.
-     * @return Balance in Wei.
-     * @notice Get total VET staked at a specific block.
-     * @dev Reads account balance from Thor and converts hex to BigInteger (Wei).
+     * Initialize queue positions for validators if not already done. This should be called when the
+     * indexer becomes fully synced. Always fetches queue order from contract on first call after
+     * restart.
+     *
+     * @param blockId The current block ID to use for contract calls.
      */
     suspend fun getTotalVETStaked(blockId: String): BigInteger {
         val res = thorClient.getAccountState(address = stakerSC, BlockRevision.Id(blockId))
         return res.balance.removePrefix("0x").ifEmpty { "0" }.toBigInteger(16)
+   
+    open fun initializeQueuePositionsIfNeeded(blockId: String) {
+        if (queueInitialized) return
+
+        // Always fetch queue order from contract on restart
+        val queueOrder = fetchQueueOrderFromContract(blockId)
+        if (queueOrder.isNotEmpty()) {
+            println("Initializing queue positions for ${queueOrder.size} validators.")
+            updateQueuePositions(queueOrder)
+        }
+
+        queueInitialized = true
     }
+
+    /**
+     * Fetch the queue order from the staker contract. Calls firstQueued, then iterates with next
+     * until zero address.
+     *
+     * @param blockId Block ID for the contract calls.
+     * @return Ordered list of validator addresses in queue.
+     */
+    private fun fetchQueueOrderFromContract(blockId: String): List<String> {
+        val queueOrder = mutableListOf<String>()
+
+        // Get first queued validator
+        val firstClause = ValidatorDecoder.buildFirstQueuedClause(stakerSC)
+        val firstResponse = thorService.inspectClausesAtBlock(listOf(firstClause), blockId)
+
+        if (firstResponse.isEmpty()) return emptyList()
+
+        // decodeFirstQueued returns null if zero address (empty queue)
+        var current =
+            ValidatorDecoder.decodeFirstQueued(firstResponse[0].toInspectionResult())
+                ?: return emptyList()
+
+        queueOrder.add(current)
+
+        // Iterate through queue with next() until zero address
+        while (true) {
+            val nextClause = ValidatorDecoder.buildNextQueuedClause(stakerSC, current)
+            val nextResponse = thorService.inspectClausesAtBlock(listOf(nextClause), blockId)
+
+            if (nextResponse.isEmpty()) break
+
+            // decodeNextQueued returns null if zero address (end of queue)
+            val next =
+                ValidatorDecoder.decodeNextQueued(nextResponse[0].toInspectionResult()) ?: break
+
+            queueOrder.add(next)
+            current = next
+        }
+
+        return queueOrder
+    }
+
+    /**
+     * Update queue positions for validators based on the fetched order.
+     *
+     * @param queueOrder Ordered list of validator addresses.
+     */
+    private fun updateQueuePositions(queueOrder: List<String>) {
+        val validators = repository.findAllById(queueOrder).associateBy { it.id }
+
+        val updates =
+            queueOrder.mapIndexedNotNull { index, validatorId ->
+                val validator = validators[validatorId] ?: return@mapIndexedNotNull null
+                validator.copy(queuePosition = (index + 1).toLong())
+            }
+
+        if (updates.isNotEmpty()) {
+            repository.saveAll(updates)
+        }
+    }
+
+    /** Convert ExecuteCodeResponse to InspectionResult */
+    private fun ExecuteCodeResponse.toInspectionResult() =
+        InspectionResult(
+            data = this.data,
+            events = emptyList(),
+            transfers = emptyList(),
+            reverted = this.reverted,
+            vmError = this.vmError ?: "",
+        )
 
     /**
      * Loads and caches ABI function definitions needed for validator processing.

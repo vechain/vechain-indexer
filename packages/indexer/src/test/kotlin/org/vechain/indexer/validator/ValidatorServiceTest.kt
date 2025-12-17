@@ -184,4 +184,180 @@ class ValidatorServiceTest {
         }
         verify { archiveService.saveAll(match { it.isNotEmpty() }) }
     }
+
+    // --- Queue Initialization Tests ---
+
+    private fun makeExecuteCodeResponse(data: String): ExecuteCodeResponse =
+        ExecuteCodeResponse(
+            data = data,
+            events = emptyList(),
+            transfers = emptyList(),
+            gasUsed = 0L,
+            reverted = false,
+            vmError = null,
+        )
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded initializes only once`() {
+        // First call - queue is empty (zero address returned)
+        val zeroAddressData = "0x0000000000000000000000000000000000000000000000000000000000000000"
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns
+            listOf(makeExecuteCodeResponse(zeroAddressData))
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK1")
+        service.initializeQueuePositionsIfNeeded("0xBLOCK2")
+        service.initializeQueuePositionsIfNeeded("0xBLOCK3")
+
+        // Should only call inspectClausesAtBlock once (for the first initialization)
+        verify(exactly = 1) { thorService.inspectClausesAtBlock(any(), any()) }
+    }
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded does nothing when queue is empty`() {
+        // Zero address indicates empty queue
+        val zeroAddressData = "0x0000000000000000000000000000000000000000000000000000000000000000"
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns
+            listOf(makeExecuteCodeResponse(zeroAddressData))
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK")
+
+        verify(exactly = 1) { thorService.inspectClausesAtBlock(any(), any()) }
+        verify(exactly = 0) { repository.findAllById(any<List<String>>()) }
+        verify(exactly = 0) { repository.saveAll(any<List<Validator>>()) }
+    }
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded fetches queue order and updates positions`() {
+        // Encode addresses as ABI-encoded return values (32-byte padded)
+        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
+        val val2 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2"
+        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+        // Mock the iteration: firstQueued -> val1 -> val2 -> zero (end)
+        every { thorService.inspectClausesAtBlock(any(), "0xBLOCK") } returnsMany
+            listOf(
+                listOf(makeExecuteCodeResponse(val1)), // firstQueued returns val1
+                listOf(makeExecuteCodeResponse(val2)), // next(val1) returns val2
+                listOf(makeExecuteCodeResponse(zeroAddress)), // next(val2) returns zero (end)
+            )
+
+        val existingValidators =
+            listOf(
+                Validator(
+                    id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                    blockId = "old",
+                    blockNumber = 100,
+                    blockTimestamp = 123,
+                    status = Status.QUEUED,
+                    version = 1,
+                ),
+                Validator(
+                    id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2",
+                    blockId = "old",
+                    blockNumber = 100,
+                    blockTimestamp = 123,
+                    status = Status.QUEUED,
+                    version = 1,
+                ),
+            )
+        every { repository.findAllById(any<List<String>>()) } returns existingValidators
+
+        val savedSlot = slot<List<Validator>>()
+        every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK")
+
+        verify { repository.saveAll(any<List<Validator>>()) }
+        val saved = savedSlot.captured
+        assertThat(saved).hasSize(2)
+        assertThat(
+                saved.find { it.id == "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1" }?.queuePosition
+            )
+            .isEqualTo(1)
+        assertThat(
+                saved.find { it.id == "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2" }?.queuePosition
+            )
+            .isEqualTo(2)
+    }
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded skips validators not found in repository`() {
+        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
+        val val2 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2"
+        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+        every { thorService.inspectClausesAtBlock(any(), "0xBLOCK") } returnsMany
+            listOf(
+                listOf(makeExecuteCodeResponse(val1)),
+                listOf(makeExecuteCodeResponse(val2)),
+                listOf(makeExecuteCodeResponse(zeroAddress)),
+            )
+
+        // Only val1 exists in DB, val2 is unknown
+        val existingValidators =
+            listOf(
+                Validator(
+                    id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                    blockId = "old",
+                    blockNumber = 100,
+                    blockTimestamp = 123,
+                    status = Status.QUEUED,
+                    version = 1,
+                )
+            )
+        every { repository.findAllById(any<List<String>>()) } returns existingValidators
+
+        val savedSlot = slot<List<Validator>>()
+        every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK")
+
+        val saved = savedSlot.captured
+        // Only val1 should be saved (val2 skipped as not in repository)
+        assertThat(saved).hasSize(1)
+        assertThat(saved[0].id).isEqualTo("0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1")
+        assertThat(saved[0].queuePosition).isEqualTo(1)
+    }
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded preserves version when updating`() {
+        val val1 = "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1"
+        val zeroAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+        every { thorService.inspectClausesAtBlock(any(), "0xBLOCK") } returnsMany
+            listOf(
+                listOf(makeExecuteCodeResponse(val1)),
+                listOf(makeExecuteCodeResponse(zeroAddress)),
+            )
+
+        val existingValidator =
+            Validator(
+                id = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+                blockId = "old",
+                blockNumber = 100,
+                blockTimestamp = 123,
+                status = Status.QUEUED,
+                version = 5,
+            )
+        every { repository.findAllById(any<List<String>>()) } returns listOf(existingValidator)
+
+        val savedSlot = slot<List<Validator>>()
+        every { repository.saveAll(capture(savedSlot)) } answers { savedSlot.captured }
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK")
+
+        val saved = savedSlot.captured
+        assertThat(saved[0].version).isEqualTo(5) // version unchanged during queue initialization
+    }
+
+    @Test
+    fun `initializeQueuePositionsIfNeeded handles empty response from thor`() {
+        every { thorService.inspectClausesAtBlock(any(), any()) } returns emptyList()
+
+        service.initializeQueuePositionsIfNeeded("0xBLOCK")
+
+        verify(exactly = 1) { thorService.inspectClausesAtBlock(any(), any()) }
+        verify(exactly = 0) { repository.findAllById(any<List<String>>()) }
+        verify(exactly = 0) { repository.saveAll(any<List<Validator>>()) }
+    }
 }

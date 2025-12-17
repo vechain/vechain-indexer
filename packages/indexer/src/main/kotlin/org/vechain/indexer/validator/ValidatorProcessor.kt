@@ -31,6 +31,10 @@ open class ValidatorProcessor(
             throw IllegalArgumentException("Block cannot be null")
         }
 
+        // Initialize queue positions from contract if any queued validators still have null
+        // positions
+        service.initializeQueuePositionsIfNeeded(entry.block.id)
+
         val (updated, existing) =
             service.processBlock(
                 entry.block,
