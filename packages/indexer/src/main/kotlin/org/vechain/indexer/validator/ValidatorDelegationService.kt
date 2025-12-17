@@ -172,16 +172,7 @@ class ValidatorDelegationService(
                 )
             }
         val results = thorClient.inspectClauses(clauses)
-        return results.map { result ->
-            InspectionResult(
-                data = result.data,
-                events = result.events,
-                transfers = result.transfers,
-                gasUsed = result.gasUsed,
-                reverted = result.reverted,
-                vmError = result.vmError,
-            )
-        }
+        return results
     }
 
     /**
