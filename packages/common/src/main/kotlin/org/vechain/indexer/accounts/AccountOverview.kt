@@ -21,16 +21,16 @@ data class AccountOverview(
     @JsonIgnore override val blockTimestamp: Long,
     @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     val firstSeen: BlockIdentifier,
-    val lastSeen: BlockIdentifier,
-    val transactionsSent: Long,
-    val clausesSent: Long,
-    val vthoGenerated: BigInteger, // Not sure how to calculate this yet
-    val vthoBurned: BigInteger,
-    val vthoDelegated: BigInteger,
-    val gasUsed: BigInteger,
-    val vetSent: BigInteger,
-    val vetReceived: BigInteger,
-    val myContracts: List<MyContract>? = null,
+    var lastSeen: BlockIdentifier,
+    var transactionsSent: Long,
+    var clausesSent: Long,
+    var vthoGenerated: BigInteger, // Not sure how to calculate this yet
+    var vthoBurned: BigInteger,
+    var vthoDelegated: BigInteger,
+    var gasUsed: BigInteger,
+    var vetSent: BigInteger,
+    var vetReceived: BigInteger,
+    var myContracts: List<MyContract>? = null,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }

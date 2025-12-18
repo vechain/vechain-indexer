@@ -29,7 +29,7 @@ open class AccountOverviewProcessor(
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
-        val (updated, existing) = service.processBlock(entry.block)
+        val (updated, existing) = service.processBlock(entry.block, entry.events)
 
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
             withContext(Dispatchers.IO) { service.save(updated, existing) }

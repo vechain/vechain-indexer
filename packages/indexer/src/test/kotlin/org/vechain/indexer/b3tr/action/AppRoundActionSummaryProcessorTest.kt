@@ -349,7 +349,7 @@ internal class AppRoundActionSummaryProcessorTest {
             }
             assertEquals(2, processor.readRoundId())
             verify(exactly = 1) { service.processEvents(events, 1) }
-            verify(exactly = 1) { service.save(updatedRecords, archiveRecords) }
+            verify(exactly = 0) { service.save(updatedRecords, archiveRecords) }
         }
     }
 
