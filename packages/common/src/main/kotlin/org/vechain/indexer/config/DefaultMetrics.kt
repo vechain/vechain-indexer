@@ -7,7 +7,8 @@ object DefaultMetrics {
 
     fun newTimer(name: String): Timer.Builder {
         return Timer.builder(name)
-            .publishPercentiles(0.5, 0.75, 0.9, 0.95, 0.99, 1.0)
+            .publishPercentileHistogram()
+            .publishPercentiles(0.5, 0.75, 0.9, 0.95, 0.99)
             .serviceLevelObjectives(
                 Duration.ofMillis(1),
                 Duration.ofMillis(2),
@@ -19,9 +20,11 @@ object DefaultMetrics {
                 Duration.ofMillis(250),
                 Duration.ofMillis(500),
                 Duration.ofSeconds(1),
+                Duration.ofSeconds(2),
                 Duration.ofSeconds(5),
             )
-            .maximumExpectedValue(Duration.ofMillis(200))
+            .minimumExpectedValue(Duration.ofMillis(1))
+            .maximumExpectedValue(Duration.ofSeconds(5))
             .distributionStatisticExpiry(Duration.ofMinutes(1))
             .distributionStatisticBufferLength(3)
     }
