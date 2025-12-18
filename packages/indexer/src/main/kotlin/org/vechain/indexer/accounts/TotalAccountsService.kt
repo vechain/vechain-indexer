@@ -45,7 +45,7 @@ open class TotalAccountsService(
     }
 
     /**
-     * @param totalAccountsInfo The list of Accounts entities to save.
+     * @param totalAccountsInfo The list of TotalAccounts entities to save.
      * @param archive The current global "ALL" tracker snapshot.
      * @notice Persists new account records and archives in MongoDB.
      * @dev Skips persistence when no new accounts exist.
