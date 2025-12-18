@@ -24,7 +24,7 @@ open class VthoGeneratedByBlockProcessor(
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        val newRecord = service.processBlock(entry.events(), entry.block, entry.callResults())
+        val newRecord = service.processBlock(entry.block, entry.callResults())
 
         if (newRecord.isNotEmpty()) {
             service.save(newRecord)

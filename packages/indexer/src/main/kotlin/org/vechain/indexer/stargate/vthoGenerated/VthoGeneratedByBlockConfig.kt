@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.vthoGenerated
 
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -14,6 +15,8 @@ import org.vechain.indexer.thor.client.ThorClient
 @Configuration
 @Profile("stargate", "vtho-generated-by-block")
 open class VthoGeneratedByBlockConfig {
+    private val logger = LoggerFactory.getLogger(VthoGeneratedByBlockConfig::class.java)
+
     @Bean
     open fun vthoGeneratedByBlockIndexer(
         thorClient: ThorClient,
@@ -23,15 +26,20 @@ open class VthoGeneratedByBlockConfig {
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") stakerSC: String,
         bEProperties: BusinessEventProperties,
-    ): BlockIndexer =
-        IndexerFactory()
+    ): BlockIndexer {
+        val clauses = StargateUtils.buildIssuanceClause(stakerSC)
+        logger.info("VTHO Generated indexer configured with staker contract: {}", stakerSC)
+        logger.info("Issuance clause: to={}, data={}", clauses[0].to, clauses[0].data)
+
+        return IndexerFactory()
             .name(IndexerNames.VTHO_GENERATED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(StargateUtils.buildIssuanceClause(stakerSC))
+            .callDataClauses(clauses)
             .includeFullBlock()
             .build()
+    }
 }
