@@ -1,6 +1,6 @@
 {
   "title": "Indexer :: MongoDB Metrics",
-  "description": "Metrics dashboard for monitoring MongoDB performance and Spring Data repository interactions.",
+  "description": "Incremental build to test MongoDB metrics",
   "widgets": [
     {
       "id": 1,
@@ -16,7 +16,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:mongodb.driver.pool.size{*}",
+                "query": "avg:mongodb.driver.pool.size{indexer-id:$indexer-id.value}",
                 "aggregator": "avg"
               }
             ],
@@ -45,7 +45,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -54,12 +60,12 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:mongodb.driver.pool.size{*}"
+                "query": "avg:mongodb.driver.pool.size{indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "avg:mongodb.driver.pool.checkedout{*}"
+                "query": "avg:mongodb.driver.pool.checkedout{indexer-id:$indexer-id.value}"
               }
             ],
             "formulas": [
@@ -102,7 +108,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*} by {collection}",
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value} by {collection}",
                 "aggregator": "sum"
               }
             ],
@@ -146,7 +152,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -155,7 +167,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*} by {repository}.as_rate()"
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value} by {repository}.as_rate()"
               }
             ],
             "formulas": [
@@ -202,7 +214,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:mongodb.driver.pool.waitqueuesize{*}",
+                      "query": "avg:mongodb.driver.pool.waitqueuesize{indexer-id:$indexer-id.value}",
                       "aggregator": "avg"
                     }
                   ],
@@ -229,6 +241,7 @@
               "title": "Checkout Failed",
               "title_size": "16",
               "title_align": "left",
+              "time": {},
               "type": "query_value",
               "requests": [
                 {
@@ -237,7 +250,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:mongodb.driver.pool.checkoutfailed{*}",
+                      "query": "sum:mongodb.driver.pool.checkoutfailed{indexer-id:$indexer-id.value}",
                       "aggregator": "sum"
                     }
                   ],
@@ -275,7 +288,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -284,7 +303,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:mongodb.driver.commands.avg{*} by {command}"
+                "query": "avg:mongodb.driver.commands.avg{indexer-id:$indexer-id.value} by {command}"
               }
             ],
             "formulas": [
@@ -303,7 +322,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 9,
+        "y": 0,
         "width": 12,
         "height": 3
       }
@@ -322,7 +341,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:spring.data.repository.invocations.avg{*} by {repository,method}",
+                "query": "avg:spring.data.repository.invocations.avg{indexer-id:$indexer-id.value} by {repository,method}",
                 "aggregator": "avg"
               }
             ],
@@ -348,12 +367,12 @@
             "type": "stacked",
             "legend": "automatic"
           },
-          "scaling": "relative"
+          "scaling": "absolute"
         }
       },
       "layout": {
         "x": 0,
-        "y": 12,
+        "y": 3,
         "width": 6,
         "height": 4
       }
@@ -366,7 +385,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -375,7 +400,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*} by {status}.as_rate()"
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value} by {status}.as_rate()"
               }
             ],
             "formulas": [
@@ -394,7 +419,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 12,
+        "y": 3,
         "width": 6,
         "height": 4
       }
@@ -413,7 +438,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*}",
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -429,7 +454,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 16,
+        "y": 7,
         "width": 3,
         "height": 2
       }
@@ -448,7 +473,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:mongodb.driver.commands.max{*}",
+                "query": "max:mongodb.driver.commands.max{indexer-id:$indexer-id.value}",
                 "aggregator": "max"
               }
             ],
@@ -464,7 +489,7 @@
       },
       "layout": {
         "x": 3,
-        "y": 16,
+        "y": 7,
         "width": 3,
         "height": 2
       }
@@ -477,7 +502,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -486,7 +517,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:spring.data.repository.invocations.max{*} by {repository}"
+                "query": "max:spring.data.repository.invocations.max{indexer-id:$indexer-id.value} by {repository}"
               }
             ],
             "formulas": [
@@ -505,7 +536,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 16,
+        "y": 7,
         "width": 6,
         "height": 2
       }
@@ -524,7 +555,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*} by {command}",
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value} by {command}",
                 "aggregator": "sum"
               }
             ],
@@ -555,7 +586,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 18,
+        "y": 9,
         "width": 6,
         "height": 4
       }
@@ -574,7 +605,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*} by {state}",
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value} by {state}",
                 "aggregator": "sum"
               }
             ],
@@ -605,7 +636,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 18,
+        "y": 9,
         "width": 6,
         "height": 4
       }
@@ -618,7 +649,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -627,7 +664,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.sum{*} by {command}"
+                "query": "sum:mongodb.driver.commands.sum{indexer-id:$indexer-id.value} by {command}"
               }
             ],
             "formulas": [
@@ -646,7 +683,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 22,
+        "y": 13,
         "width": 12,
         "height": 3
       }
@@ -659,7 +696,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -668,7 +711,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.sum{*} by {repository}"
+                "query": "sum:spring.data.repository.invocations.sum{indexer-id:$indexer-id.value} by {repository}"
               }
             ],
             "formulas": [
@@ -687,7 +730,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 25,
+        "y": 16,
         "width": 12,
         "height": 3
       }
@@ -700,7 +743,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -713,7 +762,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:spring.data.repository.invocations.avg{*} by {repository}"
+                "query": "avg:spring.data.repository.invocations.avg{indexer-id:$indexer-id.value} by {repository}"
               }
             ],
             "response_format": "timeseries",
@@ -728,7 +777,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 28,
+        "y": 19,
         "width": 12,
         "height": 3
       }
@@ -741,7 +790,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -754,7 +809,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*} by {collection}.as_rate()"
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value} by {collection}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -769,7 +824,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 31,
+        "y": 22,
         "width": 12,
         "height": 3
       }
@@ -783,20 +838,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:mongodb.driver.commands.avg{indexer-id:$indexer-id.value} by {command,collection}",
+                "aggregator": "avg"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:mongodb.driver.commands.avg{*} by {command,collection}",
-                "aggregator": "avg"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 10,
               "order_by": [
@@ -814,12 +869,12 @@
             "type": "stacked",
             "legend": "automatic"
           },
-          "scaling": "relative"
+          "scaling": "absolute"
         }
       },
       "layout": {
         "x": 0,
-        "y": 34,
+        "y": 25,
         "width": 6,
         "height": 4
       }
@@ -833,20 +888,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value} by {method}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*} by {method}",
-                "aggregator": "sum"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 10,
               "order_by": [
@@ -869,7 +924,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 34,
+        "y": 25,
         "width": 6,
         "height": 4
       }
@@ -892,7 +947,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*}",
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -904,7 +959,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 38,
+        "y": 29,
         "width": 3,
         "height": 2
       }
@@ -927,7 +982,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:spring.data.repository.invocations.max{*}",
+                "query": "max:spring.data.repository.invocations.max{indexer-id:$indexer-id.value}",
                 "aggregator": "max"
               }
             ],
@@ -939,7 +994,7 @@
       },
       "layout": {
         "x": 3,
-        "y": 38,
+        "y": 29,
         "width": 3,
         "height": 2
       }
@@ -952,7 +1007,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -965,7 +1026,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:mongodb.driver.commands.max{*} by {command}"
+                "query": "max:mongodb.driver.commands.max{indexer-id:$indexer-id.value} by {command}"
               }
             ],
             "response_format": "timeseries",
@@ -980,7 +1041,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 38,
+        "y": 29,
         "width": 6,
         "height": 2
       }
@@ -994,20 +1055,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value} by {repository}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*} by {repository}",
-                "aggregator": "sum"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 10,
               "order_by": [
@@ -1030,7 +1091,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 40,
+        "y": 31,
         "width": 6,
         "height": 4
       }
@@ -1043,7 +1104,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -1056,7 +1123,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*} by {method}.as_rate()"
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value} by {method}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -1071,7 +1138,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 40,
+        "y": 31,
         "width": 6,
         "height": 4
       }
@@ -1094,7 +1161,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:mongodb.driver.pool.checkedout{*}",
+                "query": "avg:mongodb.driver.pool.checkedout{indexer-id:$indexer-id.value}",
                 "aggregator": "avg"
               }
             ],
@@ -1106,7 +1173,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 44,
+        "y": 35,
         "width": 3,
         "height": 2
       }
@@ -1129,7 +1196,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{*}.as_rate()",
+                "query": "sum:mongodb.driver.commands.count{indexer-id:$indexer-id.value}.as_rate()",
                 "aggregator": "avg"
               }
             ],
@@ -1141,7 +1208,7 @@
       },
       "layout": {
         "x": 3,
-        "y": 44,
+        "y": 35,
         "width": 3,
         "height": 2
       }
@@ -1164,7 +1231,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{*}.as_rate()",
+                "query": "sum:spring.data.repository.invocations.count{indexer-id:$indexer-id.value}.as_rate()",
                 "aggregator": "avg"
               }
             ],
@@ -1176,7 +1243,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 44,
+        "y": 35,
         "width": 3,
         "height": 2
       }
@@ -1199,7 +1266,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:spring.data.repository.invocations.count{state:ERROR}.as_rate()",
+                "query": "sum:spring.data.repository.invocations.count{state:ERROR, indexer-id:$indexer-id.value}.as_rate()",
                 "aggregator": "avg"
               }
             ],
@@ -1211,7 +1278,7 @@
       },
       "layout": {
         "x": 9,
-        "y": 44,
+        "y": 35,
         "width": 3,
         "height": 2
       }
@@ -1224,7 +1291,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -1237,7 +1310,195 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:mongodb.driver.commands.avg{*} by {collection}"
+                "query": "avg:mongodb.driver.commands.avg{indexer-id:$indexer-id.value} by {collection}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 37,
+        "width": 12,
+        "height": 3
+      }
+    },
+    {
+      "id": 30,
+      "definition": {
+        "title": "Transaction Commit/Abort Latency",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:mongodb.driver.commands.avg{command IN (committransaction,aborttransaction) AND indexer-id:$indexer-id.value} by {command}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 40,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 31,
+      "definition": {
+        "title": "Transaction Commit/Abort Rate",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:mongodb.driver.commands.count{command IN (committransaction,aborttransaction) AND indexer-id:$indexer-id.value} by {command}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "bars"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 40,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 32,
+      "definition": {
+        "title": "Top 10 Slowest Methods (Avg Latency)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:spring.data.repository.invocations.avg{indexer-id:$indexer-id.value} by {method}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 43,
+        "width": 12,
+        "height": 3
+      }
+    },
+    {
+      "id": 33,
+      "definition": {
+        "title": "Max Latency by Repository.Method",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:spring.data.repository.invocations.max{indexer-id:$indexer-id.value} by {repository,method}"
               }
             ],
             "response_format": "timeseries",
@@ -1253,170 +1514,6 @@
       "layout": {
         "x": 0,
         "y": 46,
-        "width": 12,
-        "height": 3
-      }
-    },
-    {
-      "id": 30,
-      "definition": {
-        "title": "Transaction Commit/Abort Latency",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:mongodb.driver.commands.avg{command IN (committransaction,aborttransaction)} by {command}"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 49,
-        "width": 6,
-        "height": 3
-      }
-    },
-    {
-      "id": 31,
-      "definition": {
-        "title": "Transaction Commit/Abort Rate",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:mongodb.driver.commands.count{command IN (committransaction,aborttransaction)} by {command}.as_rate()"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "bars"
-          }
-        ]
-      },
-      "layout": {
-        "x": 6,
-        "y": 49,
-        "width": 6,
-        "height": 3
-      }
-    },
-    {
-      "id": 32,
-      "definition": {
-        "title": "Top 10 Slowest Methods (Avg Latency)",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:spring.data.repository.invocations.avg{*} by {method}"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 52,
-        "width": 12,
-        "height": 3
-      }
-    },
-    {
-      "id": 33,
-      "definition": {
-        "title": "Max Latency by Repository.Method",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "max:spring.data.repository.invocations.max{*} by {repository,method}"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 55,
         "width": 12,
         "height": 3
       }
@@ -1439,7 +1536,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:spring.data.repository.invocations.avg{*}",
+                "query": "avg:spring.data.repository.invocations.avg{indexer-id:$indexer-id.value}",
                 "aggregator": "avg"
               }
             ],
@@ -1451,14 +1548,22 @@
       },
       "layout": {
         "x": 0,
-        "y": 58,
+        "y": 49,
         "width": 3,
         "height": 2
       }
     }
   ],
-  "template_variables": [],
+  "template_variables": [
+    {
+      "name": "indexer-id",
+      "prefix": "indexer-id",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
   "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed"
+  "reflow_type": "fixed",
+  "pause_auto_refresh": false
 }
