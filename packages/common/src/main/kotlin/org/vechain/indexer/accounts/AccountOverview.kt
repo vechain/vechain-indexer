@@ -36,9 +36,3 @@ data class AccountOverview(
 @Document(collection = "account_overview_archives")
 data class AccountOverviewArchive(@Id override val id: String, override val data: AccountOverview) :
     Archive<AccountOverview>
-
-data class MyContract(
-    val contractAddress: String,
-    val isDeployer: Boolean,
-    val isMasterContract: Boolean,
-)
