@@ -119,27 +119,30 @@
         "title": "Active Indexers",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1"
+                "formula": "reduce(count(query1, { * }), 'last')"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:system.cpu.user{*}",
-                "aggregator": "avg"
+                "query": "avg:best_block_gauge{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "scalar"
           }
         ],
         "autoscale": true,
-        "precision": 0
+        "precision": 2,
+        "timeseries_background": {
+          "type": "area"
+        }
       },
       "layout": {
         "x": 9,
