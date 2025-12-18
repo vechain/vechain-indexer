@@ -139,7 +139,11 @@ open class AccountOverviewService(
             // If a record exists add it to the archive and add a copy with incremented version to
             // updated
             archived[recordId] = it
-            val updatedRecord = it.copy(version = it.version + 1)
+            val updatedRecord =
+                it.copy(
+                    version = it.version + 1,
+                    lastSeen = BlockIdentifier(block.number, block.id),
+                )
             updated[recordId] = updatedRecord
             return updatedRecord
         }

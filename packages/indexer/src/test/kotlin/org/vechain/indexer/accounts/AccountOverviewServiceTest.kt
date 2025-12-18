@@ -147,18 +147,16 @@ internal class AccountOverviewServiceTest {
 
         val updated = mutableMapOf<String, AccountOverview>()
         val archived = mutableMapOf<String, AccountOverview>()
+        val b = block(number = 42L)
 
         val resolved =
-            service.callResolveAccountOverviewForUpdateAndArchive(
-                recordId,
-                block(),
-                updated,
-                archived,
-            )
+            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
 
         assertEquals(4, resolved.version)
+        assertEquals(BlockIdentifier(b.number, b.id), resolved.lastSeen)
         assertSame(resolved, updated[recordId])
         assertSame(existing, archived[recordId])
+        assertEquals(existing.lastSeen, archived[recordId]?.lastSeen)
     }
 
     @Test
@@ -193,24 +191,16 @@ internal class AccountOverviewServiceTest {
 
         val updated = mutableMapOf<String, AccountOverview>()
         val archived = mutableMapOf<String, AccountOverview>()
+        val b = block(number = 42L)
 
         val first =
-            service.callResolveAccountOverviewForUpdateAndArchive(
-                recordId,
-                block(),
-                updated,
-                archived,
-            )
+            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
         val second =
-            service.callResolveAccountOverviewForUpdateAndArchive(
-                recordId,
-                block(),
-                updated,
-                archived,
-            )
+            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
 
         assertSame(first, second)
         assertEquals(4, second.version)
+        assertEquals(BlockIdentifier(b.number, b.id), second.lastSeen)
         assertSame(existing, archived[recordId])
     }
 }
