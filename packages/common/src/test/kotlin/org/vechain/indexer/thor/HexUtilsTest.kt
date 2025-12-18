@@ -1,5 +1,6 @@
 package org.vechain.indexer.thor
 
+import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -76,6 +77,49 @@ internal class HexUtilsTest {
     @CsvSource("0x", "Hello World!!", "xxxxxxxxxxxxxxxxxx", "hex")
     fun `parse hex string to int throws on invalid hex`(hex: String) {
         assertThrows<IllegalArgumentException> { HexUtils.toInt(hex) }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0x0, 0",
+        "0x1, 1",
+        "0x3, 3",
+        "0x0A, 10",
+        "0xFF, 255",
+        "0xFFFF, 65535",
+        "0, 0",
+        "1, 1",
+        "3, 3",
+        "0a, 10",
+        "ff, 255",
+        "ffff, 65535",
+    )
+    fun `parse hex string to long`(hex: String, expected: Long) {
+        expectThat(HexUtils.toLong(hex)).isEqualTo(expected)
+    }
+
+    @ParameterizedTest
+    @CsvSource("0x", "Hello World!!", "xxxxxxxxxxxxxxxxxx", "hex")
+    fun `parse hex string to long throws on invalid hex`(hex: String) {
+        assertThrows<IllegalArgumentException> { HexUtils.toLong(hex) }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0x0, 0",
+        "0x1, 1",
+        "0x0A, 10",
+        "ff, 255",
+        "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, 340282366920938463463374607431768211455",
+    )
+    fun `parse hex string to big integer`(hex: String, expectedDecimal: String) {
+        expectThat(HexUtils.toBigInteger(hex)).isEqualTo(BigInteger(expectedDecimal))
+    }
+
+    @ParameterizedTest
+    @CsvSource("0x", "Hello World!!", "xxxxxxxxxxxxxxxxxx", "hex")
+    fun `parse hex string to big integer throws on invalid hex`(hex: String) {
+        assertThrows<IllegalArgumentException> { HexUtils.toBigInteger(hex) }
     }
 
     @Test

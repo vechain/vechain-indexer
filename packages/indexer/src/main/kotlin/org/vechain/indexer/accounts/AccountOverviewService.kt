@@ -12,8 +12,11 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
+import org.vechain.indexer.utils.ParamUtils.getAsString
 
 @Profile("accounts", "account-overview")
 @Service
@@ -29,25 +32,24 @@ open class AccountOverviewService(
         block: Block,
         events: List<IndexedEvent>,
     ): Pair<List<AccountOverview>, List<AccountOverview>> {
-        assertEventTypes(events, "\$Master", "VET_TRANSFER")
-        //        val masterChangeEvents = events.filter { it.eventType == "\$Master" }
-        //        //        val vetTransferEvents = events.filter { it.eventType == "VET_TRANSFER" }
-        //        if (masterChangeEvents.isNotEmpty()) {
-        //            // Log the events
-        //            masterChangeEvents.forEach {
-        //                logger.info(
-        //                    "Processing Master Change Event: ${it.eventType} at block
-        // ${block.number}. \n\t Contract Address: ${it.address} \n\t New Master:
-        // ${it.params.getAsString("newMaster") ?: "N/A"}}"
-        //                )
-        //            }
-        //        }
+        assertEventTypes(events, "VET_TRANSFER")
 
         val updatedResult = mutableMapOf<String, AccountOverview>()
         val archiveResult = mutableMapOf<String, AccountOverview>()
 
         // Execute rules
-        transactionsSentRule(block, updatedResult, archiveResult)
+        if (block.transactions.isNotEmpty()) {
+            transactionsSentRule(block, updatedResult, archiveResult)
+            vthoBurnedRule(block, updatedResult, archiveResult)
+            vthoDelegatedRule(block, updatedResult, archiveResult)
+            gasUsedRule(block, updatedResult, archiveResult)
+        }
+
+        val vetTransferEvents = events.filter { it.eventType == "VET_TRANSFER" }
+        if (vetTransferEvents.isNotEmpty()) {
+            vetSentRule(block, vetTransferEvents, updatedResult, archiveResult)
+            vetReceivedRule(block, vetTransferEvents, updatedResult, archiveResult)
+        }
 
         return Pair(updatedResult.values.toList(), archiveResult.values.toList())
     }
@@ -88,6 +90,153 @@ open class AccountOverviewService(
             // Update counts
             updated.transactionsSent += 1
             updated.clausesSent += tx.clauses.size.toLong()
+        }
+    }
+
+    /**
+     * Add VTHO burned per account
+     *
+     * @param block Block being processed
+     * @param updatedResult Map of updated AccountOverview records
+     * @param archiveResult Map of AccountOverview records to be archived
+     */
+    protected fun vthoBurnedRule(
+        block: Block,
+        updatedResult: MutableMap<String, AccountOverview>,
+        archiveResult: MutableMap<String, AccountOverview>,
+    ) {
+        block.transactions.forEach { tx ->
+            val recordId = tx.gasPayer
+            val updated =
+                resolveAccountOverviewForUpdateAndArchive(
+                    recordId,
+                    block,
+                    updatedResult,
+                    archiveResult,
+                )
+
+            // Update VTHO burned
+            updated.vthoBurned += toBigInteger(tx.paid)
+        }
+    }
+
+    /**
+     * Add VTHO delegated per account
+     *
+     * @param block Block being processed
+     * @param updatedResult Map of updated AccountOverview records
+     * @param archiveResult Map of AccountOverview records to be archived
+     */
+    protected fun vthoDelegatedRule(
+        block: Block,
+        updatedResult: MutableMap<String, AccountOverview>,
+        archiveResult: MutableMap<String, AccountOverview>,
+    ) {
+        block.transactions
+            .filter { it.origin != it.gasPayer }
+            .forEach { tx ->
+                val recordId = tx.gasPayer
+                val updated =
+                    resolveAccountOverviewForUpdateAndArchive(
+                        recordId,
+                        block,
+                        updatedResult,
+                        archiveResult,
+                    )
+
+                // Update VTHO delegated
+                updated.vthoDelegated += toBigInteger(tx.paid)
+            }
+    }
+
+    /**
+     * Add gas used where the account is the origin
+     *
+     * @param block Block being processed
+     * @param updatedResult Map of updated AccountOverview records
+     * @param archiveResult Map of AccountOverview records to be archived
+     */
+    protected fun gasUsedRule(
+        block: Block,
+        updatedResult: MutableMap<String, AccountOverview>,
+        archiveResult: MutableMap<String, AccountOverview>,
+    ) {
+        block.transactions.forEach { tx ->
+            val recordId = tx.origin
+            val updated =
+                resolveAccountOverviewForUpdateAndArchive(
+                    recordId,
+                    block,
+                    updatedResult,
+                    archiveResult,
+                )
+
+            // Update gas used
+            updated.gasUsed += BigInteger.valueOf(tx.gasUsed)
+        }
+    }
+
+    /**
+     * Add VET sent per account
+     *
+     * @param block Block being processed
+     * @param vetTransferEvents List of VET_TRANSFER events in the block
+     * @param updatedResult Map of updated AccountOverview records
+     * @param archiveResult Map of AccountOverview records to be archived
+     */
+    protected fun vetSentRule(
+        block: Block,
+        vetTransferEvents: List<IndexedEvent>,
+        updatedResult: MutableMap<String, AccountOverview>,
+        archiveResult: MutableMap<String, AccountOverview>,
+    ) {
+        vetTransferEvents.forEach { event ->
+            val recordId =
+                event.params.getAsString("from")
+                    ?: error("Invalid VET_TRANSFER event: missing 'from' param")
+            val updated =
+                resolveAccountOverviewForUpdateAndArchive(
+                    recordId,
+                    block,
+                    updatedResult,
+                    archiveResult,
+                )
+
+            // Update VET sent
+            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
+            updated.vetSent += value
+        }
+    }
+
+    /**
+     * Add VET received per account
+     *
+     * @param block Block being processed
+     * @param vetTransferEvents List of VET_TRANSFER events in the block
+     * @param updatedResult Map of updated AccountOverview records
+     * @param archiveResult Map of AccountOverview records to be archived
+     */
+    protected fun vetReceivedRule(
+        block: Block,
+        vetTransferEvents: List<IndexedEvent>,
+        updatedResult: MutableMap<String, AccountOverview>,
+        archiveResult: MutableMap<String, AccountOverview>,
+    ) {
+        vetTransferEvents.forEach { event ->
+            val recordId =
+                event.params.getAsString("to")
+                    ?: error("Invalid VET_TRANSFER event: missing 'to' param")
+            val updated =
+                resolveAccountOverviewForUpdateAndArchive(
+                    recordId,
+                    block,
+                    updatedResult,
+                    archiveResult,
+                )
+
+            // Update VET received
+            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
+            updated.vetReceived += value
         }
     }
 

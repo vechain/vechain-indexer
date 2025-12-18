@@ -30,7 +30,6 @@ data class AccountOverview(
     var gasUsed: BigInteger,
     var vetSent: BigInteger,
     var vetReceived: BigInteger,
-    var myContracts: List<MyContract>? = null,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }

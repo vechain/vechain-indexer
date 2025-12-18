@@ -58,7 +58,5 @@ open class AccountOverviewConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
-            .abis("abis/contract")
-            .abiEventNames(listOf("\$Master"))
             .build()
 }
