@@ -20,7 +20,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 
@@ -166,8 +165,8 @@ internal class AccountOverviewServiceTest {
             blockNumber = 10L,
             blockTimestamp = 100L,
             version = version,
-            firstSeen = BlockIdentifier(number = 1L, id = "0xFIRST"),
-            lastSeen = BlockIdentifier(number = 10L, id = "0xOLD_BLOCK"),
+            firstSeen = 100L,
+            lastSeen = 100L,
             transactionsSent = 1L,
             clausesSent = 2L,
             vthoGenerated = BigInteger.ZERO,
@@ -190,8 +189,8 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.number, created.blockNumber)
         assertEquals(b.timestamp, created.blockTimestamp)
         assertEquals(0, created.version)
-        assertEquals(BlockIdentifier(b.number, b.id), created.firstSeen)
-        assertEquals(BlockIdentifier(b.number, b.id), created.lastSeen)
+        assertEquals(b.timestamp, created.firstSeen)
+        assertEquals(b.timestamp, created.lastSeen)
         assertEquals(0L, created.transactionsSent)
         assertEquals(0L, created.clausesSent)
         assertEquals(BigInteger.ZERO, created.vthoGenerated)
@@ -233,7 +232,7 @@ internal class AccountOverviewServiceTest {
         assertEquals(4, updatedA.version)
         assertEquals(7L, updatedA.transactionsSent)
         assertEquals(10L, updatedA.clausesSent)
-        assertEquals(BlockIdentifier(b.number, b.id), updatedA.lastSeen)
+        assertEquals(b.timestamp, updatedA.lastSeen)
         assertSame(existingA, archived[originA])
 
         val updatedB = updated[originB]!!
@@ -439,7 +438,7 @@ internal class AccountOverviewServiceTest {
             service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
 
         assertEquals(4, resolved.version)
-        assertEquals(BlockIdentifier(b.number, b.id), resolved.lastSeen)
+        assertEquals(b.timestamp, resolved.lastSeen)
         assertSame(resolved, updated[recordId])
         assertSame(existing, archived[recordId])
         assertEquals(existing.lastSeen, archived[recordId]?.lastSeen)
@@ -462,8 +461,8 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.id, resolved.blockId)
         assertEquals(b.number, resolved.blockNumber)
         assertEquals(b.timestamp, resolved.blockTimestamp)
-        assertEquals(BlockIdentifier(b.number, b.id), resolved.firstSeen)
-        assertEquals(BlockIdentifier(b.number, b.id), resolved.lastSeen)
+        assertEquals(b.timestamp, resolved.firstSeen)
+        assertEquals(b.timestamp, resolved.lastSeen)
 
         assertSame(resolved, updated[recordId])
         assertTrue(archived.isEmpty())
@@ -486,7 +485,7 @@ internal class AccountOverviewServiceTest {
 
         assertSame(first, second)
         assertEquals(4, second.version)
-        assertEquals(BlockIdentifier(b.number, b.id), second.lastSeen)
+        assertEquals(b.timestamp, second.lastSeen)
         assertSame(existing, archived[recordId])
     }
 }

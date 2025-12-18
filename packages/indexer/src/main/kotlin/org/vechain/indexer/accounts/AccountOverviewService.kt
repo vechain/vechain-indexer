@@ -14,7 +14,6 @@ import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.ParamUtils.getAsString
 
@@ -248,15 +247,14 @@ open class AccountOverviewService(
      * @return A new AccountOverview record
      */
     protected fun createNewAccountOverview(address: String, block: Block): AccountOverview {
-        val blockIdentifier = BlockIdentifier(block.number, block.id)
         return AccountOverview(
             address = address,
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
             version = 0,
-            firstSeen = blockIdentifier,
-            lastSeen = blockIdentifier,
+            firstSeen = block.timestamp,
+            lastSeen = block.timestamp,
             transactionsSent = 0L,
             clausesSent = 0L,
             vthoGenerated = BigInteger.ZERO,
@@ -295,11 +293,7 @@ open class AccountOverviewService(
             // If a record exists add it to the archive and add a copy with incremented version to
             // updated
             archived[recordId] = it
-            val updatedRecord =
-                it.copy(
-                    version = it.version + 1,
-                    lastSeen = BlockIdentifier(block.number, block.id),
-                )
+            val updatedRecord = it.copy(version = it.version + 1, lastSeen = block.timestamp)
             updated[recordId] = updatedRecord
             return updatedRecord
         }

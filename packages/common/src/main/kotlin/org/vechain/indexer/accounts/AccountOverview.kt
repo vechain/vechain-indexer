@@ -8,7 +8,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
-import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.Views
 
 @Document(collection = "account_overviews")
@@ -20,8 +19,8 @@ data class AccountOverview(
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
-    val firstSeen: BlockIdentifier,
-    var lastSeen: BlockIdentifier,
+    val firstSeen: Long,
+    var lastSeen: Long,
     var transactionsSent: Long,
     var clausesSent: Long,
     var vthoGenerated: BigInteger, // Not sure how to calculate this yet
