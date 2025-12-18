@@ -202,7 +202,7 @@ open class AccountOverviewService(
                 )
 
             // Update VET sent
-            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
+            val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
             updated.vetSent += value
         }
     }
@@ -234,7 +234,7 @@ open class AccountOverviewService(
                 )
 
             // Update VET received
-            val value = event.params.getAsBigInteger("value") ?: BigInteger.ZERO
+            val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
             updated.vetReceived += value
         }
     }

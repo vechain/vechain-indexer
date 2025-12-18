@@ -58,5 +58,6 @@ open class AccountOverviewConfig {
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
+            .includeVetTransfers()
             .build()
 }

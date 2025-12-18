@@ -29,5 +29,6 @@ open class TransferConfig {
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
+            .includeVetTransfers()
             .build()
 }

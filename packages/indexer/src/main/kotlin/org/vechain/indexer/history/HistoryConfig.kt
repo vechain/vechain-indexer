@@ -33,6 +33,7 @@ open class HistoryConfig() {
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
             .includeFullBlock()
+            .includeVetTransfers()
             .build()
     }
 }

@@ -149,12 +149,12 @@ internal class AccountOverviewServiceTest {
             type = 1,
         )
 
-    private fun vetTransferEvent(from: String, to: String, value: String): IndexedEvent =
+    private fun vetTransferEvent(from: String, to: String, amount: String): IndexedEvent =
         buildIndexedEvent(
             eventType = "VET_TRANSFER",
             params =
                 AbiEventParameters(
-                    returnValues = mapOf("from" to from, "to" to to, "value" to value)
+                    returnValues = mapOf("from" to from, "to" to to, "amount" to amount)
                 ),
         )
 
@@ -361,9 +361,9 @@ internal class AccountOverviewServiceTest {
 
         val events =
             listOf(
-                vetTransferEvent(from = fromA, to = "0xTO_1", value = "10"),
-                vetTransferEvent(from = fromA, to = "0xTO_2", value = "5"),
-                vetTransferEvent(from = fromB, to = "0xTO_3", value = "7"),
+                vetTransferEvent(from = fromA, to = "0xTO_1", amount = "10"),
+                vetTransferEvent(from = fromA, to = "0xTO_2", amount = "5"),
+                vetTransferEvent(from = fromB, to = "0xTO_3", amount = "7"),
             )
 
         val b = block(number = 42L)
@@ -388,9 +388,9 @@ internal class AccountOverviewServiceTest {
 
         val events =
             listOf(
-                vetTransferEvent(from = "0xFROM_1", to = toA, value = "10"),
-                vetTransferEvent(from = "0xFROM_2", to = toA, value = "5"),
-                vetTransferEvent(from = "0xFROM_3", to = toB, value = "7"),
+                vetTransferEvent(from = "0xFROM_1", to = toA, amount = "10"),
+                vetTransferEvent(from = "0xFROM_2", to = toA, amount = "5"),
+                vetTransferEvent(from = "0xFROM_3", to = toB, amount = "7"),
             )
 
         val b = block(number = 42L)
