@@ -49,7 +49,7 @@ open class AccountOverviewService(
         // Execute rules
         transactionsSentRule(block, updatedResult, archiveResult)
 
-        return Pair(emptyList(), emptyList())
+        return Pair(updatedResult.values.toList(), archiveResult.values.toList())
     }
 
     @Transactional
@@ -91,6 +91,13 @@ open class AccountOverviewService(
         }
     }
 
+    /**
+     * Creates a new AccountOverview record with initial values from the given block.
+     *
+     * @param address The account address
+     * @param block The block in which the account was first seen
+     * @return A new AccountOverview record
+     */
     protected fun createNewAccountOverview(address: String, block: Block): AccountOverview {
         val blockIdentifier = BlockIdentifier(block.number, block.id)
         return AccountOverview(
