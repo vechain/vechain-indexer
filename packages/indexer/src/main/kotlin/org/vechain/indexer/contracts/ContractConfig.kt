@@ -41,7 +41,6 @@ open class ContractConfig {
         processor: ContractProcessor,
         contractPruner: TargetedPruner<Contract, ContractArchive>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
-        @Value("\${indexer.start-block.contracts:0}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.contracts:500}") syncBlockBatchSize: Long,
     ): BlockIndexer =
@@ -51,7 +50,9 @@ open class ContractConfig {
             .pruner(contractPruner)
             .prunerInterval(prunerInterval)
             .processor(processor)
-            .startBlock(startBlock)
+            .abis("abis/contract")
+            .abiEventNames(listOf("\$Master"))
+            .startBlock(0L)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
             .build()

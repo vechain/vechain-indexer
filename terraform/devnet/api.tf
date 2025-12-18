@@ -451,10 +451,6 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.delegation
     },
     {
-      name  = "INDEXER_START_BLOCK_CONTRACTS"
-      value = each.value.indexer.start-block.contracts
-    },
-    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },

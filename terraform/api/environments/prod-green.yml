@@ -139,7 +139,6 @@ enabled_nets:
         very-slow-threshold-ms: '10000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
-        contracts:                 '0'
         nfts:                       '1304112'
         nft-blacklist:              '21774168'
         transactions:               '751'
@@ -344,7 +343,6 @@ enabled_nets:
         very-slow-threshold-ms: '10000'
       slack_webhook_url: https://hooks.slack.com/services/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
       start-block:
-        contracts:                 '0'
         nfts:                       '1042259'
         nft-blacklist:              '21823565'
         transactions:               '15034'
