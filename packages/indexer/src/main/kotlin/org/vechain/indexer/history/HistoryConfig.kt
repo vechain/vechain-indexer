@@ -32,6 +32,7 @@ open class HistoryConfig() {
             .businessEvents("business-events", "abis")
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .startBlock(startBlock)
+            .includeVetTransfers()
             .includeFullBlock()
             .build()
     }
