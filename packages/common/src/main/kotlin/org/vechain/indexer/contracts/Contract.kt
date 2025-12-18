@@ -21,9 +21,9 @@ data class Contract(
     val createdOn: Long,
     val deployer: String,
     val master: String,
-    val isErc20: Boolean,
-    val isErc721: Boolean,
-    val isErc1155: Boolean,
+    val isErc20: Boolean? = null,
+    val isErc721: Boolean? = null,
+    val isErc1155: Boolean? = null,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }

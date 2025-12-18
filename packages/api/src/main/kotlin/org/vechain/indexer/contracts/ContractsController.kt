@@ -8,13 +8,19 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.CONTRACTS_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
+import org.vechain.indexer.rest.PaginatedResponse
+import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.utils.PaginationUtils
 import org.vechain.indexer.validation.ValidAddress
+import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("contracts")
 @Tag(name = "Contracts", description = "Information about smart contracts")
@@ -34,4 +40,25 @@ open class ContractsController(private val contractsService: ContractsService) {
     open fun getContract(@ValidAddress @PathVariable address: Address): Contract =
         contractsService.getByAddress(address)
             ?: throw ResourceNotFoundException("Contract not found for address $address")
+
+    @GetMapping("/by-owner/{address}")
+    @Operation(summary = "Get contracts where address is deployer or master")
+    @AddressParameter(
+        name = "address",
+        `in` = ParameterIn.PATH,
+        required = true,
+        description = "The address to query as deployer or master.",
+    )
+    @CommonApiResponses
+    @PaginationParameters
+    open fun getContractsByOwner(
+        @ValidAddress @PathVariable address: Address,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<Contract> {
+        val pageable = PaginationUtils.toPageable(page, size, direction, Contract::createdOn.name)
+
+        return paginatedResponse(contractsService.getByDeployerOrMaster(address, pageable))
+    }
 }
