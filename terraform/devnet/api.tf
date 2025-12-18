@@ -451,6 +451,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.start-block.delegation
     },
     {
+      name  = "INDEXER_START_BLOCK_CONTRACTS"
+      value = each.value.indexer.start-block.contracts
+    },
+    {
       name  = "START_ROUND_B3TR_SUSTAINABLE_ACTIONS"
       value = each.value.indexer.start-round.b3tr-sustainable-actions
     },
@@ -615,6 +619,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.account-overview
     },
     {
+      name = "VERSION_CONTRACTS"
+      value = each.value.indexer.version.contracts
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
@@ -725,6 +733,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_B3TR"
       value = each.value.indexer.sync-block-batch-size.b3tr
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS"
+      value = each.value.indexer.sync-block-batch-size.contracts
     },
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"
