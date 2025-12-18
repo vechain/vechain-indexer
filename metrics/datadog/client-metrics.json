@@ -20,7 +20,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{*}",
+                "query": "sum:thor_client_response_codes_total{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -43,6 +43,7 @@
         "title": "Avg. Response Time (ms)",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -55,13 +56,13 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_request_duration.sum{*}",
+                "query": "sum:thor_client_request_duration.sum{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:thor_client_request_duration.count{*}",
+                "query": "sum:thor_client_request_duration.count{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -96,13 +97,13 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{code:200}",
+                "query": "sum:thor_client_response_codes_total{code:200 , indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:thor_client_response_codes_total{*}",
+                "query": "sum:thor_client_response_codes_total{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -137,7 +138,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{!code:200}",
+                "query": "sum:thor_client_response_codes_total{!code:200 , indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -162,7 +163,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -175,7 +182,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{*} by {endpoint}.as_rate()"
+                "query": "sum:thor_client_response_codes_total{indexer-id:$indexer-id.value} by {endpoint}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -203,7 +210,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -216,12 +229,12 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_request_duration.sum{*} by {endpoint}"
+                "query": "sum:thor_client_request_duration.sum{indexer-id:$indexer-id.value} by {endpoint}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:thor_client_request_duration.count{*} by {endpoint}"
+                "query": "sum:thor_client_request_duration.count{indexer-id:$indexer-id.value} by {endpoint}"
               }
             ],
             "response_format": "timeseries",
@@ -249,39 +262,45 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "2xx (Success)"
+                "alias": "2xx (Success)",
+                "formula": "query1"
               },
               {
-                "formula": "query2",
-                "alias": "4xx (Client Error)"
+                "alias": "4xx (Client Error)",
+                "formula": "query2"
               },
               {
-                "formula": "query3",
-                "alias": "5xx (Server Error)"
+                "alias": "5xx (Server Error)",
+                "formula": "query3"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{code:200}.as_rate()"
+                "query": "sum:thor_client_response_codes_total{code:200 , indexer-id:$indexer-id.value}.as_rate()"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:thor_client_response_codes_total{code:4*}.as_rate()"
+                "query": "sum:thor_client_response_codes_total{code:4* , indexer-id:$indexer-id.value}.as_rate()"
               },
               {
                 "data_source": "metrics",
                 "name": "query3",
-                "query": "sum:thor_client_response_codes_total{code:5*}.as_rate()"
+                "query": "sum:thor_client_response_codes_total{code:5* , indexer-id:$indexer-id.value}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -309,7 +328,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -322,7 +347,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:thor_client_request_duration.max{*} by {endpoint}"
+                "query": "max:thor_client_request_duration.max{indexer-id:$indexer-id.value} by {endpoint}"
               }
             ],
             "response_format": "timeseries",
@@ -351,20 +376,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:thor_client_response_codes_total{indexer-id:$indexer-id.value} by {endpoint}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:thor_client_response_codes_total{*} by {endpoint}",
-                "aggregator": "sum"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 50,
               "order_by": [
@@ -401,26 +426,26 @@
         "type": "toplist",
         "requests": [
           {
-            "formulas": [
-              {
-                "formula": "query1 / query2"
-              }
-            ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_request_duration.sum{*} by {endpoint}",
+                "query": "sum:thor_client_request_duration.sum{indexer-id:$indexer-id.value} by {endpoint}",
                 "aggregator": "sum"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:thor_client_request_duration.count{*} by {endpoint}",
+                "query": "sum:thor_client_request_duration.count{indexer-id:$indexer-id.value} by {endpoint}",
                 "aggregator": "sum"
               }
             ],
             "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "query1 / query2"
+              }
+            ],
             "sort": {
               "count": 50,
               "order_by": [
@@ -457,20 +482,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:thor_client_response_codes_total{indexer-id:$indexer-id.value} by {code}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:thor_client_response_codes_total{*} by {code}",
-                "aggregator": "sum"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 50,
               "order_by": [
@@ -506,7 +531,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -519,7 +550,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:thor_client_response_codes_total{!code:200} by {endpoint}.as_rate()"
+                "query": "sum:thor_client_response_codes_total{!code:200 , indexer-id:$indexer-id.value} by {endpoint}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -540,8 +571,16 @@
       }
     }
   ],
-  "template_variables": [],
+  "template_variables": [
+    {
+      "name": "indexer-id",
+      "prefix": "indexer-id",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
   "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed"
+  "reflow_type": "fixed",
+  "pause_auto_refresh": false
 }
