@@ -157,11 +157,11 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      */
     fun vthoIssued(responses: List<InspectionResult>): BigInteger {
         if (responses.isEmpty() || !responses[0].hasAbiData()) {
-            logger.debug("No ABI data in response, returning zero")
+            logger.info("No ABI data in response, returning zero")
             return BigInteger.ZERO
         }
 
-        logger.debug("Raw response data: {}", responses[0].data)
+        logger.info("Raw response data: {}", responses[0].data)
 
         val decoded =
             FunctionReturnDecoder.decode(
