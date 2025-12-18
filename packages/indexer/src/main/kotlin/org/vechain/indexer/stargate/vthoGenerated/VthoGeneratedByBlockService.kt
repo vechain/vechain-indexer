@@ -1,7 +1,6 @@
 package org.vechain.indexer.stargate.vthoGenerated
 
 import java.math.BigInteger
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -15,8 +14,6 @@ import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 @Profile("stargate", "vtho-generated-by-block")
 @Service
 open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBlockRepository) {
-    private val logger = LoggerFactory.getLogger(VthoGeneratedByBlockService::class.java)
-
     /**
      * @param events List of decoded blockchain events for the block.
      * @param block Block metadata (timestamp, number, id).
@@ -41,7 +38,6 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
 
         // Compute this block's totals (claimed + total + delta)
         val blockTotal = vthoIssued(callResponses)
-        logger.info("Block {} - VTHO blockTotal: {}", block.number, blockTotal)
         if (blockTotal == BigInteger.ZERO) return emptyList()
 
         // Shared rollover logic
@@ -157,11 +153,8 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      */
     fun vthoIssued(responses: List<InspectionResult>): BigInteger {
         if (responses.isEmpty() || !responses[0].hasAbiData()) {
-            logger.info("No ABI data in response, returning zero")
             return BigInteger.ZERO
         }
-
-        logger.info("Raw response data: {}", responses[0].data)
 
         val decoded =
             FunctionReturnDecoder.decode(
@@ -169,9 +162,6 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
                 listOf(InputOutput("uint256", "issued", "uint256")),
             )
 
-        val result = decoded["issued"] as BigInteger
-        logger.info("VTHO issuance decoded: {}", result)
-
-        return result
+        return decoded["issued"] as BigInteger
     }
 }
