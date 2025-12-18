@@ -33,6 +33,9 @@ internal class AccountOverviewServiceTest {
         archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
         pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
     ) : AccountOverviewService(repository, archiveService, pruner) {
+        fun callCreateNewAccountOverview(address: String, block: Block): AccountOverview =
+            createNewAccountOverview(address, block)
+
         fun callResolveAccountOverviewForUpdateAndArchive(
             recordId: String,
             block: Block,
@@ -89,6 +92,31 @@ internal class AccountOverviewServiceTest {
             vetSent = BigInteger.ZERO,
             vetReceived = BigInteger.ZERO,
         )
+
+    @Test
+    fun `createNewAccountOverview sets initial values from block`() {
+        val recordId = "0xNEW"
+        val b = block(number = 42L)
+
+        val created = service.callCreateNewAccountOverview(recordId, b)
+
+        assertEquals(recordId, created.address)
+        assertEquals(b.id, created.blockId)
+        assertEquals(b.number, created.blockNumber)
+        assertEquals(b.timestamp, created.blockTimestamp)
+        assertEquals(0, created.version)
+        assertEquals(BlockIdentifier(b.number, b.id), created.firstSeen)
+        assertEquals(BlockIdentifier(b.number, b.id), created.lastSeen)
+        assertEquals(0L, created.transactionsSent)
+        assertEquals(0L, created.clausesSent)
+        assertEquals(BigInteger.ZERO, created.vthoGenerated)
+        assertEquals(BigInteger.ZERO, created.vthoBurned)
+        assertEquals(BigInteger.ZERO, created.vthoDelegated)
+        assertEquals(BigInteger.ZERO, created.gasUsed)
+        assertEquals(BigInteger.ZERO, created.vetSent)
+        assertEquals(BigInteger.ZERO, created.vetReceived)
+        assertEquals(null, created.myContracts)
+    }
 
     @Test
     fun `returns cached record when already updated`() {
