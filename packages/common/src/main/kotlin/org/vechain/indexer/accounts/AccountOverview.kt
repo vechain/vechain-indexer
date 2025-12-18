@@ -23,7 +23,6 @@ data class AccountOverview(
     var lastSeen: Long,
     var transactionsSent: Long,
     var clausesSent: Long,
-    var vthoGenerated: BigInteger, // Not sure how to calculate this yet
     var vthoBurned: BigInteger,
     var vthoDelegated: BigInteger,
     var gasUsed: BigInteger,

@@ -257,7 +257,6 @@ open class AccountOverviewService(
             lastSeen = block.timestamp,
             transactionsSent = 0L,
             clausesSent = 0L,
-            vthoGenerated = BigInteger.ZERO,
             vthoBurned = BigInteger.ZERO,
             vthoDelegated = BigInteger.ZERO,
             gasUsed = BigInteger.ZERO,

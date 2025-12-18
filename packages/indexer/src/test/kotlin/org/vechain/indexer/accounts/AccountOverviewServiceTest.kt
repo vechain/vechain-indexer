@@ -169,7 +169,6 @@ internal class AccountOverviewServiceTest {
             lastSeen = 100L,
             transactionsSent = 1L,
             clausesSent = 2L,
-            vthoGenerated = BigInteger.ZERO,
             vthoBurned = BigInteger.ZERO,
             vthoDelegated = BigInteger.ZERO,
             gasUsed = BigInteger.ZERO,
@@ -193,7 +192,6 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.timestamp, created.lastSeen)
         assertEquals(0L, created.transactionsSent)
         assertEquals(0L, created.clausesSent)
-        assertEquals(BigInteger.ZERO, created.vthoGenerated)
         assertEquals(BigInteger.ZERO, created.vthoBurned)
         assertEquals(BigInteger.ZERO, created.vthoDelegated)
         assertEquals(BigInteger.ZERO, created.gasUsed)
