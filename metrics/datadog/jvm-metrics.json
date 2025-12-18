@@ -20,13 +20,13 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.used{area:heap}",
+                "query": "avg:jvm.memory.used{area:heap , indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "avg:jvm.memory.max{area:heap}",
+                "query": "avg:jvm.memory.max{area:heap ,indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               }
             ],
@@ -54,6 +54,12 @@
           {
             "formulas": [
               {
+                "number_format": {
+                  "unit": {
+                    "label": "bytes",
+                    "type": "custom_unit_label"
+                  }
+                },
                 "formula": "query1"
               }
             ],
@@ -61,7 +67,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.used{area:heap}",
+                "query": "avg:jvm.memory.used{area:heap , indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               }
             ],
@@ -69,8 +75,7 @@
           }
         ],
         "autoscale": true,
-        "precision": 2,
-        "custom_unit": "bytes"
+        "precision": 2
       },
       "layout": {
         "x": 3,
@@ -85,6 +90,7 @@
         "title": "Active Threads",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -97,7 +103,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.threads.live{*}",
+                "query": "avg:jvm.threads.live{indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               }
             ],
@@ -120,6 +126,7 @@
         "title": "Loaded Classes",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -132,7 +139,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.classes.loaded{*}",
+                "query": "avg:jvm.classes.loaded{indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               }
             ],
@@ -157,39 +164,45 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "Used"
+                "alias": "Used",
+                "formula": "query1"
               },
               {
-                "formula": "query2",
-                "alias": "Committed"
+                "alias": "Committed",
+                "formula": "query2"
               },
               {
-                "formula": "query3",
-                "alias": "Max"
+                "alias": "Max",
+                "formula": "query3"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.used{area:heap}"
+                "query": "avg:jvm.memory.used{area:heap , indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "avg:jvm.memory.committed{area:heap}"
+                "query": "avg:jvm.memory.committed{area:heap , indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query3",
-                "query": "avg:jvm.memory.max{area:heap}"
+                "query": "avg:jvm.memory.max{area:heap ,indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -217,30 +230,36 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "Used"
+                "alias": "Used",
+                "formula": "query1"
               },
               {
-                "formula": "query2",
-                "alias": "Committed"
+                "alias": "Committed",
+                "formula": "query2"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.used{area:nonheap}"
+                "query": "avg:jvm.memory.used{area:nonheap , indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "avg:jvm.memory.committed{area:nonheap}"
+                "query": "avg:jvm.memory.committed{area:nonheap , indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -268,7 +287,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -281,7 +306,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.used{*} by {id}"
+                "query": "avg:jvm.memory.used{indexer-id:$indexer-id.value} by {id}"
               }
             ],
             "response_format": "timeseries",
@@ -309,39 +334,45 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "Live"
+                "alias": "Live",
+                "formula": "query1"
               },
               {
-                "formula": "query2",
-                "alias": "Daemon"
+                "alias": "Daemon",
+                "formula": "query2"
               },
               {
-                "formula": "query3",
-                "alias": "Peak"
+                "alias": "Peak",
+                "formula": "query3"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.threads.live{*}"
+                "query": "avg:jvm.threads.live{indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "avg:jvm.threads.daemon{*}"
+                "query": "avg:jvm.threads.daemon{indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query3",
-                "query": "avg:jvm.threads.peak{*}"
+                "query": "avg:jvm.threads.peak{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -369,7 +400,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -382,7 +419,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.threads.states{*} by {state}"
+                "query": "avg:jvm.threads.states{indexer-id:$indexer-id.value} by {state}"
               }
             ],
             "response_format": "timeseries",
@@ -410,7 +447,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -423,7 +466,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.gc.pause.count{*} by {action}.as_rate()"
+                "query": "sum:jvm.gc.pause.count{indexer-id:$indexer-id.value} by {action}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -451,7 +494,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -464,12 +513,12 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.gc.pause.sum{*} by {action}"
+                "query": "sum:jvm.gc.pause.sum{indexer-id:$indexer-id.value} by {action}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:jvm.gc.pause.count{*} by {action}"
+                "query": "sum:jvm.gc.pause.count{indexer-id:$indexer-id.value} by {action}"
               }
             ],
             "response_format": "timeseries",
@@ -497,7 +546,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -510,7 +565,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.gc.overhead{*}"
+                "query": "avg:jvm.gc.overhead{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -536,6 +591,7 @@
         "title": "Total GC Pauses",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -548,7 +604,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.gc.pause.count{*}",
+                "query": "sum:jvm.gc.pause.count{indexer-id:$indexer-id.value}",
                 "aggregator": "sum"
               }
             ],
@@ -583,7 +639,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.gc.pause.avg{*}",
+                "query": "avg:jvm.gc.pause.avg{indexer-id:$indexer-id.value}",
                 "aggregator": "avg"
               }
             ],
@@ -618,7 +674,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:jvm.gc.pause.max{*}",
+                "query": "max:jvm.gc.pause.max{indexer-id:$indexer-id.value}",
                 "aggregator": "max"
               }
             ],
@@ -641,6 +697,7 @@
         "title": "Buffer Count",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -653,7 +710,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.buffer.count{*}",
+                "query": "sum:jvm.buffer.count{indexer-id:$indexer-id.value}",
                 "aggregator": "last"
               }
             ],
@@ -678,7 +735,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -691,7 +754,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.buffer.memory.used{*} by {id}"
+                "query": "avg:jvm.buffer.memory.used{indexer-id:$indexer-id.value} by {id}"
               }
             ],
             "response_format": "timeseries",
@@ -719,7 +782,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -732,7 +801,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.buffer.total.capacity{*} by {id}"
+                "query": "avg:jvm.buffer.total.capacity{indexer-id:$indexer-id.value} by {id}"
               }
             ],
             "response_format": "timeseries",
@@ -760,21 +829,28 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "time": {},
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "Live Data Size"
+                "alias": "Live Data Size",
+                "formula": "query1"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.gc.live.data.size{*}"
+                "query": "avg:jvm.gc.live.data.size{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -802,7 +878,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -815,7 +897,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.memory.usage.after.gc{*}"
+                "query": "avg:jvm.memory.usage.after.gc{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -843,7 +925,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -856,7 +944,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.gc.memory.promoted{*}.as_rate()"
+                "query": "sum:jvm.gc.memory.promoted{indexer-id:$indexer-id.value}.as_rate()"
               }
             ],
             "response_format": "timeseries",
@@ -884,30 +972,36 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1",
-                "alias": "Loaded"
+                "alias": "Loaded",
+                "formula": "query1"
               },
               {
-                "formula": "query2",
-                "alias": "Unloaded"
+                "alias": "Unloaded",
+                "formula": "query2"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.classes.loaded{*}"
+                "query": "avg:jvm.classes.loaded{indexer-id:$indexer-id.value}"
               },
               {
                 "data_source": "metrics",
                 "name": "query2",
-                "query": "sum:jvm.classes.unloaded{*}"
+                "query": "sum:jvm.classes.unloaded{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -935,7 +1029,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -948,7 +1048,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:jvm.threads.started{*}"
+                "query": "sum:jvm.threads.started{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -976,7 +1076,13 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
         "type": "timeseries",
         "requests": [
           {
@@ -989,7 +1095,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:jvm.gc.concurrent.phase.time.avg{*}"
+                "query": "avg:jvm.gc.concurrent.phase.time.avg{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "timeseries",
@@ -1018,20 +1124,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.memory.used{indexer-id:$indexer-id.value} by {id}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:jvm.memory.used{*} by {id}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 20,
               "order_by": [
@@ -1049,7 +1155,7 @@
             "type": "stacked",
             "legend": "automatic"
           },
-          "scaling": "relative"
+          "scaling": "absolute"
         }
       },
       "layout": {
@@ -1068,20 +1174,20 @@
         "type": "toplist",
         "requests": [
           {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:jvm.threads.states{indexer-id:$indexer-id.value} by {state}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
             "formulas": [
               {
                 "formula": "query1"
               }
             ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:jvm.threads.states{*} by {state}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
             "sort": {
               "count": 20,
               "order_by": [
@@ -1099,7 +1205,7 @@
             "type": "stacked",
             "legend": "automatic"
           },
-          "scaling": "relative"
+          "scaling": "absolute"
         }
       },
       "layout": {
@@ -1110,8 +1216,16 @@
       }
     }
   ],
-  "template_variables": [],
+  "template_variables": [
+    {
+      "name": "indexer-id",
+      "prefix": "indexer-id",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
   "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed"
+  "reflow_type": "fixed",
+  "pause_auto_refresh": false
 }
