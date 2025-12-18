@@ -8,7 +8,9 @@ import jakarta.annotation.PostConstruct
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration
 import org.springframework.stereotype.Component
+import org.vechain.indexer.config.DefaultMetrics
 
 @Component("indexerProcessorMetrics")
 class ProcessorMetrics(private val registry: MeterRegistry) {
@@ -34,16 +36,15 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
             .set(blockNumber)
     }
 
-    fun observeProcessingDuration(indexerName: String, durationMs: Double) {
+    fun observeProcessingDuration(indexerName: String, duration: Duration) {
         processingDurationTimers
             .computeIfAbsent(indexerName) {
-                Timer.builder("processor_duration")
+                DefaultMetrics.newTimer("processor_duration")
                     .description("Duration of indexer processing")
                     .tag("indexer_name", indexerName)
-                    .publishPercentileHistogram()
                     .register(registry)
             }
-            .record(durationMs.toLong(), TimeUnit.MILLISECONDS)
+            .record(duration.inWholeMilliseconds, TimeUnit.MILLISECONDS)
     }
 
     fun incrementEventsCounter(indexerName: String, count: Double) {
@@ -68,8 +69,8 @@ class ProcessorMetrics(private val registry: MeterRegistry) {
             instance?.setBestBlock(indexerName, blockNumber)
         }
 
-        fun observeProcessingDuration(indexerName: String, durationMs: Double) {
-            instance?.observeProcessingDuration(indexerName, durationMs)
+        fun observeProcessingDuration(indexerName: String, duration: Duration) {
+            instance?.observeProcessingDuration(indexerName, duration)
         }
 
         fun incrementEventsCounter(indexerName: String, count: Double) {

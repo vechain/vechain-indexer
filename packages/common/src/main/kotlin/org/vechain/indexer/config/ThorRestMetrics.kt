@@ -28,17 +28,16 @@ class ThorRestMetrics(private val registry: MeterRegistry) {
             .increment()
     }
 
-    fun observeRequestDuration(method: String, path: String, durationMs: Double) {
+    fun observeRequestDuration(method: String, path: String, duration: kotlin.time.Duration) {
         val endpoint = endpointName(method, path)
         requestDurationTimers
             .computeIfAbsent(endpoint) {
-                Timer.builder("thor_client_request_duration")
+                DefaultMetrics.newTimer("thor_client_request_duration")
                     .description("Duration of Thor client requests")
                     .tag("endpoint", endpoint)
-                    .publishPercentileHistogram()
                     .register(registry)
             }
-            .record(durationMs.toLong(), TimeUnit.MILLISECONDS)
+            .record(duration.inWholeMilliseconds, TimeUnit.MILLISECONDS)
     }
 
     private fun endpointName(method: String, path: String): String {

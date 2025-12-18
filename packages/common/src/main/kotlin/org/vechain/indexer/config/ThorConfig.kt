@@ -42,8 +42,7 @@ open class ThorConfig(
             next
                 .exchange(request)
                 .doOnNext { response ->
-                    val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
-                    metrics.observeRequestDuration(method, path, durationMs)
+                    metrics.observeRequestDuration(method, path, start.elapsedNow())
                     metrics.recordResponseCode(
                         method,
                         path,
@@ -51,8 +50,7 @@ open class ThorConfig(
                     )
                 }
                 .doOnError { _ ->
-                    val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
-                    metrics.observeRequestDuration(method, path, durationMs)
+                    metrics.observeRequestDuration(method, path, start.elapsedNow())
                     metrics.recordResponseCode(method, path, "unknown-exception")
                 }
         }

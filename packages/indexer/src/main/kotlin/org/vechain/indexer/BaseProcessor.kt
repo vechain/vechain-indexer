@@ -19,8 +19,7 @@ abstract class BaseProcessor(
             ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
             ProcessorMetrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
         } finally {
-            val elapsed = start.elapsedNow().inWholeMilliseconds.toDouble()
-            ProcessorMetrics.observeProcessingDuration(indexerName, elapsed)
+            ProcessorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
         }
     }
 
