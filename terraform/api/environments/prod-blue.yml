@@ -72,7 +72,7 @@ datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/datadog_keys-NFBO6v
 enabled_nets:
   main:
-    image_version:                  v.5.1.5
+    image_version:                  latest
     thor_url:                       https://mainnet.vechain.org
     api:
       cpu:                          1024
