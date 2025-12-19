@@ -130,6 +130,7 @@ indexer:
     b3tr-sustainable-actions: ${START_ROUND_B3TR_SUSTAINABLE_ACTIONS:4}
   sync-log-interval: ${INDEXER_SYNC_LOG_INTERVAL:100}
   sync-block-batch-size:
+    contracts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS:500}
     nfts: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_NFTS:500}
     transfers: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_TRANSFERS:500}
     vevote: ${INDEXER_SYNC_BLOCK_BATCH_SIZE_VEVOTE:500}
@@ -145,6 +146,7 @@ indexer:
   blacklist:
     contract-address: ${BLACKLIST_CONTRACT_ADDRESS:0x0f9b01618cd5e0030f8e26ff61bc1349cb9eb8d5}
   version:
+    contracts: ${VERSION_CONTRACTS:1}
     nfts: ${VERSION_NFTS:1}
     transfers: ${VERSION_TRANSFERS:1}
     fungible-token-interactions: ${VERSION_FUNGIBLE_TOKEN_INTERACTIONS:1}

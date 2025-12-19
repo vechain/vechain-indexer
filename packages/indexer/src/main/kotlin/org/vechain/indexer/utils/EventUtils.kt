@@ -150,6 +150,16 @@ object EventUtils {
         return entries.sortedBy { (details, _) -> details.blockNumber }.toMap(LinkedHashMap())
     }
 
+    /**
+     * Groups events by their contract address. Throws an error if any event has a null address.
+     *
+     * @param events List of IndexedEvent to group.
+     * @return Map where keys are contract addresses and values are lists of events for that
+     *   contract.
+     */
+    fun groupByContractAddress(events: List<IndexedEvent>): Map<String, List<IndexedEvent>> =
+        events.groupBy { it.address ?: error("Event address is null for txId: ${it.txId}") }
+
     /** Determine if a delegation-related event should be processed based on its type and source. */
     fun shouldProcessDelegationEvent(ev: IndexedEvent, stakerSC: String): Boolean =
         when (ev.eventType) {

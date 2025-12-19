@@ -37,4 +37,5 @@ object IndexerNames {
     const val TOKEN_REWARD = "TokenRewardIndexer"
     const val TOTAL_ACCOUNTS_INDEXER = "TotalAccountsIndexer"
     const val ACCOUNT_OVERVIEW_INDEXER = "AccountOverviewIndexer"
+    const val CONTRACTS_INDEXER = "ContractsIndexer"
 }

@@ -4,6 +4,7 @@ import com.github.kittinunf.fuel.core.FuelError
 import kotlin.time.TimeSource
 import org.vechain.indexer.exception.BlockNotFoundException
 import org.vechain.indexer.exception.RateLimitException
+import org.vechain.indexer.thor.client.AccountCodeResponse
 import org.vechain.indexer.thor.client.DefaultThorClient
 import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.model.*
@@ -70,4 +71,10 @@ class MonitoredThorClient(
         revision: BlockRevision?,
     ): ExecuteAccountResponse =
         withMetrics("GET", "/accounts/{address}") { super.getAccountState(address, revision) }
+
+    override suspend fun getAccountCode(
+        address: String,
+        revision: BlockRevision?,
+    ): AccountCodeResponse =
+        withMetrics("GET", "/accounts/{address}/code") { super.getAccountCode(address, revision) }
 }

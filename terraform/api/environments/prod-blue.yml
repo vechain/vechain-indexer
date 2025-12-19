@@ -81,7 +81,7 @@ enabled_nets:
       cpu:                          1024
       memory:                       2048
       max_capacity:                 8
-      spring_profile:             nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator,accounts
+      spring_profile:             nfts,transactions,transfers,history,vevote-results,vevote-historic-proposals,stargate,authority-nodes,b3tr,explorer,validator,accounts,contracts
       ecr_common_repo:              905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/api
       logging:
         app-log-level: 'INFO'
@@ -141,7 +141,7 @@ enabled_nets:
       cpu: 8192
       memory: 16384
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts,vevote-historic-proposals
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts,vevote-historic-proposals,contracts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -170,6 +170,7 @@ enabled_nets:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '20'
       sync-block-batch-size:
+        contracts:                 '250'
         nfts:                       '250'
         transfers:                  '250'
         vevote:                     '250'
@@ -188,6 +189,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
+        contracts: '1'
         nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
@@ -343,7 +345,7 @@ enabled_nets:
       cpu: 4096
       memory: 8192
       enabled: true
-      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts
+      spring_profile: indexer,nfts,transactions,transfers,history,vevote-results,stargate,authority-nodes,b3tr,explorer,validator,token-reward,accounts,contracts
       ecr_common_repo: 905964754131.dkr.ecr.eu-west-1.amazonaws.com/veworld/indexer
       logging:
         app-log-level: 'INFO'
@@ -372,6 +374,7 @@ enabled_nets:
         b3tr-sustainable-actions:   '4'
       sync-log-interval: '100'
       sync-block-batch-size:
+        contracts:                 '200'
         nfts:                       '200'
         transfers:                  '200'
         vevote:                     '200'
@@ -390,6 +393,7 @@ enabled_nets:
         inactive-threshold-syncing: '120'
         inactive-threshold-not-syncing: '600'
       version:
+        contracts: '1'
         nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
