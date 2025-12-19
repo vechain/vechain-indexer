@@ -116,9 +116,9 @@ open class ContractService(
         events: List<IndexedEvent>,
         existing: Contract,
     ): Contract {
-        // We only care about the last Master event in the block when updating
         val newMaster =
-            events.first().params.getAsString("newMaster") ?: error("No newMaster in event")
+            events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
+                ?: error("No new master in \$Master event")
 
         return existing.copy(
             blockId = blockDetails.blockId,
