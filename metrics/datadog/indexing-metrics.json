@@ -8,7 +8,6 @@
         "title": "Total Events Processed",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -44,13 +43,12 @@
         "title": "Avg. Processing Time (ms)",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "query_value",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "1000 * query1 / query2"
+                "formula": "query1 / query2"
               }
             ],
             "queries": [
@@ -86,7 +84,6 @@
         "title": "Events Per Second",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -122,27 +119,30 @@
         "title": "Active Indexers",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
         "type": "query_value",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "query1"
+                "formula": "reduce(count(query1, { * }), 'last')"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "count_not_null(avg:best_block_gauge{*} by {indexer_name})",
-                "aggregator": "last"
+                "query": "avg:best_block_gauge{indexer-id:$indexer-id.value}"
               }
             ],
             "response_format": "scalar"
           }
         ],
         "autoscale": true,
-        "precision": 0
+        "precision": 2,
+        "timeseries_background": {
+          "type": "area"
+        }
       },
       "layout": {
         "x": 9,
@@ -166,7 +166,6 @@
           "value",
           "sum"
         ],
-        "time": {},
         "type": "timeseries",
         "requests": [
           {
@@ -214,7 +213,6 @@
           "value",
           "sum"
         ],
-        "time": {},
         "type": "timeseries",
         "requests": [
           {
@@ -262,13 +260,12 @@
           "value",
           "sum"
         ],
-        "time": {},
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "1000 * query1 / query2"
+                "formula": "query1 / query2"
               }
             ],
             "queries": [
@@ -315,20 +312,19 @@
           "value",
           "sum"
         ],
-        "time": {},
         "type": "timeseries",
         "requests": [
           {
             "formulas": [
               {
-                "formula": "1000 * query1"
+                "formula": "query1"
               }
             ],
             "queries": [
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "p95:processor_duration{indexer-id:$indexer-id.value} by {indexer_name}"
+                "query": "avg:processor_duration.percentile{indexer-id:$indexer-id.value , phi:0.95} by {indexer_name}"
               }
             ],
             "response_format": "timeseries",
@@ -354,7 +350,6 @@
         "title": "Current Block by Indexer",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -405,7 +400,6 @@
         "title": "Events by Indexer",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -456,7 +450,6 @@
         "title": "Avg Processing Time by Indexer (ms)",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -477,7 +470,7 @@
             "response_format": "scalar",
             "formulas": [
               {
-                "formula": "1000 * query1 / query2"
+                "formula": "query1 / query2"
               }
             ],
             "sort": {
@@ -522,7 +515,6 @@
           "value",
           "sum"
         ],
-        "time": {},
         "type": "timeseries",
         "requests": [
           {

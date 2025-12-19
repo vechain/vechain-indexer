@@ -42,8 +42,7 @@ class MonitoredThorClient(
             metrics.recordResponseCode(method, path, "unknown-exception")
             throw ex
         } finally {
-            val durationMs = start.elapsedNow().inWholeMilliseconds.toDouble()
-            metrics.observeRequestDuration(method, path, durationMs)
+            metrics.observeRequestDuration(method, path, start.elapsedNow())
         }
     }
 

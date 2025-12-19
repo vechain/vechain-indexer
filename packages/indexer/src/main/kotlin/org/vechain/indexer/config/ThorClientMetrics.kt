@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
 
@@ -28,17 +29,16 @@ class ThorClientMetrics(private val registry: MeterRegistry) {
             .increment()
     }
 
-    fun observeRequestDuration(method: String, path: String, durationMs: Double) {
+    fun observeRequestDuration(method: String, path: String, duration: Duration) {
         val endpoint = endpointName(method, path)
         requestDurationTimers
             .computeIfAbsent(endpoint) {
-                Timer.builder("thor_client_request_duration")
+                DefaultMetrics.newTimer("thor_client_request_duration")
                     .description("Duration of Thor client requests")
                     .tag("endpoint", endpoint)
-                    .publishPercentileHistogram()
                     .register(registry)
             }
-            .record(durationMs.toLong(), TimeUnit.MILLISECONDS)
+            .record(duration.inWholeMilliseconds, TimeUnit.MILLISECONDS)
     }
 
     private fun endpointName(method: String, path: String): String {
