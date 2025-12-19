@@ -83,14 +83,10 @@ open class ContractService(
         events: List<IndexedEvent>,
     ): Contract? {
 
-        val deployer =
-            events.first().params.getAsString("newMaster") ?: error("No newMaster in event")
-
-        // Cater for the unlikely event of multiple Master events in the same block
-        val newMaster =
-            if (events.size > 1)
-                events.last().params.getAsString("newMaster") ?: error("No newMaster in event")
-            else deployer
+        // Use the last $Master event in the block to derive the latest master.
+        val master =
+            events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
+                ?: return null
 
         // Get the contract code. If none exists this isn't a contract
         val accountCode =
@@ -106,8 +102,9 @@ open class ContractService(
             blockTimestamp = blockDetails.blockTimestamp,
             version = 0,
             createdOn = blockDetails.blockTimestamp,
-            deployer = deployer,
-            master = newMaster,
+            deploymentTxId = events.first().txId,
+            deploymentClauseIndex = events.first().clauseIndex,
+            master = master,
             isErc20 = isContractType(Contracts.ERC20, accountCode.code),
             isErc721 = isContractType(Contracts.ERC721, accountCode.code),
             isErc1155 = isContractType(Contracts.ERC1155, accountCode.code),
@@ -119,9 +116,9 @@ open class ContractService(
         events: List<IndexedEvent>,
         existing: Contract,
     ): Contract {
-        // We only care about the last Master event in the block when updating
         val newMaster =
-            events.first().params.getAsString("newMaster") ?: error("No newMaster in event")
+            events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
+                ?: error("No new master in \$Master event")
 
         return existing.copy(
             blockId = blockDetails.blockId,

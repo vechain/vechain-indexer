@@ -8,9 +8,5 @@ import org.vechain.indexer.contracts.Contract
 
 @Profile("contracts", "contract")
 interface ContractRepository : BaseIndexedRepository<Contract, String> {
-    fun findByDeployerOrMaster(
-        deployer: String,
-        master: String,
-        pageable: Pageable,
-    ): Slice<Contract>
+    fun findByMaster(master: String, pageable: Pageable): Slice<Contract>
 }

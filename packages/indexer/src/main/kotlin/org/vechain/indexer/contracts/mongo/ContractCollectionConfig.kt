@@ -54,11 +54,6 @@ open class ContractCollectionConfig(
             listOf(
                 "blockNumber_-1" to
                     Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
-                // Supports query: deployer == address, sorted by createdOn desc
-                "deployer_1_createdOn_-1" to
-                    Index()
-                        .on(Contract::deployer.name, Sort.Direction.ASC)
-                        .on(Contract::createdOn.name, Sort.Direction.DESC),
                 // Supports query: master == address, sorted by createdOn desc
                 "master_1_createdOn_-1" to
                     Index()

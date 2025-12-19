@@ -116,7 +116,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
             .build()
     }
 
-    /** Profiled wrapper for AccountsProcessor */
+    /** Profiled wrapper for TotalAccountsProcessor */
     private class ProfiledTotalAccountsProcessor(
         service: TotalAccountsService,
         repository: TotalAccountsRepository,

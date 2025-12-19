@@ -171,7 +171,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @return BigInteger value or null if input is null
      */
     internal fun parseBaseFeePerGas(baseFeePerGas: String?): BigInteger? =
-        baseFeePerGas?.let { toBigInteger(baseFeePerGas) }
+        baseFeePerGas?.let { toBigInteger(it) }
 
     /**
      * Calculate total number of clauses in a block.

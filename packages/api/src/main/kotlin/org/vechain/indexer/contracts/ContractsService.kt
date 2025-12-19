@@ -13,6 +13,6 @@ import org.vechain.indexer.thor.Address
 open class ContractsService(private val contractRepository: ContractRepository) {
     fun getByAddress(address: Address): Contract? = contractRepository.findByIdOrNull(address.value)
 
-    fun getByDeployerOrMaster(address: Address, pageable: Pageable): Slice<Contract> =
-        contractRepository.findByDeployerOrMaster(address.value, address.value, pageable)
+    fun getByMaster(address: Address, pageable: Pageable): Slice<Contract> =
+        contractRepository.findByMaster(address.value, pageable)
 }
