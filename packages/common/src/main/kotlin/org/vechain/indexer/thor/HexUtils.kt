@@ -1,5 +1,7 @@
 package org.vechain.indexer.thor
 
+import java.math.BigInteger
+
 object HexUtils {
 
     /** Optional prefix 0x */
@@ -43,5 +45,17 @@ object HexUtils {
     fun toInt(hex: String): Int {
         require(isValid(hex)) { "Invalid hex string: $hex" }
         return removePrefix(hex).toInt(16)
+    }
+
+    /** Parse hex string to Long, handling optional 0x prefix */
+    fun toLong(hex: String): Long {
+        require(isValid(hex)) { "Invalid hex string: $hex" }
+        return removePrefix(hex).toLong(16)
+    }
+
+    /** Parse hex string to BigInteger, handling optional 0x prefix */
+    fun toBigInteger(hex: String): java.math.BigInteger {
+        require(isValid(hex)) { "Invalid hex string: $hex" }
+        return BigInteger(removePrefix(hex), 16)
     }
 }

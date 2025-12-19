@@ -4,7 +4,11 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.vechain.indexer.accounts.repository.AccountOverviewRepository
+import org.vechain.indexer.accounts.repository.TotalAccountsRepository
+import org.vechain.indexer.thor.Address
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
@@ -13,7 +17,10 @@ import org.springframework.stereotype.Service
  */
 @Profile("accounts")
 @Service
-open class AccountsService(private val accountsRepository: AccountsRepository) {
+open class AccountsService(
+    private val totalAccountsRepository: TotalAccountsRepository,
+    private val accountOverviewRepository: AccountOverviewRepository,
+) {
     /**
      * @param period The reward period to query. Defaults to ALL if not provided.
      * @param pageable Spring pageable object controlling pagination and sorting.
@@ -22,7 +29,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
      * @dev When querying for a specific period (e.g., DAY), includes the "ALL" document in the
      *   query and normalizes it to match the requested period.
      */
-    fun getTotal(period: AccountQueryTimeFrame?, pageable: Pageable): Slice<Accounts> {
+    fun getTotal(period: AccountQueryTimeFrame?, pageable: Pageable): Slice<TotalAccounts> {
         val targetPeriod =
             when (period) {
                 AccountQueryTimeFrame.DAY -> TimeFrame.DAY
@@ -41,7 +48,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
                 listOf(targetPeriod, TimeFrame.ALL)
             }
 
-        val slice = accountsRepository.findByTimeFrameIn(periods, pageable)
+        val slice = totalAccountsRepository.findByTimeFrameIn(periods, pageable)
 
         // If querying ALL directly or no data exists, return as-is
         if (targetPeriod == TimeFrame.ALL || slice.isEmpty) {
@@ -75,7 +82,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
      * @notice Normalizes an "ALL" period TokenReward to mimic a specific time frame.
      * @dev This allows the "ALL" record to reflect the target period’s cumulative rewards.
      */
-    private fun normalizeAllAs(allDoc: Accounts, target: TimeFrame): Accounts {
+    private fun normalizeAllAs(allDoc: TotalAccounts, target: TimeFrame): TotalAccounts {
         val normalized =
             when (target) {
                 TimeFrame.DAY -> allDoc.dayTotal
@@ -99,4 +106,7 @@ open class AccountsService(private val accountsRepository: AccountsRepository) {
             yearTotal = null,
         )
     }
+
+    fun getOverview(address: Address): AccountOverview? =
+        accountOverviewRepository.findByIdOrNull(address.value)
 }

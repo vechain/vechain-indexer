@@ -178,7 +178,8 @@ indexer:
     delegation: ${VERSION_DELEGATION:1}
     token-rewards: ${VERSION_TOKEN_REWARDS:1}
     stargate-token: ${VERSION_STARGATE_TOKEN:1}
-    accounts: ${VERSION_ACCOUNTS:1}
+    total-accounts: ${VERSION_TOTAL_ACCOUNTS:1}
+    account-overview: ${VERSION_ACCOUNT_OVERVIEW:1}
   healthcheck:
     inactive-threshold-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_SYNCING:120}
     inactive-threshold-not-syncing: ${HEALTHCHECK_INACTIVE_THRESHOLD_NOT_SYNCING:600}

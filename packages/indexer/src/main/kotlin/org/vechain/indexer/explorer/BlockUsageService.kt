@@ -11,6 +11,7 @@ import org.vechain.indexer.explorer.TimestampUtils.isHourly
 import org.vechain.indexer.explorer.TimestampUtils.isMonthly
 import org.vechain.indexer.explorer.TimestampUtils.isWeekly
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
+import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
 
 @Profile("explorer", "block-usage")
@@ -170,7 +171,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
      * @return BigInteger value or null if input is null
      */
     internal fun parseBaseFeePerGas(baseFeePerGas: String?): BigInteger? =
-        baseFeePerGas?.removePrefix("0x")?.let { BigInteger(it, 16) }
+        baseFeePerGas?.let { toBigInteger(it) }
 
     /**
      * Calculate total number of clauses in a block.

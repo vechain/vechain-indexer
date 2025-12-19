@@ -607,8 +607,12 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.delegation
     },
     {
-      name  = "VERSION_ACCOUNTS"
-      value = each.value.indexer.version.accounts
+      name = "VERSION_TOTAL_ACCOUNTS"
+      value = each.value.indexer.version.total-accounts
+    },
+    {
+      name = "VERSION_ACCOUNT_OVERVIEW"
+      value = each.value.indexer.version.account-overview
     },
     {
       name  = "MIN_COMMENT_LEN"

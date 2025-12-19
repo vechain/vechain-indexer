@@ -221,7 +221,8 @@ enabled_nets:
         stargate-token: '3'
         token-rewards: '2'
         delegation: '2'
-        accounts: '1'
+        total-accounts: '1'
+        account-overview: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -422,7 +423,8 @@ enabled_nets:
         stargate-token: '4'
         token-rewards: '1'
         delegation: '1'
-        accounts: '1'
+        total-accounts: '1'
+        account-overview: '1'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x95761346d18244bb91664181bf91193376197088'

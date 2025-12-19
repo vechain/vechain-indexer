@@ -29,8 +29,11 @@ open class StargateTokenProcessor(
             throw IllegalArgumentException("Block cannot be null")
         }
 
-        val updates = service.processBlock(entry.block, entry.callResults, entry.events())
+        val (updated, existing) =
+            service.processBlock(entry.block, entry.callResults, entry.events())
 
-        withContext(Dispatchers.IO) { service.save(updates.first, updates.second) }
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
+        }
     }
 }

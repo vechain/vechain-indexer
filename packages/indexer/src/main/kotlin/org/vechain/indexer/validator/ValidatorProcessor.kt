@@ -43,7 +43,7 @@ open class ValidatorProcessor(
                 entry.status == Status.FULLY_SYNCED,
             )
 
-        if (updated.isNotEmpty()) {
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
             withContext(Dispatchers.IO) { service.save(updated, existing) }
         }
     }

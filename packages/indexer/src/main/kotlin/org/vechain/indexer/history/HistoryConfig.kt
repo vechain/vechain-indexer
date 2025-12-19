@@ -34,6 +34,7 @@ open class HistoryConfig() {
             .startBlock(startBlock)
             .includeVetTransfers()
             .includeFullBlock()
+            .includeVetTransfers()
             .build()
     }
 }

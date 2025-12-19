@@ -5,6 +5,7 @@ import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
@@ -50,6 +51,7 @@ open class VeVoteResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
+    @Transactional
     open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
         saveVersionedDocuments(
             updated,

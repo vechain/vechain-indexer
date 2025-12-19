@@ -37,11 +37,13 @@ open class UserRoundActionSummaryProcessor(
             return
         }
 
-        val (updated, archives, updatedRoundId) = service.processEvents(entry.events(), roundId)
+        val (updated, existing, updatedRoundId) = service.processEvents(entry.events(), roundId)
 
         roundId = updatedRoundId
 
         // Save the updated NFTs and archives
-        withContext(Dispatchers.IO) { service.save(updated, archives) }
+        if (updated.isNotEmpty() || existing.isNotEmpty()) {
+            withContext(Dispatchers.IO) { service.save(updated, existing) }
+        }
     }
 }
