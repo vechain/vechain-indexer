@@ -5,11 +5,9 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.model.abi.InputOutput
-import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
-import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
 import org.vechain.indexer.utils.RolloverUtils
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
 
@@ -29,12 +27,11 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      *     - Applies day/week/month/year rollover logic using `RolloverUtils`.
      */
     open fun processBlock(
-        events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<VthoGeneratedByBlock> {
         // Skip blocks with nothing to index
-        if (events.isEmpty() && !callResponses[0].hasAbiData()) return emptyList()
+        if (!callResponses[0].hasAbiData()) return emptyList()
 
         // Load previous entry & validate ordering
         val latest = validateAndLoadLatest(block)
@@ -83,18 +80,6 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
 
         return latest
     }
-
-    /**
-     * @param claimed Total VTHO claimed to date (previous + new).
-     * @param blockTotal Total VTHO generated at this block including on-chain balance.
-     * @param delta Change in blockTotal vs previous block.
-     * @notice Aggregated totals derived from events + balanceOf() call.
-     */
-    data class TotalsForBlock(
-        val claimed: BigInteger,
-        val blockTotal: BigInteger,
-        val delta: BigInteger,
-    )
 
     /**
      * @param block The current block metadata (id, number, timestamp).
@@ -167,7 +152,9 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
      * @dev Returns zero if ABI data is missing.
      */
     fun vthoIssued(responses: List<InspectionResult>): BigInteger {
-        if (responses.isEmpty() || !responses[0].hasAbiData()) return BigInteger.ZERO
+        if (responses.isEmpty() || !responses[0].hasAbiData()) {
+            return BigInteger.ZERO
+        }
 
         val decoded =
             FunctionReturnDecoder.decode(
@@ -177,14 +164,4 @@ open class VthoGeneratedByBlockService(private val repository: VthoGeneratedByBl
 
         return decoded["issued"] as BigInteger
     }
-
-    /**
-     * @notice Require that an event contains a `value` parameter.
-     * @dev Throws with helpful context if missing.
-     */
-    private fun IndexedEvent.requireValue(): BigInteger =
-        this.params.getAsBigInteger("value")
-            ?: throw IllegalStateException(
-                "Event for block $blockNumber (blockId=$blockId) missing 'value'"
-            )
 }

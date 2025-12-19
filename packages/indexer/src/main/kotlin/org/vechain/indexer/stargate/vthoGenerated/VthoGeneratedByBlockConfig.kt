@@ -23,15 +23,18 @@ open class VthoGeneratedByBlockConfig {
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") stakerSC: String,
         bEProperties: BusinessEventProperties,
-    ): BlockIndexer =
-        IndexerFactory()
+    ): BlockIndexer {
+        val clauses = StargateUtils.buildIssuanceClause(stakerSC)
+
+        return IndexerFactory()
             .name(IndexerNames.VTHO_GENERATED_BY_BLOCK)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
             .syncLoggerInterval(syncLoggerInterval)
             .blockBatchSize(syncBlockBatchSize)
-            .callDataClauses(StargateUtils.buildIssuanceClause(stakerSC))
+            .callDataClauses(clauses)
             .includeFullBlock()
             .build()
+    }
 }

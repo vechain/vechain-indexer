@@ -18,7 +18,6 @@ import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
-import org.vechain.indexer.thor.ThorService
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
@@ -30,7 +29,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
     @Autowired lateinit var delegationRepository: DelegationRepository
-    @Autowired lateinit var thorService: ThorService
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsContract: String
@@ -83,7 +81,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
                     delegationRepository = delegationRepository,
-                    thorService = thorService,
+                    thorClient = thorClient,
                     profiler = profiler,
                 )
             } else {
@@ -136,7 +134,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
-        override fun processEntry(entry: IndexingResult) {
+        override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TokenRewardProcessor.process (per block)") {
                 super.processEntry(entry)
             }

@@ -15,7 +15,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorRow
 /** Performs all validator-related calculations (TVL, yields, offline %, next cycle, etc.) */
 object ValidatorCalculator {
     private val BLOCKS_PER_YEAR = BigDecimal("3155760") // 360 * 24 * 365.25
-    private val MAX_UINT32 = BigInteger.valueOf(4294967295L)
+    val MAX_UINT32 = BigInteger.valueOf(4294967295L)
 
     // ------------------------------
     // Core calculations

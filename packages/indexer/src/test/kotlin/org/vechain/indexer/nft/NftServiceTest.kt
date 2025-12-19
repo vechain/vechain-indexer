@@ -3,6 +3,7 @@ package org.vechain.indexer.nft
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -34,7 +35,7 @@ internal class NftServiceTest {
         MockKAnnotations.init(this)
         nftService =
             NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
-        every { blacklistClient.isBlacklisted(any(), any()) } returns false
+        coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
     }
 
     // Update tests
@@ -153,7 +154,7 @@ internal class NftServiceTest {
     fun `parseRecords - should parse valid NFT transfer records`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER
 
-        val result = nftService.parseRecords(events, emptyList())
+        val result = runBlocking { nftService.parseRecords(events, emptyList()) }
 
         expect {
             that(result.size).isEqualTo(2)
@@ -179,7 +180,7 @@ internal class NftServiceTest {
 
     @Test
     fun `parseRecords - should handle empty list`() {
-        val result = nftService.parseRecords(emptyList(), emptyList())
+        val result = runBlocking { nftService.parseRecords(emptyList(), emptyList()) }
 
         expect { that(result.size).isEqualTo(0) }
     }
@@ -203,7 +204,7 @@ internal class NftServiceTest {
                 )
             )
 
-        val result = nftService.parseRecords(events, existing)
+        val result = runBlocking { nftService.parseRecords(events, existing) }
 
         expectThat(result.size).isEqualTo(2)
 
@@ -235,21 +236,25 @@ internal class NftServiceTest {
     fun `parseRecords - should throw exception when 'to' parameter is missing`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
 
-        assertThrows<NullPointerException> { nftService.parseRecords(events, emptyList()) }
+        assertThrows<NullPointerException> {
+            runBlocking { nftService.parseRecords(events, emptyList()) }
+        }
     }
 
     @Test
     fun `parseRecords - should throw exception when 'tokenId' parameter is missing`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 
-        assertThrows<IllegalArgumentException> { nftService.parseRecords(events, emptyList()) }
+        assertThrows<IllegalArgumentException> {
+            runBlocking { nftService.parseRecords(events, emptyList()) }
+        }
     }
 
     @Test
     fun `parseRecords - should handle duplicate records`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 
-        val result = nftService.parseRecords(events, emptyList())
+        val result = runBlocking { nftService.parseRecords(events, emptyList()) }
 
         expect {
             that(result.size).isEqualTo(1)
@@ -262,7 +267,7 @@ internal class NftServiceTest {
     fun `parseRecords - should handle duplicate records - incorrect list order`() {
         val events = INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE.reversed()
 
-        val result = nftService.parseRecords(events, emptyList())
+        val result = runBlocking { nftService.parseRecords(events, emptyList()) }
 
         expect {
             that(result.size).isEqualTo(1)

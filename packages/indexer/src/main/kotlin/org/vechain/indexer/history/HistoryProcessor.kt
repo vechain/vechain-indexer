@@ -1,5 +1,7 @@
 package org.vechain.indexer.history
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -20,7 +22,7 @@ open class HistoryProcessor(
         indexerName = IndexerNames.HISTORY,
     ) {
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
@@ -40,7 +42,7 @@ open class HistoryProcessor(
         val records = historyService.processEvents(historyEvents, entry.block)
 
         if (records.isNotEmpty()) {
-            historyService.save(records)
+            withContext(Dispatchers.IO) { historyService.save(records) }
         }
 
         if (blacklistEvents.isNotEmpty()) {

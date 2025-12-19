@@ -3,6 +3,7 @@ package org.vechain.indexer.vevote
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -44,14 +45,16 @@ class VeVoteResultIndexerTest {
 
     @Test
     fun `process block with no vote events`() {
-        voteResultsIndexer.process(
-            IndexingResult.Normal(
-                events = emptyList(),
-                block = BLOCK_NO_CLAUSES,
-                callResults = emptyList(),
-                status = Status.FULLY_SYNCED,
+        runBlocking {
+            voteResultsIndexer.process(
+                IndexingResult.Normal(
+                    events = emptyList(),
+                    block = BLOCK_NO_CLAUSES,
+                    callResults = emptyList(),
+                    status = Status.FULLY_SYNCED,
+                )
             )
-        )
+        }
 
         verify { mongoTemplate wasNot Called }
     }

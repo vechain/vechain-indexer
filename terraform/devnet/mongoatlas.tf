@@ -145,7 +145,7 @@ resource "mongodbatlas_database_user" "api_db_user" {
   scopes {
     name = "${local.env.environment}-devnet"
     type = "CLUSTER"
-}
+  }
 }
 resource "mongodbatlas_database_user" "indexer_db_user" {
   count              = startswith(local.env.environment, "dev") ? 1 : 0
@@ -162,5 +162,5 @@ resource "mongodbatlas_database_user" "indexer_db_user" {
   scopes {
     name = "${local.env.environment}-devnet"
     type = "CLUSTER"
-}
+  }
 }

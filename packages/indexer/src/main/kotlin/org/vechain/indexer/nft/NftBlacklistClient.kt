@@ -6,14 +6,15 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.thor.AddressUtils
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.transaction.TransactionUtils.isSuccessWithData
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
 
 @Component
 open class NftBlacklistClient(
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @param:Value("\${indexer.blacklist.contract-address}") private val blacklistContract: String,
     @param:Value("\${indexer.start-block.nft-blacklist}") private val contractDeployedAt: Long,
 ) {
@@ -39,7 +40,7 @@ open class NftBlacklistClient(
      * @param address The address to check
      * @param block Details of the block
      */
-    fun isBlacklisted(address: String, block: BlockDetails): Boolean {
+    suspend fun isBlacklisted(address: String, block: BlockDetails): Boolean {
         // If the contract hasn't been deployed yet at this block, return false
         if (block.blockNumber < contractDeployedAt) {
             return false
@@ -52,7 +53,7 @@ open class NftBlacklistClient(
                 AddressUtils.toBigInt(address),
             )
 
-        val responses = thorService.inspectClausesAtBlock(listOf(clause), block.blockId)
+        val responses = thorClient.inspectClauses(listOf(clause), BlockRevision.Id(block.blockId))
 
         if (responses.size != 1) {
             error("Unexpected number of responses: ${responses.size}")

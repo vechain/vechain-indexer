@@ -1,13 +1,17 @@
 package org.vechain.indexer.amn
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockIdentifier
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("authority-nodes")
@@ -15,7 +19,7 @@ import org.vechain.indexer.version.IndexerVersionService
 open class AmnProcessor(
     private val repository: AmnRepository,
     private val amnService: AmnService,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     indexerVersionService: IndexerVersionService,
 ) : BaseProcessor(repository, indexerVersionService, IndexerNames.AUTHORITY_NODE) {
 
@@ -23,8 +27,8 @@ open class AmnProcessor(
 
     private var hasSynced = false
 
-    override fun processEntry(entry: IndexingResult) {
-        if (!hasSynced && repository.count() == 0L) {
+    override suspend fun processEntry(entry: IndexingResult) {
+        if (!hasSynced && withContext(Dispatchers.IO) { repository.count() } == 0L) {
             logger.info("No Authority Nodes found – syncing after collection setup...")
             amnService.syncEndorsersForAllNodes()
             logger.info("Initial Authority Node sync complete.")
@@ -32,13 +36,19 @@ open class AmnProcessor(
             hasSynced = true
         }
 
-        amnService.processCandidateEvents(entry.events())
+        val toSave = amnService.processCandidateEvents(entry.events())
+
+        if (toSave.isNotEmpty()) {
+            withContext(Dispatchers.IO) { amnService.save(toSave) }
+        }
     }
 
     override fun getLastSyncedBlock(): BlockIdentifier? {
         if (!hasSynced && repository.count() == 0L) {
-            val bestBlock = thorService.getBestBlock()
-            return BlockIdentifier(id = bestBlock.id, number = bestBlock.number)
+            val finalizedBlock = runBlocking {
+                thorClient.getBlockUnexpanded(BlockRevision.Keyword.FINALIZED)
+            }
+            return BlockIdentifier(id = finalizedBlock.id, number = finalizedBlock.number)
         }
         return super.getLastSyncedBlock()
     }

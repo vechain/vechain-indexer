@@ -1,5 +1,7 @@
 package org.vechain.indexer.validator
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
@@ -19,7 +21,7 @@ open class ValidatorBlockProcessor(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VALIDATOR_BLOCK,
     ) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")
         }
@@ -27,7 +29,7 @@ open class ValidatorBlockProcessor(
         val newRecords = service.processBlock(entry.block, entry.callResults())
 
         if (newRecords.isNotEmpty()) {
-            service.save(newRecords)
+            withContext(Dispatchers.IO) { service.save(newRecords) }
         }
     }
 }

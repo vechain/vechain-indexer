@@ -1,5 +1,7 @@
 package org.vechain.indexer.b3tr.action
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
@@ -30,7 +32,7 @@ open class UserRoundActionSummaryProcessor(
     protected var roundId: Int =
         repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
 
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }
@@ -40,6 +42,6 @@ open class UserRoundActionSummaryProcessor(
         roundId = updatedRoundId
 
         // Save the updated NFTs and archives
-        service.save(updated, archives)
+        withContext(Dispatchers.IO) { service.save(updated, archives) }
     }
 }

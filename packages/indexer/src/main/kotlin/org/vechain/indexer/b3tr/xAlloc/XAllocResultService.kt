@@ -27,7 +27,8 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.saveVersionedDocuments
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -39,7 +40,7 @@ open class XAllocResultService(
     private val repository: XAllocResultRepository,
     private val xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
     private val xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
 ) {
@@ -57,15 +58,17 @@ open class XAllocResultService(
         abi
     }
 
-    open fun processEvents(
+    open suspend fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<XAllocResult>, List<XAllocResult>> {
         val updatedResult = mutableMapOf<String, XAllocResult>()
         val archiveResult = mutableListOf<XAllocResult>()
 
+        val bestBlockId = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).id
+
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
-                val isQFEnabled = isQuadraticFundingEnabled(roundId)
+                val isQFEnabled = isQuadraticFundingEnabled(roundId, bestBlockId)
                 // Parse vote events
                 parseVotes(
                         roundEvents.filter { it.eventType == "B3TR_XAllocationVote" },
@@ -250,7 +253,7 @@ open class XAllocResultService(
         )
     }
 
-    open fun isQuadraticFundingEnabled(roundId: Int): Boolean =
+    open suspend fun isQuadraticFundingEnabled(roundId: Int, bestBlockId: String): Boolean =
         cachedIsQuadraticFundingEnabled[roundId]
             ?: run {
                 val clause =
@@ -259,7 +262,8 @@ open class XAllocResultService(
                         function = isQuadraticFundingDisabledAbi,
                         BigInteger.valueOf(roundId.toLong()),
                     )
-                val response = thorService.executeReadOnlyCode(listOf(clause))
+                val response =
+                    thorClient.inspectClauses(listOf(clause), BlockRevision.Id(bestBlockId))
                 val decoded =
                     FunctionReturnDecoder.decode(
                         response[0].data,

@@ -3,6 +3,7 @@ package org.vechain.indexer.transfer
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -30,9 +31,15 @@ class TransferProcessorTest {
 
     @Test
     fun `process - if no events should not do anything`() {
-        transferProcessor.process(
-            IndexingResult.EventsOnly(events = emptyList(), endBlock = 100, status = Status.SYNCING)
-        )
+        runBlocking {
+            transferProcessor.process(
+                IndexingResult.EventsOnly(
+                    events = emptyList(),
+                    endBlock = 100,
+                    status = Status.SYNCING,
+                )
+            )
+        }
 
         // Verify that no interactions with transferService occur
         verify { transferService wasNot Called }

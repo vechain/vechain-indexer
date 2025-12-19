@@ -18,6 +18,7 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.config.IndexManager
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.version.IndexerVersionService
 
 @SpringBootTest(
@@ -224,14 +225,10 @@ abstract class BasePerformanceTest {
 
         for (i in 0 until count) {
             try {
-                val block = runBlocking { thorClient.getBlock(currentBlock) }
-                if (block != null) {
-                    blocks.add(block)
-                    if ((i + 1) % 100 == 0) {
-                        println("Fetched ${i + 1}/$count blocks...")
-                    }
-                } else {
-                    errors.add("Block $currentBlock returned null")
+                val block = runBlocking { thorClient.getBlock(BlockRevision.Number(currentBlock)) }
+                blocks.add(block)
+                if ((i + 1) % 100 == 0) {
+                    println("Fetched ${i + 1}/$count blocks...")
                 }
             } catch (e: Exception) {
                 errors.add("Failed to fetch block $currentBlock: ${e.message}")

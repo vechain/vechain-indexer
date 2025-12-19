@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.vthoGenerated
 
 import java.math.BigInteger
-import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlock
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
@@ -27,13 +26,12 @@ class ProfiledVthoGeneratedByBlockService(
 ) : VthoGeneratedByBlockService(repository) {
 
     override fun processBlock(
-        events: List<IndexedEvent>,
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<VthoGeneratedByBlock> {
         return profiler.time("      VthoGeneratedByBlockService.processBlock") {
             // Skip blocks with nothing to index
-            if (events.isEmpty() && !callResponses[0].hasAbiData()) {
+            if (!callResponses[0].hasAbiData()) {
                 return@time emptyList()
             }
 

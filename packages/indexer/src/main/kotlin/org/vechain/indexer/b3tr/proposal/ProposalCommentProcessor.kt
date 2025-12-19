@@ -15,7 +15,7 @@ open class ProposalCommentProcessor(
     private val service: ProposalCommentService,
     indexerVersionService: IndexerVersionService,
 ) : BaseProcessor(repository = repository, indexerVersionService, IndexerNames.PROPOSAL_COMMENT) {
-    override fun processEntry(entry: IndexingResult) {
+    override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
         }

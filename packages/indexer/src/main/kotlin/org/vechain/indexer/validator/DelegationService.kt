@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.rest.ExecuteCodeResponse
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -36,12 +35,13 @@ open class DelegationService(
     private val repository: DelegationRepository,
     private val archiveService: ArchiveService<Delegation, DelegationArchive>,
     private val validatorDelegationService: ValidatorDelegationService,
-    @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
+    @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
+    private val stakerSC: String,
 ) {
     private val logger = LoggerFactory.getLogger(DelegationService::class.java)
     private var cachedValidators: Set<String> = emptySet()
 
-    open fun processBlock(
+    open suspend fun processBlock(
         block: Block,
         events: List<IndexedEvent>,
         callResponses: List<InspectionResult>,
@@ -157,7 +157,7 @@ open class DelegationService(
      *
      * @return Pair of (delegations to archive, updated delegations)
      */
-    private fun checkForUpdatesOnUnknown(
+    private suspend fun checkForUpdatesOnUnknown(
         unknown: List<Delegation>,
         block: Block,
         validatorsSnapshots: Map<String, ValidatorSnapshot>,
@@ -169,7 +169,7 @@ open class DelegationService(
         val validators = unknown.groupBy { it.validator }
 
         val snapshotEmpty = validatorsSnapshots.isEmpty()
-        val responses: List<ExecuteCodeResponse> =
+        val responses: List<InspectionResult> =
             (if (snapshotEmpty) {
                 validatorDelegationService.fetchValidationPeriodDetails(validators.keys.toList())
             } else {
@@ -207,7 +207,7 @@ open class DelegationService(
     // Event mutations
     // ------------------------------
 
-    private fun applyEventMutations(
+    private suspend fun applyEventMutations(
         events: List<IndexedEvent>,
         delegations: MutableMap<String, Delegation>,
         delegationsToArchive: MutableList<Delegation>,
@@ -244,7 +244,7 @@ open class DelegationService(
     // ------------------------------
 
     /** Handles a new delegation being initiated. */
-    private fun handleDelegationInitiated(
+    private suspend fun handleDelegationInitiated(
         ev: IndexedEvent,
         delegations: MutableMap<String, Delegation>,
         block: Block,
@@ -379,7 +379,7 @@ open class DelegationService(
     }
 
     /** Handles a validator requesting exit → updates all of its delegations. */
-    private fun handleValidatorExitRequested(
+    private suspend fun handleValidatorExitRequested(
         ev: IndexedEvent,
         delegations: MutableMap<String, Delegation>,
         delegationsToArchive: MutableList<Delegation>,

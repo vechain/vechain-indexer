@@ -14,8 +14,9 @@ import org.vechain.indexer.explorer.TimestampUtils.isDailyChange
 import org.vechain.indexer.explorer.TimestampUtils.isHourlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isMonthlyChange
 import org.vechain.indexer.explorer.TimestampUtils.isWeeklyChange
-import org.vechain.indexer.thor.ThorService
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildVTHOTotalsClauses
@@ -29,7 +30,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @Service
 open class ValidatorBlockService(
     private val repository: ValidatorBlockRepository,
-    private val thorService: ThorService,
+    private val thorClient: ThorClient,
 ) {
     private val cachedGetValidatorsAbi: ConcurrentHashMap<String, AbiElement> = ConcurrentHashMap()
 
@@ -48,7 +49,7 @@ open class ValidatorBlockService(
         preLoadOfflineValidators()
     }
 
-    open fun processBlock(
+    open suspend fun processBlock(
         block: Block,
         callResponses: List<InspectionResult>,
     ): List<ValidatorBlock> {
@@ -85,7 +86,10 @@ open class ValidatorBlockService(
         }
     }
 
-    fun getValidationInfo(block: Block, decodedInfo: DecodedValidatorInfo?): ValidatorBlock? {
+    suspend fun getValidationInfo(
+        block: Block,
+        decodedInfo: DecodedValidatorInfo?,
+    ): ValidatorBlock? {
         // Get total VTHO issued at this block
         val blockTotalSupply = getTotalVTHOIssued(decodedInfo, block.id)
 
@@ -207,15 +211,19 @@ open class ValidatorBlockService(
     }
 
     /** Resolve total VTHO issued = totalSupply + burned */
-    fun getTotalVTHOIssued(decodedInfo: DecodedValidatorInfo?, blockId: String): BigInteger {
+    suspend fun getTotalVTHOIssued(
+        decodedInfo: DecodedValidatorInfo?,
+        blockId: String,
+    ): BigInteger {
         if (decodedInfo == null) {
             return getTotalVTHOIssuedAtBlock(blockId)
         }
         return decodedInfo.vthoTotalSupply
     }
 
-    fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
-        val response = thorService.inspectClausesAtBlock(buildVTHOTotalsClauses(), blockId)
+    suspend fun getTotalVTHOIssuedAtBlock(blockId: String): BigInteger {
+        val response =
+            thorClient.inspectClauses(buildVTHOTotalsClauses(), BlockRevision.Id(blockId))
 
         if (response.size < 2) {
             return BigInteger.ZERO
@@ -223,8 +231,22 @@ open class ValidatorBlockService(
 
         val inspectionResults =
             listOf(
-                InspectionResult(response[0].data, emptyList(), emptyList(), false, null),
-                InspectionResult(response[1].data, emptyList(), emptyList(), false, null),
+                InspectionResult(
+                    data = response[0].data,
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 0,
+                    reverted = false,
+                    vmError = null,
+                ),
+                InspectionResult(
+                    data = response[1].data,
+                    events = emptyList(),
+                    transfers = emptyList(),
+                    gasUsed = 0,
+                    reverted = false,
+                    vmError = null,
+                ),
             )
 
         return decodeVTHOIssued(inspectionResults)

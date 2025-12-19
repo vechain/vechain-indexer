@@ -9,6 +9,7 @@ import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.domain.ValidatorDecoder.decodeResponseInfo
+import org.vechain.indexer.validator.logic.ValidatorCalculator.MAX_UINT32
 import org.vechain.indexer.validator.logic.ValidatorCalculator.blocksPerYear
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNextCycleBlock
 import org.vechain.indexer.validator.logic.ValidatorCalculator.calculateNftLevelYields
@@ -21,6 +22,9 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator.determineVTHOIssu
 import org.vechain.indexer.validator.logic.ValidatorCalculator.resolveStatus
 import org.vechain.indexer.validator.models.DecodedValidatorInfo
 import org.vechain.indexer.validator.models.DecodedValidatorRow
+
+/** Holds queue position info for a QUEUED validator */
+data class QueueInfo(val position: Long, val availableStartBlock: Long)
 
 object ValidatorAssembler {
     fun getLatestValidatorInfo(
@@ -100,6 +104,9 @@ object ValidatorAssembler {
                 )
             }
 
+        // Calculate queue positions and available start blocks for QUEUED validators
+        val queueInfo = calculateQueueInfo(rows, existingDocs)
+
         val nextPeriodTotalWeight =
             totalNextPeriodWeights.reduceOrNull(BigInteger::add) ?: BigInteger.ZERO
 
@@ -130,6 +137,7 @@ object ValidatorAssembler {
                         nextPeriodTotalWeight,
                         totalNextPeriodVET,
                         vthoIssuedNextCycle,
+                        queueInfo[row.id],
                     )
 
                 val existing = existingDocs[row.id]
@@ -163,6 +171,8 @@ object ValidatorAssembler {
                         blockProbability = Decimal128(0),
                         blocksPerYear = Decimal128(0),
                         version = oldVal.version + 1,
+                        queuePosition = null,
+                        availableStartBlock = null,
                     )
                 } else {
                     null
@@ -186,6 +196,7 @@ object ValidatorAssembler {
         nextPeriodTotalWeight: BigInteger,
         totalNextPeriodVET: BigInteger,
         vthoIssuedNextCycle: BigDecimal,
+        queueInfo: QueueInfo?,
     ): Validator {
         val vetPrice = NumberUtils.toUSD(vetPriceUsd)
         val vthoPrice = NumberUtils.toUSD(vthoPriceUsd)
@@ -277,6 +288,9 @@ object ValidatorAssembler {
             percentageOffline = NumberUtils.toSafeDecimal128(offline.percentageOffline),
             version = (existingDoc?.version ?: 0) + 1,
             cycleEndBlock = cycleEndBlock,
+            exitBlock = row.exitBlock.takeIf { it > BigInteger.ZERO && it != MAX_UINT32 }?.toLong(),
+            queuePosition = queueInfo?.position,
+            availableStartBlock = queueInfo?.availableStartBlock,
         )
     }
 
@@ -286,4 +300,64 @@ object ValidatorAssembler {
             ?: throw IllegalArgumentException(
                 "Expected List<${T::class.simpleName}> for key '$key'"
             )
+
+    /**
+     * Calculate queue positions and available start blocks for QUEUED validators.
+     *
+     * Logic:
+     * - Queue positions follow FIFO order (first in, first out)
+     * - Validators keep their relative order from previous block
+     * - New validators are added to the end of the queue
+     * - When a validator leaves the queue, remaining validators move up
+     * - Available start block is determined by:
+     *     - If they have a startBlock > 0, use that
+     *     - Otherwise, match to exiting validators by position (1st queued -> 1st exiting's
+     *       exitBlock)
+     *     - If no matching exiting validator, 0 (unknown)
+     */
+    fun calculateQueueInfo(
+        rows: List<DecodedValidatorRow>,
+        existingDocs: Map<String, Validator>,
+    ): Map<String, QueueInfo> {
+        // Status 1 = QUEUED, Status 4 = EXITING
+        val queuedRows = rows.filter { it.status.toInt() == 1 }
+        if (queuedRows.isEmpty()) return emptyMap()
+
+        // Get exiting validators sorted by exit block (earliest first)
+        // 4294967295 (MAX_UINT32) means exit block is not set
+        val exitingBlocks =
+            rows
+                .filter {
+                    it.status.toInt() == 4 &&
+                        it.exitBlock > BigInteger.ZERO &&
+                        it.exitBlock < MAX_UINT32
+                }
+                .map { it.exitBlock }
+                .sorted()
+
+        // Separate into existing queued (have previous position) and newly queued
+        val (existingQueued, newlyQueued) =
+            queuedRows.partition { row -> existingDocs[row.id]?.queuePosition != null }
+
+        // Sort existing queued by their previous position (FIFO order)
+        val sortedExisting =
+            existingQueued.sortedBy { row -> existingDocs[row.id]?.queuePosition ?: Long.MAX_VALUE }
+
+        // New validators go to the end of the queue
+        val orderedQueue = sortedExisting + newlyQueued
+
+        // Calculate available start block and assign positions
+        return orderedQueue
+            .mapIndexed { index, row ->
+                val availableStart =
+                    when {
+                        row.startBlock > BigInteger.ZERO -> row.startBlock.toLong()
+                        index < exitingBlocks.size -> exitingBlocks[index].toLong()
+                        else -> 0L // No matching exiting validator
+                    }
+                row.id to
+                    QueueInfo(position = (index + 1).toLong(), availableStartBlock = availableStart)
+            }
+            .toMap()
+    }
 }
