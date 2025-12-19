@@ -986,21 +986,32 @@ module "vpc-endpoints" {
   ] : []
 }
 
-# waf
+################################################################################
+# WAF for API Load Balancers
+################################################################################
+
 module "waf" {
-  count                              = startswith(local.env.environment, "prod") ? 1 : 0
-  source                             = "git::git@github.com:/vechain/devops.git//waf?ref=release/node-hosting/v6"
-  env                                = local.env.environment
-  project_name                       = var.project
-  waf_cloudfront_enable              = false
-  waf_regional_enable                = true
-  logs_enable                        = true
-  logs_s3_enable                     = false
-  logs_retension                     = 30
-  regional_rule                      = "${local.env.environment}-${var.project}-ip-set"
-  scope                              = "REGIONAL"
-  associate_waf                      = true
-  rate_limit                         = local.env.rate_limit
-  rate_limit_exception_list          = local.env.rate_limit_exception_list
-  managed_rule_group_statement_rules = null
+  count  = startswith(local.env.environment, "prod") ? 1 : 0
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=v.3.1.27"
+
+  env          = local.env.environment
+  project_name = "${var.project}-indexer"
+  scope        = "REGIONAL"
+
+  # Enable regional WAF for ALB protection
+  waf_regional_enable = true
+
+  # Associate WAF with all API ALBs
+  associate_waf = true
+  resource_arn  = [for service in module.ecs-lb-service-api : service.alb_arn]
+
+  # Rate limiting configuration (defaults to 2000 requests per 5 minutes per IP)
+  rate_limit                = local.env.alb.waf.waf_rate_limit
+  rate_limit_exception_list = local.env.alb.waf.waf_rate_limit_exception_list
+
+  # Required variables
+  managed_rule_group_statement_rules = []
+  rate_based_statement_rules         = []
+
+  depends_on = [module.ecs-lb-service-api]
 }
