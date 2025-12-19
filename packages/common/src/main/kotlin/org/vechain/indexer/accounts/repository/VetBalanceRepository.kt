@@ -6,6 +6,8 @@ import org.vechain.indexer.accounts.VetBalance
 
 @Profile("accounts", "vet-balance")
 interface VetBalanceRepository : BaseIndexedRepository<VetBalance, String> {
+    fun findFirstByAddressOrderByBlockTimestampDesc(address: String): VetBalance?
+
     fun findByAddressAndBlockTimestampBetweenOrderByBlockTimestampDesc(
         address: String,
         startTimestamp: Long,
