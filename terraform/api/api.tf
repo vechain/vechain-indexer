@@ -755,6 +755,10 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.contracts
     },
     {
+      name = "VERSION_VET_BALANCE"
+      value = each.value.indexer.version.vet-balance
+    },
+    {
       name  = "MIN_COMMENT_LEN"
       value = each.value.comments.min-length
     },
@@ -873,6 +877,10 @@ module "ecs-backend-service" {
     {
       name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_CONTRACTS"
       value = each.value.indexer.sync-block-batch-size.contracts
+    },
+    {
+      name  = "INDEXER_SYNC_BLOCK_BATCH_SIZE_VET_BALANCE"
+      value = each.value.indexer.sync-block-batch-size.vet-balance
     },
     {
       name  = "INDEXER_CHANNEL_BATCH_SIZE"

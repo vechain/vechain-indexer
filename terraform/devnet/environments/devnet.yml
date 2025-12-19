@@ -126,6 +126,7 @@ enabled_nets:
       sync-log-interval: '100'
       sync-block-batch-size:
         contracts:                 '100'
+        vet-balance:               '100'
         nfts:                       '100'
         transfers:                  '100'
         vevote:                     '100'
@@ -145,6 +146,7 @@ enabled_nets:
         inactive-threshold-not-syncing: '600'
       version:
         contracts:                  '1'
+        vet-balance:                '1'
         nfts:                       '7'
         transfers:                  '6'
         fungible-token-interactions: '4'
