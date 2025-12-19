@@ -43,7 +43,6 @@
         "title": "Avg. Response Time (ms)",
         "title_size": "16",
         "title_align": "left",
-        "time": {},
         "type": "query_value",
         "requests": [
           {
@@ -368,6 +367,100 @@
       }
     },
     {
+      "id": 4106623178559911,
+      "definition": {
+        "title": "Response time (p95)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:thor_client_request_duration.percentile{indexer-id:$indexer-id.value, phi:0.95} by {endpoint}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "id": 321214731188265,
+      "definition": {
+        "title": "Response time (p75)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": [
+          "avg",
+          "min",
+          "max",
+          "value",
+          "sum"
+        ],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:thor_client_request_duration.percentile{indexer-id:$indexer-id.value, phi:0.75} by {endpoint}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": {
+              "order_by": "values",
+              "line_type": "solid",
+              "line_width": "normal"
+            },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 8,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
       "id": 9,
       "definition": {
         "title": "Requests by Endpoint",
@@ -412,7 +505,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 8,
+        "y": 11,
         "width": 6,
         "height": 4
       }
@@ -468,7 +561,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 8,
+        "y": 11,
         "width": 6,
         "height": 4
       }
@@ -518,7 +611,7 @@
       },
       "layout": {
         "x": 0,
-        "y": 12,
+        "y": 15,
         "width": 6,
         "height": 4
       }
@@ -565,7 +658,7 @@
       },
       "layout": {
         "x": 6,
-        "y": 12,
+        "y": 15,
         "width": 6,
         "height": 4
       }
