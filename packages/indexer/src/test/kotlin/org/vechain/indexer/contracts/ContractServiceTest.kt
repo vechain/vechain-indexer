@@ -153,8 +153,8 @@ internal class ContractServiceTest {
         val details = blockDetails(blockId = blockIdB, blockNumber = 124L, blockTimestamp = 1111L)
         val events =
             listOf(
-                masterEvent(newMaster = "0xMASTER_NEW"),
                 masterEvent(newMaster = "0xMASTER_IGNORED"),
+                masterEvent(newMaster = "0xMASTER_NEW"),
             )
 
         val updated = service.callUpdateExistingRecord(details, events, existing)
