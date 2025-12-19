@@ -105,7 +105,8 @@ internal class ContractServiceTest {
         blockTimestamp: Long = 1000L,
         version: Int = 5,
         createdOn: Long = 900L,
-        deployer: String = "0xDEPLOYER",
+        deploymentTxId: String = "0xDEPLOY_TX",
+        deploymentClauseIndex: Long = 0L,
         master: String = "0xMASTER_OLD",
     ) =
         Contract(
@@ -115,7 +116,8 @@ internal class ContractServiceTest {
             blockTimestamp = blockTimestamp,
             version = version,
             createdOn = createdOn,
-            deployer = deployer,
+            deploymentTxId = deploymentTxId,
+            deploymentClauseIndex = deploymentClauseIndex,
             master = master,
             isErc20 = null,
             isErc721 = null,
@@ -159,7 +161,8 @@ internal class ContractServiceTest {
 
         assertEquals(existing.address, updated.address)
         assertEquals(existing.createdOn, updated.createdOn)
-        assertEquals(existing.deployer, updated.deployer)
+        assertEquals(existing.deploymentTxId, updated.deploymentTxId)
+        assertEquals(existing.deploymentClauseIndex, updated.deploymentClauseIndex)
         assertEquals(existing.version + 1, updated.version)
         assertEquals(details.blockId, updated.blockId)
         assertEquals(details.blockNumber, updated.blockNumber)
@@ -191,45 +194,48 @@ internal class ContractServiceTest {
     }
 
     @Test
-    fun `createNewRecord uses first event as deployer and last event as master`() = runBlocking {
-        mockkObject(ContractUtils)
-        try {
-            coEvery { thorClient.getAccountCode(any(), any()) } returns
-                io.mockk.mockk<AccountCodeResponse>(relaxed = true) {
-                    every { code } returns "0xdeadbeef"
-                }
+    fun `createNewRecord uses first event for deployment info and last event for master`() =
+        runBlocking {
+            mockkObject(ContractUtils)
+            try {
+                coEvery { thorClient.getAccountCode(any(), any()) } returns
+                    io.mockk.mockk<AccountCodeResponse>(relaxed = true) {
+                        every { code } returns "0xdeadbeef"
+                    }
 
-            every { ContractUtils.isContractType(Contracts.ERC20, any()) } returns true
-            every { ContractUtils.isContractType(Contracts.ERC721, any()) } returns false
-            every { ContractUtils.isContractType(Contracts.ERC1155, any()) } returns false
+                every { ContractUtils.isContractType(Contracts.ERC20, any()) } returns true
+                every { ContractUtils.isContractType(Contracts.ERC721, any()) } returns false
+                every { ContractUtils.isContractType(Contracts.ERC1155, any()) } returns false
 
-            val details = blockDetails(blockId = blockIdA, blockNumber = 7L, blockTimestamp = 1700L)
-            val result =
-                service.callCreateNewRecord(
-                    details,
-                    contractAddress = "0xCONTRACT",
-                    events =
-                        listOf(
-                            masterEvent(newMaster = "0xDEPLOYER"),
-                            masterEvent(newMaster = "0xMASTER_FINAL"),
-                        ),
-                )!!
+                val details =
+                    blockDetails(blockId = blockIdA, blockNumber = 7L, blockTimestamp = 1700L)
+                val result =
+                    service.callCreateNewRecord(
+                        details,
+                        contractAddress = "0xCONTRACT",
+                        events =
+                            listOf(
+                                masterEvent(newMaster = "0xDEPLOYER"),
+                                masterEvent(newMaster = "0xMASTER_FINAL"),
+                            ),
+                    )!!
 
-            assertEquals("0xCONTRACT", result.address)
-            assertEquals(details.blockId, result.blockId)
-            assertEquals(details.blockNumber, result.blockNumber)
-            assertEquals(details.blockTimestamp, result.blockTimestamp)
-            assertEquals(0, result.version)
-            assertEquals(details.blockTimestamp, result.createdOn)
-            assertEquals("0xDEPLOYER", result.deployer)
-            assertEquals("0xMASTER_FINAL", result.master)
-            assertEquals(true, result.isErc20)
-            assertEquals(false, result.isErc721)
-            assertEquals(false, result.isErc1155)
-        } finally {
-            unmockkObject(ContractUtils)
+                assertEquals("0xCONTRACT", result.address)
+                assertEquals(details.blockId, result.blockId)
+                assertEquals(details.blockNumber, result.blockNumber)
+                assertEquals(details.blockTimestamp, result.blockTimestamp)
+                assertEquals(0, result.version)
+                assertEquals(details.blockTimestamp, result.createdOn)
+                assertEquals("tx-id", result.deploymentTxId)
+                assertEquals(0L, result.deploymentClauseIndex)
+                assertEquals("0xMASTER_FINAL", result.master)
+                assertEquals(true, result.isErc20)
+                assertEquals(false, result.isErc721)
+                assertEquals(false, result.isErc1155)
+            } finally {
+                unmockkObject(ContractUtils)
+            }
         }
-    }
 
     @Test
     fun `createOrUpdateExisting creates when existing is null`() = runBlocking {

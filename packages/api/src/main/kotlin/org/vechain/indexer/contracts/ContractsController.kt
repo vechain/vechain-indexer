@@ -42,12 +42,12 @@ open class ContractsController(private val contractsService: ContractsService) {
             ?: throw ResourceNotFoundException("Contract not found for address $address")
 
     @GetMapping("/by-owner/{address}")
-    @Operation(summary = "Get contracts where address is deployer or master")
+    @Operation(summary = "Get contracts where address is master")
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
         required = true,
-        description = "The address to query as deployer or master.",
+        description = "The address to query as master.",
     )
     @CommonApiResponses
     @PaginationParameters
@@ -59,6 +59,6 @@ open class ContractsController(private val contractsService: ContractsService) {
     ): PaginatedResponse<Contract> {
         val pageable = PaginationUtils.toPageable(page, size, direction, Contract::createdOn.name)
 
-        return paginatedResponse(contractsService.getByDeployerOrMaster(address, pageable))
+        return paginatedResponse(contractsService.getByMaster(address, pageable))
     }
 }
