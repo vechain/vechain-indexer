@@ -31,7 +31,7 @@ internal class VetBalanceServiceTest {
         blockTimestamp: Long,
         from: String,
         to: String,
-        value: String,
+        amount: String,
     ) =
         buildIndexedEvent(
             id = "evt-$blockNumber-$from-$to",
@@ -41,7 +41,7 @@ internal class VetBalanceServiceTest {
             eventType = "VET_TRANSFER",
             params =
                 AbiEventParameters(
-                    returnValues = mapOf("from" to from, "to" to to, "value" to value)
+                    returnValues = mapOf("from" to from, "to" to to, "amount" to amount)
                 ),
         )
 
@@ -79,7 +79,7 @@ internal class VetBalanceServiceTest {
                         blockTimestamp,
                         from = from,
                         to = to,
-                        value = "10",
+                        amount = "10",
                     )
                 )
             )
@@ -125,7 +125,7 @@ internal class VetBalanceServiceTest {
                         blockTimestamp,
                         from = a,
                         to = b,
-                        value = "10",
+                        amount = "10",
                     ),
                     vetTransferEvent(
                         blockId,
@@ -133,7 +133,7 @@ internal class VetBalanceServiceTest {
                         blockTimestamp,
                         from = c,
                         to = a,
-                        value = "5",
+                        amount = "5",
                     ),
                 )
             )
