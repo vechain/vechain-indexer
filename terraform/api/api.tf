@@ -1004,7 +1004,7 @@ module "vpc-endpoints" {
 
 module "waf" {
   count  = startswith(local.env.environment, "prod") ? 1 : 0
-  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref="git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=waf_indexer_fix"
+  source = "git::git@github.com:/vechain/terraform_infrastructure_modules.git//waf?ref=waf_indexer_fix"
 
   env          = local.env.environment
   project_name = "${var.project}-indexer"
