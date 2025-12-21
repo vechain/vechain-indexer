@@ -1,0 +1,26 @@
+{
+  "network": "custom",
+  "launchTime": 1530316800,
+  "allocations": [
+    {
+      "address": "0x7567d83b7b8d80addcb281a71d54fc7b3364ffed",
+      "balance": "25000000000000000000000000"
+    },
+    {
+      "address": "0x137053dfbe6c0a43f915ad2efefefdcc2708e975",
+      "balance": "21046908616500000000000000000"
+    },
+    {
+      "address": "0xaf111431c1284a5e16d2eecd2daed133ce96820e",
+      "balance": "21046908616500000000000000000"
+    },
+    {
+      "address": "0x997522a4274336f4b86af4a6ed9e45aedcc6d360",
+      "balance": "21046908616500000000000000000"
+    },
+    {
+      "address": "0x0bd7b06debd1522e75e4b91ff598f107fd826c8a",
+      "balance": "21046908616500000000000000000"
+    }
+  ]
+}

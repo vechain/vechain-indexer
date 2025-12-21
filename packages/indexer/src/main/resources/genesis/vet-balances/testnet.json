@@ -1,0 +1,14 @@
+{
+  "network": "testnet",
+  "launchTime": 1530014400,
+  "allocations": [
+    {
+      "address": "0xe59d475abe695c7f67a8a2321f33a856b0b4c71d",
+      "balance": "50000000000000000000000000000"
+    },
+    {
+      "address": "0xb4094c25f86d628fdd571afc4077f0d0196afb48",
+      "balance": "25000000000000000000000000"
+    }
+  ]
+}

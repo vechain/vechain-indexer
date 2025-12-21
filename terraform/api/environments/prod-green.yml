@@ -170,6 +170,7 @@ enabled_nets:
       sync-log-interval: '20'
       sync-block-batch-size:
         contracts:                 '250'
+        vet-balance:               '250'
         nfts:                       '250'
         transfers:                  '250'
         vevote:                     '250'
@@ -189,6 +190,7 @@ enabled_nets:
         inactive-threshold-not-syncing: '600'
       version:
         contracts: '1'
+        vet-balance: '1'
         nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
@@ -374,6 +376,7 @@ enabled_nets:
       sync-log-interval: '100'
       sync-block-batch-size:
         contracts:                 '200'
+        vet-balance:               '200'
         nfts:                       '200'
         transfers:                  '200'
         vevote:                     '200'
@@ -393,6 +396,7 @@ enabled_nets:
         inactive-threshold-not-syncing: '600'
       version:
         contracts: '1'
+        vet-balance: '1'
         nfts: '2'
         transfers: '1'
         fungible-token-interactions: '1'
