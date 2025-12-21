@@ -317,5 +317,29 @@ class EventUtilsTest {
 
             assertEquals(listOf(1L, 2L, 3L), grouped.keys.toList().map { it.blockNumber })
         }
+
+        @Test
+        fun `groupByBlock returns all values when multiple from the same block`() {
+            val events =
+                listOf(
+                    buildIndexedEvent(
+                        blockId = "block1",
+                        blockNumber = 1L,
+                        blockTimestamp = 10L,
+                        params = AbiEventParameters(returnValues = emptyMap()),
+                    ),
+                    buildIndexedEvent(
+                        blockId = "block1",
+                        blockNumber = 1L,
+                        blockTimestamp = 10L,
+                        params = AbiEventParameters(returnValues = emptyMap()),
+                    ),
+                )
+
+            val grouped = EventUtils.groupByBlock(events)
+
+            assertEquals(1, grouped.size)
+            assertEquals(2, grouped[BlockDetails("block1", 1L, 10L)]!!.size)
+        }
     }
 }

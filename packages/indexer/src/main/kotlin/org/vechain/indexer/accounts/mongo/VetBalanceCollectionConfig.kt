@@ -22,6 +22,7 @@ import org.vechain.indexer.accounts.VetBalance
 import org.vechain.indexer.config.NetworkDetectionService
 import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.config.mongo.CollectionConfig
+import org.vechain.indexer.thor.HexUtils.normalise
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "vet-balance")
@@ -103,7 +104,7 @@ open class VetBalanceCollectionConfig(
         val normalizedAllocations =
             genesis.allocations.map { allocation ->
                 GenesisAllocation(
-                    address = allocation.address.lowercase(),
+                    address = normalise(allocation.address),
                     balance = allocation.balance,
                 )
             }
