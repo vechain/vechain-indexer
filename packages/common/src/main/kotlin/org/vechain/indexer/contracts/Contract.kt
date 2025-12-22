@@ -13,7 +13,7 @@ import org.vechain.indexer.thor.model.Views
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Contract(
-    @JsonIgnore @Id val address: String,
+    @Id val address: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
