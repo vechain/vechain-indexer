@@ -53,3 +53,5 @@ packages/**/.env.*
 .schemathesis/
 .hypothesis/
 .venv-schemathesis/
+
+.gradle-user-home
