@@ -41,7 +41,7 @@ open class ContractsController(private val contractsService: ContractsService) {
         contractsService.getByAddress(address)
             ?: throw ResourceNotFoundException("Contract not found for address $address")
 
-    @GetMapping("/by-owner/{address}")
+    @GetMapping("/by-master/{address}")
     @Operation(summary = "Get contracts where address is master")
     @AddressParameter(
         name = "address",
@@ -51,7 +51,7 @@ open class ContractsController(private val contractsService: ContractsService) {
     )
     @CommonApiResponses
     @PaginationParameters
-    open fun getContractsByOwner(
+    open fun getContractsByMaster(
         @ValidAddress @PathVariable address: Address,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
