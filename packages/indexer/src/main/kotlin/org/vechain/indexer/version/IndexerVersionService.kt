@@ -39,7 +39,10 @@ open class IndexerVersionService(
                     "No version document found for $collectionName. Creating new version document."
                 )
                 updateIndexerVersion(indexerName, collectionName, newVersion)
-                return true
+                // Do not treat this as a "reset" of the collection; it only bootstraps the version
+                // document. Returning true here causes callers to drop archive collections even
+                // though the main collection hasn't been dropped.
+                return false
             }
 
             if (storedVersion < newVersion) {
