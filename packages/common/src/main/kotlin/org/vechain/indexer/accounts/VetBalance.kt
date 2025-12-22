@@ -20,8 +20,8 @@ constructor(
     @JsonIgnore @Id val id: String,
     @JsonIgnore val address: String,
     @JsonIgnore override val blockId: String,
-    @JsonIgnore override val blockNumber: Long,
-    @JsonIgnore override val blockTimestamp: Long,
+    override val blockNumber: Long,
+    override val blockTimestamp: Long,
     val balance: BigInteger,
 ) : IndexedDocument {
     constructor(
