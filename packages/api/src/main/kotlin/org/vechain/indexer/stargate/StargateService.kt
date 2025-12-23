@@ -469,16 +469,17 @@ open class StargateService(
         val sortDesc = pageable.sort.getOrderFor("blockTimestamp")?.isDescending ?: true
         val edgeIndex = if (sortDesc) 0 else slice.content.lastIndex
 
-        val adjustedContent = slice.content.toMutableList()
+        val content = slice.content
         val idxAll =
-            if (adjustedContent[edgeIndex].rewardPeriod == RewardPeriod.ALL) {
+            if (content[edgeIndex].rewardPeriod == RewardPeriod.ALL) {
                 edgeIndex
             } else {
-                adjustedContent.indexOfFirst { it.rewardPeriod == RewardPeriod.ALL }
+                content.indexOfFirst { it.rewardPeriod == RewardPeriod.ALL }
             }
 
         if (idxAll < 0) return slice
 
+        val adjustedContent = content.toMutableList()
         val existingTargetBucketKeys =
             adjustedContent
                 .asSequence()
