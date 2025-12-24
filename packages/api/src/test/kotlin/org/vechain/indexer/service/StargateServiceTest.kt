@@ -20,7 +20,6 @@ import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByBlockRepository
 import org.vechain.indexer.stargate.vthoGenerated.VthoGeneratedByBlockRepository
 import strikt.api.expectThat
 import strikt.assertions.containsExactly
-import strikt.assertions.isEmpty
 
 class StargateServiceTest {
     private val vthoClaimedByBlockRepository: VthoClaimedByBlockRepository = mockk()
@@ -45,7 +44,7 @@ class StargateServiceTest {
         )
 
     @Test
-    fun `getRewards drops ALL when it duplicates finalized bucket`() {
+    fun `getRewards normalizes ALL documents to DAY period`() {
         val tokenId = "42"
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("blockTimestamp")))
 
@@ -88,11 +87,139 @@ class StargateServiceTest {
                 pageable,
             )
 
-        expectThat(slice.content).containsExactly(dayDoc)
+        val expectedNormalizedAll =
+            reward(
+                id = "all-1",
+                rewardPeriod = RewardPeriod.DAY,
+                blockTimestamp = 200,
+                dayOfMonth = 25,
+                month = 10,
+                year = 2025,
+                rewards = BigInteger("456"), // normalized from dayReward
+            )
+
+        expectThat(slice.content).containsExactly(dayDoc, expectedNormalizedAll)
     }
 
     @Test
-    fun `getRewards drops ALL when normalized value is zero`() {
+    fun `getRewards normalizes ALL documents to WEEK period`() {
+        val tokenId = "42"
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("blockTimestamp")))
+
+        val allTracker =
+            reward(
+                id = "all-1",
+                rewardPeriod = RewardPeriod.ALL,
+                blockTimestamp = 200,
+                dayOfMonth = 25,
+                weekOfYear = 43,
+                month = 10,
+                year = 2025,
+                rewards = BigInteger("999"),
+                weekReward = BigInteger("789"),
+            )
+
+        every {
+            tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
+                tokenId,
+                listOf(RewardPeriod.WEEK, RewardPeriod.ALL),
+                pageable,
+            )
+        } returns SliceImpl(listOf(allTracker), pageable, false)
+
+        val slice =
+            service.getRewards(
+                tokenId = tokenId,
+                validator = null,
+                period = RewardPeriod.WEEK,
+                pageable,
+            )
+
+        expectThat(slice.content)
+            .containsExactly(
+                reward(
+                    id = "all-1",
+                    rewardPeriod = RewardPeriod.WEEK,
+                    blockTimestamp = 200,
+                    dayOfMonth = 25,
+                    weekOfYear = 43,
+                    month = 10,
+                    year = 2025,
+                    rewards = BigInteger("789"), // normalized from weekReward
+                )
+            )
+    }
+
+    @Test
+    fun `getRewards normalizes multiple ALL documents to target period`() {
+        val tokenId = "42"
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.asc("blockTimestamp")))
+
+        val allTracker1 =
+            reward(
+                id = "all-1",
+                rewardPeriod = RewardPeriod.ALL,
+                blockTimestamp = 100,
+                dayOfMonth = 25,
+                month = 10,
+                year = 2025,
+                rewards = BigInteger("999"),
+                monthReward = BigInteger("111"),
+            )
+
+        val allTracker2 =
+            reward(
+                id = "all-2",
+                rewardPeriod = RewardPeriod.ALL,
+                blockTimestamp = 200,
+                dayOfMonth = 26,
+                month = 10,
+                year = 2025,
+                rewards = BigInteger("888"),
+                monthReward = BigInteger("222"),
+            )
+
+        every {
+            tokenRewardRepository.findByTokenIdAndRewardPeriodIn(
+                tokenId,
+                listOf(RewardPeriod.MONTH, RewardPeriod.ALL),
+                pageable,
+            )
+        } returns SliceImpl(listOf(allTracker1, allTracker2), pageable, false)
+
+        val slice =
+            service.getRewards(
+                tokenId = tokenId,
+                validator = null,
+                period = RewardPeriod.MONTH,
+                pageable,
+            )
+
+        expectThat(slice.content)
+            .containsExactly(
+                reward(
+                    id = "all-1",
+                    rewardPeriod = RewardPeriod.MONTH,
+                    blockTimestamp = 100,
+                    dayOfMonth = 25,
+                    month = 10,
+                    year = 2025,
+                    rewards = BigInteger("111"), // normalized from monthReward
+                ),
+                reward(
+                    id = "all-2",
+                    rewardPeriod = RewardPeriod.MONTH,
+                    blockTimestamp = 200,
+                    dayOfMonth = 26,
+                    month = 10,
+                    year = 2025,
+                    rewards = BigInteger("222"), // normalized from monthReward
+                ),
+            )
+    }
+
+    @Test
+    fun `getRewards handles null period rewards by using zero`() {
         val tokenId = "42"
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("blockTimestamp")))
 
@@ -105,7 +232,7 @@ class StargateServiceTest {
                 month = 10,
                 year = 2025,
                 rewards = BigInteger("999"),
-                dayReward = BigInteger.ZERO,
+                dayReward = null, // null day reward
             )
 
         every {
@@ -124,7 +251,18 @@ class StargateServiceTest {
                 pageable,
             )
 
-        expectThat(slice.content).isEmpty()
+        expectThat(slice.content)
+            .containsExactly(
+                reward(
+                    id = "all-1",
+                    rewardPeriod = RewardPeriod.DAY,
+                    blockTimestamp = 200,
+                    dayOfMonth = 25,
+                    month = 10,
+                    year = 2025,
+                    rewards = BigInteger.ZERO, // null becomes zero
+                )
+            )
     }
 
     private fun reward(

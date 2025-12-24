@@ -463,40 +463,15 @@ open class StargateService(
         // If target == ALL → nothing to normalize; return as-is.
         if (target == RewardPeriod.ALL || slice.isEmpty) return slice
 
-        // We included ALL in the query; adjust the ALL doc to look like the target period (if it
-        // represents the "current period so far") and drop it if it's empty or duplicates a
-        // finalized bucket already returned.
-        val sortDesc = pageable.sort.getOrderFor("blockTimestamp")?.isDescending ?: true
-        val edgeIndex = if (sortDesc) 0 else slice.content.lastIndex
-
-        val content = slice.content
-        val idxAll =
-            if (content[edgeIndex].rewardPeriod == RewardPeriod.ALL) {
-                edgeIndex
-            } else {
-                content.indexOfFirst { it.rewardPeriod == RewardPeriod.ALL }
+        // Normalize all ALL documents to the target period
+        val adjustedContent =
+            slice.content.map { doc ->
+                if (doc.rewardPeriod == RewardPeriod.ALL) {
+                    normalizeAllAs(doc, target)
+                } else {
+                    doc
+                }
             }
-
-        if (idxAll < 0) return slice
-
-        val adjustedContent = content.toMutableList()
-        val existingTargetBucketKeys =
-            adjustedContent
-                .asSequence()
-                .filterIndexed { idx, doc -> idx != idxAll && doc.rewardPeriod == target }
-                .map { rewardBucketKey(target, it) }
-                .toSet()
-
-        val normalized = normalizeAllAs(adjustedContent[idxAll], target)
-        val shouldDrop =
-            normalized.rewards == BigInteger.ZERO ||
-                rewardBucketKey(target, normalized) in existingTargetBucketKeys
-
-        if (shouldDrop) {
-            adjustedContent.removeAt(idxAll)
-        } else {
-            adjustedContent[idxAll] = normalized
-        }
 
         return SliceImpl(adjustedContent, pageable, slice.hasNext())
     }
@@ -637,17 +612,6 @@ open class StargateService(
             cycleReward = null,
         )
     }
-
-    private fun rewardBucketKey(target: RewardPeriod, reward: TokenReward): String =
-        when (target) {
-            RewardPeriod.DAY ->
-                "${reward.validator}:${reward.year}-${reward.month}-${reward.dayOfMonth}"
-            RewardPeriod.WEEK -> "${reward.validator}:${reward.year}-W${reward.weekOfYear}"
-            RewardPeriod.MONTH -> "${reward.validator}:${reward.year}-${reward.month}"
-            RewardPeriod.YEAR -> "${reward.validator}:${reward.year}"
-            RewardPeriod.CYCLE -> "${reward.validator}:C${reward.cycle}"
-            RewardPeriod.ALL -> "${reward.validator}:ALL"
-        }
 
     private fun normalizeTimeFrameAs(target: TimeFrame?, doc: TimeFrameDocument): TotalByPeriodDto {
         val normalized =
