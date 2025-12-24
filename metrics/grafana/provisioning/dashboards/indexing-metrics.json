@@ -182,7 +182,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "1000 * sum(increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum(increase(processor_duration_seconds_count{indexer_name=~\"$indexer\"}[$__range]))",
+          "expr": "1000 * sum(increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / clamp_min(sum(increase(processor_duration_seconds_count{indexer_name=~\"$indexer\"}[$__range])), 1)",
           "instant": true,
           "legendFormat": "__auto",
           "refId": "A"
@@ -493,7 +493,7 @@
       ],
       "targets": [
         {
-          "expr": "sort_desc(indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"} == indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"})",
+          "expr": "sort_desc(max by(indexer_name, status_readable) (indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"} and on(indexer_name, status) (indexer_sync_status_gauge{indexer_name=~\"$indexer\"} == 1)))",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -908,7 +908,7 @@
       "pluginVersion": "12.3.0",
       "targets": [
         {
-          "expr": "sort_desc(1000 * sum by(indexer_name) (increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / sum by(indexer_name) (increase(processor_duration_seconds_count{indexer_name=~\"$indexer\"}[$__range])))",
+          "expr": "sort_desc(1000 * sum by(indexer_name) (increase(processor_duration_seconds_sum{indexer_name=~\"$indexer\"}[$__range])) / clamp_min(sum by(indexer_name) (increase(processor_duration_seconds_count{indexer_name=~\"$indexer\"}[$__range])), 1))",
           "instant": true,
           "legendFormat": "{{indexer_name}}",
           "refId": "A"
@@ -1050,5 +1050,5 @@
   "timezone": "browser",
   "title": "Indexing Metrics",
   "uid": "indexing-metrics",
-  "version": 19
+  "version": 21
 }

@@ -63,7 +63,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     fun setIndexerCurrentBlockByStatus(indexerName: String, blockNumber: Long, syncStatus: Status) {
         lastBlockStatusByIndexer.compute(indexerName) { _, previousStatus ->
             if (previousStatus != null && previousStatus != syncStatus) {
-                getOrCreateBlockGauge(indexerName, previousStatus).set(Double.NaN)
+                getOrCreateBlockGauge(indexerName, previousStatus).set(-1.0)
             }
             getOrCreateBlockGauge(indexerName, syncStatus).set(blockNumber.toDouble())
             syncStatus
@@ -77,7 +77,7 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         val key = "$indexerName:${status.name}"
         val statusReadable = status.name.toReadableEnumLabel()
         return currentBlockByStatusGauges.computeIfAbsent(key) {
-            val ref = AtomicReference(Double.NaN)
+            val ref = AtomicReference(-1.0)
             registry.gauge(
                 "indexer_current_block_by_status_gauge",
                 listOf(
