@@ -92,13 +92,13 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     }
 
     private fun Status.toStatusCode(): Double =
-        when (name) {
-            "NOT_INITIALISED" -> 0.0
-            "INITIALISED" -> 1.0
-            "SYNCING" -> 2.0
-            "FAST_SYNCING" -> 3.0
-            "PRUNING" -> 4.0
-            "SHUT_DOWN" -> 5.0
+        when (this) {
+            Status.NOT_INITIALISED -> 0.0
+            Status.INITIALISED -> 1.0
+            Status.SYNCING -> 2.0
+            Status.FAST_SYNCING -> 3.0
+            Status.PRUNING -> 4.0
+            Status.SHUT_DOWN -> 5.0
             else -> -1.0
         }
 
