@@ -479,7 +479,8 @@
               "indexer-id": true,
               "indexer_id": true,
               "instance": true,
-              "job": true
+              "job": true,
+              "status": true
             },
             "indexByName": {},
             "renameByName": {
@@ -492,7 +493,7 @@
       ],
       "targets": [
         {
-          "expr": "sort_desc(max by(indexer_name, status_readable) (indexer_current_block_gauge{indexer_name=~\"$indexer\"} * on(indexer_name) group_left(status_readable) (indexer_sync_status_gauge{indexer_name=~\"$indexer\"} == 1)))",
+          "expr": "sort_desc(indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"} == indexer_current_block_by_status_gauge{indexer_name=~\"$indexer\"})",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -1049,5 +1050,5 @@
   "timezone": "browser",
   "title": "Indexing Metrics",
   "uid": "indexing-metrics",
-  "version": 16
+  "version": 19
 }

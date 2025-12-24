@@ -3,6 +3,33 @@
   "description": "Indexing performance metrics for VeChain indexer",
   "widgets": [
     {
+      "id": 12,
+      "definition": {
+        "title": "Sync Status",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:indexer_sync_status_gauge{indexer-id:$indexer-id.value} by {status_readable}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "style": { "palette": "datadog16" },
+            "formulas": [{ "formula": "query1" }],
+            "sort": { "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] }
+          }
+        ],
+        "type": "sunburst",
+        "legend": { "type": "automatic" }
+      },
+      "layout": { "x": 0, "y": 0, "width": 12, "height": 4 }
+    },
+    {
       "id": 1,
       "definition": {
         "title": "Total Events Processed",
@@ -11,11 +38,7 @@
         "type": "query_value",
         "requests": [
           {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
+            "formulas": [{ "formula": "query1" }],
             "queries": [
               {
                 "data_source": "metrics",
@@ -30,12 +53,7 @@
         "autoscale": true,
         "precision": 0
       },
-      "layout": {
-        "x": 0,
-        "y": 0,
-        "width": 3,
-        "height": 2
-      }
+      "layout": { "x": 0, "y": 4, "width": 4, "height": 2 }
     },
     {
       "id": 2,
@@ -46,11 +64,7 @@
         "type": "query_value",
         "requests": [
           {
-            "formulas": [
-              {
-                "formula": "query1 / query2"
-              }
-            ],
+            "formulas": [{ "formula": "query1 / query2" }],
             "queries": [
               {
                 "data_source": "metrics",
@@ -71,12 +85,7 @@
         "autoscale": true,
         "precision": 2
       },
-      "layout": {
-        "x": 3,
-        "y": 0,
-        "width": 3,
-        "height": 2
-      }
+      "layout": { "x": 4, "y": 4, "width": 4, "height": 2 }
     },
     {
       "id": 3,
@@ -87,11 +96,7 @@
         "type": "query_value",
         "requests": [
           {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
+            "formulas": [{ "formula": "query1" }],
             "queries": [
               {
                 "data_source": "metrics",
@@ -106,194 +111,7 @@
         "autoscale": true,
         "precision": 2
       },
-      "layout": {
-        "x": 6,
-        "y": 0,
-        "width": 3,
-        "height": 2
-      }
-    },
-    {
-      "id": 4,
-      "definition": {
-        "title": "Total Indexers",
-        "title_size": "16",
-        "title_align": "left",
-        "time": {},
-        "type": "query_value",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "reduce(count(query1, { * }), 'last')"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:indexer_sync_status_code_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
-              }
-            ],
-            "response_format": "scalar"
-          }
-        ],
-        "autoscale": true,
-        "precision": 2,
-        "timeseries_background": {
-          "type": "area"
-        }
-      },
-      "layout": {
-        "x": 9,
-        "y": 0,
-        "width": 3,
-        "height": 2
-      }
-    },
-    {
-      "id": 5,
-      "definition": {
-        "title": "Block by Indexer",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:indexer_current_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 2,
-        "width": 6,
-        "height": 3
-      }
-    },
-    {
-      "id": 9,
-      "definition": {
-        "title": "Current Block by Indexer",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "toplist",
-        "requests": [
-          {
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:indexer_current_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
-          }
-        ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
-      },
-      "layout": {
-        "x": 0,
-        "y": 8,
-        "width": 6,
-        "height": 4
-      }
-    },
-    {
-      "id": 6,
-      "definition": {
-        "title": "Events Processed Rate",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 6,
-        "y": 2,
-        "width": 6,
-        "height": 3
-      }
+      "layout": { "x": 8, "y": 4, "width": 4, "height": 2 }
     },
     {
       "id": 7,
@@ -303,21 +121,11 @@
         "title_align": "left",
         "show_legend": true,
         "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
         "type": "timeseries",
         "requests": [
           {
-            "formulas": [
-              {
-                "formula": "query1 / query2"
-              }
-            ],
+            "formulas": [{ "formula": "query1 / query2" }],
             "queries": [
               {
                 "data_source": "metrics",
@@ -331,118 +139,12 @@
               }
             ],
             "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
+            "style": { "order_by": "values", "line_type": "solid", "line_width": "normal" },
             "display_type": "line"
           }
         ]
       },
-      "layout": {
-        "x": 0,
-        "y": 5,
-        "width": 6,
-        "height": 3
-      }
-    },
-    {
-      "id": 8,
-      "definition": {
-        "title": "Processing Duration P95 (ms)",
-        "title_size": "16",
-        "title_align": "left",
-        "show_legend": true,
-        "legend_layout": "auto",
-        "legend_columns": [
-          "avg",
-          "min",
-          "max",
-          "value",
-          "sum"
-        ],
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:processor_duration.percentile{indexer-id:$indexer-id.value , phi:0.95} by {indexer_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "style": {
-              "order_by": "values",
-              "line_type": "solid",
-              "line_width": "normal"
-            },
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": {
-        "x": 6,
-        "y": 5,
-        "width": 6,
-        "height": 3
-      }
-    },
-    {
-      "id": 10,
-      "definition": {
-        "title": "Events by Indexer",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "toplist",
-        "requests": [
-          {
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}",
-                "aggregator": "sum"
-              }
-            ],
-            "response_format": "scalar",
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
-          }
-        ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "relative"
-        }
-      },
-      "layout": {
-        "x": 6,
-        "y": 8,
-        "width": 6,
-        "height": 4
-      }
+      "layout": { "x": 0, "y": 6, "width": 12, "height": 4 }
     },
     {
       "id": 11,
@@ -468,42 +170,18 @@
               }
             ],
             "response_format": "scalar",
-            "formulas": [
-              {
-                "formula": "query1 / query2"
-              }
-            ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
+            "formulas": [{ "formula": "query1 / query2" }],
+            "sort": { "count": 50, "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] }
           }
         ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "relative"
-        }
+        "style": { "display": { "type": "stacked", "legend": "automatic" }, "scaling": "relative" }
       },
-      "layout": {
-        "x": 0,
-        "y": 12,
-        "width": 6,
-        "height": 4
-      }
+      "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
     },
     {
-      "id": 12,
+      "id": 9,
       "definition": {
-        "title": "Sync Status",
+        "title": "Block by Indexer",
         "title_size": "16",
         "title_align": "left",
         "type": "toplist",
@@ -513,57 +191,105 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "sum:indexer_sync_status_gauge{indexer-id:$indexer-id.value} by {status_readable}",
+                "query": "max:indexer_current_block_by_status_gauge{indexer-id:$indexer-id.value} by {indexer_name,status_readable}",
                 "aggregator": "last"
               }
             ],
             "response_format": "scalar",
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "sort": {
-              "count": 200,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
+            "formulas": [{ "formula": "query1" }],
+            "sort": { "count": 50, "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] }
           }
         ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
+        "style": { "display": { "type": "stacked", "legend": "automatic" }, "scaling": "absolute" }
       },
-      "layout": {
-        "x": 6,
-        "y": 12,
-        "width": 6,
-        "height": 4
-      }
+      "layout": { "x": 0, "y": 0, "width": 12, "height": 4, "is_column_break": true }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "Events by Indexer",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}",
+                "aggregator": "sum"
+              }
+            ],
+            "response_format": "scalar",
+            "formulas": [{ "formula": "query1" }],
+            "sort": { "count": 50, "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] }
+          }
+        ],
+        "style": { "display": { "type": "stacked", "legend": "automatic" }, "scaling": "relative" }
+      },
+      "layout": { "x": 0, "y": 4, "width": 12, "height": 2 }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Events Processed Rate",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:processor_events_counter{indexer-id:$indexer-id.value} by {indexer_name}.as_rate()"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": { "order_by": "values", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 6, "width": 12, "height": 4 }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Processing Duration P95 (ms)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "legend_layout": "auto",
+        "legend_columns": ["avg", "min", "max", "value", "sum"],
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:processor_duration.percentile{indexer-id:$indexer-id.value , phi:0.95} by {indexer_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "style": { "order_by": "values", "line_type": "solid", "line_width": "normal" },
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
     }
   ],
   "template_variables": [
-    {
-      "name": "indexer-id",
-      "prefix": "indexer-id",
-      "available_values": [],
-      "default": "*"
-    },
-    {
-      "name": "indexer_name",
-      "prefix": "indexer_name",
-      "available_values": [],
-      "default": "*"
-    }
+    { "name": "indexer-id", "prefix": "indexer-id", "available_values": [], "default": "*" },
+    { "name": "indexer_name", "prefix": "indexer_name", "available_values": [], "default": "*" }
   ],
   "layout_type": "ordered",
   "notify_list": [],
