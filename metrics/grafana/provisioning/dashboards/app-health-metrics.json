@@ -1492,5 +1492,5 @@
   "timezone": "browser",
   "title": "Application Health",
   "uid": "app-health-metrics",
-  "version": 1
+  "version": 2
 }

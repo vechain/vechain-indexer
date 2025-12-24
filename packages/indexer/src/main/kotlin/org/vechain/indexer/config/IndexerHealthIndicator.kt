@@ -51,6 +51,9 @@ class IndexerHealthIndicator(
                         HealthStatus.UNKNOWN -> -1.0
                     },
                 )
+                metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
+                metrics.setIndexerCurrentBlock(indexer.name, indexer.getCurrentBlockNumber())
+
                 IndexerHealth(
                     indexerName = indexer.name,
                     status = status,
