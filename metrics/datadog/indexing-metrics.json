@@ -154,7 +154,7 @@
     {
       "id": 5,
       "definition": {
-        "title": "Best Block by Indexer",
+        "title": "Block by Indexer",
         "title_size": "16",
         "title_align": "left",
         "show_legend": true,
@@ -503,7 +503,7 @@
     {
       "id": 12,
       "definition": {
-        "title": "Indexer Sync Status (Code)",
+        "title": "Sync Status",
         "title_size": "16",
         "title_align": "left",
         "type": "toplist",
@@ -513,7 +513,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:indexer_sync_status_code_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "query": "sum:indexer_sync_status_gauge{indexer-id:$indexer-id.value} by {status_readable}",
                 "aggregator": "last"
               }
             ],
