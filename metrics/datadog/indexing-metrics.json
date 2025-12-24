@@ -116,7 +116,7 @@
     {
       "id": 4,
       "definition": {
-        "title": "Active Indexers",
+        "title": "Total Indexers",
         "title_size": "16",
         "title_align": "left",
         "time": {},
@@ -132,7 +132,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:best_block_gauge{indexer-id:$indexer-id.value}"
+                "query": "avg:indexer_sync_status_code_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
               }
             ],
             "response_format": "scalar"
@@ -178,7 +178,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:best_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
+                "query": "avg:indexer_current_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}"
               }
             ],
             "response_format": "timeseries",
@@ -196,6 +196,56 @@
         "y": 2,
         "width": 6,
         "height": 3
+      }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Current Block by Indexer",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:indexer_current_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "sort": {
+              "count": 50,
+              "order_by": [
+                {
+                  "type": "formula",
+                  "index": 0,
+                  "order": "desc"
+                }
+              ]
+            }
+          }
+        ],
+        "style": {
+          "display": {
+            "type": "stacked",
+            "legend": "automatic"
+          },
+          "scaling": "absolute"
+        }
+      },
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "width": 6,
+        "height": 4
       }
     },
     {
@@ -345,56 +395,6 @@
       }
     },
     {
-      "id": 9,
-      "definition": {
-        "title": "Current Block by Indexer",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "toplist",
-        "requests": [
-          {
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:best_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
-            "formulas": [
-              {
-                "formula": "query1"
-              }
-            ],
-            "sort": {
-              "count": 50,
-              "order_by": [
-                {
-                  "type": "formula",
-                  "index": 0,
-                  "order": "desc"
-                }
-              ]
-            }
-          }
-        ],
-        "style": {
-          "display": {
-            "type": "stacked",
-            "legend": "automatic"
-          },
-          "scaling": "absolute"
-        }
-      },
-      "layout": {
-        "x": 0,
-        "y": 8,
-        "width": 6,
-        "height": 4
-      }
-    },
-    {
       "id": 10,
       "definition": {
         "title": "Events by Indexer",
@@ -495,6 +495,56 @@
       },
       "layout": {
         "x": 0,
+        "y": 12,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "id": 12,
+      "definition": {
+        "title": "Indexer Sync Status (Code)",
+        "title_size": "16",
+        "title_align": "left",
+        "type": "toplist",
+        "requests": [
+          {
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:indexer_sync_status_code_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ],
+            "sort": {
+              "count": 200,
+              "order_by": [
+                {
+                  "type": "formula",
+                  "index": 0,
+                  "order": "desc"
+                }
+              ]
+            }
+          }
+        ],
+        "style": {
+          "display": {
+            "type": "stacked",
+            "legend": "automatic"
+          },
+          "scaling": "absolute"
+        }
+      },
+      "layout": {
+        "x": 6,
         "y": 12,
         "width": 6,
         "height": 4

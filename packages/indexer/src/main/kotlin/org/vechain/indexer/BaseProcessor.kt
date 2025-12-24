@@ -17,7 +17,6 @@ abstract class BaseProcessor(
         try {
             processEntry(entry)
             ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
-            ProcessorMetrics.setBestBlock(indexerName, entry.latestBlockNumber().toDouble())
         } finally {
             ProcessorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
         }
