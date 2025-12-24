@@ -52,7 +52,14 @@ class IndexerHealthIndicator(
                     },
                 )
                 metrics.setIndexerSyncStatus(indexer.name, indexer.getStatus())
-                metrics.setIndexerCurrentBlock(indexer.name, indexer.getCurrentBlockNumber())
+                if (indexer is BlockIndexer) {
+                    val currentBlockNumber = indexer.getCurrentBlockNumber()
+                    metrics.setIndexerCurrentBlockByStatus(
+                        indexer.name,
+                        currentBlockNumber,
+                        indexer.getStatus(),
+                    )
+                }
 
                 IndexerHealth(
                     indexerName = indexer.name,

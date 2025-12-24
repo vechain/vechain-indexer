@@ -14,7 +14,8 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val componentHealthGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
-    private val currentBlockGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val currentBlockByStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
+    private val lastBlockStatusByIndexer = ConcurrentHashMap<String, Status>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -59,20 +60,37 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
         }
     }
 
-    fun setIndexerCurrentBlock(indexerName: String, blockNumber: Long) {
-        currentBlockGauges
-            .computeIfAbsent(indexerName) { name ->
-                val ref = AtomicReference(0.0)
-                registry.gauge(
-                    "indexer_current_block_gauge",
-                    listOf(Tag.of("indexer_name", name)),
-                    ref,
-                ) {
-                    it.get()
-                }
-                ref
+    fun setIndexerCurrentBlockByStatus(indexerName: String, blockNumber: Long, syncStatus: Status) {
+        lastBlockStatusByIndexer.compute(indexerName) { _, previousStatus ->
+            if (previousStatus != null && previousStatus != syncStatus) {
+                getOrCreateBlockGauge(indexerName, previousStatus).set(Double.NaN)
             }
-            .set(blockNumber.toDouble())
+            getOrCreateBlockGauge(indexerName, syncStatus).set(blockNumber.toDouble())
+            syncStatus
+        }
+    }
+
+    private fun getOrCreateBlockGauge(
+        indexerName: String,
+        status: Status,
+    ): AtomicReference<Double> {
+        val key = "$indexerName:${status.name}"
+        val statusReadable = status.name.toReadableEnumLabel()
+        return currentBlockByStatusGauges.computeIfAbsent(key) {
+            val ref = AtomicReference(Double.NaN)
+            registry.gauge(
+                "indexer_current_block_by_status_gauge",
+                listOf(
+                    Tag.of("indexer_name", indexerName),
+                    Tag.of("status", status.name),
+                    Tag.of("status_readable", statusReadable),
+                ),
+                ref,
+            ) {
+                it.get()
+            }
+            ref
+        }
     }
 
     private fun setIndexerSyncStatusCode(indexerName: String, syncStatus: Status) {

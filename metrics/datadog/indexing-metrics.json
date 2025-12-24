@@ -191,7 +191,7 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "avg:indexer_current_block_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
+                "query": "max:indexer_current_block_by_status_gauge{indexer-id:$indexer-id.value} by {indexer_name,status_readable}",
                 "aggregator": "last"
               }
             ],
