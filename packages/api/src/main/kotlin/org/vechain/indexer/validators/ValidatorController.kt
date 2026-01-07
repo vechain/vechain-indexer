@@ -154,7 +154,8 @@ open class ValidatorController(
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<Delegation> {
-        val pageable = toPageable(page, size, direction, Delegation::blockNumber.name)
+        val pageable =
+            toPageable(page, size, direction, Delegation::blockNumber.name, Delegation::id.name)
 
         val results: Slice<Delegation> =
             when {
