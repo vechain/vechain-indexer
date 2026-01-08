@@ -2,6 +2,7 @@ package org.vechain.indexer.stargate
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
@@ -552,14 +553,52 @@ open class StargateService(
             return SliceImpl(listOf(dto), pageable, false) // only one result
         }
 
-        val slice =
-            if (timeFrame == null) {
-                repository.findAll(pageable)
+        val isDesc = direction.isNullOrBlank() || direction.equals("DESC", ignoreCase = true)
+        val willPrependLatest = isDesc && pageable.pageNumber == 0
+
+        // When prepending latest on page 0, we need to fetch one less record.
+        // For subsequent pages, we need to adjust offset by -1 to account for this.
+        // Since PageRequest doesn't support arbitrary offsets, we fetch from (page-1)
+        // with extra size, then skip/take the right records.
+        val adjustedPageable: Pageable?
+        val skipCount: Int
+
+        if (willPrependLatest && pageable.pageSize > 1) {
+            // Page 0: fetch size-1 records, prepend latest
+            adjustedPageable = PageRequest.of(0, pageable.pageSize - 1, pageable.sort)
+            skipCount = 0
+        } else if (willPrependLatest) {
+            // size=1 and prepending: don't fetch from DB, just return latest
+            adjustedPageable = null
+            skipCount = 0
+        } else if (isDesc && pageable.pageNumber > 0) {
+            // Pages > 0 when DESC: need offset (page * size - 1)
+            // Fetch from page (N-1) with size (size * 2 - 1), then skip (size-1) records
+            adjustedPageable =
+                PageRequest.of(pageable.pageNumber - 1, pageable.pageSize * 2 - 1, pageable.sort)
+            skipCount = pageable.pageSize - 1
+        } else {
+            adjustedPageable = pageable
+            skipCount = 0
+        }
+
+        val rawSlice: Slice<T> =
+            if (adjustedPageable == null) {
+                SliceImpl(emptyList(), pageable, true)
+            } else if (timeFrame == null) {
+                repository.findAll(adjustedPageable)
             } else {
-                repository.findByTimeFramesContains(timeFrame, pageable)
+                repository.findByTimeFramesContains(timeFrame, adjustedPageable)
             }
 
-        val isDesc = direction.isNullOrBlank() || direction.equals("DESC", ignoreCase = true)
+        // Apply skip and take for adjusted pagination
+        val sliceContent = rawSlice.content.drop(skipCount).take(pageable.pageSize)
+        val slice =
+            SliceImpl(
+                sliceContent,
+                pageable,
+                rawSlice.content.size > skipCount + pageable.pageSize || rawSlice.hasNext(),
+            )
 
         val shouldInsertLatest =
             if (isDesc) {
@@ -585,7 +624,7 @@ open class StargateService(
                 sliceNormalized + latestNormalized // oldest first
             }
 
-        val hasNext = slice.hasNext()
+        val hasNext = slice.hasNext() || (adjustedPageable == null)
 
         return SliceImpl(merged, pageable, hasNext)
     }
