@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 
-@Profile("validator", "delegation")
+@Profile("validator", "delegation", "stargate", "vet-delegated-by-block")
 @Repository
 interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegation, String> {
     fun findByNotify(notify: Boolean): List<Delegation>
@@ -60,8 +60,28 @@ interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegatio
     fun aggregateDelegationCountsByValidator(
         validator: String
     ): List<DelegationCountAggregateResult>
+
+    /**
+     * Aggregate active delegations (ACTIVE + EXITING) by token level. Returns total staked amount
+     * and NFT count per level.
+     */
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'status': { '\$in': ['ACTIVE', 'EXITING'] } } }",
+                "{ '\$group': { '_id': '\$tokenLevel', 'totalWei': { '\$sum': { '\$toDecimal': '\$stakedAmount' } }, 'nftCount': { '\$sum': 1 } } }",
+                "{ '\$project': { '_id': 0, 'level': '\$_id', 'totalWei': { '\$toString': '\$totalWei' }, 'nftCount': 1 } }",
+            ]
+    )
+    fun aggregateActiveDelegationsByLevel(): List<DelegationLevelAggregateResult>
 }
 
 data class DelegationStatusCount(val status: String, val count: Long)
 
 data class DelegationCountAggregateResult(val _id: String, val counts: List<DelegationStatusCount>)
+
+data class DelegationLevelAggregateResult(
+    val level: String,
+    val totalWei: String,
+    val nftCount: Long,
+)
