@@ -87,8 +87,18 @@ open class VetDelegatedByBlockService(
                     ),
             )
 
+        // Only save if there's an actual change or this is the first record
+        val hasChange = delta != BigInteger.ZERO
+        val isFirstRecord = latest == null
+        val hasRollover = roll.timeFrames.isNotEmpty()
+
+        // If no change and not first record and no rollover, skip saving
+        if (!hasChange && !isFirstRecord && !hasRollover) {
+            return output
+        }
+
         // If there's a time-frame rollover, emit previous record with timeFrames set
-        if (roll.timeFrames.isNotEmpty() && latest != null) {
+        if (hasRollover && latest != null) {
             output += latest.copy(timeFrames = roll.timeFrames)
         }
 
