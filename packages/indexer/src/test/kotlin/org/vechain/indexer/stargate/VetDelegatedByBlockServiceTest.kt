@@ -141,6 +141,75 @@ class VetDelegatedByBlockServiceTest {
     // ---------------------------------------------------------
 
     @Test
+    fun `skips save when no change and no rollover`() {
+        // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        // Same total as before - no change
+        mockActiveAggregation(TokenLevel.Strength to "10")
+
+        // New block in same hour (10 seconds later, still 12:00)
+        val block = mockBlock(101, 1735560010)
+        val result = service.processBlock(block)
+
+        // Should return empty list - no doc to save
+        expectThat(result).isEmpty()
+    }
+
+    @Test
+    fun `saves when there is a change even without rollover`() {
+        // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        // Different total - there IS a change
+        mockActiveAggregation(TokenLevel.Strength to "20")
+
+        // New block in same hour (10 seconds later, still 12:00)
+        val block = mockBlock(101, 1735560010)
+        val result = service.processBlock(block)
+
+        // Should return 1 doc because there's a change
+        expectThat(result).hasSize(1)
+        expectThat(result[0].total).isEqualTo(BigInteger("20"))
+    }
+
+    @Test
     fun `save delegates to repository`() {
         val dummy =
             listOf(
