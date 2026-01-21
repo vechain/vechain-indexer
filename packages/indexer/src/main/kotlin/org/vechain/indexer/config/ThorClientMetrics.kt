@@ -21,10 +21,7 @@ class ThorClientMetrics(private val registry: MeterRegistry) {
             .register(registry)
 
     fun recordGasUsed(results: List<InspectionResult>) {
-        var gasUsed = 0L
-        for (result in results) {
-            gasUsed += result.gasUsed
-        }
+        val gasUsed = results.sumOf { it.gasUsed }
         inspectClausesGasUsed.increment(gasUsed.toDouble())
     }
 
