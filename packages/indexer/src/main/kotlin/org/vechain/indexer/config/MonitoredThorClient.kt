@@ -21,7 +21,6 @@ class MonitoredThorClient(
     baseUrl: String,
     vararg headers: Pair<String, Any>,
 ) : DefaultThorClient(baseUrl, *headers) {
-
     private suspend fun <T> withMetrics(method: String, path: String, block: suspend () -> T): T {
         val start = TimeSource.Monotonic.markNow()
         try {
@@ -64,7 +63,11 @@ class MonitoredThorClient(
         clauses: List<Clause>,
         revision: BlockRevision?,
     ): List<InspectionResult> =
-        withMetrics("POST", "/accounts/*") { super.inspectClauses(clauses, revision) }
+        withMetrics("POST", "/accounts/*") {
+            val results = super.inspectClauses(clauses, revision)
+            metrics.recordGasUsed(results)
+            results
+        }
 
     override suspend fun getAccountState(
         address: String,

@@ -8,12 +8,25 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
+import org.vechain.indexer.thor.model.InspectionResult
 
 @Component
 class ThorClientMetrics(private val registry: MeterRegistry) {
 
     private val responseCodeCounters = ConcurrentHashMap<String, Counter>()
     private val requestDurationTimers = ConcurrentHashMap<String, Timer>()
+    private val inspectClausesGasUsed =
+        Counter.builder("thor_client_inspect_gas_used")
+            .description("The gas used per clause inspection")
+            .register(registry)
+
+    fun recordGasUsed(results: List<InspectionResult>) {
+        var gasUsed = 0L
+        for (result in results) {
+            gasUsed += result.gasUsed
+        }
+        inspectClausesGasUsed.increment(gasUsed.toDouble())
+    }
 
     fun recordResponseCode(method: String, path: String, code: String) {
         val endpoint = endpointName(method, path)
