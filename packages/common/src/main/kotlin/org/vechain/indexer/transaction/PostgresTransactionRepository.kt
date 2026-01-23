@@ -24,7 +24,7 @@ import org.vechain.indexer.thor.model.TxTransfer
 
 @Profile("transactions")
 @Repository
-class PostgresTransactionRepository(
+open class PostgresTransactionRepository(
     private val jdbcTemplate: JdbcTemplate,
     private val namedJdbcTemplate: NamedParameterJdbcTemplate,
     private val objectMapper: ObjectMapper,
@@ -71,34 +71,32 @@ class PostgresTransactionRepository(
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
                 .trimIndent(),
-            transactions
-                .map { tx ->
-                    val txId = normaliseId(tx.id)
-                    arrayOf<Any?>(
-                        txId,
-                        tx.blockId,
-                        tx.blockNumber,
-                        tx.blockTimestamp,
-                        tx.type,
-                        tx.size,
-                        tx.chainTag,
-                        tx.blockRef,
-                        tx.expiration,
-                        tx.gasPriceCoef,
-                        tx.gas,
-                        tx.maxFeePerGas,
-                        tx.maxPriorityFeePerGas,
-                        tx.dependsOn,
-                        tx.nonce,
-                        tx.gasUsed,
-                        normaliseAddress(tx.gasPayer),
-                        tx.paid,
-                        tx.reward,
-                        tx.reverted,
-                        normaliseAddress(tx.origin),
-                    )
-                }
-                .toTypedArray(),
+            transactions.map { tx ->
+                val txId = normaliseId(tx.id)
+                arrayOf<Any?>(
+                    txId,
+                    tx.blockId,
+                    tx.blockNumber,
+                    tx.blockTimestamp,
+                    tx.type,
+                    tx.size,
+                    tx.chainTag,
+                    tx.blockRef,
+                    tx.expiration,
+                    tx.gasPriceCoef,
+                    tx.gas,
+                    tx.maxFeePerGas,
+                    tx.maxPriorityFeePerGas,
+                    tx.dependsOn,
+                    tx.nonce,
+                    tx.gasUsed,
+                    normaliseAddress(tx.gasPayer),
+                    tx.paid,
+                    tx.reward,
+                    tx.reverted,
+                    normaliseAddress(tx.origin),
+                )
+            },
         )
 
         val clauseArgs =
@@ -126,7 +124,7 @@ class PostgresTransactionRepository(
                 ) VALUES (?, ?, ?, ?, ?)
                 """
                     .trimIndent(),
-                clauseArgs.toTypedArray(),
+                clauseArgs,
             )
         }
 
@@ -147,7 +145,7 @@ class PostgresTransactionRepository(
                 ) VALUES (?, ?, ?)
                 """
                     .trimIndent(),
-                outputArgs.toTypedArray(),
+                outputArgs,
             )
         }
 
@@ -179,10 +177,10 @@ class PostgresTransactionRepository(
                     data,
                     name,
                     params
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb)
                 """
                     .trimIndent(),
-                eventArgs.toTypedArray(),
+                eventArgs,
             )
         }
 
@@ -209,7 +207,7 @@ class PostgresTransactionRepository(
                 ) VALUES (?, ?, ?, ?, ?)
                 """
                     .trimIndent(),
-                topicArgs.toTypedArray(),
+                topicArgs,
             )
         }
 
@@ -242,7 +240,7 @@ class PostgresTransactionRepository(
                 ) VALUES (?, ?, ?, ?, ?, ?)
                 """
                     .trimIndent(),
-                transferArgs.toTypedArray(),
+                transferArgs,
             )
         }
 
@@ -268,7 +266,7 @@ class PostgresTransactionRepository(
     override fun findByOrigin(origin: String, pageable: Pageable): Slice<IndexedTransaction> {
         return findSlice(
             "t.origin = :origin",
-            mapOf("origin" to normaliseAddress(origin) ?: origin),
+            mapOf("origin" to (normaliseAddress(origin) ?: origin)),
             pageable,
         )
     }
@@ -281,8 +279,8 @@ class PostgresTransactionRepository(
         return findSlice(
             "t.origin = :origin OR t.gas_payer = :gasPayer",
             mapOf(
-                "origin" to normaliseAddress(origin) ?: origin,
-                "gasPayer" to normaliseAddress(gasPayer) ?: gasPayer,
+                "origin" to (normaliseAddress(origin) ?: origin),
+                "gasPayer" to (normaliseAddress(gasPayer) ?: gasPayer),
             ),
             pageable,
         )
@@ -296,8 +294,8 @@ class PostgresTransactionRepository(
         return findSlice(
             "t.gas_payer = :gasPayer AND t.origin <> :origin",
             mapOf(
-                "gasPayer" to normaliseAddress(gasPayer) ?: gasPayer,
-                "origin" to normaliseAddress(origin) ?: origin,
+                "gasPayer" to (normaliseAddress(gasPayer) ?: gasPayer),
+                "origin" to (normaliseAddress(origin) ?: origin),
             ),
             pageable,
         )
@@ -317,7 +315,7 @@ class PostgresTransactionRepository(
             )
             """
                 .trimIndent(),
-            mapOf("contractAddress" to normaliseAddress(contractAddress) ?: contractAddress),
+            mapOf("contractAddress" to (normaliseAddress(contractAddress) ?: contractAddress)),
             pageable,
         )
     }
