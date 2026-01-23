@@ -36,6 +36,25 @@ services:
     networks:
       - vechain-database
 
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: vechain
+      POSTGRES_USER: vechain
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - vechain-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U vechain -d veworld" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - vechain-database
+
 networks:
   vechain-database:
     driver: bridge
@@ -43,3 +62,4 @@ networks:
 
 volumes:
   vechain-data-1:
+  vechain-postgres-data:

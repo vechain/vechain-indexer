@@ -1,17 +1,20 @@
 package org.vechain.indexer.performance.transaction
 
 import io.mockk.every
+import kotlin.time.TimeSource
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
+import org.vechain.indexer.IndexerProcessor
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.ProcessorMetrics
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.transaction.TransactionProcessor
 import org.vechain.indexer.transaction.TransactionRepository
 import org.vechain.indexer.transaction.TransactionService
@@ -22,12 +25,11 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var transactionRepository: TransactionRepository
     @Autowired lateinit var transactionService: TransactionService
-    @Autowired lateinit var mongoTemplate: MongoTemplate
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        transactionRepository.deleteAll()
+        transactionRepository.deleteAllByBlockNumberGreaterThanEqual(0L)
         println("✓ Cleared transaction database")
 
         // Create profiler for detailed timing analysis
@@ -68,17 +70,20 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
         val processor =
             if (profiler != null) {
                 val profiledService =
-                    ProfiledTransactionService(mongoTemplate = mongoTemplate, profiler = profiler)
+                    ProfiledTransactionService(
+                        transactionRepository = transactionRepository,
+                        profiler = profiler,
+                    )
                 ProfiledTransactionProcessor(
                     profiledService = profiledService,
-                    repository = transactionRepository,
+                    transactionRepository = transactionRepository,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 TransactionProcessor(
                     transactionService = transactionService,
-                    repository = transactionRepository,
+                    transactionRepository = transactionRepository,
                     indexerVersionService = mockIndexerVersionService,
                 )
             }
@@ -100,16 +105,51 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for TransactionProcessor */
     private class ProfiledTransactionProcessor(
         private val profiledService: ProfiledTransactionService,
-        repository: TransactionRepository,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
+        private val transactionRepository: TransactionRepository,
+        private val indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
-    ) :
-        org.vechain.indexer.BaseProcessor(
-            repository = repository,
-            indexerVersionService = indexerVersionService,
-            indexerName = IndexerNames.TRANSACTION,
-        ) {
-        override suspend fun processEntry(entry: IndexingResult) {
+    ) : IndexerProcessor {
+
+        override suspend fun process(entry: IndexingResult) {
+            val start = TimeSource.Monotonic.markNow()
+            try {
+                processEntry(entry)
+                ProcessorMetrics.incrementEventsCounter(
+                    IndexerNames.TRANSACTION,
+                    entry.events().size.toDouble(),
+                )
+            } finally {
+                ProcessorMetrics.observeProcessingDuration(
+                    IndexerNames.TRANSACTION,
+                    start.elapsedNow(),
+                )
+            }
+        }
+
+        override fun getLastSyncedBlock(): BlockIdentifier? {
+            val latestBlock = transactionRepository.getLatestBlockIdentifier()
+            val lastProcessedBlock =
+                indexerVersionService.getLastProcessedBlock(IndexerNames.TRANSACTION)
+
+            return when {
+                latestBlock != null && lastProcessedBlock != null -> {
+                    if (latestBlock.number <= lastProcessedBlock.number) {
+                        lastProcessedBlock
+                    } else {
+                        latestBlock
+                    }
+                }
+                latestBlock != null -> latestBlock
+                lastProcessedBlock != null -> lastProcessedBlock
+                else -> null
+            }
+        }
+
+        override fun rollback(blockNumber: Long) {
+            transactionRepository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
+        }
+
+        private suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {
                 if (entry !is IndexingResult.Normal) {
                     throw IllegalArgumentException("Block must be a normal block.")

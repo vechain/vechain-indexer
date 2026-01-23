@@ -11,6 +11,15 @@ spring:
   output:
     ansi:
       enabled: always
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/vechain}
+    username: ${POSTGRES_USER:vechain}
+    password: ${POSTGRES_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: ${SQL_INIT_MODE:always}
+      schema-locations: classpath:db/transactions-schema.sql
 
 timing:
   warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}

@@ -201,6 +201,7 @@ allprojects {
 
         // Common dependencies
         implementation("org.springframework.boot:spring-boot-starter:3.4.5")
+        implementation("org.springframework.boot:spring-boot-starter-jdbc:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
@@ -217,6 +218,7 @@ allprojects {
         implementation("org.bouncycastle:bcprov-jdk15on:1.70")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
         implementation("commons-codec:commons-codec:1.15")
+        implementation("org.postgresql:postgresql:42.7.5")
 
         // Monitoring dependencies
         implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")

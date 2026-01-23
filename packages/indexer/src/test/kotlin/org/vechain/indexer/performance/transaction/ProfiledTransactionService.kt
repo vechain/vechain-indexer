@@ -1,12 +1,12 @@
 package org.vechain.indexer.performance.transaction
 
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.DecodedEvent
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.transaction.IndexedTransaction
+import org.vechain.indexer.transaction.TransactionRepository
 
 /**
  * Wrapper for TransactionService that profiles EVERY internal method call Tracks performance of:
@@ -14,10 +14,10 @@ import org.vechain.indexer.transaction.IndexedTransaction
  * - grouping events by transaction
  * - grouping events by clause
  * - decoding outputs
- * - MongoDB insert
+ * - Postgres insert
  */
 class ProfiledTransactionService(
-    private val mongoTemplate: MongoTemplate,
+    private val transactionRepository: TransactionRepository,
     private val profiler: DetailedProfiler,
 ) {
 
@@ -86,9 +86,7 @@ class ProfiledTransactionService(
                     }
                 }
 
-            profiler.time("        - MongoDB insert") {
-                mongoTemplate.insert(txs, IndexedTransaction::class.java)
-            }
+            profiler.time("        - Postgres insert") { transactionRepository.saveAll(txs) }
         }
     }
 }

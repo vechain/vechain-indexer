@@ -1,7 +1,6 @@
 package org.vechain.indexer.transaction
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.thor.DecodedEvent
@@ -10,7 +9,7 @@ import org.vechain.indexer.thor.model.Block
 
 @Profile("transactions")
 @Service
-class TransactionService(private val mongoTemplate: MongoTemplate) {
+class TransactionService(private val transactionRepository: TransactionRepository) {
     fun processBlockTransactions(events: List<IndexedEvent>, block: Block) {
         // Group events by transaction ID
         val eventsByTx = events.groupBy { it.txId }
@@ -59,6 +58,6 @@ class TransactionService(private val mongoTemplate: MongoTemplate) {
                 IndexedTransaction(block = block, tx = tx, decodedOutputs = decodedOutputs)
             }
 
-        mongoTemplate.insert(txs, IndexedTransaction::class.java)
+        transactionRepository.saveAll(txs)
     }
 }

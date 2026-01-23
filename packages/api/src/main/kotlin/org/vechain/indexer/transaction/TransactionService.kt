@@ -3,7 +3,6 @@ package org.vechain.indexer.transaction
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.HexUtils
@@ -13,7 +12,7 @@ import org.vechain.indexer.thor.HexUtils
 open class TransactionService(private val transactionRepository: TransactionRepository) {
 
     open fun findById(id: String): IndexedTransaction? {
-        return transactionRepository.findByIdOrNull(HexUtils.normalise(id))
+        return transactionRepository.findById(HexUtils.normalise(id))
     }
 
     open fun findByOriginOrDelegator(

@@ -1,16 +1,14 @@
 package org.vechain.indexer.transaction
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.mongodb.repository.Query
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.thor.model.BlockIdentifier
 
-@Profile("transactions")
-@Repository
-interface TransactionRepository :
-    BasePagingAndSortingIndexedRepository<IndexedTransaction, String> {
+interface TransactionRepository {
+
+    fun saveAll(transactions: List<IndexedTransaction>): List<IndexedTransaction>
+
+    fun findById(id: String): IndexedTransaction?
 
     fun findByOrigin(origin: String, pageable: Pageable): Slice<IndexedTransaction>
 
@@ -26,15 +24,17 @@ interface TransactionRepository :
         pageable: Pageable,
     ): Slice<IndexedTransaction>
 
-    @Query("{ 'clauses.to': ?0 }")
     fun findByContractAddress(
         contractAddress: String,
         pageable: Pageable,
     ): Slice<IndexedTransaction>
 
-    @Query("{ 'clauses.to': { \$in: ?0 } }")
     fun findByContractAddresses(
         contractAddresses: List<String>,
         pageable: Pageable,
     ): Slice<IndexedTransaction>
+
+    fun getLatestBlockIdentifier(): BlockIdentifier?
+
+    fun deleteAllByBlockNumberGreaterThanEqual(start: Long)
 }

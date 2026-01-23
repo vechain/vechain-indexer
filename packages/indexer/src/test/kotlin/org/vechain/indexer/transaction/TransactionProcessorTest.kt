@@ -36,7 +36,7 @@ internal class TransactionProcessorTest {
         transactionProcessor =
             TransactionProcessor(
                 transactionService = transactionService,
-                repository = transactionRepository,
+                transactionRepository = transactionRepository,
                 indexerVersionService = indexerVersionService,
             )
     }
