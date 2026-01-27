@@ -1,16 +1,20 @@
 package org.vechain.indexer.b3tr.xAlloc.repository
 
-import org.springframework.context.annotation.Profile
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.xAlloc.XAllocResult
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("b3tr", "b3tr-x-alloc")
-@Repository
-interface XAllocResultRepository : BasePagingAndSortingIndexedRepository<XAllocResult, String> {
+interface XAllocResultRepository : PostgresIndexedRepository {
+    // Versioned operations
+    fun saveAllVersioned(updated: List<XAllocResult>, existing: List<XAllocResult>)
+
+    // Query operations
     fun findByRoundId(roundId: Int): List<XAllocResult>
 
     fun findByAppId(appId: String): List<XAllocResult>
 
     fun findByAppIdAndRoundId(appId: String, roundId: Int): XAllocResult?
+
+    fun findById(id: String): XAllocResult?
+
+    fun getLatestRecord(): XAllocResult?
 }

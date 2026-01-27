@@ -14,13 +14,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -31,9 +29,7 @@ import org.vechain.indexer.thor.model.InspectionResult
 internal class XAllocResultServiceTest {
     @MockK lateinit var repository: XAllocResultRepository
 
-    @MockK lateinit var archiveService: ArchiveService<XAllocResult, XAllocResultArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
+    @MockK(relaxed = true) lateinit var xAllocResultPruner: PostgresPruner
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -46,11 +42,10 @@ internal class XAllocResultServiceTest {
     // Test wrapper to access protected functions directly
     private inner class TestableXAllocResultService(
         repository: XAllocResultRepository,
-        archiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-        pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+        pruner: PostgresPruner,
         thorClient: ThorClient,
         xAllocPoolContract: String,
-    ) : XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract) {
+    ) : XAllocResultService(repository, pruner, thorClient, xAllocPoolContract) {
         fun testAddOrCreateVoteResult(
             roundId: Int,
             appId: String,
@@ -115,12 +110,11 @@ internal class XAllocResultServiceTest {
                 )
             )
         service =
-            XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract)
+            XAllocResultService(repository, xAllocResultPruner, thorClient, xAllocPoolContract)
         testableService =
             TestableXAllocResultService(
                 repository,
-                archiveService,
-                pruner,
+                xAllocResultPruner,
                 thorClient,
                 xAllocPoolContract,
             )
@@ -451,7 +445,7 @@ internal class XAllocResultServiceTest {
             )
 
         // Mock repository to return null for first lookup
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(event1, event2)
 
@@ -494,7 +488,7 @@ internal class XAllocResultServiceTest {
                 voters = 1,
                 votesReceived = BigInteger.ONE,
             )
-        every { repository.findByIdOrNull(any()) } returns existing
+        every { repository.findById(any()) } returns existing
 
         val (updated, archived) = processEvents(event1)
 
@@ -550,7 +544,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(e1, e2)
 
@@ -603,7 +597,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(b1, b2)
 
@@ -684,7 +678,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(e1, e2, e3)
 
@@ -736,14 +730,14 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(b1, b2)
 
         assertEquals(1, updated.size)
         assertEquals(1, archived.size)
         // Repository should be consulted only once (first resolution), second lookup uses cache
-        verify(exactly = 1) { repository.findByIdOrNull(any()) }
+        verify(exactly = 1) { repository.findById(any()) }
     }
 
     @Test
@@ -773,7 +767,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(claimEvent)
 
@@ -829,7 +823,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns existingRecord
+        every { repository.findById(any()) } returns existingRecord
 
         val (updated, archived) = processEvents(claimEvent)
 
@@ -894,7 +888,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns existingRecord
+        every { repository.findById(any()) } returns existingRecord
 
         val (updated, archived) = processEvents(claimEvent)
 
@@ -953,7 +947,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(voteEvent, claimEvent)
 
@@ -1000,7 +994,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(dbaEvent)
 
@@ -1054,7 +1048,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns existingRecord
+        every { repository.findById(any()) } returns existingRecord
 
         val (updated, archived) = processEvents(dbaEvent)
 
@@ -1132,7 +1126,7 @@ internal class XAllocResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = processEvents(voteEvent, claimEvent, dbaEvent)
 

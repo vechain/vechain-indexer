@@ -3,20 +3,11 @@ package org.vechain.indexer.b3tr.xAlloc
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigDecimal
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.data.mongodb.core.mapping.Field
-import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "b3tr_x_alloc_results")
-data class XAllocResult
-@ConstructorBinding
-constructor(
-    @JsonIgnore @Id val id: String,
+data class XAllocResult(
+    @JsonIgnore val id: String,
     @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
@@ -25,10 +16,10 @@ constructor(
     val appId: String,
     val voters: Long,
     val votesReceived: BigInteger,
-    @Field(targetType = FieldType.DECIMAL128) val totalAmount: BigDecimal?,
-    @Field(targetType = FieldType.DECIMAL128) val unallocatedAmount: BigDecimal?,
-    @Field(targetType = FieldType.DECIMAL128) val teamAllocationAmount: BigDecimal?,
-    @Field(targetType = FieldType.DECIMAL128) val rewardsAllocationAmount: BigDecimal?,
+    val totalAmount: BigDecimal?,
+    val unallocatedAmount: BigDecimal?,
+    val teamAllocationAmount: BigDecimal?,
+    val rewardsAllocationAmount: BigDecimal?,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -61,7 +52,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "b3tr_x_alloc_result_archives")
-data class XAllocResultArchive(@Id override val id: String, override val data: XAllocResult) :
-    Archive<XAllocResult>

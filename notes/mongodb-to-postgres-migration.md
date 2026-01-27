@@ -559,6 +559,7 @@ Each follows the same migration pattern documented above.
 - `UserRoundActionSummary` - B3TR user round action summaries
 - `ProposalResult` - B3TR proposal results (migrated to `b3tr_proposal_results` table)
 - `ProposalComment` - B3TR proposal comments (migrated to `b3tr_proposal_comments` table)
+- `XAllocResult` - B3TR x-allocation results (migrated to `b3tr_x_alloc_results` table)
 
 ## Technical Notes
 

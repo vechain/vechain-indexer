@@ -8,10 +8,8 @@ import kotlin.collections.component2
 import kotlin.collections.set
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getRewardsAllocationAmountAsDecimal
@@ -25,8 +23,7 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.event.utils.FunctionReturnDecoder
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.BlockDetails
@@ -38,8 +35,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Service
 open class XAllocResultService(
     private val repository: XAllocResultRepository,
-    private val xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-    private val xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+    private val xAllocResultPruner: PostgresPruner,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
@@ -244,13 +240,16 @@ open class XAllocResultService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<XAllocResult>, existing: List<XAllocResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            xAllocResultArchiveService,
-            xAllocResultPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for updated entities
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                xAllocResultPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     open suspend fun isQuadraticFundingEnabled(roundId: Int, bestBlockId: String): Boolean =
@@ -277,5 +276,5 @@ open class XAllocResultService(
     protected fun resolveExisting(
         recordId: String,
         cache: Map<String, XAllocResult>,
-    ): XAllocResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
+    ): XAllocResult? = cache[recordId] ?: repository.findById(recordId)
 }
