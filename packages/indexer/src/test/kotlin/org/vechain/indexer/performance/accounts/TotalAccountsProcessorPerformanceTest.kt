@@ -4,20 +4,18 @@ import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsProcessor
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.PostgresPruner
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("total-accounts")
@@ -25,18 +23,14 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var totalAccountsRepository: TotalAccountsRepository
     @Autowired lateinit var totalAccountsService: TotalAccountsService
-    @Autowired lateinit var archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>
-    @Autowired lateinit var mongoTemplate: MongoTemplate
+    @Autowired lateinit var totalAccountsPruner: PostgresPruner
+    @Autowired lateinit var jdbcTemplate: JdbcTemplate
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        totalAccountsRepository.deleteAll()
-        mongoTemplate.remove(
-            org.springframework.data.mongodb.core.query.Query(),
-            TotalAccountsArchive::class.java,
-        )
-        println("✓ Cleared accounts database and archives")
+        jdbcTemplate.update("DELETE FROM total_accounts")
+        println("✓ Cleared accounts database")
 
         // Create profiler for detailed timing analysis
         val profiler = DetailedProfiler()
@@ -78,7 +72,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledTotalAccountsService(
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
+                    totalAccountsPruner = totalAccountsPruner,
                     profiler = profiler,
                 )
             } else {
@@ -90,15 +84,13 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTotalAccountsProcessor(
                     service = serviceToUse,
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 TotalAccountsProcessor(
-                    service = serviceToUse,
                     repository = totalAccountsRepository,
-                    archiveService = archiveService,
+                    service = serviceToUse,
                     indexerVersionService = mockIndexerVersionService,
                 )
             }
@@ -120,14 +112,12 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTotalAccountsProcessor(
         service: TotalAccountsService,
         repository: TotalAccountsRepository,
-        archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
         indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         TotalAccountsProcessor(
-            service = service,
             repository = repository,
-            archiveService = archiveService,
+            service = service,
             indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
@@ -108,5 +107,5 @@ open class AccountsService(
     }
 
     fun getOverview(address: Address): AccountOverview? =
-        accountOverviewRepository.findByIdOrNull(address.value)
+        accountOverviewRepository.findByAddress(address.value)
 }

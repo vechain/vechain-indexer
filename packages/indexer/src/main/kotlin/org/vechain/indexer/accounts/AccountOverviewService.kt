@@ -3,15 +3,12 @@ package org.vechain.indexer.accounts
 import java.math.BigInteger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.HexUtils.toBigInteger
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
@@ -21,8 +18,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class AccountOverviewService(
     private val repository: AccountOverviewRepository,
-    private val archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-    private val accountOverviewPruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+    private val accountOverviewPruner: PostgresPruner,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -53,15 +49,18 @@ open class AccountOverviewService(
         return Pair(updatedResult.values.toList(), archiveResult.values.toList())
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<AccountOverview>, existing: List<AccountOverview>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            repository = repository,
-            archiveService = archiveService,
-            pruner = accountOverviewPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.address }
+            if (entityIds.isNotEmpty()) {
+                accountOverviewPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     /**
@@ -249,10 +248,10 @@ open class AccountOverviewService(
     protected fun createNewAccountOverview(address: String, block: Block): AccountOverview {
         return AccountOverview(
             address = address,
+            version = 1,
             blockId = block.id,
             blockNumber = block.number,
             blockTimestamp = block.timestamp,
-            version = 0,
             firstSeen = block.timestamp,
             lastSeen = block.timestamp,
             transactionsSent = 0L,
@@ -288,7 +287,7 @@ open class AccountOverviewService(
         }
 
         // Check if a record exists in the DB
-        repository.findByIdOrNull(recordId)?.let {
+        repository.findByAddress(recordId)?.let {
             // If a record exists add it to the archive and add a copy with incremented version to
             // updated
             archived[recordId] = it

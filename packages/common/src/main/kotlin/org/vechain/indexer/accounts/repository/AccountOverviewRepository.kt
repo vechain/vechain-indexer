@@ -1,8 +1,10 @@
 package org.vechain.indexer.accounts.repository
 
-import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.accounts.AccountOverview
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("accounts", "account-overview")
-interface AccountOverviewRepository : BaseIndexedRepository<AccountOverview, String> {}
+interface AccountOverviewRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<AccountOverview>, existing: List<AccountOverview>)
+
+    fun findByAddress(address: String): AccountOverview?
+}

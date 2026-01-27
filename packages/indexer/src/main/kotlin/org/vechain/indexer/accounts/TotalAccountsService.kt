@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
@@ -17,7 +17,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Service
 open class TotalAccountsService(
     private val repository: TotalAccountsRepository,
-    private val archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    private val totalAccountsPruner: PostgresPruner,
 ) {
     val ONE_VET: BigInteger = BigInteger.TEN.pow(18)
 
@@ -45,16 +45,24 @@ open class TotalAccountsService(
     }
 
     /**
-     * @param totalAccountsInfo The list of TotalAccounts entities to save.
-     * @param archive The current global "ALL" tracker snapshot.
-     * @notice Persists new account records and archives in MongoDB.
+     * @param totalAccountsInfo The list of TotalAccounts entities to save (updated versions).
+     * @param archive The previous global "ALL" tracker snapshot (existing version).
+     * @notice Persists new account records in PostgreSQL.
      * @dev Skips persistence when no new accounts exist.
      */
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(totalAccountsInfo: List<TotalAccounts>, archive: TotalAccounts) {
         if (totalAccountsInfo.isEmpty()) return
-        repository.saveAll(totalAccountsInfo)
-        archiveService.saveAll(listOf(archive))
+
+        // The archive parameter is the previous version of the "ALL" tracker
+        // We pass it as 'existing' to be marked as is_current=false
+        repository.saveAllVersioned(totalAccountsInfo, listOf(archive))
+
+        // Trigger targeted pruning for the ALL tracker if it has prior versions
+        val latestBlock = totalAccountsInfo.maxOf { it.blockNumber }
+        if (archive.version > 1) {
+            totalAccountsPruner.run(latestBlock, listOf(archive.id))
+        }
     }
 
     /**
@@ -87,10 +95,10 @@ open class TotalAccountsService(
             newAccountIds.map {
                 TotalAccounts(
                     id = it,
+                    version = 1,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    version = 0,
                 )
             }
 
@@ -99,10 +107,10 @@ open class TotalAccountsService(
             existingAccounts.firstOrNull { it.id == "ALL" }
                 ?: TotalAccounts(
                     id = "ALL",
+                    version = 1,
                     blockId = block.id,
                     blockNumber = block.number,
                     blockTimestamp = block.timestamp,
-                    version = 0,
                     total = 0L,
                     timeFrame = TimeFrame.ALL,
                 )
@@ -284,6 +292,7 @@ open class TotalAccountsService(
     ): TotalAccounts =
         TotalAccounts(
             id = id,
+            version = 1,
             blockId = mainTracker.blockId,
             blockNumber = mainTracker.blockNumber,
             blockTimestamp = mainTracker.blockTimestamp,
@@ -293,6 +302,5 @@ open class TotalAccountsService(
             weekOfYear = mainTracker.weekOfYear,
             month = mainTracker.month,
             year = mainTracker.year,
-            version = 0,
         )
 }

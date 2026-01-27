@@ -12,13 +12,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
@@ -27,17 +25,12 @@ import org.vechain.indexer.thor.model.Transaction
 internal class AccountOverviewServiceTest {
     @MockK lateinit var repository: AccountOverviewRepository
 
-    @MockK lateinit var archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
-    private class TestableService(
-        repository: AccountOverviewRepository,
-        archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-        pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
-    ) : AccountOverviewService(repository, archiveService, pruner) {
+    private class TestableService(repository: AccountOverviewRepository, pruner: PostgresPruner) :
+        AccountOverviewService(repository, pruner) {
         fun callTransactionsSentRule(
             block: Block,
             updatedResult: MutableMap<String, AccountOverview>,
@@ -91,7 +84,7 @@ internal class AccountOverviewServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner)
     }
 
     private fun block(number: Long = 1L, transactions: List<Transaction> = emptyList()) =
@@ -161,10 +154,10 @@ internal class AccountOverviewServiceTest {
     private fun existingAccountOverview(address: String, version: Int = 3) =
         AccountOverview(
             address = address,
+            version = version,
             blockId = "0xOLD_BLOCK",
             blockNumber = 10L,
             blockTimestamp = 100L,
-            version = version,
             firstSeen = 100L,
             lastSeen = 100L,
             transactionsSent = 1L,
@@ -187,7 +180,7 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.id, created.blockId)
         assertEquals(b.number, created.blockNumber)
         assertEquals(b.timestamp, created.blockTimestamp)
-        assertEquals(0, created.version)
+        assertEquals(1, created.version)
         assertEquals(b.timestamp, created.firstSeen)
         assertEquals(b.timestamp, created.lastSeen)
         assertEquals(0L, created.transactionsSent)
@@ -207,8 +200,8 @@ internal class AccountOverviewServiceTest {
             existingAccountOverview(originA, version = 3)
                 .copy(transactionsSent = 5L, clausesSent = 7L)
 
-        every { repository.findByIdOrNull(originA) } returns existingA
-        every { repository.findByIdOrNull(originB) } returns null
+        every { repository.findByAddress(originA) } returns existingA
+        every { repository.findByAddress(originB) } returns null
 
         val b =
             block(
@@ -234,7 +227,7 @@ internal class AccountOverviewServiceTest {
         assertSame(existingA, archived[originA])
 
         val updatedB = updated[originB]!!
-        assertEquals(0, updatedB.version)
+        assertEquals(1, updatedB.version)
         assertEquals(1L, updatedB.transactionsSent)
         assertEquals(3L, updatedB.clausesSent)
         assertTrue(archived[originB] == null)
@@ -247,8 +240,8 @@ internal class AccountOverviewServiceTest {
         val existingA =
             existingAccountOverview(payerA, version = 1).copy(vthoBurned = BigInteger("100"))
 
-        every { repository.findByIdOrNull(payerA) } returns existingA
-        every { repository.findByIdOrNull(payerB) } returns null
+        every { repository.findByAddress(payerA) } returns existingA
+        every { repository.findByAddress(payerB) } returns null
 
         val b =
             block(
@@ -280,7 +273,7 @@ internal class AccountOverviewServiceTest {
         val payer = "0xPAYER"
         val existing =
             existingAccountOverview(payer, version = 1).copy(vthoDelegated = BigInteger("7"))
-        every { repository.findByIdOrNull(payer) } returns existing
+        every { repository.findByAddress(payer) } returns existing
 
         val b =
             block(
@@ -324,8 +317,8 @@ internal class AccountOverviewServiceTest {
         val originB = "0xB"
         val existingA = existingAccountOverview(originA, version = 1).copy(gasUsed = BigInteger.TEN)
 
-        every { repository.findByIdOrNull(originA) } returns existingA
-        every { repository.findByIdOrNull(originB) } returns null
+        every { repository.findByAddress(originA) } returns existingA
+        every { repository.findByAddress(originB) } returns null
 
         val b =
             block(
@@ -354,8 +347,8 @@ internal class AccountOverviewServiceTest {
         val existingA =
             existingAccountOverview(fromA, version = 1).copy(vetSent = BigInteger("100"))
 
-        every { repository.findByIdOrNull(fromA) } returns existingA
-        every { repository.findByIdOrNull(fromB) } returns null
+        every { repository.findByAddress(fromA) } returns existingA
+        every { repository.findByAddress(fromB) } returns null
 
         val events =
             listOf(
@@ -381,8 +374,8 @@ internal class AccountOverviewServiceTest {
         val existingA =
             existingAccountOverview(toA, version = 1).copy(vetReceived = BigInteger("100"))
 
-        every { repository.findByIdOrNull(toA) } returns existingA
-        every { repository.findByIdOrNull(toB) } returns null
+        every { repository.findByAddress(toA) } returns existingA
+        every { repository.findByAddress(toB) } returns null
 
         val events =
             listOf(
@@ -426,7 +419,7 @@ internal class AccountOverviewServiceTest {
     fun `archives existing record and returns version bumped copy`() {
         val recordId = "0xACC"
         val existing = existingAccountOverview(recordId, version = 3)
-        every { repository.findByIdOrNull(recordId) } returns existing
+        every { repository.findByAddress(recordId) } returns existing
 
         val updated = mutableMapOf<String, AccountOverview>()
         val archived = mutableMapOf<String, AccountOverview>()
@@ -446,7 +439,7 @@ internal class AccountOverviewServiceTest {
     fun `creates new record when none exists`() {
         val recordId = "0xNEW"
         val b = block(number = 42L)
-        every { repository.findByIdOrNull(recordId) } returns null
+        every { repository.findByAddress(recordId) } returns null
 
         val updated = mutableMapOf<String, AccountOverview>()
         val archived = mutableMapOf<String, AccountOverview>()
@@ -455,7 +448,7 @@ internal class AccountOverviewServiceTest {
             service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
 
         assertEquals(recordId, resolved.address)
-        assertEquals(0, resolved.version)
+        assertEquals(1, resolved.version)
         assertEquals(b.id, resolved.blockId)
         assertEquals(b.number, resolved.blockNumber)
         assertEquals(b.timestamp, resolved.blockTimestamp)
@@ -470,7 +463,7 @@ internal class AccountOverviewServiceTest {
     fun `does not bump version twice within same block`() {
         val recordId = "0xACC"
         val existing = existingAccountOverview(recordId, version = 3)
-        every { repository.findByIdOrNull(recordId) } returns existing
+        every { repository.findByAddress(recordId) } returns existing
 
         val updated = mutableMapOf<String, AccountOverview>()
         val archived = mutableMapOf<String, AccountOverview>()

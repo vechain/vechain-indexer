@@ -1,11 +1,13 @@
 package org.vechain.indexer.accounts.repository
 
-import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.accounts.VetBalance
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("accounts", "vet-balance")
-interface VetBalanceRepository : BaseIndexedRepository<VetBalance, String> {
+interface VetBalanceRepository : PostgresIndexedRepository {
+    fun saveAll(records: List<VetBalance>)
+
+    fun count(): Long
+
     fun findFirstByAddressOrderByBlockTimestampDesc(address: String): VetBalance?
 
     fun findByAddressAndBlockTimestampBetweenOrderByBlockTimestampDesc(

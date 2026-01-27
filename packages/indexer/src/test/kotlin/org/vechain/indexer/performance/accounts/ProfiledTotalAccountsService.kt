@@ -1,18 +1,17 @@
 package org.vechain.indexer.performance.accounts
 
 import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 
 /**
  * Extended AccountsService that profiles EVERY internal method call Tracks performance of:
  * - processBlock (main processing)
- * - save (MongoDB writes)
+ * - save (PostgreSQL writes)
  * - getNewAccounts (identify new accounts)
  * - updateAccountsInfo (update tracking statistics)
  * - applyRolloverLogic (rollover calculations)
@@ -20,9 +19,9 @@ import org.vechain.indexer.thor.model.InspectionResult
  */
 class ProfiledTotalAccountsService(
     repository: TotalAccountsRepository,
-    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    totalAccountsPruner: PostgresPruner,
     private val profiler: DetailedProfiler,
-) : TotalAccountsService(repository, archiveService) {
+) : TotalAccountsService(repository, totalAccountsPruner) {
 
     override fun processBlock(
         block: Block,
@@ -45,7 +44,7 @@ class ProfiledTotalAccountsService(
     }
 
     override fun save(totalAccountsInfo: List<TotalAccounts>, archive: TotalAccounts) {
-        profiler.time("      AccountsService.save (MongoDB)") {
+        profiler.time("      AccountsService.save (PostgreSQL)") {
             super.save(totalAccountsInfo, archive)
         }
     }

@@ -1,28 +1,24 @@
 package org.vechain.indexer.accounts
 
-import kotlin.collections.isNotEmpty
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "total-accounts")
 @Component
 open class TotalAccountsProcessor(
-    private val service: TotalAccountsService,
     repository: TotalAccountsRepository,
-    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    private val service: TotalAccountsService,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = archiveService,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
     ) {
