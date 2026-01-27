@@ -65,8 +65,9 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
      * Saves updated documents with versioning support.
      *
      * This method:
-     * 1. INSERTs existing versions (intermediate versions from cache) with is_current=false
-     * 2. INSERTs updated versions (final versions) with is_current=true
+     * 1. Marks all existing current versions for affected entities as is_current=false
+     * 2. INSERTs existing versions (intermediate versions from cache) with is_current=false
+     * 3. INSERTs updated versions (final versions) with is_current=true
      *
      * Uses ON CONFLICT to handle duplicate keys when blocks are reprocessed.
      *
@@ -79,14 +80,30 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
             return
         }
 
+        // First, mark all existing current versions for affected entities as is_current=false
+        // This prevents race conditions where an older version could be marked as current
+        val affectedEntityIds =
+            (updated.map { it.getDocumentId() } + existing.map { it.getDocumentId() }).distinct()
+        if (affectedEntityIds.isNotEmpty()) {
+            namedJdbcTemplate.update(
+                """
+                UPDATE ${tableName()}
+                SET is_current = false
+                WHERE ${entityIdColumn()} IN (:entityIds) AND is_current = true
+                """
+                    .trimIndent(),
+                mapOf("entityIds" to affectedEntityIds),
+            )
+        }
+
         // Insert existing versions (intermediate) with is_current=false
-        // Uses ON CONFLICT to handle re-processing of blocks
+        // Uses ON CONFLICT DO NOTHING since we already marked old versions as non-current
         if (existing.isNotEmpty()) {
             jdbcTemplate.batchUpdate(
                 """
                 INSERT INTO ${tableName()} (${insertColumns()})
                 VALUES (${insertPlaceholders()})
-                ON CONFLICT (${entityIdColumn()}, version) DO UPDATE SET is_current = false
+                ON CONFLICT (${entityIdColumn()}, version) DO NOTHING
                 """
                     .trimIndent(),
                 existing.map { insertParamsForExisting(it) },
@@ -94,7 +111,7 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
         }
 
         // Insert updated versions (final) with is_current=true
-        // Uses ON CONFLICT to handle re-processing of blocks
+        // Uses ON CONFLICT to update all fields if the row already exists
         if (updated.isNotEmpty()) {
             jdbcTemplate.batchUpdate(
                 """

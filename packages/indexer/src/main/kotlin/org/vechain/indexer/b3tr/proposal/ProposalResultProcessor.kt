@@ -42,8 +42,9 @@ open class ProposalResultProcessor(
         }
 
         if (entry.events().isNotEmpty()) {
-            // Process the events using the service
-            val (updated, archives) = service.processEvents(entry.events())
+            // Process the events using the service (wrap in IO dispatcher for blocking JDBC calls)
+            val (updated, archives) =
+                withContext(Dispatchers.IO) { service.processEvents(entry.events()) }
             updated.forEach { eventResult ->
                 val existing = allUpdated[eventResult.proposalId]
                 if (existing != null) {
