@@ -3,19 +3,16 @@ package org.vechain.indexer.history
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.b3tr.action.SustainabilityProofV2
 import org.vechain.indexer.b3tr.voting.AppVote
 import org.vechain.indexer.b3tr.voting.Support
 
-@Document(collection = "history_events")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class IndexedHistoryEvent
 @ConstructorBinding
 constructor(
-    @Id val id: String,
+    val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,

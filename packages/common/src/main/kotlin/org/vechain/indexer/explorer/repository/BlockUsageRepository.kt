@@ -1,12 +1,31 @@
 package org.vechain.indexer.explorer.repository
 
-import org.springframework.data.mongodb.repository.Query
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.explorer.BlockUsage
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Repository
-interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsage, Long> {
+interface BlockUsageRepository : PostgresIndexedRepository {
+
+    /**
+     * Save a BlockUsage record.
+     *
+     * @param blockUsage The record to save
+     */
+    fun save(blockUsage: BlockUsage)
+
+    /**
+     * Save multiple BlockUsage records.
+     *
+     * @param blockUsages The records to save
+     */
+    fun saveAll(blockUsages: List<BlockUsage>)
+
+    /**
+     * Find a block usage record by block number.
+     *
+     * @param blockNumber The block number to find
+     * @return BlockUsage record or null if not found
+     */
+    fun findByBlockNumber(blockNumber: Long): BlockUsage?
 
     /**
      * Find all block usage records within a timestamp range (inclusive).
@@ -15,10 +34,6 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @param endTimestamp The ending timestamp in seconds (inclusive)
      * @return List of BlockUsage records in the range, ordered by timestamp ascending
      */
-    @Query(
-        value = "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 } }",
-        sort = "{ 'blockTimestamp': 1 }",
-    )
     fun findAllInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 
     /**
@@ -30,11 +45,6 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @return List of hourly BlockUsage records in the range plus boundaries, ordered by timestamp
      *   ascending
      */
-    @Query(
-        value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isHourly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
-        sort = "{ 'blockTimestamp': 1 }",
-    )
     fun findHourlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 
     /**
@@ -45,11 +55,6 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @param endTimestamp The ending timestamp in seconds (inclusive)
      * @return List of daily BlockUsage records in the range, ordered by timestamp ascending
      */
-    @Query(
-        value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isDaily': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
-        sort = "{ 'blockTimestamp': 1 }",
-    )
     fun findDailyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 
     /**
@@ -60,11 +65,6 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @param endTimestamp The ending timestamp in seconds (inclusive)
      * @return List of weekly BlockUsage records in the range, ordered by timestamp ascending
      */
-    @Query(
-        value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isWeekly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }}",
-        sort = "{ 'blockTimestamp': 1 }",
-    )
     fun findWeeklyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 
     /**
@@ -75,10 +75,5 @@ interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsag
      * @param endTimestamp The ending timestamp in seconds (inclusive)
      * @return List of monthly BlockUsage records in the range, ordered by timestamp ascending
      */
-    @Query(
-        value =
-            "{ 'blockTimestamp': { \$gte: ?0, \$lte: ?1 }, \$or: [{ 'isMonthly': true }, { 'blockTimestamp': ?0 }, { 'blockTimestamp': ?1 }] }",
-        sort = "{ 'blockTimestamp': 1 }",
-    )
     fun findMonthlyInTimestampRange(startTimestamp: Long, endTimestamp: Long): List<BlockUsage>
 }

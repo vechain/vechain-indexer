@@ -2,10 +2,6 @@ package org.vechain.indexer.history
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.b3tr.ProofUtils
@@ -25,7 +21,6 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class HistoryService(
     private val historyRepository: HistoryRepository,
-    private val mongoTemplate: MongoTemplate,
     private val blacklistClient: NftBlacklistClient,
 ) {
 
@@ -57,43 +52,15 @@ open class HistoryService(
         historyRepository.saveAll(events)
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
         assertEventTypes(events, "NFT_Blacklisted", "NFT_Whitelisted")
 
         val (blacklistAddresses, whitelistAddresses) = EventUtils.partitionBlacklistEvents(events)
 
-        if (blacklistAddresses.isNotEmpty()) blacklist(blacklistAddresses)
-        if (whitelistAddresses.isNotEmpty()) whitelist(whitelistAddresses)
-    }
-
-    /** Sets isBlacklisted to true for all history events related to the given contract addresses */
-    protected fun blacklist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, true)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
-    }
-
-    protected fun whitelist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedHistoryEvent::contractAddress.name)
-                        .`in`(contractAddresses)
-                )
-            }
-        val update = Update().set(IndexedHistoryEvent::isBlacklisted.name, false)
-        mongoTemplate.updateMulti(query, update, IndexedHistoryEvent::class.java)
+        if (blacklistAddresses.isNotEmpty()) historyRepository.blacklist(blacklistAddresses)
+        if (whitelistAddresses.isNotEmpty()) historyRepository.whitelist(whitelistAddresses)
     }
 
     private suspend fun processBatchTransferEvents(event: IndexedEvent): List<IndexedHistoryEvent> {

@@ -2,7 +2,6 @@ package org.vechain.indexer.explorer
 
 import java.math.BigInteger
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.explorer.TimestampUtils.calculateTimeBoundary
@@ -64,7 +63,7 @@ open class BlockUsageService(private val repository: BlockUsageRepository) {
         }
 
         // Cache miss - fall back to database lookup
-        return repository.findByIdOrNull(blockNumber - 1)
+        return repository.findByBlockNumber(blockNumber - 1)
     }
 
     /**

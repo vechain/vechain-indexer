@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
@@ -17,7 +17,7 @@ open class BlockUsageProcessor(
     private val service: BlockUsageService,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseProcessor(
+    BasePostgresProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.BLOCK_USAGE,

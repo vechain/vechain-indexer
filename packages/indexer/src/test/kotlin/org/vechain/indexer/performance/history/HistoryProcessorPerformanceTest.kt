@@ -4,7 +4,6 @@ import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
@@ -25,14 +24,12 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var historyService: HistoryService
 
-    @Autowired lateinit var mongoTemplate: MongoTemplate
-
     @Autowired lateinit var blacklistClient: NftBlacklistClient
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        historyRepository.deleteAll()
+        historyRepository.rollback(0)
         println("✓ Cleared history database")
 
         // Create profiler for detailed timing analysis
@@ -77,12 +74,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 // Use comprehensive profiling that tracks ALL internal methods
                 val profiledService =
-                    ProfiledHistoryService(
-                        historyRepository,
-                        mongoTemplate,
-                        blacklistClient,
-                        profiler,
-                    )
+                    ProfiledHistoryService(historyRepository, blacklistClient, profiler)
                 ProfiledHistoryProcessor(
                     repository = historyRepository,
                     historyService = profiledService,

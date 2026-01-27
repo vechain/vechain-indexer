@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.history
 
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.history.HistoryRepository
 import org.vechain.indexer.history.HistoryService
@@ -15,10 +14,9 @@ import org.vechain.indexer.thor.model.Block
  */
 class ProfiledHistoryService(
     repository: HistoryRepository,
-    mongoTemplate: MongoTemplate,
     blacklistClient: NftBlacklistClient,
     private val profiler: DetailedProfiler,
-) : HistoryService(repository, mongoTemplate, blacklistClient) {
+) : HistoryService(repository, blacklistClient) {
 
     private suspend fun <T> timeSuspend(operationName: String, block: suspend () -> T): T {
         profiler.start(operationName)
@@ -39,7 +37,7 @@ class ProfiledHistoryService(
     }
 
     override fun save(events: List<IndexedHistoryEvent>) {
-        profiler.time("      HistoryService.save (MongoDB)") {
+        profiler.time("      HistoryService.save (PostgreSQL)") {
             profiler.time("        - repository.saveAll") { super.save(events) }
         }
     }

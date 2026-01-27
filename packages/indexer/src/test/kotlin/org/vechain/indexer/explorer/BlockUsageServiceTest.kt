@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
 import org.vechain.indexer.fixtures.BlockFixtures
 
@@ -37,12 +36,12 @@ class BlockUsageServiceTest {
     @Test
     fun `getPreviousBlockUsage queries repository for non-genesis block`() {
         val previousBlockUsage = createBlockUsage(blockNumber = 99L, blockTimestamp = 1000L)
-        every { repository.findByIdOrNull(99L) } returns previousBlockUsage
+        every { repository.findByBlockNumber(99L) } returns previousBlockUsage
 
         val result = service.getPreviousBlockUsage(100L)
 
         assertEquals(previousBlockUsage, result)
-        verify(exactly = 1) { repository.findByIdOrNull(99L) }
+        verify(exactly = 1) { repository.findByBlockNumber(99L) }
     }
 
     // Test validatePreviousBlockUsage
@@ -281,7 +280,7 @@ class BlockUsageServiceTest {
                 cumulativeNumClauses = BigInteger.ZERO,
             )
 
-        every { repository.findByIdOrNull(2L) } returns previousBlockUsage
+        every { repository.findByBlockNumber(2L) } returns previousBlockUsage
 
         val block = BlockFixtures.BLOCK_NO_CLAUSES // block number = 3
 
@@ -294,14 +293,14 @@ class BlockUsageServiceTest {
             BigInteger.ZERO,
             result.cumulativeNumTransactions,
         ) // no transactions in this block either
-        verify(exactly = 1) { repository.findByIdOrNull(2L) }
+        verify(exactly = 1) { repository.findByBlockNumber(2L) }
     }
 
     // Test processBlock - missing previous block
     @Test
     fun `processBlock throws exception when previous block is missing`() {
         val block = BlockFixtures.BLOCK_SINGLE_CLAUSE
-        every { repository.findByIdOrNull(block.number - 1) } returns null
+        every { repository.findByBlockNumber(block.number - 1) } returns null
 
         val exception = assertThrows<IllegalArgumentException> { service.processBlock(block) }
 
@@ -317,7 +316,7 @@ class BlockUsageServiceTest {
     fun `processBlock detects time boundaries correctly`() {
         val previousBlockUsage = createBlockUsage(blockNumber = 2L, blockTimestamp = 1680177320L)
 
-        every { repository.findByIdOrNull(2L) } returns previousBlockUsage
+        every { repository.findByBlockNumber(2L) } returns previousBlockUsage
 
         val block = BlockFixtures.BLOCK_NO_CLAUSES // timestamp: 1680177330
 
@@ -333,7 +332,7 @@ class BlockUsageServiceTest {
     @Test
     fun `save calls repository save`() {
         val blockUsage = createBlockUsage()
-        every { repository.save(blockUsage) } returns blockUsage
+        every { repository.save(blockUsage) } returns Unit
 
         service.save(blockUsage)
 

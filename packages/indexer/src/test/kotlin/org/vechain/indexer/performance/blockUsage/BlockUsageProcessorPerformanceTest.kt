@@ -25,7 +25,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
-        blockUsageRepository.deleteAll()
+        blockUsageRepository.rollback(0)
         println("✓ Cleared block usage database")
 
         // Create profiler for detailed timing analysis
