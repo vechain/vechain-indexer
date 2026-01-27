@@ -1,12 +1,18 @@
 package org.vechain.indexer.stargate.tokenReward
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("stargate", "token-reward")
-interface TokenRewardRepository : BaseIndexedRepository<TokenReward, String> {
+interface TokenRewardRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<TokenReward>, existing: List<TokenReward>)
+
+    fun findById(id: String): TokenReward?
+
+    fun findAllById(ids: Collection<String>): List<TokenReward>
+
+    fun saveAll(rewards: List<TokenReward>)
+
     fun findAllByValidatorAndRewardPeriodAndCycle(
         validator: String,
         rewardPeriod: RewardPeriod,

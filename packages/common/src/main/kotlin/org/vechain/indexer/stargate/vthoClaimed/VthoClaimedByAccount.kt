@@ -2,17 +2,10 @@ package org.vechain.indexer.stargate.vthoClaimed
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils
 
-@Document(collection = "stargate_vtho_claimed_by_account")
-data class VthoClaimedByAccount
-@ConstructorBinding
-constructor(
+data class VthoClaimedByAccount(
     override val version: Int,
     override val blockId: String,
     override val blockNumber: Long,
@@ -23,7 +16,7 @@ constructor(
     val account: String,
     val tokenId: String?,
     /** Could either be the `account` or `account_tokenId` */
-    @Id val id: String,
+    @JsonIgnore val id: String,
 ) : VersionedDocument {
     constructor(
         version: Int,
@@ -50,9 +43,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "stargate_vtho_claimed_by_account_archives")
-data class VthoClaimedByAccountArchive(
-    @Id override val id: String,
-    override val data: VthoClaimedByAccount,
-) : Archive<VthoClaimedByAccount>

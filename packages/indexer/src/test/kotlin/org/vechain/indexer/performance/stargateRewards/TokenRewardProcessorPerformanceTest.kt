@@ -10,13 +10,11 @@ import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
-import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.domain.ValidatorDecoder
@@ -27,7 +25,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
-    @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
+    @Autowired lateinit var tokenRewardPruner: PostgresPruner
     @Autowired lateinit var delegationRepository: DelegationRepository
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
@@ -35,9 +33,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
-        // Clear database to start fresh
-        tokenRewardRepository.deleteAll()
-        println("✓ Cleared token reward database")
+        // Note: With PostgreSQL, database cleanup is handled differently
+        println("✓ Starting token reward performance test")
 
         // Create profiler for detailed timing analysis
         val profiler = DetailedProfiler()
@@ -79,7 +76,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledTokenRewardService(
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
+                    tokenRewardPruner = tokenRewardPruner,
                     delegationRepository = delegationRepository,
                     thorClient = thorClient,
                     profiler = profiler,
@@ -93,7 +90,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
@@ -101,7 +97,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                 TokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
-                    archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                 )
             }
@@ -124,14 +119,12 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTokenRewardProcessor(
         service: TokenRewardService,
         repository: TokenRewardRepository,
-        archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
         indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         TokenRewardProcessor(
             service = service,
             repository = repository,
-            archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

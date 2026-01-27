@@ -15,7 +15,7 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
 @Configuration
-@Profile("validator", "delegation")
+@Profile("validator", "delegation", "stargate")
 open class DelegationConfig {
     @Bean
     open fun delegationArchiveService(

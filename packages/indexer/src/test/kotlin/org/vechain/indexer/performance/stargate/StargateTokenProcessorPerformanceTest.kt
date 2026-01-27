@@ -10,12 +10,10 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.token.StargateEventService
-import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
@@ -30,7 +28,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
     @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
-    @Autowired lateinit var archiveService: ArchiveService<StargateToken, StargateTokenArchive>
+    @Autowired lateinit var stargateTokenPruner: PostgresPruner
 
     @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
     lateinit var stargateNftContract: String
@@ -49,9 +47,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
-        // Clear database to start fresh
-        stargateTokenRepository.deleteAll()
-        println("✓ Cleared stargate token database")
+        // Note: With PostgreSQL, database cleanup is handled differently
+        println("✓ Starting stargate token performance test")
 
         // Create profiler for detailed timing analysis
         val profiler = DetailedProfiler()
@@ -95,7 +92,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     repository = stargateTokenRepository,
                     eventService = stargateEventService,
                     validatorDelegationService = validatorDelegationService,
-                    archiveService = archiveService,
+                    stargateTokenPruner = stargateTokenPruner,
                     profiler = profiler,
                 )
             } else {
@@ -107,7 +104,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledStargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
@@ -115,7 +111,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                 StargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
-                    archiveService = archiveService,
                     indexerVersionService = mockIndexerVersionService,
                 )
             }
@@ -163,14 +158,12 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledStargateTokenProcessor(
         service: StargateTokenService,
         stargateTokenRepository: StargateTokenRepository,
-        archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
         indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         StargateTokenProcessor(
             service = service,
             stargateTokenRepository = stargateTokenRepository,
-            archiveService = archiveService,
             indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

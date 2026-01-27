@@ -11,12 +11,12 @@ import kotlin.collections.isNotEmpty
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
-import org.vechain.indexer.archive.ArchiveService
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -34,7 +34,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @Service
 open class TokenRewardService(
     private val repository: TokenRewardRepository,
-    private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    private val tokenRewardPruner: PostgresPruner,
     private val delegationRepository: DelegationRepository,
     private val thorClient: ThorClient,
 ) {
@@ -117,13 +117,19 @@ open class TokenRewardService(
         )
     }
 
-    /** @notice Persist a batch of reward records to MongoDB. */
-    open fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        if (rewards.isEmpty()) return
-        repository.saveAll(rewards)
+    /** @notice Persist a batch of reward records to PostgreSQL. */
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(updated: List<TokenReward>, existing: List<TokenReward>) {
+        if (updated.isEmpty() && existing.isEmpty()) return
+        repository.saveAllVersioned(updated, existing)
 
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                tokenRewardPruner.run(latestBlock, entityIds)
+            }
         }
     }
 

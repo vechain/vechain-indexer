@@ -2,12 +2,9 @@ package org.vechain.indexer.stargate.rewards
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -16,12 +13,10 @@ import org.vechain.indexer.version.IndexerVersionService
 open class TokenRewardProcessor(
     private val service: TokenRewardService,
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = archiveService,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.TOKEN_REWARD,
     ) {

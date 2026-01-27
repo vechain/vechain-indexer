@@ -72,23 +72,16 @@ open class StargateService(
      * @notice Retrieves the total VTHO claimed by a specific account.
      * @dev If the account has never claimed rewards, zero is returned.
      */
-    open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger =
-        vthoClaimedByAccountRepository
-            .findById(IdUtils.generateId(HexUtils.normalise(account)))
-            .map {
-                when (rewardType) {
-                    "LEGACY" -> {
-                        it.legacyRewards
-                    }
-                    "DELEGATION" -> {
-                        it.delegationRewards
-                    }
-                    else -> {
-                        it.total
-                    }
-                }
-            }
-            .orElse(BigInteger.ZERO)
+    open fun getTotalVthoClaimed(account: String, rewardType: String?): BigInteger {
+        val record =
+            vthoClaimedByAccountRepository.findById(IdUtils.generateId(HexUtils.normalise(account)))
+        return when {
+            record == null -> BigInteger.ZERO
+            rewardType == "LEGACY" -> record.legacyRewards
+            rewardType == "DELEGATION" -> record.delegationRewards
+            else -> record.total
+        }
+    }
 
     /**
      * @param account Owner or delegator address.
@@ -102,28 +95,21 @@ open class StargateService(
         account: String,
         tokenId: String,
         rewardType: String?,
-    ): BigInteger =
-        vthoClaimedByAccountRepository
-            .findById(
+    ): BigInteger {
+        val record =
+            vthoClaimedByAccountRepository.findById(
                 IdUtils.generateId(
                     HexUtils.normalise(account),
                     BigIntegerUtils.fromHexOrDecimal(tokenId).toString(10),
                 )
             )
-            .map {
-                when (rewardType) {
-                    "LEGACY" -> {
-                        it.legacyRewards
-                    }
-                    "DELEGATION" -> {
-                        it.delegationRewards
-                    }
-                    else -> {
-                        it.total
-                    }
-                }
-            }
-            .orElse(BigInteger.ZERO)
+        return when {
+            record == null -> BigInteger.ZERO
+            rewardType == "LEGACY" -> record.legacyRewards
+            rewardType == "DELEGATION" -> record.delegationRewards
+            else -> record.total
+        }
+    }
 
     /**
      * @param blockNumber Block number to query.
@@ -404,10 +390,12 @@ open class StargateService(
         val slice =
             when {
                 tokenId != null -> {
-                    stargateTokenRepository
-                        .findById(tokenId)
-                        .map { SliceImpl(listOf(it), pageable, false) }
-                        .orElseGet { SliceImpl(emptyList(), pageable, false) }
+                    val token = stargateTokenRepository.findById(tokenId)
+                    if (token != null) {
+                        SliceImpl(listOf(token), pageable, false)
+                    } else {
+                        SliceImpl(emptyList(), pageable, false)
+                    }
                 }
                 manager != null && owner != null ->
                     stargateTokenRepository.findByOwnerOrManager(owner, manager, pageable)

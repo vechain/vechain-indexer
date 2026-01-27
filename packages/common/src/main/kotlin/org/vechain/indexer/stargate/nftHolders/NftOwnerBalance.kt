@@ -1,20 +1,15 @@
 package org.vechain.indexer.stargate.nftHolders
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
 
 /**
  * Tracks the number of NFTs held by each owner address. Used to determine unique holder counts - an
  * address is a holder if total > 0.
  */
-@Document(collection = "stargate_nft_owner_balances")
 data class NftOwnerBalance(
-    @Id val owner: String,
+    @JsonIgnore val owner: String,
     val total: Long,
     val byLevel: Map<TokenLevel, Long>,
     @JsonIgnore override val blockNumber: Long,
@@ -24,9 +19,3 @@ data class NftOwnerBalance(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = owner
 }
-
-@Document("stargate_nft_owner_balances_archives")
-data class NftOwnerBalanceArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: NftOwnerBalance) :
-    Archive<NftOwnerBalance>

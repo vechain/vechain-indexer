@@ -4,8 +4,8 @@ import kotlin.collections.plus
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -30,7 +30,7 @@ open class StargateTokenService(
     private val stargateTokenRepository: StargateTokenRepository,
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
-    private val archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    private val stargateTokenPruner: PostgresPruner,
 ) {
     private var cachedValidators: Set<String> = emptySet()
 
@@ -76,13 +76,18 @@ open class StargateTokenService(
     }
 
     /** Persist updated token snapshots. */
-    @Transactional
-    open fun save(tokens: Collection<StargateToken>, archive: List<StargateToken>) {
-        if (tokens.isEmpty()) return
-        stargateTokenRepository.saveAll(tokens)
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(updated: Collection<StargateToken>, existing: List<StargateToken>) {
+        if (updated.isEmpty() && existing.isEmpty()) return
+        stargateTokenRepository.saveAllVersioned(updated.toList(), existing)
 
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.tokenId }
+            if (entityIds.isNotEmpty()) {
+                stargateTokenPruner.run(latestBlock, entityIds)
+            }
         }
     }
 

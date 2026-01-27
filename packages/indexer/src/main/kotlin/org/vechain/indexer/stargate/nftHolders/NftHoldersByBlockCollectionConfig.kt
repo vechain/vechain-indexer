@@ -36,14 +36,7 @@ open class NftHoldersByBlockCollectionConfig(
                 version,
             )
 
-        if (dropped) {
-            val ownerDropped =
-                indexerVersionService.dropCollection(
-                    indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
-                )
-            if (ownerDropped)
-                indexerVersionService.dropArchiveCollection(NftOwnerBalanceArchive::class.java)
-        }
+        // NftOwnerBalance is now stored in PostgreSQL, no MongoDB collection to drop
 
         ensureCollection()
 

@@ -4,24 +4,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("stargate", "vtho-claimed-by-account")
 @Component
 open class VthoClaimedByAccountProcessor(
     private val service: VthoClaimedByAccountService,
-    vthoClaimByAccountArchiveService:
-        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     repository: VthoClaimedByAccountRepository,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = vthoClaimByAccountArchiveService,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
     ) {

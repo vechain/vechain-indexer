@@ -1,11 +1,10 @@
 package org.vechain.indexer.performance.stargateRewards
 
 import java.math.BigInteger
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -17,7 +16,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 /**
  * Extended TokenRewardService that profiles EVERY internal method call Tracks performance of:
  * - processBlock (main processing)
- * - save (MongoDB writes)
+ * - save (PostgreSQL writes)
  * - decodeResponseInfo (validator info decoding)
  * - getLatestRewards (get reward trackers)
  * - getDelegatorsBlockReward (calculate block reward)
@@ -29,11 +28,11 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
  */
 class ProfiledTokenRewardService(
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    tokenRewardPruner: PostgresPruner,
     delegationRepository: DelegationRepository,
     thorClient: ThorClient,
     private val profiler: DetailedProfiler,
-) : TokenRewardService(repository, archiveService, delegationRepository, thorClient) {
+) : TokenRewardService(repository, tokenRewardPruner, delegationRepository, thorClient) {
 
     override suspend fun processBlock(
         block: Block,
@@ -80,8 +79,10 @@ class ProfiledTokenRewardService(
         }
     }
 
-    override fun save(rewards: List<TokenReward>, archive: List<TokenReward>) {
-        profiler.time("      TokenRewardService.save (MongoDB)") { super.save(rewards, archive) }
+    override fun save(updated: List<TokenReward>, existing: List<TokenReward>) {
+        profiler.time("      TokenRewardService.save (PostgreSQL)") {
+            super.save(updated, existing)
+        }
     }
 
     // Private method accessors using reflection

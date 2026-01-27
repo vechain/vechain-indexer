@@ -1,7 +1,12 @@
 package org.vechain.indexer.stargate.vthoClaimed
 
-import org.springframework.context.annotation.Profile
-import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("stargate", "vtho-claimed-by-account")
-interface VthoClaimedByAccountRepository : BaseIndexedRepository<VthoClaimedByAccount, String>
+interface VthoClaimedByAccountRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<VthoClaimedByAccount>, existing: List<VthoClaimedByAccount>)
+
+    /** Find a record by its entity ID (account or account_tokenId). */
+    fun findById(id: String): VthoClaimedByAccount?
+
+    fun findAllById(ids: Collection<String>): List<VthoClaimedByAccount>
+}

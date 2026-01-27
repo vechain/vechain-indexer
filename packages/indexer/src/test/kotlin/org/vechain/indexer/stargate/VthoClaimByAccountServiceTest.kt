@@ -7,11 +7,9 @@ import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountArchive
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountService
 import org.vechain.indexer.utils.IdUtils
@@ -24,17 +22,14 @@ import strikt.assertions.isEqualTo
 internal class VthoClaimByAccountServiceTest {
     @MockK lateinit var repository: VthoClaimedByAccountRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>
+    @MockK lateinit var vthoClaimByAccountPruner: PostgresPruner
 
     private lateinit var service: VthoClaimedByAccountService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = VthoClaimedByAccountService(repository, archiveService, pruner)
+        service = VthoClaimedByAccountService(repository, vthoClaimByAccountPruner)
     }
 
     @Test
@@ -284,26 +279,22 @@ internal class VthoClaimByAccountServiceTest {
                     id = "0xabc",
                 )
             )
-        every { repository.saveAll(update) } returns update
-        every { archiveService.saveAll(existing) } just Runs
+        every { repository.saveAllVersioned(update, existing) } just Runs
 
         service.save(update, existing)
 
-        verify(exactly = 1) { repository.saveAll(update) }
-        verify(exactly = 1) { archiveService.saveAll(existing) }
+        verify(exactly = 1) { repository.saveAllVersioned(update, existing) }
     }
 
     @Test
     fun `update does not save or archive empty lists`() {
         val update = emptyList<VthoClaimedByAccount>()
         val existing = emptyList<VthoClaimedByAccount>()
-        every { repository.saveAll(update) } returns update
-        every { archiveService.saveAll(existing) } just Runs
+        every { repository.saveAllVersioned(any(), any()) } just Runs
 
         service.save(update, existing)
 
-        verify(exactly = 0) { repository.saveAll(update) }
-        verify(exactly = 0) { archiveService.saveAll(existing) }
+        verify(exactly = 0) { repository.saveAllVersioned(any(), any()) }
     }
 
     @Test

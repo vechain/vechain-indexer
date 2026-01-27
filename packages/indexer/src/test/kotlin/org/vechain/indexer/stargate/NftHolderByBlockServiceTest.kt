@@ -10,13 +10,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalance
-import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceArchive
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -29,14 +28,15 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
     @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
-    @MockK lateinit var archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>
+    @MockK lateinit var nftOwnerBalancePruner: PostgresPruner
 
     private lateinit var service: NftHoldersByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = NftHoldersByBlockService(repository, ownerBalanceRepository, archiveService)
+        service =
+            NftHoldersByBlockService(repository, ownerBalanceRepository, nftOwnerBalancePruner)
     }
 
     // ------------------------------------------------------------
@@ -369,7 +369,7 @@ class NftHolderByBlockServiceTest {
 
         every { repository.saveAll(records) } returns records
         // No owner balances to save after direct saveRecords call
-        every { ownerBalanceRepository.saveAll(emptyList<NftOwnerBalance>()) } returns emptyList()
+        every { ownerBalanceRepository.saveAllVersioned(any(), any()) } returns Unit
 
         service.saveRecords(records)
 
