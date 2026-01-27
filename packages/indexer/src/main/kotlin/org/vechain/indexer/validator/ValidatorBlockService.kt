@@ -4,7 +4,6 @@ import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.event.AbiLoader
@@ -198,7 +197,7 @@ open class ValidatorBlockService(
                 val offlineStartBlock = offlineValidators.remove(validatorId)
                 if (offlineStartBlock != null) {
                     val offlineDocId = "$offlineStartBlock-$validatorId"
-                    val offlineDoc = repository.findByIdOrNull(offlineDocId)
+                    val offlineDoc = repository.findById(offlineDocId)
                     return@mapNotNull offlineDoc?.copy(
                         blocksOffline = block.number - offlineDoc.blockNumber,
                         onlineBlock = block.number,

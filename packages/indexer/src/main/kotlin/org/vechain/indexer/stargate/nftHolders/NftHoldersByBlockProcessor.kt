@@ -1,8 +1,10 @@
 package org.vechain.indexer.stargate.nftHolders
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
@@ -14,7 +16,7 @@ open class NftHoldersByBlockProcessor(
     repository: NftHoldersByBlockRepository,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseProcessor(
+    BasePostgresProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK,
@@ -27,7 +29,7 @@ open class NftHoldersByBlockProcessor(
         val newRecords = service.processEvents(entry.events())
 
         if (newRecords.isNotEmpty()) {
-            service.saveRecords(newRecords)
+            withContext(Dispatchers.IO) { service.saveRecords(newRecords) }
         }
     }
 }

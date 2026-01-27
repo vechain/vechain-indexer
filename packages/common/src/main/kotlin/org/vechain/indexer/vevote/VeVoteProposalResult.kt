@@ -2,18 +2,11 @@ package org.vechain.indexer.vevote
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigDecimal
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "vevote_proposal_results")
-data class VeVoteProposalResult
-@ConstructorBinding
-constructor(
-    @JsonIgnore @Id val id: String,
+data class VeVoteProposalResult(
+    @JsonIgnore val id: String,
     @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
     override val blockNumber: Long,
@@ -46,9 +39,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "vevote_proposal_results_archives")
-data class VeVoteProposalResultArchive(
-    @Id override val id: String,
-    override val data: VeVoteProposalResult,
-) : Archive<VeVoteProposalResult>

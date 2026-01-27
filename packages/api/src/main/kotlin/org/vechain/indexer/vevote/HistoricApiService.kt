@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 
@@ -24,7 +23,7 @@ open class HistoricApiService(
         // Case 1: Filter by both proposalId and contractAddress
         if (proposalId != null && address != null) {
             val id = "$address-$proposalId"
-            val proposal = historicProposalsRepository.findByIdOrNull(id)
+            val proposal = historicProposalsRepository.findById(id)
             val content = proposal?.let { listOf(it) } ?: emptyList()
             return SliceImpl(content, pageable, false)
         }

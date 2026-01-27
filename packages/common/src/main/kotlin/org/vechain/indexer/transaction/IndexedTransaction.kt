@@ -3,8 +3,6 @@ package org.vechain.indexer.transaction
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
@@ -12,13 +10,12 @@ import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "transactions")
 @JsonView(Views.Public::class)
 data class IndexedTransaction
 @ConstructorBinding
 @JsonCreator
 constructor(
-    @Id val id: String,
+    val id: String,
     override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,

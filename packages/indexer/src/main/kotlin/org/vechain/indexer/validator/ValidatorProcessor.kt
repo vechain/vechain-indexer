@@ -4,26 +4,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("validator", "validator-stats")
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
     private val service: ValidatorService,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = archiveService,
         indexerVersionService = indexerVersionService,
-        IndexerNames.VALIDATOR,
+        indexerName = IndexerNames.VALIDATOR,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

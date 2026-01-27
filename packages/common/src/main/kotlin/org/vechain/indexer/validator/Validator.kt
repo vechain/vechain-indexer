@@ -5,21 +5,17 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigDecimal
 import org.bson.types.Decimal128
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "validators")
+@JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(
-    @Id val id: String,
-    override val blockId: String,
-    override val blockNumber: Long,
-    override val blockTimestamp: Long,
+    @JsonIgnore val id: String,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockNumber: Long,
+    @JsonIgnore override val blockTimestamp: Long,
     val endorser: String? = null, // address of the endorser
     val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
@@ -83,9 +79,3 @@ data class Validator(
                 version = this.version,
             )
 }
-
-@Document("validators_archives")
-@JsonView(Views.Public::class)
-data class ValidatorArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: Validator) : Archive<Validator>

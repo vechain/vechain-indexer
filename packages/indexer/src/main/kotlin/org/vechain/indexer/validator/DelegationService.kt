@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -33,7 +33,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class DelegationService(
     private val repository: DelegationRepository,
-    private val archiveService: ArchiveService<Delegation, DelegationArchive>,
+    private val delegationPruner: PostgresPruner,
     private val validatorDelegationService: ValidatorDelegationService,
     @param:Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
     private val stakerSC: String,
@@ -76,10 +76,18 @@ open class DelegationService(
         return delegations.values.toList() to delegationsToArchive
     }
 
-    @Transactional
-    open fun save(updates: List<Delegation>, archive: List<Delegation>) {
-        if (updates.isNotEmpty()) repository.saveAll(updates)
-        if (archive.isNotEmpty()) archiveService.saveAll(archive)
+    @Transactional(rollbackFor = [Exception::class])
+    open fun save(updates: List<Delegation>, existing: List<Delegation>) {
+        repository.saveAllVersioned(updates, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updates.isNotEmpty()) {
+            val latestBlock = updates.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                delegationPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     // ------------------------------

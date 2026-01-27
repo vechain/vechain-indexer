@@ -3,15 +3,12 @@ package org.vechain.indexer.vevote
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 import org.vechain.indexer.utils.IdUtils.generateId
@@ -23,10 +20,7 @@ import org.vechain.indexer.vevote.VeVoteEventUtils.groupBySupport
 @Service
 open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
-    private val veVoteResultArchiveService:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    private val veVoteResultPruner:
-        TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val veVoteResultPruner: PostgresPruner,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>
@@ -51,15 +45,18 @@ open class VeVoteResultService(
         return updatedResult.values.toList() to archiveResult
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            veVoteResultArchiveService,
-            veVoteResultPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                veVoteResultPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     protected fun createOrUpdateExisting(
@@ -128,5 +125,5 @@ open class VeVoteResultService(
     protected fun resolveExisting(
         recordId: String,
         cache: Map<String, VeVoteProposalResult>,
-    ): VeVoteProposalResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
+    ): VeVoteProposalResult? = cache[recordId] ?: repository.findById(recordId)
 }

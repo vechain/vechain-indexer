@@ -2,20 +2,14 @@ package org.vechain.indexer.stargate.nftHolders
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 import org.vechain.indexer.stargate.token.LevelledValue
 import org.vechain.indexer.stargate.token.TokenLevel
 
-@Document(collection = "stargate_total_nft_holders_by_block")
-data class NftHoldersByBlock
-@ConstructorBinding
-constructor(
+data class NftHoldersByBlock(
     @JsonIgnore override val blockId: String,
-    @JsonIgnore @Id override val blockNumber: Long,
+    @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
     override val total: Long,
     override val byLevel: Map<TokenLevel, Long>,

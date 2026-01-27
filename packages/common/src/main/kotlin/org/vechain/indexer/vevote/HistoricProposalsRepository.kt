@@ -1,14 +1,18 @@
 package org.vechain.indexer.vevote
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BaseIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("vevote", "vevote-historic-proposals")
-@Repository
-interface HistoricProposalsRepository : BaseIndexedRepository<HistoricProposals, String> {
+interface HistoricProposalsRepository : PostgresIndexedRepository {
+    fun saveAll(proposals: List<HistoricProposals>)
+
+    fun findById(id: String): HistoricProposals?
+
+    fun findAllById(ids: List<String>): List<HistoricProposals>
+
+    fun updateVoteTallies(id: String, voteTallies: List<Long>, totalVotes: Long)
+
     fun findAll(pageable: Pageable): Slice<HistoricProposals>
 
     fun findByProposalId(proposalId: String, pageable: Pageable): Slice<HistoricProposals>

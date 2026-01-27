@@ -1,14 +1,18 @@
 package org.vechain.indexer.validator
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("validator", "validator-stats")
-@Repository
-interface ValidatorRepository : BasePagingAndSortingIndexedRepository<Validator, String> {
+interface ValidatorRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<Validator>, existing: List<Validator>)
+
+    fun saveAll(validators: List<Validator>)
+
+    fun findAllById(ids: Collection<String>): List<Validator>
+
+    fun findById(id: String): Validator?
+
     fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator>
 
     fun findByStatusNot(status: Status): List<Validator>

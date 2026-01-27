@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
@@ -26,7 +26,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,
-    private val archiveService: ArchiveService<Validator, ValidatorArchive>,
+    private val validatorPruner: PostgresPruner,
     private val thorClient: ThorClient,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,
@@ -101,14 +101,19 @@ open class ValidatorService(
      * Persists updated validator records and archives old ones.
      *
      * @param updates List of validators with new state.
-     * @param archive List of validators to archive.
+     * @param existing List of validators to archive (previous versions).
      */
     @Transactional(rollbackFor = [Exception::class])
-    open fun save(updates: List<Validator>, archive: List<Validator>) {
-        repository.saveAll(updates)
+    open fun save(updates: List<Validator>, existing: List<Validator>) {
+        repository.saveAllVersioned(updates, existing)
 
-        if (archive.isNotEmpty()) {
-            archiveService.saveAll(archive)
+        // Trigger targeted pruning for entities with prior versions
+        if (updates.isNotEmpty()) {
+            val latestBlock = updates.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                validatorPruner.run(latestBlock, entityIds)
+            }
         }
     }
 

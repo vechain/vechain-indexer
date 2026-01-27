@@ -1,15 +1,14 @@
 package org.vechain.indexer.vevote
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("vevote", "vevote-results")
-@Repository
-interface VeVoteProposalResultRepository :
-    BasePagingAndSortingIndexedRepository<VeVoteProposalResult, String> {
+interface VeVoteProposalResultRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<VeVoteProposalResult>, existing: List<VeVoteProposalResult>)
+
+    fun findById(id: String): VeVoteProposalResult?
+
     fun findByProposalIdAndSupport(
         proposalId: String,
         support: Support,

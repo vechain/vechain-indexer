@@ -4,10 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-results")
@@ -16,11 +15,9 @@ open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     repository: VeVoteProposalResultRepository,
     indexerVersionService: IndexerVersionService,
-    veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = veVoteResultArchiveService,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VEVOTE_RESULT,
     ) {

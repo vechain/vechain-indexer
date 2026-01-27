@@ -4,25 +4,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("validator", "delegation")
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,
-    archiveService: ArchiveService<Delegation, DelegationArchive>,
     private val service: DelegationService,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = archiveService,
         indexerVersionService = indexerVersionService,
-        IndexerNames.DELEGATION,
+        indexerName = IndexerNames.DELEGATION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
