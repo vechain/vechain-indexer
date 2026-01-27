@@ -79,6 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_my_entity_block_number
     ON my_entity_table (block_number);
 ```
 
+**Note:** The schema file will be automatically picked up by Spring's SQL initialization. The `application.yaml` uses a wildcard pattern (`classpath:db/*.sql`) to load all SQL files from the `db/` directory.
+
 ---
 
 ### Step 2: Update Model (`packages/common`)
@@ -511,7 +513,7 @@ verify { repository.saveAllVersioned(any(), any()) }
 
 For each indexer migration:
 
-- [ ] Create SQL schema file with versioned table structure
+- [ ] Create SQL schema file with versioned table structure (auto-loaded via `classpath:db/*.sql`)
 - [ ] Update model: remove `@Document`, `@Id`, delete `Archive` class
 - [ ] Update repository interface: extend `PostgresIndexedRepository`
 - [ ] Create `Postgres*Repository` implementation
@@ -543,7 +545,38 @@ The following indexers still use MongoDB and will need migration:
 - `TokenReward` - Token rewards
 - `NftOwnerBalance` - NFT owner balances
 - `ProposalResult` - B3TR proposal results
-- `GmNft` - GM NFTs
 - `VeVoteProposalResult` - VeVote proposal results
 
 Each follows the same migration pattern documented above.
+
+## Completed Migrations
+
+- `GmNft` - GM NFTs (migrated to `b3tr_gm_nfts` table)
+- `AppAllTimeActionSummary` - B3TR app all-time action summaries
+- `AppDailyActionSummary` - B3TR app daily action summaries
+- `AppRoundActionSummary` - B3TR app round action summaries
+- `UserAllTimeActionSummary` - B3TR user all-time action summaries
+- `UserDailyActionSummary` - B3TR user daily action summaries
+- `UserRoundActionSummary` - B3TR user round action summaries
+
+## Technical Notes
+
+### Versioned Document Persistence Fix (2026-01-27)
+
+The `PostgresVersionedRepository.saveAllVersioned()` method was updated to fix critical issues with intermediate version persistence and duplicate key handling.
+
+**Problem:** When batch processing events across multiple blocks, intermediate versions were being lost:
+- Block 100: entity v1 → v2
+- Block 101: entity v2 → v3
+- Block 102: entity v3 → v4
+
+Only v4 was persisted; v2 and v3 were never saved, breaking rollback functionality.
+
+**Root Cause:** The original implementation tried to UPDATE existing records (which don't exist in DB for cache-sourced versions) and had no ON CONFLICT handling for reprocessed blocks.
+
+**Solution:** 
+1. Changed from UPDATE to INSERT for `existing` records with `ON CONFLICT (entity_id, version) DO UPDATE SET is_current = false`
+2. Added `insertParamsForExisting()` helper method that returns params with `is_current = false`
+3. Both `existing` (intermediate) and `updated` (final) records are now explicitly INSERTed with appropriate `is_current` flags
+
+**Impact:** All versioned PostgreSQL repositories now correctly persist intermediate versions, enabling proper rollback across multi-block batches.

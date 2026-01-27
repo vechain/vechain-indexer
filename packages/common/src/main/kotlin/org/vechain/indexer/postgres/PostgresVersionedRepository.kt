@@ -51,14 +51,27 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
     abstract fun insertPlaceholders(): String
 
     /**
+     * Returns the parameters for an INSERT statement for existing/archived records. Same as
+     * insertParams() but with is_current=false. Default implementation assumes is_current is at
+     * index 2 in the params array (after entity_id and version).
+     */
+    open fun insertParamsForExisting(doc: T): Array<Any?> {
+        val params = insertParams(doc).copyOf()
+        params[2] = false // is_current = false
+        return params
+    }
+
+    /**
      * Saves updated documents with versioning support.
      *
      * This method:
-     * 1. Marks existing versions (from the `existing` list) as is_current=false
-     * 2. Inserts new versions (from the `updated` list) with is_current=true
+     * 1. INSERTs existing versions (intermediate versions from cache) with is_current=false
+     * 2. INSERTs updated versions (final versions) with is_current=true
      *
-     * @param updated List of new document versions to insert
-     * @param existing List of previous document versions to archive (mark as non-current)
+     * Uses ON CONFLICT to handle duplicate keys when blocks are reprocessed.
+     *
+     * @param updated List of new document versions to insert (will be marked as current)
+     * @param existing List of previous document versions to archive (will be marked as non-current)
      */
     @Transactional(rollbackFor = [Exception::class])
     open fun saveAllVersioned(updated: List<T>, existing: List<T>) {
@@ -66,32 +79,28 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
             return
         }
 
-        // Mark existing versions as non-current
+        // Insert existing versions (intermediate) with is_current=false
+        // Uses ON CONFLICT to handle re-processing of blocks
         if (existing.isNotEmpty()) {
-            val entityIds = existing.map { it.getDocumentId() }
-            val versions = existing.map { it.version }
-
-            // Build the update for each entity_id + version pair
-            existing.forEach { doc ->
-                jdbcTemplate.update(
-                    """
-                    UPDATE ${tableName()}
-                    SET is_current = false
-                    WHERE ${entityIdColumn()} = ? AND version = ?
-                    """
-                        .trimIndent(),
-                    doc.getDocumentId(),
-                    doc.version,
-                )
-            }
+            jdbcTemplate.batchUpdate(
+                """
+                INSERT INTO ${tableName()} (${insertColumns()})
+                VALUES (${insertPlaceholders()})
+                ON CONFLICT (${entityIdColumn()}, version) DO UPDATE SET is_current = false
+                """
+                    .trimIndent(),
+                existing.map { insertParamsForExisting(it) },
+            )
         }
 
-        // Insert new versions
+        // Insert updated versions (final) with is_current=true
+        // Uses ON CONFLICT to handle re-processing of blocks
         if (updated.isNotEmpty()) {
             jdbcTemplate.batchUpdate(
                 """
                 INSERT INTO ${tableName()} (${insertColumns()})
                 VALUES (${insertPlaceholders()})
+                ON CONFLICT (${entityIdColumn()}, version) DO UPDATE SET is_current = true
                 """
                     .trimIndent(),
                 updated.map { insertParams(it) },
@@ -136,22 +145,20 @@ abstract class PostgresVersionedRepository<T : VersionedDocument>(
         )
 
         // Restore is_current=true for the max version of each affected entity
-        if (affectedEntityIds.isNotEmpty()) {
-            namedJdbcTemplate.update(
-                """
-                UPDATE ${tableName()} t
-                SET is_current = true
-                WHERE (${entityIdColumn()}, version) IN (
-                    SELECT ${entityIdColumn()}, MAX(version)
-                    FROM ${tableName()}
-                    WHERE ${entityIdColumn()} IN (:entityIds)
-                    GROUP BY ${entityIdColumn()}
-                )
-                """
-                    .trimIndent(),
-                mapOf("entityIds" to affectedEntityIds),
+        namedJdbcTemplate.update(
+            """
+            UPDATE ${tableName()} t
+            SET is_current = true
+            WHERE (${entityIdColumn()}, version) IN (
+                SELECT ${entityIdColumn()}, MAX(version)
+                FROM ${tableName()}
+                WHERE ${entityIdColumn()} IN (:entityIds)
+                GROUP BY ${entityIdColumn()}
             )
-        }
+            """
+                .trimIndent(),
+            mapOf("entityIds" to affectedEntityIds),
+        )
     }
 
     /**

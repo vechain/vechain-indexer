@@ -4,14 +4,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.BusinessEventProperties
-import org.vechain.indexer.pruner.PrunerService
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -19,33 +18,18 @@ import org.vechain.indexer.thor.client.ThorClient
 open class GmNftConfig {
 
     @Bean
-    open fun gmNftArchiveService(
-        mongoTemplate: MongoTemplate,
-        @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<GmNft, GmNftArchive> =
-        ArchiveService(
-            mongoTemplate = mongoTemplate,
-            clazz = GmNft::class.java,
-            archiveClazz = GmNftArchive::class.java,
-            queryLimit = recordLimit,
-        )
-
-    @Bean
     open fun gmNftPruner(
-        gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
-        @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<GmNft, GmNftArchive> =
-        PrunerService(
-            klass = GmNftArchive::class,
-            archiveService = gmNftArchiveService,
-            prunerRemovalChunkSize = prunerRemovalChunkSize,
-        )
+        jdbcTemplate: JdbcTemplate,
+        namedJdbcTemplate: NamedParameterJdbcTemplate,
+        @Value("\${indexer.pruner.prune-block-depth:10000}") pruneBlockDepth: Long,
+    ): PostgresPruner =
+        PostgresPruner(jdbcTemplate, namedJdbcTemplate, pruneBlockDepth, "b3tr_gm_nfts")
 
     @Bean
     open fun gmNftIndexer(
         thorClient: ThorClient,
         processor: GmNftProcessor,
-        gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
+        gmNftPruner: PostgresPruner,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

@@ -1,24 +1,20 @@
 package org.vechain.indexer.b3tr.gm
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Service
 open class GmNftService(
     private val repository: GmNftRepository,
-    private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
-    private val gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
+    private val gmNftPruner: PostgresPruner,
 ) {
 
     /**
@@ -56,9 +52,18 @@ open class GmNftService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
-        saveVersionedDocuments(updated, existing, repository, gmNftArchiveService, gmNftPruner)
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                gmNftPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     private fun resolveExistingNft(tokenId: String, cache: Map<String, GmNft>): GmNft? =
-        cache[tokenId] ?: repository.findByIdOrNull(tokenId)
+        cache[tokenId] ?: repository.findById(tokenId)
 }

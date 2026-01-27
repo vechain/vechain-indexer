@@ -9,27 +9,23 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 
 @ExtendWith(MockKExtension::class)
 internal class GmNftServiceTest {
     @MockK lateinit var repository: GmNftRepository
 
-    @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<GmNft, GmNftArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: GmNftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = GmNftService(repository, gmNftArchiveService, pruner)
+        service = GmNftService(repository, pruner)
     }
 
     @Test
@@ -59,7 +55,7 @@ internal class GmNftServiceTest {
             )
 
         // Mock repository to return null for first lookup
-        every { repository.findByIdOrNull(tokenId) } returns null
+        every { repository.findById(tokenId) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
@@ -109,8 +105,8 @@ internal class GmNftServiceTest {
                         returnValues = mapOf("tokenId" to tokenId2, "to" to "owner2")
                     ),
             )
-        every { repository.findByIdOrNull(tokenId1) } returns null
-        every { repository.findByIdOrNull(tokenId2) } returns null
+        every { repository.findById(tokenId1) } returns null
+        every { repository.findById(tokenId2) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
         assertEquals(2, updated.size)
@@ -147,7 +143,7 @@ internal class GmNftServiceTest {
                 b3trDonated = BigInteger.valueOf(500),
             )
 
-        every { repository.findByIdOrNull(tokenId) } returns existingNft
+        every { repository.findById(tokenId) } returns existingNft
 
         val (updated, archived) = service.processEvents(listOf(event1))
 
@@ -188,7 +184,7 @@ internal class GmNftServiceTest {
                 b3trDonated = BigInteger.valueOf(500),
             )
 
-        every { repository.findByIdOrNull(tokenId) } returns existingNft
+        every { repository.findById(tokenId) } returns existingNft
 
         val (updated, archived) = service.processEvents(listOf(event1))
 

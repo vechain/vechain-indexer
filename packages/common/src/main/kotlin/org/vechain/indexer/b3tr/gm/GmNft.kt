@@ -3,16 +3,12 @@ package org.vechain.indexer.b3tr.gm
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 
-@Document(collection = "b3tr_gm_nfts")
 data class GmNft
 @ConstructorBinding
 constructor(
-    @JsonIgnore @Id val id: String, // tokenId as string
+    @JsonIgnore val id: String, // tokenId as string
     @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
@@ -46,6 +42,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "b3tr_gm_nfts_archives")
-data class GmNftArchive(@Id override val id: String, override val data: GmNft) : Archive<GmNft>
