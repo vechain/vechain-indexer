@@ -8,10 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getDescription
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getPower
@@ -26,8 +24,7 @@ import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -41,8 +38,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Service
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
-    private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-    private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+    private val proposalResultPruner: PostgresPruner,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,
@@ -227,17 +223,19 @@ open class ProposalResultService(
      * @param updated The list of updated proposal results to save.
      * @param existing The list of existing proposal results to archive.
      * @throws Exception if any error occurs during the save operation.
-     * @see ProposalResultRepository.saveAll
      */
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<ProposalResult>, existing: List<ProposalResult>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            proposalResultArchiveService,
-            proposalResultPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.proposalId }
+            if (entityIds.isNotEmpty()) {
+                proposalResultPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     /**
@@ -372,5 +370,5 @@ open class ProposalResultService(
     protected fun resolveExisting(
         recordId: String,
         cache: Map<String, ProposalResult>,
-    ): ProposalResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
+    ): ProposalResult? = cache[recordId] ?: repository.findById(recordId)
 }

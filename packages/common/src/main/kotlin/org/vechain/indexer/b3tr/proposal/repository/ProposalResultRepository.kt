@@ -1,15 +1,19 @@
 package org.vechain.indexer.b3tr.proposal.repository
 
-import org.springframework.context.annotation.Profile
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Slice
 import org.vechain.indexer.b3tr.proposal.ProposalResult
 import org.vechain.indexer.b3tr.proposal.ProposalState
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
-@Repository
-interface ProposalResultRepository : BasePagingAndSortingIndexedRepository<ProposalResult, String> {
-    fun findByProposalId(proposalId: String): List<ProposalResult>
+interface ProposalResultRepository : PostgresIndexedRepository {
+    // Versioned operations
+    fun saveAllVersioned(updated: List<ProposalResult>, existing: List<ProposalResult>)
+
+    // Query operations
+    fun findById(proposalId: String): ProposalResult?
+
+    fun findAll(pageable: Pageable): Slice<ProposalResult>
 
     /**
      * Find proposals where state is in the given list. Usage:
@@ -21,8 +25,8 @@ interface ProposalResultRepository : BasePagingAndSortingIndexedRepository<Propo
      * Find proposals where state is in the given list, paginated. Usage:
      * findByStateIn(listOf(ProposalState.Pending, ProposalState.Active), pageable)
      */
-    fun findByStateIn(
-        states: List<ProposalState>,
-        pageable: org.springframework.data.domain.Pageable,
-    ): org.springframework.data.domain.Slice<ProposalResult>
+    fun findByStateIn(states: List<ProposalState>, pageable: Pageable): Slice<ProposalResult>
+
+    /** Returns the latest record (by block number) from the repository, or null if empty. */
+    fun getLatestRecord(): ProposalResult?
 }

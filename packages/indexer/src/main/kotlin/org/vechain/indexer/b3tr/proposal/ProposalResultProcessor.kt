@@ -4,10 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.version.IndexerVersionService
@@ -16,13 +15,11 @@ import org.vechain.indexer.version.IndexerVersionService
 @Component
 open class ProposalResultProcessor(
     repository: ProposalResultRepository,
-    proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
     private val service: ProposalResultService,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
+    BasePostgresProcessor(
         repository = repository,
-        archiveService = proposalResultArchiveService,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.PROPOSAL_RESULT,
     ) {

@@ -300,7 +300,7 @@ open class MyService(
 @Service
 open class MyService(
     private val repository: MyRepository,
-    private val pruner: PostgresPruner,
+    private val myEntityPruner: PostgresPruner,  // Name must match the bean name in Config
 ) {
     open fun processEvents(events: List<IndexedEvent>): Pair<List<MyEntity>, List<MyEntity>> {
         val updated = mutableListOf<MyEntity>()
@@ -325,12 +325,14 @@ open class MyService(
             val latestBlock = updated.maxOf { it.blockNumber }
             val entityIds = existing.filter { it.version > 1 }.map { it.id }
             if (entityIds.isNotEmpty()) {
-                pruner.run(latestBlock, entityIds)
+                myEntityPruner.run(latestBlock, entityIds)
             }
         }
     }
 }
 ```
+
+**Important:** The pruner parameter name (e.g., `myEntityPruner`) must match the `@Bean` method name in the Config class (e.g., `fun myEntityPruner(...)`) for Spring's dependency injection to wire the correct bean when multiple `PostgresPruner` beans exist.
 
 **Important:** The service now returns a `Pair<List<T>, List<T>>` from `processEvents()`:
 - First list (`updated`): New versions to insert with `is_current = true`
@@ -420,27 +422,25 @@ open class MyConfig {
 @Configuration
 open class MyConfig {
     @Bean
-    open fun myPruner(
+    open fun myEntityPruner(  // Bean name must match the parameter name in Service
         jdbcTemplate: JdbcTemplate,
         namedJdbcTemplate: NamedParameterJdbcTemplate,
         @Value("\${indexer.pruner.prune-block-depth:10000}") pruneBlockDepth: Long,
-    ): PostgresPruner = PostgresPruner(
-        jdbcTemplate,
-        namedJdbcTemplate,
-        pruneBlockDepth,
-        "my_entity_table",  // Must match tableName() in repository
-    )
+    ): PostgresPruner =
+        PostgresPruner(jdbcTemplate, namedJdbcTemplate, pruneBlockDepth, "my_entity_table")
     
     @Bean
     open fun myIndexer(
         // ...
-        myPruner: PostgresPruner,
+        myEntityPruner: PostgresPruner,  // Parameter name matches bean name
     ): Indexer = IndexerFactory()
         // ...
-        .pruner(myPruner)
+        .pruner(myEntityPruner)
         .build()
 }
 ```
+
+**Important:** Use a descriptive bean name like `myEntityPruner` (not just `pruner`) to avoid ambiguity when multiple pruner beans exist. The parameter names in Service and Config must match the bean method name.
 
 ---
 
@@ -478,8 +478,8 @@ Update test files to mock the new patterns:
 private val archiveService: ArchiveService<MyEntity, MyArchive> = mockk(relaxed = true)
 private val targetedPruner: TargetedPruner<MyEntity, MyArchive> = mockk(relaxed = true)
 
-// After
-private val pruner: PostgresPruner = mockk(relaxed = true)
+// After - use descriptive name matching the bean
+private val myEntityPruner: PostgresPruner = mockk(relaxed = true)
 
 // Before - verify save
 verify { archiveService.archive(any()) }
@@ -544,7 +544,6 @@ The following indexers still use MongoDB and will need migration:
 - `StargateToken` - Stargate tokens
 - `TokenReward` - Token rewards
 - `NftOwnerBalance` - NFT owner balances
-- `ProposalResult` - B3TR proposal results
 - `VeVoteProposalResult` - VeVote proposal results
 
 Each follows the same migration pattern documented above.
@@ -558,6 +557,8 @@ Each follows the same migration pattern documented above.
 - `UserAllTimeActionSummary` - B3TR user all-time action summaries
 - `UserDailyActionSummary` - B3TR user daily action summaries
 - `UserRoundActionSummary` - B3TR user round action summaries
+- `ProposalResult` - B3TR proposal results (migrated to `b3tr_proposal_results` table)
+- `ProposalComment` - B3TR proposal comments (migrated to `b3tr_proposal_comments` table)
 
 ## Technical Notes
 

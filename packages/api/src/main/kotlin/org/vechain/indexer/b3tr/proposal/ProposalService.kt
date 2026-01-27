@@ -4,7 +4,6 @@ import kotlin.to
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.IndexerService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
@@ -25,7 +24,7 @@ open class ProposalService(
      * @param proposalId Proposal ID to filter by.
      */
     open fun getProposalResult(proposalId: String): ProposalResult? =
-        proposalResultRepository.findByIdOrNull(proposalId)
+        proposalResultRepository.findById(proposalId)
 
     /**
      * Get all proposal results paginated.

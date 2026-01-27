@@ -9,12 +9,10 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Clause
@@ -25,10 +23,7 @@ import org.vechain.indexer.utils.BlockDetails
 internal class ProposalResultServiceTest {
     @MockK lateinit var repository: ProposalResultRepository
 
-    @MockK
-    lateinit var proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -39,18 +34,10 @@ internal class ProposalResultServiceTest {
     // A testable subclass to expose protected methods for testing
     private class TestableProposalResultService(
         repository: ProposalResultRepository,
-        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+        pruner: PostgresPruner,
         thorClient: ThorClient,
         governorContract: String,
-    ) :
-        ProposalResultService(
-            repository,
-            proposalResultArchiveService,
-            proposalResultPruner,
-            thorClient,
-            governorContract,
-        ) {
+    ) : ProposalResultService(repository, pruner, thorClient, governorContract) {
         suspend fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
             updateStatusesForBatch(batch, block)
 
@@ -75,7 +62,6 @@ internal class ProposalResultServiceTest {
         service =
             TestableProposalResultService(
                 repository,
-                proposalResultArchiveService,
                 pruner,
                 thorClient,
                 "0x1234567890123456789012345678901234567890",
@@ -106,7 +92,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event))
 
@@ -147,7 +133,7 @@ internal class ProposalResultServiceTest {
                 description = "ABC",
             )
 
-        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+        every { repository.findById("proposal1") } returns existingProposal
 
         assertThrows(IllegalStateException::class.java) { service.processEvents(listOf(event)) }
     }
@@ -176,7 +162,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         assertThrows(IllegalStateException::class.java) { service.processEvents(listOf(event)) }
     }
@@ -217,7 +203,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+        every { repository.findById("proposal1") } returns existingProposal
 
         val (updated, archived) = service.processEvents(listOf(event))
 
@@ -290,7 +276,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+        every { repository.findById("proposal1") } returns existingProposal
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
@@ -357,7 +343,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+        every { repository.findById("proposal1") } returns existingProposal
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
@@ -442,7 +428,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+        every { repository.findById("proposal1") } returns existingProposal
 
         val (updated, archived) = service.processEvents(listOf(forVote, againstVote, abstainVote))
 
@@ -501,7 +487,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(createdEvent, voteEvent))
 
@@ -550,7 +536,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(proposal1Created, proposal2Created))
 
@@ -580,7 +566,7 @@ internal class ProposalResultServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findById(any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(createdEvent))
 

@@ -3,18 +3,15 @@ package org.vechain.indexer.b3tr.proposal
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "b3tr_proposal_comments")
 data class ProposalComment
 @ConstructorBinding
 constructor(
-    @JsonIgnore @Id val id: String,
+    @JsonIgnore val id: String,
     @JsonIgnore override val blockId: String,
     override val blockNumber: Long,
     override val blockTimestamp: Long,

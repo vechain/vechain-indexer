@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
@@ -16,7 +16,12 @@ open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
     indexerVersionService: IndexerVersionService,
-) : BaseProcessor(repository = repository, indexerVersionService, IndexerNames.PROPOSAL_COMMENT) {
+) :
+    BasePostgresProcessor(
+        repository = repository,
+        indexerVersionService = indexerVersionService,
+        indexerName = IndexerNames.PROPOSAL_COMMENT,
+    ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
