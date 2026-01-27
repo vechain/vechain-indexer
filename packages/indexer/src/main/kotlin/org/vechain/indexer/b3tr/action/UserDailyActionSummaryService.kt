@@ -3,10 +3,8 @@ package org.vechain.indexer.b3tr.action
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAmount
@@ -17,8 +15,7 @@ import org.vechain.indexer.b3tr.action.ActionSummaryUtils.validateAndFilterImpac
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.BlockUtils
 import org.vechain.indexer.utils.EventUtils.groupByBlock
@@ -28,11 +25,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 open class UserDailyActionSummaryService(
     private val repository: UserDailyActionSummaryRepository,
-    private val userDailyActionSummaryArchiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-    private val userDailyActionSummaryPruner:
-        TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
     private val impactConfig: ActionImpactConfig,
+    private val userDailyActionSummaryPruner: PostgresPruner,
 ) {
 
     open fun processEvents(
@@ -49,7 +43,7 @@ open class UserDailyActionSummaryService(
             // Process Users
             groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, date)
-                val existing = resolveExisting(recordId, updatedResult)
+                val existing = resolveExisting(userId, date, updatedResult)
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -65,7 +59,7 @@ open class UserDailyActionSummaryService(
             // Process Apps
             groupByAppId(blockEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId, date)
-                val existing = resolveExisting(recordId, updatedResult)
+                val existing = resolveExisting(appId, date, updatedResult)
                 val updated =
                     createOrUpdateExisting(
                         appId,
@@ -80,7 +74,7 @@ open class UserDailyActionSummaryService(
 
             // Process Global
             val recordId = generateId(EntityType.GLOBAL.name, date)
-            val existing = resolveExisting(recordId, updatedResult)
+            val existing = resolveExisting(EntityType.GLOBAL.name, date, updatedResult)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -98,13 +92,16 @@ open class UserDailyActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<UserDailyActionSummary>, existing: List<UserDailyActionSummary>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            userDailyActionSummaryArchiveService,
-            userDailyActionSummaryPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for updated entities
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                userDailyActionSummaryPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     protected fun createOrUpdateExisting(
@@ -160,7 +157,11 @@ open class UserDailyActionSummaryService(
     }
 
     protected fun resolveExisting(
-        recordId: String,
+        entity: String,
+        date: String,
         cache: Map<String, UserDailyActionSummary>,
-    ): UserDailyActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
+    ): UserDailyActionSummary? {
+        val recordId = generateId(entity, date)
+        return cache[recordId] ?: repository.findByEntityAndDate(entity, date)
+    }
 }

@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -24,10 +23,6 @@ import org.vechain.indexer.version.IndexerVersionService
 @ExtendWith(MockKExtension::class)
 internal class UserAllTimeActionSummaryProcessorTest {
     @MockK lateinit var repository: UserAllTimeActionSummaryRepository
-
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
 
     @MockK lateinit var service: UserAllTimeActionSummaryService
 
@@ -41,7 +36,6 @@ internal class UserAllTimeActionSummaryProcessorTest {
         processor =
             UserAllTimeActionSummaryProcessor(
                 repository = repository,
-                userAllTimeActionSummaryArchiveService = archiveService,
                 service = service,
                 indexerVersionService = indexerVersionService,
             )

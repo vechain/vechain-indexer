@@ -2,12 +2,6 @@ package org.vechain.indexer.b3tr.action
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigDecimal
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.data.mongodb.core.mapping.Field
-import org.springframework.data.mongodb.core.mapping.FieldType
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -15,11 +9,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
  * Sustainable overview This model is used to track how apps are doing in terms of sustainability on
  * a daily basis.
  */
-@Document(collection = "b3tr_app_action_summaries_daily")
-data class AppDailyActionSummary
-@ConstructorBinding
-constructor(
-    @JsonIgnore @Id val id: String,
+data class AppDailyActionSummary(
+    @JsonIgnore val id: String,
     @JsonIgnore override val version: Int,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
@@ -28,7 +19,7 @@ constructor(
     override val user: String,
     val date: String,
     override val actionsRewarded: Long,
-    @Field(targetType = FieldType.DECIMAL128) override val totalRewardAmount: BigDecimal,
+    override val totalRewardAmount: BigDecimal,
     override val totalImpact: Impact?,
 ) : AppActionSummaryDocument {
     constructor(
@@ -61,9 +52,3 @@ constructor(
         return id
     }
 }
-
-@Document(collection = "b3tr_app_action_summaries_daily_archives")
-data class AppDailyActionSummaryArchive(
-    @Id override val id: String,
-    override val data: AppDailyActionSummary,
-) : Archive<AppDailyActionSummary>

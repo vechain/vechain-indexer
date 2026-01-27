@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -23,9 +22,6 @@ import org.vechain.indexer.version.IndexerVersionService
 @ExtendWith(MockKExtension::class)
 internal class AppDailyActionSummaryProcessorTest {
     @MockK lateinit var repository: AppDailyActionSummaryRepository
-
-    @MockK
-    lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
 
     @MockK lateinit var service: AppDailyActionSummaryService
 
@@ -39,7 +35,6 @@ internal class AppDailyActionSummaryProcessorTest {
         processor =
             AppDailyActionSummaryProcessor(
                 repository = repository,
-                appDailyActionSummaryArchiveService = archiveService,
                 service = service,
                 indexerVersionService = indexerVersionService,
             )

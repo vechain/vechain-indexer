@@ -5,10 +5,9 @@ import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseStatefulProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -16,21 +15,24 @@ import org.vechain.indexer.version.IndexerVersionService
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryProcessor(
     private val repository: UserRoundActionSummaryRepository,
-    userRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
     private val service: UserRoundActionSummaryService,
     @param:Value("\${indexer.start-round.b3tr-sustainable-actions}") private val startRound: Int,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseStatefulProcessor(
-        repository = repository,
-        archiveService = userRoundActionSummaryArchiveService,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.USER_ROUND_ACTION_SUMMARY,
+    BasePostgresProcessor(
+        repository,
+        indexerVersionService,
+        IndexerNames.USER_ROUND_ACTION_SUMMARY,
     ) {
 
     protected var roundId: Int =
         repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
+
+    override fun rollback(blockNumber: Long) {
+        super.rollback(blockNumber)
+        // Reset roundId from the latest record after rollback
+        roundId = repository.findFirstByOrderByBlockNumberDesc()?.roundId ?: startRound
+    }
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
@@ -41,7 +43,7 @@ open class UserRoundActionSummaryProcessor(
 
         roundId = updatedRoundId
 
-        // Save the updated NFTs and archives
+        // Save the updated records
         if (updated.isNotEmpty() || existing.isNotEmpty()) {
             withContext(Dispatchers.IO) { service.save(updated, existing) }
         }

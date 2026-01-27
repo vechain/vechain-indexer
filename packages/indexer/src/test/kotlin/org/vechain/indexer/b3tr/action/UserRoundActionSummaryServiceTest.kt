@@ -14,14 +14,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -29,24 +27,21 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class UserRoundActionSummaryServiceTest {
     @MockK lateinit var repository: UserRoundActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>
-
-    @MockK
-    lateinit var pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserRoundActionSummaryRepository,
-        archive: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-        pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : UserRoundActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, UserRoundActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : UserRoundActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(
+            entity: String,
+            roundId: Int,
+            cache: Map<String, UserRoundActionSummary>,
+        ) = resolveExisting(entity, roundId, cache)
 
         fun callCreateOrUpdateExisting(
             entity: String,
@@ -61,13 +56,11 @@ internal class UserRoundActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
     }
 
     @Test
     fun `processEvents no existing record results in new record being created`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
-
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -87,7 +80,7 @@ internal class UserRoundActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByEntityAndRoundId(any(), any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event), roundId = 1)
 
@@ -112,8 +105,6 @@ internal class UserRoundActionSummaryServiceTest {
 
     @Test
     fun `processEvents multiple events with same appId and user result in a single new record`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
-
         val event1 =
             buildIndexedEvent(
                 id = "e1",
@@ -152,7 +143,7 @@ internal class UserRoundActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByEntityAndRoundId(any(), any()) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event1, event2), roundId = 1)
 
@@ -176,8 +167,6 @@ internal class UserRoundActionSummaryServiceTest {
 
     @Test
     fun `processEvents existing record results in record being updated`() {
-        val blockDetails = BlockDetails("block-1", 2L, 2000L)
-
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -212,9 +201,9 @@ internal class UserRoundActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        every { repository.findByIdOrNull(existingRecord.id) } returns existingRecord
-        every { repository.findByIdOrNull(generateId("app-1", "1")) } returns null
-        every { repository.findByIdOrNull(generateId(EntityType.GLOBAL.name, "1")) } returns null
+        every { repository.findByEntityAndRoundId("user-1", 1) } returns existingRecord
+        every { repository.findByEntityAndRoundId("app-1", 1) } returns null
+        every { repository.findByEntityAndRoundId(EntityType.GLOBAL.name, 1) } returns null
 
         val (updated, archived) = service.processEvents(listOf(event), roundId = 1)
 
@@ -239,7 +228,6 @@ internal class UserRoundActionSummaryServiceTest {
 
     @Test
     fun `processEvents throws if all events are not of type B3TR_ActionReward`() {
-        val blockDetails = BlockDetails("block-1", 1L, 1000L)
         val event1 =
             buildIndexedEvent(
                 id = "e1",
@@ -300,7 +288,7 @@ internal class UserRoundActionSummaryServiceTest {
         val archived =
             listOf(
                 UserRoundActionSummary(
-                    version = 1,
+                    version = 2,
                     blockId = "b1",
                     blockNumber = 1L,
                     blockTimestamp = 100L,
@@ -313,20 +301,21 @@ internal class UserRoundActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { archiveService.saveAll(archived) } just runs
+        every { repository.saveAllVersioned(updated, archived) } just runs
+        every { pruner.run(any<Long>(), any<List<String>>()) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { archiveService.saveAll(archived) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every { repository.saveAllVersioned(emptyList(), emptyList()) } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<UserRoundActionSummary>>()) }
-        verify(exactly = 0) { archiveService.saveAll(any<List<UserRoundActionSummary>>()) }
+
+        verify(exactly = 1) { repository.saveAllVersioned(emptyList(), emptyList()) }
     }
 
     @Test
@@ -663,21 +652,16 @@ internal class UserRoundActionSummaryServiceTest {
         val updatedRecordsExpected =
             listOf(expectedUserRecord, expectedAppRecord, expectedGlobalRecord)
 
-        every { repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2")) } returns null
-        every { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) } returns null
-        every { repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2")) } returns
-            null
+        every { repository.findByEntityAndRoundId("user-1", 2) } returns null
+        every { repository.findByEntityAndRoundId("app-1", 2) } returns null
+        every { repository.findByEntityAndRoundId(EntityType.GLOBAL.name, 2) } returns null
 
         // Verify that service.save is called with the correct parameters
         val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
 
-        verify(exactly = 1) {
-            repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2"))
-        }
-        verify(exactly = 1) { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) }
-        verify(exactly = 1) {
-            repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2"))
-        }
+        verify(exactly = 1) { repository.findByEntityAndRoundId("user-1", 2) }
+        verify(exactly = 1) { repository.findByEntityAndRoundId("app-1", 2) }
+        verify(exactly = 1) { repository.findByEntityAndRoundId(EntityType.GLOBAL.name, 2) }
 
         assertTrue(
             updated.zip(updatedRecordsExpected).all { (actual, expected) ->
@@ -778,21 +762,16 @@ internal class UserRoundActionSummaryServiceTest {
         val updatedRecordsExpected =
             listOf(expectedUserRecord, expectedAppRecord, expectedGlobalRecord)
 
-        every { repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2")) } returns null
-        every { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) } returns null
-        every { repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2")) } returns
-            null
+        every { repository.findByEntityAndRoundId("user-1", 2) } returns null
+        every { repository.findByEntityAndRoundId("app-1", 2) } returns null
+        every { repository.findByEntityAndRoundId(EntityType.GLOBAL.name, 2) } returns null
 
         // Verify that service.save is called with the correct parameters
         val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
 
-        verify(exactly = 1) {
-            repository.findByIdOrNull(generateId(expectedUserRecord.entity, "2"))
-        }
-        verify(exactly = 1) { repository.findByIdOrNull(generateId(expectedAppRecord.entity, "2")) }
-        verify(exactly = 1) {
-            repository.findByIdOrNull(generateId(expectedGlobalRecord.entity, "2"))
-        }
+        verify(exactly = 1) { repository.findByEntityAndRoundId("user-1", 2) }
+        verify(exactly = 1) { repository.findByEntityAndRoundId("app-1", 2) }
+        verify(exactly = 1) { repository.findByEntityAndRoundId(EntityType.GLOBAL.name, 2) }
 
         assertTrue(
             updated.zip(updatedRecordsExpected).all { (actual, expected) ->

@@ -13,13 +13,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppDailyActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -27,22 +25,22 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class AppDailyActionSummaryServiceTest {
     @MockK lateinit var repository: AppDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppDailyActionSummaryRepository,
-        archive: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-        pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : AppDailyActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : AppDailyActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(
+            appId: String,
+            user: String,
+            date: String,
+            cache: Map<String, AppDailyActionSummary>,
+        ) = resolveExisting(appId, user, date, cache)
 
         fun callCreateOrUpdateExisting(
             appId: String,
@@ -57,7 +55,7 @@ internal class AppDailyActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
     }
 
     @Test
@@ -108,7 +106,7 @@ internal class AppDailyActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByAppIdAndUserAndDate("app-1", "user-1", "2025-09-09") } returns null
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
@@ -169,7 +167,8 @@ internal class AppDailyActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByAppIdAndUserAndDate("app-1", "user-1", "2025-09-09") } returns null
+        every { repository.findByAppIdAndUserAndDate("app-1", "user-1", "2025-09-10") } returns null
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
@@ -216,7 +215,7 @@ internal class AppDailyActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "2025-09-09")) } returns
+        every { repository.findByAppIdAndUserAndDate("app-1", "user-1", "2025-09-09") } returns
             AppDailyActionSummary(
                 version = 1,
                 blockId = "b1",
@@ -307,7 +306,7 @@ internal class AppDailyActionSummaryServiceTest {
         val archived =
             listOf(
                 AppDailyActionSummary(
-                    version = 1,
+                    version = 2,
                     blockId = "b1",
                     blockNumber = 1L,
                     blockTimestamp = 100L,
@@ -320,20 +319,21 @@ internal class AppDailyActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { archiveService.saveAll(archived) } just runs
+        every { repository.saveAllVersioned(updated, archived) } just runs
+        every { pruner.run(any<Long>(), any<List<String>>()) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { archiveService.saveAll(archived) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every { repository.saveAllVersioned(emptyList(), emptyList()) } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppDailyActionSummary>>()) }
-        verify(exactly = 0) { archiveService.saveAll(any<List<AppDailyActionSummary>>()) }
+
+        verify(exactly = 1) { repository.saveAllVersioned(emptyList(), emptyList()) }
     }
 
     @Test
@@ -662,18 +662,16 @@ internal class AppDailyActionSummaryServiceTest {
                 date = "2025-09-09",
             )
 
-        // Prefer cache
+        // Prefer cache - use generateId to create the cache key
+        val cacheKey = generateId("app-1", "user-1", "2025-09-09")
         val fromCache =
-            service.callResolveExisting(
-                "app-1:user-1:2025-09-09",
-                mapOf("app-1:user-1:2025-09-09" to cached),
-            )
+            service.callResolveExisting("app-1", "user-1", "2025-09-09", mapOf(cacheKey to cached))
         assertEquals(cached, fromCache)
 
         // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2:2025-09-09") } returns
+        every { repository.findByAppIdAndUserAndDate("app-1", "user-2", "2025-09-09") } returns
             cached.copy(user = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2:2025-09-09", emptyMap())
+        val fromRepo = service.callResolveExisting("app-1", "user-2", "2025-09-09", emptyMap())
         assertEquals("user-2", fromRepo?.user)
     }
 }

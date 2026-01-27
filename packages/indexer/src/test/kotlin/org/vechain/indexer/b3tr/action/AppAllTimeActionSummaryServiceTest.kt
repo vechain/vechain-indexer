@@ -13,13 +13,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -27,24 +25,21 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class AppAllTimeActionSummaryServiceTest {
     @MockK lateinit var repository: AppAllTimeActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
-
-    @MockK
-    lateinit var pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppAllTimeActionSummaryRepository,
-        archive: ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
-        pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : AppAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : AppAllTimeActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(
+            appId: String,
+            user: String,
+            cache: Map<String, AppAllTimeActionSummary>,
+        ) = resolveExisting(appId, user, cache)
 
         fun callCreateOrUpdateExisting(
             appId: String,
@@ -58,7 +53,7 @@ internal class AppAllTimeActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
     }
 
     @Test
@@ -107,7 +102,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1")) } returns null
+        every { repository.findByAppIdAndUser("app-1", "user-1") } returns null
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
         assertEquals(1, updated.size)
@@ -145,7 +140,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1")) } returns
+        every { repository.findByAppIdAndUser("app-1", "user-1") } returns
             AppAllTimeActionSummary(
                 version = 1,
                 blockId = "b1",
@@ -234,7 +229,7 @@ internal class AppAllTimeActionSummaryServiceTest {
         val archived =
             listOf(
                 AppAllTimeActionSummary(
-                    version = 1,
+                    version = 2,
                     blockId = "b1",
                     blockNumber = 1L,
                     blockTimestamp = 100L,
@@ -246,20 +241,21 @@ internal class AppAllTimeActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { archiveService.saveAll(archived) } just runs
+        every { repository.saveAllVersioned(updated, archived) } just runs
+        every { pruner.run(any<Long>(), any<List<String>>()) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { archiveService.saveAll(archived) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every { repository.saveAllVersioned(emptyList(), emptyList()) } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppAllTimeActionSummary>>()) }
-        verify(exactly = 0) { archiveService.saveAll(any<List<AppAllTimeActionSummary>>()) }
+
+        verify(exactly = 1) { repository.saveAllVersioned(emptyList(), emptyList()) }
     }
 
     @Test
@@ -567,13 +563,15 @@ internal class AppAllTimeActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        // Prefer cache
-        val fromCache = service.callResolveExisting("app-1:user-1", mapOf("app-1:user-1" to cached))
+        // Prefer cache - use generateId to create the cache key
+        val cacheKey = generateId("app-1", "user-1")
+        val fromCache = service.callResolveExisting("app-1", "user-1", mapOf(cacheKey to cached))
         assertEquals(cached, fromCache)
 
         // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2") } returns cached.copy(user = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2", emptyMap())
+        every { repository.findByAppIdAndUser("app-1", "user-2") } returns
+            cached.copy(user = "user-2")
+        val fromRepo = service.callResolveExisting("app-1", "user-2", emptyMap())
         assertEquals("user-2", fromRepo?.user)
     }
 
@@ -704,12 +702,7 @@ internal class AppAllTimeActionSummaryServiceTest {
     fun `createOrUpdateExisting with custom threshold filters appropriately`() {
         // Create service with lower threshold for carbon
         val customService =
-            TestableService(
-                repository,
-                archiveService,
-                pruner,
-                ActionImpactConfig().apply { carbon = 1000 },
-            )
+            TestableService(repository, ActionImpactConfig().apply { carbon = 1000 }, pruner)
 
         val event =
             buildIndexedEvent(

@@ -13,13 +13,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -27,22 +25,22 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class AppRoundActionSummaryServiceTest {
     @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppRoundActionSummaryRepository,
-        archive: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
-        pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : AppRoundActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, AppRoundActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : AppRoundActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(
+            appId: String,
+            user: String,
+            roundId: Int,
+            cache: Map<String, AppRoundActionSummary>,
+        ) = resolveExisting(appId, user, roundId, cache)
 
         fun callCreateOrUpdateExisting(
             appId: String,
@@ -57,7 +55,7 @@ internal class AppRoundActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
     }
 
     @Test
@@ -89,7 +87,7 @@ internal class AppRoundActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "1")) } returns null
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 1) } returns null
 
         val (updated, archived, updatedRoundId) = service.processEvents(listOf(event), roundId = 1)
 
@@ -145,7 +143,7 @@ internal class AppRoundActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "1")) } returns null
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 1) } returns null
 
         val (updated, archived, updatedRoundId) =
             service.processEvents(listOf(event1, event2), roundId = 1)
@@ -183,7 +181,7 @@ internal class AppRoundActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "1")) } returns
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 1) } returns
             AppRoundActionSummary(
                 version = 1,
                 blockId = "block-0",
@@ -300,11 +298,11 @@ internal class AppRoundActionSummaryServiceTest {
 
         val events = listOf(roundChangeEvent, rewardEvent)
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) } returns null
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 2) } returns null
 
         val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
 
-        verify(exactly = 1) { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) }
+        verify(exactly = 1) { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 2) }
 
         assertEquals(1, updated.size)
         val record = updated.first()
@@ -360,11 +358,11 @@ internal class AppRoundActionSummaryServiceTest {
 
         val events = listOf(roundChangeEvent, rewardEvent)
 
-        every { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) } returns null
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 2) } returns null
 
         val (updated, archive, updatedRoundId) = service.processEvents(events, 1)
 
-        verify(exactly = 1) { repository.findByIdOrNull(generateId("app-1", "user-1", "2")) }
+        verify(exactly = 1) { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 2) }
 
         assertEquals(1, updated.size)
         val record = updated.first()
@@ -401,7 +399,7 @@ internal class AppRoundActionSummaryServiceTest {
 
         val (updated, archive, updatedRoundId) = service.processEvents(listOf(roundChangeEvent), 1)
 
-        verify(exactly = 0) { repository.findByIdOrNull(any()) }
+        verify(exactly = 0) { repository.findByAppIdAndUserAndRoundId(any(), any(), any()) }
         assertEquals(emptyList<AppRoundActionSummary>(), updated)
         assertEquals(emptyList<AppRoundActionSummary>(), archive)
         assertEquals(2, updatedRoundId)
@@ -427,7 +425,7 @@ internal class AppRoundActionSummaryServiceTest {
         val archived =
             listOf(
                 AppRoundActionSummary(
-                    version = 1,
+                    version = 2,
                     blockId = "b1",
                     blockNumber = 1L,
                     blockTimestamp = 100L,
@@ -440,20 +438,21 @@ internal class AppRoundActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { archiveService.saveAll(archived) } just runs
+        every { repository.saveAllVersioned(updated, archived) } just runs
+        every { pruner.run(any<Long>(), any<List<String>>()) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { archiveService.saveAll(archived) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every { repository.saveAllVersioned(emptyList(), emptyList()) } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<AppRoundActionSummary>>()) }
-        verify(exactly = 0) { archiveService.saveAll(any<List<AppRoundActionSummary>>()) }
+
+        verify(exactly = 1) { repository.saveAllVersioned(emptyList(), emptyList()) }
     }
 
     @Test
@@ -750,17 +749,17 @@ internal class AppRoundActionSummaryServiceTest {
         val cache = mapOf(recordId to existing)
 
         // From cache
-        val fromCache = service.callResolveExisting(recordId, cache)
+        val fromCache = service.callResolveExisting("app-1", "user-1", 1, cache)
         assertEquals(existing, fromCache)
 
         // From repository
-        every { repository.findByIdOrNull(recordId) } returns existing
-        val fromRepo = service.callResolveExisting(recordId, emptyMap())
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 1) } returns existing
+        val fromRepo = service.callResolveExisting("app-1", "user-1", 1, emptyMap())
         assertEquals(existing, fromRepo)
 
         // Not found
-        every { repository.findByIdOrNull(recordId) } returns null
-        val notFound = service.callResolveExisting(recordId, emptyMap())
+        every { repository.findByAppIdAndUserAndRoundId("app-1", "user-1", 1) } returns null
+        val notFound = service.callResolveExisting("app-1", "user-1", 1, emptyMap())
         assertEquals(null, notFound)
     }
 }

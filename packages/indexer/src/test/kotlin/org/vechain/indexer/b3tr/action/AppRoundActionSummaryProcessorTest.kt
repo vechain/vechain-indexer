@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
@@ -28,14 +27,12 @@ internal class AppRoundActionSummaryProcessorTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableProcessor(
         repository: AppRoundActionSummaryRepository,
-        archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         service: AppRoundActionSummaryService,
         startRound: Int,
         indexerVersionService: IndexerVersionService,
     ) :
         AppRoundActionSummaryProcessor(
             repository = repository,
-            appRoundActionSummaryArchiveService = archiveService,
             service = service,
             startRound = startRound,
             indexerVersionService = indexerVersionService,
@@ -46,10 +43,6 @@ internal class AppRoundActionSummaryProcessorTest {
     @Nested
     inner class NoExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
-
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
@@ -64,7 +57,6 @@ internal class AppRoundActionSummaryProcessorTest {
             processor =
                 TestableProcessor(
                     repository,
-                    archiveService,
                     service = service,
                     startRound = 1,
                     indexerVersionService = indexerVersionService,
@@ -357,10 +349,6 @@ internal class AppRoundActionSummaryProcessorTest {
     inner class ExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
-
         @MockK lateinit var service: AppRoundActionSummaryService
 
         @MockK lateinit var indexerVersionService: IndexerVersionService
@@ -387,7 +375,6 @@ internal class AppRoundActionSummaryProcessorTest {
             processor =
                 TestableProcessor(
                     repository,
-                    archiveService,
                     service = service,
                     startRound = 1,
                     indexerVersionService = indexerVersionService,

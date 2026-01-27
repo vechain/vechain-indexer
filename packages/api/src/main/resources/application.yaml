@@ -39,7 +39,7 @@ spring:
   sql:
     init:
       mode: ${SQL_INIT_MODE:always}
-      schema-locations: classpath:db/transactions-schema.sql
+      schema-locations: classpath:db/transactions-schema.sql,classpath:db/action-summaries-schema.sql
 
 management:
   endpoints:

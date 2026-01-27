@@ -10,16 +10,13 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryProcessor
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 
 @Disabled("Performance test - run explicitly with --tests when needed")
 @ActiveProfiles("b3tr-user-all-time-action-summary")
@@ -27,11 +24,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var repository: UserAllTimeActionSummaryRepository
     @Autowired lateinit var service: UserAllTimeActionSummaryService
-    @Autowired
-    lateinit var archiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
-    @Autowired
-    lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
+    @Autowired lateinit var pruner: PostgresPruner
     @Autowired lateinit var impactConfig: ActionImpactConfig
 
     @Value("\${business-event.substitutions.B3TR_CONTRACT}") lateinit var b3trContract: String
@@ -41,9 +34,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
-        // Clear database to start fresh
-        repository.deleteAll()
-        println("✓ Cleared user all time action summary database")
+        // Note: Database clearing should be done via SQL or test setup
 
         // Create profiler for detailed timing analysis
         val profiler = DetailedProfiler()
@@ -82,9 +73,8 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledUserAllTimeActionSummaryService(
                     repository = repository,
-                    archiveService = archiveService,
-                    pruner = pruner,
                     impactConfig = impactConfig,
+                    pruner = pruner,
                     profiler = profiler,
                 )
             } else {
@@ -95,7 +85,6 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             if (profiler != null) {
                 ProfiledUserAllTimeActionSummaryProcessor(
                     repository = repository,
-                    archiveService = archiveService,
                     service = serviceToUse,
                     indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
@@ -103,7 +92,6 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             } else {
                 UserAllTimeActionSummaryProcessor(
                     repository = repository,
-                    userAllTimeActionSummaryArchiveService = archiveService,
                     service = serviceToUse,
                     indexerVersionService = mockIndexerVersionService,
                 )
@@ -128,14 +116,12 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for UserAllTimeActionSummaryProcessor */
     private class ProfiledUserAllTimeActionSummaryProcessor(
         repository: UserAllTimeActionSummaryRepository,
-        archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         service: UserAllTimeActionSummaryService,
         indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         UserAllTimeActionSummaryProcessor(
             repository = repository,
-            userAllTimeActionSummaryArchiveService = archiveService,
             service = service,
             indexerVersionService = indexerVersionService,
         ) {

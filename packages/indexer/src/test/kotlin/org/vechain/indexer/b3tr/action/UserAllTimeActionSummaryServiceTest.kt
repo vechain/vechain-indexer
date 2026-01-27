@@ -13,39 +13,31 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
 @ExtendWith(MockKExtension::class)
 internal class UserAllTimeActionSummaryServiceTest {
     @MockK lateinit var repository: UserAllTimeActionSummaryRepository
-
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
-
-    @MockK
-    lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
+    private lateinit var serviceWithPruner: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserAllTimeActionSummaryRepository,
-        archive: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-        pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : UserAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, UserAllTimeActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : UserAllTimeActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(entity: String, cache: Map<String, UserAllTimeActionSummary>) =
+            resolveExisting(entity, cache)
 
         fun callCreateOrUpdateExisting(
             entity: String,
@@ -59,7 +51,8 @@ internal class UserAllTimeActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
+        serviceWithPruner = TestableService(repository, ActionImpactConfig(), pruner)
     }
 
     @Test
@@ -108,7 +101,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByEntity(any()) } returns null
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
         assertEquals(4, updated.size)
@@ -193,10 +186,9 @@ internal class UserAllTimeActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        every { repository.findByIdOrNull(generateId("user-1")) } returns existingUserRecord
-        every { repository.findByIdOrNull(generateId("app-1")) } returns existingAppRecord
-        every { repository.findByIdOrNull(generateId(EntityType.GLOBAL.name)) } returns
-            existingGlobalRecord
+        every { repository.findByEntity("user-1") } returns existingUserRecord
+        every { repository.findByEntity("app-1") } returns existingAppRecord
+        every { repository.findByEntity(EntityType.GLOBAL.name) } returns existingGlobalRecord
 
         val (updated, archived) = service.processEvents(listOf(event))
 
@@ -304,20 +296,154 @@ internal class UserAllTimeActionSummaryServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { archiveService.saveAll(archived) } just runs
+        every { repository.saveAllVersioned(updated, archived) } just runs
 
         service.save(updated, archived)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { archiveService.saveAll(archived) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
     }
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every {
+            repository.saveAllVersioned(
+                any<List<UserAllTimeActionSummary>>(),
+                any<List<UserAllTimeActionSummary>>(),
+            )
+        } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.saveAll(any<List<UserAllTimeActionSummary>>()) }
-        verify(exactly = 0) { archiveService.saveAll(any<List<UserAllTimeActionSummary>>()) }
+
+        verify(exactly = 1) {
+            repository.saveAllVersioned(
+                any<List<UserAllTimeActionSummary>>(),
+                any<List<UserAllTimeActionSummary>>(),
+            )
+        }
+    }
+
+    @Test
+    fun `save calls pruner for entities with version greater than 1`() {
+        val updated =
+            listOf(
+                UserAllTimeActionSummary(
+                    version = 3,
+                    blockId = "b3",
+                    blockNumber = 300L,
+                    blockTimestamp = 3000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 5,
+                    totalRewardAmount = BigDecimal.TEN,
+                    totalImpact = null,
+                )
+            )
+        val archived =
+            listOf(
+                UserAllTimeActionSummary(
+                    id = generateId("user-1"),
+                    version = 2,
+                    blockId = "b2",
+                    blockNumber = 200L,
+                    blockTimestamp = 2000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 3,
+                    totalRewardAmount = BigDecimal.ONE,
+                    totalImpact = null,
+                )
+            )
+
+        every { repository.saveAllVersioned(updated, archived) } just runs
+        every { pruner.run(300L, listOf(generateId("user-1"))) } just runs
+
+        serviceWithPruner.save(updated, archived)
+
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
+        verify(exactly = 1) { pruner.run(300L, listOf(generateId("user-1"))) }
+    }
+
+    @Test
+    fun `save does not call pruner when archived items have version 1`() {
+        val updated =
+            listOf(
+                UserAllTimeActionSummary(
+                    version = 2,
+                    blockId = "b2",
+                    blockNumber = 200L,
+                    blockTimestamp = 2000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 3,
+                    totalRewardAmount = BigDecimal.TEN,
+                    totalImpact = null,
+                )
+            )
+        val archived =
+            listOf(
+                UserAllTimeActionSummary(
+                    id = generateId("user-1"),
+                    version = 1,
+                    blockId = "b1",
+                    blockNumber = 100L,
+                    blockTimestamp = 1000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 1,
+                    totalRewardAmount = BigDecimal.ONE,
+                    totalImpact = null,
+                )
+            )
+
+        every { repository.saveAllVersioned(updated, archived) } just runs
+
+        serviceWithPruner.save(updated, archived)
+
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
+        verify(exactly = 0) { pruner.run(any(), any()) }
+    }
+
+    @Test
+    fun `save does not call pruner when archived items have version 1 or less`() {
+        val updated =
+            listOf(
+                UserAllTimeActionSummary(
+                    version = 2,
+                    blockId = "b2",
+                    blockNumber = 200L,
+                    blockTimestamp = 2000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 3,
+                    totalRewardAmount = BigDecimal.TEN,
+                    totalImpact = null,
+                )
+            )
+        // This archived item has version = 1, which is NOT greater than 1,
+        // so it should NOT trigger pruning
+        val archived =
+            listOf(
+                UserAllTimeActionSummary(
+                    id = generateId("user-1"),
+                    version = 1,
+                    blockId = "b1",
+                    blockNumber = 100L,
+                    blockTimestamp = 1000L,
+                    entity = "user-1",
+                    entityType = EntityType.USER,
+                    actionsRewarded = 1,
+                    totalRewardAmount = BigDecimal.ONE,
+                    totalImpact = null,
+                )
+            )
+
+        every { repository.saveAllVersioned(updated, archived) } just runs
+
+        service.save(updated, archived)
+
+        verify(exactly = 1) { repository.saveAllVersioned(updated, archived) }
+        // Pruner should NOT be called since archived items have version <= 1
+        verify(exactly = 0) { pruner.run(any<Long>(), any<List<String>>()) }
     }
 
     @Test
@@ -550,12 +676,12 @@ internal class UserAllTimeActionSummaryServiceTest {
             )
 
         // Prefer cache
-        val fromCache = service.callResolveExisting("app-1:user-1", mapOf("app-1:user-1" to cached))
+        val fromCache = service.callResolveExisting("user-1", mapOf(generateId("user-1") to cached))
         assertEquals(cached, fromCache)
 
         // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2") } returns cached.copy(entity = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2", emptyMap())
+        every { repository.findByEntity("user-2") } returns cached.copy(entity = "user-2")
+        val fromRepo = service.callResolveExisting("user-2", emptyMap())
         assertEquals("user-2", fromRepo?.entity)
     }
 }

@@ -4,6 +4,8 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
+import io.mockk.runs
 import io.mockk.verify
 import java.math.BigDecimal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,14 +13,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserDailyActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.IdUtils.generateId
 
@@ -26,24 +26,21 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class UserDailyActionSummaryServiceTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>
-
-    @MockK
-    lateinit var pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK lateinit var pruner: PostgresPruner
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserDailyActionSummaryRepository,
-        archive: ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-        pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
-    ) : UserDailyActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, UserDailyActionSummary>) =
-            resolveExisting(recordId, cache)
+        pruner: PostgresPruner,
+    ) : UserDailyActionSummaryService(repository, impactConfig, pruner) {
+        fun callResolveExisting(
+            entity: String,
+            date: String,
+            cache: Map<String, UserDailyActionSummary>,
+        ) = resolveExisting(entity, date, cache)
 
         fun callCreateOrUpdateExisting(
             entity: String,
@@ -57,7 +54,7 @@ internal class UserDailyActionSummaryServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service = TestableService(repository, pruner = pruner)
     }
 
     @Test
@@ -108,7 +105,7 @@ internal class UserDailyActionSummaryServiceTest {
                     ),
             )
 
-        every { repository.findByIdOrNull(any()) } returns null
+        every { repository.findByEntityAndDate(any(), any()) } returns null
         val (updated, archived) = service.processEvents(listOf(event1, event2))
 
         assertEquals(4, updated.size)
@@ -217,13 +214,11 @@ internal class UserDailyActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        every { repository.findByIdOrNull(generateId("user-1", "2025-09-09")) } returns
-            existingUser1
-        every { repository.findByIdOrNull(generateId("user-2", "2025-09-09")) } returns null
-        every { repository.findByIdOrNull(generateId("app-1", "2025-09-09")) } returns existingApp1
-        every {
-            repository.findByIdOrNull(generateId(EntityType.GLOBAL.name, "2025-09-09"))
-        } returns existingGlobal
+        every { repository.findByEntityAndDate("user-1", "2025-09-09") } returns existingUser1
+        every { repository.findByEntityAndDate("user-2", "2025-09-09") } returns null
+        every { repository.findByEntityAndDate("app-1", "2025-09-09") } returns existingApp1
+        every { repository.findByEntityAndDate(EntityType.GLOBAL.name, "2025-09-09") } returns
+            existingGlobal
 
         val (updated, archived) = service.processEvents(listOf(event1, event2))
         assertEquals(4, updated.size)
@@ -256,9 +251,11 @@ internal class UserDailyActionSummaryServiceTest {
 
     @Test
     fun `save with empty lists does not call repositories`() {
+        every { repository.saveAllVersioned(emptyList(), emptyList()) } just runs
+
         service.save(emptyList(), emptyList())
-        verify(exactly = 0) { repository.save(any()) }
-        verify(exactly = 0) { archiveService.saveAll(any()) }
+
+        verify(exactly = 1) { repository.saveAllVersioned(emptyList(), emptyList()) }
     }
 
     @Test
@@ -400,44 +397,6 @@ internal class UserDailyActionSummaryServiceTest {
                             )
                     ),
             )
-        val event3 =
-            buildIndexedEvent(
-                id = "e3",
-                blockId = "block-1",
-                blockNumber = 3L,
-                blockTimestamp = 1757449050, // 2025-09-09
-                eventType = "B3TR_ActionReward",
-                params =
-                    AbiEventParameters(
-                        returnValues =
-                            mapOf(
-                                "appId" to "app-2", // Different appId
-                                "receiver" to "user-1",
-                                "amount" to "20000000000000000000",
-                                "action" to "",
-                                "distributor" to "0x0",
-                            )
-                    ),
-            )
-        val event4 =
-            buildIndexedEvent(
-                id = "e4",
-                blockId = "block-1",
-                blockNumber = 4L,
-                blockTimestamp = 1757449050, // 2025-09-09
-                eventType = "B3TR_ActionReward",
-                params =
-                    AbiEventParameters(
-                        returnValues =
-                            mapOf(
-                                "appId" to "app-1",
-                                "receiver" to "user-2", // Different receiverId
-                                "amount" to "20000000000000000000",
-                                "action" to "",
-                                "distributor" to "0x0",
-                            )
-                    ),
-            )
 
         val blockDetails = BlockDetails("block-1", 1L, 1757449050)
 
@@ -533,7 +492,7 @@ internal class UserDailyActionSummaryServiceTest {
                 totalRewardAmount = BigDecimal(10),
                 totalImpact = null,
             )
-        val fromRepo =
+        val fromRepoRecord =
             UserDailyActionSummary(
                 version = 2,
                 blockId = "block-2",
@@ -547,11 +506,13 @@ internal class UserDailyActionSummaryServiceTest {
                 totalImpact = null,
             )
 
-        val cache = mapOf("id-1" to cached)
-        every { repository.findByIdOrNull("id-2") } returns fromRepo
-        every { repository.findByIdOrNull("id-3") } returns null
-        assertEquals(cached, service.callResolveExisting("id-1", cache))
-        assertEquals(fromRepo, service.callResolveExisting("id-2", cache))
-        assertEquals(null, service.callResolveExisting("id-3", cache))
+        // Prefer cache - use generateId to create the cache key
+        val cacheKey = generateId("user-1", "2025-09-09")
+        val cache = mapOf(cacheKey to cached)
+        every { repository.findByEntityAndDate("user-2", "2025-09-09") } returns fromRepoRecord
+        every { repository.findByEntityAndDate("user-3", "2025-09-09") } returns null
+        assertEquals(cached, service.callResolveExisting("user-1", "2025-09-09", cache))
+        assertEquals(fromRepoRecord, service.callResolveExisting("user-2", "2025-09-09", cache))
+        assertEquals(null, service.callResolveExisting("user-3", "2025-09-09", cache))
     }
 }

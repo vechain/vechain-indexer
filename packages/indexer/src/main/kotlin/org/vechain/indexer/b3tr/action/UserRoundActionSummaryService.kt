@@ -3,10 +3,8 @@ package org.vechain.indexer.b3tr.action
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
@@ -19,8 +17,7 @@ import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryReposito
 import org.vechain.indexer.b3tr.round.RoundUtils.discoverRoundId
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils.groupByBlock
 import org.vechain.indexer.utils.IdUtils.generateId
@@ -29,11 +26,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryService(
     private val repository: UserRoundActionSummaryRepository,
-    private val userRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    private val userRoundActionSummaryPruner:
-        TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
     private val impactConfig: ActionImpactConfig,
+    private val userRoundActionSummaryPruner: PostgresPruner,
 ) {
 
     open fun processEvents(
@@ -73,7 +67,7 @@ open class UserRoundActionSummaryService(
             // Process Users
             groupByReceiver(rewardDistributedEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, "$updatedRoundId")
-                val existing = resolveExisting(recordId, updatedResult)
+                val existing = resolveExisting(userId, updatedRoundId, updatedResult)
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -90,7 +84,7 @@ open class UserRoundActionSummaryService(
             // Process Apps
             groupByAppId(rewardDistributedEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId, "$updatedRoundId")
-                val existing = resolveExisting(recordId, updatedResult)
+                val existing = resolveExisting(appId, updatedRoundId, updatedResult)
                 val updated =
                     createOrUpdateExisting(
                         appId,
@@ -106,7 +100,7 @@ open class UserRoundActionSummaryService(
 
             // Process Global
             val recordId = generateId(EntityType.GLOBAL.name, "$updatedRoundId")
-            val existing = resolveExisting(recordId, updatedResult)
+            val existing = resolveExisting(EntityType.GLOBAL.name, updatedRoundId, updatedResult)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -125,13 +119,16 @@ open class UserRoundActionSummaryService(
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<UserRoundActionSummary>, existing: List<UserRoundActionSummary>) {
-        saveVersionedDocuments(
-            updated,
-            existing,
-            repository,
-            userRoundActionSummaryArchiveService,
-            userRoundActionSummaryPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for updated entities
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                userRoundActionSummaryPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     protected fun createOrUpdateExisting(
@@ -186,7 +183,11 @@ open class UserRoundActionSummaryService(
     }
 
     protected fun resolveExisting(
-        recordId: String,
+        entity: String,
+        roundId: Int,
         cache: Map<String, UserRoundActionSummary>,
-    ): UserRoundActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
+    ): UserRoundActionSummary? {
+        val recordId = generateId(entity, "$roundId")
+        return cache[recordId] ?: repository.findByEntityAndRoundId(entity, roundId)
+    }
 }

@@ -1,17 +1,19 @@
 package org.vechain.indexer.b3tr.action.repository
 
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.context.annotation.Profile
+import java.math.BigDecimal
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.action.AppRoundActionSummary
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
-@Repository
-interface AppRoundActionSummaryRepository :
-    BasePagingAndSortingIndexedRepository<AppRoundActionSummary, String> {
+interface AppRoundActionSummaryRepository : PostgresIndexedRepository {
+    // Versioned operations
+    fun saveAllVersioned(
+        updated: List<AppRoundActionSummary>,
+        existing: List<AppRoundActionSummary>,
+    )
+
+    // Query operations
     fun findFirstByOrderByBlockNumberDesc(): AppRoundActionSummary?
 
     fun findAllByAppIdAndRoundId(
@@ -28,24 +30,14 @@ interface AppRoundActionSummaryRepository :
         roundId: Int,
     ): AppRoundActionSummary?
 
-    @Cacheable(value = ["app_round_countByAppIdAndRoundId"], key = "#appId + '-' + #roundId")
     fun countByAppIdAndRoundId(appId: String, roundId: Int): Long
 
-    @Cacheable(
-        value = ["app_round_countByTotalRewardAmountGreaterThanAndAppIdAndRoundId"],
-        key =
-            "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #roundId",
-    )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndRoundId(
-        totalRewardAmount: java.math.BigDecimal,
+        totalRewardAmount: BigDecimal,
         appId: String,
         roundId: Int,
     ): Long
 
-    @Cacheable(
-        value = ["app_round_countByActionsRewardedGreaterThanAndAppIdAndRoundId"],
-        key = "#actionsRewarded + '-' + #appId + '-' + #roundId",
-    )
     fun countByActionsRewardedGreaterThanAndAppIdAndRoundId(
         actionsRewarded: Long,
         appId: String,

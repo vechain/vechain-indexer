@@ -1,19 +1,20 @@
 package org.vechain.indexer.b3tr.action.repository
 
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.context.annotation.Profile
+import java.math.BigDecimal
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.action.AppDailyActionSummary
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
-@Repository
 interface AppDailyActionSummaryRepository :
-    BasePagingAndSortingIndexedRepository<AppDailyActionSummary, String>,
-    CustomAppDailyActionSummaryRepository {
+    PostgresIndexedRepository, CustomAppDailyActionSummaryRepository {
+    // Versioned operations
+    fun saveAllVersioned(
+        updated: List<AppDailyActionSummary>,
+        existing: List<AppDailyActionSummary>,
+    )
 
+    // Query operations
     fun findAllByAppIdAndDate(
         appId: String,
         date: String,
@@ -24,23 +25,14 @@ interface AppDailyActionSummaryRepository :
 
     fun findByAppIdAndUserAndDate(appId: String, user: String, date: String): AppDailyActionSummary?
 
-    @Cacheable(value = ["app_daily_action_countByAppIdAndDate"], key = "#appId + '-' + #date")
     fun countByAppIdAndDate(appId: String, date: String): Long
 
-    @Cacheable(
-        value = ["app_daily_action_countByTotalRewardAmountGreaterThanAndAppIdAndDate"],
-        key = "#totalRewardAmount.stripTrailingZeros().toPlainString() + '-' + #appId + '-' + #date",
-    )
     fun countByTotalRewardAmountGreaterThanAndAppIdAndDate(
-        totalRewardAmount: java.math.BigDecimal,
+        totalRewardAmount: BigDecimal,
         appId: String,
         date: String,
     ): Long
 
-    @Cacheable(
-        value = ["app_daily_action_countByActionsRewardedGreaterThanAndAppIdAndDate"],
-        key = "#actionsRewarded + '-' + #appId + '-' + #date",
-    )
     fun countByActionsRewardedGreaterThanAndAppIdAndDate(
         actionsRewarded: Long,
         appId: String,
