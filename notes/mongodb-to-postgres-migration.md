@@ -529,8 +529,6 @@ For each indexer migration:
 ## Indexers Remaining to Migrate
 
 The following indexers still use MongoDB and will need migration:
-
-- `Contract` - `packages/common/src/main/kotlin/org/vechain/indexer/contracts/`
 - `AccountOverview` - `packages/common/src/main/kotlin/org/vechain/indexer/accounts/`
 - `Validator` - `packages/common/src/main/kotlin/org/vechain/indexer/validator/`
 - `VetBalance` - VET balance tracking
@@ -550,6 +548,7 @@ Each follows the same migration pattern documented above.
 
 ## Completed Migrations
 
+- `Contract` - Contracts (migrated to `contracts` table)
 - `GmNft` - GM NFTs (migrated to `b3tr_gm_nfts` table)
 - `AppAllTimeActionSummary` - B3TR app all-time action summaries
 - `AppDailyActionSummary` - B3TR app daily action summaries
@@ -582,3 +581,58 @@ Only v4 was persisted; v2 and v3 were never saved, breaking rollback functionali
 3. Both `existing` (intermediate) and `updated` (final) records are now explicitly INSERTed with appropriate `is_current` flags
 
 **Impact:** All versioned PostgreSQL repositories now correctly persist intermediate versions, enabling proper rollback across multi-block batches.
+
+### Race Condition Fix for is_current Flag (2026-01-27)
+
+The `PostgresVersionedRepository.saveAllVersioned()` method was updated to prevent a race condition that could result in multiple rows with `is_current = true` for the same entity.
+
+**Problem:** Concurrent or sequential processing could leave stale `is_current = true` rows:
+
+1. Version 1 exists with `is_current = true`
+2. Process A reads version 1, prepares version 2
+3. Process B reads version 1, prepares version 2
+4. Process B saves: version 1 → `is_current = false`, version 2 → `is_current = true`
+5. Process B runs again: reads version 2, prepares version 3, saves both
+6. **Process A finally saves:** version 1 → `is_current = false`, version 2 → `ON CONFLICT` sets `is_current = true` again!
+
+Result: Both version 2 AND version 3 have `is_current = true`, causing `IncorrectResultSizeDataAccessException: expected 1, actual 2`.
+
+**Solution:** Added an explicit UPDATE at the start of `saveAllVersioned()` to mark ALL existing current rows for affected entities as `is_current = false` before inserting:
+
+```kotlin
+val affectedEntityIds = (updated.map { it.getDocumentId() } + existing.map { it.getDocumentId() }).distinct()
+if (affectedEntityIds.isNotEmpty()) {
+    namedJdbcTemplate.update(
+        """
+        UPDATE ${tableName()}
+        SET is_current = false
+        WHERE ${entityIdColumn()} IN (:entityIds) AND is_current = true
+        """,
+        mapOf("entityIds" to affectedEntityIds),
+    )
+}
+```
+
+This ensures any stale `is_current = true` rows are cleared before new versions are inserted.
+
+**Data Cleanup:** If you encounter `IncorrectResultSizeDataAccessException: expected 1, actual 2`, run this SQL to fix corrupted data:
+
+```sql
+-- Find and fix duplicate is_current=true rows by keeping only the max version
+WITH duplicates AS (
+    SELECT entity_id, MAX(version) as max_version
+    FROM <table_name>
+    WHERE is_current = true
+    GROUP BY entity_id
+    HAVING COUNT(*) > 1
+)
+UPDATE <table_name> t
+SET is_current = false
+WHERE t.entity_id IN (SELECT entity_id FROM duplicates)
+  AND t.is_current = true
+  AND (t.entity_id, t.version) NOT IN (
+      SELECT entity_id, max_version FROM duplicates
+  );
+```
+
+Replace `<table_name>` with the affected table (e.g., `b3tr_proposal_results`).

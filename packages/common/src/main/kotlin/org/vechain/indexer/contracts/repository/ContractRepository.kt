@@ -1,12 +1,14 @@
 package org.vechain.indexer.contracts.repository
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.contracts.Contract
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("contracts", "contract")
-interface ContractRepository : BaseIndexedRepository<Contract, String> {
+interface ContractRepository : PostgresIndexedRepository {
+    fun saveAllVersioned(updated: List<Contract>, existing: List<Contract>)
+
+    fun findById(id: String): Contract?
+
     fun findByMaster(master: String, pageable: Pageable): Slice<Contract>
 }

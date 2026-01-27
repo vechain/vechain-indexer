@@ -3,16 +3,13 @@ package org.vechain.indexer.contracts
 import kotlin.collections.component1
 import kotlin.collections.component2
 import org.springframework.context.annotation.Profile
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.contracts.repository.ContractRepository
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.BlockDetails
@@ -26,8 +23,7 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class ContractService(
     private val repository: ContractRepository,
-    private val archiveService: ArchiveService<Contract, ContractArchive>,
-    private val contractPruner: TargetedPruner<Contract, ContractArchive>,
+    private val contractPruner: PostgresPruner,
     private val thorClient: ThorClient,
 ) {
     open suspend fun processBlock(
@@ -53,15 +49,18 @@ open class ContractService(
         return Pair(updatedResult.values.toList(), archiveResult)
     }
 
-    @Transactional
+    @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<Contract>, existing: List<Contract>) {
-        saveVersionedDocuments(
-            updated = updated,
-            existing = existing,
-            repository = repository,
-            archiveService = archiveService,
-            pruner = contractPruner,
-        )
+        repository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.address }
+            if (entityIds.isNotEmpty()) {
+                contractPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     protected suspend fun createOrUpdateExisting(
@@ -130,5 +129,5 @@ open class ContractService(
     }
 
     protected fun resolveExisting(recordId: String, cache: Map<String, Contract>): Contract? =
-        cache[recordId] ?: repository.findByIdOrNull(recordId)
+        cache[recordId] ?: repository.findById(recordId)
 }

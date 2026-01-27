@@ -16,14 +16,12 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.contracts.repository.ContractRepository
 import org.vechain.indexer.contracts.specifications.Contracts
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.AccountCodeResponse
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.utils.BlockDetails
@@ -33,9 +31,7 @@ import org.vechain.indexer.utils.ContractUtils
 internal class ContractServiceTest {
     @MockK lateinit var repository: ContractRepository
 
-    @MockK lateinit var archiveService: ArchiveService<Contract, ContractArchive>
-
-    @MockK lateinit var pruner: TargetedPruner<Contract, ContractArchive>
+    @MockK lateinit var contractPruner: PostgresPruner
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -46,10 +42,9 @@ internal class ContractServiceTest {
 
     private class TestableService(
         repository: ContractRepository,
-        archiveService: ArchiveService<Contract, ContractArchive>,
-        pruner: TargetedPruner<Contract, ContractArchive>,
+        contractPruner: PostgresPruner,
         thorClient: ThorClient,
-    ) : ContractService(repository, archiveService, pruner, thorClient) {
+    ) : ContractService(repository, contractPruner, thorClient) {
         suspend fun callCreateOrUpdateExisting(
             blockDetails: BlockDetails,
             contractAddress: String,
@@ -76,7 +71,7 @@ internal class ContractServiceTest {
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner, thorClient)
+        service = TestableService(repository, contractPruner, thorClient)
     }
 
     private fun blockDetails(
@@ -132,19 +127,19 @@ internal class ContractServiceTest {
         val resolved = service.callResolveExisting(recordId, mapOf(recordId to cached))
 
         assertSame(cached, resolved)
-        verify(exactly = 0) { repository.findByIdOrNull(recordId) }
+        verify(exactly = 0) { repository.findById(recordId) }
     }
 
     @Test
     fun `resolveExisting falls back to repository when cache miss`() {
         val recordId = "id-1"
         val fromDb = existingContract(address = "0xDB")
-        every { repository.findByIdOrNull(recordId) } returns fromDb
+        every { repository.findById(recordId) } returns fromDb
 
         val resolved = service.callResolveExisting(recordId, emptyMap())
 
         assertSame(fromDb, resolved)
-        verify(exactly = 1) { repository.findByIdOrNull(recordId) }
+        verify(exactly = 1) { repository.findById(recordId) }
     }
 
     @Test

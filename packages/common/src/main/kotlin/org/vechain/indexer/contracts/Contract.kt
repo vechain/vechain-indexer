@@ -3,17 +3,13 @@ package org.vechain.indexer.contracts
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "contracts")
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Contract(
-    @Id val address: String,
+    @JsonIgnore val address: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     @JsonIgnore override val blockTimestamp: Long,
@@ -28,8 +24,3 @@ data class Contract(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }
-
-@Document("contract_archives")
-@JsonView(Views.Public::class)
-data class ContractArchive(@Id override val id: String, override val data: Contract) :
-    Archive<Contract>
