@@ -1,17 +1,11 @@
 package org.vechain.indexer.nft
 
 import org.springframework.context.annotation.Profile
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.saveVersionedDocuments
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.EventUtils
 import org.vechain.indexer.utils.ParamUtils.getAsString
@@ -21,14 +15,21 @@ import org.vechain.indexer.utils.buildNftId
 @Service
 open class NftService(
     private val nftRepository: NftRepository,
-    private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-    private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+    private val nftPruner: PostgresPruner,
     private val blacklistClient: NftBlacklistClient,
-    private val mongoTemplate: MongoTemplate,
 ) {
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<IndexedNft>, existing: List<IndexedNft>) {
-        saveVersionedDocuments(updated, existing, nftRepository, nftArchiveService, nftPruner)
+        nftRepository.saveAllVersioned(updated, existing)
+
+        // Trigger targeted pruning for entities with prior versions
+        if (updated.isNotEmpty()) {
+            val latestBlock = updated.maxOf { it.blockNumber }
+            val entityIds = existing.filter { it.version > 1 }.map { it.id }
+            if (entityIds.isNotEmpty()) {
+                nftPruner.run(latestBlock, entityIds)
+            }
+        }
     }
 
     open suspend fun parseRecords(
@@ -75,7 +76,7 @@ open class NftService(
     }
 
     open fun getExisting(nftTransfers: List<IndexedEvent>): List<IndexedNft> =
-        nftRepository.findAllById(nftTransfers.map { buildNftId(it) }).toList()
+        nftRepository.findAllById(nftTransfers.map { buildNftId(it) })
 
     open fun processBlacklistEvents(events: List<IndexedEvent>) {
         // Should only contain blacklist and whitelist events
@@ -87,30 +88,12 @@ open class NftService(
         if (whitelistAddresses.isNotEmpty()) whitelist(whitelistAddresses)
     }
 
-    /** Sets isBlacklisted to true for all history events related to the given contract addresses */
+    /** Sets isBlacklisted to true for all NFTs related to the given contract addresses */
     protected fun blacklist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedNft::contractAddress.name).`in`(contractAddresses)
-                )
-            }
-        val update = Update().set(IndexedNft::isBlacklisted.name, true)
-        mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
+        nftRepository.blacklist(contractAddresses)
     }
 
     protected fun whitelist(contractAddresses: List<String>) {
-        if (contractAddresses.isEmpty()) return
-
-        val query =
-            Query().apply {
-                addCriteria(
-                    Criteria.where(IndexedNft::contractAddress.name).`in`(contractAddresses)
-                )
-            }
-        val update = Update().set(IndexedNft::isBlacklisted.name, false)
-        mongoTemplate.updateMulti(query, update, IndexedNft::class.java)
+        nftRepository.whitelist(contractAddresses)
     }
 }

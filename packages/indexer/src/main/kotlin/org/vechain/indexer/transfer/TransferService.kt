@@ -47,7 +47,7 @@ open class TransferService(private val repository: TransferEventRepository) {
                     from = event.params.getAsString("from")!!,
                     to = event.params.getAsString("to")!!,
                     value = values.getOrNull(i)?.toString()!!,
-                    topics = event.raw!!.topics,
+                    topics = event.raw?.topics.orEmpty(),
                     tokenAddress = event.address,
                     tokenId = tokenIds.getOrNull(i)?.toString(),
                     eventType = TransferEventType.SEMI_FUNGIBLE_TOKEN,

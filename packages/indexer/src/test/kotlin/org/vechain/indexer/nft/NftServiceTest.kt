@@ -8,13 +8,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_DUPLICATE
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TOKEN_ID_PARAM
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_TRANSFER_MISSING_TO_PARAM
-import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.pruner.PostgresPruner
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -23,18 +21,15 @@ import strikt.assertions.isNotNull
 @ExtendWith(MockKExtension::class)
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
-    @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
-    @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
+    @MockK lateinit var nftPruner: PostgresPruner
     @MockK lateinit var blacklistClient: NftBlacklistClient
-    @MockK lateinit var mongoTemplate: MongoTemplate
 
     private lateinit var nftService: NftService
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        nftService =
-            NftService(repository, nftArchiveService, pruner, blacklistClient, mongoTemplate)
+        nftService = NftService(repository, nftPruner, blacklistClient)
         coEvery { blacklistClient.isBlacklisted(any(), any()) } returns false
     }
 
@@ -71,81 +66,23 @@ internal class NftServiceTest {
                 )
             )
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
+        every { repository.saveAllVersioned(updated, existing) } just Runs
 
         nftService.save(updated, existing)
 
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 1) { nftArchiveService.saveAll(existing) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, existing) }
     }
 
     @Test
-    fun `update - shouldn't call saveAll if updated is empty`() {
-        val updated = emptyList<IndexedNft>()
-        val existing =
-            listOf(
-                IndexedNft(
-                    id = "nft2",
-                    version = 1,
-                    owner = "owner2",
-                    contractAddress = "contract2",
-                    tokenId = "2",
-                    txId = "tx2",
-                    blockId = "block2",
-                    blockNumber = 2L,
-                    blockTimestamp = 2L,
-                )
-            )
-
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
-
-        nftService.save(updated, existing)
-
-        verify(exactly = 0) { repository.saveAll(updated) }
-        verify(exactly = 1) { nftArchiveService.saveAll(existing) }
-    }
-
-    @Test
-    fun `update - shouldn't call saveAll if existing is empty`() {
-        val updated =
-            listOf(
-                IndexedNft(
-                    id = "nft1",
-                    version = 1,
-                    owner = "owner1",
-                    contractAddress = "contract1",
-                    tokenId = "1",
-                    txId = "tx1",
-                    blockId = "block1",
-                    blockNumber = 1L,
-                    blockTimestamp = 1L,
-                )
-            )
-        val existing = emptyList<IndexedNft>()
-
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
-
-        nftService.save(updated, existing)
-
-        verify(exactly = 1) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftArchiveService.saveAll(existing) }
-    }
-
-    @Test
-    fun `update - shouldn't call saveAll with empty lists`() {
+    fun `update - shouldn't call saveAllVersioned if both lists are empty`() {
         val updated = emptyList<IndexedNft>()
         val existing = emptyList<IndexedNft>()
 
-        every { repository.saveAll(updated) } returns updated
-        every { nftArchiveService.saveAll(existing) } just Runs
+        every { repository.saveAllVersioned(updated, existing) } just Runs
 
         nftService.save(updated, existing)
 
-        verify(exactly = 0) { repository.saveAll(updated) }
-        verify(exactly = 0) { nftArchiveService.saveAll(existing) }
+        verify(exactly = 1) { repository.saveAllVersioned(updated, existing) }
     }
 
     // parseRecords

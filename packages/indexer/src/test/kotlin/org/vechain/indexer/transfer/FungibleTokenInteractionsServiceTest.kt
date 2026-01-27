@@ -4,7 +4,6 @@ import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures
 import org.vechain.indexer.thor.Address
@@ -22,8 +21,8 @@ internal class FungibleTokenInteractionsServiceTest {
 
     @BeforeEach
     fun setUp() {
-        val mockMongoTemplate = mockk<MongoTemplate>()
-        service = FungibleTokenInteractionsService(mockMongoTemplate)
+        val mockRepository = mockk<FungibleTokenInteractionsRepository>()
+        service = FungibleTokenInteractionsService(mockRepository)
     }
 
     @Test

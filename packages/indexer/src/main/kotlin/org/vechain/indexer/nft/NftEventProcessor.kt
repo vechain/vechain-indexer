@@ -4,21 +4,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BasePostgresProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts")
 @Component
 open class NftProcessor(
     private val nftService: NftService,
-    private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
     repository: NftRepository,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseProcessor(
+    BasePostgresProcessor(
         repository = repository,
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.NFT,
@@ -50,11 +48,7 @@ open class NftProcessor(
         }
 
         if (blacklistEvents.isNotEmpty()) {
-            nftService.processBlacklistEvents(blacklistEvents)
+            withContext(Dispatchers.IO) { nftService.processBlacklistEvents(blacklistEvents) }
         }
-    }
-
-    override fun rollback(blockNumber: Long) {
-        nftArchiveService.rollback(blockNumber)
     }
 }

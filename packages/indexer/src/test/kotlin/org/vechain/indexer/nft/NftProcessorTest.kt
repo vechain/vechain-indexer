@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -17,8 +16,6 @@ import org.vechain.indexer.version.IndexerVersionService
 internal class NftProcessorTest {
 
     @MockK lateinit var nftRepository: NftRepository
-
-    @MockK lateinit var archiveService: ArchiveService<IndexedNft, NftArchive>
 
     @MockK lateinit var nftService: NftService
 
@@ -33,7 +30,6 @@ internal class NftProcessorTest {
         processor =
             NftProcessor(
                 nftService = nftService,
-                nftArchiveService = archiveService,
                 repository = nftRepository,
                 indexerVersionService = indexerVersionService,
             )

@@ -1,17 +1,13 @@
 package org.vechain.indexer.transfer
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.mongodb.repository.Query
-import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.postgres.PostgresIndexedRepository
 
-@Profile("transfers")
-@Repository
-interface TransferEventRepository :
-    BasePagingAndSortingIndexedRepository<IndexedTransferEvent, String> {
-    @Query("{'\$and': [ {'tokenAddress': ?1}, {'\$or': [{'to': ?0}, {'from': ?0}]} ] }")
+interface TransferEventRepository : PostgresIndexedRepository {
+
+    fun saveAll(events: List<IndexedTransferEvent>)
+
     fun findByToOrFromAndTokenAddress(
         address: String,
         contractAddress: String,
@@ -38,7 +34,6 @@ interface TransferEventRepository :
         pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
-    @Query("{'blockNumber': ?0,'\$or': [ { 'to': {\$in: ?1} }, { 'from': {\$in: ?1} } ] }")
     fun findByBlockNumberAndToOrFromIn(
         blockNumber: Long,
         addresses: List<String>,
