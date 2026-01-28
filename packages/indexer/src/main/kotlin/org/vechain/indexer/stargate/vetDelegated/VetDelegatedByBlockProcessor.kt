@@ -2,7 +2,7 @@ package org.vechain.indexer.stargate.vetDelegated
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
-import org.vechain.indexer.BaseProcessor
+import org.vechain.indexer.BaseTimeSeriesProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.version.IndexerVersionService
@@ -11,14 +11,19 @@ import org.vechain.indexer.version.IndexerVersionService
 @Component
 open class VetDelegatedByBlockProcessor(
     private val service: VetDelegatedByBlockService,
-    repository: VetDelegatedByBlockRepository,
+    private val repository: VetDelegatedByBlockRepository,
     indexerVersionService: IndexerVersionService,
 ) :
-    BaseProcessor(
-        repository = repository,
+    BaseTimeSeriesProcessor<VetDelegatedByBlock>(
         indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
     ) {
+
+    override fun getLatestRecord(): VetDelegatedByBlock? = repository.getLatestRecord()
+
+    override fun deleteAllByBlockNumberGreaterThanEqual(blockNumber: Long) =
+        repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
+
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             return

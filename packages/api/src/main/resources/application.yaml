@@ -59,11 +59,6 @@ management:
       export:
         enabled: false
 
-spring.data:
-  mongodb:
-    auto-index-creation: false
-    uri: ${MONGO_URI:mongodb://api:password@localhost:27017/vechain?authSource=admin}
-
 token:
   registry:
     url: ${TOKEN_REGISTRY_URL:https://vechain.github.io/token-registry}

@@ -24,8 +24,6 @@ rate_limit_exception_list:
   -                              81.39.47.171/32
   -                              90.26.60.41/32
 cloudwatch_alarms:               true
-mongoatlas_project_id:           67ee682c537792244670fa74
-slack_secret_arn:                arn:aws:secretsmanager:eu-west-1:951789968977:secret:veworld-mongodb-alerts/slack/api-token-K34UoI
 datadog:
   secret_arn:                       arn:aws:secretsmanager:eu-west-1:951789968977:secret:dev/datadog_keys-4CywdI
 enabled_nets:
@@ -226,14 +224,3 @@ enabled_nets:
         historic-proposals:
           steering-committee:       '0x7E54f0790153647Ec0651c35cEd28171Adb5D44A'
           all-stakeholders:         '0xA6416A72F816d3a69f33D0814700545C8E3fe4BE'
-    mongodb:
-      type: atlas
-      fqdn: devnet.imcfs.mongodb.net
-      proto: mongodb+srv
-      opts: retryWrites=true&w=majority
-      cluster_tier: M20
-      disk_size_gb: 250
-      iops: 1000
-      secret_arn: arn:aws:secretsmanager:eu-west-1:951789968977:secret:dev/mongo-atlas-api-sz2Vw5
-      auto_scaling_compute_max_instance_size: M40
-      auto_scaling_compute_min_instance_size: M20

@@ -1,9 +1,10 @@
 package org.vechain.indexer.version
 
-import org.springframework.data.repository.CrudRepository
-import org.springframework.stereotype.Repository
+/** Repository interface for managing IndexerVersion entities in PostgreSQL. */
+interface IndexerVersionRepository {
+    fun findById(indexerName: String): IndexerVersion?
 
-@Repository
-interface IndexerVersionRepository : CrudRepository<IndexerVersion, String> {
-    fun findByCollectionName(collectionName: String): IndexerVersion?
+    fun findByTableName(tableName: String): IndexerVersion?
+
+    fun save(indexerVersion: IndexerVersion): IndexerVersion
 }

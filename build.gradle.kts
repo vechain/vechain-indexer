@@ -202,7 +202,7 @@ allprojects {
         // Common dependencies
         implementation("org.springframework.boot:spring-boot-starter:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jdbc:3.4.5")
-        implementation("org.springframework.boot:spring-boot-starter-data-mongodb:3.4.5")
+        implementation("org.springframework.data:spring-data-commons:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-webflux:3.4.5")
         implementation("org.springframework.boot:spring-boot-starter-jetty:3.4.5")
         implementation("org.springframework:spring-webflux")

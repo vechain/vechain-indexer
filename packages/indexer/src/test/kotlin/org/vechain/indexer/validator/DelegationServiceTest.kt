@@ -6,9 +6,9 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -18,8 +18,7 @@ import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
-    private val archiveService =
-        mockk<ArchiveService<Delegation, DelegationArchive>>(relaxed = true)
+    private val delegationPruner = mockk<PostgresPruner>(relaxed = true)
 
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
@@ -32,7 +31,7 @@ class DelegationServiceTest {
             spyk(
                 DelegationService(
                     repository,
-                    archiveService,
+                    delegationPruner,
                     validatorDelegationService,
                     stakerSC = "0xSTAKER",
                 )

@@ -4,174 +4,153 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.util.Optional
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.mapping.MongoMappingContext
-import org.springframework.data.mongodb.core.mapping.MongoPersistentEntity
+import org.vechain.indexer.thor.model.BlockIdentifier
 import strikt.api.expect
 import strikt.assertions.isEqualTo
-import strikt.assertions.isFalse
-import strikt.assertions.isTrue
+import strikt.assertions.isNull
 
 internal class IndexerVersionServiceTest {
-    private lateinit var mongoTemplate: MongoTemplate
     private lateinit var repo: IndexerVersionRepository
-    private lateinit var mappingContext: MongoMappingContext
 
     private lateinit var service: IndexerVersionService
 
-    private fun stubCollectionName(clazz: Class<*>, collectionName: String) {
-        val entity = mockk<MongoPersistentEntity<*>>()
-        every { entity.collection } returns collectionName
-        every { mappingContext.getPersistentEntity(clazz) } returns entity
-    }
-
     @BeforeEach
     fun setUp() {
-        mongoTemplate = mockk(relaxed = true)
         repo = mockk(relaxed = true)
-        mappingContext = mockk(relaxed = true)
-        service = IndexerVersionService(mongoTemplate, repo, mappingContext)
+        service = IndexerVersionService(repo)
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - missing version doc does not drop collection`() {
-        val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
-
-        every { repo.findByCollectionName("test_collection") } returns null
-        every { repo.findById(any()) } returns Optional.empty()
-        every { repo.save(any<IndexerVersion>()) } answers { firstArg() }
-
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 1)
-
-        expect { that(dropped).isFalse() }
-        verify(exactly = 0) { mongoTemplate.dropCollection("test_collection") }
-        verify(exactly = 1) { repo.save(any()) }
-    }
-
-    @Test
-    fun `checkAndResetCollectionIfVersionChanged - stored version lower drops and updates`() {
-        val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
-
-        every { repo.findByCollectionName("test_collection") } returns
+    fun `getStoredIndexerVersion - returns version when found`() {
+        val tableName = "test_table"
+        every { repo.findByTableName(tableName) } returns
             IndexerVersion(
-                indexerName = indexerName,
-                collectionName = "test_collection",
-                version = 1,
-                lastProcessedBlock = null,
-            )
-        every { repo.findById(indexerName) } returns
-            Optional.of(
-                IndexerVersion(
-                    indexerName = indexerName,
-                    collectionName = "test_collection",
-                    version = 1,
-                    lastProcessedBlock =
-                        org.vechain.indexer.thor.model.BlockIdentifier(123, "0xabc"),
-                )
-            )
-
-        val saved = slot<IndexerVersion>()
-        every { repo.save(capture(saved)) } answers { firstArg() }
-        every { mongoTemplate.dropCollection("test_collection") } returns Unit
-
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
-
-        expect {
-            that(dropped).isTrue()
-            that(saved.captured.indexerName).isEqualTo(indexerName)
-            that(saved.captured.collectionName).isEqualTo("test_collection")
-            that(saved.captured.version).isEqualTo(2)
-            that(saved.captured.lastProcessedBlock).isEqualTo(null)
-        }
-        verify(exactly = 1) { mongoTemplate.dropCollection("test_collection") }
-        verify(exactly = 1) { repo.save(any()) }
-    }
-
-    @Test
-    fun `checkAndResetCollectionIfVersionChanged - drop throws returns false`() {
-        val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
-
-        every { repo.findByCollectionName("test_collection") } returns
-            IndexerVersion(
-                indexerName = indexerName,
-                collectionName = "test_collection",
-                version = 1,
-                lastProcessedBlock = null,
-            )
-        every { repo.findById(indexerName) } returns Optional.empty()
-        every { repo.save(any<IndexerVersion>()) } answers { firstArg() }
-        every { mongoTemplate.dropCollection("test_collection") } throws RuntimeException("boom")
-
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
-
-        expect { that(dropped).isFalse() }
-        verify(exactly = 1) { repo.save(any()) }
-        verify(exactly = 1) { mongoTemplate.dropCollection("test_collection") }
-    }
-
-    @Test
-    fun `checkAndResetCollectionIfVersionChanged - stored version equal does nothing`() {
-        val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
-
-        every { repo.findByCollectionName("test_collection") } returns
-            IndexerVersion(
-                indexerName = indexerName,
-                collectionName = "test_collection",
+                indexerName = "TestIndexer",
+                tableName = tableName,
                 version = 2,
                 lastProcessedBlock = null,
             )
 
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
+        val version = service.getStoredIndexerVersion(tableName)
 
-        expect { that(dropped).isFalse() }
-        verify(exactly = 0) { repo.save(any()) }
-        verify(exactly = 0) { mongoTemplate.dropCollection(any<String>()) }
+        expect { that(version).isEqualTo(2) }
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - stored version higher does nothing`() {
-        val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
+    fun `getStoredIndexerVersion - returns null when not found`() {
+        every { repo.findByTableName("unknown_table") } returns null
 
-        every { repo.findByCollectionName("test_collection") } returns
+        val version = service.getStoredIndexerVersion("unknown_table")
+
+        expect { that(version).isNull() }
+    }
+
+    @Test
+    fun `getLastProcessedBlock - returns block when found`() {
+        val indexerName = "TestIndexer"
+        val expectedBlock = BlockIdentifier(123, "0xabc")
+        every { repo.findById(indexerName) } returns
             IndexerVersion(
                 indexerName = indexerName,
-                collectionName = "test_collection",
-                version = 3,
-                lastProcessedBlock = null,
+                tableName = "test_table",
+                version = 1,
+                lastProcessedBlock = expectedBlock,
             )
 
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
+        val block = service.getLastProcessedBlock(indexerName)
 
-        expect { that(dropped).isFalse() }
-        verify(exactly = 0) { repo.save(any()) }
-        verify(exactly = 0) { mongoTemplate.dropCollection(any<String>()) }
+        expect { that(block).isEqualTo(expectedBlock) }
     }
 
     @Test
-    fun `checkAndResetCollectionIfVersionChanged - exception returns false`() {
+    fun `getLastProcessedBlock - returns null when not found`() {
+        every { repo.findById("unknown") } returns null
+
+        val block = service.getLastProcessedBlock("unknown")
+
+        expect { that(block).isNull() }
+    }
+
+    @Test
+    fun `updateIndexerVersion - creates new version when not exists`() {
         val indexerName = "TestIndexer"
-        val clazz = Any::class.java
-        stubCollectionName(clazz, "test_collection")
+        val tableName = "test_table"
+        every { repo.findById(indexerName) } returns null
 
-        every { repo.findByCollectionName("test_collection") } throws RuntimeException("boom")
+        val saved = slot<IndexerVersion>()
+        every { repo.save(capture(saved)) } answers { firstArg() }
 
-        val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 1)
+        service.updateIndexerVersion(indexerName, tableName, 2)
 
-        expect { that(dropped).isFalse() }
+        expect {
+            that(saved.captured.indexerName).isEqualTo(indexerName)
+            that(saved.captured.tableName).isEqualTo(tableName)
+            that(saved.captured.version).isEqualTo(2)
+            that(saved.captured.lastProcessedBlock).isNull()
+        }
+    }
+
+    @Test
+    fun `updateIndexerVersion - updates existing version and clears block`() {
+        val indexerName = "TestIndexer"
+        val tableName = "test_table"
+        every { repo.findById(indexerName) } returns
+            IndexerVersion(
+                indexerName = indexerName,
+                tableName = tableName,
+                version = 1,
+                lastProcessedBlock = BlockIdentifier(123, "0xabc"),
+            )
+
+        val saved = slot<IndexerVersion>()
+        every { repo.save(capture(saved)) } answers { firstArg() }
+
+        service.updateIndexerVersion(indexerName, tableName, 2)
+
+        expect {
+            that(saved.captured.indexerName).isEqualTo(indexerName)
+            that(saved.captured.tableName).isEqualTo(tableName)
+            that(saved.captured.version).isEqualTo(2)
+            that(saved.captured.lastProcessedBlock).isNull()
+        }
+    }
+
+    @Test
+    fun `updateLastSafeSyncedBlock - updates block when indexer exists`() {
+        val indexerName = "TestIndexer"
+        val newBlock = BlockIdentifier(456, "0xdef")
+        every { repo.findById(indexerName) } returns
+            IndexerVersion(
+                indexerName = indexerName,
+                tableName = "test_table",
+                version = 1,
+                lastProcessedBlock = BlockIdentifier(123, "0xabc"),
+            )
+
+        val saved = slot<IndexerVersion>()
+        every { repo.save(capture(saved)) } answers { firstArg() }
+
+        service.updateLastSafeSyncedBlock(indexerName, newBlock)
+
+        expect { that(saved.captured.lastProcessedBlock).isEqualTo(newBlock) }
+    }
+
+    @Test
+    fun `updateLastSafeSyncedBlock - does nothing when block is null`() {
+        service.updateLastSafeSyncedBlock("TestIndexer", null)
+
+        verify(exactly = 0) { repo.findById(any()) }
         verify(exactly = 0) { repo.save(any()) }
-        verify(exactly = 0) { mongoTemplate.dropCollection(any<String>()) }
+    }
+
+    @Test
+    fun `updateLastSafeSyncedBlock - does nothing when indexer not found`() {
+        every { repo.findById("unknown") } returns null
+
+        service.updateLastSafeSyncedBlock("unknown", BlockIdentifier(123, "0xabc"))
+
+        verify(exactly = 0) { repo.save(any()) }
     }
 }

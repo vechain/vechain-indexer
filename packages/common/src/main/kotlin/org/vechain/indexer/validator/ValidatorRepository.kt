@@ -18,4 +18,12 @@ interface ValidatorRepository : PostgresIndexedRepository {
     fun findByStatusNot(status: Status): List<Validator>
 
     fun findByStatus(status: Status): List<Validator>
+
+    /** Finds validators with optional filters. */
+    fun findByFilters(
+        validatorId: String?,
+        endorser: String?,
+        statuses: List<Status>?,
+        pageable: Pageable,
+    ): Slice<Validator>
 }

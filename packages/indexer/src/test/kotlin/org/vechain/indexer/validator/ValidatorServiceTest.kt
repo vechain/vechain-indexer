@@ -5,10 +5,10 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ExecuteAccountResponse
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -18,7 +18,7 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidator
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
-    private val archiveService = mockk<ArchiveService<Validator, ValidatorArchive>>(relaxed = true)
+    private val validatorPruner = mockk<PostgresPruner>(relaxed = true)
     private val thorClient = mockk<ThorClient>()
 
     private lateinit var service: ValidatorService
@@ -26,7 +26,7 @@ class ValidatorServiceTest {
     @BeforeEach
     fun setup() {
         clearAllMocks()
-        service = spyk(ValidatorService(repository, archiveService, thorClient, 25L, "0xcontract"))
+        service = spyk(ValidatorService(repository, validatorPruner, thorClient, 25L, "0xcontract"))
     }
 
     private fun inspectionResult(data: String): InspectionResult =
@@ -173,10 +173,10 @@ class ValidatorServiceTest {
         verify { getLatestValidatorInfo(any(), any(), any(), any(), any(), any()) }
     }
 
-    // --- saveAndDelete tests ---
+    // --- save tests ---
 
     @Test
-    fun `saveAndDelete persists updates, archives, and deletes`() {
+    fun `save persists updates with versioning`() {
         val v1 =
             Validator(
                 id = "0xVAL1",
@@ -186,16 +186,16 @@ class ValidatorServiceTest {
                 version = 1,
             )
 
-        every { repository.saveAll(any<List<Validator>>()) } returns listOf(v1)
-        every { repository.deleteAllById(any<List<String>>()) } just Runs
-        every { archiveService.saveAll(any<List<Validator>>()) } just Runs
+        every { repository.saveAllVersioned(any(), any()) } just Runs
 
         service.save(listOf(v1), listOf(v1))
 
         verify {
-            repository.saveAll(withArg<List<Validator>> { list -> assertThat(list).contains(v1) })
+            repository.saveAllVersioned(
+                withArg<List<Validator>> { list -> assertThat(list).contains(v1) },
+                any(),
+            )
         }
-        verify { archiveService.saveAll(match { it.isNotEmpty() }) }
     }
 
     // --- Queue Initialization Tests ---

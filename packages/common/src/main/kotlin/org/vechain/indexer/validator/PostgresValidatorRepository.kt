@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.math.BigDecimal
 import java.sql.ResultSet
-import org.bson.types.Decimal128
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -58,42 +57,42 @@ open class PostgresValidatorRepository(
             doc.endorser,
             doc.beneficiary,
             doc.status?.name,
-            doc.vetStaked?.bigDecimalValue(),
-            doc.validatorVetStaked?.bigDecimalValue(),
-            doc.delegatorVetStaked?.bigDecimalValue(),
-            doc.queuedVetStaked?.bigDecimalValue(),
-            doc.validatorQueuedVetStaked?.bigDecimalValue(),
-            doc.delegatorQueuedVetStaked?.bigDecimalValue(),
-            doc.validatorExitingVetStaked?.bigDecimalValue(),
-            doc.delegatorExitingVetStaked?.bigDecimalValue(),
-            doc.exitingVetStaked?.bigDecimalValue(),
+            doc.vetStaked,
+            doc.validatorVetStaked,
+            doc.delegatorVetStaked,
+            doc.queuedVetStaked,
+            doc.validatorQueuedVetStaked,
+            doc.delegatorQueuedVetStaked,
+            doc.validatorExitingVetStaked,
+            doc.delegatorExitingVetStaked,
+            doc.exitingVetStaked,
             doc.exitingValidatorVetStaked,
             doc.cycleEndBlock,
-            doc.totalRewards?.bigDecimalValue(),
-            doc.blockProbability?.bigDecimalValue(),
-            doc.blocksPerEpoch?.bigDecimalValue(),
-            doc.totalTvl?.bigDecimalValue(),
-            doc.validatorTvl?.bigDecimalValue(),
-            doc.delegatorTvl?.bigDecimalValue(),
-            doc.validatorTvlPercentage?.bigDecimalValue(),
-            doc.tvlBasedYield?.bigDecimalValue(),
-            doc.validatorYield?.bigDecimalValue(),
-            doc.avgDelegatorYield?.bigDecimalValue(),
-            doc.nextCycleTvlBasedYield?.bigDecimalValue(),
-            doc.nextCycleValidatorYield?.bigDecimalValue(),
-            doc.nextCycleAvgDelegatorYield?.bigDecimalValue(),
+            doc.totalRewards,
+            doc.blockProbability,
+            doc.blocksPerEpoch,
+            doc.totalTvl,
+            doc.validatorTvl,
+            doc.delegatorTvl,
+            doc.validatorTvlPercentage,
+            doc.tvlBasedYield,
+            doc.validatorYield,
+            doc.avgDelegatorYield,
+            doc.nextCycleTvlBasedYield,
+            doc.nextCycleValidatorYield,
+            doc.nextCycleAvgDelegatorYield,
             doc.nftYieldsNextCycle?.let { map ->
                 objectMapper.writeValueAsString(
-                    map.mapKeys { it.key.name }.mapValues { it.value.bigDecimalValue().toString() }
+                    map.mapKeys { it.key.name }.mapValues { it.value.toString() }
                 )
             },
-            doc.totalWeight?.bigDecimalValue(),
+            doc.totalWeight,
             doc.online,
             doc.completedPeriods,
             doc.startBlock,
             doc.cyclePeriodLength,
-            doc.blocksPerYear?.bigDecimalValue(),
-            doc.percentageOffline?.bigDecimalValue(),
+            doc.blocksPerYear,
+            doc.percentageOffline,
             doc.offlineBlocks,
             doc.exitBlock,
             doc.queuePosition,
@@ -102,12 +101,12 @@ open class PostgresValidatorRepository(
 
     override fun mapRow(rs: ResultSet): Validator {
         val nftYieldsJson = rs.getString("nft_yields_next_cycle")
-        val nftYieldsNextCycle: Map<TokenLevel, Decimal128>? =
+        val nftYieldsNextCycle: Map<TokenLevel, BigDecimal>? =
             nftYieldsJson?.let {
                 val rawMap: Map<String, String> = objectMapper.readValue(it)
                 rawMap
                     .mapKeys { entry -> TokenLevel.valueOf(entry.key) }
-                    .mapValues { entry -> Decimal128(BigDecimal(entry.value)) }
+                    .mapValues { entry -> BigDecimal(entry.value) }
             }
 
         return Validator(
@@ -119,47 +118,39 @@ open class PostgresValidatorRepository(
             endorser = rs.getString("endorser"),
             beneficiary = rs.getString("beneficiary"),
             status = rs.getString("status")?.let { Status.valueOf(it) },
-            vetStaked = rs.getBigDecimal("vet_staked")?.let { Decimal128(it) },
-            validatorVetStaked = rs.getBigDecimal("validator_vet_staked")?.let { Decimal128(it) },
-            delegatorVetStaked = rs.getBigDecimal("delegator_vet_staked")?.let { Decimal128(it) },
-            queuedVetStaked = rs.getBigDecimal("queued_vet_staked")?.let { Decimal128(it) },
-            validatorQueuedVetStaked =
-                rs.getBigDecimal("validator_queued_vet_staked")?.let { Decimal128(it) },
-            delegatorQueuedVetStaked =
-                rs.getBigDecimal("delegator_queued_vet_staked")?.let { Decimal128(it) },
-            validatorExitingVetStaked =
-                rs.getBigDecimal("validator_exiting_vet_staked")?.let { Decimal128(it) },
-            delegatorExitingVetStaked =
-                rs.getBigDecimal("delegator_exiting_vet_staked")?.let { Decimal128(it) },
-            exitingVetStaked = rs.getBigDecimal("exiting_vet_staked")?.let { Decimal128(it) },
+            vetStaked = rs.getBigDecimal("vet_staked"),
+            validatorVetStaked = rs.getBigDecimal("validator_vet_staked"),
+            delegatorVetStaked = rs.getBigDecimal("delegator_vet_staked"),
+            queuedVetStaked = rs.getBigDecimal("queued_vet_staked"),
+            validatorQueuedVetStaked = rs.getBigDecimal("validator_queued_vet_staked"),
+            delegatorQueuedVetStaked = rs.getBigDecimal("delegator_queued_vet_staked"),
+            validatorExitingVetStaked = rs.getBigDecimal("validator_exiting_vet_staked"),
+            delegatorExitingVetStaked = rs.getBigDecimal("delegator_exiting_vet_staked"),
+            exitingVetStaked = rs.getBigDecimal("exiting_vet_staked"),
             exitingValidatorVetStaked =
                 rs.getBigDecimal("exiting_validator_vet_staked") ?: BigDecimal.ZERO,
             cycleEndBlock = rs.getLongOrNull("cycle_end_block"),
-            totalRewards = rs.getBigDecimal("total_rewards")?.let { Decimal128(it) },
-            blockProbability = rs.getBigDecimal("block_probability")?.let { Decimal128(it) },
-            blocksPerEpoch = rs.getBigDecimal("blocks_per_epoch")?.let { Decimal128(it) },
-            totalTvl = rs.getBigDecimal("total_tvl")?.let { Decimal128(it) },
-            validatorTvl = rs.getBigDecimal("validator_tvl")?.let { Decimal128(it) },
-            delegatorTvl = rs.getBigDecimal("delegator_tvl")?.let { Decimal128(it) },
-            validatorTvlPercentage =
-                rs.getBigDecimal("validator_tvl_percentage")?.let { Decimal128(it) },
-            tvlBasedYield = rs.getBigDecimal("tvl_based_yield")?.let { Decimal128(it) },
-            validatorYield = rs.getBigDecimal("validator_yield")?.let { Decimal128(it) },
-            avgDelegatorYield = rs.getBigDecimal("avg_delegator_yield")?.let { Decimal128(it) },
-            nextCycleTvlBasedYield =
-                rs.getBigDecimal("next_cycle_tvl_based_yield")?.let { Decimal128(it) },
-            nextCycleValidatorYield =
-                rs.getBigDecimal("next_cycle_validator_yield")?.let { Decimal128(it) },
-            nextCycleAvgDelegatorYield =
-                rs.getBigDecimal("next_cycle_avg_delegator_yield")?.let { Decimal128(it) },
+            totalRewards = rs.getBigDecimal("total_rewards"),
+            blockProbability = rs.getBigDecimal("block_probability"),
+            blocksPerEpoch = rs.getBigDecimal("blocks_per_epoch"),
+            totalTvl = rs.getBigDecimal("total_tvl"),
+            validatorTvl = rs.getBigDecimal("validator_tvl"),
+            delegatorTvl = rs.getBigDecimal("delegator_tvl"),
+            validatorTvlPercentage = rs.getBigDecimal("validator_tvl_percentage"),
+            tvlBasedYield = rs.getBigDecimal("tvl_based_yield"),
+            validatorYield = rs.getBigDecimal("validator_yield"),
+            avgDelegatorYield = rs.getBigDecimal("avg_delegator_yield"),
+            nextCycleTvlBasedYield = rs.getBigDecimal("next_cycle_tvl_based_yield"),
+            nextCycleValidatorYield = rs.getBigDecimal("next_cycle_validator_yield"),
+            nextCycleAvgDelegatorYield = rs.getBigDecimal("next_cycle_avg_delegator_yield"),
             nftYieldsNextCycle = nftYieldsNextCycle,
-            totalWeight = rs.getBigDecimal("total_weight")?.let { Decimal128(it) },
+            totalWeight = rs.getBigDecimal("total_weight"),
             online = rs.getObject("online") as? Boolean,
             completedPeriods = rs.getLongOrNull("completed_periods"),
             startBlock = rs.getLongOrNull("start_block"),
             cyclePeriodLength = rs.getLongOrNull("cycle_period_length"),
-            blocksPerYear = rs.getBigDecimal("blocks_per_year")?.let { Decimal128(it) },
-            percentageOffline = rs.getBigDecimal("percentage_offline")?.let { Decimal128(it) },
+            blocksPerYear = rs.getBigDecimal("blocks_per_year"),
+            percentageOffline = rs.getBigDecimal("percentage_offline"),
             offlineBlocks = rs.getLongOrNull("offline_blocks"),
             exitBlock = rs.getLongOrNull("exit_block"),
             queuePosition = rs.getLongOrNull("queue_position"),
@@ -218,7 +209,17 @@ open class PostgresValidatorRepository(
     }
 
     override fun findById(id: String): Validator? {
-        return findCurrentByEntityId(id)
+        val results =
+            jdbcTemplate.query(
+                """
+            SELECT * FROM ${tableName()}
+            WHERE ${entityIdColumn()} = ? AND is_current = true
+            """
+                    .trimIndent(),
+                { rs, _ -> mapRow(rs) },
+                id,
+            )
+        return results.firstOrNull()
     }
 
     override fun findByEndorser(endorser: String, pageable: Pageable): Slice<Validator> {
@@ -228,11 +229,11 @@ open class PostgresValidatorRepository(
         val results =
             jdbcTemplate.query(
                 """
-                SELECT * FROM ${tableName()}
-                WHERE endorser = ? AND is_current = true
-                ORDER BY entity_id ASC
-                LIMIT ? OFFSET ?
-                """
+            SELECT * FROM ${tableName()}
+            WHERE endorser = ? AND is_current = true
+            ORDER BY entity_id
+            LIMIT ? OFFSET ?
+            """
                     .trimIndent(),
                 { rs, _ -> mapRow(rs) },
                 endorser,
@@ -268,5 +269,57 @@ open class PostgresValidatorRepository(
             { rs, _ -> mapRow(rs) },
             status.name,
         )
+    }
+
+    override fun findByFilters(
+        validatorId: String?,
+        endorser: String?,
+        statuses: List<Status>?,
+        pageable: Pageable,
+    ): Slice<Validator> {
+        val conditions = mutableListOf<String>()
+        val params = mutableMapOf<String, Any>()
+
+        conditions.add("is_current = true")
+
+        if (!validatorId.isNullOrBlank()) {
+            conditions.add("entity_id = :validatorId")
+            params["validatorId"] = validatorId
+        }
+
+        if (!endorser.isNullOrBlank()) {
+            conditions.add("endorser = :endorser")
+            params["endorser"] = endorser
+        }
+
+        if (!statuses.isNullOrEmpty()) {
+            conditions.add("status IN (:statuses)")
+            params["statuses"] = statuses.map { it.name }
+        }
+
+        val whereClause = conditions.joinToString(" AND ")
+        val limit = pageable.pageSize + 1
+        val offset = pageable.offset
+        params["limit"] = limit
+        params["offset"] = offset
+
+        val results =
+            namedJdbcTemplate.query(
+                """
+                SELECT * FROM ${tableName()}
+                WHERE $whereClause
+                ORDER BY entity_id
+                LIMIT :limit OFFSET :offset
+                """
+                    .trimIndent(),
+                params,
+            ) { rs, _ ->
+                mapRow(rs)
+            }
+
+        val hasNext = results.size > pageable.pageSize
+        val content = if (hasNext) results.dropLast(1) else results
+
+        return SliceImpl(content, pageable, hasNext)
     }
 }

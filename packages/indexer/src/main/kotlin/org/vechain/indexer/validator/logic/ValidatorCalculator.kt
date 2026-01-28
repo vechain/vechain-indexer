@@ -4,7 +4,6 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.MathContext
 import java.math.RoundingMode
-import org.bson.types.Decimal128
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.NumberUtils
 import org.vechain.indexer.validator.Status
@@ -321,7 +320,7 @@ object ValidatorCalculator {
      * @param vthoPriceUsd VTHO price in USD
      * @param vetPriceUsd VET price in USD
      * @param status current validator status
-     * @return map of TokenLevel → yield (Decimal128)
+     * @return map of TokenLevel → yield (BigDecimal)
      */
     fun calculateNftLevelYields(
         nextPeriodWeight: BigDecimal,
@@ -331,7 +330,7 @@ object ValidatorCalculator {
         vthoPriceUsd: BigDecimal,
         vetPriceUsd: BigDecimal,
         status: Status,
-    ): Map<TokenLevel, Decimal128> {
+    ): Map<TokenLevel, BigDecimal> {
         if (status == Status.EXITING) {
             return emptyMap()
         }
@@ -379,7 +378,7 @@ object ValidatorCalculator {
                         .divide(requiredUSD, 12, RoundingMode.HALF_UP)
                         .multiply(BigDecimal(100))
 
-                level to NumberUtils.toSafeDecimal128(yieldPct)
+                level to NumberUtils.toSafeDecimal(yieldPct)
             }
             .toMap()
     }

@@ -370,4 +370,60 @@ open class PostgresValidatorBlockRepository(private val jdbcTemplate: JdbcTempla
             startBlock,
         )
     }
+
+    override fun findByFilters(
+        validator: String?,
+        status: BlockStatus?,
+        blockNumber: Long?,
+        pageable: org.springframework.data.domain.Pageable,
+    ): org.springframework.data.domain.Slice<ValidatorBlock> {
+        val conditions = mutableListOf<String>()
+        val params = mutableListOf<Any>()
+
+        validator?.let {
+            conditions.add("validator = ?")
+            params.add(it.lowercase())
+        }
+
+        status?.let {
+            conditions.add("status = ?")
+            params.add(it.name)
+        }
+
+        blockNumber?.let {
+            conditions.add("block_number = ?")
+            params.add(it)
+        }
+
+        val whereClause =
+            if (conditions.isNotEmpty()) {
+                "WHERE ${conditions.joinToString(" AND ")}"
+            } else {
+                ""
+            }
+
+        val limit = pageable.pageSize + 1
+        val offset = pageable.offset
+
+        params.add(limit)
+        params.add(offset)
+
+        val results =
+            jdbcTemplate.query(
+                """
+                SELECT * FROM ${tableName()}
+                $whereClause
+                ORDER BY block_number DESC
+                LIMIT ? OFFSET ?
+                """
+                    .trimIndent(),
+                { rs, _ -> mapRow(rs) },
+                *params.toTypedArray(),
+            )
+
+        val hasNext = results.size > pageable.pageSize
+        val content = if (hasNext) results.dropLast(1) else results
+
+        return org.springframework.data.domain.SliceImpl(content, pageable, hasNext)
+    }
 }

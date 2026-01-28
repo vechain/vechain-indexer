@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import java.math.BigDecimal
-import org.bson.types.Decimal128
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
@@ -19,40 +18,40 @@ data class Validator(
     val endorser: String? = null, // address of the endorser
     val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
-    val vetStaked: Decimal128? = null, // amount of VET staked
-    val validatorVetStaked: Decimal128? = null,
-    val delegatorVetStaked: Decimal128? = null,
-    val queuedVetStaked: Decimal128? = null,
-    val validatorQueuedVetStaked: Decimal128? = null,
-    val delegatorQueuedVetStaked: Decimal128? = null,
-    val validatorExitingVetStaked: Decimal128? = null,
-    val delegatorExitingVetStaked: Decimal128? = null,
-    val exitingVetStaked: Decimal128? = null,
+    val vetStaked: BigDecimal? = null, // amount of VET staked
+    val validatorVetStaked: BigDecimal? = null,
+    val delegatorVetStaked: BigDecimal? = null,
+    val queuedVetStaked: BigDecimal? = null,
+    val validatorQueuedVetStaked: BigDecimal? = null,
+    val delegatorQueuedVetStaked: BigDecimal? = null,
+    val validatorExitingVetStaked: BigDecimal? = null,
+    val delegatorExitingVetStaked: BigDecimal? = null,
+    val exitingVetStaked: BigDecimal? = null,
     @JsonIgnore
     val exitingValidatorVetStaked: BigDecimal =
         BigDecimal.ZERO, // amount of VET in the process of exiting
     val cycleEndBlock: Long? = null, // end block of the current cycle
-    val totalRewards: Decimal128? = null, // total rewards earned
-    val blockProbability: Decimal128? = null,
-    val blocksPerEpoch: Decimal128? = null,
-    val totalTvl: Decimal128? = null,
-    val validatorTvl: Decimal128? = null,
-    val delegatorTvl: Decimal128? = null,
-    val validatorTvlPercentage: Decimal128? = null,
-    val tvlBasedYield: Decimal128? = null,
-    val validatorYield: Decimal128? = null,
-    val avgDelegatorYield: Decimal128? = null,
-    val nextCycleTvlBasedYield: Decimal128? = null,
-    val nextCycleValidatorYield: Decimal128? = null,
-    val nextCycleAvgDelegatorYield: Decimal128? = null,
-    val nftYieldsNextCycle: Map<TokenLevel, Decimal128>? = null,
-    val totalWeight: Decimal128? = null,
+    val totalRewards: BigDecimal? = null, // total rewards earned
+    val blockProbability: BigDecimal? = null,
+    val blocksPerEpoch: BigDecimal? = null,
+    val totalTvl: BigDecimal? = null,
+    val validatorTvl: BigDecimal? = null,
+    val delegatorTvl: BigDecimal? = null,
+    val validatorTvlPercentage: BigDecimal? = null,
+    val tvlBasedYield: BigDecimal? = null,
+    val validatorYield: BigDecimal? = null,
+    val avgDelegatorYield: BigDecimal? = null,
+    val nextCycleTvlBasedYield: BigDecimal? = null,
+    val nextCycleValidatorYield: BigDecimal? = null,
+    val nextCycleAvgDelegatorYield: BigDecimal? = null,
+    val nftYieldsNextCycle: Map<TokenLevel, BigDecimal>? = null,
+    val totalWeight: BigDecimal? = null,
     val online: Boolean? = null,
     val completedPeriods: Long? = null,
     val startBlock: Long? = null,
     val cyclePeriodLength: Long? = null,
-    val blocksPerYear: Decimal128? = null,
-    val percentageOffline: Decimal128? = null,
+    val blocksPerYear: BigDecimal? = null,
+    val percentageOffline: BigDecimal? = null,
     val offlineBlocks: Long? = null,
     val exitBlock: Long? = null, // Block at which validator will exit (for EXITING status)
     val queuePosition: Long? = null, // Position in queue (1-based), null if not QUEUED

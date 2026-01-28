@@ -1,34 +1,18 @@
 package org.vechain.indexer.stargate.vthoClaimed
 
-import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.mongodb.repository.Aggregation
-import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.timeFrame.TimeFrameRepo
 
-@Profile("stargate", "vtho-claimed-by-block")
-interface VthoClaimedByBlockRepository :
-    BaseIndexedRepository<VthoClaimedByBlock, Long>, TimeFrameRepo<VthoClaimedByBlock> {
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'blockNumber': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
+/** Repository interface for VthoClaimedByBlock time-series data. */
+interface VthoClaimedByBlockRepository : TimeFrameRepo<VthoClaimedByBlock> {
+    fun saveAll(records: Iterable<VthoClaimedByBlock>): Iterable<VthoClaimedByBlock>
+
+    fun deleteAllByBlockNumberGreaterThanEqual(start: Long)
+
     override fun findLatestBeforeOrAtBlockNumber(blockNumber: Long): VthoClaimedByBlock?
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { 'blockTimestamp': { '\$lte': ?0 } } }",
-                "{ '\$sort': { 'blockTimestamp': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoClaimedByBlock?
 
     override fun findByTimeFramesContains(
@@ -60,7 +44,6 @@ interface VthoClaimedByBlockRepository :
         pageable: Pageable,
     ): Slice<VthoClaimedByBlock>
 
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
     override fun getLatestRecord(): VthoClaimedByBlock?
 
     override fun findAll(pageable: Pageable): Slice<VthoClaimedByBlock>

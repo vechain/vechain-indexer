@@ -2,24 +2,18 @@ package org.vechain.indexer.stargate.vthoGenerated
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import java.math.BigInteger
-import org.springframework.boot.context.properties.bind.ConstructorBinding
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 
-@Document(collection = "stargate_vtho_generated_by_block")
-data class VthoGeneratedByBlock
-@ConstructorBinding
-constructor(
+data class VthoGeneratedByBlock(
     override val blockId: String,
-    @Id override val blockNumber: Long,
+    override val blockNumber: Long,
     override val blockTimestamp: Long,
     override val hourOfDay: Long,
-    override val dayOfMonth: Long, // 25
-    override val weekOfYear: Long, // 43
-    override val month: Long, // 10 (October)
-    override val year: Long, // 2025
+    override val dayOfMonth: Long,
+    override val weekOfYear: Long,
+    override val month: Long,
+    override val year: Long,
     override val timeFrames: List<TimeFrame>,
     @JsonIgnore override val blockTotal: BigInteger? = null,
     @JsonIgnore override val hourTotal: BigInteger? = null,

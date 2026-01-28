@@ -54,4 +54,12 @@ interface ValidatorBlockRepository : PostgresIndexedRepository {
     fun findMissedInRange(validator: String, startBlock: Long, endBlock: Long): List<ValidatorBlock>
 
     fun findAllMissedInRange(startBlock: Long, endBlock: Long): List<ValidatorBlock>
+
+    /** Finds validator blocks with optional filters. */
+    fun findByFilters(
+        validator: String?,
+        status: BlockStatus?,
+        blockNumber: Long?,
+        pageable: org.springframework.data.domain.Pageable,
+    ): org.springframework.data.domain.Slice<ValidatorBlock>
 }

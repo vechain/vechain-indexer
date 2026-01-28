@@ -3,11 +3,6 @@ package org.vechain.indexer.validators
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
-import org.springframework.data.domain.SliceImpl
-import org.springframework.data.domain.Sort
-import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.client.ThorClient
 import org.vechain.indexer.exception.BadRequestException
@@ -23,6 +18,7 @@ import org.vechain.indexer.validator.Status
 import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
+import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validators.ErrorMessages.ERROR_END_TIME_CANNOT_BE_LESS_THAN_START_TIME
 import org.vechain.indexer.validators.ErrorMessages.ERROR_START_TIME_CANNOT_BE_NEGATIVE
 
@@ -30,7 +26,7 @@ import org.vechain.indexer.validators.ErrorMessages.ERROR_START_TIME_CANNOT_BE_N
 @Service
 open class ValidatorService(
     private val validatorBlockRepository: ValidatorBlockRepository,
-    private val mongoTemplate: MongoTemplate,
+    private val validatorRepository: ValidatorRepository,
     private val thorClient: ThorClient,
 ) {
     open fun getValidatorBlocks(
@@ -39,30 +35,13 @@ open class ValidatorService(
         blockNumber: Long?,
         pageable: Pageable,
     ): PaginatedResponse<ValidatorBlock> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
-        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
-        blockNumber?.let { criteriaList.add(Criteria.where("blockNumber").`is`(it)) }
-
-        val query =
-            if (criteriaList.isNotEmpty()) {
-                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-            } else {
-                Query()
-            }
-
-        query
-            .with(pageable)
-            .with(
-                org.springframework.data.domain.Sort.by(
-                    org.springframework.data.domain.Sort.Direction.DESC,
-                    "blockNumber",
-                )
+        val slice =
+            validatorBlockRepository.findByFilters(
+                validator = validator?.value,
+                status = status,
+                blockNumber = blockNumber,
+                pageable = pageable,
             )
-
-        val results = mongoTemplate.find(query, ValidatorBlock::class.java)
-        val slice = SliceImpl(results, pageable, results.size == pageable.pageSize)
 
         return paginatedResponse(slice)
     }
@@ -147,23 +126,12 @@ open class ValidatorService(
         statuses: List<Status>?,
         pageable: Pageable,
     ): Slice<Validator> {
-        val criteriaList = mutableListOf<Criteria>()
-
-        validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
-        endorser?.let { criteriaList.add(Criteria.where("endorser").`is`(it.lowercase())) }
-        statuses?.let { criteriaList.add(Criteria.where("status").`in`(it)) }
-
-        val query =
-            if (criteriaList.isNotEmpty()) {
-                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-            } else {
-                Query()
-            }
-
-        query.with(pageable)
-
-        val results = mongoTemplate.find(query, Validator::class.java)
-        return SliceImpl(results, pageable, results.size == pageable.pageSize)
+        return validatorRepository.findByFilters(
+            validatorId = validatorId,
+            endorser = endorser,
+            statuses = statuses,
+            pageable = pageable,
+        )
     }
 
     open fun getMissedBlocksPercentage(

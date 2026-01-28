@@ -40,7 +40,6 @@ logging:
         '*': ${APP_LOG_LEVEL:INFO}
       springframework:
         data: INFO
-#      mongodb.driver.protocol.command: DEBUG
 
 management:
   endpoints:
@@ -70,10 +69,6 @@ management:
       export:
         enabled: ${PROMETHEUS_METRICS_ENABLED:true}
         step: 10s
-
-spring.data:
-  mongodb:
-    uri: ${MONGO_URI:mongodb://indexer:password@localhost:27017/vechain?authSource=admin}
 
 thor:
   url: ${THOR_URL:https://mainnet.vechain.org}

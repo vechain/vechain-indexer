@@ -156,7 +156,7 @@ open class VetStakedByBlockService(private val repository: VetStakedByBlockRepos
      * @notice Persist a single per-block staking record.
      */
     open fun saveRecord(record: VetStakedByBlock) {
-        repository.save(record)
+        repository.saveAll(listOf(record))
     }
 
     /**

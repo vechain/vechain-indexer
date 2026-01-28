@@ -5,7 +5,6 @@ import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext
 import jakarta.validation.Payload
 import kotlin.reflect.KClass
-import org.vechain.indexer.utils.CursorPaginationUtils
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
@@ -28,13 +27,17 @@ class CursorValidator : ConstraintValidator<ValidCursor, String> {
         }
 
         // Validate well-formed cursor (contains pipe separator and non-blank cursor value)
-        if (!CursorPaginationUtils.isValidCursor(value)) {
+        if (!value.contains("|")) {
+            return false
+        }
+
+        val parts = value.split("|", limit = 2)
+        if (parts.size != 2 || parts[1].isBlank()) {
             return false
         }
 
         // Validate that sort value can be parsed as a number
-        val cursorInfo = CursorPaginationUtils.parseCursor(value) ?: return false
-        return cursorInfo.sortValue.toLongOrNull() != null ||
-            cursorInfo.sortValue.toBigDecimalOrNull() != null
+        val sortValue = parts[0]
+        return sortValue.toLongOrNull() != null || sortValue.toBigDecimalOrNull() != null
     }
 }

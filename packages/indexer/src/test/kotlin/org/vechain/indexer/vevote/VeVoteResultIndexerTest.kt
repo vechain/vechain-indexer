@@ -7,10 +7,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -18,13 +16,7 @@ import org.vechain.indexer.version.IndexerVersionService
 class VeVoteResultIndexerTest {
     @MockK lateinit var veVoteProposalResultRepository: VeVoteProposalResultRepository
 
-    @MockK
-    lateinit var veVoteProposalResultArchive:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
-
     @MockK lateinit var veVoteResultService: VeVoteResultService
-
-    @MockK lateinit var mongoTemplate: MongoTemplate
 
     @MockK lateinit var indexerVersionService: IndexerVersionService
 
@@ -38,7 +30,6 @@ class VeVoteResultIndexerTest {
             VeVoteResultProcessor(
                 service = veVoteResultService,
                 repository = veVoteProposalResultRepository,
-                veVoteResultArchiveService = veVoteProposalResultArchive,
                 indexerVersionService = indexerVersionService,
             )
     }
@@ -56,6 +47,6 @@ class VeVoteResultIndexerTest {
             )
         }
 
-        verify { mongoTemplate wasNot Called }
+        verify { veVoteResultService wasNot Called }
     }
 }
