@@ -36,6 +36,18 @@ test-indexer: #@ Run all the indexer tests.
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 
+# Database
+DB_COMMAND=docker compose -f database/docker-compose-postgres.yaml
+
+db-up: #@ Start PostgreSQL database.
+	$(DB_COMMAND) up -d --wait
+db-down: #@ Stop PostgreSQL database.
+	$(DB_COMMAND) down
+db-clean: #@ Stop and remove all database data.
+	$(DB_COMMAND) down -v --remove-orphans
+db-logs: #@ Attach to the database logs.
+	$(DB_COMMAND) logs -f
+
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
 
@@ -70,8 +82,8 @@ run-api: build-api #@ Run the api locally.
 	java -jar packages/api/build/libs/api*.jar
 
 # All
-start: #@ Remove, clean and start all the infrastructure and the application.
-	make db-up db-setup app-up
+start: #@ Start the database and the application.
+	make db-up app-up
 clean: #@ Clean all the infrastructure and the application data.
 	make load-test-clean app-down db-clean load-test-clean
 down: #@ Stop all the infrastructure and the application.
