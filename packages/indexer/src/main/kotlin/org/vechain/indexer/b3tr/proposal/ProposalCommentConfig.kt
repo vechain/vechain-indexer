@@ -1,5 +1,6 @@
 package org.vechain.indexer.b3tr.proposal
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -9,10 +10,23 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
-open class ProposalCommentConfig {
+open class ProposalCommentConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.b3tr-proposal-comments:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.PROPOSAL_COMMENT,
+            tableName = "b3tr_proposal_comments",
+            schemaResource = "db/tables/b3tr_proposal_comments.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun proposalCommentIndexer(
         thorClient: ThorClient,

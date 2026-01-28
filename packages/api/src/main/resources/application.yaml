@@ -38,8 +38,8 @@ spring:
     driver-class-name: org.postgresql.Driver
   sql:
     init:
-      mode: ${SQL_INIT_MODE:always}
-      schema-locations: classpath:db/transactions-schema.sql,classpath:db/action-summaries-schema.sql
+      # API is read-only - tables are created by the indexer via IndexerVersionService
+      mode: ${SQL_INIT_MODE:never}
 
 management:
   endpoints:

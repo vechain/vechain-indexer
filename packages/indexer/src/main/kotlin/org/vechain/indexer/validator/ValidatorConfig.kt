@@ -1,5 +1,6 @@
 package org.vechain.indexer.validator
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -12,10 +13,23 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder.buildClauses
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("validator", "validator-stats")
-open class ValidatorConfig {
+open class ValidatorConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.validator:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.VALIDATOR,
+            tableName = "validators",
+            schemaResource = "db/tables/validators.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun validatorPruner(
         jdbcTemplate: JdbcTemplate,

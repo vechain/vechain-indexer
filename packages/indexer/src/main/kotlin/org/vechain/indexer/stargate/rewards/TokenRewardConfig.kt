@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.rewards
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -15,10 +16,23 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("token-reward")
-open class TokenRewardConfig {
+open class TokenRewardConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.token-rewards:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.TOKEN_REWARD,
+            tableName = "stargate_token_rewards",
+            schemaResource = "db/tables/stargate_token_rewards.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun tokenRewardPruner(
         jdbcTemplate: JdbcTemplate,

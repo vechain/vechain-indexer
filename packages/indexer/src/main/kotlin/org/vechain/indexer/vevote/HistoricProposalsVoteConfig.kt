@@ -1,5 +1,6 @@
 package org.vechain.indexer.vevote
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -9,10 +10,23 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("vevote", "vevote-historic-proposals")
-open class HistoricProposalsVoteConfig {
+open class HistoricProposalsVoteConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.historic-proposals:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE,
+            tableName = "historic_proposals_votes",
+            schemaResource = "db/tables/historic_proposals_votes.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun historicProposalsVoteIndexer(
         thorClient: ThorClient,

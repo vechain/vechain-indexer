@@ -1,3 +1,8 @@
+------------------------------------------------------------
+-- TRANSACTIONS TABLE AND RELATED TABLES
+-- Note: These tables have FK dependencies and must be created together
+------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS transactions (
     id TEXT PRIMARY KEY,
     block_id TEXT NOT NULL,

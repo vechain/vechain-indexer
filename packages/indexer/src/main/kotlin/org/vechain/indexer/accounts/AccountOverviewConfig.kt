@@ -1,5 +1,6 @@
 package org.vechain.indexer.accounts
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -11,10 +12,23 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("accounts", "account-overview")
-open class AccountOverviewConfig {
+open class AccountOverviewConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.account-overview:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.ACCOUNT_OVERVIEW_INDEXER,
+            tableName = "account_overviews",
+            schemaResource = "db/tables/account_overviews.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun accountOverviewPruner(
         jdbcTemplate: JdbcTemplate,

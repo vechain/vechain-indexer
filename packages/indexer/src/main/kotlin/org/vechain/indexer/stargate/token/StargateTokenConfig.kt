@@ -1,5 +1,6 @@
 package org.vechain.indexer.stargate.token
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -12,10 +13,23 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.pruner.PostgresPruner
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("stargate", "stargate-token")
-open class StargateTokenConfig {
+open class StargateTokenConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.stargate-token:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.STARGATE_TOKEN,
+            tableName = "stargate_tokens",
+            schemaResource = "db/tables/stargate_tokens.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun stargateTokenPruner(
         jdbcTemplate: JdbcTemplate,

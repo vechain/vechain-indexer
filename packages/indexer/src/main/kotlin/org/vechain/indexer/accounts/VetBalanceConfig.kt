@@ -1,5 +1,6 @@
 package org.vechain.indexer.accounts
 
+import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -8,10 +9,23 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.version.IndexerVersionService
 
 @Configuration
 @Profile("accounts", "vet-balance")
-open class VetBalanceConfig {
+open class VetBalanceConfig(private val indexerVersionService: IndexerVersionService) {
+    @Value("\${indexer.version.vet-balance:1}") private var version: Int = 1
+
+    @PostConstruct
+    open fun initVersionCheck() {
+        indexerVersionService.ensureTableExists(
+            indexerName = IndexerNames.VET_BALANCE_INDEXER,
+            tableName = "vet_balances",
+            schemaResource = "db/tables/vet_balances.sql",
+            newVersion = version,
+        )
+    }
+
     @Bean
     open fun vetBalanceIndexer(
         thorClient: ThorClient,

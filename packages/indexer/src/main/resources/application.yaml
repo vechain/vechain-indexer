@@ -19,7 +19,9 @@ spring:
   sql:
     init:
       mode: ${SQL_INIT_MODE:always}
-      schema-locations: classpath:db/*.sql
+      # Only create indexer_versions table via Spring init - all other tables
+      # are created by individual indexers via IndexerVersionService.ensureTableExists()
+      schema-locations: classpath:db/tables/indexer_versions.sql
 
 timing:
   warn-threshold-ms: ${TIMING_WARN_THRESHOLD_MS:1000}

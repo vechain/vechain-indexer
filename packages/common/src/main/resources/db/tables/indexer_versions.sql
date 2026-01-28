@@ -1,4 +1,6 @@
--- Indexer Version Tracking
+------------------------------------------------------------
+-- INDEXER VERSION TRACKING TABLE
+------------------------------------------------------------
 -- Stores the version and last processed block for each indexer
 
 CREATE TABLE IF NOT EXISTS indexer_versions (
