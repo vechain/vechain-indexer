@@ -18,9 +18,32 @@ interface TransferEventRepository :
         pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
+    @Query(
+        "{'\$and': [ {'tokenAddress': ?1}, {'eventType': ?2}, {'\$or': [{'to': ?0}, {'from': ?0}]} ] }"
+    )
+    fun findByToOrFromAndTokenAddressAndEventType(
+        address: String,
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
+
     fun findByToOrFrom(to: String, from: String, pageable: Pageable): Slice<IndexedTransferEvent>
 
+    @Query("{'\$and': [ {'eventType': ?1}, {'\$or': [{'to': ?0}, {'from': ?0}]} ] }")
+    fun findByToOrFromAndEventType(
+        address: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
+
     fun findByTokenAddress(contractAddress: String, pageable: Pageable): Slice<IndexedTransferEvent>
+
+    fun findByTokenAddressAndEventType(
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
 
     fun findByToAndTokenAddress(
         to: String,
@@ -28,13 +51,39 @@ interface TransferEventRepository :
         pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
+    fun findByToAndTokenAddressAndEventType(
+        to: String,
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
+
     fun findByTo(to: String, pageable: Pageable): Slice<IndexedTransferEvent>
 
+    fun findByToAndEventType(
+        to: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
+
     fun findByFrom(from: String, pageable: Pageable): Slice<IndexedTransferEvent>
+
+    fun findByFromAndEventType(
+        from: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
 
     fun findByFromAndTokenAddress(
         from: String,
         contractAddress: String,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent>
+
+    fun findByFromAndTokenAddressAndEventType(
+        from: String,
+        contractAddress: String,
+        eventType: TransferEventType,
         pageable: Pageable,
     ): Slice<IndexedTransferEvent>
 
