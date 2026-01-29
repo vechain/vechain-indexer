@@ -28,6 +28,12 @@ CREATE INDEX IF NOT EXISTS idx_transfer_events_to_block
 CREATE INDEX IF NOT EXISTS idx_transfer_events_from_block
     ON transfer_events (from_address, block_number DESC, tx_id DESC, id DESC);
 
+CREATE INDEX IF NOT EXISTS idx_transfer_events_to_eventtype_block
+    ON transfer_events (to_address, event_type, block_number DESC, tx_id DESC, id DESC);
+
+CREATE INDEX IF NOT EXISTS idx_transfer_events_from_eventtype_block
+    ON transfer_events (from_address, event_type, block_number DESC, tx_id DESC, id DESC);
+
 CREATE INDEX IF NOT EXISTS idx_transfer_events_token_block
     ON transfer_events (token_address, block_number DESC, tx_id DESC, id DESC);
 

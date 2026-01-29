@@ -42,6 +42,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEvents(
         @ValidAddress @RequestParam(required = false) address: Address?,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @RequestParam(required = false) eventType: TransferEventType?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -51,10 +52,10 @@ open class TransferEventController(private val transferEventService: TransferEve
         val resultsPage =
             when {
                 address != null && tokenAddress != null ->
-                    transferEventService.find(address, tokenAddress, pageable)
-                address != null -> transferEventService.findByAddress(address, pageable)
+                    transferEventService.find(address, tokenAddress, eventType, pageable)
+                address != null -> transferEventService.findByAddress(address, eventType, pageable)
                 tokenAddress != null ->
-                    transferEventService.findByTokenAddress(tokenAddress, pageable)
+                    transferEventService.findByTokenAddress(tokenAddress, eventType, pageable)
                 else -> throw BadRequestException("Either address or tokenAddress must be provided")
             }
 
@@ -70,6 +71,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEventsByFrom(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @RequestParam(required = false) eventType: TransferEventType?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -78,6 +80,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findByFrom(
                 address,
                 tokenAddress,
+                eventType,
                 PaginationUtils.toPageable(page, size, direction),
             )
         )
@@ -92,6 +95,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEventsByTo(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
+        @RequestParam(required = false) eventType: TransferEventType?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -100,6 +104,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.findByTo(
                 address,
                 tokenAddress,
+                eventType,
                 PaginationUtils.toPageable(page, size, direction),
             )
         )

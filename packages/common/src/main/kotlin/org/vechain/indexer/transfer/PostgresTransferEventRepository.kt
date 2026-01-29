@@ -163,6 +163,22 @@ open class PostgresTransferEventRepository(
         )
     }
 
+    override fun findByToOrFromAndTokenAddressAndEventType(
+        address: String,
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "token_address = ? AND event_type = ? AND (to_address = ? OR from_address = ?)",
+            pageable,
+            contractAddress,
+            eventType.name,
+            address,
+            address,
+        )
+    }
+
     override fun findByToOrFrom(
         to: String,
         from: String,
@@ -171,11 +187,38 @@ open class PostgresTransferEventRepository(
         return queryWithPagination("to_address = ? OR from_address = ?", pageable, to, from)
     }
 
+    override fun findByToOrFromAndEventType(
+        address: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "event_type = ? AND (to_address = ? OR from_address = ?)",
+            pageable,
+            eventType.name,
+            address,
+            address,
+        )
+    }
+
     override fun findByTokenAddress(
         contractAddress: String,
         pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
         return queryWithPagination("token_address = ?", pageable, contractAddress)
+    }
+
+    override fun findByTokenAddressAndEventType(
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "token_address = ? AND event_type = ?",
+            pageable,
+            contractAddress,
+            eventType.name,
+        )
     }
 
     override fun findByToAndTokenAddress(
@@ -191,12 +234,53 @@ open class PostgresTransferEventRepository(
         )
     }
 
+    override fun findByToAndTokenAddressAndEventType(
+        to: String,
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "to_address = ? AND token_address = ? AND event_type = ?",
+            pageable,
+            to,
+            contractAddress,
+            eventType.name,
+        )
+    }
+
     override fun findByTo(to: String, pageable: Pageable): Slice<IndexedTransferEvent> {
         return queryWithPagination("to_address = ?", pageable, to)
     }
 
+    override fun findByToAndEventType(
+        to: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "to_address = ? AND event_type = ?",
+            pageable,
+            to,
+            eventType.name,
+        )
+    }
+
     override fun findByFrom(from: String, pageable: Pageable): Slice<IndexedTransferEvent> {
         return queryWithPagination("from_address = ?", pageable, from)
+    }
+
+    override fun findByFromAndEventType(
+        from: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "from_address = ? AND event_type = ?",
+            pageable,
+            from,
+            eventType.name,
+        )
     }
 
     override fun findByFromAndTokenAddress(
@@ -209,6 +293,21 @@ open class PostgresTransferEventRepository(
             pageable,
             from,
             contractAddress,
+        )
+    }
+
+    override fun findByFromAndTokenAddressAndEventType(
+        from: String,
+        contractAddress: String,
+        eventType: TransferEventType,
+        pageable: Pageable,
+    ): Slice<IndexedTransferEvent> {
+        return queryWithPagination(
+            "from_address = ? AND token_address = ? AND event_type = ?",
+            pageable,
+            from,
+            contractAddress,
+            eventType.name,
         )
     }
 
