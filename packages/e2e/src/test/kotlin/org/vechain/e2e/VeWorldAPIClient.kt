@@ -29,8 +29,6 @@ object VeWorldAPIClient {
         object : ParameterizedTypeReference<PaginatedResponse<String>>() {}
     private val PAGINATED_TRANSFER_EVENTS_TYPE =
         object : ParameterizedTypeReference<PaginatedResponse<IndexedTransferEvent>>() {}
-    private val NFT_ARCHIVES_TYPE =
-        object : ParameterizedTypeReference<List<org.vechain.indexer.nft.NftArchive>>() {}
     private val NFTS_TYPE =
         object : ParameterizedTypeReference<List<org.vechain.indexer.nft.IndexedNft>>() {}
     private val TRANSFER_EVENTS_TYPE =
@@ -213,10 +211,6 @@ object VeWorldAPIClient {
             "$API_URL/transfers/to?address=$address$tokenParam$eventTypeParam&page=$page&size=$size",
             PAGINATED_TRANSFER_EVENTS_TYPE,
         )
-    }
-
-    fun getNftArchives(): List<org.vechain.indexer.nft.NftArchive> {
-        return getRequest("$API_URL/e2e/nft-archives", NFT_ARCHIVES_TYPE)
     }
 
     fun getNftTransfers(): List<IndexedTransferEvent> {
