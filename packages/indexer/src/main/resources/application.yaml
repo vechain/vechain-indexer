@@ -69,6 +69,15 @@ spring.data:
 thor:
   url: ${THOR_URL:https://mainnet.vechain.org}
 
+vechain:
+  forks:
+    galactica:
+      mainnet: 22084200
+      testnet: 21770500
+    hayabusa:
+      mainnet: 23474880
+      testnet: 23282280
+
 abis:
   path: ${ABI_PATH:abis}
 

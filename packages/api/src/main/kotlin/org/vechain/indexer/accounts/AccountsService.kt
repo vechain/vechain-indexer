@@ -1,5 +1,7 @@
 package org.vechain.indexer.accounts
 
+import java.math.BigInteger
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -8,7 +10,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
+import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.validator.ValidatorBlockRepository
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
@@ -21,6 +25,12 @@ open class AccountsService(
     private val totalAccountsRepository: TotalAccountsRepository,
     private val accountOverviewRepository: AccountOverviewRepository,
 ) {
+    @Autowired(required = false)
+    private var vthoClaimedByAccountRepository: VthoClaimedByAccountRepository? = null
+
+    @Autowired(required = false)
+    private var validatorBlockRepository: ValidatorBlockRepository? = null
+
     /**
      * @param period The reward period to query. Defaults to ALL if not provided.
      * @param pageable Spring pageable object controlling pagination and sorting.
@@ -109,4 +119,27 @@ open class AccountsService(
 
     fun getOverview(address: Address): AccountOverview? =
         accountOverviewRepository.findByIdOrNull(address.value)
+
+    /**
+     * Get account overview with enriched VTHO earnings data. Joins AccountOverview with Stargate
+     * VTHO claimed data, Era 3 validator rewards, and computes total VTHO earned.
+     *
+     * @param address The account address
+     * @return AccountOverviewResponse with all VTHO earned fields, or null if not found
+     */
+    fun getOverviewWithVthoEarnings(address: Address): AccountOverviewResponse? {
+        val overview = accountOverviewRepository.findByIdOrNull(address.value) ?: return null
+
+        // Sum up all Stargate VTHO claimed for this account (could be multiple token IDs)
+        val stargateVthoClaimed =
+            vthoClaimedByAccountRepository?.findByAccount(address.value)?.sumOf { it.total }
+                ?: BigInteger.ZERO
+
+        // Sum up Era 3 (post-Hayabusa) validator rewards for this account
+        val validatorRewards =
+            validatorBlockRepository?.sumValidatorRewardsByValidator(address.value)?.total
+                ?: BigInteger.ZERO
+
+        return AccountOverviewResponse.from(overview, stargateVthoClaimed, validatorRewards)
+    }
 }

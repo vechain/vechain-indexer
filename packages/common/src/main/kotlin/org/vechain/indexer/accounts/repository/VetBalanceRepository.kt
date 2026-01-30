@@ -13,4 +13,9 @@ interface VetBalanceRepository : BaseIndexedRepository<VetBalance, String> {
         startTimestamp: Long,
         endTimestamp: Long,
     ): List<VetBalance>
+
+    fun findByAddressAndBlockTimestampLessThanEqualOrderByBlockTimestampAsc(
+        address: String,
+        endTimestamp: Long,
+    ): List<VetBalance>
 }

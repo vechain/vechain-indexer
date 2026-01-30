@@ -6,12 +6,6 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
 
-enum class VeChainNetwork {
-    MAINNET,
-    TESTNET,
-    CUSTOM,
-}
-
 data class DetectedNetwork(val network: VeChainNetwork, val genesisBlock: Block)
 
 @Service

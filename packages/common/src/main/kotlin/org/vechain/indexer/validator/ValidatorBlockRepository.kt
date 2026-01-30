@@ -7,6 +7,20 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("validator", "validator-reward")
 interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, String> {
+
+    /**
+     * Sum validatorRewards for a specific validator address. Used for calculating total
+     * post-Hayabusa block rewards for validators.
+     */
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { 'validator': ?0, 'status': 'VALIDATED' } }",
+                "{ '\$group': { '_id': null, 'total': { '\$sum': '\$validatorRewards' } } }",
+            ]
+    )
+    fun sumValidatorRewardsByValidator(validator: String): ValidatorRewardTotal?
+
     // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =
