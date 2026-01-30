@@ -1,6 +1,5 @@
 package org.vechain.indexer.accounts.mongo
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PostConstruct
 import java.math.BigInteger
 import kotlinx.coroutines.CoroutineScope
@@ -8,8 +7,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.core.io.DefaultResourceLoader
-import org.springframework.core.io.Resource
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.count
@@ -19,10 +16,8 @@ import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.VetBalance
-import org.vechain.indexer.config.NetworkDetectionService
-import org.vechain.indexer.config.VeChainNetwork
+import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
 import org.vechain.indexer.config.mongo.CollectionConfig
-import org.vechain.indexer.thor.HexUtils.normalise
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "vet-balance")
@@ -31,13 +26,9 @@ open class VetBalanceCollectionConfig(
     private val mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-    private val objectMapper: ObjectMapper,
-    private val networkDetectionService: NetworkDetectionService,
-    @param:Value("\${indexer.genesis.vet-balances.resource:}")
-    private val genesisVetBalancesResourcePath: String,
+    private val genesisVetBalanceLoader: GenesisVetBalanceLoader,
 ) : CollectionConfig(mongoTemplate, appCoroutineScope, VetBalance::class.java) {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    private val resourceLoader = DefaultResourceLoader()
 
     @Value("\${indexer.version.vet-balance:1}") private val version: Int = 1
 
@@ -79,49 +70,24 @@ open class VetBalanceCollectionConfig(
             return
         }
 
-        val detected = networkDetectionService.detectBlocking()
-        val genesisBlock = detected.genesisBlock
-        val genesisResource = resolveGenesisVetBalancesResource(detected.network)
-
-        if (!genesisResource.exists()) {
-            logger.warn(
-                "Skipping genesis preload for ${modelObj.simpleName}: resource not found ({}).",
-                genesisResource.description,
-            )
+        val genesis = genesisVetBalanceLoader.loadGenesisAllocations()
+        if (genesis == null) {
+            logger.warn("Skipping genesis preload for ${modelObj.simpleName}: resource not found.")
             return
         }
-
-        val genesis =
-            genesisResource.inputStream.use {
-                objectMapper.readValue(it, GenesisVetBalancesFile::class.java)
-            }
 
         val computedTotalSupply =
             genesis.allocations.fold(BigInteger.ZERO) { acc, allocation ->
                 acc + BigInteger(allocation.balance)
             }
 
-        val normalizedAllocations =
-            genesis.allocations.map { allocation ->
-                GenesisAllocation(
-                    address = normalise(allocation.address),
-                    balance = allocation.balance,
-                )
-            }
-
-        val duplicates =
-            normalizedAllocations.groupBy { it.address }.filterValues { it.size > 1 }.keys
-        check(duplicates.isEmpty()) {
-            "Invalid genesis VET balances: duplicate addresses found: ${duplicates.joinToString(", ")}"
-        }
-
         val records =
-            normalizedAllocations.map { allocation ->
+            genesis.allocations.map { allocation ->
                 VetBalance(
                     address = allocation.address,
-                    blockId = genesisBlock.id,
+                    blockId = genesis.genesisBlock.id,
                     blockNumber = 0L,
-                    blockTimestamp = genesisBlock.timestamp,
+                    blockTimestamp = genesis.genesisBlock.timestamp,
                     balance = BigInteger(allocation.balance),
                 )
             }
@@ -135,29 +101,4 @@ open class VetBalanceCollectionConfig(
             computedTotalSupply,
         )
     }
-
-    private fun resolveGenesisVetBalancesResource(network: VeChainNetwork): Resource {
-        val configured = genesisVetBalancesResourcePath.trim()
-        if (configured.isNotEmpty()) {
-            return resourceLoader.getResource(configured)
-        }
-
-        val resourcePath =
-            when (network) {
-                VeChainNetwork.MAINNET -> "classpath:genesis/vet-balances/mainnet.json"
-                VeChainNetwork.TESTNET -> "classpath:genesis/vet-balances/testnet.json"
-                VeChainNetwork.CUSTOM -> "classpath:genesis/vet-balances/custom.json"
-            }
-
-        logger.info("Detected network={} selecting {}", network, resourcePath)
-        return resourceLoader.getResource(resourcePath)
-    }
-
-    private data class GenesisVetBalancesFile(
-        val network: String,
-        val launchTime: Long,
-        val allocations: List<GenesisAllocation>,
-    )
-
-    private data class GenesisAllocation(val address: String, val balance: String)
 }

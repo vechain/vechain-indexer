@@ -4,4 +4,6 @@ import org.springframework.context.annotation.Profile
 import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("stargate", "vtho-claimed-by-account")
-interface VthoClaimedByAccountRepository : BaseIndexedRepository<VthoClaimedByAccount, String>
+interface VthoClaimedByAccountRepository : BaseIndexedRepository<VthoClaimedByAccount, String> {
+    fun findByAccount(account: String): List<VthoClaimedByAccount>
+}

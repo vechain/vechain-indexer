@@ -7,6 +7,7 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("validator", "validator-reward")
 interface ValidatorBlockRepository : BaseIndexedRepository<ValidatorBlock, String> {
+
     // Finds the latest hourly block per validator and status -> VALIDATED only
     @Aggregation(
         pipeline =

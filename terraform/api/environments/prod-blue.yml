@@ -226,7 +226,7 @@ enabled_nets:
         token-rewards: '2'
         delegation: '4'
         total-accounts: '1'
-        account-overview: '1'
+        account-overview: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x5ef79995fe8a89e0812330e4378eb2660cede699'
@@ -432,7 +432,7 @@ enabled_nets:
         token-rewards: '1'
         delegation: '3'
         total-accounts: '1'
-        account-overview: '1'
+        account-overview: '2'
       business-event:
         substitutions:
           B3TR_CONTRACT: '0x95761346d18244bb91664181bf91193376197088'
