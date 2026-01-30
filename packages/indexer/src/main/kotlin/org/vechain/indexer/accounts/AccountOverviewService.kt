@@ -110,7 +110,7 @@ open class AccountOverviewService(
         block: Block,
         events: List<IndexedEvent>,
     ): Pair<List<AccountOverview>, List<AccountOverview>> {
-        assertEventTypes(events, "VET_TRANSFER")
+        assertEventTypes(events, "VET_TRANSFER", "Transfer")
 
         val updatedResult = mutableMapOf<String, AccountOverview>()
         val archiveResult = mutableMapOf<String, AccountOverview>()
