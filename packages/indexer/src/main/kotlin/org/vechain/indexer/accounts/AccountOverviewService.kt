@@ -451,11 +451,15 @@ open class AccountOverviewService(
      * Calculate and apply block rewards to the block beneficiary using universal balance-based
      * calculation. This methodology works across all eras.
      *
-     * Universal methodology:
-     * 1. Calculate Btrue (settled VTHO balance at block N-1, plus passive generation up to block N)
-     * 2. Get VTHO balance at block N
-     * 3. Calculate VTHO transfer delta in block N (VTHO_in - VTHO_out)
-     * 4. Block reward R = (balanceAtN - delta) - Btrue
+     * All values relate to the beneficiary B:
+     * - vthoAtNMinus1 = settled VTHO balance at block n-1
+     * - vthoAtN = settled VTHO balance at block n
+     * - passiveVtho = passive VTHO generation (pre-Hayabusa only)
+     * - vthoTransferDelta = VTHO_in - VTHO_out (positive if net inflow)
+     * - vthoUsed = VTHO paid as gas in block n
+     * - btrue = vthoAtNMinus1 + passiveVtho
+     *
+     * Block reward: R = (vthoAtN - vthoTransferDelta + vthoUsed) - btrue
      *
      * @param block Block being processed
      * @param events List of all events in the block
@@ -495,8 +499,11 @@ open class AccountOverviewService(
         // 5. Calculate VTHO transfer delta in block n
         val vthoTransferDelta = calculateVthoTransferDelta(beneficiary, events)
 
-        // 6. Calculate block reward: R = (balanceAtN - delta) - Btrue
-        val adjustedBalance = vthoAtN - vthoTransferDelta
+        // 6. Calculate VTHO used by beneficiary as gasPayer in block n
+        val vthoUsed = calculateVthoUsedByBeneficiary(beneficiary, block)
+
+        // 7. Calculate block reward: R = (balanceAtN - delta + used) - Btrue
+        val adjustedBalance = vthoAtN - vthoTransferDelta + vthoUsed
         val reward = adjustedBalance - btrue
 
         if (reward <= BigInteger.ZERO) {
@@ -588,6 +595,19 @@ open class AccountOverviewService(
             if (from == address) delta -= value // Outflow
         }
         return delta
+    }
+
+    /**
+     * Calculate the VTHO used by the beneficiary as gasPayer in this block.
+     *
+     * @param beneficiary The beneficiary address
+     * @param block The block containing transactions
+     * @return The total VTHO used (from tx.paid)
+     */
+    private fun calculateVthoUsedByBeneficiary(beneficiary: String, block: Block): BigInteger {
+        return block.transactions
+            .filter { it.gasPayer == beneficiary }
+            .sumOf { toBigInteger(it.paid) }
     }
 
     /**

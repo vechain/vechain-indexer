@@ -1034,4 +1034,133 @@ internal class AccountOverviewServiceTest {
 
         assertEquals(result10Sec.multiply(BigInteger.TEN), result100Sec)
     }
+
+    // Tests for VTHO used by beneficiary as gasPayer
+
+    @Test
+    fun `vthoBlockRewardsRule adds back VTHO used by beneficiary as gasPayer`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b =
+            block(number = 100L)
+                .copy(
+                    transactions =
+                        listOf(
+                            tx(
+                                id = "0x1",
+                                origin = "0xOTHER",
+                                gasPayer = beneficiary,
+                                paid = "0x64",
+                            ) // 100
+                        )
+                )
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+
+        // Balance at n-1: 1000, Balance at n: 1500
+        // VTHOused: 100 (from tx.paid) - must add back since gas payment reduced balance
+        // Adjusted balance = 1500 - 0 (no transfers) + 100 (gas used) = 1600
+        // Reward = 1600 - 1000 = 600
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("600"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule does not subtract gas when beneficiary is not gasPayer`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b =
+                block(number = 100L)
+                    .copy(
+                        transactions =
+                            listOf(
+                                tx(
+                                    id = "0x1",
+                                    origin = "0xOTHER",
+                                    gasPayer = "0xOTHER",
+                                    paid = "0x64",
+                                ) // 100, but not beneficiary
+                            )
+                    )
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Balance at n-1: 1000, Balance at n: 1500
+            // VTHOused: 0 (beneficiary is not gasPayer)
+            // Adjusted balance = 1500 - 0 - 0 = 1500
+            // Reward = 1500 - 1000 = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+            val record = updated[beneficiary]!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
+
+    @Test
+    fun `vthoBlockRewardsRule handles combined scenario with transfers AND gas payment`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b =
+                block(number = 100L)
+                    .copy(
+                        transactions =
+                            listOf(
+                                tx(
+                                    id = "0x1",
+                                    origin = "0xOTHER",
+                                    gasPayer = beneficiary,
+                                    paid = "0x64",
+                                ) // 100
+                            )
+                    )
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Balance at n-1: 1000, Balance at n: 1700
+            // Beneficiary received VTHO transfer: +300
+            // Beneficiary paid gas: 100
+            // Delta = +300, Used = 100
+            // Adjusted = 1700 - 300 + 100 = 1500
+            // Reward = 1500 - 1000 = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x6a4", hasCode = false) // 1700
+
+            val events =
+                listOf(vthoTransferEvent(from = "0xOTHER", to = beneficiary, value = "300"))
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, events, updated, archived)
+
+            val record = updated[beneficiary]!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
 }
