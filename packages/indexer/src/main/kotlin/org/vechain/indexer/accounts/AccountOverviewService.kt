@@ -42,10 +42,13 @@ private class ReadOnceCache<K, V> {
      * @return The cached or fetched value
      */
     suspend fun getOrFetch(key: K, fetcher: suspend () -> V): V {
-        cache.remove(key)?.let {
-            return it
+        val cached = cache.remove(key)
+        if (cached != null) {
+            return cached
         }
-        return fetcher()
+        val fetched = fetcher()
+        cache[key] = fetched
+        return fetched
     }
 
     /**
