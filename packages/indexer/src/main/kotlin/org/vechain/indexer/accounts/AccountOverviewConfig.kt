@@ -11,7 +11,6 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
-import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -60,8 +59,5 @@ open class AccountOverviewConfig {
             .blockBatchSize(syncBlockBatchSize)
             .includeFullBlock()
             .includeVetTransfers()
-            .abis("abis/other")
-            .abiEventNames(listOf("Transfer"))
-            .abiContracts(listOf(VTHO_CONTRACT_ADDRESS))
             .build()
 }
