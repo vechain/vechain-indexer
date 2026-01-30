@@ -756,8 +756,8 @@ internal class AccountOverviewServiceTest {
             // VET balance at n-1: 1_000_000_000_000_000_000 (1e18 = 1 VET)
             // VTHO balance at n-1: 1000, VTHO balance at n: 1600
             // Passive VTHO = 1e18 * 10 * 5 / 1e9 = 50_000_000_000 (50e9)
-            // Btrue = 1000 + 50_000_000_000
-            // Reward = 1600 - Btrue = 1600 - 1000 - 50_000_000_000 = negative -> no reward
+            // Btrue = 1000 + 50_000_000_000 = 50_000_001_000
+            // Reward = 1600 - Btrue = 1600 - 50_000_001_000 = -49_999_999_400 (negative -> no reward)
             coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
                 ExecuteAccountResponse(
                     balance = "0xde0b6b3a7640000", // 1e18 (1 VET)
