@@ -14,7 +14,9 @@ interface AccountOverviewRepository : BaseIndexedRepository<AccountOverview, Str
      * Find accounts that need passive VTHO settlement at Hayabusa fork (paginated). These are
      * accounts with VET balance > 0 and lastVthoSettlement before the given timestamp.
      */
-    @Query("{ 'vetBalance': { '\$gt': 0 }, 'lastVthoSettlement': { '\$lt': ?0, '\$exists': true } }")
+    @Query(
+        "{ 'vetBalance': { '\$gt': 0 }, 'lastVthoSettlement': { '\$lt': ?0, '\$exists': true } }"
+    )
     fun findAccountsNeedingVthoSettlement(
         beforeTimestamp: Long,
         pageable: Pageable,
