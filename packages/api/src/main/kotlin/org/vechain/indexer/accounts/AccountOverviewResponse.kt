@@ -18,25 +18,21 @@ data class AccountOverviewResponse(
     val vetSent: BigInteger,
     val vetReceived: BigInteger,
     val vetBalance: BigInteger,
-    /** Pre-Hayabusa (Era 1 & 2) block rewards stored in AccountOverview */
+    /** Block rewards from AccountOverview (includes all eras) */
     val vthoBlockRewards: BigInteger,
     val vthoPassiveGeneration: BigInteger,
     val vthoClaimedStargate: BigInteger,
-    /** Post-Hayabusa (Era 3) validator rewards from ValidatorBlock collection */
-    val vthoValidatorRewards: BigInteger,
     val vthoEarnedTotal: BigInteger,
 ) {
     companion object {
         fun from(
             overview: AccountOverview,
             stargateVthoClaimed: BigInteger,
-            validatorRewards: BigInteger = BigInteger.ZERO,
         ): AccountOverviewResponse {
             val vthoEarnedTotal =
                 overview.vthoBlockRewards
                     .add(overview.vthoPassiveGeneration)
                     .add(stargateVthoClaimed)
-                    .add(validatorRewards)
 
             return AccountOverviewResponse(
                 address = overview.address,
@@ -53,7 +49,6 @@ data class AccountOverviewResponse(
                 vthoBlockRewards = overview.vthoBlockRewards,
                 vthoPassiveGeneration = overview.vthoPassiveGeneration,
                 vthoClaimedStargate = stargateVthoClaimed,
-                vthoValidatorRewards = validatorRewards,
                 vthoEarnedTotal = vthoEarnedTotal,
             )
         }

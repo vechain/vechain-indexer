@@ -12,7 +12,6 @@ import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.thor.Address
-import org.vechain.indexer.validator.ValidatorBlockRepository
 
 /**
  * @notice Service handling reward aggregation and normalization for accounts.
@@ -27,9 +26,6 @@ open class AccountsService(
 ) {
     @Autowired(required = false)
     private var vthoClaimedByAccountRepository: VthoClaimedByAccountRepository? = null
-
-    @Autowired(required = false)
-    private var validatorBlockRepository: ValidatorBlockRepository? = null
 
     /**
      * @param period The reward period to query. Defaults to ALL if not provided.
@@ -122,7 +118,7 @@ open class AccountsService(
 
     /**
      * Get account overview with enriched VTHO earnings data. Joins AccountOverview with Stargate
-     * VTHO claimed data, Era 3 validator rewards, and computes total VTHO earned.
+     * VTHO claimed data and computes total VTHO earned.
      *
      * @param address The account address
      * @return AccountOverviewResponse with all VTHO earned fields, or null if not found
@@ -135,11 +131,6 @@ open class AccountsService(
             vthoClaimedByAccountRepository?.findByAccount(address.value)?.sumOf { it.total }
                 ?: BigInteger.ZERO
 
-        // Sum up Era 3 (post-Hayabusa) validator rewards for this account
-        val validatorRewards =
-            validatorBlockRepository?.sumValidatorRewardsByValidator(address.value)?.total
-                ?: BigInteger.ZERO
-
-        return AccountOverviewResponse.from(overview, stargateVthoClaimed, validatorRewards)
+        return AccountOverviewResponse.from(overview, stargateVthoClaimed)
     }
 }
