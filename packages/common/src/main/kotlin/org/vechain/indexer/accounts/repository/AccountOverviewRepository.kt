@@ -15,7 +15,7 @@ interface AccountOverviewRepository : BaseIndexedRepository<AccountOverview, Str
      * accounts with VET balance > 0 and lastVthoSettlement before the given timestamp.
      */
     @Query(
-        "{ 'vetBalance': { '\$gt': 0 }, 'lastVthoSettlement': { '\$lt': ?0, '\$exists': true } }"
+        "{ 'vetBalance': { '\$ne': '0' }, 'lastVthoSettlement': { '\$lt': ?0, '\$exists': true } }"
     )
     fun findAccountsNeedingVthoSettlement(
         beforeTimestamp: Long,

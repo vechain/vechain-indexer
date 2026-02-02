@@ -11,6 +11,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "account-overview")
@@ -43,7 +44,7 @@ open class AccountOverviewProcessor(
 
         // At the Hayabusa fork block, settle passive VTHO for all accounts with VET balance
         if (service.isHayabusaBlock(block.number)) {
-            withContext(Dispatchers.IO) { settleAllAccountsAtHayabusa(block.timestamp) }
+            withContext(Dispatchers.IO) { settleAllAccountsAtHayabusa(block) }
         }
 
         val (updated, existing) = service.processBlock(block, entry.events)
@@ -57,18 +58,18 @@ open class AccountOverviewProcessor(
      * Settle passive VTHO for all accounts at the Hayabusa fork in batches. Each batch is processed
      * in its own transaction to avoid memory issues.
      */
-    private fun settleAllAccountsAtHayabusa(hayabusaTimestamp: Long) {
-        logger.info("Starting Hayabusa passive VTHO settlement at timestamp {}", hayabusaTimestamp)
+    private fun settleAllAccountsAtHayabusa(block: Block) {
+        logger.info("Starting Hayabusa VTHO settlement at block {} {}", block.number, block.id)
 
         var totalSettled = 0
         var hasMore = true
 
         while (hasMore) {
             val pageable = PageRequest.of(0, HAYABUSA_SETTLEMENT_BATCH_SIZE)
-            val batch = service.getAccountsNeedingHayabusaSettlement(hayabusaTimestamp, pageable)
+            val batch = service.getAccountsNeedingHayabusaSettlement(block.timestamp, pageable)
 
             if (batch.content.isNotEmpty()) {
-                service.settleHayabusaBatch(batch.content, hayabusaTimestamp)
+                service.settleHayabusaBatch(batch.content, block.timestamp)
                 totalSettled += batch.content.size
                 logger.info("Settled {} accounts (total: {})", batch.content.size, totalSettled)
             }
@@ -78,9 +79,6 @@ open class AccountOverviewProcessor(
             hasMore = batch.content.isNotEmpty()
         }
 
-        logger.info(
-            "Completed Hayabusa passive VTHO settlement. Total accounts settled: {}",
-            totalSettled,
-        )
+        logger.info("Completed Hayabusa VTHO settlement. Total accounts settled: {}", totalSettled)
     }
 }
