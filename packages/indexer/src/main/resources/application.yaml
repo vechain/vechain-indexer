@@ -75,8 +75,8 @@ vechain:
       mainnet: 22084200
       testnet: 21770500
     hayabusa:
-      mainnet: 23474880
-      testnet: 23282280
+      mainnet: 23414400
+      testnet: 23221800
 
 abis:
   path: ${ABI_PATH:abis}
