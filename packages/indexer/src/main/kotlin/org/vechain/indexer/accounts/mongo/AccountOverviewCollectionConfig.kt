@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.count
+import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexerNames
@@ -56,7 +58,12 @@ open class AccountOverviewCollectionConfig(
         logger.info("Initializing indexes for ${modelObj.simpleName}")
 
         // Ensure indexes
-        // Currently it'll just be a lookup by address (the ID), so no extra indexes needed
+        ensureIndexes(
+            listOf(
+                "lastVthoSettlement_1" to
+                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC)
+            )
+        )
     }
 
     private fun preloadGenesisIfCollectionEmpty() {
