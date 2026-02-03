@@ -62,4 +62,12 @@ internal class ValidTransferEventTypeTest {
     fun `rejects empty string in list`() {
         expect { that(validator.isValid(listOf("VET", "", "NFT"), DummyContext())).isFalse() }
     }
+
+    @Test
+    fun `rejects duplicate event types`() {
+        expect {
+            that(validator.isValid(listOf("VET", "VET"), DummyContext())).isFalse()
+            that(validator.isValid(listOf("VET", "NFT", "VET"), DummyContext())).isFalse()
+        }
+    }
 }

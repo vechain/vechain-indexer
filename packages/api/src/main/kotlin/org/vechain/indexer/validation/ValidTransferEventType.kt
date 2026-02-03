@@ -13,7 +13,7 @@ import org.vechain.indexer.transfer.TransferEventType
 @MustBeDocumented
 annotation class ValidTransferEventType(
     val message: String =
-        "Invalid eventType value. Allowed values: VET, FUNGIBLE_TOKEN, NFT, SEMI_FUNGIBLE_TOKEN",
+        "Invalid eventType value. Allowed values: VET, FUNGIBLE_TOKEN, NFT, SEMI_FUNGIBLE_TOKEN. No duplicates allowed.",
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = [],
 )
@@ -24,6 +24,11 @@ class TransferEventTypeValidator : ConstraintValidator<ValidTransferEventType, L
     override fun isValid(value: List<String>?, context: ConstraintValidatorContext): Boolean {
         if (value.isNullOrEmpty()) {
             return true
+        }
+
+        // Reject duplicates
+        if (value.size != value.toSet().size) {
+            return false
         }
 
         return value.all { it in allowedValues }
