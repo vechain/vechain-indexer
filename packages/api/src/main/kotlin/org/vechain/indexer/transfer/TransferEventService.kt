@@ -24,7 +24,7 @@ open class TransferEventService(
         from: Address? = null,
         toOrFrom: Address? = null,
         tokenAddress: Address? = null,
-        eventType: TransferEventType? = null,
+        eventTypes: List<TransferEventType>? = null,
         after: Long? = null,
         before: Long? = null,
         pageable: Pageable,
@@ -35,7 +35,7 @@ open class TransferEventService(
                 from = from?.value,
                 toOrFrom = toOrFrom?.value,
                 tokenAddress = tokenAddress?.value,
-                eventType = eventType,
+                eventTypes = eventTypes,
                 after = after,
                 before = before,
             )
@@ -77,7 +77,7 @@ open class TransferEventService(
         from: String? = null,
         toOrFrom: String? = null,
         tokenAddress: String? = null,
-        eventType: TransferEventType? = null,
+        eventTypes: List<TransferEventType>? = null,
         after: Long? = null,
         before: Long? = null,
     ): Criteria {
@@ -101,8 +101,8 @@ open class TransferEventService(
             criteria.and(IndexedTransferEvent::tokenAddress.name).`is`(tokenAddress)
         }
 
-        if (eventType != null) {
-            criteria.and(IndexedTransferEvent::eventType.name).`is`(eventType)
+        if (!eventTypes.isNullOrEmpty()) {
+            criteria.and(IndexedTransferEvent::eventType.name).`in`(eventTypes)
         }
 
         if (before != null && after != null) {

@@ -19,6 +19,7 @@ import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
+import org.vechain.indexer.docs.TransferEventTypeParameter
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -29,6 +30,7 @@ import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAddressList
 import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
+import org.vechain.indexer.validation.ValidTransferEventType
 
 @Profile("transfers")
 @Tag(name = "TransferEvent", description = "Query blockchain transfer events")
@@ -41,6 +43,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Operation(summary = "Get transfer events by address or token address")
     @AddressParameter(description = "To or from address of the transfer event")
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -48,7 +51,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEvents(
         @ValidAddress @RequestParam(required = false) address: Address?,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
-        @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -75,7 +78,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.find(
                 toOrFrom = address,
                 tokenAddress = tokenAddress,
-                eventType = eventType,
+                eventTypes = eventType?.map { TransferEventType.valueOf(it) },
                 after = after,
                 before = before,
                 pageable = pageable,
@@ -87,6 +90,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Operation(summary = "Get transfer events by from address")
     @AddressParameter(description = "From address of the transfer event", required = true)
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -94,7 +98,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEventsByFrom(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
-        @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -107,7 +111,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.find(
                 from = address,
                 tokenAddress = tokenAddress,
-                eventType = eventType,
+                eventTypes = eventType?.map { TransferEventType.valueOf(it) },
                 after = after,
                 before = before,
                 pageable =
@@ -127,6 +131,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Operation(summary = "Get transfer events by to address")
     @AddressParameter(description = "To address of the transfer event", required = true)
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @TransferEventTypeParameter
     @AfterParameter
     @BeforeParameter
     @CommonApiResponses
@@ -134,7 +139,7 @@ open class TransferEventController(private val transferEventService: TransferEve
     open fun getTransferEventsByTo(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
-        @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidTransferEventType @RequestParam(required = false) eventType: List<String>?,
         @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
         @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
@@ -147,7 +152,7 @@ open class TransferEventController(private val transferEventService: TransferEve
             transferEventService.find(
                 to = address,
                 tokenAddress = tokenAddress,
-                eventType = eventType,
+                eventTypes = eventType?.map { TransferEventType.valueOf(it) },
                 after = after,
                 before = before,
                 pageable =
