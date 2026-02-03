@@ -163,23 +163,27 @@ object VeWorldAPIClient {
         address: String? = null,
         tokenAddress: String? = null,
         eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransferEvent> {
         val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
         return if (address != null && tokenAddress != null)
             getRequest(
-                "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress$eventTypeParam&page=$page&size=$size",
+                "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (address != null)
             getRequest(
-                "$API_URL/transfers?address=$address$eventTypeParam&page=$page&size=$size",
+                "$API_URL/transfers?address=$address$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (tokenAddress != null)
             getRequest(
-                "$API_URL/transfers?tokenAddress=$tokenAddress$eventTypeParam&page=$page&size=$size",
+                "$API_URL/transfers?tokenAddress=$tokenAddress$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else throw Exception("No address or tokenAddress provided")
@@ -189,13 +193,17 @@ object VeWorldAPIClient {
         address: String,
         tokenAddress: String? = null,
         eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransferEvent> {
         val tokenParam = tokenAddress?.let { "&tokenAddress=$it" } ?: ""
         val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
         return getRequest(
-            "$API_URL/transfers/from?address=$address$tokenParam$eventTypeParam&page=$page&size=$size",
+            "$API_URL/transfers/from?address=$address$tokenParam$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
             PAGINATED_TRANSFER_EVENTS_TYPE,
         )
     }
@@ -204,13 +212,17 @@ object VeWorldAPIClient {
         address: String,
         tokenAddress: String? = null,
         eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransferEvent> {
         val tokenParam = tokenAddress?.let { "&tokenAddress=$it" } ?: ""
         val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
         return getRequest(
-            "$API_URL/transfers/to?address=$address$tokenParam$eventTypeParam&page=$page&size=$size",
+            "$API_URL/transfers/to?address=$address$tokenParam$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
             PAGINATED_TRANSFER_EVENTS_TYPE,
         )
     }

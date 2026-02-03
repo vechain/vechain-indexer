@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.TRANSFER_EVENTS_PATH
 import org.vechain.indexer.docs.AddressListParameter
 import org.vechain.indexer.docs.AddressParameter
+import org.vechain.indexer.docs.AfterParameter
+import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
@@ -22,8 +24,10 @@ import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
 import org.vechain.indexer.utils.PaginationUtils
+import org.vechain.indexer.utils.TimeValidationUtils
 import org.vechain.indexer.validation.ValidAddress
 import org.vechain.indexer.validation.ValidAddressList
+import org.vechain.indexer.validation.ValidNonNegativeLong
 import org.vechain.indexer.validation.ValidPageSize
 
 @Profile("transfers")
@@ -37,51 +41,84 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Operation(summary = "Get transfer events by address or token address")
     @AddressParameter(description = "To or from address of the transfer event")
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEvents(
         @ValidAddress @RequestParam(required = false) address: Address?,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
-        val pageable = PaginationUtils.toPageable(page, size, direction)
+        TimeValidationUtils.validateTimestamps(after, before)
 
-        val resultsPage =
-            when {
-                address != null && tokenAddress != null ->
-                    transferEventService.find(address, tokenAddress, eventType, pageable)
-                address != null -> transferEventService.findByAddress(address, eventType, pageable)
-                tokenAddress != null ->
-                    transferEventService.findByTokenAddress(tokenAddress, eventType, pageable)
-                else -> throw BadRequestException("Either address or tokenAddress must be provided")
-            }
+        if (address == null && tokenAddress == null) {
+            throw BadRequestException("Either address or tokenAddress must be provided")
+        }
 
-        return paginatedResponse(resultsPage)
+        val pageable =
+            PaginationUtils.toPageable(
+                page,
+                size,
+                direction,
+                IndexedTransferEvent::blockTimestamp.name,
+                IndexedTransferEvent::txId.name,
+                "_id",
+            )
+
+        return paginatedResponse(
+            transferEventService.find(
+                toOrFrom = address,
+                tokenAddress = tokenAddress,
+                eventType = eventType,
+                after = after,
+                before = before,
+                pageable = pageable,
+            )
+        )
     }
 
     @GetMapping("/from")
     @Operation(summary = "Get transfer events by from address")
     @AddressParameter(description = "From address of the transfer event", required = true)
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByFrom(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
+        TimeValidationUtils.validateTimestamps(after, before)
+
         return paginatedResponse(
-            transferEventService.findByFrom(
-                address,
-                tokenAddress,
-                eventType,
-                PaginationUtils.toPageable(page, size, direction),
+            transferEventService.find(
+                from = address,
+                tokenAddress = tokenAddress,
+                eventType = eventType,
+                after = after,
+                before = before,
+                pageable =
+                    PaginationUtils.toPageable(
+                        page,
+                        size,
+                        direction,
+                        IndexedTransferEvent::blockTimestamp.name,
+                        IndexedTransferEvent::txId.name,
+                        "_id",
+                    ),
             )
         )
     }
@@ -90,22 +127,38 @@ open class TransferEventController(private val transferEventService: TransferEve
     @Operation(summary = "Get transfer events by to address")
     @AddressParameter(description = "To address of the transfer event", required = true)
     @AddressParameter(name = "tokenAddress", description = "The token contract address")
+    @AfterParameter
+    @BeforeParameter
     @CommonApiResponses
     @PaginationParameters
     open fun getTransferEventsByTo(
         @ValidAddress @RequestParam address: Address,
         @ValidAddress @RequestParam(required = false) tokenAddress: Address?,
         @RequestParam(required = false) eventType: TransferEventType?,
+        @ValidNonNegativeLong @RequestParam(required = false) after: Long?,
+        @ValidNonNegativeLong @RequestParam(required = false) before: Long?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<IndexedTransferEvent> {
+        TimeValidationUtils.validateTimestamps(after, before)
+
         return paginatedResponse(
-            transferEventService.findByTo(
-                address,
-                tokenAddress,
-                eventType,
-                PaginationUtils.toPageable(page, size, direction),
+            transferEventService.find(
+                to = address,
+                tokenAddress = tokenAddress,
+                eventType = eventType,
+                after = after,
+                before = before,
+                pageable =
+                    PaginationUtils.toPageable(
+                        page,
+                        size,
+                        direction,
+                        IndexedTransferEvent::blockTimestamp.name,
+                        IndexedTransferEvent::txId.name,
+                        "_id",
+                    ),
             )
         )
     }

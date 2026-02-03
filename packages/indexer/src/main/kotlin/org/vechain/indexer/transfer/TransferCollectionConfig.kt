@@ -97,6 +97,24 @@ open class TransferCollectionConfig(
                         .on(IndexedTransferEvent::blockNumber.name, Sort.Direction.DESC)
                         .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
                         .on("_id", Sort.Direction.DESC),
+                "transfer_to_1_blockTimestamp_-1_txId_-1__id_-1" to
+                    Index()
+                        .on(IndexedTransferEvent::to.name, Sort.Direction.ASC)
+                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "transfer_from_1_blockTimestamp_-1_txId_-1__id_-1" to
+                    Index()
+                        .on(IndexedTransferEvent::from.name, Sort.Direction.ASC)
+                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
+                "transfer_tokenAddress_1_blockTimestamp_-1_txId_-1__id_-1" to
+                    Index()
+                        .on(IndexedTransferEvent::tokenAddress.name, Sort.Direction.ASC)
+                        .on(IndexedTransferEvent::blockTimestamp.name, Sort.Direction.DESC)
+                        .on(IndexedTransferEvent::txId.name, Sort.Direction.DESC)
+                        .on("_id", Sort.Direction.DESC),
             )
         )
     }
