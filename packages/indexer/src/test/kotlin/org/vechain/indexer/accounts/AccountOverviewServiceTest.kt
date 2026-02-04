@@ -1,11 +1,13 @@
 package org.vechain.indexer.accounts
 
 import io.mockk.MockKAnnotations
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import java.math.BigInteger
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -15,11 +17,20 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.config.DetectedNetwork
+import org.vechain.indexer.config.ForkConfig
+import org.vechain.indexer.config.NetworkDetectionService
+import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
+import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
+import org.vechain.indexer.thor.client.ExecuteAccountResponse
+import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.thor.model.BlockUnexpanded
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 
@@ -31,13 +42,30 @@ internal class AccountOverviewServiceTest {
 
     @MockK lateinit var pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>
 
+    @MockK lateinit var forkConfig: ForkConfig
+
+    @MockK lateinit var networkDetectionService: NetworkDetectionService
+
+    @MockK lateinit var thorClient: ThorClient
+
     private lateinit var service: TestableService
 
     private class TestableService(
         repository: AccountOverviewRepository,
         archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
         pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
-    ) : AccountOverviewService(repository, archiveService, pruner) {
+        forkConfig: ForkConfig,
+        networkDetectionService: NetworkDetectionService,
+        thorClient: ThorClient,
+    ) :
+        AccountOverviewService(
+            repository,
+            archiveService,
+            pruner,
+            forkConfig,
+            networkDetectionService,
+            thorClient,
+        ) {
         fun callTransactionsSentRule(
             block: Block,
             updatedResult: MutableMap<String, AccountOverview>,
@@ -86,20 +114,44 @@ internal class AccountOverviewServiceTest {
             archived: MutableMap<String, AccountOverview>,
         ): AccountOverview =
             resolveAccountOverviewForUpdateAndArchive(recordId, block, updated, archived)
+
+        suspend fun callVthoBlockRewardsRule(
+            block: Block,
+            events: List<IndexedEvent>,
+            updatedResult: MutableMap<String, AccountOverview>,
+            archiveResult: MutableMap<String, AccountOverview>,
+        ) = vthoBlockRewardsRule(block, events, updatedResult, archiveResult)
+
+        fun callCalculatePassiveVthoForBlock(
+            vetBalance: BigInteger,
+            blockNumber: Long,
+            beneficiaryAccount: AccountOverview?,
+        ) = calculatePassiveVthoForBlock(vetBalance, blockNumber, beneficiaryAccount)
+
+        fun callCalculatePassiveVtho(vetBalance: BigInteger, durationSeconds: BigInteger) =
+            calculatePassiveVtho(vetBalance, durationSeconds)
     }
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
-        service = TestableService(repository, archiveService, pruner)
+        service =
+            TestableService(
+                repository,
+                archiveService,
+                pruner,
+                forkConfig,
+                networkDetectionService,
+                thorClient,
+            )
     }
 
     private fun block(number: Long = 1L, transactions: List<Transaction> = emptyList()) =
         Block(
-            id = "0xBLOCK",
+            id = "0x" + "0".repeat(63) + "1",
             number = number,
             timestamp = 1234567890,
-            parentID = "0xPARENT",
+            parentID = "0x" + "0".repeat(63) + "0",
             size = 0,
             gasLimit = 0,
             baseFeePerGas = null,
@@ -197,6 +249,8 @@ internal class AccountOverviewServiceTest {
         assertEquals(BigInteger.ZERO, created.gasUsed)
         assertEquals(BigInteger.ZERO, created.vetSent)
         assertEquals(BigInteger.ZERO, created.vetReceived)
+        assertEquals(BigInteger.ZERO, created.vthoBlockRewards)
+        assertEquals(BigInteger.ZERO, created.vthoPassiveGeneration)
     }
 
     @Test
@@ -486,4 +540,627 @@ internal class AccountOverviewServiceTest {
         assertEquals(b.timestamp, second.lastSeen)
         assertSame(existing, archived[recordId])
     }
+
+    // Helper for creating VTHO Transfer events
+    private fun vthoTransferEvent(from: String, to: String, value: String): IndexedEvent =
+        buildIndexedEvent(
+            eventType = "Transfer",
+            address = VTHO_CONTRACT_ADDRESS,
+            params =
+                AbiEventParameters(
+                    returnValues = mapOf("from" to from, "to" to to, "value" to value)
+                ),
+        )
+
+    // Helper for creating parent block mock
+    private fun parentBlockUnexpanded(timestamp: Long = 1234567880L): BlockUnexpanded =
+        BlockUnexpanded(
+            id = "0x" + "0".repeat(63) + "0",
+            number = 99L,
+            timestamp = timestamp,
+            parentID = "0x" + "0".repeat(64),
+            size = 0,
+            gasLimit = 0,
+            baseFeePerGas = null,
+            beneficiary = "0xBENEFICIARY",
+            gasUsed = 0,
+            totalScore = 0,
+            txsRoot = "0xTXROOT",
+            txsFeatures = 0,
+            stateRoot = "0xSTATEROOT",
+            receiptsRoot = "0xRECEIPTSROOT",
+            signer = "0xSIGNER",
+            isTrunk = true,
+            isFinalized = true,
+            transactions = emptyList(),
+            com = false,
+        )
+
+    // Helper for mocking network detection and fork config
+    private fun mockNetworkDetection(hayabusaBlock: Long = 1000L) {
+        val mockBlock = mockk<Block>(relaxed = true)
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(network = VeChainNetwork.MAINNET, genesisBlock = mockBlock)
+        every { forkConfig.getHayabusaBlock(VeChainNetwork.MAINNET) } returns hayabusaBlock
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule calculates reward from balance difference`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b = block(number = 100L)
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns parentBlockUnexpanded()
+
+        // Mock VTHO balances: 1000 at block n-1, 1500 at block n
+        // No AccountOverview, so no passive generation
+        // Reward should be 500
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("500"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule applies zero reward when no balance change`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b = block(number = 100L)
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns parentBlockUnexpanded()
+
+        // Same balance at both blocks -> no reward
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        assertTrue(updated.isEmpty())
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule subtracts VTHO transfers to beneficiary`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b = block(number = 100L)
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns parentBlockUnexpanded()
+
+        // Balance at n-1: 1000, Balance at n: 1500
+        // Beneficiary received 300 VTHO in transfer
+        // Adjusted balance = 1500 - 300 = 1200
+        // Reward = 1200 - 1000 = 200
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+        val events = listOf(vthoTransferEvent(from = "0xOTHER", to = beneficiary, value = "300"))
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, events, updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("200"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule adds VTHO transfers from beneficiary`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b = block(number = 100L)
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns parentBlockUnexpanded()
+
+        // Balance at n-1: 1000, Balance at n: 800
+        // Beneficiary sent 500 VTHO in transfer
+        // Adjusted balance = 800 - (-500) = 1300
+        // Reward = 1300 - 1000 = 300
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x320", hasCode = false) // 800
+
+        val events = listOf(vthoTransferEvent(from = beneficiary, to = "0xOTHER", value = "500"))
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, events, updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("300"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule accumulates rewards to existing account without passive generation`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val existingRewards = BigInteger("1000")
+            // Account exists but lastVthoSettlement is null -> no passive generation
+            val existingAccount =
+                existingAccountOverview(beneficiary, version = 3)
+                    .copy(vthoBlockRewards = existingRewards, lastVthoSettlement = null)
+            val b = block(number = 100L)
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findByIdOrNull(beneficiary) } returns existingAccount
+            coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns
+                parentBlockUnexpanded()
+
+            // Mock VTHO balances: 500 at block n-1, 700 at block n
+            // No passive generation (lastVthoSettlement is null)
+            // Reward = 200
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x1f4", hasCode = false) // 500
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x2bc", hasCode = false) // 700
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+            val record = updated[beneficiary]!!
+            assertEquals(BigInteger("1200"), record.vthoBlockRewards) // 1000 + 200
+            assertSame(existingAccount, archived[beneficiary])
+        }
+
+    @Test
+    fun `vthoBlockRewardsRule includes passive generation for pre-Hayabusa with lastVthoSettlement`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            // Account with lastVthoSettlement set -> passive generation applies
+            val existingAccount =
+                existingAccountOverview(beneficiary, version = 3)
+                    .copy(lastVthoSettlement = 1234567800L)
+            val b = block(number = 100L) // timestamp = 1234567890
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L) // Pre-Hayabusa
+            every { repository.findByIdOrNull(beneficiary) } returns existingAccount
+            // Parent block timestamp = 1234567880 (10 seconds before block n)
+            coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns
+                parentBlockUnexpanded(timestamp = 1234567880L)
+
+            // VET balance at n-1: 1_000_000_000_000_000_000 (1e18 = 1 VET)
+            // VTHO balance at n-1: 1000, VTHO balance at n: 1600
+            // Passive VTHO = 1e18 * 10 * 5 / 1e9 = 50_000_000_000 (50e9)
+            // Btrue = 1000 + 50_000_000_000 = 50_000_001_000
+            // Reward = 1600 - Btrue = 1600 - 50_000_001_000 = -49_999_999_400 (negative -> no
+            // reward)
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(
+                    balance = "0xde0b6b3a7640000", // 1e18 (1 VET)
+                    energy = "0x3e8", // 1000
+                    hasCode = false,
+                )
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(
+                    balance = "0x0",
+                    energy = "0x640", // 1600
+                    hasCode = false,
+                )
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+            // Reward should be negative (passive generation > balance increase), so no update
+            assertTrue(updated.isEmpty())
+        }
+
+    @Test
+    fun `vthoBlockRewardsRule calculates correct reward with passive generation`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        // Account with lastVthoSettlement set -> passive generation applies
+        val existingAccount =
+            existingAccountOverview(beneficiary, version = 3).copy(lastVthoSettlement = 1234567800L)
+        val b = block(number = 100L) // timestamp = 1234567890
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L) // Pre-Hayabusa
+        every { repository.findByIdOrNull(beneficiary) } returns existingAccount
+        // Parent block timestamp = 1234567880 (10 seconds before block n)
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns
+            parentBlockUnexpanded(timestamp = 1234567880L)
+
+        // VET balance at n-1: 200_000_000_000 (200e9 = 0.0000002 VET, small to keep passive small)
+        // VTHO balance at n-1: 1000, VTHO balance at n: 1510
+        // Passive VTHO = 200e9 * 10 * 5 / 1e9 = 10_000 (10e3)
+        // Btrue = 1000 + 10_000 = 11_000
+        // Badj = 1510 - 0 (no transfers) = 1510
+        // Reward = 1510 - 11000 = negative -> no reward... let's adjust
+
+        // Let's use bigger numbers to get a positive reward:
+        // VET balance at n-1: 200_000_000_000 (200e9)
+        // VTHO balance at n-1: 1000, VTHO balance at n: 12000
+        // Passive VTHO = 200e9 * 10 * 5 / 1e9 = 10_000
+        // Btrue = 1000 + 10_000 = 11_000
+        // Badj = 12000
+        // Reward = 12000 - 11000 = 1000
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(
+                balance = "0x2e90edd000", // 200_000_000_000 (200e9)
+                energy = "0x3e8", // 1000
+                hasCode = false,
+            )
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(
+                balance = "0x0",
+                energy = "0x2ee0", // 12000
+                hasCode = false,
+            )
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("1000"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule skips passive generation post-Hayabusa`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        // Account with lastVthoSettlement set, but post-Hayabusa -> no passive generation
+        val existingAccount =
+            existingAccountOverview(beneficiary, version = 3).copy(lastVthoSettlement = 1234567800L)
+        val b = block(number = 1500L) // Post-Hayabusa (hayabusaBlock = 1000)
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L) // Post-Hayabusa (block 1500 >= 1000)
+        every { repository.findByIdOrNull(beneficiary) } returns existingAccount
+        coEvery { thorClient.getBlockUnexpanded(parentRevision) } returns
+            parentBlockUnexpanded(timestamp = 1234567880L)
+
+        // Same setup as passive generation test, but post-Hayabusa
+        // VET balance at n-1: 200_000_000_000 (200e9)
+        // VTHO balance at n-1: 1000, VTHO balance at n: 1600
+        // Post-Hayabusa: no passive generation
+        // Btrue = 1000
+        // Reward = 1600 - 1000 = 600
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(
+                balance = "0x2e90edd000", // 200_000_000_000 (200e9)
+                energy = "0x3e8", // 1000
+                hasCode = false,
+            )
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(
+                balance = "0x0",
+                energy = "0x640", // 1600
+                hasCode = false,
+            )
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("600"), record.vthoBlockRewards)
+    }
+
+    // Tests for calculatePassiveVthoForBlock
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns correct value pre-Hayabusa with lastVthoSettlement`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val account =
+            existingAccountOverview("0xTEST", version = 1).copy(lastVthoSettlement = 1234567800L)
+
+        // VET balance: 1_000_000_000_000_000_000 (1e18 = 1 VET)
+        // Passive = 1e18 * 10 * 5 / 1e9 = 50_000_000_000 (50e9)
+        val vetBalance = BigInteger("1000000000000000000")
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 100L, account)
+
+        assertEquals(BigInteger("50000000000"), result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns zero pre-Hayabusa with null lastVthoSettlement`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val account = existingAccountOverview("0xTEST", version = 1).copy(lastVthoSettlement = null)
+
+        val vetBalance = BigInteger("1000000000000000000")
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 100L, account)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns zero pre-Hayabusa with no AccountOverview`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val vetBalance = BigInteger("1000000000000000000")
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 100L, null)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns zero post-Hayabusa with lastVthoSettlement`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val account =
+            existingAccountOverview("0xTEST", version = 1).copy(lastVthoSettlement = 1234567800L)
+
+        val vetBalance = BigInteger("1000000000000000000")
+        // Block 1500 >= Hayabusa block 1000, so post-Hayabusa
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 1500L, account)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns zero post-Hayabusa with no AccountOverview`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val vetBalance = BigInteger("1000000000000000000")
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 1500L, null)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock scales correctly with VET balance`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val account =
+            existingAccountOverview("0xTEST", version = 1).copy(lastVthoSettlement = 1234567800L)
+
+        // VET balance: 200_000_000_000 (200e9)
+        // Passive = 200e9 * 10 * 5 / 1e9 = 10_000
+        val vetBalance = BigInteger("200000000000")
+        val result = service.callCalculatePassiveVthoForBlock(vetBalance, 100L, account)
+
+        assertEquals(BigInteger("10000"), result)
+    }
+
+    @Test
+    fun `calculatePassiveVthoForBlock returns zero for zero VET balance`() {
+        mockNetworkDetection(hayabusaBlock = 1000L)
+
+        val account =
+            existingAccountOverview("0xTEST", version = 1).copy(lastVthoSettlement = 1234567800L)
+
+        val result = service.callCalculatePassiveVthoForBlock(BigInteger.ZERO, 100L, account)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    // Tests for calculatePassiveVtho (core calculation function)
+
+    @Test
+    fun `calculatePassiveVtho returns correct value for 1 VET over 10 seconds`() {
+        // 1 VET = 1e18 wei
+        // Passive = 1e18 * 10 * 5 / 1e9 = 50_000_000_000 (50e9)
+        val vetBalance = BigInteger("1000000000000000000")
+        val durationSeconds = BigInteger.TEN
+
+        val result = service.callCalculatePassiveVtho(vetBalance, durationSeconds)
+
+        assertEquals(BigInteger("50000000000"), result)
+    }
+
+    @Test
+    fun `calculatePassiveVtho returns correct value for 1 day`() {
+        // 1 VET = 1e18 wei
+        // 1 day = 86400 seconds
+        // Passive = 1e18 * 86400 * 5 / 1e9 = 432_000_000_000_000 (0.000432 VTHO as expected)
+        val vetBalance = BigInteger("1000000000000000000")
+        val durationSeconds = BigInteger.valueOf(86400)
+
+        val result = service.callCalculatePassiveVtho(vetBalance, durationSeconds)
+
+        assertEquals(BigInteger("432000000000000"), result)
+    }
+
+    @Test
+    fun `calculatePassiveVtho returns zero for zero VET balance`() {
+        val result = service.callCalculatePassiveVtho(BigInteger.ZERO, BigInteger.TEN)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVtho returns zero for zero duration`() {
+        val vetBalance = BigInteger("1000000000000000000")
+
+        val result = service.callCalculatePassiveVtho(vetBalance, BigInteger.ZERO)
+
+        assertEquals(BigInteger.ZERO, result)
+    }
+
+    @Test
+    fun `calculatePassiveVtho scales linearly with VET balance`() {
+        val durationSeconds = BigInteger.TEN
+
+        // 1 VET
+        val result1Vet =
+            service.callCalculatePassiveVtho(BigInteger("1000000000000000000"), durationSeconds)
+        // 10 VET
+        val result10Vet =
+            service.callCalculatePassiveVtho(BigInteger("10000000000000000000"), durationSeconds)
+
+        assertEquals(result1Vet.multiply(BigInteger.TEN), result10Vet)
+    }
+
+    @Test
+    fun `calculatePassiveVtho scales linearly with duration`() {
+        val vetBalance = BigInteger("1000000000000000000")
+
+        // 10 seconds
+        val result10Sec = service.callCalculatePassiveVtho(vetBalance, BigInteger.TEN)
+        // 100 seconds
+        val result100Sec = service.callCalculatePassiveVtho(vetBalance, BigInteger.valueOf(100))
+
+        assertEquals(result10Sec.multiply(BigInteger.TEN), result100Sec)
+    }
+
+    // Tests for VTHO used by beneficiary as gasPayer
+
+    @Test
+    fun `vthoBlockRewardsRule adds back VTHO used by beneficiary as gasPayer`() = runBlocking {
+        val beneficiary = "0xBENEFICIARY"
+        val b =
+            block(number = 100L)
+                .copy(
+                    transactions =
+                        listOf(
+                            tx(
+                                id = "0x1",
+                                origin = "0xOTHER",
+                                gasPayer = beneficiary,
+                                paid = "0x64",
+                            ) // 100
+                        )
+                )
+        val parentRevision = BlockRevision.Id(b.parentID)
+        val blockRevision = BlockRevision.Id(b.id)
+
+        mockNetworkDetection(hayabusaBlock = 1000L)
+        every { repository.findByIdOrNull(beneficiary) } returns null
+
+        // Balance at n-1: 1000, Balance at n: 1500
+        // VTHOused: 100 (from tx.paid) - must add back since gas payment reduced balance
+        // Adjusted balance = 1500 - 0 (no transfers) + 100 (gas used) = 1600
+        // Reward = 1600 - 1000 = 600
+        coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+        coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+            ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+        val updated = mutableMapOf<String, AccountOverview>()
+        val archived = mutableMapOf<String, AccountOverview>()
+
+        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+        val record = updated[beneficiary]!!
+        assertEquals(BigInteger("600"), record.vthoBlockRewards)
+    }
+
+    @Test
+    fun `vthoBlockRewardsRule does not subtract gas when beneficiary is not gasPayer`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b =
+                block(number = 100L)
+                    .copy(
+                        transactions =
+                            listOf(
+                                tx(
+                                    id = "0x1",
+                                    origin = "0xOTHER",
+                                    gasPayer = "0xOTHER",
+                                    paid = "0x64",
+                                ) // 100, but not beneficiary
+                            )
+                    )
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Balance at n-1: 1000, Balance at n: 1500
+            // VTHOused: 0 (beneficiary is not gasPayer)
+            // Adjusted balance = 1500 - 0 - 0 = 1500
+            // Reward = 1500 - 1000 = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+
+            val record = updated[beneficiary]!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
+
+    @Test
+    fun `vthoBlockRewardsRule handles combined scenario with transfers AND gas payment`() =
+        runBlocking {
+            val beneficiary = "0xBENEFICIARY"
+            val b =
+                block(number = 100L)
+                    .copy(
+                        transactions =
+                            listOf(
+                                tx(
+                                    id = "0x1",
+                                    origin = "0xOTHER",
+                                    gasPayer = beneficiary,
+                                    paid = "0x64",
+                                ) // 100
+                            )
+                    )
+            val parentRevision = BlockRevision.Id(b.parentID)
+            val blockRevision = BlockRevision.Id(b.id)
+
+            mockNetworkDetection(hayabusaBlock = 1000L)
+            every { repository.findByIdOrNull(beneficiary) } returns null
+
+            // Balance at n-1: 1000, Balance at n: 1700
+            // Beneficiary received VTHO transfer: +300
+            // Beneficiary paid gas: 100
+            // Delta = +300, Used = 100
+            // Adjusted = 1700 - 300 + 100 = 1500
+            // Reward = 1500 - 1000 = 500
+            coEvery { thorClient.getAccountState(beneficiary, parentRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
+            coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
+                ExecuteAccountResponse(balance = "0x0", energy = "0x6a4", hasCode = false) // 1700
+
+            val events =
+                listOf(vthoTransferEvent(from = "0xOTHER", to = beneficiary, value = "300"))
+
+            val updated = mutableMapOf<String, AccountOverview>()
+            val archived = mutableMapOf<String, AccountOverview>()
+
+            service.callVthoBlockRewardsRule(b, events, updated, archived)
+
+            val record = updated[beneficiary]!!
+            assertEquals(BigInteger("500"), record.vthoBlockRewards)
+        }
 }

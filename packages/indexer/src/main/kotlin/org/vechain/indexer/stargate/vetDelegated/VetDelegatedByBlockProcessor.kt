@@ -20,11 +20,11 @@ open class VetDelegatedByBlockProcessor(
         indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
-        if (entry.events().isEmpty()) {
+        if (entry !is IndexingResult.Normal) {
             return
         }
 
-        val newRecords = service.processEvents(entry.events())
+        val newRecords = service.processBlock(entry.block)
 
         if (newRecords.isNotEmpty()) {
             service.saveRecords(newRecords)

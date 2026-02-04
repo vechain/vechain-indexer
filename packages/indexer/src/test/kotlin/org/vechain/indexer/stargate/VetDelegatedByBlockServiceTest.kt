@@ -4,6 +4,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import io.mockk.verify
 import java.math.BigInteger
 import org.junit.jupiter.api.BeforeEach
@@ -11,43 +12,38 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.accounts.TimeFrame
-import org.vechain.indexer.event.model.generic.IndexedEvent
-import org.vechain.indexer.utils.ParamUtils.getAsBigInteger
-import org.vechain.indexer.utils.ParamUtils.getAsInt
+import org.vechain.indexer.stargate.token.TokenLevel
+import org.vechain.indexer.thor.model.Block
+import org.vechain.indexer.validator.DelegationLevelAggregateResult
+import org.vechain.indexer.validator.DelegationRepository
 import strikt.api.expectThat
 import strikt.assertions.*
 
 @ExtendWith(MockKExtension::class)
 class VetDelegatedByBlockServiceTest {
     @MockK lateinit var repository: VetDelegatedByBlockRepository
+    @MockK lateinit var delegationRepository: DelegationRepository
     private lateinit var service: VetDelegatedByBlockService
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = VetDelegatedByBlockService(repository)
+        service = VetDelegatedByBlockService(repository, delegationRepository)
     }
 
-    private fun mockEvent(
+    private fun mockBlock(
         blockNumber: Long,
         timestamp: Long,
-        amount: String,
-        eventType: String = "DelegationInitiated",
         blockId: String = "block-$blockNumber",
-    ): IndexedEvent =
-        io.mockk.mockk {
-            every { this@mockk.blockId } returns blockId
-            every { this@mockk.blockNumber } returns blockNumber
-            every { this@mockk.blockTimestamp } returns timestamp
-            every { this@mockk.eventType } returns eventType
-            every { params.getAsBigInteger("amount") } returns BigInteger(amount)
-            every { params.getAsInt("levelId") } returns null
-        }
+    ): Block = mockk {
+        every { number } returns blockNumber
+        every { this@mockk.timestamp } returns timestamp
+        every { id } returns blockId
+    }
 
-    @Test
-    fun `empty events returns empty list`() {
-        every { repository.getLatestRecord() } returns null
-        expectThat(service.processEvents(emptyList())).isEmpty()
+    private fun mockActiveAggregation(vararg levels: Pair<TokenLevel, String>) {
+        every { delegationRepository.aggregateActiveDelegationsByLevel() } returns
+            levels.map { (level, amount) -> DelegationLevelAggregateResult(level.name, amount, 1) }
     }
 
     @Test
@@ -73,13 +69,28 @@ class VetDelegatedByBlockServiceTest {
                 yearTotal = BigInteger.ZERO,
             )
 
-        val events =
-            listOf(
-                mockEvent(10, 1100, "1") // EXACT SAME BLOCK → FAIL
-            )
+        val block = mockBlock(10, 1100) // EXACT SAME BLOCK → FAIL
 
-        val ex = assertThrows<IllegalStateException> { service.processEvents(events) }
-        expectThat(ex.message).isEqualTo("Events include block ≤ last persisted block 10")
+        val ex = assertThrows<IllegalStateException> { service.processBlock(block) }
+        expectThat(ex.message).isEqualTo("Block 10 ≤ last persisted block 10")
+    }
+
+    @Test
+    fun `aggregates active delegations correctly`() {
+        every { repository.getLatestRecord() } returns null
+        mockActiveAggregation(
+            TokenLevel.Strength to "1000000000000000000",
+            TokenLevel.Thunder to "5000000000000000000",
+        )
+
+        val block = mockBlock(100, 1767043140)
+        val result = service.processBlock(block)
+
+        expectThat(result).hasSize(1)
+        expectThat(result[0].total).isEqualTo(BigInteger("6000000000000000000"))
+        expectThat(result[0].byLevel).hasSize(2)
+        expectThat(result[0].byLevel[TokenLevel.Strength])
+            .isEqualTo(BigInteger("1000000000000000000"))
     }
 
     // ---------------------------------------------------------
@@ -87,103 +98,116 @@ class VetDelegatedByBlockServiceTest {
     // ---------------------------------------------------------
 
     @Test
-    fun `DAY rollover - previous block gets DAY tag only`() {
-        every { repository.getLatestRecord() } returns null
-
-        val events =
-            listOf(
-                // Dec 30 2025 @ 23:59 UTC (day 30)
-                mockEvent(100, 1767043140, "10"),
-                // Dec 31 2025 @ 00:00 UTC (day 31)
-                mockEvent(101, 1767129600, "5"),
+    fun `DAY rollover - previous block gets DAY tag`() {
+        // Previous record from Dec 30 2025 @ 23:59 UTC
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735603140, // Dec 30 2025 @ 23:59 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 23,
+                dayOfMonth = 30,
+                weekOfYear = 1,
+                month = 12,
+                year = 2025,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
             )
+        mockActiveAggregation(TokenLevel.Strength to "10")
 
-        val r = service.processEvents(events)
+        // New block on Dec 31 2025 @ 00:00 UTC (day 31)
+        val block = mockBlock(101, 1735689600)
+        val r = service.processBlock(block)
 
-        expectThat(r).hasSize(3)
+        expectThat(r).hasSize(2)
 
-        // r[1] = previous block (block 100) WITH rollover flag
-        expectThat(r[1].timeFrames).contains(TimeFrame.DAY)
-        expectThat(r[1].timeFrames).contains(TimeFrame.HOUR)
+        // r[0] = previous block WITH rollover flag
+        expectThat(r[0].timeFrames).contains(TimeFrame.DAY)
+        expectThat(r[0].timeFrames).contains(TimeFrame.HOUR)
 
-        // r[2] = block 101 new day → no timeFrames
-        expectThat(r[2].timeFrames).isEmpty()
-    }
-
-    // ---------------------------------------------------------
-    // WEEK ROLLOVER
-    // ---------------------------------------------------------
-
-    @Test
-    fun `WEEK rollover - previous block gets WEEK tag`() {
-        every { repository.getLatestRecord() } returns null
-
-        val events =
-            listOf(
-                // Feb 28 2025 @ 12:00 UTC
-                mockEvent(300, 1740744000, "50"),
-                // Mar 28 2025 @ 12:00 UTC
-                mockEvent(301, 1743336000, "10"),
-            )
-
-        val r = service.processEvents(events)
-
-        expectThat(r).hasSize(3)
-
-        expectThat(r[1].timeFrames).contains(TimeFrame.WEEK)
-        expectThat(r[2].timeFrames).isEmpty()
-    }
-
-    // ---------------------------------------------------------
-    // MONTH ROLLOVER
-    // ---------------------------------------------------------
-
-    @Test
-    fun `MONTH rollover - previous block gets MONTH tag`() {
-        every { repository.getLatestRecord() } returns null
-
-        val events =
-            listOf(
-                // Jan 31
-                mockEvent(300, 1761961220, "50"),
-                // Feb 1
-                mockEvent(301, 1761950990, "10"),
-            )
-
-        val r = service.processEvents(events)
-
-        expectThat(r).hasSize(3)
-        expectThat(r[1].timeFrames).contains(TimeFrame.MONTH)
-        expectThat(r[2].timeFrames).isEmpty()
-    }
-
-    // ---------------------------------------------------------
-    // YEAR ROLLOVER
-    // ---------------------------------------------------------
-
-    @Test
-    fun `YEAR rollover - previous block gets YEAR tag`() {
-        every { repository.getLatestRecord() } returns null
-
-        val events =
-            listOf(
-                // Dec 31 2025
-                mockEvent(400, 1763487400, "100"),
-                // Jan 1 2026
-                mockEvent(401, 1707225605, "25"),
-            )
-
-        val r = service.processEvents(events)
-
-        expectThat(r).hasSize(3)
-
-        expectThat(r[1].timeFrames).contains(TimeFrame.YEAR)
-        expectThat(r[2].timeFrames).isEmpty()
+        // r[1] = new block → no timeFrames
+        expectThat(r[1].timeFrames).isEmpty()
     }
 
     // ---------------------------------------------------------
     // SAVE RECORDS
     // ---------------------------------------------------------
+
+    @Test
+    fun `skips save when no change and no rollover`() {
+        // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        // Same total as before - no change
+        mockActiveAggregation(TokenLevel.Strength to "10")
+
+        // New block in same hour (10 seconds later, still 12:00)
+        val block = mockBlock(101, 1735560010)
+        val result = service.processBlock(block)
+
+        // Should return empty list - no doc to save
+        expectThat(result).isEmpty()
+    }
+
+    @Test
+    fun `saves when there is a change even without rollover`() {
+        // Previous record exists with total = 10 @ Dec 30 2024 12:00 UTC
+        every { repository.getLatestRecord() } returns
+            VetDelegatedByBlock(
+                "block-100",
+                100,
+                1735560000, // Dec 30 2024 @ 12:00 UTC
+                total = BigInteger("10"),
+                byLevel = mapOf(TokenLevel.Strength to BigInteger("10")),
+                hourOfDay = 12,
+                dayOfMonth = 30,
+                weekOfYear = 53,
+                month = 12,
+                year = 2024,
+                timeFrames = emptyList(),
+                blockTotal = BigInteger.ZERO,
+                hourTotal = BigInteger.ZERO,
+                dayTotal = BigInteger.ZERO,
+                weekTotal = BigInteger.ZERO,
+                monthTotal = BigInteger.ZERO,
+                yearTotal = BigInteger.ZERO,
+            )
+        // Different total - there IS a change
+        mockActiveAggregation(TokenLevel.Strength to "20")
+
+        // New block in same hour (10 seconds later, still 12:00)
+        val block = mockBlock(101, 1735560010)
+        val result = service.processBlock(block)
+
+        // Should return 1 doc because there's a change
+        expectThat(result).hasSize(1)
+        expectThat(result[0].total).isEqualTo(BigInteger("20"))
+    }
 
     @Test
     fun `save delegates to repository`() {

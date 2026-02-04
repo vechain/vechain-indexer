@@ -62,6 +62,15 @@ token:
 thor:
   url: ${THOR_URL:https://testnet.vechain.org}
 
+vechain:
+  forks:
+    galactica:
+      mainnet: 22084200
+      testnet: 21770500
+    hayabusa:
+      mainnet: 23474880
+      testnet: 23282280
+
 cache:
   max-size: ${CACHE_MAX_SIZE:1000}
   ttl-seconds: ${CACHE_TTL_SECONDS:300}

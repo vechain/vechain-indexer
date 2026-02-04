@@ -21,13 +21,18 @@ data class AccountOverview(
     @JsonIgnore @field:JsonView(Views.Internal::class) override val version: Int,
     val firstSeen: Long,
     var lastSeen: Long,
-    var transactionsSent: Long,
-    var clausesSent: Long,
-    var vthoBurned: BigInteger,
-    var vthoDelegated: BigInteger,
-    var gasUsed: BigInteger,
-    var vetSent: BigInteger,
-    var vetReceived: BigInteger,
+    var transactionsSent: Long = 0L,
+    var clausesSent: Long = 0L,
+    var vthoBurned: BigInteger = BigInteger.ZERO,
+    var vthoDelegated: BigInteger = BigInteger.ZERO,
+    var gasUsed: BigInteger = BigInteger.ZERO,
+    var vetSent: BigInteger = BigInteger.ZERO,
+    var vetReceived: BigInteger = BigInteger.ZERO,
+    var vetBalance: BigInteger = BigInteger.ZERO,
+    var vthoBlockRewards: BigInteger = BigInteger.ZERO,
+    var vthoPassiveGeneration: BigInteger = BigInteger.ZERO,
+    /** Timestamp when passive VTHO was last settled (for calculating time-based generation) */
+    @JsonIgnore var lastVthoSettlement: Long? = null,
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = address
 }

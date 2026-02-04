@@ -61,6 +61,18 @@ open class AccountsController(private val accountsService: AccountsService) {
     }
 
     @GetMapping("/overview/{address}")
+    @Operation(
+        summary = "Retrieve account overview with VTHO earnings",
+        description =
+            """
+            Retrieves the account overview including VTHO earned from three sources:
+            - Block rewards (pre-Hayabusa authority nodes + post-Hayabusa validators)
+            - Passive VTHO generation from VET holdings (genesis to Hayabusa only)
+            - Stargate VTHO claimed (delegation rewards)
+
+            The response includes individual breakdowns and a computed total.
+        """,
+    )
     @AddressParameter(
         name = "address",
         `in` = ParameterIn.PATH,
@@ -68,7 +80,7 @@ open class AccountsController(private val accountsService: AccountsService) {
         description = "The address of the account to retrieve the overview for.",
     )
     @CommonApiResponses
-    open fun getOverview(@ValidAddress @PathVariable address: Address): AccountOverview =
-        accountsService.getOverview(address)
+    open fun getOverview(@ValidAddress @PathVariable address: Address): AccountOverviewResponse =
+        accountsService.getOverviewWithVthoEarnings(address)
             ?: throw ResourceNotFoundException("Account overview not found for address $address")
 }

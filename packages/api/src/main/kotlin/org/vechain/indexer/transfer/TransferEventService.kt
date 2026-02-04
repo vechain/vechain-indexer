@@ -3,6 +3,10 @@ package org.vechain.indexer.transfer
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.domain.SliceImpl
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.thor.Address
 
@@ -12,54 +16,30 @@ open class TransferEventService(
     private val transferEventRepository: TransferEventRepository,
     private val fungibleTokenInteractionsRepository: FungibleTokenInteractionsRepository,
     private val officialTokenService: OfficialTokenService,
+    private val mongoTemplate: MongoTemplate,
 ) {
 
     fun find(
-        address: Address,
-        tokenAddress: Address,
+        to: Address? = null,
+        from: Address? = null,
+        toOrFrom: Address? = null,
+        tokenAddress: Address? = null,
+        eventTypes: List<TransferEventType>? = null,
+        after: Long? = null,
+        before: Long? = null,
         pageable: Pageable,
     ): Slice<IndexedTransferEvent> {
-        return transferEventRepository.findByToOrFromAndTokenAddress(
-            address.value,
-            tokenAddress.value,
-            pageable,
-        )
-    }
-
-    fun findByAddress(address: Address, pageable: Pageable): Slice<IndexedTransferEvent> {
-        return transferEventRepository.findByToOrFrom(address.value, address.value, pageable)
-    }
-
-    fun findByTokenAddress(tokenAddress: Address, pageable: Pageable): Slice<IndexedTransferEvent> {
-        return transferEventRepository.findByTokenAddress(tokenAddress.value, pageable)
-    }
-
-    fun findByTo(
-        to: Address,
-        tokenAddress: Address?,
-        pageable: Pageable,
-    ): Slice<IndexedTransferEvent> {
-        return if (tokenAddress != null) {
-            transferEventRepository.findByToAndTokenAddress(to.value, tokenAddress.value, pageable)
-        } else {
-            transferEventRepository.findByTo(to.value, pageable)
-        }
-    }
-
-    fun findByFrom(
-        from: Address,
-        tokenAddress: Address?,
-        pageable: Pageable,
-    ): Slice<IndexedTransferEvent> {
-        return if (tokenAddress != null) {
-            transferEventRepository.findByFromAndTokenAddress(
-                from.value,
-                tokenAddress.value,
-                pageable,
+        val criteria =
+            buildCriteria(
+                to = to?.value,
+                from = from?.value,
+                toOrFrom = toOrFrom?.value,
+                tokenAddress = tokenAddress?.value,
+                eventTypes = eventTypes,
+                after = after,
+                before = before,
             )
-        } else {
-            transferEventRepository.findByFrom(from.value, pageable)
-        }
+        return runQuery(criteria, pageable)
     }
 
     fun findByBlockNumber(
@@ -90,5 +70,60 @@ open class TransferEventService(
                 fungibleTokenInteractionsRepository.findByWalletAddress(address.value, pageable)
             }
         return interactions.map { it.contractAddress }
+    }
+
+    private fun buildCriteria(
+        to: String? = null,
+        from: String? = null,
+        toOrFrom: String? = null,
+        tokenAddress: String? = null,
+        eventTypes: List<TransferEventType>? = null,
+        after: Long? = null,
+        before: Long? = null,
+    ): Criteria {
+        val criteria = Criteria()
+
+        if (toOrFrom != null) {
+            criteria.orOperator(
+                Criteria.where(IndexedTransferEvent::to.name).`is`(toOrFrom),
+                Criteria.where(IndexedTransferEvent::from.name).`is`(toOrFrom),
+            )
+        } else {
+            if (to != null) {
+                criteria.and(IndexedTransferEvent::to.name).`is`(to)
+            }
+            if (from != null) {
+                criteria.and(IndexedTransferEvent::from.name).`is`(from)
+            }
+        }
+
+        if (tokenAddress != null) {
+            criteria.and(IndexedTransferEvent::tokenAddress.name).`is`(tokenAddress)
+        }
+
+        if (!eventTypes.isNullOrEmpty()) {
+            criteria.and(IndexedTransferEvent::eventType.name).`in`(eventTypes)
+        }
+
+        if (before != null && after != null) {
+            criteria.and(IndexedTransferEvent::blockTimestamp.name).gte(after).lte(before)
+        } else if (before != null) {
+            criteria.and(IndexedTransferEvent::blockTimestamp.name).lte(before)
+        } else if (after != null) {
+            criteria.and(IndexedTransferEvent::blockTimestamp.name).gte(after)
+        }
+
+        return criteria
+    }
+
+    private fun runQuery(criteria: Criteria, pageable: Pageable): Slice<IndexedTransferEvent> {
+        val query = Query(criteria).with(pageable)
+        query.limit(pageable.pageSize + 1)
+        val raw = mongoTemplate.find(query, IndexedTransferEvent::class.java)
+
+        val hasNext = raw.size > pageable.pageSize
+        val content = if (hasNext) raw.dropLast(1) else raw
+
+        return SliceImpl(content, pageable, hasNext)
     }
 }

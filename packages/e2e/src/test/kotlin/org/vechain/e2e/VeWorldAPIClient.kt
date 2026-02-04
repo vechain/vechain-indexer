@@ -8,6 +8,7 @@ import org.vechain.indexer.rest.PAGE_SIZE_LIMIT
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.transaction.IndexedTransaction
 import org.vechain.indexer.transfer.IndexedTransferEvent
+import org.vechain.indexer.transfer.TransferEventType
 
 object VeWorldAPIClient {
 
@@ -161,25 +162,69 @@ object VeWorldAPIClient {
     fun getTransferEvents(
         address: String? = null,
         tokenAddress: String? = null,
+        eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
         page: Int = 0,
         size: Int = PAGE_SIZE_LIMIT,
     ): PaginatedResponse<IndexedTransferEvent> {
+        val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
         return if (address != null && tokenAddress != null)
             getRequest(
-                "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress&page=$page&size=$size",
+                "$API_URL/transfers?address=$address&tokenAddress=$tokenAddress$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (address != null)
             getRequest(
-                "$API_URL/transfers?address=$address&page=$page&size=$size",
+                "$API_URL/transfers?address=$address$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else if (tokenAddress != null)
             getRequest(
-                "$API_URL/transfers?tokenAddress=$tokenAddress&page=$page&size=$size",
+                "$API_URL/transfers?tokenAddress=$tokenAddress$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
                 PAGINATED_TRANSFER_EVENTS_TYPE,
             )
         else throw Exception("No address or tokenAddress provided")
+    }
+
+    fun getTransferEventsFrom(
+        address: String,
+        tokenAddress: String? = null,
+        eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
+        page: Int = 0,
+        size: Int = PAGE_SIZE_LIMIT,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        val tokenParam = tokenAddress?.let { "&tokenAddress=$it" } ?: ""
+        val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
+        return getRequest(
+            "$API_URL/transfers/from?address=$address$tokenParam$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
+            PAGINATED_TRANSFER_EVENTS_TYPE,
+        )
+    }
+
+    fun getTransferEventsTo(
+        address: String,
+        tokenAddress: String? = null,
+        eventType: TransferEventType? = null,
+        after: Long? = null,
+        before: Long? = null,
+        page: Int = 0,
+        size: Int = PAGE_SIZE_LIMIT,
+    ): PaginatedResponse<IndexedTransferEvent> {
+        val tokenParam = tokenAddress?.let { "&tokenAddress=$it" } ?: ""
+        val eventTypeParam = eventType?.let { "&eventType=$it" } ?: ""
+        val afterParam = after?.let { "&after=$it" } ?: ""
+        val beforeParam = before?.let { "&before=$it" } ?: ""
+        return getRequest(
+            "$API_URL/transfers/to?address=$address$tokenParam$eventTypeParam$afterParam$beforeParam&page=$page&size=$size",
+            PAGINATED_TRANSFER_EVENTS_TYPE,
+        )
     }
 
     fun getNftArchives(): List<org.vechain.indexer.nft.NftArchive> {
