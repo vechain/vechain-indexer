@@ -4,6 +4,8 @@ import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 
 enum class HealthStatus() {
     UP,
@@ -22,6 +26,7 @@ enum class HealthStatus() {
 class IndexerHealthIndicator(
     private val indexers: List<Indexer>,
     private val metrics: IndexerHealthMetrics,
+    private val thorClient: ThorClient,
     @param:Value("\${indexer.healthcheck.inactive-threshold-syncing}")
     private val inactiveThresholdSyncing: Long,
     @param:Value("\${indexer.healthcheck.inactive-threshold-not-syncing}")
@@ -38,6 +43,12 @@ class IndexerHealthIndicator(
 
     override fun health(): Health {
         val key = "IndexersHealth"
+
+        val bestBlockNumber =
+            runBlocking(Dispatchers.IO) {
+                thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number
+            }
+        metrics.setBestBlockNumber(bestBlockNumber)
 
         val indexerHealths =
             indexers.map { indexer ->
@@ -59,6 +70,7 @@ class IndexerHealthIndicator(
                         currentBlockNumber,
                         indexer.getStatus(),
                     )
+                    metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
                 }
 
                 IndexerHealth(
