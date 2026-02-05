@@ -4,8 +4,9 @@ import java.text.NumberFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.HealthIndicator
@@ -15,6 +16,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.Status
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
+import org.vechain.indexer.utils.TtlCache
 
 enum class HealthStatus() {
     UP,
@@ -33,6 +35,9 @@ class IndexerHealthIndicator(
     private val inactiveThresholdNotSyncing: Long,
 ) : HealthIndicator {
 
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private val bestBlockCache = TtlCache<Long>()
+
     data class IndexerHealth(
         val indexerName: String,
         val status: HealthStatus,
@@ -44,11 +49,14 @@ class IndexerHealthIndicator(
     override fun health(): Health {
         val key = "IndexersHealth"
 
-        val bestBlockNumber =
-            runBlocking(Dispatchers.IO) {
-                thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number
-            }
-        metrics.setBestBlockNumber(bestBlockNumber)
+        // Fetch best block asynchronously to avoid blocking the health check thread
+        scope.launch {
+            val bestBlock = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number
+            bestBlockCache.set(bestBlock)
+            metrics.setBestBlockNumber(bestBlock)
+        }
+
+        val bestBlockNumber = bestBlockCache.get()
 
         val indexerHealths =
             indexers.map { indexer ->
@@ -70,7 +78,12 @@ class IndexerHealthIndicator(
                         currentBlockNumber,
                         indexer.getStatus(),
                     )
-                    metrics.setIndexerSyncGap(indexer.name, bestBlockNumber - currentBlockNumber)
+                    if (bestBlockNumber != null) {
+                        metrics.setIndexerSyncGap(
+                            indexer.name,
+                            bestBlockNumber - currentBlockNumber,
+                        )
+                    }
                 }
 
                 IndexerHealth(
