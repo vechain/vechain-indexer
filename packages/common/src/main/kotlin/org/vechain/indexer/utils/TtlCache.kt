@@ -1,6 +1,8 @@
 package org.vechain.indexer.utils
 
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private data class CachedValue<T>(val value: T, val timestamp: Long)
 
@@ -17,6 +19,7 @@ class TtlCache<T>(private val ttlMs: Long = DEFAULT_TTL_MS) {
     }
 
     private val cache = AtomicReference<CachedValue<T>?>(null)
+    private val fetchMutex = Mutex()
 
     /**
      * Get the cached value if it exists and hasn't expired.
@@ -39,17 +42,29 @@ class TtlCache<T>(private val ttlMs: Long = DEFAULT_TTL_MS) {
     }
 
     /**
-     * Get the cached value if valid, otherwise fetch a new value and cache it.
+     * Get the cached value if valid, otherwise fetch a new value and cache it. Uses double-checked
+     * locking to prevent duplicate fetches when multiple coroutines call this method concurrently
+     * with an expired cache.
      *
      * @param fetch Suspend function to fetch the value if not cached or expired
      * @return The cached or freshly fetched value
      */
     suspend fun getOrFetch(fetch: suspend () -> T): T {
+        // Fast path: return cached value if valid
         get()?.let {
             return it
         }
-        val value = fetch()
-        set(value)
-        return value
+
+        // Slow path: acquire lock and fetch
+        return fetchMutex.withLock {
+            // Double-check after acquiring lock
+            get()?.let {
+                return@withLock it
+            }
+
+            val value = fetch()
+            set(value)
+            value
+        }
     }
 }
