@@ -10,14 +10,14 @@ import org.springframework.context.annotation.Profile
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.vechain.indexer.client.ThorClient
-import org.vechain.indexer.config.NetworkType
+import org.vechain.indexer.config.NetworkDetectionService
+import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
 
 @Profile("transfers")
 @Service
 open class OfficialTokenService(
-    private val thorClient: ThorClient,
+    private val networkDetectionService: NetworkDetectionService,
     private val officialTokenRepoRest: WebClient,
 ) {
 
@@ -36,35 +36,35 @@ open class OfficialTokenService(
     }
 
     /**
-     * Gets the network type from ThorClient, defaulting to OTHER on failure.
+     * Gets the network type from NetworkDetectionService, defaulting to CUSTOM on failure.
      *
-     * @return NetworkType
+     * @return VeChainNetwork
      */
-    internal open fun getNetworkType(): NetworkType {
+    internal open fun getNetworkType(): VeChainNetwork {
         return try {
-            thorClient.getNetworkType()
+            networkDetectionService.detectBlocking().network
         } catch (e: Exception) {
-            logger.warn("Failed to get network type. Setting to OTHER. ${e.message}")
-            NetworkType.OTHER
+            logger.warn("Failed to get network type. Setting to CUSTOM. ${e.message}")
+            VeChainNetwork.CUSTOM
         }
     }
 
     /**
      * Loads token registry from API with fallback to local JSON.
      *
-     * @param networkType The network type to load tokens for
+     * @param network The network type to load tokens for
      * @return List of TokenRegistry entries
      */
-    internal open fun loadTokenRegistry(networkType: NetworkType): List<TokenRegistry> {
+    internal open fun loadTokenRegistry(network: VeChainNetwork): List<TokenRegistry> {
         return try {
-            val tokens = getTokenRegistryInfoFromApi(networkType)
-            logger.info("${tokens.size} official tokens loaded from API for network $networkType")
+            val tokens = getTokenRegistryInfoFromApi(network)
+            logger.info("${tokens.size} official tokens loaded from API for network $network")
             tokens
         } catch (e: Exception) {
             logger.warn(
                 "Token registry not loaded from API. Will load from local JSON. ${e.message}"
             )
-            getTokenRegistryInfoFromJson(networkType)
+            getTokenRegistryInfoFromJson(network)
         }
     }
 
@@ -81,21 +81,21 @@ open class OfficialTokenService(
     /**
      * Loads token registry from local JSON file.
      *
-     * @param networkType The network type to load tokens for
+     * @param network The network type to load tokens for
      * @return List of TokenRegistry entries
      * @throws Exception if the file cannot be found or parsed
      */
-    internal open fun getTokenRegistryInfoFromJson(networkType: NetworkType): List<TokenRegistry> {
+    internal open fun getTokenRegistryInfoFromJson(network: VeChainNetwork): List<TokenRegistry> {
         // Only main and test supported. Return empty list for other networks.
-        if (networkType != NetworkType.MAIN && networkType != NetworkType.TEST) {
-            logger.debug("Network type $networkType not supported for token registry")
+        if (network != VeChainNetwork.MAINNET && network != VeChainNetwork.TESTNET) {
+            logger.debug("Network type $network not supported for token registry")
             return emptyList()
         }
 
         val path =
             Paths.get(
-                javaClass.classLoader.getResource("token-registry/$networkType.json")?.toURI()
-                    ?: throw Exception("Token registry not found for network: $networkType")
+                javaClass.classLoader.getResource("token-registry/$network.json")?.toURI()
+                    ?: throw Exception("Token registry not found for network: $network")
             )
 
         val jsonData = String(Files.readAllBytes(path))
@@ -106,23 +106,22 @@ open class OfficialTokenService(
     /**
      * Loads token registry from remote API.
      *
-     * @param networkType The network type to load tokens for
+     * @param network The network type to load tokens for
      * @return List of TokenRegistry entries
      * @throws Exception if the API call fails or returns null
      */
-    internal open fun getTokenRegistryInfoFromApi(networkType: NetworkType): List<TokenRegistry> {
+    internal open fun getTokenRegistryInfoFromApi(network: VeChainNetwork): List<TokenRegistry> {
         // Only main and test supported. Return empty list for other networks.
-        if (networkType != NetworkType.MAIN && networkType != NetworkType.TEST) {
-            logger.debug("Network type $networkType not supported for token registry API")
+        if (network != VeChainNetwork.MAINNET && network != VeChainNetwork.TESTNET) {
+            logger.debug("Network type $network not supported for token registry API")
             return emptyList()
         }
 
         return officialTokenRepoRest
             .get()
-            .uri("/$networkType.json")
+            .uri("/$network.json")
             .retrieve()
             .bodyToMono(object : ParameterizedTypeReference<List<TokenRegistry>>() {})
-            .block()
-            ?: throw Exception("Call to token registry API failed for network: $networkType")
+            .block() ?: throw Exception("Call to token registry API failed for network: $network")
     }
 }

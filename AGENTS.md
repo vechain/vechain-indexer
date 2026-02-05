@@ -5,6 +5,7 @@ Keep application code inside `packages/`: `indexer` holds the Spring Boot indexe
 
 ## Build, Test, and Development Commands
 Run `make build` for a Spotless format pass plus Gradle builds of API and indexer jars. Use `make start` to stand up MongoDB and both services via Docker Compose, or `make db-all` when you only need the database locally. Primary tests run with `make test`; targeted suites use `make test-api`, `make test-indexer`, `make test-common`, or `make test-e2e`. To explore available shortcuts, execute `make help`.
+Always run `make build` after making a code change to check whether it builds and the format the code.
 
 ## Coding Style & Naming Conventions
 Kotlin sources must stay formatted by ktfmt Google style with 4-space block and continuation indents; ensure `./gradlew spotlessApply` runs cleanly before committing. Keep package names lowercase, classes in `PascalCase`, functions in `camelCase`, and constants in `UPPER_SNAKE_CASE`. Prefer constructor injection and Spring annotations already used across the repo.

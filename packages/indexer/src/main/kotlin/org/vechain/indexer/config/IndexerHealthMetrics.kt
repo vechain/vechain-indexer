@@ -16,6 +16,9 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
     private val syncStatusCodeGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val currentBlockByStatusGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
     private val lastBlockStatusByIndexer = ConcurrentHashMap<String, Status>()
+    private val bestBlockGauge = AtomicReference(0.0)
+    private var bestBlockGaugeInitialized = false
+    private val syncGapGauges = ConcurrentHashMap<String, AtomicReference<Double>>()
 
     fun setComponentHealth(name: String, type: String, value: Double) {
         val key = "$name:$type"
@@ -126,4 +129,28 @@ class IndexerHealthMetrics(private val registry: MeterRegistry) {
             .joinToString(" ") { part ->
                 part.lowercase(Locale.US).replaceFirstChar { it.titlecase(Locale.US) }
             }
+
+    fun setBestBlockNumber(blockNumber: Long) {
+        if (!bestBlockGaugeInitialized) {
+            registry.gauge("thor_best_block_number_gauge", bestBlockGauge) { it.get() }
+            bestBlockGaugeInitialized = true
+        }
+        bestBlockGauge.set(blockNumber.toDouble())
+    }
+
+    fun setIndexerSyncGap(indexerName: String, gap: Long) {
+        syncGapGauges
+            .computeIfAbsent(indexerName) { name ->
+                val ref = AtomicReference(0.0)
+                registry.gauge(
+                    "indexer_sync_gap_gauge",
+                    listOf(Tag.of("indexer_name", name)),
+                    ref,
+                ) {
+                    it.get()
+                }
+                ref
+            }
+            .set(gap.toDouble())
+    }
 }

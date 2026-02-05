@@ -4,16 +4,17 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
-import org.vechain.indexer.client.ThorClient
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
+import org.vechain.indexer.thor.client.ThorClient
+import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.utils.TimeSeriesUtils.DAILY_THRESHOLD
 import org.vechain.indexer.utils.TimeSeriesUtils.HOURLY_THRESHOLD
 import org.vechain.indexer.utils.TimeSeriesUtils.MONTHLY_THRESHOLD
@@ -33,6 +34,7 @@ open class ValidatorService(
     private val mongoTemplate: MongoTemplate,
     private val thorClient: ThorClient,
 ) {
+
     open fun getValidatorBlocks(
         validator: Address?,
         status: BlockStatus?,
@@ -166,20 +168,23 @@ open class ValidatorService(
         return SliceImpl(results, pageable, results.size == pageable.pageSize)
     }
 
-    open fun getMissedBlocksPercentage(
+    open suspend fun getMissedBlocksPercentage(
         timeframe: MissedBlocksTimeframe,
         validator: String? = null,
     ): AllValidatorsMissedBlocksResponse {
-        val currentBlock = thorClient.getBestBlock().number
+        val currentBlock = thorClient.getBlock(BlockRevision.Keyword.BEST).number
         val blocksPerSecond = 10L // VeChain produces ~1 block per 10 seconds
 
         val startBlock =
             when (timeframe) {
-                MissedBlocksTimeframe.DAY -> currentBlock - (86400 / blocksPerSecond)
-                MissedBlocksTimeframe.WEEK -> currentBlock - (7 * 86400 / blocksPerSecond)
-                MissedBlocksTimeframe.MONTH -> currentBlock - (30 * 86400 / blocksPerSecond)
-                MissedBlocksTimeframe.YEAR -> currentBlock - (365 * 86400 / blocksPerSecond)
-            }.coerceAtLeast(0)
+                MissedBlocksTimeframe.DAY -> currentBlock - (SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.WEEK ->
+                    currentBlock - (7L * SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.MONTH ->
+                    currentBlock - (30L * SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.YEAR ->
+                    currentBlock - (365L * SECONDS_PER_DAY / blocksPerSecond)
+            }.coerceAtLeast(0L)
 
         val missedDocs =
             if (validator != null) {
@@ -197,13 +202,13 @@ open class ValidatorService(
             val offlineEnd = doc.onlineBlock ?: currentBlock
 
             if (offlineEnd >= offlineStart) {
-                val missedCount = offlineEnd - offlineStart + 1
+                val missedCount = offlineEnd - offlineStart + 1L
                 validatorMissedMap[validatorAddr] =
                     (validatorMissedMap[validatorAddr] ?: 0L) + missedCount
             }
         }
 
-        val totalBlocks = (currentBlock - startBlock + 1).toDouble()
+        val totalBlocks = (currentBlock - startBlock + 1L).toDouble()
 
         val validatorStats =
             validatorMissedMap

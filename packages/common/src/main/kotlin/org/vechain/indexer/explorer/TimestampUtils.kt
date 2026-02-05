@@ -4,9 +4,10 @@ object TimestampUtils {
     private const val SLOT_STEP = 10L
 
     private const val ONE_HOUR = 3600L
-    private const val ONE_DAY = 86400L
     private const val ONE_WEEK = 604800L
     private const val ONE_MONTH = 2592000L
+
+    const val SECONDS_PER_DAY = 86400L
 
     // Solo genesis block timestamp (2018-05-15 23:59:50 UTC) - This should be the earliest valid
     // timestamp
@@ -16,7 +17,7 @@ object TimestampUtils {
         isMultipleOf(previousTimestamp, currentTimestamp, ONE_HOUR)
 
     fun isDaily(previousTimestamp: Long, currentTimestamp: Long): Boolean =
-        isMultipleOf(previousTimestamp, currentTimestamp, ONE_DAY)
+        isMultipleOf(previousTimestamp, currentTimestamp, SECONDS_PER_DAY)
 
     fun isWeekly(previousTimestamp: Long, currentTimestamp: Long): Boolean =
         isMultipleOf(previousTimestamp, currentTimestamp, ONE_WEEK)
@@ -28,7 +29,7 @@ object TimestampUtils {
         hasBoundaryChanged(previous, current, ONE_HOUR)
 
     fun isDailyChange(previous: Long, current: Long): Boolean =
-        hasBoundaryChanged(previous, current, ONE_DAY)
+        hasBoundaryChanged(previous, current, SECONDS_PER_DAY)
 
     fun isWeeklyChange(previous: Long, current: Long): Boolean =
         hasBoundaryChanged(previous, current, ONE_WEEK)
