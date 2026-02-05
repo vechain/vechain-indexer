@@ -6,6 +6,14 @@ import org.vechain.indexer.thor.model.BlockRevision
 import org.vechain.indexer.thor.model.BlockUnexpanded
 import org.vechain.indexer.utils.TtlCache
 
+/**
+ * Thor client that wraps [DefaultThorClient] and caches "best block" queries.
+ *
+ * Calls for [BlockRevision.Keyword.BEST] are served from an in-memory cache
+ * backed by [TtlCache], reducing repeated best-block requests and therefore
+ * lowering load on the Thor API. Cached entries have a time-to-live (TTL)
+ * of 10 seconds before they are refreshed from the underlying client.
+ */
 class CachingThorClient(baseUrl: String, vararg headers: Pair<String, Any>) :
     DefaultThorClient(baseUrl, *headers) {
 
