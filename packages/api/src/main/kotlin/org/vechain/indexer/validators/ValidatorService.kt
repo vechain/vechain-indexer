@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
 import org.vechain.indexer.exception.BadRequestException
+import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -176,10 +177,13 @@ open class ValidatorService(
 
         val startBlock =
             when (timeframe) {
-                MissedBlocksTimeframe.DAY -> currentBlock - (86400L / blocksPerSecond)
-                MissedBlocksTimeframe.WEEK -> currentBlock - (7L * 86400L / blocksPerSecond)
-                MissedBlocksTimeframe.MONTH -> currentBlock - (30L * 86400L / blocksPerSecond)
-                MissedBlocksTimeframe.YEAR -> currentBlock - (365L * 86400L / blocksPerSecond)
+                MissedBlocksTimeframe.DAY -> currentBlock - (SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.WEEK ->
+                    currentBlock - (7L * SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.MONTH ->
+                    currentBlock - (30L * SECONDS_PER_DAY / blocksPerSecond)
+                MissedBlocksTimeframe.YEAR ->
+                    currentBlock - (365L * SECONDS_PER_DAY / blocksPerSecond)
             }.coerceAtLeast(0L)
 
         val missedDocs =
