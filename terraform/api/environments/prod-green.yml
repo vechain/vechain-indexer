@@ -176,7 +176,7 @@ enabled_nets:
         vevote:                     '250'
         stargate:                   '250'
         authority-nodes:            '250'
-        b3tr:                       '250'
+        b3tr:                       '75'
         historic-proposals:       '250'
       channel-batch-size:           '100'
       pruner:
