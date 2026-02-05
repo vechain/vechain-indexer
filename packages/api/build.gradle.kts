@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
@@ -12,6 +13,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation:3.4.5")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
     // Caffeine cache
     implementation("org.springframework.boot:spring-boot-starter-cache:3.4.5")

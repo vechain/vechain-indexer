@@ -13,15 +13,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.web.reactive.function.client.WebClient
-import org.vechain.indexer.client.ThorClient
-import org.vechain.indexer.config.NetworkType
+import org.vechain.indexer.config.DetectedNetwork
+import org.vechain.indexer.config.NetworkDetectionService
+import org.vechain.indexer.config.VeChainNetwork
 import org.vechain.indexer.thor.VTHO_CONTRACT_ADDRESS
+import org.vechain.indexer.thor.model.Block
 import reactor.core.publisher.Mono
 
 @ExtendWith(MockKExtension::class)
 internal class OfficialTokenServiceTest {
 
-    @MockK lateinit var thorClient: ThorClient
+    @MockK lateinit var networkDetectionService: NetworkDetectionService
     @MockK lateinit var officialTokenRepoRest: WebClient
     @MockK lateinit var requestHeadersUriSpec: WebClient.RequestHeadersUriSpec<*>
     @MockK lateinit var responseSpec: WebClient.ResponseSpec
@@ -31,8 +33,31 @@ internal class OfficialTokenServiceTest {
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
-        service = OfficialTokenService(thorClient, officialTokenRepoRest)
+        service = OfficialTokenService(networkDetectionService, officialTokenRepoRest)
     }
+
+    private fun mockBlock(): Block =
+        Block(
+            id = "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a",
+            number = 0L,
+            timestamp = 1530316800L,
+            parentID = "0x" + "0".repeat(64),
+            size = 0,
+            gasLimit = 0,
+            baseFeePerGas = null,
+            beneficiary = "0x" + "0".repeat(40),
+            gasUsed = 0,
+            totalScore = 0,
+            txsRoot = "0x" + "0".repeat(64),
+            txsFeatures = 0,
+            stateRoot = "0x" + "0".repeat(64),
+            receiptsRoot = "0x" + "0".repeat(64),
+            signer = "0x" + "0".repeat(40),
+            isTrunk = true,
+            isFinalized = true,
+            transactions = emptyList(),
+            com = false,
+        )
 
     // Test getOfficialTokenAddresses - Happy path
     @Test
@@ -45,7 +70,8 @@ internal class OfficialTokenServiceTest {
                 createTokenRegistry("0xdef456", "TOKEN2"),
             )
 
-        every { thorClient.getNetworkType() } returns NetworkType.MAIN
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.MAINNET, mockBlock())
         mockWebClientResponse(tokenList)
 
         // When
@@ -63,7 +89,8 @@ internal class OfficialTokenServiceTest {
         // Given
         val tokenList = listOf(createTokenRegistry(VTHO_CONTRACT_ADDRESS, "VTHO"))
 
-        every { thorClient.getNetworkType() } returns NetworkType.MAIN
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.MAINNET, mockBlock())
         mockWebClientResponse(tokenList)
 
         // When
@@ -76,7 +103,8 @@ internal class OfficialTokenServiceTest {
     @Test
     fun `getOfficialTokenAddresses returns empty list when token list is empty`() {
         // Given
-        every { thorClient.getNetworkType() } returns NetworkType.MAIN
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.MAINNET, mockBlock())
         mockWebClientResponse(emptyList())
 
         // When
@@ -88,39 +116,41 @@ internal class OfficialTokenServiceTest {
 
     // Test getNetworkType
     @Test
-    fun `getNetworkType returns MAIN when thorClient succeeds`() {
+    fun `getNetworkType returns MAINNET when detection succeeds`() {
         // Given
-        every { thorClient.getNetworkType() } returns NetworkType.MAIN
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.MAINNET, mockBlock())
 
         // When
         val result = service.getNetworkType()
 
         // Then
-        assertEquals(NetworkType.MAIN, result)
+        assertEquals(VeChainNetwork.MAINNET, result)
     }
 
     @Test
-    fun `getNetworkType returns TEST when thorClient succeeds`() {
+    fun `getNetworkType returns TESTNET when detection succeeds`() {
         // Given
-        every { thorClient.getNetworkType() } returns NetworkType.TEST
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.TESTNET, mockBlock())
 
         // When
         val result = service.getNetworkType()
 
         // Then
-        assertEquals(NetworkType.TEST, result)
+        assertEquals(VeChainNetwork.TESTNET, result)
     }
 
     @Test
-    fun `getNetworkType returns OTHER when thorClient throws exception`() {
+    fun `getNetworkType returns CUSTOM when detection throws exception`() {
         // Given
-        every { thorClient.getNetworkType() } throws RuntimeException("Network error")
+        every { networkDetectionService.detectBlocking() } throws RuntimeException("Network error")
 
         // When
         val result = service.getNetworkType()
 
         // Then
-        assertEquals(NetworkType.OTHER, result)
+        assertEquals(VeChainNetwork.CUSTOM, result)
     }
 
     // Test loadTokenRegistry
@@ -136,7 +166,7 @@ internal class OfficialTokenServiceTest {
         mockWebClientResponse(tokenList)
 
         // When
-        val result = service.loadTokenRegistry(NetworkType.MAIN)
+        val result = service.loadTokenRegistry(VeChainNetwork.MAINNET)
 
         // Then
         assertEquals(2, result.size)
@@ -150,7 +180,7 @@ internal class OfficialTokenServiceTest {
         mockWebClientError()
 
         // When
-        val result = service.loadTokenRegistry(NetworkType.TEST)
+        val result = service.loadTokenRegistry(VeChainNetwork.TESTNET)
 
         // Then
         // The test network JSON file should be loaded
@@ -161,12 +191,12 @@ internal class OfficialTokenServiceTest {
     }
 
     @Test
-    fun `loadTokenRegistry returns empty list for OTHER network type`() {
+    fun `loadTokenRegistry returns empty list for CUSTOM network type`() {
         // Given
         mockWebClientError()
 
         // When
-        val result = service.loadTokenRegistry(NetworkType.OTHER)
+        val result = service.loadTokenRegistry(VeChainNetwork.CUSTOM)
 
         // Then
         assertEquals(0, result.size)
@@ -236,9 +266,9 @@ internal class OfficialTokenServiceTest {
 
     // Test getTokenRegistryInfoFromJson
     @Test
-    fun `getTokenRegistryInfoFromJson loads MAIN network tokens successfully`() {
+    fun `getTokenRegistryInfoFromJson loads MAINNET tokens successfully`() {
         // When
-        val result = service.getTokenRegistryInfoFromJson(NetworkType.MAIN)
+        val result = service.getTokenRegistryInfoFromJson(VeChainNetwork.MAINNET)
 
         // Then
         assertTrue(result.isNotEmpty())
@@ -251,9 +281,9 @@ internal class OfficialTokenServiceTest {
     }
 
     @Test
-    fun `getTokenRegistryInfoFromJson loads TEST network tokens successfully`() {
+    fun `getTokenRegistryInfoFromJson loads TESTNET tokens successfully`() {
         // When
-        val result = service.getTokenRegistryInfoFromJson(NetworkType.TEST)
+        val result = service.getTokenRegistryInfoFromJson(VeChainNetwork.TESTNET)
 
         // Then
         assertTrue(result.isNotEmpty())
@@ -263,18 +293,9 @@ internal class OfficialTokenServiceTest {
     }
 
     @Test
-    fun `getTokenRegistryInfoFromJson returns empty list for OTHER network`() {
+    fun `getTokenRegistryInfoFromJson returns empty list for CUSTOM network`() {
         // When
-        val result = service.getTokenRegistryInfoFromJson(NetworkType.OTHER)
-
-        // Then
-        assertEquals(0, result.size)
-    }
-
-    @Test
-    fun `getTokenRegistryInfoFromJson returns empty list for SOLO network`() {
-        // When
-        val result = service.getTokenRegistryInfoFromJson(NetworkType.SOLO)
+        val result = service.getTokenRegistryInfoFromJson(VeChainNetwork.CUSTOM)
 
         // Then
         assertEquals(0, result.size)
@@ -293,7 +314,7 @@ internal class OfficialTokenServiceTest {
         mockWebClientResponse(tokenList)
 
         // When
-        val result = service.getTokenRegistryInfoFromApi(NetworkType.MAIN)
+        val result = service.getTokenRegistryInfoFromApi(VeChainNetwork.MAINNET)
 
         // Then
         assertEquals(2, result.size)
@@ -303,19 +324,9 @@ internal class OfficialTokenServiceTest {
     }
 
     @Test
-    fun `getTokenRegistryInfoFromApi returns empty list for OTHER network`() {
+    fun `getTokenRegistryInfoFromApi returns empty list for CUSTOM network`() {
         // When
-        val result = service.getTokenRegistryInfoFromApi(NetworkType.OTHER)
-
-        // Then
-        assertEquals(0, result.size)
-        verify(exactly = 0) { officialTokenRepoRest.get() }
-    }
-
-    @Test
-    fun `getTokenRegistryInfoFromApi returns empty list for SOLO network`() {
-        // When
-        val result = service.getTokenRegistryInfoFromApi(NetworkType.SOLO)
+        val result = service.getTokenRegistryInfoFromApi(VeChainNetwork.CUSTOM)
 
         // Then
         assertEquals(0, result.size)
@@ -335,7 +346,7 @@ internal class OfficialTokenServiceTest {
         // When/Then
         val exception =
             assertThrows(Exception::class.java) {
-                service.getTokenRegistryInfoFromApi(NetworkType.MAIN)
+                service.getTokenRegistryInfoFromApi(VeChainNetwork.MAINNET)
             }
 
         assertTrue(exception.message!!.contains("Call to token registry API failed"))
@@ -348,7 +359,7 @@ internal class OfficialTokenServiceTest {
 
         // When/Then
         assertThrows(RuntimeException::class.java) {
-            service.getTokenRegistryInfoFromApi(NetworkType.MAIN)
+            service.getTokenRegistryInfoFromApi(VeChainNetwork.MAINNET)
         }
     }
 
@@ -356,7 +367,8 @@ internal class OfficialTokenServiceTest {
     @Test
     fun `full flow - API fails and falls back to JSON for TEST network`() {
         // Given
-        every { thorClient.getNetworkType() } returns NetworkType.TEST
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.TESTNET, mockBlock())
         mockWebClientError()
 
         // When
@@ -371,7 +383,8 @@ internal class OfficialTokenServiceTest {
     @Test
     fun `full flow - returns empty list when network is OTHER and JSON fallback fails`() {
         // Given
-        every { thorClient.getNetworkType() } returns NetworkType.OTHER
+        every { networkDetectionService.detectBlocking() } returns
+            DetectedNetwork(VeChainNetwork.CUSTOM, mockBlock())
         mockWebClientError()
 
         // When

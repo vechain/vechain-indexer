@@ -1,7 +1,9 @@
 package org.vechain.indexer.config
 
-enum class VeChainNetwork {
-    MAINNET,
-    TESTNET,
-    CUSTOM,
+enum class VeChainNetwork(val value: String) {
+    MAINNET("main"),
+    TESTNET("test"),
+    CUSTOM("custom");
+
+    override fun toString(): String = value
 }
