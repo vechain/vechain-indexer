@@ -179,11 +179,39 @@
       "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
     },
     {
-      "id": 9,
+      "id": 13,
       "definition": {
-        "title": "Block by Indexer",
+        "title": "Best Block Number",
         "title_size": "16",
         "title_align": "left",
+        "time": {},
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "max:thor_best_block_number_gauge{indexer-id:$indexer-id.value}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "autoscale": false,
+        "precision": 0
+      },
+      "layout": { "x": 0, "y": 0, "width": 3, "height": 2, "is_column_break": true }
+    },
+    {
+      "id": 14,
+      "definition": {
+        "title": "Sync Gap per Indexer",
+        "title_size": "16",
+        "title_align": "left",
+        "time": {},
         "type": "toplist",
         "requests": [
           {
@@ -191,18 +219,23 @@
               {
                 "data_source": "metrics",
                 "name": "query1",
-                "query": "max:indexer_current_block_by_status_gauge{indexer-id:$indexer-id.value} by {indexer_name,status_readable}",
+                "query": "max:indexer_sync_gap_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
                 "aggregator": "last"
               }
             ],
             "response_format": "scalar",
+            "conditional_formats": [
+              { "comparator": "<", "value": 10, "palette": "white_on_green" },
+              { "comparator": ">=", "value": 10000, "palette": "white_on_red" },
+              { "comparator": ">=", "value": 10, "palette": "white_on_yellow" }
+            ],
             "formulas": [{ "formula": "query1" }],
             "sort": { "count": 50, "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] }
           }
         ],
         "style": { "display": { "type": "stacked", "legend": "automatic" }, "scaling": "absolute" }
       },
-      "layout": { "x": 0, "y": 0, "width": 12, "height": 4, "is_column_break": true }
+      "layout": { "x": 3, "y": 0, "width": 9, "height": 4 }
     },
     {
       "id": 10,
@@ -285,63 +318,6 @@
         ]
       },
       "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
-    },
-    {
-      "id": 13,
-      "definition": {
-        "title": "Best Block Number",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "query_value",
-        "requests": [
-          {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "max:thor_best_block_number_gauge{indexer-id:$indexer-id.value}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar"
-          }
-        ],
-        "autoscale": true,
-        "precision": 0
-      },
-      "layout": { "x": 0, "y": 14, "width": 4, "height": 2 }
-    },
-    {
-      "id": 14,
-      "definition": {
-        "title": "Sync Gap per Indexer",
-        "title_size": "16",
-        "title_align": "left",
-        "type": "toplist",
-        "requests": [
-          {
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "max:indexer_sync_gap_gauge{indexer-id:$indexer-id.value} by {indexer_name}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar",
-            "formulas": [{ "formula": "query1" }],
-            "sort": { "count": 50, "order_by": [{ "type": "formula", "index": 0, "order": "desc" }] },
-            "conditional_formats": [
-              { "comparator": "<", "value": 10, "palette": "white_on_green" },
-              { "comparator": ">=", "value": 10, "palette": "white_on_yellow" },
-              { "comparator": ">=", "value": 100, "palette": "white_on_red" }
-            ]
-          }
-        ],
-        "style": { "display": { "type": "stacked", "legend": "automatic" }, "scaling": "absolute" }
-      },
-      "layout": { "x": 4, "y": 14, "width": 8, "height": 4 }
     }
   ],
   "template_variables": [
@@ -350,6 +326,6 @@
   ],
   "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed",
-  "pause_auto_refresh": false
+  "pause_auto_refresh": false,
+  "reflow_type": "fixed"
 }
