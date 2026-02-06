@@ -5,5 +5,5 @@ import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("stargate", "vtho-claimed-by-account")
 interface VthoClaimedByAccountRepository : BaseIndexedRepository<VthoClaimedByAccount, String> {
-    fun findByAccount(account: String): List<VthoClaimedByAccount>
+    fun findByAccountAndTokenIdIsNull(account: String): List<VthoClaimedByAccount>
 }
