@@ -128,8 +128,9 @@ open class AccountsService(
 
         // Sum up all Stargate VTHO claimed for this account (could be multiple token IDs)
         val stargateVthoClaimed =
-            vthoClaimedByAccountRepository?.findByAccount(address.value)?.sumOf { it.total }
-                ?: BigInteger.ZERO
+            vthoClaimedByAccountRepository?.findByAccountAndTokenIdIsNull(address.value)?.sumOf {
+                it.total
+            } ?: BigInteger.ZERO
 
         return AccountOverviewResponse.from(overview, stargateVthoClaimed)
     }
