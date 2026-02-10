@@ -14,7 +14,7 @@ import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
 open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
-) : BaseProcessor(repository = repository, IndexerNames.PROPOSAL_COMMENT) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.PROPOSAL_COMMENT) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return
