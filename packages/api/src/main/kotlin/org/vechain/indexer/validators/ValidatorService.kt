@@ -97,7 +97,7 @@ open class ValidatorService(
 
         query.with(pageable).limit(pageable.pageSize + 1)
 
-        val results = mongoTemplate.find(query, ValidatorBlock::class.java)
+        val results = mongoTemplate.find<ValidatorBlock>(query)
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
         val slice = SliceImpl(page, pageable, hasNext)
@@ -217,7 +217,7 @@ open class ValidatorService(
 
         query.with(pageable).limit(pageable.pageSize + 1)
 
-        val results = mongoTemplate.find(query, Validator::class.java)
+        val results = mongoTemplate.find<Validator>(query)
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
         return SliceImpl(page, pageable, hasNext)
