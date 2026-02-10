@@ -1,10 +1,14 @@
 package org.vechain.indexer.validators
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.domain.SliceImpl
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.find
+import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
@@ -43,9 +47,15 @@ open class ValidatorService(
     ): PaginatedResponse<ValidatorBlock> {
         val criteriaList = mutableListOf<Criteria>()
 
-        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
-        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
-        blockNumber?.let { criteriaList.add(Criteria.where("blockNumber").`is`(it)) }
+        validator?.let {
+            criteriaList.add(
+                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
+            )
+        }
+        status?.let { criteriaList.add(Criteria.where(ValidatorBlock::status.name).`is`(it)) }
+        blockNumber?.let {
+            criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).`is`(it))
+        }
 
         val query =
             if (criteriaList.isNotEmpty()) {
@@ -56,7 +66,7 @@ open class ValidatorService(
 
         query.with(pageable).limit(pageable.pageSize + 1)
 
-        val results = mongoTemplate.find(query, ValidatorBlock::class.java)
+        val results = mongoTemplate.find<ValidatorBlock>(query)
         val hasNext = results.size > pageable.pageSize
         val page = if (hasNext) results.dropLast(1) else results
         val slice = SliceImpl(page, pageable, hasNext)
@@ -71,8 +81,12 @@ open class ValidatorService(
     ): PaginatedResponse<ValidatorBlock> {
         val criteriaList = mutableListOf<Criteria>()
 
-        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
-        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
+        validator?.let {
+            criteriaList.add(
+                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
+            )
+        }
+        status?.let { criteriaList.add(Criteria.where(ValidatorBlock::status.name).`is`(it)) }
 
         val query =
             if (criteriaList.isNotEmpty()) {
@@ -94,12 +108,16 @@ open class ValidatorService(
     open fun getBlockByNumber(blockNumber: Long, validator: Address?): List<ValidatorBlock> {
         val criteriaList = mutableListOf<Criteria>()
 
-        criteriaList.add(Criteria.where("blockNumber").`is`(blockNumber))
-        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
+        criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).`is`(blockNumber))
+        validator?.let {
+            criteriaList.add(
+                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
+            )
+        }
 
         val query = Query(Criteria().andOperator(*criteriaList.toTypedArray()))
 
-        return mongoTemplate.find(query, ValidatorBlock::class.java)
+        return mongoTemplate.find<ValidatorBlock>(query)
     }
 
     /**
@@ -185,8 +203,10 @@ open class ValidatorService(
         val criteriaList = mutableListOf<Criteria>()
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
-        endorser?.let { criteriaList.add(Criteria.where("endorser").`is`(it.lowercase())) }
-        statuses?.let { criteriaList.add(Criteria.where("status").`in`(it)) }
+        endorser?.let {
+            criteriaList.add(Criteria.where(Validator::endorser.name).`is`(it.lowercase()))
+        }
+        statuses?.let { criteriaList.add(Criteria.where(Validator::status.name).`in`(it)) }
 
         val query =
             if (criteriaList.isNotEmpty()) {
@@ -205,7 +225,7 @@ open class ValidatorService(
 
     open fun getValidatorById(validatorId: String): Validator? {
         val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
-        return mongoTemplate.findOne(query, Validator::class.java)
+        return mongoTemplate.findOne<Validator>(query)
     }
 
     open suspend fun getMissedBlocksPercentage(
@@ -228,9 +248,13 @@ open class ValidatorService(
 
         val missedDocs =
             if (validator != null) {
-                validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
+                withContext(Dispatchers.IO) {
+                    validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
+                }
             } else {
-                validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
+                withContext(Dispatchers.IO) {
+                    validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
+                }
             }
 
         // Group by validator and calculate missed blocks for each
