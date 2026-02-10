@@ -227,6 +227,50 @@ class ValidatorServiceTest {
         expectThat(result).isEmpty()
     }
 
+    // -- getValidators hasNext tests --
+
+    @Test
+    fun `getValidators hasNext is false when results equal pageSize`() {
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val validators =
+            (1..3).map { validator(id = "0x000000000000000000000000000000000000000$it") }
+
+        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+
+        val result = service.getValidators(null, null, null, pageable)
+
+        expectThat(result.content).hasSize(3)
+        expectThat(result.hasNext()).isFalse()
+    }
+
+    @Test
+    fun `getValidators hasNext is true and content is trimmed when more results exist`() {
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val validators =
+            (1..4).map { validator(id = "0x000000000000000000000000000000000000000$it") }
+
+        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+
+        val result = service.getValidators(null, null, null, pageable)
+
+        expectThat(result.content).hasSize(3)
+        expectThat(result.hasNext()).isTrue()
+    }
+
+    @Test
+    fun `getValidators hasNext is false when fewer results than pageSize`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "validatorTvl"))
+        val validators =
+            (1..2).map { validator(id = "0x000000000000000000000000000000000000000$it") }
+
+        every { mongoTemplate.find(any<Query>(), Validator::class.java) } returns validators
+
+        val result = service.getValidators(null, null, null, pageable)
+
+        expectThat(result.content).hasSize(2)
+        expectThat(result.hasNext()).isFalse()
+    }
+
     // -- getValidatorById tests --
 
     @Test
