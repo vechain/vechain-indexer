@@ -54,19 +54,48 @@ open class ValidatorService(
                 Query()
             }
 
-        query
-            .with(pageable)
-            .with(
-                org.springframework.data.domain.Sort.by(
-                    org.springframework.data.domain.Sort.Direction.DESC,
-                    "blockNumber",
-                )
-            )
+        query.with(pageable)
 
         val results = mongoTemplate.find(query, ValidatorBlock::class.java)
         val slice = SliceImpl(results, pageable, results.size == pageable.pageSize)
 
         return paginatedResponse(slice)
+    }
+
+    open fun getValidatorBlockRewards(
+        validator: Address?,
+        status: BlockStatus?,
+        pageable: Pageable,
+    ): PaginatedResponse<ValidatorBlock> {
+        val criteriaList = mutableListOf<Criteria>()
+
+        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
+        status?.let { criteriaList.add(Criteria.where("status").`is`(it)) }
+
+        val query =
+            if (criteriaList.isNotEmpty()) {
+                Query(Criteria().andOperator(*criteriaList.toTypedArray()))
+            } else {
+                Query()
+            }
+
+        query.with(pageable)
+
+        val results = mongoTemplate.find(query, ValidatorBlock::class.java)
+        val slice = SliceImpl(results, pageable, results.size == pageable.pageSize)
+
+        return paginatedResponse(slice)
+    }
+
+    open fun getBlockByNumber(blockNumber: Long, validator: Address?): List<ValidatorBlock> {
+        val criteriaList = mutableListOf<Criteria>()
+
+        criteriaList.add(Criteria.where("blockNumber").`is`(blockNumber))
+        validator?.let { criteriaList.add(Criteria.where("validator").`is`(it.value.lowercase())) }
+
+        val query = Query(Criteria().andOperator(*criteriaList.toTypedArray()))
+
+        return mongoTemplate.find(query, ValidatorBlock::class.java)
     }
 
     /**
@@ -166,6 +195,11 @@ open class ValidatorService(
 
         val results = mongoTemplate.find(query, Validator::class.java)
         return SliceImpl(results, pageable, results.size == pageable.pageSize)
+    }
+
+    open fun getValidatorById(validatorId: String): Validator? {
+        val query = Query(Criteria.where("_id").`is`(validatorId.lowercase()))
+        return mongoTemplate.findOne(query, Validator::class.java)
     }
 
     open suspend fun getMissedBlocksPercentage(
