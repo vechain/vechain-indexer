@@ -10,12 +10,10 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.context.event.EventListener
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerRunner
 import org.vechain.indexer.thor.client.ThorClient
-import org.vechain.indexer.version.IndexerVersionService
 
 @Component
 open class IndexManager(
@@ -23,7 +21,6 @@ open class IndexManager(
     private val appCoroutineScope: CoroutineScope,
     private val thorClient: ThorClient,
     private val applicationContext: ApplicationContext,
-    private val indexerVersionService: IndexerVersionService,
     @param:Value("\${indexer.channel-batch-size}") private val channelBatchSize: Int,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -51,26 +48,9 @@ open class IndexManager(
             }
     }
 
-    @Scheduled(fixedDelay = 60 * 1000)
-    open fun trackLastSyncedBlock() {
-        logger.info("Storing last processed block for indexers")
-        indexers.forEach { indexer ->
-            try {
-                indexerVersionService.updateLastSafeSyncedBlock(
-                    indexerName = indexer.name,
-                    block = indexer.getPreviousBlock(),
-                )
-            } catch (e: Exception) {
-                logger.error("Failed to store last safe indexed block for ${indexer.name}", e)
-            }
-        }
-    }
-
     @EventListener(ContextClosedEvent::class)
     open fun onShutdown() {
         logger.info("Shutting down indexers")
-        // Update the last synced block for all indexers one final time
-        trackLastSyncedBlock()
         indexers.forEach { indexer ->
             try {
                 indexer.shutDown()

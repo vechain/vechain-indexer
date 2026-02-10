@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class VeVoteCommentProcessorTest {
@@ -21,8 +20,6 @@ class VeVoteCommentProcessorTest {
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     private lateinit var vevoteCommentProcessor: VeVoteCommentProcessor
 
     @BeforeEach
@@ -30,12 +27,7 @@ class VeVoteCommentProcessorTest {
         MockKAnnotations.init(this)
 
         vevoteCommentProcessor =
-            VeVoteCommentProcessor(
-                vevoteCommentRepository,
-                veVoteCommentService,
-                mongoTemplate,
-                indexerVersionService,
-            )
+            VeVoteCommentProcessor(vevoteCommentRepository, veVoteCommentService, mongoTemplate)
     }
 
     @Test

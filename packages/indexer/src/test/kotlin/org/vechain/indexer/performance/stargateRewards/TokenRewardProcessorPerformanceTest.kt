@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.stargateRewards
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -94,7 +93,6 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
@@ -102,11 +100,8 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.TOKEN_REWARD)
@@ -125,14 +120,12 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
         service: TokenRewardService,
         repository: TokenRewardRepository,
         archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         TokenRewardProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
-            indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TokenRewardProcessor.process (per block)") {

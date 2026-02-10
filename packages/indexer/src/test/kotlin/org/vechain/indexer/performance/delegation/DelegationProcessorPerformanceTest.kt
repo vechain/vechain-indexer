@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.delegation
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -109,7 +108,6 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                     repository = delegationRepository,
                     archiveService = archiveService,
                     service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
@@ -117,11 +115,8 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                     repository = delegationRepository,
                     archiveService = archiveService,
                     service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return DelegationConfig()
             .delegationIndexer(
@@ -142,14 +137,12 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
         repository: DelegationRepository,
         archiveService: ArchiveService<Delegation, DelegationArchive>,
         service: DelegationService,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         DelegationProcessor(
             repository = repository,
             archiveService = archiveService,
             service = service,
-            indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    DelegationProcessor.process (per block)") {

@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.validatorBlock
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -86,18 +85,14 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledValidatorBlockProcessor(
                     service = serviceToUse,
                     repository = validatorBlockRepository,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 ValidatorBlockProcessor(
                     service = serviceToUse,
                     repository = validatorBlockRepository,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return ValidatorBlockConfig()
             .validatorBlockIndexer(
@@ -115,14 +110,8 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledValidatorBlockProcessor(
         service: ValidatorBlockService,
         repository: ValidatorBlockRepository,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
-    ) :
-        ValidatorBlockProcessor(
-            service = service,
-            repository = repository,
-            indexerVersionService = indexerVersionService,
-        ) {
+    ) : ValidatorBlockProcessor(service = service, repository = repository) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {
                 super.processEntry(entry)

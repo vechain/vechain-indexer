@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class BaseStatefulProcessorTest {
@@ -20,15 +19,13 @@ class BaseStatefulProcessorTest {
 
     @MockK lateinit var archiveService: ArchiveService<TestDocument, TestDocumentArchive>
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     private lateinit var processor: TestableBaseStatefulProcessor
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
 
-        processor = TestableBaseStatefulProcessor(repository, archiveService, indexerVersionService)
+        processor = TestableBaseStatefulProcessor(repository, archiveService)
     }
 
     @Test
@@ -57,14 +54,7 @@ class BaseStatefulProcessorTest {
     class TestableBaseStatefulProcessor(
         repository: BaseIndexedRepository<*, *>,
         archiveService: ArchiveService<*, *>,
-        indexerVersionService: IndexerVersionService,
-    ) :
-        BaseStatefulProcessor(
-            repository,
-            archiveService,
-            indexerVersionService,
-            TEST_INDEXER_NAME,
-        ) {
+    ) : BaseStatefulProcessor(repository, archiveService, TEST_INDEXER_NAME) {
 
         override suspend fun processEntry(entry: IndexingResult) {
             // does nothing

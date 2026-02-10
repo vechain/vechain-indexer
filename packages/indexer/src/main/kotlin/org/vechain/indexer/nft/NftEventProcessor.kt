@@ -8,7 +8,6 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("nfts")
 @Component
@@ -16,13 +15,7 @@ open class NftProcessor(
     private val nftService: NftService,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
     repository: NftRepository,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.NFT,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.NFT) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

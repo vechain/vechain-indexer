@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.blockUsage
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,18 +75,11 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledBlockUsageProcessor(
                     repository = blockUsageRepository,
                     service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
-                BlockUsageProcessor(
-                    repository = blockUsageRepository,
-                    service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
-                )
+                BlockUsageProcessor(repository = blockUsageRepository, service = serviceToUse)
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.BLOCK_USAGE)
@@ -103,14 +95,8 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledBlockUsageProcessor(
         repository: BlockUsageRepository,
         service: BlockUsageService,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
-    ) :
-        BlockUsageProcessor(
-            repository = repository,
-            service = service,
-            indexerVersionService = indexerVersionService,
-        ) {
+    ) : BlockUsageProcessor(repository = repository, service = service) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    BlockUsageProcessor.process (per block)") {
                 super.processEntry(entry)

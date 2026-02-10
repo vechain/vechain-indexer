@@ -9,7 +9,6 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.repository.GmNftRepository
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-gm-nft")
 @Component
@@ -17,12 +16,10 @@ open class GmNftProcessor(
     repository: GmNftRepository,
     gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
     private val service: GmNftService,
-    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = gmNftArchiveService,
-        indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.GM_NFT,
     ) {
 

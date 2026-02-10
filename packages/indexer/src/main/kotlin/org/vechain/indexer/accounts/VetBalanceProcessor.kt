@@ -8,20 +8,13 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.repository.VetBalanceRepository
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("accounts", "vet-balance")
 @Component
 open class VetBalanceProcessor(
     repository: VetBalanceRepository,
     private val service: VetBalanceService,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.VET_BALANCE_INDEXER,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.VET_BALANCE_INDEXER) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return

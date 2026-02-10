@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.b3trUserAllTimeAction
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -97,7 +96,6 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = repository,
                     archiveService = archiveService,
                     service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
@@ -105,11 +103,8 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = repository,
                     userAllTimeActionSummaryArchiveService = archiveService,
                     service = serviceToUse,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.USER_ALL_TIME_ACTION_SUMMARY)
@@ -130,14 +125,12 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
         repository: UserAllTimeActionSummaryRepository,
         archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         service: UserAllTimeActionSummaryService,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         UserAllTimeActionSummaryProcessor(
             repository = repository,
             userAllTimeActionSummaryArchiveService = archiveService,
             service = service,
-            indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    UserAllTimeActionSummaryProcessor.process (per block)") {

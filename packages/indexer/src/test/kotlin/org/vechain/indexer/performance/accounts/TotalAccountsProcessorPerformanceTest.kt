@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.accounts
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -91,7 +90,6 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = totalAccountsRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
@@ -99,11 +97,8 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = totalAccountsRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.TOTAL_ACCOUNTS_INDEXER)
@@ -121,14 +116,12 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
         service: TotalAccountsService,
         repository: TotalAccountsRepository,
         archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         TotalAccountsProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
-            indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    AccountsProcessor.process (per block)") { super.processEntry(entry) }

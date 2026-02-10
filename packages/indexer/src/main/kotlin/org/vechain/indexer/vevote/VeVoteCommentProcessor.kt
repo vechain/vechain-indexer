@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-comments")
 @Component
@@ -15,13 +14,7 @@ open class VeVoteCommentProcessor(
     private val vevoteCommentRepository: VevoteCommentRepository,
     private val veVoteCommentService: VeVoteCommentService,
     private val mongoTemplate: MongoTemplate,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = vevoteCommentRepository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.VEVOTE_COMMENT,
-    ) {
+) : BaseProcessor(repository = vevoteCommentRepository, indexerName = IndexerNames.VEVOTE_COMMENT) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
 

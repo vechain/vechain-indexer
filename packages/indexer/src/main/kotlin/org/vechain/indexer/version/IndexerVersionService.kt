@@ -5,7 +5,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.vechain.indexer.thor.model.BlockIdentifier
 
 @Service
 open class IndexerVersionService(
@@ -98,11 +97,6 @@ open class IndexerVersionService(
     fun getStoredIndexerVersion(collectionName: String): Int? =
         repo.findByCollectionName(collectionName)?.version
 
-    fun getLastProcessedBlock(indexerName: String): BlockIdentifier? {
-        val indexer = repo.findByIdOrNull(indexerName)
-        return indexer?.lastProcessedBlock
-    }
-
     /**
      * Updates the version of the indexer in the indexer version collection.
      *
@@ -111,23 +105,13 @@ open class IndexerVersionService(
      */
     private fun updateIndexerVersion(indexerName: String, collectionName: String, newVersion: Int) {
         val updated =
-            repo.findByIdOrNull(indexerName)?.copy(version = newVersion, lastProcessedBlock = null)
+            repo.findByIdOrNull(indexerName)?.copy(version = newVersion)
                 ?: IndexerVersion(
                     indexerName = indexerName,
                     collectionName = collectionName,
                     version = newVersion,
-                    lastProcessedBlock = null,
                 )
         repo.save(updated)
-    }
-
-    fun updateLastSafeSyncedBlock(indexerName: String, block: BlockIdentifier?) {
-        if (block == null) return
-        val indexer = repo.findByIdOrNull(indexerName)
-        if (indexer != null) {
-            val updatedIndexer = indexer.copy(lastProcessedBlock = block)
-            repo.save(updatedIndexer)
-        }
     }
 
     /**

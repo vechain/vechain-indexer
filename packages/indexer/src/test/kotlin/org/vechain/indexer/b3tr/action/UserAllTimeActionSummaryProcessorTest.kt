@@ -19,7 +19,6 @@ import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryReposi
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class UserAllTimeActionSummaryProcessorTest {
@@ -31,8 +30,6 @@ internal class UserAllTimeActionSummaryProcessorTest {
 
     @MockK lateinit var service: UserAllTimeActionSummaryService
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     private lateinit var processor: UserAllTimeActionSummaryProcessor
 
     @BeforeEach
@@ -43,7 +40,6 @@ internal class UserAllTimeActionSummaryProcessorTest {
                 repository = repository,
                 userAllTimeActionSummaryArchiveService = archiveService,
                 service = service,
-                indexerVersionService = indexerVersionService,
             )
     }
 

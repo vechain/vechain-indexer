@@ -64,7 +64,6 @@ internal class IndexerVersionServiceTest {
                 indexerName = indexerName,
                 collectionName = "test_collection",
                 version = 1,
-                lastProcessedBlock = null,
             )
         every { repo.findById(indexerName) } returns
             Optional.of(
@@ -72,8 +71,6 @@ internal class IndexerVersionServiceTest {
                     indexerName = indexerName,
                     collectionName = "test_collection",
                     version = 1,
-                    lastProcessedBlock =
-                        org.vechain.indexer.thor.model.BlockIdentifier(123, "0xabc"),
                 )
             )
 
@@ -88,7 +85,6 @@ internal class IndexerVersionServiceTest {
             that(saved.captured.indexerName).isEqualTo(indexerName)
             that(saved.captured.collectionName).isEqualTo("test_collection")
             that(saved.captured.version).isEqualTo(2)
-            that(saved.captured.lastProcessedBlock).isEqualTo(null)
         }
         verify(exactly = 1) { mongoTemplate.dropCollection("test_collection") }
         verify(exactly = 1) { repo.save(any()) }
@@ -105,7 +101,6 @@ internal class IndexerVersionServiceTest {
                 indexerName = indexerName,
                 collectionName = "test_collection",
                 version = 1,
-                lastProcessedBlock = null,
             )
         every { repo.findById(indexerName) } returns Optional.empty()
         every { repo.save(any<IndexerVersion>()) } answers { firstArg() }
@@ -129,7 +124,6 @@ internal class IndexerVersionServiceTest {
                 indexerName = indexerName,
                 collectionName = "test_collection",
                 version = 2,
-                lastProcessedBlock = null,
             )
 
         val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
@@ -150,7 +144,6 @@ internal class IndexerVersionServiceTest {
                 indexerName = indexerName,
                 collectionName = "test_collection",
                 version = 3,
-                lastProcessedBlock = null,
             )
 
         val dropped = service.checkAndResetCollectionIfVersionChanged(indexerName, clazz, 2)
