@@ -49,7 +49,7 @@ open class ValidatorController(
             This endpoint retrieves validator stats.
 
             You can filter the results by:
-            - `validatorId`: (deprecated - use GET /validators/{validatorId} instead)
+            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)
             - `status`: validator status
             - `endorser`: endorser address
 
