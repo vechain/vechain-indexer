@@ -201,7 +201,9 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
-    @Deprecated("Use /block-rewards and /block-rewards/{blockNumber} instead")
+    @Deprecated(
+        "Use /api/v1/validators/block-rewards and /api/v1/validators/block-rewards/{blockNumber} instead"
+    )
     @GetMapping("/blocks")
     @Operation(
         summary = "Get validator block records (deprecated)",
@@ -209,7 +211,7 @@ open class ValidatorController(
             "Note: the original description was inaccurate. This endpoint does not return cumulative " +
                 "rewards 'up to the latest block'. It returns a paginated list of individual block " +
                 "reward/miss records, optionally filtered by an exact block number, validator, or status. " +
-                "Deprecated: use /block-rewards for paginated listing or /block-rewards/{blockNumber} for lookup by block.",
+                "Deprecated: use /api/v1/validators/block-rewards for paginated listing or /api/v1/validators/block-rewards/{blockNumber} for lookup by block.",
         deprecated = true,
     )
     @BlockNumberParameter(
