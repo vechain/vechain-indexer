@@ -17,6 +17,7 @@ import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
 import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.TokenIdParameter
+import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.thor.Address
@@ -48,7 +49,7 @@ open class ValidatorController(
             This endpoint retrieves validator stats.
 
             You can filter the results by:
-            - `validatorId`: specific validator ID
+            - `validatorId`: (deprecated - use GET /api/v1/validators/{validatorId} instead)
             - `status`: validator status
             - `endorser`: endorser address
 
@@ -59,7 +60,14 @@ open class ValidatorController(
             - `direction`: Either `asc` or `desc`
             """,
     )
-    @AddressParameter(name = "validatorId", description = "Filter by validator ID")
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "validatorId",
+        description = "Deprecated: use GET /api/v1/validators/{validatorId} instead.",
+        required = false,
+        deprecated = true,
+        schema = Schema(type = "string", pattern = Address.REGEX),
+    )
     @AddressParameter(name = "endorser", description = "Filter by endorser address")
     @Parameter(
         `in` = ParameterIn.QUERY,
@@ -120,6 +128,24 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
+    @GetMapping("/{validatorId}")
+    @Operation(
+        summary = "Get a single validator by ID",
+        description = "Returns a single validator's stats by their address.",
+    )
+    @AddressParameter(
+        name = "validatorId",
+        `in` = ParameterIn.PATH,
+        description = "Validator address",
+        required = true,
+    )
+    @CommonApiResponses
+    open fun getValidatorById(@PathVariable @ValidAddress validatorId: Address): Validator {
+        val normalised = HexUtils.normalise(validatorId.value)
+        return service.getValidatorById(normalised)
+            ?: throw ResourceNotFoundException("Validator not found for id $normalised")
+    }
+
     @GetMapping("/delegations")
     @Operation(
         summary = "Get delegations with optional filters",
@@ -175,12 +201,18 @@ open class ValidatorController(
         return paginatedResponse(results)
     }
 
+    @Deprecated(
+        "Use /api/v1/validators/block-rewards and /api/v1/validators/block-rewards/{blockNumber} instead"
+    )
     @GetMapping("/blocks")
     @Operation(
-        summary = "Get VTHO rewards for a validator for a given block",
+        summary = "Get validator block records (deprecated)",
         description =
-            "Returns the block VTHO rewards generated for the specified block number or up to the latest block. " +
-                "You can optionally filter by a specific validator.",
+            "Note: the original description was inaccurate. This endpoint does not return cumulative " +
+                "rewards 'up to the latest block'. It returns a paginated list of individual block " +
+                "reward/miss records, optionally filtered by an exact block number, validator, or status. " +
+                "Deprecated: use /api/v1/validators/block-rewards for paginated listing or /api/v1/validators/block-rewards/{blockNumber} for lookup by block.",
+        deprecated = true,
     )
     @BlockNumberParameter(
         description =
@@ -194,6 +226,7 @@ open class ValidatorController(
         description = "Filter by block status - either VALIDATED or MISSED.",
         required = false,
     )
+    @PaginationParameters
     @CommonApiResponses
     open fun getValidatorBlocks(
         @RequestParam(required = false) blockNumber: Long?,
@@ -206,6 +239,54 @@ open class ValidatorController(
         val pageable = toPageable(page, size, direction, ValidatorBlock::blockNumber.name)
         return service.getValidatorBlocks(validator, status, blockNumber, pageable)
     }
+
+    @GetMapping("/block-rewards")
+    @Operation(
+        summary = "Get paginated validator block reward records",
+        description =
+            "Returns a paginated list of validator block reward and performance records. " +
+                "You can filter by validator address and/or block status (VALIDATED or MISSED). " +
+                "Results are sorted by block number (default: descending).",
+    )
+    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @Parameter(
+        `in` = ParameterIn.QUERY,
+        name = "status",
+        schema = Schema(implementation = BlockStatus::class),
+        description = "Filter by block status - either VALIDATED or MISSED.",
+        required = false,
+    )
+    @PaginationParameters
+    @CommonApiResponses
+    open fun getValidatorBlockRewards(
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) status: BlockStatus?,
+        @RequestParam(required = false) page: Int?,
+        @ValidPageSize @RequestParam(required = false) size: Int?,
+        @RequestParam(required = false) direction: String?,
+    ): PaginatedResponse<ValidatorBlock> {
+        val pageable = toPageable(page, size, direction, ValidatorBlock::blockNumber.name)
+        return service.getValidatorBlockRewards(validator, status, pageable)
+    }
+
+    @GetMapping("/block-rewards/{blockNumber}")
+    @Operation(
+        summary = "Get validator block records for a specific block number",
+        description =
+            "Returns all validator block reward records for a specific block number. " +
+                "You can optionally filter by validator address to narrow to a single record.",
+    )
+    @BlockNumberParameter(
+        `in` = ParameterIn.PATH,
+        required = true,
+        description = "The block number to look up.",
+    )
+    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @CommonApiResponses
+    open fun getBlockByBlockNumber(
+        @PathVariable blockNumber: Long,
+        @ValidAddress @RequestParam(required = false) validator: Address?,
+    ): List<ValidatorBlock> = service.getBlockByNumber(blockNumber, validator)
 
     @GetMapping("/blocks/historic/{validator}")
     @Operation(
