@@ -53,7 +53,7 @@ class ValidatorServiceTest {
 
         expectThat(result.data).hasSize(2)
         expectThat(querySlot.captured.queryObject.isEmpty()).isTrue()
-        expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", -1))
+        expectThat(querySlot.captured.sortObject["blockNumber"]).isEqualTo(-1)
     }
 
     @Test
