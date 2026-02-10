@@ -19,8 +19,10 @@ import strikt.assertions.containsExactly
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
 import strikt.assertions.isNotNull
 import strikt.assertions.isNull
+import strikt.assertions.isTrue
 
 class ValidatorServiceTest {
     private val validatorBlockRepository: ValidatorBlockRepository = mockk()
@@ -110,6 +112,51 @@ class ValidatorServiceTest {
         val result = service.getValidatorBlockRewards(null, null, pageable)
 
         expectThat(result.data).containsExactly(block1, block2)
+    }
+
+    // -- hasNext pagination tests --
+
+    @Test
+    fun `hasNext is false when results equal pageSize (exact last page)`() {
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val blocks =
+            (1..3).map { validatorBlock(blockNumber = it.toLong(), status = BlockStatus.VALIDATED) }
+
+        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
+
+        val result = service.getValidatorBlockRewards(null, null, pageable)
+
+        expectThat(result.data).hasSize(3)
+        expectThat(result.pagination.hasNext).isFalse()
+    }
+
+    @Test
+    fun `hasNext is true when more results exist beyond pageSize`() {
+        val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        // Service fetches pageSize+1 = 4 items; DB returns 4 meaning there's a next page
+        val blocks =
+            (1..4).map { validatorBlock(blockNumber = it.toLong(), status = BlockStatus.VALIDATED) }
+
+        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
+
+        val result = service.getValidatorBlockRewards(null, null, pageable)
+
+        expectThat(result.data).hasSize(3)
+        expectThat(result.pagination.hasNext).isTrue()
+    }
+
+    @Test
+    fun `hasNext is false when fewer results than pageSize`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val blocks =
+            (1..2).map { validatorBlock(blockNumber = it.toLong(), status = BlockStatus.VALIDATED) }
+
+        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns blocks
+
+        val result = service.getValidatorBlockRewards(null, null, pageable)
+
+        expectThat(result.data).hasSize(2)
+        expectThat(result.pagination.hasNext).isFalse()
     }
 
     // -- getBlockByNumber tests --
