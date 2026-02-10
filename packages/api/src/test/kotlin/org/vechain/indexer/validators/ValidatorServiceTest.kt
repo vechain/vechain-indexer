@@ -2,6 +2,7 @@ package org.vechain.indexer.validators
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import java.math.BigInteger
 import org.junit.jupiter.api.Test
 import org.springframework.data.domain.PageRequest
@@ -15,7 +16,6 @@ import org.vechain.indexer.validator.Validator
 import org.vechain.indexer.validator.ValidatorBlock
 import org.vechain.indexer.validator.ValidatorBlockRepository
 import strikt.api.expectThat
-import strikt.assertions.containsExactly
 import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
@@ -39,79 +39,86 @@ class ValidatorServiceTest {
     // -- getValidatorBlockRewards tests --
 
     @Test
-    fun `getValidatorBlockRewards returns all records when no filters provided`() {
+    fun `getValidatorBlockRewards builds query with no criteria when no filters provided`() {
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
-        val block1 = validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED)
-        val block2 = validatorBlock(blockNumber = 99, status = BlockStatus.MISSED)
+        val querySlot = slot<Query>()
 
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1, block2)
-
-        val result = service.getValidatorBlockRewards(null, null, pageable)
-
-        expectThat(result.data).containsExactly(block1, block2)
-    }
-
-    @Test
-    fun `getValidatorBlockRewards filters by status when provided`() {
-        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
-        val block1 = validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED)
-
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1)
-
-        val result = service.getValidatorBlockRewards(null, BlockStatus.VALIDATED, pageable)
-
-        expectThat(result.data).hasSize(1)
-        expectThat(result.data.first().status).isEqualTo(BlockStatus.VALIDATED)
-    }
-
-    @Test
-    fun `getValidatorBlockRewards filters by validator when provided`() {
-        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
-        val validator = Address("0x1234567890abcdef1234567890abcdef12345678")
-        val block1 =
-            validatorBlock(
-                blockNumber = 100,
-                status = BlockStatus.VALIDATED,
-                validator = validator.value.lowercase(),
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            listOf(
+                validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED),
+                validatorBlock(blockNumber = 99, status = BlockStatus.MISSED),
             )
 
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1)
-
-        val result = service.getValidatorBlockRewards(validator, null, pageable)
-
-        expectThat(result.data).hasSize(1)
-        expectThat(result.data.first().validator).isEqualTo(validator.value.lowercase())
-    }
-
-    @Test
-    fun `getValidatorBlockRewards respects ASC direction`() {
-        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "blockNumber"))
-        val block1 = validatorBlock(blockNumber = 99, status = BlockStatus.VALIDATED)
-        val block2 = validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED)
-
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1, block2)
-
         val result = service.getValidatorBlockRewards(null, null, pageable)
 
-        expectThat(result.data).containsExactly(block1, block2)
+        expectThat(result.data).hasSize(2)
+        expectThat(querySlot.captured.queryObject.isEmpty()).isTrue()
+        expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", -1))
     }
 
     @Test
-    fun `getValidatorBlockRewards respects DESC direction`() {
+    fun `getValidatorBlockRewards builds query with status criteria when status provided`() {
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
-        val block1 = validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED)
-        val block2 = validatorBlock(blockNumber = 99, status = BlockStatus.VALIDATED)
+        val querySlot = slot<Query>()
 
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1, block2)
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            listOf(validatorBlock(blockNumber = 100, status = BlockStatus.VALIDATED))
 
-        val result = service.getValidatorBlockRewards(null, null, pageable)
+        service.getValidatorBlockRewards(null, BlockStatus.VALIDATED, pageable)
 
-        expectThat(result.data).containsExactly(block1, block2)
+        val criteria = querySlot.captured.queryObject
+        expectThat(criteria.get("\$and") as List<*>).hasSize(1)
+        expectThat((criteria.get("\$and") as List<*>).first())
+            .isEqualTo(org.bson.Document("status", BlockStatus.VALIDATED))
+    }
+
+    @Test
+    fun `getValidatorBlockRewards builds query with validator criteria when validator provided`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val validator = Address("0x1234567890abcdef1234567890abcdef12345678")
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            listOf(
+                validatorBlock(
+                    blockNumber = 100,
+                    status = BlockStatus.VALIDATED,
+                    validator = validator.value.lowercase(),
+                )
+            )
+
+        service.getValidatorBlockRewards(validator, null, pageable)
+
+        val criteria = querySlot.captured.queryObject
+        expectThat(criteria.get("\$and") as List<*>).hasSize(1)
+        expectThat((criteria.get("\$and") as List<*>).first())
+            .isEqualTo(org.bson.Document("validator", validator.value.lowercase()))
+    }
+
+    @Test
+    fun `getValidatorBlockRewards applies ASC sort from pageable`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "blockNumber"))
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            emptyList()
+
+        service.getValidatorBlockRewards(null, null, pageable)
+
+        expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", 1))
+    }
+
+    @Test
+    fun `getValidatorBlockRewards applies DESC sort from pageable`() {
+        val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
+        val querySlot = slot<Query>()
+
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            emptyList()
+
+        service.getValidatorBlockRewards(null, null, pageable)
+
+        expectThat(querySlot.captured.sortObject).isEqualTo(org.bson.Document("blockNumber", -1))
     }
 
     // -- hasNext pagination tests --
@@ -133,7 +140,6 @@ class ValidatorServiceTest {
     @Test
     fun `hasNext is true when more results exist beyond pageSize`() {
         val pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "blockNumber"))
-        // Service fetches pageSize+1 = 4 items; DB returns 4 meaning there's a next page
         val blocks =
             (1..4).map { validatorBlock(blockNumber = it.toLong(), status = BlockStatus.VALIDATED) }
 
@@ -162,37 +168,54 @@ class ValidatorServiceTest {
     // -- getBlockByNumber tests --
 
     @Test
-    fun `getBlockByNumber returns records for specific block`() {
-        val block1 =
-            validatorBlock(blockNumber = 12345, status = BlockStatus.VALIDATED, validator = "0xaaa")
-        val block2 =
-            validatorBlock(blockNumber = 12345, status = BlockStatus.MISSED, validator = "0xbbb")
+    fun `getBlockByNumber builds query with blockNumber criteria`() {
+        val querySlot = slot<Query>()
 
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1, block2)
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            listOf(
+                validatorBlock(
+                    blockNumber = 12345,
+                    status = BlockStatus.VALIDATED,
+                    validator = "0xaaa",
+                ),
+                validatorBlock(
+                    blockNumber = 12345,
+                    status = BlockStatus.MISSED,
+                    validator = "0xbbb",
+                ),
+            )
 
         val result = service.getBlockByNumber(12345, null)
 
         expectThat(result).hasSize(2)
+        val criteria = querySlot.captured.queryObject
+        expectThat(criteria.get("\$and") as List<*>).hasSize(1)
+        expectThat((criteria.get("\$and") as List<*>).first())
+            .isEqualTo(org.bson.Document("blockNumber", 12345L))
     }
 
     @Test
-    fun `getBlockByNumber with validator filter narrows to single record`() {
+    fun `getBlockByNumber builds query with blockNumber and validator criteria`() {
         val validator = Address("0x1234567890abcdef1234567890abcdef12345678")
-        val block1 =
-            validatorBlock(
-                blockNumber = 12345,
-                status = BlockStatus.VALIDATED,
-                validator = validator.value.lowercase(),
-            )
+        val querySlot = slot<Query>()
 
-        every { mongoTemplate.find(any<Query>(), ValidatorBlock::class.java) } returns
-            listOf(block1)
+        every { mongoTemplate.find(capture(querySlot), ValidatorBlock::class.java) } returns
+            listOf(
+                validatorBlock(
+                    blockNumber = 12345,
+                    status = BlockStatus.VALIDATED,
+                    validator = validator.value.lowercase(),
+                )
+            )
 
         val result = service.getBlockByNumber(12345, validator)
 
         expectThat(result).hasSize(1)
-        expectThat(result.first().validator).isEqualTo(validator.value.lowercase())
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(2)
+        expectThat(andList[0]).isEqualTo(org.bson.Document("blockNumber", 12345L))
+        expectThat(andList[1])
+            .isEqualTo(org.bson.Document("validator", validator.value.lowercase()))
     }
 
     @Test
@@ -207,16 +230,19 @@ class ValidatorServiceTest {
     // -- getValidatorById tests --
 
     @Test
-    fun `getValidatorById returns validator when found`() {
+    fun `getValidatorById builds query with _id criteria`() {
+        val querySlot = slot<Query>()
         val validator = validator(id = "0x1234567890abcdef1234567890abcdef12345678")
 
-        every { mongoTemplate.findOne(any<Query>(), Validator::class.java) } returns validator
+        every { mongoTemplate.findOne(capture(querySlot), Validator::class.java) } returns validator
 
         val result = service.getValidatorById("0x1234567890abcdef1234567890abcdef12345678")
 
         expectThat(result).isNotNull().and {
             get { id }.isEqualTo("0x1234567890abcdef1234567890abcdef12345678")
         }
+        expectThat(querySlot.captured.queryObject)
+            .isEqualTo(org.bson.Document("_id", "0x1234567890abcdef1234567890abcdef12345678"))
     }
 
     @Test
