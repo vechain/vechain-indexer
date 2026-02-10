@@ -63,7 +63,7 @@ open class ValidatorController(
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "validatorId",
-        description = "Deprecated: use GET /validators/{validatorId} instead.",
+        description = "Deprecated: use GET /api/v1/validators/{validatorId} instead.",
         required = false,
         deprecated = true,
         schema = Schema(type = "string", pattern = Address.REGEX),
