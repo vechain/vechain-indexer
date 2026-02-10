@@ -9,7 +9,6 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.repository.XAllocResultRepository
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("b3tr", "b3tr-x-alloc")
 @Component
@@ -17,12 +16,10 @@ open class XAllocResultProcessor(
     repository: XAllocResultRepository,
     xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
     private val service: XAllocResultService,
-    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = xAllocResultArchiveService,
-        indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.X_ALLOC_RESULT,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {

@@ -8,7 +8,6 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("validator", "delegation")
 @Component
@@ -16,12 +15,10 @@ open class DelegationProcessor(
     repository: DelegationRepository,
     archiveService: ArchiveService<Delegation, DelegationArchive>,
     private val service: DelegationService,
-    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerVersionService = indexerVersionService,
         IndexerNames.DELEGATION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {

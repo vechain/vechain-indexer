@@ -16,12 +16,7 @@ open class HistoricProposalsVoteProcessor(
     private val historicProposalTallyService: HistoricProposalTallyService,
     private val indexerVersionService: IndexerVersionService,
     @Value("\${indexer.stop-block.historic-proposals}") private val stopBlock: Long,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE) {
     private var aggregationRan: Boolean = false
 
     override suspend fun processEntry(entry: IndexingResult) {

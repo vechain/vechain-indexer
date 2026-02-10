@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.stargate
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -108,7 +107,6 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
@@ -116,11 +114,8 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
                     archiveService = archiveService,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.STARGATE_TOKEN)
@@ -164,14 +159,12 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
         service: StargateTokenService,
         stargateTokenRepository: StargateTokenRepository,
         archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         StargateTokenProcessor(
             service = service,
             stargateTokenRepository = stargateTokenRepository,
             archiveService = archiveService,
-            indexerVersionService = indexerVersionService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    StargateTokenProcessor.process (per block)") {

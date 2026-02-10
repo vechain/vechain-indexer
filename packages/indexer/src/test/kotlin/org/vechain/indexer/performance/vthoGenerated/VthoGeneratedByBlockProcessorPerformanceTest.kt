@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.vthoGenerated
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -86,18 +85,14 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledVthoGeneratedByBlockProcessor(
                     service = serviceToUse,
                     repository = vthoGeneratedByBlockRepository,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 VthoGeneratedByBlockProcessor(
                     service = serviceToUse,
                     repository = vthoGeneratedByBlockRepository,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.VTHO_GENERATED_BY_BLOCK)
@@ -115,14 +110,8 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledVthoGeneratedByBlockProcessor(
         service: VthoGeneratedByBlockService,
         repository: VthoGeneratedByBlockRepository,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
-    ) :
-        VthoGeneratedByBlockProcessor(
-            service = service,
-            repository = repository,
-            indexerVersionService = indexerVersionService,
-        ) {
+    ) : VthoGeneratedByBlockProcessor(service = service, repository = repository) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    VthoGeneratedByBlockProcessor.process (per block)") {
                 super.processEntry(entry)

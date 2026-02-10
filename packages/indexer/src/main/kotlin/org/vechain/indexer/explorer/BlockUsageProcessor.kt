@@ -8,20 +8,13 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("explorer", "block-usage")
 @Component
 open class BlockUsageProcessor(
     repository: BlockUsageRepository,
     private val service: BlockUsageService,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.BLOCK_USAGE,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.BLOCK_USAGE) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

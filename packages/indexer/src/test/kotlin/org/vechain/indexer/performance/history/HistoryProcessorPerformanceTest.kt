@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.history
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -86,20 +85,12 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledHistoryProcessor(
                     repository = historyRepository,
                     historyService = profiledService,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 // Use standard processor
-                HistoryProcessor(
-                    repository = historyRepository,
-                    historyService = historyService,
-                    indexerVersionService = mockIndexerVersionService,
-                )
+                HistoryProcessor(repository = historyRepository, historyService = historyService)
             }
-
-        // Mock processor methods to prevent rollback issues
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return HistoryConfig()
             .historyIndexer(
@@ -115,14 +106,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledHistoryProcessor(
         repository: HistoryRepository,
         historyService: HistoryService,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
-    ) :
-        HistoryProcessor(
-            repository = repository,
-            historyService = historyService,
-            indexerVersionService = indexerVersionService,
-        ) {
+    ) : HistoryProcessor(repository = repository, historyService = historyService) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("HistoryProcessor.process (per block)") {
                 profiler.time("  Event processing logic") {

@@ -1,11 +1,8 @@
 package org.vechain.indexer.performance
 
-import io.mockk.every
-import io.mockk.mockk
 import java.time.Duration
 import java.time.LocalDateTime
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
@@ -19,7 +16,6 @@ import org.vechain.indexer.config.IndexManager
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.BlockRevision
-import org.vechain.indexer.version.IndexerVersionService
 
 @SpringBootTest(
     properties =
@@ -35,18 +31,10 @@ abstract class BasePerformanceTest {
 
     @Autowired(required = false) lateinit var businessEventProperties: BusinessEventProperties
 
-    protected lateinit var mockIndexerVersionService: IndexerVersionService
-
     @Value("\${thor.url}") lateinit var thorUrl: String
 
     // Mock IndexManager to prevent it from starting all indexers
     @MockBean private lateinit var indexManager: IndexManager
-
-    @BeforeEach
-    fun setupBase() {
-        mockIndexerVersionService = mockk(relaxed = true)
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
-    }
 
     protected data class PerformanceTestConfig(
         val indexerName: String,

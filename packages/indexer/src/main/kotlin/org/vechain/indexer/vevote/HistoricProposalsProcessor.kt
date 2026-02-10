@@ -5,20 +5,13 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-historic-proposals")
 @Component
 open class HistoricProposalsProcessor(
     private val repository: HistoricProposalsRepository,
     private val historicProposalsService: HistoricProposalsService,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.HISTORIC_PROPOSALS,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.HISTORIC_PROPOSALS) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         // No events to process

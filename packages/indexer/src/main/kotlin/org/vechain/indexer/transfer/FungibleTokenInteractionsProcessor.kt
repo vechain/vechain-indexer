@@ -7,20 +7,13 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("transfers")
 @Component
 open class FungibleTokenInteractionsProcessor(
     private val service: FungibleTokenInteractionsService,
     repository: FungibleTokenInteractionsRepository,
-    indexerVersionService: IndexerVersionService,
-) :
-    BaseProcessor(
-        repository = repository,
-        indexerVersionService = indexerVersionService,
-        indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS,
-    ) {
+) : BaseProcessor(repository = repository, indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

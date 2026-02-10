@@ -12,7 +12,6 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class VeVoteResultIndexerTest {
@@ -26,8 +25,6 @@ class VeVoteResultIndexerTest {
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     private lateinit var voteResultsIndexer: VeVoteResultProcessor
 
     @BeforeEach
@@ -39,7 +36,6 @@ class VeVoteResultIndexerTest {
                 service = veVoteResultService,
                 repository = veVoteProposalResultRepository,
                 veVoteResultArchiveService = veVoteProposalResultArchive,
-                indexerVersionService = indexerVersionService,
             )
     }
 

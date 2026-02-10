@@ -9,7 +9,6 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.AppAllTimeActionSummaryRepository
-import org.vechain.indexer.version.IndexerVersionService
 
 @Component
 @Profile("b3tr", "b3tr-actions", "b3tr-app-all-time-action-summary")
@@ -18,12 +17,10 @@ open class AppAllTimeActionSummaryProcessor(
     appAllTimeActionSummaryArchiveService:
         ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
     private val service: AppAllTimeActionSummaryService,
-    indexerVersionService: IndexerVersionService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = appAllTimeActionSummaryArchiveService,
-        indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {

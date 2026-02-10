@@ -1,6 +1,5 @@
 package org.vechain.indexer.performance.transaction
 
-import io.mockk.every
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -72,18 +71,14 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledTransactionProcessor(
                     profiledService = profiledService,
                     repository = transactionRepository,
-                    indexerVersionService = mockIndexerVersionService,
                     profiler = profiler,
                 )
             } else {
                 TransactionProcessor(
                     transactionService = transactionService,
                     repository = transactionRepository,
-                    indexerVersionService = mockIndexerVersionService,
                 )
             }
-
-        every { mockIndexerVersionService.getLastProcessedBlock(any()) } returns null
 
         return IndexerFactory()
             .name(IndexerNames.TRANSACTION)
@@ -101,12 +96,10 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTransactionProcessor(
         private val profiledService: ProfiledTransactionService,
         repository: TransactionRepository,
-        indexerVersionService: org.vechain.indexer.version.IndexerVersionService,
         private val profiler: DetailedProfiler,
     ) :
         org.vechain.indexer.BaseProcessor(
             repository = repository,
-            indexerVersionService = indexerVersionService,
             indexerName = IndexerNames.TRANSACTION,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {

@@ -21,7 +21,6 @@ import org.vechain.indexer.b3tr.action.repository.AppRoundActionSummaryRepositor
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.utils.BlockDetails
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class AppRoundActionSummaryProcessorTest {
@@ -31,14 +30,12 @@ internal class AppRoundActionSummaryProcessorTest {
         archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
         service: AppRoundActionSummaryService,
         startRound: Int,
-        indexerVersionService: IndexerVersionService,
     ) :
         AppRoundActionSummaryProcessor(
             repository = repository,
             appRoundActionSummaryArchiveService = archiveService,
             service = service,
             startRound = startRound,
-            indexerVersionService = indexerVersionService,
         ) {
         fun readRoundId(): Int = roundId
     }
@@ -53,8 +50,6 @@ internal class AppRoundActionSummaryProcessorTest {
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
-        @MockK lateinit var indexerVersionService: IndexerVersionService
-
         private lateinit var processor: TestableProcessor
 
         @BeforeEach
@@ -62,13 +57,7 @@ internal class AppRoundActionSummaryProcessorTest {
             MockKAnnotations.init(this)
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
-                TestableProcessor(
-                    repository,
-                    archiveService,
-                    service = service,
-                    startRound = 1,
-                    indexerVersionService = indexerVersionService,
-                )
+                TestableProcessor(repository, archiveService, service = service, startRound = 1)
         }
 
         @Test
@@ -363,8 +352,6 @@ internal class AppRoundActionSummaryProcessorTest {
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
-        @MockK lateinit var indexerVersionService: IndexerVersionService
-
         private lateinit var processor: TestableProcessor
 
         @BeforeEach
@@ -385,13 +372,7 @@ internal class AppRoundActionSummaryProcessorTest {
                 )
             every { repository.findFirstByOrderByBlockNumberDesc() } returns latestRecord
             processor =
-                TestableProcessor(
-                    repository,
-                    archiveService,
-                    service = service,
-                    startRound = 1,
-                    indexerVersionService = indexerVersionService,
-                )
+                TestableProcessor(repository, archiveService, service = service, startRound = 1)
         }
 
         @Test

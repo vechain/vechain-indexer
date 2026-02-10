@@ -8,20 +8,17 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
-import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("vevote", "vevote-results")
 @Component
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     repository: VeVoteProposalResultRepository,
-    indexerVersionService: IndexerVersionService,
     veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = veVoteResultArchiveService,
-        indexerVersionService = indexerVersionService,
         indexerName = IndexerNames.VEVOTE_RESULT,
     ) {
 

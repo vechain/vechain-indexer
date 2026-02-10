@@ -18,7 +18,6 @@ import org.vechain.indexer.Status
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 internal class TransactionProcessorTest {
@@ -28,8 +27,6 @@ internal class TransactionProcessorTest {
 
     @MockK lateinit var transactionProcessor: TransactionProcessor
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
@@ -37,7 +34,6 @@ internal class TransactionProcessorTest {
             TransactionProcessor(
                 transactionService = transactionService,
                 repository = transactionRepository,
-                indexerVersionService = indexerVersionService,
             )
     }
 

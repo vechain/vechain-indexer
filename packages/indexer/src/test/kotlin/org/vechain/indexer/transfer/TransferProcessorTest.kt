@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
-import org.vechain.indexer.version.IndexerVersionService
 
 @ExtendWith(MockKExtension::class)
 class TransferProcessorTest {
@@ -17,16 +16,13 @@ class TransferProcessorTest {
 
     @MockK lateinit var transferEventRepository: TransferEventRepository
 
-    @MockK lateinit var indexerVersionService: IndexerVersionService
-
     private lateinit var transferProcessor: TransferProcessor
 
     @BeforeEach
     fun setUp() {
         MockKAnnotations.init(this)
 
-        transferProcessor =
-            TransferProcessor(transferService, transferEventRepository, indexerVersionService)
+        transferProcessor = TransferProcessor(transferService, transferEventRepository)
     }
 
     @Test
