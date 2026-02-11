@@ -16,7 +16,7 @@ import org.vechain.indexer.utils.BlockDetails
 @Component
 open class ProposalResultProcessor(
     repository: ProposalResultRepository,
-    proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+    proposalResultArchiveService: ArchiveService<ProposalResult>,
     private val service: ProposalResultService,
     checkpointService: CheckpointService,
 ) :

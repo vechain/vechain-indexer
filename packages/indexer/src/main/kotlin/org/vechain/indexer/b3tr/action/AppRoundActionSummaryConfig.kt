@@ -21,33 +21,30 @@ open class AppRoundActionSummaryConfig {
     open fun appRoundActionSummaryArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive> {
+    ): ArchiveService<AppRoundActionSummary> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = AppRoundActionSummary::class.java,
-            archiveClazz = AppRoundActionSummaryArchive::class.java,
             queryLimit = recordLimit,
         )
     }
 
     @Bean
     open fun appRoundActionSummaryPruner(
-        appRoundActionSummaryArchiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+        appRoundActionSummaryArchiveService: ArchiveService<AppRoundActionSummary>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive> =
+    ): TargetedPruner<AppRoundActionSummary> =
         PrunerService(
-            klass = AppRoundActionSummaryArchive::class,
             archiveService = appRoundActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            targetObjectName = "AppRoundActionSummaryArchive",
         )
 
     @Bean
     open fun appRoundActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppRoundActionSummaryProcessor,
-        appRoundActionSummaryPruner:
-            TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+        appRoundActionSummaryPruner: TargetedPruner<AppRoundActionSummary>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-sustainable-actions}") startBlock: Long,
         @Value("\${indexer.sync-block-batch-size.b3tr}") syncBlockBatchSize: Long,

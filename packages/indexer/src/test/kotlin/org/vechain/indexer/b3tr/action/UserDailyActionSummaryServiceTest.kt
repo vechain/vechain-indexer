@@ -26,20 +26,17 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class UserDailyActionSummaryServiceTest {
     @MockK lateinit var repository: UserDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK lateinit var archiveService: ArchiveService<UserDailyActionSummary>
 
-    @MockK
-    lateinit var pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>
+    @MockK lateinit var pruner: TargetedPruner<UserDailyActionSummary>
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: UserDailyActionSummaryRepository,
-        archive: ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
-        pruner: TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+        archive: ArchiveService<UserDailyActionSummary>,
+        pruner: TargetedPruner<UserDailyActionSummary>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : UserDailyActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callResolveExisting(recordId: String, cache: Map<String, UserDailyActionSummary>) =

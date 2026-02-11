@@ -29,10 +29,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-app-daily-action-summary")
 open class AppDailyActionSummaryService(
     private val repository: AppDailyActionSummaryRepository,
-    private val appDailyActionSummaryArchiveService:
-        ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
-    private val appDailyActionSummaryPruner:
-        TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+    private val appDailyActionSummaryArchiveService: ArchiveService<AppDailyActionSummary>,
+    private val appDailyActionSummaryPruner: TargetedPruner<AppDailyActionSummary>,
     private val impactConfig: ActionImpactConfig,
 ) {
 

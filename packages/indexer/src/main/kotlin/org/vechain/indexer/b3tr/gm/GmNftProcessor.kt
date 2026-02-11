@@ -15,7 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class GmNftProcessor(
     repository: GmNftRepository,
-    gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+    gmNftArchiveService: ArchiveService<GmNft>,
     private val service: GmNftService,
     checkpointService: CheckpointService,
 ) :

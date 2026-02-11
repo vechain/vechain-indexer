@@ -1,7 +1,6 @@
 package org.vechain.indexer.performance.accounts
 
 import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.archive.ArchiveService
@@ -20,7 +19,7 @@ import org.vechain.indexer.thor.model.InspectionResult
  */
 class ProfiledTotalAccountsService(
     repository: TotalAccountsRepository,
-    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    archiveService: ArchiveService<TotalAccounts>,
     private val profiler: DetailedProfiler,
 ) : TotalAccountsService(repository, archiveService) {
 

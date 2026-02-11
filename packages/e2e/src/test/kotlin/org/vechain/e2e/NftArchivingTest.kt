@@ -5,7 +5,6 @@ import org.jetbrains.annotations.TestOnly
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.vechain.indexer.nft.IndexedNft
-import org.vechain.indexer.nft.NftArchive
 import org.vechain.indexer.transfer.IndexedTransferEvent
 import org.web3j.utils.Numeric
 import strikt.api.expect
@@ -29,7 +28,7 @@ class NftArchivingTest {
         expect {
             that(nftTransfers).isA<List<IndexedTransferEvent>>()
             that(nfts).isA<List<IndexedNft>>()
-            that(nftArchives).isA<List<NftArchive>>()
+            that(nftArchives).isA<List<Map<String, Any?>>>()
         }
 
         // verify that the updated NFTs have their corresponding archives
@@ -41,9 +40,11 @@ class NftArchivingTest {
             // verify we have as much NFT archives as there are NFT updates
             that(updatedNfts.size).isEqualTo(nftArchives.size)
             // verify the archives have the correct version
-            that(nftArchives).map { it.data.version }.all { isEqualTo(1) }
+            that(nftArchives).map { it["version"] }.all { isEqualTo(1) }
             // verify that the updated NFTs IDs match with the archived NFTs IDs
-            that(nftArchives.map { it.data.id }).all { isContainedIn(updatedNfts.map { it.id }) }
+            that(nftArchives.map { it["_originalDocId"] }).all {
+                isContainedIn(updatedNfts.map { it.id })
+            }
         }
 
         // verify that NFTs transfer events correspond to indexed NFTs

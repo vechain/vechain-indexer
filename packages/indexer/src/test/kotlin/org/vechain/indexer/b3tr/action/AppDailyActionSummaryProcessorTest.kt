@@ -24,8 +24,7 @@ import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 internal class AppDailyActionSummaryProcessorTest {
     @MockK lateinit var repository: AppDailyActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>
+    @MockK lateinit var archiveService: ArchiveService<AppDailyActionSummary>
 
     @MockK lateinit var service: AppDailyActionSummaryService
 

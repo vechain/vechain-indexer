@@ -71,8 +71,8 @@ private class ReadOnceCache<K, V> {
 @Service
 open class AccountOverviewService(
     private val repository: AccountOverviewRepository,
-    private val archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-    private val accountOverviewPruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+    private val archiveService: ArchiveService<AccountOverview>,
+    private val accountOverviewPruner: TargetedPruner<AccountOverview>,
     private val forkConfig: ForkConfig,
     private val networkDetectionService: NetworkDetectionService,
     private val thorClient: ThorClient,

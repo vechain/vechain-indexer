@@ -6,7 +6,6 @@ import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.CrudRepository
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.TargetedPruner
 
@@ -15,9 +14,9 @@ internal class VersionedDocumentPersistenceTest {
 
     @MockK private lateinit var repository: CrudRepository<TestDocument, String>
 
-    @MockK private lateinit var archiveService: ArchiveService<TestDocument, TestArchive>
+    @MockK private lateinit var archiveService: ArchiveService<TestDocument>
 
-    @MockK(relaxed = true) private lateinit var pruner: TargetedPruner<TestDocument, TestArchive>
+    @MockK(relaxed = true) private lateinit var pruner: TargetedPruner<TestDocument>
 
     @Test
     fun `saves only updated documents when no existing records`() {
@@ -115,7 +114,4 @@ internal class VersionedDocumentPersistenceTest {
     ) : VersionedDocument {
         override fun getDocumentId(): String = id
     }
-
-    private data class TestArchive(override val id: String, override val data: TestDocument) :
-        Archive<TestDocument>
 }

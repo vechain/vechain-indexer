@@ -21,33 +21,30 @@ open class AppDailyActionSummaryConfig {
     open fun appDailyActionSummaryArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive> {
+    ): ArchiveService<AppDailyActionSummary> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = AppDailyActionSummary::class.java,
-            archiveClazz = AppDailyActionSummaryArchive::class.java,
             queryLimit = recordLimit,
         )
     }
 
     @Bean
     open fun appDailyActionSummaryPruner(
-        appDailyActionSummaryArchiveService:
-            ArchiveService<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+        appDailyActionSummaryArchiveService: ArchiveService<AppDailyActionSummary>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive> =
+    ): TargetedPruner<AppDailyActionSummary> =
         PrunerService(
-            klass = AppDailyActionSummaryArchive::class,
             archiveService = appDailyActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            targetObjectName = "AppDailyActionSummaryArchive",
         )
 
     @Bean
     open fun appDailyActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppDailyActionSummaryProcessor,
-        appDailyActionSummaryPruner:
-            TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
+        appDailyActionSummaryPruner: TargetedPruner<AppDailyActionSummary>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

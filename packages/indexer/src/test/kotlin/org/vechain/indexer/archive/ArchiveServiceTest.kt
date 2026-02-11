@@ -1,8 +1,11 @@
 package org.vechain.indexer.archive
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.result.InsertManyResult
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -24,61 +27,65 @@ class TestVersionedDocument : VersionedDocument {
     override val blockTimestamp: Long = System.currentTimeMillis()
 }
 
-class TestArchive(override val data: TestVersionedDocument) : Archive<TestVersionedDocument> {
-    override var id: String = buildArchiveId(data, data.version)
-
-    constructor(id: String, data: TestVersionedDocument) : this(data) {
-        this.id = id
-    }
-}
-
 @ExtendWith(MockKExtension::class)
 internal class ArchiveServiceTest {
     @MockK private lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var archiveService: ArchiveService<TestVersionedDocument, TestArchive>
+    private lateinit var archiveService: ArchiveService<TestVersionedDocument>
+
+    private val collectionName = "testVersionedDocument"
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
 
+        every { mongoTemplate.getCollectionName(TestVersionedDocument::class.java) } returns
+            collectionName
+
         archiveService =
-            ArchiveService(
-                mongoTemplate,
-                TestVersionedDocument::class.java,
-                TestArchive::class.java,
-                queryLimit = 100,
-            )
+            ArchiveService(mongoTemplate, TestVersionedDocument::class.java, queryLimit = 100)
     }
 
     @Test
     fun `saveAll - empty list should return immediately`() {
         archiveService.saveAll(emptyList())
 
-        verify(exactly = 0) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
-        }
+        verify(exactly = 0) { mongoTemplate.getCollection(any()) }
     }
 
     @Test
     fun `saveAll - non-empty list should save documents`() {
         val documents = listOf(TestVersionedDocument(), TestVersionedDocument())
-        val archives = documents.map { TestArchive(buildArchiveId(it, it.version), it) }
-        val slot = slot<List<TestArchive>>()
 
-        every { mongoTemplate.insert(capture(slot), TestArchive::class.java) } returns
-            listOf<TestArchive>()
+        val mongoCollection = mockk<MongoCollection<Document>>()
+        every { mongoTemplate.getCollection(collectionName) } returns mongoCollection
+        every { mongoTemplate.converter } returns
+            mockk {
+                every { write(any(), any<Document>()) } answers
+                    {
+                        // Simulate writing the document fields into the bson doc
+                        val doc = secondArg<Document>()
+                        doc["version"] = 1
+                        doc["blockNumber"] = 1L
+                    }
+            }
+        every { mongoCollection.insertMany(any()) } returns mockk<InsertManyResult>()
 
         archiveService.saveAll(documents)
 
-        verify(exactly = 1) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
-        }
+        val slot = slot<List<Document>>()
+        verify(exactly = 1) { mongoCollection.insertMany(capture(slot)) }
 
         expect {
             that(slot.captured).hasSize(2)
-            that(slot.captured[0].id).isEqualTo(archives[0].id)
-            that(slot.captured[1].id).isEqualTo(archives[1].id)
+            that(slot.captured[0].getString("_id"))
+                .isEqualTo(buildArchiveId(documents[0], documents[0].version))
+            that(slot.captured[1].getString("_id"))
+                .isEqualTo(buildArchiveId(documents[1], documents[1].version))
+            that(slot.captured[0].getBoolean("_isArchive")).isEqualTo(true)
+            that(slot.captured[1].getBoolean("_isArchive")).isEqualTo(true)
+            that(slot.captured[0].getString("_originalDocId")).isEqualTo("test-id")
+            that(slot.captured[1].getString("_originalDocId")).isEqualTo("test-id")
         }
     }
 

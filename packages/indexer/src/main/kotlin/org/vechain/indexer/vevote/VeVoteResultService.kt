@@ -23,10 +23,8 @@ import org.vechain.indexer.vevote.VeVoteEventUtils.groupBySupport
 @Service
 open class VeVoteResultService(
     private val repository: VeVoteProposalResultRepository,
-    private val veVoteResultArchiveService:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-    private val veVoteResultPruner:
-        TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    private val veVoteResultArchiveService: ArchiveService<VeVoteProposalResult>,
+    private val veVoteResultPruner: TargetedPruner<VeVoteProposalResult>,
 ) {
     open fun processEvents(
         events: List<IndexedEvent>

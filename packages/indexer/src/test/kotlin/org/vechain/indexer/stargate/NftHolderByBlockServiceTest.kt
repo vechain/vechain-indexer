@@ -16,7 +16,6 @@ import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlock
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockService
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalance
-import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceArchive
 import org.vechain.indexer.stargate.nftHolders.NftOwnerBalanceRepository
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.utils.ParamUtils.getAsInt
@@ -29,7 +28,7 @@ import strikt.assertions.*
 class NftHolderByBlockServiceTest {
     @MockK lateinit var repository: NftHoldersByBlockRepository
     @MockK lateinit var ownerBalanceRepository: NftOwnerBalanceRepository
-    @MockK lateinit var archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>
+    @MockK lateinit var archiveService: ArchiveService<NftOwnerBalance>
 
     private lateinit var service: NftHoldersByBlockService
 

@@ -21,20 +21,13 @@ open class ValidatorConfig {
     open fun validatorArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<Validator, ValidatorArchive> =
-        ArchiveService(
-            mongoTemplate,
-            Validator::class.java,
-            ValidatorArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<Validator> = ArchiveService(mongoTemplate, Validator::class.java, recordLimit)
 
     @Bean
     open fun validatorPruner(
-        validatorArchiveService: ArchiveService<Validator, ValidatorArchive>,
+        validatorArchiveService: ArchiveService<Validator>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
-        PrunerService(ValidatorArchive::class, validatorArchiveService, prunerRemovalChunkSize)
+    ): Pruner = PrunerService(validatorArchiveService, prunerRemovalChunkSize, "ValidatorArchive")
 
     @Bean
     open fun validatorIndexer(

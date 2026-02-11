@@ -21,30 +21,25 @@ open class NftHoldersByBlockConfig {
     open fun nftOwnerBalanceArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive> =
-        ArchiveService(
-            mongoTemplate,
-            NftOwnerBalance::class.java,
-            NftOwnerBalanceArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<NftOwnerBalance> =
+        ArchiveService(mongoTemplate, NftOwnerBalance::class.java, recordLimit)
 
     @Bean
     open fun nftOwnerBalancePruner(
-        nftOwnerBalanceArchiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
+        nftOwnerBalanceArchiveService: ArchiveService<NftOwnerBalance>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<NftOwnerBalance, NftOwnerBalanceArchive> =
+    ): TargetedPruner<NftOwnerBalance> =
         PrunerService(
-            NftOwnerBalanceArchive::class,
             nftOwnerBalanceArchiveService,
             prunerRemovalChunkSize,
+            "NftOwnerBalanceArchive",
         )
 
     @Bean
     open fun nftHoldersByBlockIndexer(
         thorClient: ThorClient,
         processor: NftHoldersByBlockProcessor,
-        nftOwnerBalancePruner: TargetedPruner<NftOwnerBalance, NftOwnerBalanceArchive>,
+        nftOwnerBalancePruner: TargetedPruner<NftOwnerBalance>,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,

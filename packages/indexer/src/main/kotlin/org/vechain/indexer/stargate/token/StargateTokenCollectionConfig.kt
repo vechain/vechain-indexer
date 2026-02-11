@@ -24,7 +24,7 @@ open class StargateTokenCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         StargateToken::class.java,
-        StargateTokenArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -34,14 +34,11 @@ open class StargateTokenCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.STARGATE_TOKEN.NAME,
-                StargateToken::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(StargateTokenArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.STARGATE_TOKEN.NAME,
+            StargateToken::class.java,
+            version,
+        )
 
         ensureCollection()
 

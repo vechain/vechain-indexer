@@ -20,13 +20,7 @@ open class NftCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        IndexedNft::class.java,
-        NftArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedNft::class.java, hasArchives = true) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.nfts}") private var version: Int = 1
@@ -35,14 +29,11 @@ open class NftCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.NFT.NAME,
-                IndexedNft::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(NftArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.NFT.NAME,
+            IndexedNft::class.java,
+            version,
+        )
 
         ensureCollection()
 

@@ -19,13 +19,7 @@ open class DelegationCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        Delegation::class.java,
-        DelegationArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, Delegation::class.java, hasArchives = true) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.delegation}") private val version: Int = 1
@@ -34,14 +28,11 @@ open class DelegationCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                IndexerNames.DELEGATION.NAME,
-                Delegation::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(DelegationArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            IndexerNames.DELEGATION.NAME,
+            Delegation::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

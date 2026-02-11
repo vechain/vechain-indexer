@@ -21,30 +21,25 @@ open class AccountOverviewConfig {
     open fun accountOverviewArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<AccountOverview, AccountOverviewArchive> =
-        ArchiveService(
-            mongoTemplate,
-            AccountOverview::class.java,
-            AccountOverviewArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<AccountOverview> =
+        ArchiveService(mongoTemplate, AccountOverview::class.java, recordLimit)
 
     @Bean
     open fun accountOverviewPruner(
-        accountOverviewArchiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
+        accountOverviewArchiveService: ArchiveService<AccountOverview>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<AccountOverview, AccountOverviewArchive> =
+    ): TargetedPruner<AccountOverview> =
         PrunerService(
-            AccountOverviewArchive::class,
             accountOverviewArchiveService,
             prunerRemovalChunkSize,
+            "AccountOverviewArchive",
         )
 
     @Bean
     open fun accountOverviewIndexer(
         thorClient: ThorClient,
         processor: AccountOverviewProcessor,
-        accountOverviewPruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+        accountOverviewPruner: TargetedPruner<AccountOverview>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,

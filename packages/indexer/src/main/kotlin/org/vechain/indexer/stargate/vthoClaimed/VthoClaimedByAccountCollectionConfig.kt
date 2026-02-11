@@ -22,7 +22,7 @@ open class VthoClaimedByAccountCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         VthoClaimedByAccount::class.java,
-        VthoClaimedByAccountArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -32,16 +32,11 @@ open class VthoClaimedByAccountCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
-                VthoClaimedByAccount::class.java,
-                version,
-            )
-
-        if (dropped) {
-            indexerVersionService.dropArchiveCollection(VthoClaimedByAccountArchive::class.java)
-        }
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
+            VthoClaimedByAccount::class.java,
+            version,
+        )
 
         ensureCollection()
     }

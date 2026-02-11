@@ -29,20 +29,16 @@ open class NftHoldersByBlockCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME,
-                NftHoldersByBlock::class.java,
-                version,
-            )
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME,
+            NftHoldersByBlock::class.java,
+            version,
+        )
 
         if (dropped) {
-            val ownerDropped =
-                indexerVersionService.dropCollection(
-                    indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
-                )
-            if (ownerDropped)
-                indexerVersionService.dropArchiveCollection(NftOwnerBalanceArchive::class.java)
+            indexerVersionService.dropCollection(
+                indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
+            )
         }
 
         ensureCollection()

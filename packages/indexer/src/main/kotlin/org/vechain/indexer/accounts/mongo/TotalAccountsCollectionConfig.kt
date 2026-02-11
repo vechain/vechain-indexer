@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -27,7 +26,7 @@ open class TotalAccountsCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         TotalAccounts::class.java,
-        TotalAccountsArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -37,14 +36,11 @@ open class TotalAccountsCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
-                TotalAccounts::class.java,
-                version,
-            )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(TotalAccountsArchive::class.java)
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
+            TotalAccounts::class.java,
+            version,
+        )
 
         ensureCollection()
 

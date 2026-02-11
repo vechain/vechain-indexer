@@ -21,32 +21,30 @@ open class VeVoteResultConfig {
     open fun veVoteResultArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive> {
+    ): ArchiveService<VeVoteProposalResult> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = VeVoteProposalResult::class.java,
-            archiveClazz = VeVoteProposalResultArchive::class.java,
             queryLimit = recordLimit,
         )
     }
 
     @Bean
     open fun veVoteResultPruner(
-        veVoteResultArchiveService:
-            ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+        veVoteResultArchiveService: ArchiveService<VeVoteProposalResult>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive> =
+    ): TargetedPruner<VeVoteProposalResult> =
         PrunerService(
-            klass = VeVoteProposalResultArchive::class,
             archiveService = veVoteResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            targetObjectName = "VeVoteProposalResultArchive",
         )
 
     @Bean
     open fun vevoteResultIndexer(
         thorClient: ThorClient,
         processor: VeVoteResultProcessor,
-        veVoteResultPruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+        veVoteResultPruner: TargetedPruner<VeVoteProposalResult>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.vevote}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

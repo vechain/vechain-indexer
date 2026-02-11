@@ -19,7 +19,7 @@ import org.vechain.indexer.thor.model.Block
 open class AccountOverviewProcessor(
     private val service: AccountOverviewService,
     repository: AccountOverviewRepository,
-    archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
+    archiveService: ArchiveService<AccountOverview>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

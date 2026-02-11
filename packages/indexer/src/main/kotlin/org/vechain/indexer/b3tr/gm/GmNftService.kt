@@ -17,8 +17,8 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Service
 open class GmNftService(
     private val repository: GmNftRepository,
-    private val gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
-    private val gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
+    private val gmNftArchiveService: ArchiveService<GmNft>,
+    private val gmNftPruner: TargetedPruner<GmNft>,
 ) {
 
     /**

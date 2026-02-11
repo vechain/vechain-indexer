@@ -38,9 +38,9 @@ import org.vechain.indexer.thor.model.Transaction
 internal class AccountOverviewServiceTest {
     @MockK lateinit var repository: AccountOverviewRepository
 
-    @MockK lateinit var archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var archiveService: ArchiveService<AccountOverview>
 
-    @MockK lateinit var pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>
+    @MockK lateinit var pruner: TargetedPruner<AccountOverview>
 
     @MockK lateinit var forkConfig: ForkConfig
 
@@ -52,8 +52,8 @@ internal class AccountOverviewServiceTest {
 
     private class TestableService(
         repository: AccountOverviewRepository,
-        archiveService: ArchiveService<AccountOverview, AccountOverviewArchive>,
-        pruner: TargetedPruner<AccountOverview, AccountOverviewArchive>,
+        archiveService: ArchiveService<AccountOverview>,
+        pruner: TargetedPruner<AccountOverview>,
         forkConfig: ForkConfig,
         networkDetectionService: NetworkDetectionService,
         thorClient: ThorClient,

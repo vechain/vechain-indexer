@@ -26,7 +26,7 @@ import org.vechain.indexer.validator.logic.ValidatorCalculator
 @Service
 open class ValidatorService(
     private val repository: ValidatorRepository,
-    private val archiveService: ArchiveService<Validator, ValidatorArchive>,
+    private val archiveService: ArchiveService<Validator>,
     private val thorClient: ThorClient,
     @Value("\${indexer.validator-stats-threshold-blocks}") private val statsStartThreshold: Long,
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}") private val stakerSC: String,

@@ -1,18 +1,16 @@
 package org.vechain.indexer.pruner
 
-import kotlin.reflect.KClass
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 
-open class PrunerService<T : VersionedDocument, S : Archive<T>>(
-    klass: KClass<S>,
-    private val archiveService: ArchiveService<T, S>,
+open class PrunerService<T : VersionedDocument>(
+    private val archiveService: ArchiveService<T>,
     private val prunerRemovalChunkSize: Int,
-) : TargetedPruner<T, S> {
+    targetObjectName: String,
+) : TargetedPruner<T> {
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
-    private val targetObjectName = klass.simpleName ?: "Unknown"
+    private val targetObjectName = targetObjectName
 
     override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
 

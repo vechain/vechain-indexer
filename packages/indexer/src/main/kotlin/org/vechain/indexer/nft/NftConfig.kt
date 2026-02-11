@@ -21,21 +21,21 @@ open class NftConfig() {
     open fun nftArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<IndexedNft, NftArchive> =
-        ArchiveService(mongoTemplate, IndexedNft::class.java, NftArchive::class.java, recordLimit)
+    ): ArchiveService<IndexedNft> =
+        ArchiveService(mongoTemplate, IndexedNft::class.java, recordLimit)
 
     @Bean
     open fun nftPruner(
-        nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
+        nftArchiveService: ArchiveService<IndexedNft>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<IndexedNft, NftArchive> =
-        PrunerService(NftArchive::class, nftArchiveService, prunerRemovalChunkSize)
+    ): TargetedPruner<IndexedNft> =
+        PrunerService(nftArchiveService, prunerRemovalChunkSize, "NftArchive")
 
     @Bean
     open fun nftIndexer(
         thorClient: ThorClient,
         processor: NftProcessor,
-        nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+        nftPruner: TargetedPruner<IndexedNft>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.nfts}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

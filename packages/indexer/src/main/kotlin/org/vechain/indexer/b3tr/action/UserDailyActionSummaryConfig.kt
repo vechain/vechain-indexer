@@ -21,33 +21,30 @@ open class UserDailyActionSummaryConfig {
     open fun userDailyActionSummaryArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive> {
+    ): ArchiveService<UserDailyActionSummary> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = UserDailyActionSummary::class.java,
-            archiveClazz = UserDailyActionSummaryArchive::class.java,
             queryLimit = recordLimit,
         )
     }
 
     @Bean
     open fun userDailyActionSummaryPruner(
-        userDailyActionSummaryArchiveService:
-            ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+        userDailyActionSummaryArchiveService: ArchiveService<UserDailyActionSummary>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive> =
+    ): TargetedPruner<UserDailyActionSummary> =
         PrunerService(
-            klass = UserDailyActionSummaryArchive::class,
             archiveService = userDailyActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            targetObjectName = "UserDailyActionSummaryArchive",
         )
 
     @Bean
     open fun userDailyActionSummaryIndexer(
         thorClient: ThorClient,
         processor: UserDailyActionSummaryProcessor,
-        userDailyActionSummaryPruner:
-            TargetedPruner<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+        userDailyActionSummaryPruner: TargetedPruner<UserDailyActionSummary>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

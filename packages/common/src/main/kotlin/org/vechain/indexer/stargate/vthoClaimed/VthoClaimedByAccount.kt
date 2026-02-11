@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils
 
 @Document(collection = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.COLLECTION)
@@ -51,9 +50,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "stargate_vtho_claimed_by_account_archives")
-data class VthoClaimedByAccountArchive(
-    @Id override val id: String,
-    override val data: VthoClaimedByAccount,
-) : Archive<VthoClaimedByAccount>

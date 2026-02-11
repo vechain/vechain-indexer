@@ -31,9 +31,9 @@ import org.vechain.indexer.thor.model.InspectionResult
 internal class XAllocResultServiceTest {
     @MockK lateinit var repository: XAllocResultRepository
 
-    @MockK lateinit var archiveService: ArchiveService<XAllocResult, XAllocResultArchive>
+    @MockK lateinit var archiveService: ArchiveService<XAllocResult>
 
-    @MockK lateinit var pruner: TargetedPruner<XAllocResult, XAllocResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<XAllocResult>
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -46,8 +46,8 @@ internal class XAllocResultServiceTest {
     // Test wrapper to access protected functions directly
     private inner class TestableXAllocResultService(
         repository: XAllocResultRepository,
-        archiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-        pruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+        archiveService: ArchiveService<XAllocResult>,
+        pruner: TargetedPruner<XAllocResult>,
         thorClient: ThorClient,
         xAllocPoolContract: String,
     ) : XAllocResultService(repository, archiveService, pruner, thorClient, xAllocPoolContract) {

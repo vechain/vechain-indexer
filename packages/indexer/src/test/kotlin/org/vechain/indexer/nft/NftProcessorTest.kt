@@ -18,7 +18,7 @@ internal class NftProcessorTest {
 
     @MockK lateinit var nftRepository: NftRepository
 
-    @MockK lateinit var archiveService: ArchiveService<IndexedNft, NftArchive>
+    @MockK lateinit var archiveService: ArchiveService<IndexedNft>
 
     @MockK lateinit var nftService: NftService
 

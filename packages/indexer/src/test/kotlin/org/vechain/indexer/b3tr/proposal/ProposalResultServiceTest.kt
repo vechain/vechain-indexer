@@ -25,10 +25,9 @@ import org.vechain.indexer.utils.BlockDetails
 internal class ProposalResultServiceTest {
     @MockK lateinit var repository: ProposalResultRepository
 
-    @MockK
-    lateinit var proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var proposalResultArchiveService: ArchiveService<ProposalResult>
 
-    @MockK lateinit var pruner: TargetedPruner<ProposalResult, ProposalResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<ProposalResult>
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -39,8 +38,8 @@ internal class ProposalResultServiceTest {
     // A testable subclass to expose protected methods for testing
     private class TestableProposalResultService(
         repository: ProposalResultRepository,
-        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+        proposalResultArchiveService: ArchiveService<ProposalResult>,
+        proposalResultPruner: TargetedPruner<ProposalResult>,
         thorClient: ThorClient,
         governorContract: String,
     ) :

@@ -14,8 +14,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class VthoClaimedByAccountProcessor(
     private val service: VthoClaimedByAccountService,
-    vthoClaimByAccountArchiveService:
-        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    vthoClaimByAccountArchiveService: ArchiveService<VthoClaimedByAccount>,
     repository: VthoClaimedByAccountRepository,
     checkpointService: CheckpointService,
 ) :

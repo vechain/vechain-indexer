@@ -8,7 +8,7 @@ interface BaseIndexedRepository<T : IndexedDocument, ID> : CrudRepository<T, ID>
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' } } }",
+                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' }, '_isArchive': { '\$ne': true } } }",
                 "{ '\$sort': { 'blockNumber': -1 } }",
                 "{ '\$limit': 1 }",
             ]

@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -27,7 +26,7 @@ open class UserAllTimeActionSummaryCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         UserAllTimeActionSummary::class.java,
-        UserAllTimeActionSummaryArchive::class.java,
+        hasArchives = true,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -36,16 +35,11 @@ open class UserAllTimeActionSummaryCollectionConfig(
     override fun initCollection() {
         logger.info("Check collection version for ${modelObj.simpleName}")
 
-        val dropped =
-            indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME,
-                UserAllTimeActionSummary::class.java,
-                version,
-            )
-
-        if (dropped) {
-            indexerVersionService.dropArchiveCollection(UserAllTimeActionSummaryArchive::class.java)
-        }
+        indexerVersionService.checkAndResetCollectionIfVersionChanged(
+            indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME,
+            UserAllTimeActionSummary::class.java,
+            version,
+        )
 
         this.ensureCollection()
 

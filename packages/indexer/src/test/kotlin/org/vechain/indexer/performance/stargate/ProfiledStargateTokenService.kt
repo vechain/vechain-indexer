@@ -5,7 +5,6 @@ import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
 import org.vechain.indexer.thor.model.Block
@@ -29,7 +28,7 @@ class ProfiledStargateTokenService(
     repository: StargateTokenRepository,
     eventService: StargateEventService,
     validatorDelegationService: ValidatorDelegationService,
-    archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    archiveService: ArchiveService<StargateToken>,
     private val profiler: DetailedProfiler,
 ) : StargateTokenService(repository, eventService, validatorDelegationService, archiveService) {
 

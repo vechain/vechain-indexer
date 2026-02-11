@@ -7,7 +7,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.voting.Support
 
 @Document(collection = IndexerNames.PROPOSAL_RESULT.COLLECTION)
@@ -55,10 +54,6 @@ constructor(
             )
         } ?: emptyList()
 }
-
-@Document(collection = "b3tr_proposal_result_archives")
-data class ProposalResultArchive(@Id override val id: String, override val data: ProposalResult) :
-    Archive<ProposalResult>
 
 data class VoteResults(val forResult: Result, val againstResult: Result, val abstainResult: Result)
 

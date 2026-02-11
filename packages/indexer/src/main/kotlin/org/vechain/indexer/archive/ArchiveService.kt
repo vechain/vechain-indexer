@@ -1,5 +1,6 @@
 package org.vechain.indexer.archive
 
+import com.mongodb.client.model.Filters
 import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
@@ -24,29 +25,31 @@ class RawStage(private val stage: Document) : AggregationOperation {
     override fun toDocument(context: AggregationOperationContext): Document = stage
 }
 
-open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
+open class ArchiveService<T : VersionedDocument>(
     private val mongoTemplate: MongoTemplate,
     private val clazz: Class<T>,
-    private val archiveClazz: Class<S>,
     private val queryLimit: Long,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
+    private val collectionName = mongoTemplate.getCollectionName(clazz)
 
     open fun getPreviousVersionId(document: VersionedDocument): String =
         buildArchiveId(document, document.version - 1)
 
     open fun saveAll(documents: List<T>) {
-
         if (documents.isEmpty()) return
 
-        val archives =
-            documents.map {
-                archiveClazz
-                    .getConstructor(String::class.java, it::class.java)
-                    .newInstance(buildArchiveId(it, it.version), it)
+        val archiveDocs =
+            documents.map { doc ->
+                val bsonDoc = Document()
+                mongoTemplate.converter.write(doc, bsonDoc)
+                bsonDoc["_id"] = buildArchiveId(doc, doc.version)
+                bsonDoc["_isArchive"] = true
+                bsonDoc["_originalDocId"] = doc.getDocumentId()
+                bsonDoc
             }
-        mongoTemplate.insert(archives, archiveClazz)
+        mongoTemplate.getCollection(collectionName).insertMany(archiveDocs)
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -61,19 +64,34 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         val previousDocumentIds =
             currentDocuments.filter { it.version > 1 }.map { getPreviousVersionId(it) }
 
+        // Read archive docs from main collection, strip extra fields, convert back
         val previousDocuments =
-            mongoTemplate
-                .find(Query.query(Criteria.where("_id").`in`(previousDocumentIds)), archiveClazz)
-                .map { clazz.cast(it.data) }
-                .associateBy { it.getDocumentId() }
+            if (previousDocumentIds.isNotEmpty()) {
+                mongoTemplate
+                    .getCollection(collectionName)
+                    .find(Filters.`in`("_id", previousDocumentIds))
+                    .map { doc ->
+                        doc.remove("_isArchive")
+                        val originalId = doc.remove("_originalDocId")
+                        doc["_id"] = originalId
+                        mongoTemplate.converter.read(clazz, doc)
+                    }
+                    .associateBy { it.getDocumentId() }
+            } else {
+                emptyMap()
+            }
 
         val rollbackOperations = getRollbackOperation(currentDocuments, previousDocuments)
 
         val rollback = rollbackOperations.execute()
-        mongoTemplate.remove(
-            Query.query(Criteria.where("_id").`in`(previousDocumentIds)),
-            archiveClazz,
-        )
+
+        // Delete used archives from main collection
+        if (previousDocumentIds.isNotEmpty()) {
+            mongoTemplate.remove(
+                Query.query(Criteria.where("_id").`in`(previousDocumentIds)),
+                collectionName,
+            )
+        }
 
         logger.info(
             "{} - Rollback of block {} completed: \n- {} documents rolled back \n- {} documents deleted",
@@ -84,10 +102,12 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         )
     }
 
-    /** Get all documents greater than or equal to the block number */
+    /** Get all non-archive documents greater than or equal to the block number */
     open fun getCurrentDocuments(blockNumber: Long): List<T> {
         val query =
-            Query().addCriteria(Criteria.where(IndexedDocument::blockNumber.name).gte(blockNumber))
+            Query()
+                .addCriteria(Criteria.where(IndexedDocument::blockNumber.name).gte(blockNumber))
+                .addCriteria(Criteria.where("_isArchive").ne(true))
 
         return mongoTemplate.find(query, clazz)
     }
@@ -130,20 +150,20 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         require(batchSize > 0) { "Batch size must be greater than zero" }
         logger.debug("Finding records to prune for {}", clazz.simpleName)
 
-        // 1) Create the match stage. If ids are provided, filter by them as well.
-        val matchCriteria = Criteria.where("data.blockNumber").lt(endBlock)
+        // 1) Match archive docs in the main collection
+        val matchCriteria = Criteria.where("_isArchive").`is`(true).and("blockNumber").lt(endBlock)
         if (idsToPrune != null && idsToPrune.isNotEmpty()) {
-            matchCriteria.and("data._id").`in`(idsToPrune)
+            matchCriteria.and("_originalDocId").`in`(idsToPrune)
         }
 
-        // 2) Rank by recordId/version (desc)
+        // 2) Rank by _originalDocId/version (desc)
         val setWindowFields =
             RawStage(
                 Document(
                     "\$setWindowFields",
                     Document()
-                        .append("partitionBy", "\$data._id")
-                        .append("sortBy", Document("data.version", -1))
+                        .append("partitionBy", "\$_originalDocId")
+                        .append("sortBy", Document("version", -1))
                         .append("output", Document("rn", Document("\$documentNumber", Document()))),
                 )
             )
@@ -153,7 +173,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
             Aggregation.newAggregation(
                     Aggregation.match(matchCriteria),
                     Aggregation.sort(
-                        Sort.by(Sort.Order.asc("data._id"), Sort.Order.desc("data.version"))
+                        Sort.by(Sort.Order.asc("_originalDocId"), Sort.Order.desc("version"))
                     ),
                     setWindowFields,
                     Aggregation.match(Criteria.where("rn").gt(1)),
@@ -167,12 +187,7 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
                         .build()
                 )
 
-        val stream =
-            mongoTemplate.aggregateStream(
-                pipeline,
-                mongoTemplate.getCollectionName(archiveClazz),
-                Document::class.java,
-            )
+        val stream = mongoTemplate.aggregateStream(pipeline, collectionName, Document::class.java)
         val iterator = stream.iterator()
 
         return object : CloseableIterator<String> {
@@ -193,6 +208,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
     @Transactional(rollbackFor = [Exception::class])
     open fun removeAll(records: List<String>) {
         logger.debug("Removing {} archives for {}", records.size, clazz.simpleName)
-        mongoTemplate.remove(Query.query(Criteria.where("_id").`in`(records)), archiveClazz)
+        mongoTemplate.remove(Query.query(Criteria.where("_id").`in`(records)), collectionName)
     }
 }

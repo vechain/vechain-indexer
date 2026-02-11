@@ -41,8 +41,8 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Service
 open class ProposalResultService(
     private val repository: ProposalResultRepository,
-    private val proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
-    private val proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+    private val proposalResultArchiveService: ArchiveService<ProposalResult>,
+    private val proposalResultPruner: TargetedPruner<ProposalResult>,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.B3TR_GOVERNOR_CONTRACT}")
     private val governorContract: String,

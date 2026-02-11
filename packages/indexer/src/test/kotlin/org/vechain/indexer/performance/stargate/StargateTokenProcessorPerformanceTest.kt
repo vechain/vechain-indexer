@@ -15,7 +15,6 @@ import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.token.StargateEventService
 import org.vechain.indexer.stargate.token.StargateToken
-import org.vechain.indexer.stargate.token.StargateTokenArchive
 import org.vechain.indexer.stargate.token.StargateTokenProcessor
 import org.vechain.indexer.stargate.token.StargateTokenRepository
 import org.vechain.indexer.stargate.token.StargateTokenService
@@ -30,7 +29,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateTokenService: StargateTokenService
     @Autowired lateinit var stargateEventService: StargateEventService
     @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
-    @Autowired lateinit var archiveService: ArchiveService<StargateToken, StargateTokenArchive>
+    @Autowired lateinit var archiveService: ArchiveService<StargateToken>
     @Autowired lateinit var checkpointService: CheckpointService
 
     @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
@@ -162,7 +161,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledStargateTokenProcessor(
         service: StargateTokenService,
         stargateTokenRepository: StargateTokenRepository,
-        archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+        archiveService: ArchiveService<StargateToken>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
     ) :

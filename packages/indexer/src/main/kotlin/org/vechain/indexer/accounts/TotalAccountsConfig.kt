@@ -20,30 +20,21 @@ open class TotalAccountsConfig {
     open fun totalAccountsArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<TotalAccounts, TotalAccountsArchive> =
-        ArchiveService(
-            mongoTemplate,
-            TotalAccounts::class.java,
-            TotalAccountsArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<TotalAccounts> =
+        ArchiveService(mongoTemplate, TotalAccounts::class.java, recordLimit)
 
     @Bean
     open fun totalAccountsPruner(
-        totalAccountsArchiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+        totalAccountsArchiveService: ArchiveService<TotalAccounts>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<TotalAccounts, TotalAccountsArchive> =
-        PrunerService(
-            TotalAccountsArchive::class,
-            totalAccountsArchiveService,
-            prunerRemovalChunkSize,
-        )
+    ): TargetedPruner<TotalAccounts> =
+        PrunerService(totalAccountsArchiveService, prunerRemovalChunkSize, "TotalAccountsArchive")
 
     @Bean
     open fun totalAccountsIndexer(
         thorClient: ThorClient,
         processor: TotalAccountsProcessor,
-        totalAccountsPruner: TargetedPruner<TotalAccounts, TotalAccountsArchive>,
+        totalAccountsPruner: TargetedPruner<TotalAccounts>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,

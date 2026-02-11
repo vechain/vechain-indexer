@@ -18,7 +18,7 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler.getLatestValidator
 
 class ValidatorServiceTest {
     private val repository = mockk<ValidatorRepository>()
-    private val archiveService = mockk<ArchiveService<Validator, ValidatorArchive>>(relaxed = true)
+    private val archiveService = mockk<ArchiveService<Validator>>(relaxed = true)
     private val thorClient = mockk<ThorClient>()
 
     private lateinit var service: ValidatorService

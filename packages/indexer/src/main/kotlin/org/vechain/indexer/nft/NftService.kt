@@ -21,8 +21,8 @@ import org.vechain.indexer.utils.buildNftId
 @Service
 open class NftService(
     private val nftRepository: NftRepository,
-    private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
-    private val nftPruner: TargetedPruner<IndexedNft, NftArchive>,
+    private val nftArchiveService: ArchiveService<IndexedNft>,
+    private val nftPruner: TargetedPruner<IndexedNft>,
     private val blacklistClient: NftBlacklistClient,
     private val mongoTemplate: MongoTemplate,
 ) {

@@ -15,7 +15,6 @@ import org.vechain.indexer.config.BusinessEventProperties
 import org.vechain.indexer.pruner.PrunerService
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.validator.domain.ValidatorDecoder
 
@@ -26,20 +25,15 @@ open class TokenRewardConfig {
     open fun tokenRewardArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<TokenReward, TokenRewardArchive> =
-        ArchiveService(
-            mongoTemplate,
-            TokenReward::class.java,
-            TokenRewardArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<TokenReward> =
+        ArchiveService(mongoTemplate, TokenReward::class.java, recordLimit)
 
     @Bean
     open fun tokenRewardPruner(
-        tokenRewardArchiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+        tokenRewardArchiveService: ArchiveService<TokenReward>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<TokenReward, TokenRewardArchive> =
-        PrunerService(TokenRewardArchive::class, tokenRewardArchiveService, prunerRemovalChunkSize)
+    ): TargetedPruner<TokenReward> =
+        PrunerService(tokenRewardArchiveService, prunerRemovalChunkSize, "TokenRewardArchive")
 
     @Bean
     open fun tokenRewardIndexer(

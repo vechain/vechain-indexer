@@ -13,7 +13,6 @@ import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorArchive
 import org.vechain.indexer.validator.ValidatorConfig
 import org.vechain.indexer.validator.ValidatorProcessor
 import org.vechain.indexer.validator.ValidatorRepository
@@ -25,7 +24,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorRepository: ValidatorRepository
     @Autowired lateinit var validatorService: ValidatorService
-    @Autowired lateinit var archiveService: ArchiveService<Validator, ValidatorArchive>
+    @Autowired lateinit var archiveService: ArchiveService<Validator>
     @Autowired lateinit var checkpointService: CheckpointService
 
     @Value("\${business-event.substitutions.BUILTIN_STAKER_CONTRACT}")
@@ -125,7 +124,7 @@ class ValidatorProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledValidatorProcessor(
         repository: ValidatorRepository,
         service: ValidatorService,
-        archiveService: ArchiveService<Validator, ValidatorArchive>,
+        archiveService: ArchiveService<Validator>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
     ) :

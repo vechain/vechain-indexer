@@ -21,30 +21,29 @@ open class XAllocResultConfig {
     open fun xAllocResultArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<XAllocResult, XAllocResultArchive> =
+    ): ArchiveService<XAllocResult> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = XAllocResult::class.java,
-            archiveClazz = XAllocResultArchive::class.java,
             queryLimit = recordLimit,
         )
 
     @Bean
     open fun xAllocResultPruner(
-        xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
+        xAllocResultArchiveService: ArchiveService<XAllocResult>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<XAllocResult, XAllocResultArchive> =
+    ): TargetedPruner<XAllocResult> =
         PrunerService(
-            klass = XAllocResultArchive::class,
             archiveService = xAllocResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
+            targetObjectName = "XAllocResultArchive",
         )
 
     @Bean
     open fun xAllocResultIndexer(
         thorClient: ThorClient,
         processor: XAllocResultProcessor,
-        xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+        xAllocResultPruner: TargetedPruner<XAllocResult>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-x-alloc-result}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

@@ -5,7 +5,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 
 abstract class BaseStatefulProcessor(
     repository: BaseIndexedRepository<*, *>,
-    private val archiveService: ArchiveService<*, *>,
+    private val archiveService: ArchiveService<*>,
     indexerName: String,
     checkpointService: CheckpointService,
     collectionName: String,
