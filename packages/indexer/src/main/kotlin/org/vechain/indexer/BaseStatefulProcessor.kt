@@ -11,7 +11,7 @@ abstract class BaseStatefulProcessor(
     collectionName: String,
 ) : BaseProcessor(repository, indexerName, checkpointService, collectionName) {
     override fun rollback(blockNumber: Long) {
-        checkpointService.deleteCheckpoint(collectionName)
+        checkpointService.saveCheckpoint(collectionName, blockNumber)
         archiveService.rollback(blockNumber)
     }
 }

@@ -33,7 +33,7 @@ abstract class BaseProcessor(
     }
 
     override fun rollback(blockNumber: Long) {
-        checkpointService.deleteCheckpoint(collectionName)
+        checkpointService.saveCheckpoint(collectionName, blockNumber)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
     }
 }
