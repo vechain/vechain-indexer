@@ -12,7 +12,8 @@ import org.vechain.indexer.thor.model.BlockIdentifier
 open class CheckpointService(private val mongoTemplate: MongoTemplate) {
 
     fun saveCheckpoint(collectionName: String, blockNumber: Long) {
-        val doc = Document().append("_id", CHECKPOINT_ID).append("blockNumber", blockNumber)
+        val doc =
+            Document().append("_id", CHECKPOINT_ID).append("checkpointBlockNumber", blockNumber)
         mongoTemplate
             .getCollection(collectionName)
             .replaceOne(Filters.eq("_id", CHECKPOINT_ID), doc, ReplaceOptions().upsert(true))
@@ -24,7 +25,7 @@ open class CheckpointService(private val mongoTemplate: MongoTemplate) {
                 .getCollection(collectionName)
                 .find(Filters.eq("_id", CHECKPOINT_ID))
                 .first() ?: return null
-        val blockNumber = doc.getLong("blockNumber") ?: return null
+        val blockNumber = doc.getLong("checkpointBlockNumber") ?: return null
         return BlockIdentifier(number = blockNumber, id = "")
     }
 
