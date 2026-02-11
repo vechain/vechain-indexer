@@ -29,12 +29,7 @@ abstract class BaseProcessor(
     private fun maybeUpdateCheckpoint(entry: IndexingResult) {
         blocksSinceCheckpoint++
         if (blocksSinceCheckpoint >= CheckpointService.CHECKPOINT_INTERVAL) {
-            val blockId =
-                when (entry) {
-                    is IndexingResult.Normal -> entry.block.id
-                    is IndexingResult.EventsOnly -> ""
-                }
-            checkpointService.saveCheckpoint(collectionName, entry.latestBlockNumber(), blockId)
+            checkpointService.saveCheckpoint(collectionName, entry.latestBlockNumber())
             blocksSinceCheckpoint = 0
         }
     }

@@ -66,20 +66,20 @@ class BaseProcessorTest {
     @Test
     fun `getLastSyncedBlock returns checkpoint when it is ahead of repository`() {
         val document = Document(blockId = "repo", blockNumber = 42L, blockTimestamp = 0L)
-        val checkpoint = BlockIdentifier(number = 100L, id = "checkpoint")
+        val checkpoint = BlockIdentifier(number = 100L, id = "")
         every { checkpointService.getCheckpoint(TEST_COLLECTION) } returns checkpoint
         every { repository.getLatestRecord() } returns document
 
         val result = processor.getLastSyncedBlock()
 
-        assertEquals("checkpoint", result?.id)
+        assertEquals("", result?.id)
         assertEquals(100L, result?.number)
     }
 
     @Test
     fun `getLastSyncedBlock returns repository block when it is ahead of checkpoint`() {
         val document = Document(blockId = "repo", blockNumber = 200L, blockTimestamp = 0L)
-        val checkpoint = BlockIdentifier(number = 100L, id = "checkpoint")
+        val checkpoint = BlockIdentifier(number = 100L, id = "")
         every { checkpointService.getCheckpoint(TEST_COLLECTION) } returns checkpoint
         every { repository.getLatestRecord() } returns document
 

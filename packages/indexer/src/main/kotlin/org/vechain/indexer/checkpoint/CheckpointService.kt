@@ -15,12 +15,8 @@ open class CheckpointService(private val mongoTemplate: MongoTemplate) {
         const val CHECKPOINT_INTERVAL = 100
     }
 
-    fun saveCheckpoint(collectionName: String, blockNumber: Long, blockId: String) {
-        val doc =
-            Document()
-                .append("_id", CHECKPOINT_ID)
-                .append("blockNumber", blockNumber)
-                .append("blockId", blockId)
+    fun saveCheckpoint(collectionName: String, blockNumber: Long) {
+        val doc = Document().append("_id", CHECKPOINT_ID).append("blockNumber", blockNumber)
         mongoTemplate
             .getCollection(collectionName)
             .replaceOne(Filters.eq("_id", CHECKPOINT_ID), doc, ReplaceOptions().upsert(true))
@@ -33,8 +29,7 @@ open class CheckpointService(private val mongoTemplate: MongoTemplate) {
                 .find(Filters.eq("_id", CHECKPOINT_ID))
                 .first() ?: return null
         val blockNumber = doc.getLong("blockNumber") ?: return null
-        val blockId = doc.getString("blockId") ?: ""
-        return BlockIdentifier(number = blockNumber, id = blockId)
+        return BlockIdentifier(number = blockNumber, id = "")
     }
 
     fun deleteCheckpoint(collectionName: String) {
