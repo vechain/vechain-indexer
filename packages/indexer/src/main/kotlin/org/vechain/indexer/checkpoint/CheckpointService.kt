@@ -5,13 +5,13 @@ import com.mongodb.client.model.ReplaceOptions
 import org.bson.Document
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.vechain.indexer.IndexedDocument.Companion.CHECKPOINT_ID
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 @Service
 open class CheckpointService(private val mongoTemplate: MongoTemplate) {
 
     companion object {
-        const val CHECKPOINT_ID = "__checkpoint__"
         const val CHECKPOINT_INTERVAL = 100
     }
 
