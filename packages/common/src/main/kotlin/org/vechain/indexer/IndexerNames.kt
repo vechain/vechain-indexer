@@ -185,4 +185,26 @@ object IndexerNames {
         const val NAME = "VetBalanceIndexer"
         const val COLLECTION = "vet_balances"
     }
+
+    /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
+    fun nameToCollection(): Map<String, String> =
+        IndexerNames::class
+            .java
+            .declaredClasses
+            .mapNotNull { clazz ->
+                val name =
+                    try {
+                        clazz.getField("NAME").get(null) as? String
+                    } catch (_: Exception) {
+                        null
+                    }
+                val collection =
+                    try {
+                        clazz.getField("COLLECTION").get(null) as? String
+                    } catch (_: Exception) {
+                        null
+                    }
+                if (name != null && collection != null) name to collection else null
+            }
+            .toMap()
 }
