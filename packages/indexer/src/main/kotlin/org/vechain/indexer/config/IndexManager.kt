@@ -62,7 +62,9 @@ open class IndexManager(
             try {
                 if (indexer.getStatus() !in activeSyncStatuses) return@forEach
 
-                val collection = nameToCollection[indexer.name] ?: return@forEach
+                val collection =
+                    nameToCollection[indexer.name]
+                        ?: error("No collection mapping found for indexer '${indexer.name}'")
 
                 val lastProcessedBlock = indexer.getCurrentBlockNumber() - 1
                 if (lastProcessedBlock >= 0) {
