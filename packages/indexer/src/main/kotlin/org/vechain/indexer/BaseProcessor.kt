@@ -40,7 +40,7 @@ abstract class BaseProcessor(
             repository.getLatestRecord()?.let {
                 BlockIdentifier(number = it.blockNumber, id = it.blockId)
             }
-        return listOfNotNull(checkpoint, latestRecord).maxByOrNull { it.number }
+        return listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
     }
 
     override fun rollback(blockNumber: Long) {
