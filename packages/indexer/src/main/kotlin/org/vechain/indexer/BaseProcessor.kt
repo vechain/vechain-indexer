@@ -35,7 +35,9 @@ abstract class BaseProcessor(
                 }
             } catch (e: Exception) {
                 logger.error(
-                    "Failed to get latest record for $indexerName (collection: $collectionName)",
+                    "Failed to get latest record for {} (collection: {})",
+                    indexerName,
+                    collectionName,
                     e,
                 )
                 throw e
