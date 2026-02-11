@@ -186,44 +186,25 @@ object IndexerNames {
         const val COLLECTION = "vet_balances"
     }
 
-    /** Returns a map of indexer NAME → COLLECTION for every entry that defines a COLLECTION. */
+    /** Returns a map of indexer NAME → COLLECTION for every nested object that defines both. */
     fun nameToCollection(): Map<String, String> =
-        mapOf(
-            APP_ALL_TIME_ACTION_SUMMARY.NAME to APP_ALL_TIME_ACTION_SUMMARY.COLLECTION,
-            APP_DAILY_ACTION_SUMMARY.NAME to APP_DAILY_ACTION_SUMMARY.COLLECTION,
-            APP_ROUND_ACTION_SUMMARY.NAME to APP_ROUND_ACTION_SUMMARY.COLLECTION,
-            AUTHORITY_NODE.NAME to AUTHORITY_NODE.COLLECTION,
-            BLOCK_USAGE.NAME to BLOCK_USAGE.COLLECTION,
-            GM_NFT.NAME to GM_NFT.COLLECTION,
-            HISTORIC_PROPOSALS.NAME to HISTORIC_PROPOSALS.COLLECTION,
-            HISTORIC_PROPOSALS_VOTE.NAME to HISTORIC_PROPOSALS_VOTE.COLLECTION,
-            HISTORY.NAME to HISTORY.COLLECTION,
-            NFT.NAME to NFT.COLLECTION,
-            NFT_HOLDERS_BY_BLOCK.NAME to NFT_HOLDERS_BY_BLOCK.COLLECTION,
-            PROPOSAL_COMMENT.NAME to PROPOSAL_COMMENT.COLLECTION,
-            PROPOSAL_RESULT.NAME to PROPOSAL_RESULT.COLLECTION,
-            TRANSACTION.NAME to TRANSACTION.COLLECTION,
-            TRANSFER.NAME to TRANSFER.COLLECTION,
-            FUNGIBLE_TOKEN_INTERACTIONS.NAME to FUNGIBLE_TOKEN_INTERACTIONS.COLLECTION,
-            USER_ALL_TIME_ACTION_SUMMARY.NAME to USER_ALL_TIME_ACTION_SUMMARY.COLLECTION,
-            USER_DAILY_ACTION_SUMMARY.NAME to USER_DAILY_ACTION_SUMMARY.COLLECTION,
-            USER_ROUND_ACTION_SUMMARY.NAME to USER_ROUND_ACTION_SUMMARY.COLLECTION,
-            VEVOTE_COMMENT.NAME to VEVOTE_COMMENT.COLLECTION,
-            VEVOTE_RESULT.NAME to VEVOTE_RESULT.COLLECTION,
-            VET_STAKED_BY_BLOCK.NAME to VET_STAKED_BY_BLOCK.COLLECTION,
-            VET_DELEGATED_BY_BLOCK.NAME to VET_DELEGATED_BY_BLOCK.COLLECTION,
-            VTHO_CLAIMED_BY_ACCOUNT.NAME to VTHO_CLAIMED_BY_ACCOUNT.COLLECTION,
-            VTHO_CLAIMED_BY_BLOCK.NAME to VTHO_CLAIMED_BY_BLOCK.COLLECTION,
-            X_ALLOC_RESULT.NAME to X_ALLOC_RESULT.COLLECTION,
-            VALIDATOR.NAME to VALIDATOR.COLLECTION,
-            DELEGATION.NAME to DELEGATION.COLLECTION,
-            VTHO_GENERATED_BY_BLOCK.NAME to VTHO_GENERATED_BY_BLOCK.COLLECTION,
-            VALIDATOR_BLOCK.NAME to VALIDATOR_BLOCK.COLLECTION,
-            STARGATE_TOKEN.NAME to STARGATE_TOKEN.COLLECTION,
-            TOKEN_REWARD.NAME to TOKEN_REWARD.COLLECTION,
-            TOTAL_ACCOUNTS.NAME to TOTAL_ACCOUNTS.COLLECTION,
-            ACCOUNT_OVERVIEW.NAME to ACCOUNT_OVERVIEW.COLLECTION,
-            CONTRACTS.NAME to CONTRACTS.COLLECTION,
-            VET_BALANCE.NAME to VET_BALANCE.COLLECTION,
-        )
+        IndexerNames::class
+            .java
+            .declaredClasses
+            .mapNotNull { clazz ->
+                val name =
+                    try {
+                        clazz.getField("NAME").get(null) as? String
+                    } catch (_: Exception) {
+                        null
+                    }
+                val collection =
+                    try {
+                        clazz.getField("COLLECTION").get(null) as? String
+                    } catch (_: Exception) {
+                        null
+                    }
+                if (name != null && collection != null) name to collection else null
+            }
+            .toMap()
 }
