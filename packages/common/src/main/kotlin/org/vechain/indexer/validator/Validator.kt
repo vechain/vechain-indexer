@@ -18,9 +18,9 @@ import org.vechain.indexer.thor.model.Views
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Validator(
     @Id val id: String,
-    override val blockId: String,
-    override val blockNumber: Long,
-    override val blockTimestamp: Long,
+    @JsonIgnore override val blockId: String,
+    @JsonIgnore override val blockNumber: Long,
+    @JsonIgnore override val blockTimestamp: Long,
     val endorser: String? = null, // address of the endorser
     val beneficiary: String? = null,
     val status: Status? = null, // active, inactive, jailed, etc.
