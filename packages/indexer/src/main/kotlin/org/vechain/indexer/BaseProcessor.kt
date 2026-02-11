@@ -1,6 +1,7 @@
 package org.vechain.indexer
 
 import kotlin.time.TimeSource
+import org.slf4j.LoggerFactory
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.thor.model.BlockIdentifier
 
@@ -10,6 +11,8 @@ abstract class BaseProcessor(
     protected val checkpointService: CheckpointService,
     protected val collectionName: String,
 ) : IndexerProcessor {
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     abstract suspend fun processEntry(entry: IndexingResult)
 
@@ -26,8 +29,18 @@ abstract class BaseProcessor(
     override fun getLastSyncedBlock(): BlockIdentifier? {
         val checkpoint = checkpointService.getCheckpoint(collectionName)
         val latestRecord =
-            repository.getLatestRecord()?.let {
-                BlockIdentifier(number = it.blockNumber, id = it.blockId)
+            try {
+                repository.getLatestRecord()?.let {
+                    BlockIdentifier(number = it.blockNumber, id = it.blockId)
+                }
+            } catch (e: Exception) {
+                logger.error(
+                    "Failed to get latest record for {} (collection: {})",
+                    indexerName,
+                    collectionName,
+                    e,
+                )
+                throw e
             }
         return listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
     }
