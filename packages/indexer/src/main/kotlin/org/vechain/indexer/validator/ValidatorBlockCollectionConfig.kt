@@ -30,7 +30,7 @@ open class ValidatorBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VALIDATOR_BLOCK,
+            indexerName = IndexerNames.VALIDATOR_BLOCK.NAME,
             ValidatorBlock::class.java,
             version,
         )

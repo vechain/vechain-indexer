@@ -16,9 +16,9 @@ open class NftHoldersByBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK,
+        indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_total_nft_holders_by_block",
+        collectionName = IndexerNames.NFT_HOLDERS_BY_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

@@ -36,7 +36,7 @@ open class ProposalResultCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.PROPOSAL_RESULT,
+                indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
                 ProposalResult::class.java,
                 version,
             )

@@ -16,9 +16,9 @@ open class VetDelegatedByBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
+        indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_total_vet_delegated_by_block",
+        collectionName = IndexerNames.VET_DELEGATED_BY_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

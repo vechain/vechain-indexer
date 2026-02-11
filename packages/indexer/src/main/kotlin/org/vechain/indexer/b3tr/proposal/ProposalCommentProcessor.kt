@@ -19,9 +19,9 @@ open class ProposalCommentProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.PROPOSAL_COMMENT,
+        indexerName = IndexerNames.PROPOSAL_COMMENT.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_proposal_comments",
+        collectionName = IndexerNames.PROPOSAL_COMMENT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

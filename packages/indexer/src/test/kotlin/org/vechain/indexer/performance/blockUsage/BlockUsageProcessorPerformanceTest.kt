@@ -34,7 +34,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.BLOCK_USAGE,
+                indexerName = IndexerNames.BLOCK_USAGE.NAME,
                 startBlock = 0L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -89,7 +89,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.BLOCK_USAGE)
+            .name(IndexerNames.BLOCK_USAGE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(100L)

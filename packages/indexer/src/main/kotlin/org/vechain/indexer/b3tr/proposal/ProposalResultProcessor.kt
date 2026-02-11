@@ -23,9 +23,9 @@ open class ProposalResultProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = proposalResultArchiveService,
-        indexerName = IndexerNames.PROPOSAL_RESULT,
+        indexerName = IndexerNames.PROPOSAL_RESULT.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_proposal_results",
+        collectionName = IndexerNames.PROPOSAL_RESULT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         val allUpdated = mutableMapOf<String, ProposalResult>()

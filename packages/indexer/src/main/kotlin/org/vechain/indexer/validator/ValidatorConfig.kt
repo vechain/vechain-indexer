@@ -50,7 +50,7 @@ open class ValidatorConfig {
         getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VALIDATOR)
+            .name(IndexerNames.VALIDATOR.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

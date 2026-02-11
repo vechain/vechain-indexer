@@ -39,7 +39,7 @@ open class ContractCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.CONTRACTS_INDEXER,
+                indexerName = IndexerNames.CONTRACTS.NAME,
                 Contract::class.java,
                 version,
             )

@@ -16,9 +16,9 @@ open class VetStakedByBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VET_STAKED_BY_BLOCK,
+        indexerName = IndexerNames.VET_STAKED_BY_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_total_vet_staked_by_block",
+        collectionName = IndexerNames.VET_STAKED_BY_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

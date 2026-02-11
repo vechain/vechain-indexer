@@ -22,9 +22,9 @@ open class GmNftProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = gmNftArchiveService,
-        indexerName = IndexerNames.GM_NFT,
+        indexerName = IndexerNames.GM_NFT.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_gm_nfts",
+        collectionName = IndexerNames.GM_NFT.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

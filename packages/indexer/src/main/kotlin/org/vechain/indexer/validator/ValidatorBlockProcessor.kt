@@ -18,9 +18,9 @@ open class ValidatorBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VALIDATOR_BLOCK,
+        indexerName = IndexerNames.VALIDATOR_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "validator_block_rewards",
+        collectionName = IndexerNames.VALIDATOR_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

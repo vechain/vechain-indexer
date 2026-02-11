@@ -22,9 +22,9 @@ open class XAllocResultProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = xAllocResultArchiveService,
-        indexerName = IndexerNames.X_ALLOC_RESULT,
+        indexerName = IndexerNames.X_ALLOC_RESULT.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_x_alloc_results",
+        collectionName = IndexerNames.X_ALLOC_RESULT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

@@ -51,7 +51,7 @@ interface <Model>Repository : BaseIndexedRepository<<Model>, String> {
 ## 2) Indexer module (`packages/indexer`)
 
 ### 2.1 Names
-Add a constant to `packages/indexer/src/main/kotlin/org/vechain/indexer/IndexerNames.kt`.
+Add a nested object with `NAME` and `COLLECTION` constants to `packages/common/src/main/kotlin/org/vechain/indexer/IndexerNames.kt`.
 
 ### 2.2 Service (business logic lives here)
 - Keep `processBlock/processEvents` returning `(updated, archivedExisting)` lists.

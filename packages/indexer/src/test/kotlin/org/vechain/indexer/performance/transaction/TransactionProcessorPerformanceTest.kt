@@ -36,7 +36,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.TRANSACTION,
+                indexerName = IndexerNames.TRANSACTION.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -85,7 +85,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.TRANSACTION)
+            .name(IndexerNames.TRANSACTION.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis")
@@ -105,9 +105,9 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
     ) :
         org.vechain.indexer.BaseProcessor(
             repository = repository,
-            indexerName = IndexerNames.TRANSACTION,
+            indexerName = IndexerNames.TRANSACTION.NAME,
             checkpointService = checkpointService,
-            collectionName = "transactions",
+            collectionName = IndexerNames.TRANSACTION.COLLECTION,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {

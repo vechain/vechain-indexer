@@ -19,9 +19,9 @@ open class VeVoteCommentProcessor(
 ) :
     BaseProcessor(
         repository = vevoteCommentRepository,
-        indexerName = IndexerNames.VEVOTE_COMMENT,
+        indexerName = IndexerNames.VEVOTE_COMMENT.NAME,
         checkpointService = checkpointService,
-        collectionName = "vevote_proposal_comments",
+        collectionName = IndexerNames.VEVOTE_COMMENT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

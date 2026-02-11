@@ -29,7 +29,7 @@ open class BlockUsageCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.BLOCK_USAGE,
+            indexerName = IndexerNames.BLOCK_USAGE.NAME,
             BlockUsage::class.java,
             version,
         )

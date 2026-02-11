@@ -44,7 +44,7 @@ open class AccountOverviewCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.ACCOUNT_OVERVIEW_INDEXER,
+                indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
                 AccountOverview::class.java,
                 version,
             )

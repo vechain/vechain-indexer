@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 
-@Document(collection = "historic_proposals")
+@Document(collection = IndexerNames.HISTORIC_PROPOSALS.COLLECTION)
 data class HistoricProposals(
     @Id val id: String,
     val proposalId: String,

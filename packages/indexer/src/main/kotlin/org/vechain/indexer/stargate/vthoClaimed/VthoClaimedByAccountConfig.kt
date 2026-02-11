@@ -59,7 +59,7 @@ open class VthoClaimedByAccountConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VTHO_CLAIMED_BY_ACCOUNT)
+            .name(IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(vthoClaimByAccountPruner)

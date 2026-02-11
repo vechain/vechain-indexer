@@ -26,7 +26,7 @@ open class ValidatorBlockConfig {
         getAllValidatorsAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.VALIDATOR_BLOCK)
+            .name(IndexerNames.VALIDATOR_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

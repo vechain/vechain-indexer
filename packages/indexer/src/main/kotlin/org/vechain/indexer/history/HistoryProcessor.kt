@@ -18,9 +18,9 @@ open class HistoryProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.HISTORY,
+        indexerName = IndexerNames.HISTORY.NAME,
         checkpointService = checkpointService,
-        collectionName = "history_events",
+        collectionName = IndexerNames.HISTORY.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

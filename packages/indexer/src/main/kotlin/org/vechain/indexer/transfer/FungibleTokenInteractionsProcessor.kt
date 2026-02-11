@@ -18,9 +18,9 @@ open class FungibleTokenInteractionsProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS,
+        indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.NAME,
         checkpointService = checkpointService,
-        collectionName = "fungible_token_interactions",
+        collectionName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -42,7 +42,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.HISTORY,
+                indexerName = IndexerNames.HISTORY.NAME,
                 startBlock = 23430500L, // Adjust this to a block range with activity
                 blockCount = 1000, // Start with 100 blocks for first test
                 warmupBlocks = 0, // Disabled warmup to avoid database conflicts

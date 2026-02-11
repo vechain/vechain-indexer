@@ -54,7 +54,7 @@ open class TokenRewardConfig {
         getAllValidatorsAddress: String,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.TOKEN_REWARD)
+            .name(IndexerNames.TOKEN_REWARD.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

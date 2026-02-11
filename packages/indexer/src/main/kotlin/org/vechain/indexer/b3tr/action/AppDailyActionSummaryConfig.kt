@@ -58,7 +58,7 @@ open class AppDailyActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.APP_DAILY_ACTION_SUMMARY)
+            .name(IndexerNames.APP_DAILY_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(appDailyActionSummaryPruner)

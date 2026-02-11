@@ -17,9 +17,9 @@ open class TransactionProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.TRANSACTION,
+        indexerName = IndexerNames.TRANSACTION.NAME,
         checkpointService = checkpointService,
-        collectionName = "transactions",
+        collectionName = IndexerNames.TRANSACTION.COLLECTION,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

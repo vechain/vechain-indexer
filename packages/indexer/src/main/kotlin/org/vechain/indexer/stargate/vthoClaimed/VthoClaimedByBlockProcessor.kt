@@ -16,9 +16,9 @@ open class VthoClaimedByBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK,
+        indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_vtho_claimed_by_block",
+        collectionName = IndexerNames.VTHO_CLAIMED_BY_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

@@ -21,9 +21,9 @@ open class HistoricProposalsVoteProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE,
+        indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE.NAME,
         checkpointService = checkpointService,
-        collectionName = "historic_proposals_votes",
+        collectionName = IndexerNames.HISTORIC_PROPOSALS_VOTE.COLLECTION,
     ) {
     private var aggregationRan: Boolean = false
 

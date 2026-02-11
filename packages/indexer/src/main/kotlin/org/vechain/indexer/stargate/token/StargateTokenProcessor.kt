@@ -21,9 +21,9 @@ open class StargateTokenProcessor(
     BaseStatefulProcessor(
         repository = stargateTokenRepository,
         archiveService = archiveService,
-        indexerName = IndexerNames.STARGATE_TOKEN,
+        indexerName = IndexerNames.STARGATE_TOKEN.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_tokens",
+        collectionName = IndexerNames.STARGATE_TOKEN.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

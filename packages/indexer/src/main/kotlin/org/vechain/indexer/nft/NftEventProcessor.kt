@@ -20,9 +20,9 @@ open class NftProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.NFT,
+        indexerName = IndexerNames.NFT.NAME,
         checkpointService = checkpointService,
-        collectionName = "nfts",
+        collectionName = IndexerNames.NFT.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

@@ -31,7 +31,7 @@ open class NftHoldersByBlockCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK,
+                indexerName = IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME,
                 NftHoldersByBlock::class.java,
                 version,
             )

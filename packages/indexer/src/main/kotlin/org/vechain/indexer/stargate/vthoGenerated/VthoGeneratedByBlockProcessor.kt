@@ -18,9 +18,9 @@ open class VthoGeneratedByBlockProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
+        indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_vtho_generated_by_block",
+        collectionName = IndexerNames.VTHO_GENERATED_BY_BLOCK.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

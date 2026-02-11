@@ -25,9 +25,9 @@ open class AppRoundActionSummaryProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = appRoundActionSummaryArchiveService,
-        indexerName = IndexerNames.APP_ROUND_ACTION_SUMMARY,
+        indexerName = IndexerNames.APP_ROUND_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_app_action_summaries_round",
+        collectionName = IndexerNames.APP_ROUND_ACTION_SUMMARY.COLLECTION,
     ) {
 
     protected var roundId: Int =

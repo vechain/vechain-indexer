@@ -6,12 +6,13 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "delegations")
+@Document(collection = IndexerNames.DELEGATION.COLLECTION)
 data class Delegation
 @ConstructorBinding
 constructor(

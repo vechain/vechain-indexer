@@ -6,11 +6,12 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.voting.Support
 import org.vechain.indexer.thor.HexUtils
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "b3tr_proposal_comments")
+@Document(collection = IndexerNames.PROPOSAL_COMMENT.COLLECTION)
 data class ProposalComment
 @ConstructorBinding
 constructor(

@@ -26,7 +26,7 @@ open class HistoricProposalsVoteConfig {
         @Qualifier("historicProposalsIndexer") historicProposalsIndexer: Indexer,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.HISTORIC_PROPOSALS_VOTE)
+            .name(IndexerNames.HISTORIC_PROPOSALS_VOTE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

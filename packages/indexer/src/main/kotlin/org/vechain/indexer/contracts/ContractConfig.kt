@@ -45,7 +45,7 @@ open class ContractConfig {
         @Value("\${indexer.sync-block-batch-size.contracts:500}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.CONTRACTS_INDEXER)
+            .name(IndexerNames.CONTRACTS.NAME)
             .thorClient(thorClient)
             .pruner(contractPruner)
             .prunerInterval(prunerInterval)

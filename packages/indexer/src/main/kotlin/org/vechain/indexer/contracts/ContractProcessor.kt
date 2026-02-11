@@ -22,9 +22,9 @@ open class ContractProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.CONTRACTS_INDEXER,
+        indexerName = IndexerNames.CONTRACTS.NAME,
         checkpointService = checkpointService,
-        collectionName = "contracts",
+        collectionName = IndexerNames.CONTRACTS.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

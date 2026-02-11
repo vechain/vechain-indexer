@@ -20,7 +20,7 @@ open class VetBalanceConfig {
         @Value("\${indexer.sync-block-batch-size.vet-balance}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VET_BALANCE_INDEXER)
+            .name(IndexerNames.VET_BALANCE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(0L)

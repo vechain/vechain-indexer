@@ -39,7 +39,7 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
+                indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -99,7 +99,7 @@ class VthoGeneratedByBlockProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.VTHO_GENERATED_BY_BLOCK)
+            .name(IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

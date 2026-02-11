@@ -26,7 +26,7 @@ open class HistoricProposalsConfig {
         legacyDescriptions: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.HISTORIC_PROPOSALS)
+            .name(IndexerNames.HISTORIC_PROPOSALS.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

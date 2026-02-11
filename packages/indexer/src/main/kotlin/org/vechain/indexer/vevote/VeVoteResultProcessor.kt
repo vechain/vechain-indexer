@@ -21,9 +21,9 @@ open class VeVoteResultProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = veVoteResultArchiveService,
-        indexerName = IndexerNames.VEVOTE_RESULT,
+        indexerName = IndexerNames.VEVOTE_RESULT.NAME,
         checkpointService = checkpointService,
-        collectionName = "vevote_proposal_results",
+        collectionName = IndexerNames.VEVOTE_RESULT.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

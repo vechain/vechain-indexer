@@ -18,9 +18,9 @@ open class TransferProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.TRANSFER,
+        indexerName = IndexerNames.TRANSFER.NAME,
         checkpointService = checkpointService,
-        collectionName = "transfer_events",
+        collectionName = IndexerNames.TRANSFER.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

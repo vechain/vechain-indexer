@@ -60,6 +60,7 @@ class AmnProcessorTest {
         every { amnRepository.count() } returns 5L
         val superResult = AmnEndorser("0xabc", 50, blockTimestamp = 123L, blockId = "a")
         every { amnRepository.getLatestRecord() } returns superResult
+        every { checkpointService.getCheckpoint(any()) } returns null
 
         val result = processor.getLastSyncedBlock()
 

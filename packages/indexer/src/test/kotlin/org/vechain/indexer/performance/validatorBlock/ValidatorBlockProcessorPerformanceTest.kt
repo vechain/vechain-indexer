@@ -38,7 +38,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.VALIDATOR_BLOCK,
+                indexerName = IndexerNames.VALIDATOR_BLOCK.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,

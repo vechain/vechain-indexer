@@ -24,9 +24,9 @@ open class AmnProcessor(
 ) :
     BaseProcessor(
         repository,
-        IndexerNames.AUTHORITY_NODE,
+        IndexerNames.AUTHORITY_NODE.NAME,
         checkpointService = checkpointService,
-        collectionName = "authority_nodes",
+        collectionName = IndexerNames.AUTHORITY_NODE.COLLECTION,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

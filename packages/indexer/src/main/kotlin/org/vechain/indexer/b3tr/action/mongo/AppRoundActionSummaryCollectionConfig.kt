@@ -38,7 +38,7 @@ open class AppRoundActionSummaryCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.APP_ROUND_ACTION_SUMMARY,
+                indexerName = IndexerNames.APP_ROUND_ACTION_SUMMARY.NAME,
                 AppRoundActionSummary::class.java,
                 version,
             )

@@ -23,9 +23,9 @@ open class AppDailyActionSummaryProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = appDailyActionSummaryArchiveService,
-        indexerName = IndexerNames.APP_DAILY_ACTION_SUMMARY,
+        indexerName = IndexerNames.APP_DAILY_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_app_action_summaries_daily",
+        collectionName = IndexerNames.APP_DAILY_ACTION_SUMMARY.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

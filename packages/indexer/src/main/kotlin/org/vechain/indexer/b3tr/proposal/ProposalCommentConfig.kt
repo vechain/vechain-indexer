@@ -26,7 +26,7 @@ open class ProposalCommentConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.PROPOSAL_COMMENT)
+            .name(IndexerNames.PROPOSAL_COMMENT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

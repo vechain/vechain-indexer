@@ -51,7 +51,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY,
+                indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -111,7 +111,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.USER_ALL_TIME_ACTION_SUMMARY)
+            .name(IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

@@ -23,9 +23,9 @@ open class TotalAccountsProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
+        indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
         checkpointService = checkpointService,
-        collectionName = "total_accounts",
+        collectionName = IndexerNames.TOTAL_ACCOUNTS.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

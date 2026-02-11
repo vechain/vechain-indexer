@@ -54,7 +54,7 @@ open class ProposalResultConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.PROPOSAL_RESULT)
+            .name(IndexerNames.PROPOSAL_RESULT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(proposalResultPruner)

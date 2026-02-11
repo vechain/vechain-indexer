@@ -21,7 +21,7 @@ open class AmnConfig {
         @Value("\${veworld.contract.authority-node.address}") contractAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.AUTHORITY_NODE)
+            .name(IndexerNames.AUTHORITY_NODE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(syncLoggerInterval)

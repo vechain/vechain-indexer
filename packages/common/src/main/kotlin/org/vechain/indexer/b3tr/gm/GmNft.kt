@@ -5,10 +5,11 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 
-@Document(collection = "b3tr_gm_nfts")
+@Document(collection = IndexerNames.GM_NFT.COLLECTION)
 data class GmNft
 @ConstructorBinding
 constructor(

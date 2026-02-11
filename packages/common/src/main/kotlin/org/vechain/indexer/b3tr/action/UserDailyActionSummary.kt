@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.EntityType
 import org.vechain.indexer.b3tr.shared.UserActionSummaryDocument
@@ -16,7 +17,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
  * Sustainable overview This model is used to track how apps and users are doing in terms of
  * sustainability on a daily basis.
  */
-@Document(collection = "b3tr_user_action_summaries_daily")
+@Document(collection = IndexerNames.USER_DAILY_ACTION_SUMMARY.COLLECTION)
 data class UserDailyActionSummary
 @ConstructorBinding
 constructor(

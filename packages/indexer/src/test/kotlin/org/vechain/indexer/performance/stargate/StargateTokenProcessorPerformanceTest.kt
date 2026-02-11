@@ -59,7 +59,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.STARGATE_TOKEN,
+                indexerName = IndexerNames.STARGATE_TOKEN.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -122,7 +122,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.STARGATE_TOKEN)
+            .name(IndexerNames.STARGATE_TOKEN.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

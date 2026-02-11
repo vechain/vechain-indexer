@@ -40,7 +40,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
+                indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -101,7 +101,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.TOTAL_ACCOUNTS_INDEXER)
+            .name(IndexerNames.TOTAL_ACCOUNTS.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

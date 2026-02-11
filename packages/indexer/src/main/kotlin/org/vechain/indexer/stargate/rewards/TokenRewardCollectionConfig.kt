@@ -39,7 +39,7 @@ open class TokenRewardCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.TOKEN_REWARD,
+                indexerName = IndexerNames.TOKEN_REWARD.NAME,
                 TokenReward::class.java,
                 version,
             )

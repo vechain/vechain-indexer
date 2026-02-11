@@ -22,9 +22,9 @@ open class VthoClaimedByAccountProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = vthoClaimByAccountArchiveService,
-        indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
+        indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_vtho_claimed_by_account",
+        collectionName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

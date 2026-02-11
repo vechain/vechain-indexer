@@ -21,9 +21,9 @@ open class DelegationProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.DELEGATION,
+        indexerName = IndexerNames.DELEGATION.NAME,
         checkpointService = checkpointService,
-        collectionName = "delegations",
+        collectionName = IndexerNames.DELEGATION.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

@@ -23,9 +23,9 @@ open class UserAllTimeActionSummaryProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = userAllTimeActionSummaryArchiveService,
-        indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY,
+        indexerName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.NAME,
         checkpointService = checkpointService,
-        collectionName = "b3tr_user_action_summaries_all_time",
+        collectionName = IndexerNames.USER_ALL_TIME_ACTION_SUMMARY.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

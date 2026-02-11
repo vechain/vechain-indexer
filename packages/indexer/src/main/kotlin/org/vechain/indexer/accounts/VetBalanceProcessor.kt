@@ -19,9 +19,9 @@ open class VetBalanceProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.VET_BALANCE_INDEXER,
+        indexerName = IndexerNames.VET_BALANCE.NAME,
         checkpointService = checkpointService,
-        collectionName = "vet_balances",
+        collectionName = IndexerNames.VET_BALANCE.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

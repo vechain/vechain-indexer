@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
-import org.vechain.indexer.IndexerNames.BLOCK_USAGE
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.client.ThorClient
 
 @Configuration
@@ -19,7 +19,7 @@ open class BlockUsageConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): Indexer =
         IndexerFactory()
-            .name(BLOCK_USAGE)
+            .name(IndexerNames.BLOCK_USAGE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(syncLoggerInterval)

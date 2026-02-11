@@ -6,11 +6,12 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "b3tr_app_action_summaries_all_time")
+@Document(collection = IndexerNames.APP_ALL_TIME_ACTION_SUMMARY.COLLECTION)
 data class AppAllTimeActionSummary
 @ConstructorBinding
 constructor(

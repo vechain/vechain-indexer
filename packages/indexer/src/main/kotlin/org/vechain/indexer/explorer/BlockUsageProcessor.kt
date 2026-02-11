@@ -19,9 +19,9 @@ open class BlockUsageProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.BLOCK_USAGE,
+        indexerName = IndexerNames.BLOCK_USAGE.NAME,
         checkpointService = checkpointService,
-        collectionName = "block_usage",
+        collectionName = IndexerNames.BLOCK_USAGE.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

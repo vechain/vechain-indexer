@@ -4,13 +4,14 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.utils.IdUtils.generateId
 
 /**
  * Used to track fungible token contracts that a wallet has interacted with. If a user has sent or
  * received a token from a fungible token contract, an entry will be created here.
  */
-@Document(collection = "fungible_token_interactions")
+@Document(collection = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.COLLECTION)
 data class FungibleTokenInteraction
 @ConstructorBinding
 constructor(

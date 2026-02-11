@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.b3tr.shared.AppActionSummaryDocument
 import org.vechain.indexer.utils.IdUtils.generateId
@@ -15,7 +16,7 @@ import org.vechain.indexer.utils.IdUtils.generateId
  * Sustainable overview This model is used to track how apps are doing in terms of sustainability
  * over each round.
  */
-@Document(collection = "b3tr_app_action_summaries_round")
+@Document(collection = IndexerNames.APP_ROUND_ACTION_SUMMARY.COLLECTION)
 data class AppRoundActionSummary
 @ConstructorBinding
 constructor(

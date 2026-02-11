@@ -16,9 +16,9 @@ open class HistoricProposalsProcessor(
 ) :
     BaseProcessor(
         repository = repository,
-        indexerName = IndexerNames.HISTORIC_PROPOSALS,
+        indexerName = IndexerNames.HISTORIC_PROPOSALS.NAME,
         checkpointService = checkpointService,
-        collectionName = "historic_proposals",
+        collectionName = IndexerNames.HISTORIC_PROPOSALS.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

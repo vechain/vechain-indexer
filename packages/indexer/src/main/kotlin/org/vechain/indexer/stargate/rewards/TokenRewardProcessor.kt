@@ -22,9 +22,9 @@ open class TokenRewardProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.TOKEN_REWARD,
+        indexerName = IndexerNames.TOKEN_REWARD.NAME,
         checkpointService = checkpointService,
-        collectionName = "stargate_token_rewards",
+        collectionName = IndexerNames.TOKEN_REWARD.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

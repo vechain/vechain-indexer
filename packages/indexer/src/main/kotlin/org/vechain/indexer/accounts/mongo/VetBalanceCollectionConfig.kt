@@ -37,7 +37,7 @@ open class VetBalanceCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VET_BALANCE_INDEXER,
+            indexerName = IndexerNames.VET_BALANCE.NAME,
             VetBalance::class.java,
             version,
         )

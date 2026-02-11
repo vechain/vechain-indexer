@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 
 enum class TransferEventType {
     VET,
@@ -12,7 +13,7 @@ enum class TransferEventType {
     SEMI_FUNGIBLE_TOKEN,
 }
 
-@Document(collection = "transfer_events")
+@Document(collection = IndexerNames.TRANSFER.COLLECTION)
 data class IndexedTransferEvent
 @ConstructorBinding
 constructor(

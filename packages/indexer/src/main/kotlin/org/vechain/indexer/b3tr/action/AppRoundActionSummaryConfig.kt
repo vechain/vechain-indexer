@@ -59,7 +59,7 @@ open class AppRoundActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.APP_ROUND_ACTION_SUMMARY)
+            .name(IndexerNames.APP_ROUND_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(appRoundActionSummaryPruner)

@@ -25,9 +25,9 @@ open class AccountOverviewProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.ACCOUNT_OVERVIEW_INDEXER,
+        indexerName = IndexerNames.ACCOUNT_OVERVIEW.NAME,
         checkpointService = checkpointService,
-        collectionName = "account_overviews",
+        collectionName = IndexerNames.ACCOUNT_OVERVIEW.COLLECTION,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)

@@ -54,7 +54,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.DELEGATION,
+                indexerName = IndexerNames.DELEGATION.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,

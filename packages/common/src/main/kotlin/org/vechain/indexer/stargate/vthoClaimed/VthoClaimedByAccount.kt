@@ -5,11 +5,12 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils
 
-@Document(collection = "stargate_vtho_claimed_by_account")
+@Document(collection = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.COLLECTION)
 data class VthoClaimedByAccount
 @ConstructorBinding
 constructor(

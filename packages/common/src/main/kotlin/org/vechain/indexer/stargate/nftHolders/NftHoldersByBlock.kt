@@ -5,12 +5,13 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.TimeFrame
 import org.vechain.indexer.stargate.timeFrame.TimeFrameDocument
 import org.vechain.indexer.stargate.token.LevelledValue
 import org.vechain.indexer.stargate.token.TokenLevel
 
-@Document(collection = "stargate_total_nft_holders_by_block")
+@Document(collection = IndexerNames.NFT_HOLDERS_BY_BLOCK.COLLECTION)
 data class NftHoldersByBlock
 @ConstructorBinding
 constructor(

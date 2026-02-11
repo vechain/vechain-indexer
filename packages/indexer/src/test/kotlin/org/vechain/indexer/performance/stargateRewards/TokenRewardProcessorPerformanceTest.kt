@@ -45,7 +45,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.TOKEN_REWARD,
+                indexerName = IndexerNames.TOKEN_REWARD.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -108,7 +108,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
             }
 
         return IndexerFactory()
-            .name(IndexerNames.TOKEN_REWARD)
+            .name(IndexerNames.TOKEN_REWARD.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

@@ -22,9 +22,9 @@ open class ValidatorProcessor(
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.VALIDATOR,
+        indexerName = IndexerNames.VALIDATOR.NAME,
         checkpointService = checkpointService,
-        collectionName = "validators",
+        collectionName = IndexerNames.VALIDATOR.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
