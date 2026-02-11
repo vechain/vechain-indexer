@@ -7,11 +7,12 @@ import java.math.BigInteger
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "stargate_token_rewards")
+@Document(collection = IndexerNames.TOKEN_REWARD.COLLECTION)
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TokenReward(

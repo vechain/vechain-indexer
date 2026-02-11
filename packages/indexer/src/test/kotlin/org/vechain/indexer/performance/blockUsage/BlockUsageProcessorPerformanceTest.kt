@@ -8,6 +8,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.explorer.BlockUsageProcessor
 import org.vechain.indexer.explorer.BlockUsageService
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
@@ -20,6 +21,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var blockUsageRepository: BlockUsageRepository
     @Autowired lateinit var blockUsageService: BlockUsageService
+    @Autowired lateinit var checkpointService: CheckpointService
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -32,7 +34,7 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.BLOCK_USAGE,
+                indexerName = IndexerNames.BLOCK_USAGE.NAME,
                 startBlock = 0L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -76,13 +78,18 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
                     repository = blockUsageRepository,
                     service = serviceToUse,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
-                BlockUsageProcessor(repository = blockUsageRepository, service = serviceToUse)
+                BlockUsageProcessor(
+                    repository = blockUsageRepository,
+                    service = serviceToUse,
+                    checkpointService = checkpointService,
+                )
             }
 
         return IndexerFactory()
-            .name(IndexerNames.BLOCK_USAGE)
+            .name(IndexerNames.BLOCK_USAGE.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .syncLoggerInterval(100L)
@@ -96,7 +103,13 @@ class BlockUsageProcessorPerformanceTest : BasePerformanceTest() {
         repository: BlockUsageRepository,
         service: BlockUsageService,
         private val profiler: DetailedProfiler,
-    ) : BlockUsageProcessor(repository = repository, service = service) {
+        checkpointService: CheckpointService,
+    ) :
+        BlockUsageProcessor(
+            repository = repository,
+            service = service,
+            checkpointService = checkpointService,
+        ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    BlockUsageProcessor.process (per block)") {
                 super.processEntry(entry)

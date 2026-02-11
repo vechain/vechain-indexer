@@ -36,7 +36,7 @@ open class ValidatorCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                IndexerNames.VALIDATOR,
+                IndexerNames.VALIDATOR.NAME,
                 Validator::class.java,
                 version,
             )

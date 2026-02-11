@@ -5,11 +5,12 @@ import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
-@Document("nfts")
+@Document(IndexerNames.NFT.COLLECTION)
 @JsonView(Views.Public::class)
 data class IndexedNft
 @ConstructorBinding

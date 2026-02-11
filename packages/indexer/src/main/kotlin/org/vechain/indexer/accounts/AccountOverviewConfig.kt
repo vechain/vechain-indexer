@@ -50,7 +50,7 @@ open class AccountOverviewConfig {
         @Value("\${indexer.sync-block-batch-size.stargate}") syncBlockBatchSize: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.ACCOUNT_OVERVIEW_INDEXER)
+            .name(IndexerNames.ACCOUNT_OVERVIEW.NAME)
             .thorClient(thorClient)
             .pruner(accountOverviewPruner)
             .prunerInterval(prunerInterval)

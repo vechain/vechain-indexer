@@ -8,18 +8,22 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("validator", "delegation")
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,
     archiveService: ArchiveService<Delegation, DelegationArchive>,
+    checkpointService: CheckpointService,
     private val service: DelegationService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        IndexerNames.DELEGATION,
+        indexerName = IndexerNames.DELEGATION.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.DELEGATION.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

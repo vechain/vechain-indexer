@@ -29,7 +29,7 @@ open class HistoryCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.HISTORY,
+            indexerName = IndexerNames.HISTORY.NAME,
             IndexedHistoryEvent::class.java,
             version,
         )

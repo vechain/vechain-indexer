@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockIdentifier
 import org.vechain.indexer.thor.model.BlockRevision
@@ -19,7 +20,14 @@ open class AmnProcessor(
     private val repository: AmnRepository,
     private val amnService: AmnService,
     private val thorClient: ThorClient,
-) : BaseProcessor(repository, IndexerNames.AUTHORITY_NODE) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository,
+        IndexerNames.AUTHORITY_NODE.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.AUTHORITY_NODE.COLLECTION,
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

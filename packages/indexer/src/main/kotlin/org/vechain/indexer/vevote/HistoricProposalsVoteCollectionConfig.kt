@@ -29,7 +29,7 @@ open class HistoricProposalsVoteCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE,
+            indexerName = IndexerNames.HISTORIC_PROPOSALS_VOTE.NAME,
             HistoricProposalsVote::class.java,
             version,
         )

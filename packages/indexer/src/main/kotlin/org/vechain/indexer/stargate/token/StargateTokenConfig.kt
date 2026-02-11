@@ -59,7 +59,7 @@ open class StargateTokenConfig {
         nodeManagementContract: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.STARGATE_TOKEN)
+            .name(IndexerNames.STARGATE_TOKEN.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(stargateTokenPruner)

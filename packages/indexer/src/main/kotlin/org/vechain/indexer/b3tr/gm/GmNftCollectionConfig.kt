@@ -37,7 +37,7 @@ open class GmNftCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.GM_NFT,
+                indexerName = IndexerNames.GM_NFT.NAME,
                 GmNft::class.java,
                 version,
             )

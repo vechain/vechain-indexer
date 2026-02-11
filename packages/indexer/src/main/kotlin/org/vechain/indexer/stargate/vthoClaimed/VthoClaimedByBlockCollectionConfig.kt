@@ -31,7 +31,7 @@ open class VthoClaimedByBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK,
+            indexerName = IndexerNames.VTHO_CLAIMED_BY_BLOCK.NAME,
             VthoClaimedByBlock::class.java,
             version,
         )

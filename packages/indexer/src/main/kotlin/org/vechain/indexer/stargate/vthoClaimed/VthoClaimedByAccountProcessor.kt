@@ -8,6 +8,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("stargate", "vtho-claimed-by-account")
 @Component
@@ -16,11 +17,14 @@ open class VthoClaimedByAccountProcessor(
     vthoClaimByAccountArchiveService:
         ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
     repository: VthoClaimedByAccountRepository,
+    checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = vthoClaimByAccountArchiveService,
-        indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
+        indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {

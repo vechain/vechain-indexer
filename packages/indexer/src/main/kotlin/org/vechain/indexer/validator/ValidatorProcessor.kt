@@ -9,18 +9,22 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("validator", "validator-stats")
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,
     archiveService: ArchiveService<Validator, ValidatorArchive>,
+    checkpointService: CheckpointService,
     private val service: ValidatorService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        IndexerNames.VALIDATOR,
+        indexerName = IndexerNames.VALIDATOR.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.VALIDATOR.COLLECTION,
     ) {
 
     override suspend fun processEntry(entry: IndexingResult) {

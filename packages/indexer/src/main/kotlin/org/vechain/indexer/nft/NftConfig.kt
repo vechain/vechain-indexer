@@ -43,7 +43,7 @@ open class NftConfig() {
         @Value("\${indexer.blacklist.contract-address}") blacklistContract: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.NFT)
+            .name(IndexerNames.NFT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(nftPruner)

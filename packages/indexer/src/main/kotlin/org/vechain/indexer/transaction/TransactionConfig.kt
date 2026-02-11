@@ -20,7 +20,7 @@ open class TransactionConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.TRANSACTION)
+            .name(IndexerNames.TRANSACTION.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis")

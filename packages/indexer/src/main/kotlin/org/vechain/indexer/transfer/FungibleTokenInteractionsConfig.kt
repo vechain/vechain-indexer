@@ -21,7 +21,7 @@ open class FungibleTokenInteractionsConfig {
         @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS)
+            .name(IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis/fungible-tokens")

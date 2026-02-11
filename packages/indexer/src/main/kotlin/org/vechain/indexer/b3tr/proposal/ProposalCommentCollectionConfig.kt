@@ -28,7 +28,7 @@ open class ProposalCommentCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.PROPOSAL_COMMENT,
+            indexerName = IndexerNames.PROPOSAL_COMMENT.NAME,
             ProposalComment::class.java,
             version,
         )

@@ -31,7 +31,7 @@ open class VetDelegatedByBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK,
+            indexerName = IndexerNames.VET_DELEGATED_BY_BLOCK.NAME,
             VetDelegatedByBlock::class.java,
             version,
         )

@@ -5,11 +5,12 @@ import java.math.BigDecimal
 import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "vevote_proposal_results")
+@Document(collection = IndexerNames.VEVOTE_RESULT.COLLECTION)
 data class VeVoteProposalResult
 @ConstructorBinding
 constructor(

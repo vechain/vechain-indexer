@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -20,6 +21,8 @@ class VeVoteCommentProcessorTest {
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var vevoteCommentProcessor: VeVoteCommentProcessor
 
     @BeforeEach
@@ -27,7 +30,12 @@ class VeVoteCommentProcessorTest {
         MockKAnnotations.init(this)
 
         vevoteCommentProcessor =
-            VeVoteCommentProcessor(vevoteCommentRepository, veVoteCommentService, mongoTemplate)
+            VeVoteCommentProcessor(
+                vevoteCommentRepository,
+                veVoteCommentService,
+                mongoTemplate,
+                checkpointService,
+            )
     }
 
     @Test

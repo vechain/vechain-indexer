@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
@@ -28,6 +29,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var tokenRewardService: TokenRewardService
     @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
     @Autowired lateinit var delegationRepository: DelegationRepository
+    @Autowired lateinit var checkpointService: CheckpointService
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsContract: String
@@ -43,7 +45,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.TOKEN_REWARD,
+                indexerName = IndexerNames.TOKEN_REWARD.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -94,17 +96,19 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
                 TokenRewardProcessor(
                     service = serviceToUse,
                     repository = tokenRewardRepository,
                     archiveService = archiveService,
+                    checkpointService = checkpointService,
                 )
             }
 
         return IndexerFactory()
-            .name(IndexerNames.TOKEN_REWARD)
+            .name(IndexerNames.TOKEN_REWARD.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)
@@ -121,11 +125,13 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
         repository: TokenRewardRepository,
         archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
         private val profiler: DetailedProfiler,
+        checkpointService: CheckpointService,
     ) :
         TokenRewardProcessor(
             service = service,
             repository = repository,
             archiveService = archiveService,
+            checkpointService = checkpointService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TokenRewardProcessor.process (per block)") {

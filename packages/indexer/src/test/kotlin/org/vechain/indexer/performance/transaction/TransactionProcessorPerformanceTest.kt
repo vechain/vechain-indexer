@@ -9,6 +9,7 @@ import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.transaction.TransactionProcessor
@@ -22,6 +23,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var transactionRepository: TransactionRepository
     @Autowired lateinit var transactionService: TransactionService
     @Autowired lateinit var mongoTemplate: MongoTemplate
+    @Autowired lateinit var checkpointService: CheckpointService
 
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
@@ -34,7 +36,7 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.TRANSACTION,
+                indexerName = IndexerNames.TRANSACTION.NAME,
                 startBlock = 23430500L,
                 blockCount = 1000,
                 warmupBlocks = 0,
@@ -72,16 +74,18 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
                     profiledService = profiledService,
                     repository = transactionRepository,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
                 TransactionProcessor(
                     transactionService = transactionService,
                     repository = transactionRepository,
+                    checkpointService = checkpointService,
                 )
             }
 
         return IndexerFactory()
-            .name(IndexerNames.TRANSACTION)
+            .name(IndexerNames.TRANSACTION.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis")
@@ -97,10 +101,13 @@ class TransactionProcessorPerformanceTest : BasePerformanceTest() {
         private val profiledService: ProfiledTransactionService,
         repository: TransactionRepository,
         private val profiler: DetailedProfiler,
+        checkpointService: CheckpointService,
     ) :
         org.vechain.indexer.BaseProcessor(
             repository = repository,
-            indexerName = IndexerNames.TRANSACTION,
+            indexerName = IndexerNames.TRANSACTION.NAME,
+            checkpointService = checkpointService,
+            collectionName = IndexerNames.TRANSACTION.COLLECTION,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    TransactionProcessor.process (per block)") {

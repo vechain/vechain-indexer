@@ -27,7 +27,7 @@ open class VthoGeneratedByBlockConfig {
         val clauses = StargateUtils.buildIssuanceClause(stakerSC)
 
         return IndexerFactory()
-            .name(IndexerNames.VTHO_GENERATED_BY_BLOCK)
+            .name(IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

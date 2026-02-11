@@ -5,11 +5,12 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonView
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "contracts")
+@Document(collection = IndexerNames.CONTRACTS.COLLECTION)
 @JsonView(Views.Public::class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Contract(

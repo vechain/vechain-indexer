@@ -36,7 +36,7 @@ open class DelegationCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                IndexerNames.DELEGATION,
+                IndexerNames.DELEGATION.NAME,
                 Delegation::class.java,
                 version,
             )

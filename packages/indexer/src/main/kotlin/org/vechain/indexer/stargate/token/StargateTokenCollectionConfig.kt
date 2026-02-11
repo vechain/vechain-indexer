@@ -36,7 +36,7 @@ open class StargateTokenCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.STARGATE_TOKEN,
+                indexerName = IndexerNames.STARGATE_TOKEN.NAME,
                 StargateToken::class.java,
                 version,
             )

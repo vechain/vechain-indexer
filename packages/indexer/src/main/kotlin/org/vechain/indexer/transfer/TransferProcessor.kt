@@ -7,13 +7,21 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("transfers")
 @Component
 open class TransferProcessor(
     private val service: TransferService,
     repository: TransferEventRepository,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.TRANSFER) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.TRANSFER.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.TRANSFER.COLLECTION,
+    ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return

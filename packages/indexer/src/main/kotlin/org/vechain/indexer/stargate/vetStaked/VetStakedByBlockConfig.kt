@@ -27,7 +27,7 @@ open class VetStakedByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VET_STAKED_BY_BLOCK)
+            .name(IndexerNames.VET_STAKED_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

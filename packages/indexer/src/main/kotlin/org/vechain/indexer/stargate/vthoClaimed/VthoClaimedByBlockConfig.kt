@@ -29,7 +29,7 @@ open class VthoClaimedByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK)
+            .name(IndexerNames.VTHO_CLAIMED_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

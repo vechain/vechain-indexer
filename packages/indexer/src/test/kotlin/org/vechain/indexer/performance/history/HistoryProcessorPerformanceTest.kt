@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.Indexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.history.HistoryConfig
 import org.vechain.indexer.history.HistoryProcessor
 import org.vechain.indexer.history.HistoryRepository
@@ -28,6 +29,8 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var blacklistClient: NftBlacklistClient
 
+    @Autowired lateinit var checkpointService: CheckpointService
+
     @Test
     fun `Performance test - 1000 blocks from mainnet`() {
         // Clear database to start fresh
@@ -39,7 +42,7 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
 
         val config =
             PerformanceTestConfig(
-                indexerName = IndexerNames.HISTORY,
+                indexerName = IndexerNames.HISTORY.NAME,
                 startBlock = 23430500L, // Adjust this to a block range with activity
                 blockCount = 1000, // Start with 100 blocks for first test
                 warmupBlocks = 0, // Disabled warmup to avoid database conflicts
@@ -86,10 +89,15 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
                     repository = historyRepository,
                     historyService = profiledService,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
                 // Use standard processor
-                HistoryProcessor(repository = historyRepository, historyService = historyService)
+                HistoryProcessor(
+                    repository = historyRepository,
+                    historyService = historyService,
+                    checkpointService = checkpointService,
+                )
             }
 
         return HistoryConfig()
@@ -107,7 +115,13 @@ class HistoryProcessorPerformanceTest : BasePerformanceTest() {
         repository: HistoryRepository,
         historyService: HistoryService,
         private val profiler: DetailedProfiler,
-    ) : HistoryProcessor(repository = repository, historyService = historyService) {
+        checkpointService: CheckpointService,
+    ) :
+        HistoryProcessor(
+            repository = repository,
+            historyService = historyService,
+            checkpointService = checkpointService,
+        ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("HistoryProcessor.process (per block)") {
                 profiler.time("  Event processing logic") {

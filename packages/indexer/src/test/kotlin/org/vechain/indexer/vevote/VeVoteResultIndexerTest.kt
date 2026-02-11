@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 
 @ExtendWith(MockKExtension::class)
@@ -25,6 +26,8 @@ class VeVoteResultIndexerTest {
 
     @MockK lateinit var mongoTemplate: MongoTemplate
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var voteResultsIndexer: VeVoteResultProcessor
 
     @BeforeEach
@@ -36,6 +39,7 @@ class VeVoteResultIndexerTest {
                 service = veVoteResultService,
                 repository = veVoteProposalResultRepository,
                 veVoteResultArchiveService = veVoteProposalResultArchive,
+                checkpointService = checkpointService,
             )
     }
 

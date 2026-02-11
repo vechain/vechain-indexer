@@ -6,13 +6,14 @@ import org.springframework.boot.context.properties.bind.ConstructorBinding
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.thor.DecodedOutputs
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.Transaction
 import org.vechain.indexer.thor.model.Views
 
-@Document(collection = "transactions")
+@Document(collection = IndexerNames.TRANSACTION.COLLECTION)
 @JsonView(Views.Public::class)
 data class IndexedTransaction
 @ConstructorBinding

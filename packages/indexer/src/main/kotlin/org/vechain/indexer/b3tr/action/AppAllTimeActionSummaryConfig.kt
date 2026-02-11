@@ -58,7 +58,7 @@ open class AppAllTimeActionSummaryConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.APP_ALL_TIME_ACTION_SUMMARY)
+            .name(IndexerNames.APP_ALL_TIME_ACTION_SUMMARY.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(appAllTimeActionSummaryPruner)

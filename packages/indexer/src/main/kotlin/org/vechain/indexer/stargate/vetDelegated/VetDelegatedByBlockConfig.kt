@@ -23,7 +23,7 @@ open class VetDelegatedByBlockConfig {
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
     ): BlockIndexer =
         IndexerFactory()
-            .name(IndexerNames.VET_DELEGATED_BY_BLOCK)
+            .name(IndexerNames.VET_DELEGATED_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

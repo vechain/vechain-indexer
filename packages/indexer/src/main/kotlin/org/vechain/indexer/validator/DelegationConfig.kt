@@ -52,7 +52,7 @@ open class DelegationConfig {
         getAllValidatorsAddress: String,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.DELEGATION)
+            .name(IndexerNames.DELEGATION.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

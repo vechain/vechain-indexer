@@ -29,7 +29,7 @@ open class VeVoteCommentCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VEVOTE_COMMENT,
+            indexerName = IndexerNames.VEVOTE_COMMENT.NAME,
             VeVoteProposalComment::class.java,
             version,
         )

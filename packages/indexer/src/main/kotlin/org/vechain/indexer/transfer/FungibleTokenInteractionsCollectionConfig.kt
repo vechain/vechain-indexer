@@ -29,7 +29,7 @@ open class FungibleTokenInteractionsCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS,
+            indexerName = IndexerNames.FUNGIBLE_TOKEN_INTERACTIONS.NAME,
             FungibleTokenInteraction::class.java,
             version,
         )

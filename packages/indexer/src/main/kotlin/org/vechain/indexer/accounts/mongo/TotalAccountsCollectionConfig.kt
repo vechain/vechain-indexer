@@ -39,7 +39,7 @@ open class TotalAccountsCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
+                indexerName = IndexerNames.TOTAL_ACCOUNTS.NAME,
                 TotalAccounts::class.java,
                 version,
             )

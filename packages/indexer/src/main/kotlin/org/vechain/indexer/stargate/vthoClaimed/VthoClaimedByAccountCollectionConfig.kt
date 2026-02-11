@@ -34,7 +34,7 @@ open class VthoClaimedByAccountCollectionConfig(
 
         val dropped =
             indexerVersionService.checkAndResetCollectionIfVersionChanged(
-                indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT,
+                indexerName = IndexerNames.VTHO_CLAIMED_BY_ACCOUNT.NAME,
                 VthoClaimedByAccount::class.java,
                 version,
             )

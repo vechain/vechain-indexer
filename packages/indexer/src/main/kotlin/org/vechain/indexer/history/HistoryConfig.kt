@@ -23,7 +23,7 @@ open class HistoryConfig() {
         bEProperties: BusinessEventProperties,
     ): Indexer {
         return IndexerFactory()
-            .name(IndexerNames.HISTORY)
+            .name(IndexerNames.HISTORY.NAME)
             .thorClient(thorClient)
             .syncLoggerInterval(syncLoggerInterval)
             .processor(processor)

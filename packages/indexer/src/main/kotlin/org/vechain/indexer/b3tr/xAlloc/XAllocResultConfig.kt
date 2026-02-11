@@ -56,7 +56,7 @@ open class XAllocResultConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.X_ALLOC_RESULT)
+            .name(IndexerNames.X_ALLOC_RESULT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(xAllocResultPruner)

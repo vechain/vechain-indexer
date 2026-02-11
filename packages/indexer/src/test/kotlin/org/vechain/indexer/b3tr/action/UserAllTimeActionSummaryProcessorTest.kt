@@ -17,6 +17,7 @@ import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 
@@ -30,6 +31,8 @@ internal class UserAllTimeActionSummaryProcessorTest {
 
     @MockK lateinit var service: UserAllTimeActionSummaryService
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var processor: UserAllTimeActionSummaryProcessor
 
     @BeforeEach
@@ -40,6 +43,7 @@ internal class UserAllTimeActionSummaryProcessorTest {
                 repository = repository,
                 userAllTimeActionSummaryArchiveService = archiveService,
                 service = service,
+                checkpointService = checkpointService,
             )
     }
 

@@ -29,7 +29,7 @@ open class AmnEndorserCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.AUTHORITY_NODE,
+            indexerName = IndexerNames.AUTHORITY_NODE.NAME,
             clazz = AmnEndorser::class.java,
             newVersion = version,
         )

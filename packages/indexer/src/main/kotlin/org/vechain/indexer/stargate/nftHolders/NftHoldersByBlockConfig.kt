@@ -56,7 +56,7 @@ open class NftHoldersByBlockConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.NFT_HOLDERS_BY_BLOCK)
+            .name(IndexerNames.NFT_HOLDERS_BY_BLOCK.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .startBlock(startBlock)

@@ -8,11 +8,12 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
-@Document(collection = "b3tr_x_alloc_results")
+@Document(collection = IndexerNames.X_ALLOC_RESULT.COLLECTION)
 data class XAllocResult
 @ConstructorBinding
 constructor(

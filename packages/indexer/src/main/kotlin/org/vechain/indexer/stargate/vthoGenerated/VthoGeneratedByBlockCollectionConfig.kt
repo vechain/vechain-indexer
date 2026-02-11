@@ -31,7 +31,7 @@ open class VthoGeneratedByBlockCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK,
+            indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
             VthoGeneratedByBlock::class.java,
             version,
         )

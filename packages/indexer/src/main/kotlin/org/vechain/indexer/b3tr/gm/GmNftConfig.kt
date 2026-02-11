@@ -57,7 +57,7 @@ open class GmNftConfig {
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.GM_NFT)
+            .name(IndexerNames.GM_NFT.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .pruner(gmNftPruner)

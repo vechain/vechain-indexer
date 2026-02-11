@@ -19,6 +19,7 @@ import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.repository.UserRoundActionSummaryRepository
 import org.vechain.indexer.b3tr.shared.EntityType
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.buildIndexedEvent
 import org.vechain.indexer.utils.BlockDetails
@@ -32,12 +33,14 @@ internal class UserRoundActionSummaryProcessorTest {
         archiveService: ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         service: UserRoundActionSummaryService,
         startRound: Int,
+        checkpointService: CheckpointService,
     ) :
         UserRoundActionSummaryProcessor(
             repository = repository,
             userRoundActionSummaryArchiveService = archiveService,
             service = service,
             startRound = startRound,
+            checkpointService = checkpointService,
         ) {
         fun readRoundId(): Int = roundId
     }
@@ -52,6 +55,8 @@ internal class UserRoundActionSummaryProcessorTest {
 
         @MockK lateinit var service: UserRoundActionSummaryService
 
+        @MockK lateinit var checkpointService: CheckpointService
+
         private lateinit var processor: TestableProcessor
 
         @BeforeEach
@@ -59,7 +64,13 @@ internal class UserRoundActionSummaryProcessorTest {
             MockKAnnotations.init(this)
             every { repository.findFirstByOrderByBlockNumberDesc() } returns null
             processor =
-                TestableProcessor(repository, archiveService, service = service, startRound = 1)
+                TestableProcessor(
+                    repository,
+                    archiveService,
+                    service = service,
+                    startRound = 1,
+                    checkpointService = checkpointService,
+                )
         }
 
         @Test
@@ -150,6 +161,8 @@ internal class UserRoundActionSummaryProcessorTest {
 
         @MockK lateinit var service: UserRoundActionSummaryService
 
+        @MockK lateinit var checkpointService: CheckpointService
+
         private lateinit var processor: TestableProcessor
 
         @BeforeEach
@@ -171,7 +184,13 @@ internal class UserRoundActionSummaryProcessorTest {
 
             every { repository.findFirstByOrderByBlockNumberDesc() } returns latestRecord
             processor =
-                TestableProcessor(repository, archiveService, service = service, startRound = 1)
+                TestableProcessor(
+                    repository,
+                    archiveService,
+                    service = service,
+                    startRound = 1,
+                    checkpointService = checkpointService,
+                )
         }
 
         @Test

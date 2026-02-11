@@ -22,7 +22,7 @@ When adding a new feature indexer and endpoint, prefer copying an existing imple
 - Repository: add `*Repository : BaseIndexedRepository<Model, String>` and put it in `.../repository/`.
 
 ### Indexer (`packages/indexer`)
-- `IndexerNames`: add a constant for the new indexer.
+- `IndexerNames` (in `common` package): add a nested object with `NAME` and `COLLECTION` constants for the new indexer.
 - `*Service`: constructor-inject `Repository`, `ArchiveService`, `TargetedPruner`; expose `processBlock/processEvents` and `save(...)` via `saveVersionedDocuments`. Keep business logic isolated here.
 - `*Processor`: extend `BaseStatefulProcessor` for versioned storage (rollback + archive/pruner support). Call `service.process*` then `service.save` when lists are non-empty.
 - `*Config`: wire `ArchiveService`, `TargetedPruner`, and `IndexerFactory().build()` settings (start block, batch size, included data).

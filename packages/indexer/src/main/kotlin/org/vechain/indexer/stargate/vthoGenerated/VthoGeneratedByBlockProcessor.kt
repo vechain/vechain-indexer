@@ -7,13 +7,21 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("stargate", "vtho-generated-by-block")
 @Component
 open class VthoGeneratedByBlockProcessor(
     private val service: VthoGeneratedByBlockService,
     repository: VthoGeneratedByBlockRepository,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.VTHO_GENERATED_BY_BLOCK.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.VTHO_GENERATED_BY_BLOCK.COLLECTION,
+    ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")

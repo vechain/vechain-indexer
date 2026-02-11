@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @ExtendWith(MockKExtension::class)
 class BaseStatefulProcessorTest {
@@ -19,21 +20,25 @@ class BaseStatefulProcessorTest {
 
     @MockK lateinit var archiveService: ArchiveService<TestDocument, TestDocumentArchive>
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var processor: TestableBaseStatefulProcessor
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
 
-        processor = TestableBaseStatefulProcessor(repository, archiveService)
+        processor = TestableBaseStatefulProcessor(repository, archiveService, checkpointService)
     }
 
     @Test
-    fun `rollback - deletes blocks in range`() {
+    fun `rollback - deletes checkpoint and rolls back archives`() {
+        every { checkpointService.deleteCheckpoint(TEST_COLLECTION) } just Runs
         every { archiveService.rollback(10) } just Runs
 
         processor.rollback(10)
 
+        verify(exactly = 1) { checkpointService.deleteCheckpoint(TEST_COLLECTION) }
         verify(exactly = 1) { archiveService.rollback(10) }
     }
 
@@ -54,7 +59,15 @@ class BaseStatefulProcessorTest {
     class TestableBaseStatefulProcessor(
         repository: BaseIndexedRepository<*, *>,
         archiveService: ArchiveService<*, *>,
-    ) : BaseStatefulProcessor(repository, archiveService, TEST_INDEXER_NAME) {
+        checkpointService: CheckpointService,
+    ) :
+        BaseStatefulProcessor(
+            repository,
+            archiveService,
+            TEST_INDEXER_NAME,
+            checkpointService,
+            TEST_COLLECTION,
+        ) {
 
         override suspend fun processEntry(entry: IndexingResult) {
             // does nothing
@@ -63,5 +76,6 @@ class BaseStatefulProcessorTest {
 
     companion object {
         private const val TEST_INDEXER_NAME = "TestStatefulIndexer"
+        private const val TEST_COLLECTION = "test_collection"
     }
 }

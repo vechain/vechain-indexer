@@ -4,8 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexerNames
 
-@Document(collection = "authority_nodes")
+@Document(collection = IndexerNames.AUTHORITY_NODE.COLLECTION)
 data class AmnEndorser(
     @Id val nodeMaster: String,
     @JsonIgnore override val blockNumber: Long,

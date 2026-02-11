@@ -29,7 +29,7 @@ open class TransactionCollectionConfig(
         logger.info("Check collection version for ${modelObj.simpleName}")
 
         indexerVersionService.checkAndResetCollectionIfVersionChanged(
-            indexerName = IndexerNames.TRANSACTION,
+            indexerName = IndexerNames.TRANSACTION.NAME,
             IndexedTransaction::class.java,
             version,
         )

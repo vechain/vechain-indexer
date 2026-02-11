@@ -21,7 +21,7 @@ open class TransferConfig {
         @Value("\${indexer.sync-block-batch-size.transfers}") syncBlockBatchSize: Long,
     ): Indexer =
         IndexerFactory()
-            .name(IndexerNames.TRANSFER)
+            .name(IndexerNames.TRANSFER.NAME)
             .thorClient(thorClient)
             .processor(processor)
             .abis("abis/tokens")

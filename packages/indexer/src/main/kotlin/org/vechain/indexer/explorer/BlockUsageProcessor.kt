@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.explorer.repository.BlockUsageRepository
 
 @Profile("explorer", "block-usage")
@@ -14,7 +15,14 @@ import org.vechain.indexer.explorer.repository.BlockUsageRepository
 open class BlockUsageProcessor(
     repository: BlockUsageRepository,
     private val service: BlockUsageService,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.BLOCK_USAGE) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.BLOCK_USAGE.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.BLOCK_USAGE.COLLECTION,
+    ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

@@ -6,6 +6,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
 import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
@@ -16,11 +17,14 @@ open class TokenRewardProcessor(
     private val service: TokenRewardService,
     repository: TokenRewardRepository,
     archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
-        indexerName = IndexerNames.TOKEN_REWARD,
+        indexerName = IndexerNames.TOKEN_REWARD.NAME,
+        checkpointService = checkpointService,
+        collectionName = IndexerNames.TOKEN_REWARD.COLLECTION,
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
