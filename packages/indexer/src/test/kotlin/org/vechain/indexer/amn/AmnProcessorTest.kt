@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.BlockRevision
@@ -25,6 +26,8 @@ class AmnProcessorTest {
 
     @MockK lateinit var thorClient: ThorClient
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var processor: AmnProcessor
 
     @BeforeEach
@@ -36,6 +39,7 @@ class AmnProcessorTest {
                 repository = amnRepository,
                 amnService = amnService,
                 thorClient = thorClient,
+                checkpointService = checkpointService,
             )
     }
 

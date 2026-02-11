@@ -7,13 +7,21 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("validator", "validator-reward")
 @Component
 open class ValidatorBlockProcessor(
     private val service: ValidatorBlockService,
     repository: ValidatorBlockRepository,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.VALIDATOR_BLOCK) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.VALIDATOR_BLOCK,
+        checkpointService = checkpointService,
+        collectionName = "validator_block_rewards",
+    ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {
             throw IllegalArgumentException("Block cannot be null")

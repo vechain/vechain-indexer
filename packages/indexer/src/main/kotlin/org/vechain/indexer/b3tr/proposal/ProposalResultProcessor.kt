@@ -9,6 +9,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.utils.BlockDetails
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
@@ -17,11 +18,14 @@ open class ProposalResultProcessor(
     repository: ProposalResultRepository,
     proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
     private val service: ProposalResultService,
+    checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = proposalResultArchiveService,
         indexerName = IndexerNames.PROPOSAL_RESULT,
+        checkpointService = checkpointService,
+        collectionName = "b3tr_proposal_results",
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         val allUpdated = mutableMapOf<String, ProposalResult>()

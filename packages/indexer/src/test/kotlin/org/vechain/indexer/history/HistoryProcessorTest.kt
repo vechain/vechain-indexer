@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_SINGLE_CLAUSE
@@ -28,6 +29,8 @@ internal class HistoryProcessorTest {
 
     @MockK lateinit var historyService: HistoryService
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     private lateinit var processor: HistoryProcessor
 
     @BeforeEach
@@ -35,7 +38,11 @@ internal class HistoryProcessorTest {
         MockKAnnotations.init(this)
 
         processor =
-            HistoryProcessor(repository = historyRepository, historyService = historyService)
+            HistoryProcessor(
+                repository = historyRepository,
+                historyService = historyService,
+                checkpointService = checkpointService,
+            )
     }
 
     @Test

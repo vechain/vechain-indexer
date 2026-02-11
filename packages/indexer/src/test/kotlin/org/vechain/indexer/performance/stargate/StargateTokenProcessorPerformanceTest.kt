@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.token.StargateEventService
@@ -30,6 +31,7 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var stargateEventService: StargateEventService
     @Autowired lateinit var validatorDelegationService: ValidatorDelegationService
     @Autowired lateinit var archiveService: ArchiveService<StargateToken, StargateTokenArchive>
+    @Autowired lateinit var checkpointService: CheckpointService
 
     @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
     lateinit var stargateNftContract: String
@@ -108,12 +110,14 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
                     stargateTokenRepository = stargateTokenRepository,
                     archiveService = archiveService,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
                 StargateTokenProcessor(
                     service = serviceToUse,
                     stargateTokenRepository = stargateTokenRepository,
                     archiveService = archiveService,
+                    checkpointService = checkpointService,
                 )
             }
 
@@ -160,11 +164,13 @@ class StargateTokenProcessorPerformanceTest : BasePerformanceTest() {
         stargateTokenRepository: StargateTokenRepository,
         archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
         private val profiler: DetailedProfiler,
+        checkpointService: CheckpointService,
     ) :
         StargateTokenProcessor(
             service = service,
             stargateTokenRepository = stargateTokenRepository,
             archiveService = archiveService,
+            checkpointService = checkpointService,
         ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    StargateTokenProcessor.process (per block)") {

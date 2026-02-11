@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.vechain.indexer.BlockIndexer
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.validator.ValidatorBlockConfig
@@ -21,6 +22,7 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var validatorBlockRepository: ValidatorBlockRepository
     @Autowired lateinit var validatorBlockService: ValidatorBlockService
+    @Autowired lateinit var checkpointService: CheckpointService
 
     @Value("\${business-event.substitutions.GET_ALL_VALIDATORS_CONTRACT}")
     lateinit var getAllValidatorsAddress: String
@@ -86,11 +88,13 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
                     service = serviceToUse,
                     repository = validatorBlockRepository,
                     profiler = profiler,
+                    checkpointService = checkpointService,
                 )
             } else {
                 ValidatorBlockProcessor(
                     service = serviceToUse,
                     repository = validatorBlockRepository,
+                    checkpointService = checkpointService,
                 )
             }
 
@@ -111,7 +115,13 @@ class ValidatorBlockProcessorPerformanceTest : BasePerformanceTest() {
         service: ValidatorBlockService,
         repository: ValidatorBlockRepository,
         private val profiler: DetailedProfiler,
-    ) : ValidatorBlockProcessor(service = service, repository = repository) {
+        checkpointService: CheckpointService,
+    ) :
+        ValidatorBlockProcessor(
+            service = service,
+            repository = repository,
+            checkpointService = checkpointService,
+        ) {
         override suspend fun processEntry(entry: IndexingResult) {
             profiler.time("    ValidatorBlockProcessor.process (per block)") {
                 super.processEntry(entry)

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.fixtures.BlockFixtures
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_BLACKLIST
@@ -25,6 +26,8 @@ internal class TransactionProcessorTest {
 
     @MockK lateinit var transactionService: TransactionService
 
+    @MockK lateinit var checkpointService: CheckpointService
+
     @MockK lateinit var transactionProcessor: TransactionProcessor
 
     @BeforeEach
@@ -34,6 +37,7 @@ internal class TransactionProcessorTest {
             TransactionProcessor(
                 transactionService = transactionService,
                 repository = transactionRepository,
+                checkpointService = checkpointService,
             )
     }
 

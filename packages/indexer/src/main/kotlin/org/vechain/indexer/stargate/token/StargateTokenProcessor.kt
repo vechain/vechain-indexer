@@ -8,6 +8,7 @@ import org.vechain.indexer.BaseStatefulProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("stargate", "stargate-token")
 @Component
@@ -15,11 +16,14 @@ open class StargateTokenProcessor(
     private val service: StargateTokenService,
     stargateTokenRepository: StargateTokenRepository,
     archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(
         repository = stargateTokenRepository,
         archiveService = archiveService,
         indexerName = IndexerNames.STARGATE_TOKEN,
+        checkpointService = checkpointService,
+        collectionName = "stargate_tokens",
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

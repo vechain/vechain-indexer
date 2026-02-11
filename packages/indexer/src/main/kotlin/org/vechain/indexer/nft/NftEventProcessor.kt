@@ -8,6 +8,7 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("nfts")
 @Component
@@ -15,7 +16,14 @@ open class NftProcessor(
     private val nftService: NftService,
     private val nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
     repository: NftRepository,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.NFT) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.NFT,
+        checkpointService = checkpointService,
+        collectionName = "nfts",
+    ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) return
@@ -48,6 +56,7 @@ open class NftProcessor(
     }
 
     override fun rollback(blockNumber: Long) {
+        checkpointService.deleteCheckpoint(collectionName)
         nftArchiveService.rollback(blockNumber)
     }
 }

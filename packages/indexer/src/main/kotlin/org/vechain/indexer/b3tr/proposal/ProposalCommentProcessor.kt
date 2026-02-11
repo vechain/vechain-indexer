@@ -8,13 +8,21 @@ import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.b3tr.proposal.repository.ProposalCommentRepository
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-comments")
 @Component
 open class ProposalCommentProcessor(
     repository: ProposalCommentRepository,
     private val service: ProposalCommentService,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.PROPOSAL_COMMENT) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.PROPOSAL_COMMENT,
+        checkpointService = checkpointService,
+        collectionName = "b3tr_proposal_comments",
+    ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry.events().isEmpty()) {
             return

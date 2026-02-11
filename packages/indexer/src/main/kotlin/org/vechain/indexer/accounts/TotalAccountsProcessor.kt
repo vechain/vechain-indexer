@@ -10,6 +10,7 @@ import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("accounts", "total-accounts")
 @Component
@@ -17,11 +18,14 @@ open class TotalAccountsProcessor(
     private val service: TotalAccountsService,
     repository: TotalAccountsRepository,
     archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(
         repository = repository,
         archiveService = archiveService,
         indexerName = IndexerNames.TOTAL_ACCOUNTS_INDEXER,
+        checkpointService = checkpointService,
+        collectionName = "total_accounts",
     ) {
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

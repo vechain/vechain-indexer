@@ -6,13 +6,21 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("transactions")
 @Component
 open class TransactionProcessor(
     private val transactionService: TransactionService,
     repository: TransactionRepository,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.TRANSACTION) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.TRANSACTION,
+        checkpointService = checkpointService,
+        collectionName = "transactions",
+    ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 

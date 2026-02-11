@@ -7,13 +7,21 @@ import org.springframework.stereotype.Component
 import org.vechain.indexer.BaseProcessor
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
+import org.vechain.indexer.checkpoint.CheckpointService
 
 @Profile("history")
 @Component
 open class HistoryProcessor(
     repository: HistoryRepository,
     private val historyService: HistoryService,
-) : BaseProcessor(repository = repository, indexerName = IndexerNames.HISTORY) {
+    checkpointService: CheckpointService,
+) :
+    BaseProcessor(
+        repository = repository,
+        indexerName = IndexerNames.HISTORY,
+        checkpointService = checkpointService,
+        collectionName = "history_events",
+    ) {
 
     override suspend fun processEntry(entry: IndexingResult) {
         if (entry !is IndexingResult.Normal) {

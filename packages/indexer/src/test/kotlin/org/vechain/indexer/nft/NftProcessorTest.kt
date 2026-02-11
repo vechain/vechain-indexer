@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.Status
 import org.vechain.indexer.archive.ArchiveService
+import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.fixtures.IndexedEventsFixtures.INDEXED_EVENTS_NFT_MINT
 
 @ExtendWith(MockKExtension::class)
@@ -20,6 +21,8 @@ internal class NftProcessorTest {
     @MockK lateinit var archiveService: ArchiveService<IndexedNft, NftArchive>
 
     @MockK lateinit var nftService: NftService
+
+    @MockK lateinit var checkpointService: CheckpointService
 
     private lateinit var processor: NftProcessor
 
@@ -32,6 +35,7 @@ internal class NftProcessorTest {
                 nftService = nftService,
                 nftArchiveService = archiveService,
                 repository = nftRepository,
+                checkpointService = checkpointService,
             )
     }
 
