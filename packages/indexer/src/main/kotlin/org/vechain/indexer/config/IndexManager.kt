@@ -59,19 +59,19 @@ open class IndexManager(
         val activeSyncStatuses = setOf(Status.FAST_SYNCING, Status.SYNCING, Status.FULLY_SYNCED)
 
         indexers.forEach { indexer ->
-            try {
-                if (indexer.getStatus() !in activeSyncStatuses) return@forEach
+            if (indexer.getStatus() !in activeSyncStatuses) return@forEach
 
-                val collection =
-                    nameToCollection[indexer.name]
-                        ?: error("No collection mapping found for indexer '${indexer.name}'")
+            val collection =
+                nameToCollection[indexer.name]
+                    ?: error("No collection mapping found for indexer '${indexer.name}'")
 
-                val lastProcessedBlock = indexer.getCurrentBlockNumber() - 1
-                if (lastProcessedBlock >= 0) {
+            val lastProcessedBlock = indexer.getCurrentBlockNumber() - 1
+            if (lastProcessedBlock >= 0) {
+                try {
                     checkpointService.saveCheckpoint(collection, lastProcessedBlock)
+                } catch (e: Exception) {
+                    logger.error("Failed to save checkpoint for ${indexer.name}", e)
                 }
-            } catch (e: Exception) {
-                logger.error("Failed to save checkpoint for ${indexer.name}", e)
             }
         }
     }
