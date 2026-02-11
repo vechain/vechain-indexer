@@ -11,26 +11,15 @@ abstract class BaseProcessor(
     protected val collectionName: String,
 ) : IndexerProcessor {
 
-    private var blocksSinceCheckpoint = 0
-
     abstract suspend fun processEntry(entry: IndexingResult)
 
     override suspend fun process(entry: IndexingResult) {
         val start = TimeSource.Monotonic.markNow()
         try {
             processEntry(entry)
-            maybeUpdateCheckpoint(entry)
             ProcessorMetrics.incrementEventsCounter(indexerName, entry.events().size.toDouble())
         } finally {
             ProcessorMetrics.observeProcessingDuration(indexerName, start.elapsedNow())
-        }
-    }
-
-    private fun maybeUpdateCheckpoint(entry: IndexingResult) {
-        blocksSinceCheckpoint++
-        if (blocksSinceCheckpoint >= CheckpointService.CHECKPOINT_INTERVAL) {
-            checkpointService.saveCheckpoint(collectionName, entry.latestBlockNumber())
-            blocksSinceCheckpoint = 0
         }
     }
 

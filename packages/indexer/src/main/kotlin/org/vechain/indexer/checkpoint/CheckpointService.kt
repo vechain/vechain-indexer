@@ -11,10 +11,6 @@ import org.vechain.indexer.thor.model.BlockIdentifier
 @Service
 open class CheckpointService(private val mongoTemplate: MongoTemplate) {
 
-    companion object {
-        const val CHECKPOINT_INTERVAL = 100
-    }
-
     fun saveCheckpoint(collectionName: String, blockNumber: Long) {
         val doc = Document().append("_id", CHECKPOINT_ID).append("blockNumber", blockNumber)
         mongoTemplate
