@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.groupByTokenId
 import org.vechain.indexer.b3tr.gm.GmNftEventUtils.processAllTokenEvents
@@ -34,31 +35,27 @@ open class GmNftService(
     open fun processEvents(events: List<IndexedEvent>): Pair<List<GmNft>, List<GmNft>> {
         if (events.isEmpty()) return emptyList<GmNft>() to emptyList()
 
-        val updatedNfts = mutableMapOf<String, GmNft>()
-        val archiveNfts = mutableListOf<GmNft>()
+        val accumulator = VersionedDocumentAccumulator<GmNft>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (_, blockEvents) ->
+            accumulator.startBlock()
             groupByTokenId(blockEvents).forEach { (tokenId, tokenEvents) ->
-                val existing = resolveExistingNft(tokenId, updatedNfts)
-                val updated = processAllTokenEvents(existing, tokenEvents)
+                val (existing, nextVersion) = accumulator.resolve(tokenId)
+                val updated = processAllTokenEvents(existing, tokenEvents, nextVersion)
 
                 // If the updated record is different from the existing one, update it and archive
                 // the old
                 if (existing != updated) {
-                    existing?.let { archiveNfts.add(it) }
-                    updatedNfts[tokenId] = updated
+                    accumulator.put(tokenId, existing, updated)
                 }
             }
         }
 
-        return updatedNfts.values.toList() to archiveNfts
+        return accumulator.results()
     }
 
     @Transactional(rollbackFor = [Exception::class])
     open fun save(updated: List<GmNft>, existing: List<GmNft>) {
         saveVersionedDocuments(updated, existing, repository, gmNftArchiveService, gmNftPruner)
     }
-
-    private fun resolveExistingNft(tokenId: String, cache: Map<String, GmNft>): GmNft? =
-        cache[tokenId] ?: repository.findByIdOrNull(tokenId)
 }

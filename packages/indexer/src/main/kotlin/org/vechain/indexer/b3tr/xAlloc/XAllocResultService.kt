@@ -6,11 +6,13 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAmountAsDecimal
 import org.vechain.indexer.b3tr.xAlloc.XAllocEventUtils.getAppId
@@ -45,6 +47,8 @@ open class XAllocResultService(
     private val xAllocPoolContract: String,
 ) {
 
+    private val logger = LoggerFactory.getLogger(XAllocResultService::class.java)
+
     private val cachedIsQuadraticFundingEnabled: ConcurrentHashMap<Int, Boolean> =
         ConcurrentHashMap()
     private val isQuadraticFundingDisabledAbi: AbiElement by lazy {
@@ -61,12 +65,11 @@ open class XAllocResultService(
     open suspend fun processEvents(
         events: List<IndexedEvent>
     ): Pair<List<XAllocResult>, List<XAllocResult>> {
-        val updatedResult = mutableMapOf<String, XAllocResult>()
-        val archiveResult = mutableListOf<XAllocResult>()
-
+        val accumulator = VersionedDocumentAccumulator<XAllocResult>(repository::findByIdOrNull)
         val bestBlockId = thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).id
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             groupByRoundId(blockEvents).forEach { (roundId, roundEvents) ->
                 val isQFEnabled = isQuadraticFundingEnabled(roundId, bestBlockId)
                 // Parse vote events
@@ -76,7 +79,7 @@ open class XAllocResultService(
                     )
                     .forEach { (appId, aggregatedVote) ->
                         val recordId = generateId("$roundId", appId)
-                        val existing = resolveExisting(recordId, updatedResult)
+                        val (existing, nextVersion) = accumulator.resolve(recordId)
                         val updated =
                             addOrCreateVoteResult(
                                 roundId = roundId,
@@ -85,10 +88,9 @@ open class XAllocResultService(
                                 votesReceived = aggregatedVote.votesReceived,
                                 blockDetails = blockDetails,
                                 existing = existing,
+                                version = nextVersion,
                             )
-
-                        updatedResult[recordId] = updated
-                        existing?.let { archiveResult.add(it) }
+                        accumulator.put(recordId, existing, updated)
                     }
                 // Parse ClaimReward events
                 roundEvents
@@ -100,7 +102,7 @@ open class XAllocResultService(
                         val teamAllocationAmount = getTeamAllocationAmountAsDecimal(event)
                         val rewardsAllocationAmount = getRewardsAllocationAmountAsDecimal(event)
                         val recordId = generateId("$roundId", appId)
-                        val existing = resolveExisting(recordId, updatedResult)
+                        val (existing, nextVersion) = accumulator.resolve(recordId)
                         val updated =
                             addOrCreateRewardClaimResult(
                                 roundId = roundId,
@@ -111,9 +113,9 @@ open class XAllocResultService(
                                 unallocatedAmount = unallocatedAmount,
                                 teamAllocationAmount = teamAllocationAmount,
                                 rewardsAllocationAmount = rewardsAllocationAmount,
+                                version = nextVersion,
                             )
-                        updatedResult[recordId] = updated
-                        existing?.let { archiveResult.add(it) }
+                        accumulator.put(recordId, existing, updated)
                     }
                 // Parse DBA Funds Distributed events
                 roundEvents
@@ -122,7 +124,7 @@ open class XAllocResultService(
                         val appId = getAppId(event)
                         val amount = getAmountAsDecimal(event)
                         val recordId = generateId("$roundId", appId)
-                        val existing = resolveExisting(recordId, updatedResult)
+                        val (existing, nextVersion) = accumulator.resolve(recordId)
                         val updated =
                             addOrCreateDbaFundResult(
                                 roundId = roundId,
@@ -130,14 +132,14 @@ open class XAllocResultService(
                                 blockDetails = blockDetails,
                                 existing = existing,
                                 amount = amount,
+                                version = nextVersion,
                             )
-                        updatedResult[recordId] = updated
-                        existing?.let { archiveResult.add(it) }
+                        accumulator.put(recordId, existing, updated)
                     }
             }
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     protected fun addOrCreateVoteResult(
@@ -147,9 +149,10 @@ open class XAllocResultService(
         existing: XAllocResult?,
         voters: Long,
         votesReceived: BigInteger,
+        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = existing.version + 1,
+            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -157,7 +160,7 @@ open class XAllocResultService(
             votesReceived = existing.votesReceived + votesReceived,
         )
             ?: XAllocResult(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -181,9 +184,10 @@ open class XAllocResultService(
         unallocatedAmount: BigDecimal,
         teamAllocationAmount: BigDecimal,
         rewardsAllocationAmount: BigDecimal,
+        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = existing.version + 1,
+            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -197,7 +201,7 @@ open class XAllocResultService(
                     ?: rewardsAllocationAmount,
         )
             ?: XAllocResult(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -218,16 +222,17 @@ open class XAllocResultService(
         blockDetails: BlockDetails,
         existing: XAllocResult?,
         amount: BigDecimal,
+        version: Int,
     ): XAllocResult {
         return existing?.copy(
-            version = existing.version + 1,
+            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
             totalAmount = existing.totalAmount?.plus(amount) ?: amount,
         )
             ?: XAllocResult(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -273,9 +278,4 @@ open class XAllocResultService(
                 cachedIsQuadraticFundingEnabled[roundId] = !isDisabled
                 !isDisabled
             }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, XAllocResult>,
-    ): XAllocResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

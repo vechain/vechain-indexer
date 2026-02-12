@@ -1,5 +1,7 @@
 package org.vechain.indexer.performance.b3trUserAllTimeAction
 
+import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
@@ -20,10 +22,10 @@ import org.vechain.indexer.utils.EventUtils
  * - groupByReceiver (group by user)
  * - groupByAppId (group by app)
  * - createOrUpdateExisting (create/update records)
- * - resolveExisting (resolve from cache or DB)
+ * - accumulator.resolve (resolve from cache or DB)
  */
 class ProfiledUserAllTimeActionSummaryService(
-    repository: UserAllTimeActionSummaryRepository,
+    private val repository: UserAllTimeActionSummaryRepository,
     archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
     impactConfig: ActionImpactConfig,
@@ -41,14 +43,15 @@ class ProfiledUserAllTimeActionSummaryService(
                 )
             }
 
-            val updatedResult = mutableMapOf<String, UserAllTimeActionSummary>()
-            val archiveResult = mutableListOf<UserAllTimeActionSummary>()
+            val accumulator =
+                VersionedDocumentAccumulator<UserAllTimeActionSummary>(repository::findByIdOrNull)
 
             val blockGroups =
                 profiler.time("        - groupByBlock") { EventUtils.groupByBlock(events) }
 
             profiler.time("        - process block groups") {
                 blockGroups.forEach { (blockDetails, blockEvents) ->
+                    accumulator.startBlock()
                     // Process Users
                     val userGroups =
                         profiler.time("          - groupByReceiver") {
@@ -60,9 +63,9 @@ class ProfiledUserAllTimeActionSummaryService(
                     profiler.time("          - process users") {
                         userGroups.forEach { (userId, eventsPerReceiver) ->
                             val recordId = org.vechain.indexer.utils.IdUtils.generateId(userId)
-                            val existing =
-                                profiler.time("            - resolveExisting") {
-                                    resolveExisting(recordId, updatedResult)
+                            val (existing, nextVersion) =
+                                profiler.time("            - accumulator.resolve") {
+                                    accumulator.resolve(recordId)
                                 }
                             val updated =
                                 profiler.time("            - createOrUpdateExisting") {
@@ -72,10 +75,10 @@ class ProfiledUserAllTimeActionSummaryService(
                                         eventsPerReceiver,
                                         blockDetails,
                                         existing,
+                                        version = nextVersion,
                                     )
                                 }
-                            existing?.let { archiveResult.add(it) }
-                            updatedResult[recordId] = updated
+                            accumulator.put(recordId, existing, updated)
                         }
                     }
 
@@ -90,9 +93,9 @@ class ProfiledUserAllTimeActionSummaryService(
                     profiler.time("          - process apps") {
                         appGroups.forEach { (appId, eventsPerApp) ->
                             val recordId = org.vechain.indexer.utils.IdUtils.generateId(appId)
-                            val existing =
-                                profiler.time("            - resolveExisting") {
-                                    resolveExisting(recordId, updatedResult)
+                            val (existing, nextVersion) =
+                                profiler.time("            - accumulator.resolve") {
+                                    accumulator.resolve(recordId)
                                 }
                             val updated =
                                 profiler.time("            - createOrUpdateExisting") {
@@ -102,10 +105,10 @@ class ProfiledUserAllTimeActionSummaryService(
                                         eventsPerApp,
                                         blockDetails,
                                         existing,
+                                        version = nextVersion,
                                     )
                                 }
-                            existing?.let { archiveResult.add(it) }
-                            updatedResult[recordId] = updated
+                            accumulator.put(recordId, existing, updated)
                         }
                     }
 
@@ -114,9 +117,9 @@ class ProfiledUserAllTimeActionSummaryService(
                         org.vechain.indexer.utils.IdUtils.generateId(
                             org.vechain.indexer.b3tr.shared.EntityType.GLOBAL.name
                         )
-                    val existing =
-                        profiler.time("          - resolveExisting (global)") {
-                            resolveExisting(globalId, updatedResult)
+                    val (existing, nextVersion) =
+                        profiler.time("          - accumulator.resolve (global)") {
+                            accumulator.resolve(globalId)
                         }
                     val updated =
                         profiler.time("          - createOrUpdateExisting (global)") {
@@ -126,14 +129,14 @@ class ProfiledUserAllTimeActionSummaryService(
                                 blockEvents,
                                 blockDetails,
                                 existing,
+                                version = nextVersion,
                             )
                         }
-                    existing?.let { archiveResult.add(it) }
-                    updatedResult[globalId] = updated
+                    accumulator.put(globalId, existing, updated)
                 }
             }
 
-            updatedResult.values.toList() to archiveResult
+            accumulator.results()
         }
     }
 

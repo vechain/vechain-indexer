@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getDescription
@@ -188,36 +189,44 @@ open class ProposalResultService(
         // Ensure all events are of type B3TR_ProposalCreated or B3TR_ProposalVote
         assertEventTypes(events, "B3TR_ProposalCreated", "B3TR_ProposalVote")
 
-        val updatedResult = mutableMapOf<String, ProposalResult>()
-        val archiveResult = mutableListOf<ProposalResult>()
+        val accumulator = VersionedDocumentAccumulator<ProposalResult>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
                 // Check for ProposalCreated event (at most one)
                 val createdEvent =
                     proposalEvents.firstOrNull { it.eventType == "B3TR_ProposalCreated" }
                 if (createdEvent != null) {
-                    val existing = resolveExisting(proposalId, updatedResult)
+                    val (existing, nextVersion) = accumulator.resolve(proposalId)
                     if (existing != null) {
                         error("Existing ProposalResult found for creation event: $proposalId")
                     }
-                    updatedResult[proposalId] =
-                        processCreatedEvent(proposalId, blockDetails, createdEvent)
+                    val created =
+                        processCreatedEvent(proposalId, blockDetails, createdEvent, nextVersion)
+                    accumulator.put(proposalId, existing, created)
                 }
                 // Process voting events
                 val voteEvents = proposalEvents.filter { it.eventType == "B3TR_ProposalVote" }
                 if (voteEvents.isNotEmpty()) {
-                    val existing =
-                        resolveExisting(proposalId, updatedResult)
+                    val (existing, nextVersion) = accumulator.resolve(proposalId)
+                    val existingResult =
+                        existing
                             ?: error("No existing ProposalResult found for vote event: $proposalId")
-                    archiveResult.add(existing)
-                    updatedResult[proposalId] =
-                        processVoteEvents(proposalId, blockDetails, voteEvents, existing)
+                    val updated =
+                        processVoteEvents(
+                            proposalId,
+                            blockDetails,
+                            voteEvents,
+                            existingResult,
+                            nextVersion,
+                        )
+                    accumulator.put(proposalId, existing, updated)
                 }
             }
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     /**
@@ -252,10 +261,11 @@ open class ProposalResultService(
         proposalId: String,
         blockDetails: BlockDetails,
         event: IndexedEvent,
+        version: Int,
     ) =
         ProposalResult(
             proposalId = proposalId,
-            version = 1,
+            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -284,6 +294,7 @@ open class ProposalResultService(
         blockDetails: BlockDetails,
         voteEvents: List<IndexedEvent>,
         existing: ProposalResult,
+        version: Int,
     ): ProposalResult {
         require(voteEvents.isNotEmpty()) { "No events provided" }
 
@@ -302,7 +313,7 @@ open class ProposalResultService(
 
         return ProposalResult(
             proposalId = proposalId,
-            version = existing.version + 1,
+            version = version,
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
@@ -368,9 +379,4 @@ open class ProposalResultService(
             totalPower = result.totalPower + events.sumOf { getPower(it) },
         )
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, ProposalResult>,
-    ): ProposalResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

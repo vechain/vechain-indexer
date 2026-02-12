@@ -44,16 +44,14 @@ internal class UserAllTimeActionSummaryServiceTest {
         pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : UserAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, UserAllTimeActionSummary>) =
-            resolveExisting(recordId, cache)
-
         fun callCreateOrUpdateExisting(
             entity: String,
             entityType: EntityType,
             events: List<IndexedEvent>,
             blockDetails: BlockDetails,
             existing: UserAllTimeActionSummary?,
-        ) = createOrUpdateExisting(entity, entityType, events, blockDetails, existing)
+            version: Int,
+        ) = createOrUpdateExisting(entity, entityType, events, blockDetails, existing, version)
     }
 
     @BeforeEach
@@ -349,6 +347,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                 events = listOf(event),
                 blockDetails = blockDetails,
                 existing = null,
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -404,6 +403,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                 events = listOf(event),
                 blockDetails = blockDetails,
                 existing = existing,
+                version = existing.version + 1,
             )
 
         assertEquals(6, result.version)
@@ -464,6 +464,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                 events = listOf(event1, event2),
                 blockDetails = blockDetails,
                 existing = null,
+                version = 1,
             )
         }
     }
@@ -519,6 +520,7 @@ internal class UserAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -532,30 +534,5 @@ internal class UserAllTimeActionSummaryServiceTest {
         assertEquals(160, result.totalImpact?.carbon)
         assertEquals(350, result.totalImpact?.water)
         assertEquals(70, result.totalImpact?.energy)
-    }
-
-    @Test
-    fun `resolveExisting returns from cache when present, otherwise repository`() {
-        val cached =
-            UserAllTimeActionSummary(
-                version = 1,
-                blockId = "b1",
-                blockNumber = 1L,
-                blockTimestamp = 100L,
-                entity = "user-1",
-                entityType = EntityType.USER,
-                actionsRewarded = 1,
-                totalRewardAmount = BigDecimal.ONE,
-                totalImpact = null,
-            )
-
-        // Prefer cache
-        val fromCache = service.callResolveExisting("app-1:user-1", mapOf("app-1:user-1" to cached))
-        assertEquals(cached, fromCache)
-
-        // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2") } returns cached.copy(entity = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2", emptyMap())
-        assertEquals("user-2", fromRepo?.entity)
     }
 }

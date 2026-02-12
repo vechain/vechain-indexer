@@ -41,9 +41,6 @@ internal class AppDailyActionSummaryServiceTest {
         pruner: TargetedPruner<AppDailyActionSummary, AppDailyActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : AppDailyActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, AppDailyActionSummary>) =
-            resolveExisting(recordId, cache)
-
         fun callCreateOrUpdateExisting(
             appId: String,
             receiverId: String,
@@ -51,7 +48,8 @@ internal class AppDailyActionSummaryServiceTest {
             events: List<IndexedEvent>,
             blockDetails: BlockDetails,
             existing: AppDailyActionSummary?,
-        ) = createOrUpdateExisting(appId, receiverId, date, events, blockDetails, existing)
+            version: Int,
+        ) = createOrUpdateExisting(appId, receiverId, date, events, blockDetails, existing, version)
     }
 
     @BeforeEach
@@ -385,6 +383,7 @@ internal class AppDailyActionSummaryServiceTest {
                 events = listOf(event1, event2),
                 blockDetails = BlockDetails("block-1", 1L, 1757449050),
                 existing = null,
+                version = 1,
             )
 
         assertEquals("app-1", result.appId)
@@ -459,6 +458,7 @@ internal class AppDailyActionSummaryServiceTest {
                 events = listOf(event1, event2),
                 blockDetails = BlockDetails("block-2", 2L, 1757449060),
                 existing = existing,
+                version = existing.version + 1,
             )
 
         assertEquals("app-1", result.appId)
@@ -553,6 +553,7 @@ internal class AppDailyActionSummaryServiceTest {
                 events = listOf(event1, event2),
                 blockDetails = BlockDetails("block-1", 1L, 100L),
                 existing = null,
+                version = 1,
             )
         }
 
@@ -564,6 +565,7 @@ internal class AppDailyActionSummaryServiceTest {
                 events = listOf(event1, event3),
                 blockDetails = BlockDetails("block-1", 1L, 100L),
                 existing = null,
+                version = 1,
             )
         }
 
@@ -575,6 +577,7 @@ internal class AppDailyActionSummaryServiceTest {
                 events = listOf(event1, event4),
                 blockDetails = BlockDetails("block-1", 1L, 100L),
                 existing = null,
+                version = 1,
             )
         }
     }
@@ -631,6 +634,7 @@ internal class AppDailyActionSummaryServiceTest {
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
                 date = "2025-09-09",
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -644,36 +648,5 @@ internal class AppDailyActionSummaryServiceTest {
         assertEquals(160, result.totalImpact?.carbon)
         assertEquals(350, result.totalImpact?.water)
         assertEquals(70, result.totalImpact?.energy)
-    }
-
-    @Test
-    fun `resolveExisting returns from cache when present, otherwise repository`() {
-        val cached =
-            AppDailyActionSummary(
-                version = 1,
-                blockId = "b1",
-                blockNumber = 1L,
-                blockTimestamp = 100L,
-                user = "user-1",
-                appId = "app-1",
-                actionsRewarded = 1,
-                totalRewardAmount = BigDecimal.ONE,
-                totalImpact = null,
-                date = "2025-09-09",
-            )
-
-        // Prefer cache
-        val fromCache =
-            service.callResolveExisting(
-                "app-1:user-1:2025-09-09",
-                mapOf("app-1:user-1:2025-09-09" to cached),
-            )
-        assertEquals(cached, fromCache)
-
-        // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2:2025-09-09") } returns
-            cached.copy(user = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2:2025-09-09", emptyMap())
-        assertEquals("user-2", fromRepo?.user)
     }
 }

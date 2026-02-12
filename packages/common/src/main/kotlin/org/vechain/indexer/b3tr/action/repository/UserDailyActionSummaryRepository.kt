@@ -7,14 +7,13 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.b3tr.action.UserDailyActionSummary
 import org.vechain.indexer.b3tr.shared.EntityType
 
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 @Repository
-interface UserDailyActionSummaryRepository :
-    BasePagingAndSortingIndexedRepository<UserDailyActionSummary, String> {
+interface UserDailyActionSummaryRepository : BaseIndexedRepository<UserDailyActionSummary, String> {
     @Query("{ 'entity' : ?0, 'date' : { '\$gte' : ?1, '\$lte': ?2}}")
     fun findAllByEntityAndDateBetween(
         entity: String,
@@ -23,17 +22,23 @@ interface UserDailyActionSummaryRepository :
         pageable: Pageable,
     ): Slice<UserDailyActionSummary>
 
+    @Query("{ 'entityType': ?0, 'date': ?1 }")
     fun findAllByEntityTypeAndDate(
         entityType: EntityType,
         date: String,
         pageable: Pageable,
     ): Slice<UserDailyActionSummary>
 
+    @Query("{ 'entity': ?0, 'date': ?1 }")
     fun findByEntityAndDate(entity: String, date: String): UserDailyActionSummary?
 
     @Cacheable(
         value = ["user_daily_action_countByAppIdAndDate"],
         key = "#totalRewardAmount + '-' + #entityType + '-' + #date",
+    )
+    @Query(
+        value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'entityType': ?1, 'date': ?2 }",
+        count = true,
     )
     fun countByTotalRewardAmountGreaterThanAndEntityTypeAndDate(
         totalRewardAmount: BigDecimal,
@@ -45,6 +50,10 @@ interface UserDailyActionSummaryRepository :
         value = ["user_daily_action_countByActionsRewardedGreaterThanAndEntityTypeAndDate"],
         key = "#actionsRewarded + '-' + #entityType + '-' + #date",
     )
+    @Query(
+        value = "{ 'actionsRewarded': { '\$gt': ?0 }, 'entityType': ?1, 'date': ?2 }",
+        count = true,
+    )
     fun countByActionsRewardedGreaterThanAndEntityTypeAndDate(
         actionsRewarded: Long,
         entityType: EntityType,
@@ -55,5 +64,6 @@ interface UserDailyActionSummaryRepository :
         value = ["user_daily_action_countByEntityTypeAndDate"],
         key = "#entityType + '-' + #date",
     )
+    @Query(value = "{ 'entityType': ?0, 'date': ?1 }", count = true)
     fun countByEntityTypeAndDate(entityType: EntityType, date: String): Long
 }

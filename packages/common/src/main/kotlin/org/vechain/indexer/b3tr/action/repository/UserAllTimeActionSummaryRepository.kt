@@ -5,21 +5,23 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
 import org.vechain.indexer.b3tr.shared.EntityType
 
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
 @Repository
 interface UserAllTimeActionSummaryRepository :
-    BasePagingAndSortingIndexedRepository<UserAllTimeActionSummary, String> {
+    BaseIndexedRepository<UserAllTimeActionSummary, String> {
     // Count entries where totalRewardAmount is greater than a specific value, filtering by entity
     // type
     @Cacheable(
         value = ["user_all_time_action_countByTotalRewardAmountGreaterThanAndEntityType"],
         key = "#totalRewardAmount + '-' + #entityType",
     )
+    @Query(value = "{ 'totalRewardAmount': { '\$gt': ?0 }, 'entityType': ?1 }", count = true)
     fun countByTotalRewardAmountGreaterThanAndEntityType(
         totalRewardAmount: BigDecimal,
         entityType: EntityType,
@@ -31,6 +33,7 @@ interface UserAllTimeActionSummaryRepository :
         value = ["user_all_time_action_countByActionsRewardedGreaterThanAndEntityType"],
         key = "#actionsRewarded + '-' + #entityType",
     )
+    @Query(value = "{ 'actionsRewarded': { '\$gt': ?0 }, 'entityType': ?1 }", count = true)
     fun countByActionsRewardedGreaterThanAndEntityType(
         actionsRewarded: Long,
         entityType: EntityType,
@@ -38,9 +41,11 @@ interface UserAllTimeActionSummaryRepository :
 
     // Count entries where entity is equal to a specific value
     @Cacheable(value = ["user_all_time_action_countByEntityType"], key = "#entityType")
+    @Query(value = "{ 'entityType': ?0 }", count = true)
     fun countByEntityType(entityType: EntityType): Long
 
-    fun findByEntity(entity: String): UserAllTimeActionSummary?
+    @Query("{ 'entity': ?0 }") fun findByEntity(entity: String): UserAllTimeActionSummary?
 
+    @Query("{ 'entityType': ?0 }")
     fun findAllByEntityType(type: EntityType, pageable: Pageable): Slice<UserAllTimeActionSummary>
 }

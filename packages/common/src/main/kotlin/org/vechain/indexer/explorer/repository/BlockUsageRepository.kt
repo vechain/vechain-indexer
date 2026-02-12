@@ -2,11 +2,11 @@ package org.vechain.indexer.explorer.repository
 
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 import org.vechain.indexer.explorer.BlockUsage
 
 @Repository
-interface BlockUsageRepository : BasePagingAndSortingIndexedRepository<BlockUsage, Long> {
+interface BlockUsageRepository : BaseIndexedRepository<BlockUsage, Long> {
 
     /**
      * Find all block usage records within a timestamp range (inclusive).

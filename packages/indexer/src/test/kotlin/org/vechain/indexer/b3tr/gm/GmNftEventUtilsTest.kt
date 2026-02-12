@@ -26,7 +26,7 @@ class GmNftEventUtilsTest {
                         ),
                 )
 
-            val result = GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent))
+            val result = GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent), 1)
 
             assertEquals("0xMinted", result.id)
             assertEquals("0xOwner", result.owner)
@@ -70,7 +70,7 @@ class GmNftEventUtilsTest {
                 )
 
             val result =
-                GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent, upgradeEvent))
+                GmNftEventUtils.processAllTokenEvents(null, listOf(mintEvent, upgradeEvent), 1)
 
             assertEquals(GmLevelName.MOON, result.level)
             assertEquals(java.math.BigInteger.valueOf(150), result.b3trDonated)
@@ -101,7 +101,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
                 }
 
             assertTrue(exception.message!!.contains("All events must have the same tokenId"))
@@ -122,7 +122,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event))
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event), 1)
                 }
 
             assertTrue(exception.message!!.contains("No mint event found for tokenId"))
@@ -149,7 +149,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
                 }
 
             assertTrue(
@@ -182,7 +182,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2))
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event1, event2), 1)
                 }
 
             assertTrue(exception.message!!.contains("Multiple mint events"))
@@ -203,7 +203,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(null, listOf(event))
+                    GmNftEventUtils.processAllTokenEvents(null, listOf(event), 1)
                 }
 
             assertTrue(exception.message!!.contains("No mint event"))
@@ -235,7 +235,7 @@ class GmNftEventUtilsTest {
 
             val exception =
                 assertThrows<IllegalArgumentException> {
-                    GmNftEventUtils.processAllTokenEvents(existing, listOf(mintEvent))
+                    GmNftEventUtils.processAllTokenEvents(existing, listOf(mintEvent), 2)
                 }
 
             assertTrue(exception.message!!.contains("Mint event should not be present"))

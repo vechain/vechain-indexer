@@ -43,7 +43,8 @@ class VeVoteResultServiceTest {
             blockDetails: BlockDetails,
             events: List<IndexedEvent>,
             existing: VeVoteProposalResult?,
-        ): VeVoteProposalResult = createOrUpdateExisting(blockDetails, events, existing)
+            version: Int,
+        ): VeVoteProposalResult = createOrUpdateExisting(blockDetails, events, existing, version)
     }
 
     @BeforeEach
@@ -236,6 +237,7 @@ class VeVoteResultServiceTest {
                 ),
                 listOf(event),
                 null,
+                version = 1,
             )
 
         val id = generateId(proposalId, Support.FOR.name)
@@ -281,6 +283,7 @@ class VeVoteResultServiceTest {
                 ),
                 listOf(event),
                 existingRecord,
+                version = existingRecord.version + 1,
             )
 
         assertEquals(id, result.id)
@@ -309,7 +312,12 @@ class VeVoteResultServiceTest {
 
         // Different block numbers
         try {
-            service.callCreateOrUpdateExisting(blockDetails, listOf(event1, event2), null)
+            service.callCreateOrUpdateExisting(
+                blockDetails,
+                listOf(event1, event2),
+                null,
+                version = 1,
+            )
             throw AssertionError("Expected an exception due to different block numbers")
         } catch (e: IllegalArgumentException) {
             // Expected
@@ -317,7 +325,12 @@ class VeVoteResultServiceTest {
 
         // Different proposalIds
         try {
-            service.callCreateOrUpdateExisting(blockDetails, listOf(event1, event3), null)
+            service.callCreateOrUpdateExisting(
+                blockDetails,
+                listOf(event1, event3),
+                null,
+                version = 1,
+            )
             throw AssertionError("Expected an exception due to different proposalIds")
         } catch (e: IllegalArgumentException) {
             // Expected
@@ -337,7 +350,12 @@ class VeVoteResultServiceTest {
             )
 
         try {
-            service.callCreateOrUpdateExisting(blockDetails, listOf(event1, event2), null)
+            service.callCreateOrUpdateExisting(
+                blockDetails,
+                listOf(event1, event2),
+                null,
+                version = 1,
+            )
             throw AssertionError("Expected an exception due to different support values")
         } catch (e: IllegalArgumentException) {
             // Expected

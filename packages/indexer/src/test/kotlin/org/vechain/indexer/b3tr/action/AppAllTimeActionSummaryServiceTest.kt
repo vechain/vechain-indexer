@@ -43,16 +43,14 @@ internal class AppAllTimeActionSummaryServiceTest {
         pruner: TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : AppAllTimeActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, AppAllTimeActionSummary>) =
-            resolveExisting(recordId, cache)
-
         fun callCreateOrUpdateExisting(
             appId: String,
             receiverId: String,
             events: List<IndexedEvent>,
             blockDetails: BlockDetails,
             existing: AppAllTimeActionSummary?,
-        ) = createOrUpdateExisting(appId, receiverId, events, blockDetails, existing)
+            version: Int,
+        ) = createOrUpdateExisting(appId, receiverId, events, blockDetails, existing, version)
     }
 
     @BeforeEach
@@ -309,6 +307,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -364,6 +363,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 200L),
                 existing = existing,
+                version = existing.version + 1,
             )
 
         assertEquals(2, result.version)
@@ -460,6 +460,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
         }
 
@@ -471,6 +472,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
         }
 
@@ -482,6 +484,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
         }
     }
@@ -537,6 +540,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -550,31 +554,6 @@ internal class AppAllTimeActionSummaryServiceTest {
         assertEquals(160, result.totalImpact?.carbon)
         assertEquals(350, result.totalImpact?.water)
         assertEquals(70, result.totalImpact?.energy)
-    }
-
-    @Test
-    fun `resolveExisting returns from cache when present, otherwise repository`() {
-        val cached =
-            AppAllTimeActionSummary(
-                version = 1,
-                blockId = "b1",
-                blockNumber = 1L,
-                blockTimestamp = 100L,
-                user = "user-1",
-                appId = "app-1",
-                actionsRewarded = 1,
-                totalRewardAmount = BigDecimal.ONE,
-                totalImpact = null,
-            )
-
-        // Prefer cache
-        val fromCache = service.callResolveExisting("app-1:user-1", mapOf("app-1:user-1" to cached))
-        assertEquals(cached, fromCache)
-
-        // Fallback to repository when not in cache
-        every { repository.findByIdOrNull("app-1:user-2") } returns cached.copy(user = "user-2")
-        val fromRepo = service.callResolveExisting("app-1:user-2", emptyMap())
-        assertEquals("user-2", fromRepo?.user)
     }
 
     @Test
@@ -631,6 +610,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         // Should only include the valid impact (carbon: 100, water: 500)
@@ -691,6 +671,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         // All impacts exceeded threshold, so totalImpact should be null
@@ -740,6 +721,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 100L),
                 existing = null,
+                version = 1,
             )
 
         // Impact of 1500 exceeds threshold of 1000, so should be filtered
@@ -811,6 +793,7 @@ internal class AppAllTimeActionSummaryServiceTest {
                 blockDetails =
                     BlockDetails(blockId = "block-2", blockNumber = 2L, blockTimestamp = 200L),
                 existing = existing,
+                version = existing.version + 1,
             )
 
         // Should accumulate existing (500, 300, null) with valid new (100, null, 50)

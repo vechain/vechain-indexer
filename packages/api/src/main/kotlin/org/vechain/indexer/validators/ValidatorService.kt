@@ -12,7 +12,6 @@ import org.springframework.data.mongodb.core.findOne
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
-import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.explorer.TimestampUtils.SECONDS_PER_DAY
 import org.vechain.indexer.rest.PaginatedResponse
@@ -46,7 +45,7 @@ open class ValidatorService(
         blockNumber: Long?,
         pageable: Pageable,
     ): PaginatedResponse<ValidatorBlock> {
-        val criteriaList = mutableListOf(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
+        val criteriaList = mutableListOf<Criteria>()
 
         validator?.let {
             criteriaList.add(
@@ -80,7 +79,7 @@ open class ValidatorService(
         status: BlockStatus?,
         pageable: Pageable,
     ): PaginatedResponse<ValidatorBlock> {
-        val criteriaList = mutableListOf(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
+        val criteriaList = mutableListOf<Criteria>()
 
         validator?.let {
             criteriaList.add(
@@ -201,7 +200,7 @@ open class ValidatorService(
         statuses: List<Status>?,
         pageable: Pageable,
     ): Slice<Validator> {
-        val criteriaList = mutableListOf(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
+        val criteriaList = mutableListOf<Criteria>()
 
         validatorId?.let { criteriaList.add(Criteria.where("_id").`is`(it.lowercase())) }
         endorser?.let {

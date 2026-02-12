@@ -45,9 +45,6 @@ internal class UserRoundActionSummaryServiceTest {
         pruner: TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : UserRoundActionSummaryService(repository, archive, pruner, impactConfig) {
-        fun callResolveExisting(recordId: String, cache: Map<String, UserRoundActionSummary>) =
-            resolveExisting(recordId, cache)
-
         fun callCreateOrUpdateExisting(
             entity: String,
             entityType: EntityType,
@@ -55,7 +52,17 @@ internal class UserRoundActionSummaryServiceTest {
             blockDetails: BlockDetails,
             roundId: Int,
             existing: UserRoundActionSummary?,
-        ) = createOrUpdateExisting(entity, entityType, events, blockDetails, roundId, existing)
+            version: Int,
+        ) =
+            createOrUpdateExisting(
+                entity,
+                entityType,
+                events,
+                blockDetails,
+                roundId,
+                existing,
+                version,
+            )
     }
 
     @BeforeEach
@@ -360,6 +367,7 @@ internal class UserRoundActionSummaryServiceTest {
                 blockDetails = blockDetails,
                 roundId = 1,
                 existing = null,
+                version = 1,
             )
 
         assertEquals("user-1", result.entity)
@@ -417,6 +425,7 @@ internal class UserRoundActionSummaryServiceTest {
                 blockDetails = blockDetails,
                 roundId = 1,
                 existing = existingRecord,
+                version = existingRecord.version + 1,
             )
 
         assertEquals("user-1", result.entity)
@@ -497,6 +506,7 @@ internal class UserRoundActionSummaryServiceTest {
                 blockDetails = blockDetails,
                 roundId = 1,
                 existing = null,
+                version = 1,
             )
         }
 
@@ -508,6 +518,7 @@ internal class UserRoundActionSummaryServiceTest {
                 blockDetails = blockDetails,
                 roundId = 1,
                 existing = null,
+                version = 1,
             )
         }
     }
@@ -564,6 +575,7 @@ internal class UserRoundActionSummaryServiceTest {
                 events = listOf(event1, event2),
                 blockDetails = blockDetails,
                 existing = null,
+                version = 1,
             )
 
         assertEquals("app-1", result.entity)

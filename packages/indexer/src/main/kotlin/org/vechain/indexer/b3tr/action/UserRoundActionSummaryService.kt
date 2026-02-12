@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -47,11 +48,12 @@ open class UserRoundActionSummaryService(
             "EmissionDistributedV2",
         )
 
-        val updatedResult = mutableMapOf<String, UserRoundActionSummary>()
-        val archiveResult = mutableListOf<UserRoundActionSummary>()
+        val accumulator =
+            VersionedDocumentAccumulator<UserRoundActionSummary>(repository::findByIdOrNull)
         var updatedRoundId = roundId
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             val roundChangeEvents =
                 blockEvents.filter {
                     (it.eventType == "EmissionDistributed" ||
@@ -73,7 +75,7 @@ open class UserRoundActionSummaryService(
             // Process Users
             groupByReceiver(rewardDistributedEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, "$updatedRoundId")
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -82,15 +84,15 @@ open class UserRoundActionSummaryService(
                         blockDetails,
                         updatedRoundId,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
 
             // Process Apps
             groupByAppId(rewardDistributedEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId, "$updatedRoundId")
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         appId,
@@ -99,14 +101,14 @@ open class UserRoundActionSummaryService(
                         blockDetails,
                         updatedRoundId,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
 
             // Process Global
             val recordId = generateId(EntityType.GLOBAL.name, "$updatedRoundId")
-            val existing = resolveExisting(recordId, updatedResult)
+            val (existing, nextVersion) = accumulator.resolve(recordId)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -115,12 +117,13 @@ open class UserRoundActionSummaryService(
                     blockDetails,
                     updatedRoundId,
                     existing,
+                    version = nextVersion,
                 )
-            existing?.let { archiveResult.add(it) }
-            updatedResult[recordId] = updated
+            accumulator.put(recordId, existing, updated)
         }
 
-        return Triple(updatedResult.values.toList(), archiveResult.toList(), updatedRoundId)
+        val (updated, archived) = accumulator.results()
+        return Triple(updated, archived, updatedRoundId)
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -141,6 +144,7 @@ open class UserRoundActionSummaryService(
         blockDetails: BlockDetails,
         roundId: Int,
         existing: UserRoundActionSummary?,
+        version: Int,
     ): UserRoundActionSummary {
         require(
             events.all { it.blockId == blockDetails.blockId && getEntity(it, entityType) == entity }
@@ -158,7 +162,7 @@ open class UserRoundActionSummaryService(
         return if (existing != null) {
             require(existing.entity == entity) { "Entity mismatch" }
             UserRoundActionSummary(
-                version = existing.version + 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -171,7 +175,7 @@ open class UserRoundActionSummaryService(
             )
         } else {
             UserRoundActionSummary(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -184,9 +188,4 @@ open class UserRoundActionSummaryService(
             )
         }
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, UserRoundActionSummary>,
-    ): UserRoundActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }
