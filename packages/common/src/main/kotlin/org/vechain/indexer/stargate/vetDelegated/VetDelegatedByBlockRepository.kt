@@ -14,7 +14,7 @@ interface VetDelegatedByBlockRepository :
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { 'blockNumber': { '\$lte': ?0 } } }",
+                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' }, 'blockNumber': { '\$lte': ?0 } } }",
                 "{ '\$sort': { 'blockNumber': -1 } }",
                 "{ '\$limit': 1 }",
             ]
@@ -50,7 +50,14 @@ interface VetDelegatedByBlockRepository :
         pageable: Pageable,
     ): Slice<VetDelegatedByBlock>
 
-    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' } } }",
+                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
     override fun getLatestRecord(): VetDelegatedByBlock?
 
     @Aggregation(

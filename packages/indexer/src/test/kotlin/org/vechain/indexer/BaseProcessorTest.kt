@@ -31,13 +31,13 @@ class BaseProcessorTest {
     }
 
     @Test
-    fun `rollback - deletes checkpoint and blocks starting from requested height`() {
-        every { checkpointService.deleteCheckpoint(TEST_COLLECTION) } just Runs
+    fun `rollback - saves checkpoint and deletes blocks starting from requested height`() {
+        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) } just Runs
         every { repository.deleteAllByBlockNumberGreaterThanEqual(10) } just Runs
 
         processor.rollback(10)
 
-        verify { checkpointService.deleteCheckpoint(TEST_COLLECTION) }
+        verify { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) }
         verify { repository.deleteAllByBlockNumberGreaterThanEqual(10) }
     }
 

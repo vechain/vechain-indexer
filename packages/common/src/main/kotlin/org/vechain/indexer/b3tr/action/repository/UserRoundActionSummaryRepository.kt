@@ -5,6 +5,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
+import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.stereotype.Repository
 import org.vechain.indexer.BasePagingAndSortingIndexedRepository
 import org.vechain.indexer.b3tr.action.UserRoundActionSummary
@@ -14,6 +15,14 @@ import org.vechain.indexer.b3tr.shared.EntityType
 @Repository
 interface UserRoundActionSummaryRepository :
     BasePagingAndSortingIndexedRepository<UserRoundActionSummary, String> {
+    @Aggregation(
+        pipeline =
+            [
+                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' } } }",
+                "{ '\$sort': { 'blockNumber': -1 } }",
+                "{ '\$limit': 1 }",
+            ]
+    )
     fun findFirstByOrderByBlockNumberDesc(): UserRoundActionSummary?
 
     fun findAllByEntityTypeAndRoundId(
