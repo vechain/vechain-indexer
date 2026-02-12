@@ -30,7 +30,7 @@ interface VetStakedByBlockRepository :
     @Aggregation(
         pipeline =
             [
-                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' }, 'blockNumber': { '\$lte': ?0 } } }",
+                "{ '\$match': { 'blockNumber': { '\$lte': ?0 } } }",
                 "{ '\$sort': { 'blockNumber': -1 } }",
                 "{ '\$limit': 1 }",
             ]
@@ -50,14 +50,7 @@ interface VetStakedByBlockRepository :
         pageable: Pageable,
     ): Slice<VetStakedByBlock>
 
-    @Aggregation(
-        pipeline =
-            [
-                "{ '\$match': { '_id': { '\$ne': '__checkpoint__' } } }",
-                "{ '\$sort': { 'blockNumber': -1 } }",
-                "{ '\$limit': 1 }",
-            ]
-    )
+    @Aggregation(pipeline = ["{ '\$sort': { 'blockNumber': -1 } }", "{ '\$limit': 1 }"])
     override fun getLatestRecord(): VetStakedByBlock?
 
     fun findByTimeFramesContainsAndBlockTimestampAfter(

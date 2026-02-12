@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.b3tr.proposal.ProposalEventUtils.getProposalId
@@ -33,22 +34,23 @@ open class VeVoteResultService(
     ): Pair<List<VeVoteProposalResult>, List<VeVoteProposalResult>> {
         assertEventTypes(events, "VoteCast")
 
-        val updatedResult = mutableMapOf<String, VeVoteProposalResult>()
-        val archiveResult = mutableListOf<VeVoteProposalResult>()
+        val accumulator =
+            VersionedDocumentAccumulator<VeVoteProposalResult>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
                 groupBySupport(proposalEvents).forEach { (support, supportEvents) ->
                     val recordId = generateId(proposalId, support.name)
-                    val existing = resolveExisting(recordId, updatedResult)
-                    val updated = createOrUpdateExisting(blockDetails, supportEvents, existing)
-                    existing?.let { archiveResult.add(it) }
-                    updatedResult[recordId] = updated
+                    val (existing, nextVersion) = accumulator.resolve(recordId)
+                    val updated =
+                        createOrUpdateExisting(blockDetails, supportEvents, existing, nextVersion)
+                    accumulator.put(recordId, existing, updated)
                 }
             }
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     @Transactional
@@ -66,6 +68,7 @@ open class VeVoteResultService(
         blockDetails: BlockDetails,
         events: List<IndexedEvent>,
         existing: VeVoteProposalResult?,
+        version: Int,
     ): VeVoteProposalResult {
         require(events.isNotEmpty()) { "No events provided" }
 
@@ -102,7 +105,7 @@ open class VeVoteResultService(
 
             VeVoteProposalResult(
                 id = existing.id,
-                version = existing.version + 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -113,7 +116,7 @@ open class VeVoteResultService(
             )
         } else {
             VeVoteProposalResult(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -124,9 +127,4 @@ open class VeVoteResultService(
             )
         }
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, VeVoteProposalResult>,
-    ): VeVoteProposalResult? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

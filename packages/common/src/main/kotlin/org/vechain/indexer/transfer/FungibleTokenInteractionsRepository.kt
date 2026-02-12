@@ -5,12 +5,12 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("transfers")
 @Repository
 interface FungibleTokenInteractionsRepository :
-    BasePagingAndSortingIndexedRepository<FungibleTokenInteraction, String> {
+    BaseIndexedRepository<FungibleTokenInteraction, String> {
 
     @Query("{ 'walletAddress': ?0 }")
     fun findByWalletAddress(

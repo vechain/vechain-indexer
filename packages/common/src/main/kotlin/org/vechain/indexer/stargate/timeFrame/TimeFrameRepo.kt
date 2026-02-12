@@ -36,7 +36,7 @@ interface TimeFrameRepo<T : IndexedDocument> {
 
     fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): T?
 
-    @Query("{ '_id': { '\$ne': '__checkpoint__' } }") fun findAll(pageable: Pageable): Slice<T>
+    @Query("{}") fun findAll(pageable: Pageable): Slice<T>
 
     fun findByBlockTimestampBefore(blockTimestamp: Long, pageable: Pageable): Slice<T>
 

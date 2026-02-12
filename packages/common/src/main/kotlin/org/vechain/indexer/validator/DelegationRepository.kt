@@ -6,37 +6,45 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("validator", "delegation", "stargate", "vet-delegated-by-block")
 @Repository
-interface DelegationRepository : BasePagingAndSortingIndexedRepository<Delegation, String> {
-    fun findByNotify(notify: Boolean): List<Delegation>
+interface DelegationRepository : BaseIndexedRepository<Delegation, String> {
+    @Query("{ 'notify': ?0 }") fun findByNotify(notify: Boolean): List<Delegation>
 
+    @Query("{ 'validatorNextCycle': { '\$in': ?0 }, 'status': { '\$in': ?1 } }")
     fun findByValidatorNextCycleInAndStatusIn(
         blockNumber: List<Long>,
         statuses: List<Status>,
     ): List<Delegation>
 
+    @Query("{ 'validator': { '\$in': ?0 } }")
     fun findByValidatorIn(validators: List<String>): List<Delegation>
 
-    @Query("{ 'status': { \$ne: ?0 } }", fields = "{ 'validator' : 1, '_id' : 0 }")
+    @Query(value = "{ 'status': { '\$ne': ?0 } }", fields = "{ 'validator' : 1, '_id' : 0 }")
     fun findValidatorIdsByStatusNot(status: Status): List<String>
 
+    @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
     fun findByValidatorAndStatusIn(
         validator: String,
         statuses: List<Status>,
         pageable: Pageable,
     ): Slice<Delegation>
 
+    @Query("{ 'validator': ?0, 'status': { '\$in': ?1 } }")
     fun findByValidatorAndStatusIn(validator: String, statuses: List<Status>): List<Delegation>
 
+    @Query("{ 'validator': ?0 }")
     fun findByValidator(validator: String, pageable: Pageable): Slice<Delegation>
 
+    @Query("{ 'tokenId': ?0 }")
     fun findByTokenId(tokenId: String, pageable: Pageable): Slice<Delegation>
 
+    @Query("{ 'tokenId': { '\$in': ?0 } }")
     fun findByTokenIdIn(tokenIds: List<String>): List<Delegation>
 
+    @Query("{ 'status': { '\$in': ?0 } }")
     fun findByStatusIn(statuses: Collection<Status>, pageable: Pageable): Slice<Delegation>
 
     @Aggregation(

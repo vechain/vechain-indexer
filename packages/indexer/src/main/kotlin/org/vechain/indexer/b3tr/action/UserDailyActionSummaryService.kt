@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.getAction
@@ -39,17 +40,18 @@ open class UserDailyActionSummaryService(
         events: List<IndexedEvent>
     ): Pair<List<UserDailyActionSummary>, List<UserDailyActionSummary>> {
 
-        val updatedResult = mutableMapOf<String, UserDailyActionSummary>()
-        val archiveResult = mutableListOf<UserDailyActionSummary>()
+        val accumulator =
+            VersionedDocumentAccumulator<UserDailyActionSummary>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             // Get date from block timestamp (preserving UTC)
             val date = BlockUtils.getDateAtUTC(blockDetails.blockTimestamp)
 
             // Process Users
             groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId, date)
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -57,15 +59,15 @@ open class UserDailyActionSummaryService(
                         eventsPerReceiver,
                         blockDetails,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
 
             // Process Apps
             groupByAppId(blockEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId, date)
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         appId,
@@ -73,14 +75,14 @@ open class UserDailyActionSummaryService(
                         eventsPerApp,
                         blockDetails,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
 
             // Process Global
             val recordId = generateId(EntityType.GLOBAL.name, date)
-            val existing = resolveExisting(recordId, updatedResult)
+            val (existing, nextVersion) = accumulator.resolve(recordId)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -88,12 +90,12 @@ open class UserDailyActionSummaryService(
                     blockEvents,
                     blockDetails,
                     existing,
+                    version = nextVersion,
                 )
-            existing?.let { archiveResult.add(it) }
-            updatedResult[recordId] = updated
+            accumulator.put(recordId, existing, updated)
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -113,6 +115,7 @@ open class UserDailyActionSummaryService(
         events: List<IndexedEvent>,
         blockDetails: BlockDetails,
         existing: UserDailyActionSummary?,
+        version: Int,
     ): UserDailyActionSummary {
         require(events.isNotEmpty()) { "No events provided" }
 
@@ -132,7 +135,7 @@ open class UserDailyActionSummaryService(
         return if (existing != null) {
             require(existing.entity == entity) { "Entity mismatch" }
             UserDailyActionSummary(
-                version = existing.version + 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -145,7 +148,7 @@ open class UserDailyActionSummaryService(
             )
         } else {
             UserDailyActionSummary(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -158,9 +161,4 @@ open class UserDailyActionSummaryService(
             )
         }
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, UserDailyActionSummary>,
-    ): UserDailyActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

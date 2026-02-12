@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
 import org.vechain.indexer.contracts.repository.ContractRepository
@@ -35,22 +36,28 @@ open class ContractService(
     ): Pair<List<Contract>, List<Contract>> {
         assertEventTypes(events, "\$Master")
 
-        val updatedResult = mutableMapOf<String, Contract>()
-        val archiveResult = mutableListOf<Contract>()
+        val accumulator =
+            VersionedDocumentAccumulator<Contract>(repository::findByIdOrNull, initialVersion = 0)
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             groupByContractAddress(blockEvents).forEach { (contractAddress, contractEvents) ->
                 val recordId = generateId(blockDetails.blockId, contractAddress)
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
-                    createOrUpdateExisting(blockDetails, contractAddress, contractEvents, existing)
-                updated?.let { u ->
-                    existing?.let { e -> archiveResult.add(e) }
-                    updatedResult[recordId] = u
+                    createOrUpdateExisting(
+                        blockDetails,
+                        contractAddress,
+                        contractEvents,
+                        existing,
+                        nextVersion,
+                    )
+                if (updated != null) {
+                    accumulator.put(recordId, existing, updated)
                 }
             }
         }
 
-        return Pair(updatedResult.values.toList(), archiveResult)
+        return accumulator.results()
     }
 
     @Transactional
@@ -69,11 +76,12 @@ open class ContractService(
         contractAddress: String,
         events: List<IndexedEvent>,
         existing: Contract?,
+        version: Int,
     ): Contract? {
         return if (existing == null) {
-            createNewRecord(blockDetails, contractAddress, events)
+            createNewRecord(blockDetails, contractAddress, events, version)
         } else {
-            updateExistingRecord(blockDetails, events, existing)
+            updateExistingRecord(blockDetails, events, existing, version)
         }
     }
 
@@ -81,6 +89,7 @@ open class ContractService(
         blockDetails: BlockDetails,
         contractAddress: String,
         events: List<IndexedEvent>,
+        version: Int,
     ): Contract? {
 
         // Use the last $Master event in the block to derive the latest master.
@@ -100,7 +109,7 @@ open class ContractService(
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
-            version = 0,
+            version = version,
             createdOn = blockDetails.blockTimestamp,
             deploymentTxId = events.first().txId,
             deploymentClauseIndex = events.first().clauseIndex,
@@ -115,6 +124,7 @@ open class ContractService(
         blockDetails: BlockDetails,
         events: List<IndexedEvent>,
         existing: Contract,
+        version: Int,
     ): Contract {
         val newMaster =
             events.asReversed().firstNotNullOfOrNull { it.params.getAsString("newMaster") }
@@ -124,11 +134,8 @@ open class ContractService(
             blockId = blockDetails.blockId,
             blockNumber = blockDetails.blockNumber,
             blockTimestamp = blockDetails.blockTimestamp,
-            version = existing.version + 1,
+            version = version,
             master = newMaster,
         )
     }
-
-    protected fun resolveExisting(recordId: String, cache: Map<String, Contract>): Contract? =
-        cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

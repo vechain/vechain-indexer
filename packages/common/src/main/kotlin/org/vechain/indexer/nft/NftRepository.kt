@@ -6,11 +6,11 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.mongodb.repository.Aggregation
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.stereotype.Repository
-import org.vechain.indexer.BasePagingAndSortingIndexedRepository
+import org.vechain.indexer.BaseIndexedRepository
 
 @Profile("nfts")
 @Repository
-interface NftRepository : BasePagingAndSortingIndexedRepository<IndexedNft, String> {
+interface NftRepository : BaseIndexedRepository<IndexedNft, String> {
 
     @Query("{ 'owner': ?0, 'contractAddress': { \$nin: ?1 }, isBlacklisted: { \$ne: true } }")
     fun findByOwner(

@@ -11,12 +11,11 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.springframework.data.repository.findByIdOrNull
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.contracts.repository.ContractRepository
 import org.vechain.indexer.contracts.specifications.Contracts
@@ -55,22 +54,22 @@ internal class ContractServiceTest {
             contractAddress: String,
             events: List<IndexedEvent>,
             existing: Contract?,
-        ) = createOrUpdateExisting(blockDetails, contractAddress, events, existing)
+            version: Int,
+        ) = createOrUpdateExisting(blockDetails, contractAddress, events, existing, version)
 
         suspend fun callCreateNewRecord(
             blockDetails: BlockDetails,
             contractAddress: String,
             events: List<IndexedEvent>,
-        ) = createNewRecord(blockDetails, contractAddress, events)
+            version: Int,
+        ) = createNewRecord(blockDetails, contractAddress, events, version)
 
         fun callUpdateExistingRecord(
             blockDetails: BlockDetails,
             events: List<IndexedEvent>,
             existing: Contract,
-        ) = updateExistingRecord(blockDetails, events, existing)
-
-        fun callResolveExisting(recordId: String, cache: Map<String, Contract>) =
-            resolveExisting(recordId, cache)
+            version: Int,
+        ) = updateExistingRecord(blockDetails, events, existing, version)
     }
 
     @BeforeEach
@@ -125,29 +124,6 @@ internal class ContractServiceTest {
         )
 
     @Test
-    fun `resolveExisting returns from cache without hitting DB`() {
-        val recordId = "id-1"
-        val cached = existingContract(address = "0xCACHED")
-
-        val resolved = service.callResolveExisting(recordId, mapOf(recordId to cached))
-
-        assertSame(cached, resolved)
-        verify(exactly = 0) { repository.findByIdOrNull(recordId) }
-    }
-
-    @Test
-    fun `resolveExisting falls back to repository when cache miss`() {
-        val recordId = "id-1"
-        val fromDb = existingContract(address = "0xDB")
-        every { repository.findByIdOrNull(recordId) } returns fromDb
-
-        val resolved = service.callResolveExisting(recordId, emptyMap())
-
-        assertSame(fromDb, resolved)
-        verify(exactly = 1) { repository.findByIdOrNull(recordId) }
-    }
-
-    @Test
     fun `updateExistingRecord bumps version and updates master and block fields`() {
         val existing = existingContract()
         val details = blockDetails(blockId = blockIdB, blockNumber = 124L, blockTimestamp = 1111L)
@@ -157,7 +133,13 @@ internal class ContractServiceTest {
                 masterEvent(newMaster = "0xMASTER_NEW"),
             )
 
-        val updated = service.callUpdateExistingRecord(details, events, existing)
+        val updated =
+            service.callUpdateExistingRecord(
+                details,
+                events,
+                existing,
+                version = existing.version + 1,
+            )
 
         assertEquals(existing.address, updated.address)
         assertEquals(existing.createdOn, updated.createdOn)
@@ -183,6 +165,7 @@ internal class ContractServiceTest {
                     details,
                     contractAddress = "0xCONTRACT",
                     events = listOf(masterEvent(newMaster = "0xDEPLOYER")),
+                    version = 0,
                 )
 
             assertNull(result)
@@ -218,6 +201,7 @@ internal class ContractServiceTest {
                                 masterEvent(newMaster = "0xDEPLOYER"),
                                 masterEvent(newMaster = "0xMASTER_FINAL"),
                             ),
+                        version = 0,
                     )!!
 
                 assertEquals("0xCONTRACT", result.address)
@@ -254,8 +238,10 @@ internal class ContractServiceTest {
                     contractAddress = "0xCONTRACT",
                     events = listOf(masterEvent(newMaster = "0xDEPLOYER")),
                     existing = null,
+                    version = 0,
                 )
 
+            assertNotNull(result)
             assertEquals(0, result!!.version)
             assertEquals(details.blockTimestamp, result.createdOn)
         } finally {
@@ -274,6 +260,7 @@ internal class ContractServiceTest {
                 contractAddress = "0xCONTRACT",
                 events = listOf(masterEvent(newMaster = "0xNEW_MASTER")),
                 existing = existing,
+                version = existing.version + 1,
             )!!
 
         assertEquals(3, result.version)

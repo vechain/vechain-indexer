@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -40,14 +41,15 @@ open class AppAllTimeActionSummaryService(
     ): Pair<List<AppAllTimeActionSummary>, List<AppAllTimeActionSummary>> {
         assertEventTypes(events, "B3TR_ActionReward")
 
-        val updatedResult = mutableMapOf<String, AppAllTimeActionSummary>()
-        val archiveResult = mutableListOf<AppAllTimeActionSummary>()
+        val accumulator =
+            VersionedDocumentAccumulator<AppAllTimeActionSummary>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             groupByAppId(blockEvents).forEach { (appId, appEvents) ->
                 groupByReceiver(appEvents).forEach { (receiverId, receiverEvents) ->
                     val recordId = generateId(appId, receiverId)
-                    val existing = resolveExisting(recordId, updatedResult)
+                    val (existing, nextVersion) = accumulator.resolve(recordId)
                     val updated =
                         createOrUpdateExisting(
                             appId,
@@ -55,14 +57,14 @@ open class AppAllTimeActionSummaryService(
                             receiverEvents,
                             blockDetails,
                             existing,
+                            version = nextVersion,
                         )
-                    existing?.let { archiveResult.add(it) }
-                    updatedResult[recordId] = updated
+                    accumulator.put(recordId, existing, updated)
                 }
             }
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -82,6 +84,7 @@ open class AppAllTimeActionSummaryService(
         events: List<IndexedEvent>,
         blockDetails: BlockDetails,
         existing: AppAllTimeActionSummary?,
+        version: Int,
     ): AppAllTimeActionSummary {
         require(events.isNotEmpty()) { "No events provided" }
 
@@ -107,7 +110,7 @@ open class AppAllTimeActionSummaryService(
             require(existing.appId == appId) { "App ID mismatch" }
 
             AppAllTimeActionSummary(
-                version = existing.version + 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -119,7 +122,7 @@ open class AppAllTimeActionSummaryService(
             )
         } else {
             AppAllTimeActionSummary(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -131,9 +134,4 @@ open class AppAllTimeActionSummaryService(
             )
         }
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, AppAllTimeActionSummary>,
-    ): AppAllTimeActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

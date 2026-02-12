@@ -58,8 +58,17 @@ internal class XAllocResultServiceTest {
             existing: XAllocResult?,
             voters: Long,
             votesReceived: BigInteger,
+            version: Int,
         ): XAllocResult =
-            addOrCreateVoteResult(roundId, appId, blockDetails, existing, voters, votesReceived)
+            addOrCreateVoteResult(
+                roundId,
+                appId,
+                blockDetails,
+                existing,
+                voters,
+                votesReceived,
+                version,
+            )
 
         fun testAddOrCreateRewardClaimResult(
             roundId: Int,
@@ -70,6 +79,7 @@ internal class XAllocResultServiceTest {
             unallocatedAmount: BigDecimal,
             teamAllocationAmount: BigDecimal,
             rewardsAllocationAmount: BigDecimal,
+            version: Int,
         ): XAllocResult =
             addOrCreateRewardClaimResult(
                 roundId,
@@ -80,6 +90,7 @@ internal class XAllocResultServiceTest {
                 unallocatedAmount,
                 teamAllocationAmount,
                 rewardsAllocationAmount,
+                version,
             )
 
         fun testAddOrCreateDbaFundResult(
@@ -88,7 +99,9 @@ internal class XAllocResultServiceTest {
             blockDetails: org.vechain.indexer.utils.BlockDetails,
             existing: XAllocResult?,
             amount: BigDecimal,
-        ): XAllocResult = addOrCreateDbaFundResult(roundId, appId, blockDetails, existing, amount)
+            version: Int,
+        ): XAllocResult =
+            addOrCreateDbaFundResult(roundId, appId, blockDetails, existing, amount, version)
     }
 
     private lateinit var testableService: TestableXAllocResultService
@@ -156,6 +169,7 @@ internal class XAllocResultServiceTest {
                 existing = null,
                 voters = 5,
                 votesReceived = BigInteger.valueOf(100),
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -197,9 +211,10 @@ internal class XAllocResultServiceTest {
                 existing = existing,
                 voters = 2,
                 votesReceived = BigInteger.valueOf(30),
+                version = 3,
             )
 
-        assertEquals(3, result.version) // incremented from 2
+        assertEquals(3, result.version) // version passed in
         assertEquals("app1", result.appId)
         assertEquals(1, result.roundId)
         assertEquals(5, result.voters) // 3 + 2
@@ -237,6 +252,7 @@ internal class XAllocResultServiceTest {
                 existing = existing,
                 voters = 1,
                 votesReceived = BigInteger.valueOf(30),
+                version = 2,
             )
 
         assertEquals(2, result.version)
@@ -264,6 +280,7 @@ internal class XAllocResultServiceTest {
                 unallocatedAmount = BigDecimal("2.0"),
                 teamAllocationAmount = BigDecimal("3.0"),
                 rewardsAllocationAmount = BigDecimal("5.0"),
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -307,6 +324,7 @@ internal class XAllocResultServiceTest {
                 unallocatedAmount = BigDecimal("0.5"),
                 teamAllocationAmount = BigDecimal("1.0"),
                 rewardsAllocationAmount = BigDecimal("1.5"),
+                version = 2,
             )
 
         assertEquals(2, result.version)
@@ -335,6 +353,7 @@ internal class XAllocResultServiceTest {
                 blockDetails = blockDetails,
                 existing = null,
                 amount = BigDecimal("7.5"),
+                version = 1,
             )
 
         assertEquals(1, result.version)
@@ -372,6 +391,7 @@ internal class XAllocResultServiceTest {
                 blockDetails = blockDetails,
                 existing = existing,
                 amount = BigDecimal("1.5"),
+                version = 2,
             )
 
         assertEquals(2, result.version)
@@ -408,6 +428,7 @@ internal class XAllocResultServiceTest {
                 blockDetails = blockDetails,
                 existing = existing,
                 amount = BigDecimal("5.0"),
+                version = 2,
             )
 
         assertEquals(2, result.version)
@@ -1155,5 +1176,215 @@ internal class XAllocResultServiceTest {
         assertEquals(220L, u.blockTimestamp)
         // Two archived snapshots
         assertEquals(2, archived.size)
+    }
+
+    @Test
+    fun `processEvents with many vote events across blocks produces exactly one updated record`() {
+        // Simulate the real scenario: existing record at v64 in DB,
+        // vote events spanning 12 blocks, each with 1-3 voters for the same app
+        val existingRecord =
+            XAllocResult(
+                version = 64,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 1,
+                appId = "targetApp",
+                voters = 64,
+                votesReceived = BigInteger.valueOf(1000),
+            )
+        every { repository.findByIdOrNull(any()) } returns existingRecord
+
+        // Build vote events across 5 different blocks, some blocks with multiple voters
+        val events = mutableListOf<IndexedEvent>()
+        val blocks =
+            listOf(
+                Triple("block-100", 100L, 1000L),
+                Triple("block-101", 101L, 1010L),
+                Triple("block-102", 102L, 1020L),
+                Triple("block-103", 103L, 1030L),
+                Triple("block-104", 104L, 1040L),
+            )
+
+        // Block 100: 2 voters
+        for (i in 0..1) {
+            events.add(
+                buildIndexedEvent(
+                    id = "vote-100-$i",
+                    blockNumber = 100L,
+                    blockTimestamp = 1000L,
+                    blockId = "block-100",
+                    eventType = "B3TR_XAllocationVote",
+                    params =
+                        AbiEventParameters(
+                            returnValues =
+                                mapOf(
+                                    "roundId" to 1,
+                                    "appsIds" to listOf("targetApp"),
+                                    "voteWeights" to listOf(BigInteger.valueOf(10)),
+                                )
+                        ),
+                )
+            )
+        }
+
+        // Block 101: 3 voters
+        for (i in 0..2) {
+            events.add(
+                buildIndexedEvent(
+                    id = "vote-101-$i",
+                    blockNumber = 101L,
+                    blockTimestamp = 1010L,
+                    blockId = "block-101",
+                    eventType = "B3TR_XAllocationVote",
+                    params =
+                        AbiEventParameters(
+                            returnValues =
+                                mapOf(
+                                    "roundId" to 1,
+                                    "appsIds" to listOf("targetApp"),
+                                    "voteWeights" to listOf(BigInteger.valueOf(20)),
+                                )
+                        ),
+                )
+            )
+        }
+
+        // Block 102-104: 1 voter each
+        for (blockIdx in 2..4) {
+            events.add(
+                buildIndexedEvent(
+                    id = "vote-${100 + blockIdx}",
+                    blockNumber = blocks[blockIdx].second,
+                    blockTimestamp = blocks[blockIdx].third,
+                    blockId = blocks[blockIdx].first,
+                    eventType = "B3TR_XAllocationVote",
+                    params =
+                        AbiEventParameters(
+                            returnValues =
+                                mapOf(
+                                    "roundId" to 1,
+                                    "appsIds" to listOf("targetApp"),
+                                    "voteWeights" to listOf(BigInteger.valueOf(30)),
+                                )
+                        ),
+                )
+            )
+        }
+
+        val (updated, archived) = processEvents(*events.toTypedArray())
+
+        // CRITICAL: must be exactly 1 updated record regardless of event count
+        assertEquals(1, updated.size, "Must have exactly 1 updated record")
+        val u = updated.first()
+
+        // 5 blocks = 5 version increments from v64 → v69
+        assertEquals(69, u.version)
+        // 64 existing + 2 (block 100) + 3 (block 101) + 1 + 1 + 1 = 72
+        assertEquals(72, u.voters)
+        // block 104 is the last block
+        assertEquals("block-104", u.blockId)
+        assertEquals(104L, u.blockNumber)
+
+        // 5 archives: one per block (the pre-block state)
+        assertEquals(5, archived.size, "Must have exactly 5 archives (one per block)")
+        // Verify no duplicate versions in archives
+        val archivedVersions = archived.map { it.version }.sorted()
+        assertEquals(listOf(64, 65, 66, 67, 68), archivedVersions)
+    }
+
+    @Test
+    fun `processEvents with vote+claim+DBA in SAME block only bumps version once`() {
+        // This is the core bug scenario from the plan
+        val existingRecord =
+            XAllocResult(
+                version = 1,
+                blockId = "block-0",
+                blockNumber = 0L,
+                blockTimestamp = 0L,
+                roundId = 1,
+                appId = "bugApp",
+                voters = 5,
+                votesReceived = BigInteger.valueOf(100),
+            )
+        every { repository.findByIdOrNull(any()) } returns existingRecord
+
+        val voteEvent =
+            buildIndexedEvent(
+                id = "vote-same-block",
+                blockNumber = 50L,
+                blockTimestamp = 500L,
+                blockId = "block-50",
+                eventType = "B3TR_XAllocationVote",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 1,
+                                "appsIds" to listOf("bugApp"),
+                                "voteWeights" to listOf(BigInteger.valueOf(50)),
+                            )
+                    ),
+            )
+
+        val claimEvent =
+            buildIndexedEvent(
+                id = "claim-same-block",
+                blockNumber = 50L,
+                blockTimestamp = 500L,
+                blockId = "block-50",
+                eventType = "B3TR_XAllocationRewardsClaimed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 1,
+                                "appId" to "bugApp",
+                                "totalAmount" to BigInteger("5000000000000000000"),
+                                "unallocatedAmount" to BigInteger("1000000000000000000"),
+                                "teamAllocationAmount" to BigInteger("1500000000000000000"),
+                                "rewardsAllocationAmount" to BigInteger("2500000000000000000"),
+                            )
+                    ),
+            )
+
+        val dbaEvent =
+            buildIndexedEvent(
+                id = "dba-same-block",
+                blockNumber = 50L,
+                blockTimestamp = 500L,
+                blockId = "block-50",
+                eventType = "B3TR_DBAFundsDistributed",
+                params =
+                    AbiEventParameters(
+                        returnValues =
+                            mapOf(
+                                "roundId" to 1,
+                                "appId" to "bugApp",
+                                "amount" to BigInteger("2000000000000000000"),
+                            )
+                    ),
+            )
+
+        val (updated, archived) = processEvents(voteEvent, claimEvent, dbaEvent)
+
+        // Exactly 1 updated record
+        assertEquals(1, updated.size, "Must have exactly 1 updated record")
+        val u = updated.first()
+
+        // BUG FIX: version should be 2 (one bump per block), NOT 4
+        assertEquals(2, u.version, "Version should only bump once per block")
+
+        // Data should accumulate from all 3 event types
+        assertEquals(6, u.voters) // 5 + 1
+        assertEquals(BigInteger.valueOf(150), u.votesReceived) // 100 + 50
+        assertEquals(BigDecimal("7.000000000000000000"), u.totalAmount) // 5 + 2
+        assertEquals(BigDecimal("1.000000000000000000"), u.unallocatedAmount)
+        assertEquals(BigDecimal("1.500000000000000000"), u.teamAllocationAmount)
+        assertEquals(BigDecimal("2.500000000000000000"), u.rewardsAllocationAmount)
+
+        // Only 1 archive: the pre-block state (v1)
+        assertEquals(1, archived.size, "Must have exactly 1 archive (the pre-block state)")
+        assertEquals(existingRecord, archived.first())
     }
 }

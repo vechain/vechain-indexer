@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.accumulateImpacts
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -41,14 +42,15 @@ open class UserAllTimeActionSummaryService(
     ): Pair<List<UserAllTimeActionSummary>, List<UserAllTimeActionSummary>> {
         assertEventTypes(events, "B3TR_ActionReward")
 
-        val updatedResult = mutableMapOf<String, UserAllTimeActionSummary>()
-        val archiveResult = mutableListOf<UserAllTimeActionSummary>()
+        val accumulator =
+            VersionedDocumentAccumulator<UserAllTimeActionSummary>(repository::findByIdOrNull)
 
         groupByBlock(events).forEach { (blockDetails, blockEvents) ->
+            accumulator.startBlock()
             // Process Users
             groupByReceiver(blockEvents).forEach { (userId, eventsPerReceiver) ->
                 val recordId = generateId(userId)
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         userId,
@@ -56,14 +58,14 @@ open class UserAllTimeActionSummaryService(
                         eventsPerReceiver,
                         blockDetails,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
             // Process Apps
             groupByAppId(blockEvents).forEach { (appId, eventsPerApp) ->
                 val recordId = generateId(appId)
-                val existing = resolveExisting(recordId, updatedResult)
+                val (existing, nextVersion) = accumulator.resolve(recordId)
                 val updated =
                     createOrUpdateExisting(
                         appId,
@@ -71,13 +73,13 @@ open class UserAllTimeActionSummaryService(
                         eventsPerApp,
                         blockDetails,
                         existing,
+                        version = nextVersion,
                     )
-                existing?.let { archiveResult.add(it) }
-                updatedResult[recordId] = updated
+                accumulator.put(recordId, existing, updated)
             }
 
             // Process Global
-            val existing = resolveExisting(globalId, updatedResult)
+            val (existing, nextVersion) = accumulator.resolve(globalId)
             val updated =
                 createOrUpdateExisting(
                     EntityType.GLOBAL.name,
@@ -85,12 +87,12 @@ open class UserAllTimeActionSummaryService(
                     blockEvents,
                     blockDetails,
                     existing,
+                    version = nextVersion,
                 )
-            existing?.let { archiveResult.add(it) }
-            updatedResult[globalId] = updated
+            accumulator.put(globalId, existing, updated)
         }
 
-        return updatedResult.values.toList() to archiveResult
+        return accumulator.results()
     }
 
     @Transactional(rollbackFor = [Exception::class])
@@ -113,6 +115,7 @@ open class UserAllTimeActionSummaryService(
         events: List<IndexedEvent>,
         blockDetails: BlockDetails,
         existing: UserAllTimeActionSummary?,
+        version: Int,
     ): UserAllTimeActionSummary {
         require(events.isNotEmpty()) { "No events provided" }
 
@@ -133,7 +136,7 @@ open class UserAllTimeActionSummaryService(
             require(existing.entity == entity) { "Entity mismatch" }
 
             UserAllTimeActionSummary(
-                version = existing.version + 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -145,7 +148,7 @@ open class UserAllTimeActionSummaryService(
             )
         } else {
             UserAllTimeActionSummary(
-                version = 1,
+                version = version,
                 blockId = blockDetails.blockId,
                 blockNumber = blockDetails.blockNumber,
                 blockTimestamp = blockDetails.blockTimestamp,
@@ -157,9 +160,4 @@ open class UserAllTimeActionSummaryService(
             )
         }
     }
-
-    protected fun resolveExisting(
-        recordId: String,
-        cache: Map<String, UserAllTimeActionSummary>,
-    ): UserAllTimeActionSummary? = cache[recordId] ?: repository.findByIdOrNull(recordId)
 }

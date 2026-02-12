@@ -20,7 +20,11 @@ object GmNftEventUtils {
      * @param tokenEvents List of IndexedEvent representing the token events to process.
      * @return The updated or newly created GmNft.
      */
-    fun processAllTokenEvents(existing: GmNft?, tokenEvents: List<IndexedEvent>): GmNft {
+    fun processAllTokenEvents(
+        existing: GmNft?,
+        tokenEvents: List<IndexedEvent>,
+        version: Int,
+    ): GmNft {
         require(tokenEvents.isNotEmpty()) { "No events provided" }
 
         val firstTokenId =
@@ -68,8 +72,7 @@ object GmNftEventUtils {
                 }
             }
 
-        return if (updatedNft == existing) existing
-        else updatedNft.copy(version = updatedNft.version + 1)
+        return if (updatedNft == existing) updatedNft else updatedNft.copy(version = version)
     }
 
     /**
