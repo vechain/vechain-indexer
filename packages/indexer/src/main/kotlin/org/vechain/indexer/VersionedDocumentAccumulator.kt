@@ -66,16 +66,6 @@ class VersionedDocumentAccumulator<T : VersionedDocument>(
      * archived.
      */
     fun put(recordId: String, existing: T?, updatedRecord: T) {
-        val docId = updatedRecord.getDocumentId()
-        if (recordId != docId) {
-            logger.error(
-                "KEY MISMATCH: recordId={} != documentId={}, version={}, existing.id={}",
-                recordId,
-                docId,
-                updatedRecord.version,
-                existing?.getDocumentId(),
-            )
-        }
         if (existing != null && recordId !in archivedInCurrentBlock) {
             archived["${existing.getDocumentId()}_${existing.version}"] = existing
             archivedInCurrentBlock.add(recordId)
@@ -87,19 +77,6 @@ class VersionedDocumentAccumulator<T : VersionedDocument>(
     fun results(): Pair<List<T>, List<T>> {
         val updatedList = updated.values.toList()
         val archivedList = archived.values.toList()
-
-        // Sanity check: updated map keys are unique so the list should never
-        // contain duplicates by documentId.
-        val duplicateIds = updatedList.groupBy { it.getDocumentId() }.filter { it.value.size > 1 }
-        if (duplicateIds.isNotEmpty()) {
-            logger.error(
-                "BUG: updated list has duplicate documentIds! " +
-                    "Map size={}, list size={}, duplicates={}",
-                updated.size,
-                updatedList.size,
-                duplicateIds.map { (id, records) -> "$id: versions=${records.map { it.version }}" },
-            )
-        }
 
         logger.debug(
             "Accumulator results: {} updated records, {} archived records",

@@ -72,7 +72,7 @@ object GmNftEventUtils {
                 }
             }
 
-        return if (updatedNft == existing) existing else updatedNft.copy(version = version)
+        return if (updatedNft == existing) updatedNft else updatedNft.copy(version = version)
     }
 
     /**
