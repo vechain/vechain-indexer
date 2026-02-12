@@ -42,9 +42,9 @@ open class TransferEventController(private val transferEventService: TransferEve
     @GetMapping
     @Operation(summary = "Get transfer events by address or token address")
     @AddressParameter(
+        name = "address",
         description =
             "To or from address of the transfer event. Either address or tokenAddress must be provided",
-        required = true,
     )
     @AddressParameter(
         name = "tokenAddress",
