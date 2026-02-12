@@ -70,8 +70,6 @@ interface NftHoldersByBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): NftHoldersByBlock?
 
-    override fun findAll(pageable: Pageable): Slice<NftHoldersByBlock>
-
     override fun findByBlockTimestampBefore(
         blockTimestamp: Long,
         pageable: Pageable,

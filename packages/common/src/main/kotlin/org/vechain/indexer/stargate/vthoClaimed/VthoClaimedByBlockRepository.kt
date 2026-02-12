@@ -70,8 +70,6 @@ interface VthoClaimedByBlockRepository :
     )
     override fun getLatestRecord(): VthoClaimedByBlock?
 
-    override fun findAll(pageable: Pageable): Slice<VthoClaimedByBlock>
-
     override fun findByBlockTimestampBefore(
         blockTimestamp: Long,
         pageable: Pageable,

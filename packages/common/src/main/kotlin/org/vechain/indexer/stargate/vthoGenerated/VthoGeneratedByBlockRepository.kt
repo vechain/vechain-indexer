@@ -70,8 +70,6 @@ interface VthoGeneratedByBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VthoGeneratedByBlock?
 
-    override fun findAll(pageable: Pageable): Slice<VthoGeneratedByBlock>
-
     override fun findByBlockTimestampBefore(
         blockTimestamp: Long,
         pageable: Pageable,

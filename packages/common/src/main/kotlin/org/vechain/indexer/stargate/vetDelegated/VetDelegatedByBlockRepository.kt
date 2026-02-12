@@ -70,8 +70,6 @@ interface VetDelegatedByBlockRepository :
     )
     override fun findLatestBeforeOrAtBlockTimestamp(blockTimestamp: Long): VetDelegatedByBlock?
 
-    override fun findAll(pageable: Pageable): Slice<VetDelegatedByBlock>
-
     override fun findByBlockTimestampBefore(
         blockTimestamp: Long,
         pageable: Pageable,
