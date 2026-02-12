@@ -23,10 +23,12 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.RewardsTypeParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.docs.TokenLevelParameter
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -287,6 +289,7 @@ open class StargateController(
     @AddressParameter(name = "manager")
     @AddressParameter(name = "owner")
     @CommonApiResponses
+    @PaginationParameters
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,
@@ -325,10 +328,11 @@ open class StargateController(
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @AddressParameter(name = "validator")
     @CommonApiResponses
+    @PaginationParameters
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
-        @RequestParam(required = false) periodType: RewardPeriod,
+        @RequestParam(required = false) periodType: RewardPeriod?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
@@ -520,7 +524,7 @@ open class StargateController(
             if (input.equals("BLOCK", ignoreCase = true)) {
                 null
             } else {
-                throw IllegalArgumentException(
+                throw BadRequestException(
                     "Invalid period '$input'. Allowed: BLOCK, ${TimeFrame.entries.joinToString()}"
                 )
             }
@@ -568,4 +572,5 @@ open class StargateController(
 @AfterParameter(name = "from", description = "Optional start of custom date range (Unix seconds)")
 @BeforeParameter(name = "to", description = "Optional end of custom date range (Unix seconds)")
 @CommonApiResponses
+@PaginationParameters
 annotation class TimeFrameEndpoint

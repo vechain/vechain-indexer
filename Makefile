@@ -36,6 +36,23 @@ test-indexer: #@ Run all the indexer tests.
 test-common: #@ Run all the common tests.
 	./gradlew clean :package:common:test
 
+# API Schema Tests (Schemathesis via Docker)
+SCHEMA_TEST_BASE_URL ?= http://host.docker.internal:8080
+SCHEMA_TEST_MAX_EXAMPLES ?= 200
+SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS ?= 2
+
+test-api-schema: #@ Run API schema tests via Docker against a running API (default: localhost:8080).
+	docker run --rm \
+		--add-host=host.docker.internal:host-gateway \
+		schemathesis/schemathesis:stable \
+		run "$(SCHEMA_TEST_BASE_URL)/api-docs" \
+		--url="$(SCHEMA_TEST_BASE_URL)" \
+		--generation-deterministic \
+		--max-examples=$(SCHEMA_TEST_MAX_EXAMPLES) \
+		--checks=status_code_conformance,not_a_server_error,content_type_conformance \
+		--phases=examples,coverage,fuzzing,stateful \
+		--max-response-time=$(SCHEMA_TEST_MAX_RESPONSE_TIME_SECONDS)
+
 # Load Testing
 LOAD_TEST_COMMAND=docker compose -f load-testing/docker-compose.yaml
 

@@ -39,7 +39,7 @@ class ValidatorServiceTest {
     // -- getValidatorBlockRewards tests --
 
     @Test
-    fun `getValidatorBlockRewards builds query with no criteria when no filters provided`() {
+    fun `getValidatorBlockRewards builds query with checkpoint exclusion when no filters provided`() {
         val pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "blockNumber"))
         val querySlot = slot<Query>()
 
@@ -52,7 +52,10 @@ class ValidatorServiceTest {
         val result = service.getValidatorBlockRewards(null, null, pageable)
 
         expectThat(result.data).hasSize(2)
-        expectThat(querySlot.captured.queryObject.isEmpty()).isTrue()
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(1)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("_id", org.bson.Document("\$ne", "__checkpoint__")))
         expectThat(querySlot.captured.sortObject["blockNumber"]).isEqualTo(-1)
     }
 
@@ -66,10 +69,11 @@ class ValidatorServiceTest {
 
         service.getValidatorBlockRewards(null, BlockStatus.VALIDATED, pageable)
 
-        val criteria = querySlot.captured.queryObject
-        expectThat(criteria.get("\$and") as List<*>).hasSize(1)
-        expectThat((criteria.get("\$and") as List<*>).first())
-            .isEqualTo(org.bson.Document("status", BlockStatus.VALIDATED))
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(2)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("_id", org.bson.Document("\$ne", "__checkpoint__")))
+        expectThat(andList[1]).isEqualTo(org.bson.Document("status", BlockStatus.VALIDATED))
     }
 
     @Test
@@ -89,9 +93,11 @@ class ValidatorServiceTest {
 
         service.getValidatorBlockRewards(validator, null, pageable)
 
-        val criteria = querySlot.captured.queryObject
-        expectThat(criteria.get("\$and") as List<*>).hasSize(1)
-        expectThat((criteria.get("\$and") as List<*>).first())
+        val andList = querySlot.captured.queryObject.get("\$and") as List<*>
+        expectThat(andList).hasSize(2)
+        expectThat(andList[0])
+            .isEqualTo(org.bson.Document("_id", org.bson.Document("\$ne", "__checkpoint__")))
+        expectThat(andList[1])
             .isEqualTo(org.bson.Document("validator", validator.value.lowercase()))
     }
 
