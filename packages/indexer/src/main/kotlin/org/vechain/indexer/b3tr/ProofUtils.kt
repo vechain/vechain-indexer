@@ -99,7 +99,7 @@ object ProofUtils {
     }
 
     private fun fallbackParser(proofJson: String): SustainabilityProofV2 {
-        logger.info(
+        logger.debug(
             "Using fallback parser for proof as it is not a valid V1 or V2 proof: $proofJson"
         )
 
