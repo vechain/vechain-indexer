@@ -23,6 +23,7 @@ import org.vechain.indexer.docs.AfterParameter
 import org.vechain.indexer.docs.BeforeParameter
 import org.vechain.indexer.docs.BlockNumberParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.RewardsTypeParameter
 import org.vechain.indexer.docs.TokenIdParameter
@@ -287,6 +288,7 @@ open class StargateController(
     @AddressParameter(name = "manager")
     @AddressParameter(name = "owner")
     @CommonApiResponses
+    @PaginationParameters
     open fun getStargateTokens(
         @ValidTokenId @RequestParam(required = false) tokenId: String?,
         @ValidAddress @RequestParam(required = false) manager: Address?,
@@ -325,6 +327,7 @@ open class StargateController(
     @TokenIdParameter(required = true, `in` = ParameterIn.PATH)
     @AddressParameter(name = "validator")
     @CommonApiResponses
+    @PaginationParameters
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
@@ -568,4 +571,5 @@ open class StargateController(
 @AfterParameter(name = "from", description = "Optional start of custom date range (Unix seconds)")
 @BeforeParameter(name = "to", description = "Optional end of custom date range (Unix seconds)")
 @CommonApiResponses
+@PaginationParameters
 annotation class TimeFrameEndpoint

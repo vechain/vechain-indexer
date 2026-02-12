@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.vechain.indexer.constants.ACCOUNTS_PATH
 import org.vechain.indexer.docs.AddressParameter
 import org.vechain.indexer.docs.CommonApiResponses
+import org.vechain.indexer.docs.PaginationParameters
 import org.vechain.indexer.exception.ResourceNotFoundException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
@@ -48,6 +49,7 @@ open class AccountsController(private val accountsService: AccountsService) {
         schema = Schema(implementation = AccountQueryTimeFrame::class),
     )
     @CommonApiResponses
+    @PaginationParameters
     open fun getTotalAccounts(
         @RequestParam(required = false) timeFrame: AccountQueryTimeFrame?,
         @RequestParam(required = false) page: Int?,
