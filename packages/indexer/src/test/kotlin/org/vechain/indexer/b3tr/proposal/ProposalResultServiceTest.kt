@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.proposal.repository.ProposalResultRepository
 import org.vechain.indexer.event.model.generic.AbiEventParameters
@@ -51,19 +52,8 @@ internal class ProposalResultServiceTest {
             thorClient,
             governorContract,
         ) {
-        suspend fun callUpdateStatusesForBatch(batch: List<ProposalResult>, block: BlockDetails) =
-            updateStatusesForBatch(batch, block)
-
         fun callCreateStatusClauses(proposals: List<ProposalResult>) =
             createStatusClauses(proposals)
-
-        fun callUpdateProposalStates(
-            proposals: List<ProposalResult>,
-            responses: List<InspectionResult>,
-            block: BlockDetails,
-            updatedResult: MutableList<ProposalResult>,
-            archiveResult: MutableList<ProposalResult>,
-        ) = updateProposalStates(proposals, responses, block, updatedResult, archiveResult)
 
         fun callParseProposalState(response: InspectionResult, proposalId: String) =
             parseProposalState(response, proposalId)
@@ -82,12 +72,15 @@ internal class ProposalResultServiceTest {
             )
     }
 
+    private fun newAccumulator(): VersionedDocumentAccumulator<ProposalResult> =
+        VersionedDocumentAccumulator(service::findByProposalId)
+
     // ============================================================================
     // ProposalCreated Event Tests
     // ============================================================================
 
     @Test
-    fun `processEvents should create new proposal result from ProposalCreated event`() {
+    fun `processBlockEvents should create new proposal result from ProposalCreated event`() {
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -108,7 +101,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(event))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(event), accumulator)
+        val (updated, archived) = accumulator.results()
 
         assertEquals(1, updated.size)
         assertEquals(0, archived.size)
@@ -121,7 +117,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should throw error if ProposalCreated event for existing proposal`() {
+    fun `processBlockEvents should throw error if ProposalCreated event for existing proposal`() {
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -149,7 +145,11 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
 
-        assertThrows(IllegalStateException::class.java) { service.processEvents(listOf(event)) }
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(listOf(event), accumulator)
+        }
     }
 
     // ============================================================================
@@ -157,7 +157,7 @@ internal class ProposalResultServiceTest {
     // ============================================================================
 
     @Test
-    fun `processEvents should throw error if no existing proposal for vote event`() {
+    fun `processBlockEvents should throw error if no existing proposal for vote event`() {
         val event =
             buildIndexedEvent(
                 id = "e1",
@@ -178,11 +178,15 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        assertThrows(IllegalStateException::class.java) { service.processEvents(listOf(event)) }
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        assertThrows(IllegalStateException::class.java) {
+            service.processBlockEvents(listOf(event), accumulator)
+        }
     }
 
     @Test
-    fun `processEvents should skip vote events without existing proposal`() {
+    fun `processBlockEvents should update existing proposal with vote events`() {
         val existingProposal =
             ProposalResult(
                 proposalId = "proposal1",
@@ -219,7 +223,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
 
-        val (updated, archived) = service.processEvents(listOf(event))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(event), accumulator)
+        val (updated, archived) = accumulator.results()
 
         // When vote events are processed, the existing record is archived and a new one is created
         // with updated votes
@@ -235,7 +242,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should accumulate multiple vote events in same block`() {
+    fun `processBlockEvents should accumulate multiple vote events in same block`() {
         val existingProposal =
             ProposalResult(
                 proposalId = "proposal1",
@@ -292,7 +299,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
 
-        val (updated, archived) = service.processEvents(listOf(event1, event2))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(event1, event2), accumulator)
+        val (updated, archived) = accumulator.results()
 
         // Multiple vote events in same block are accumulated into single updated proposal
         assertEquals(1, updated.size)
@@ -302,7 +312,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should create separate archive for each block update`() {
+    fun `multi-block batch should create separate archive for each block update`() {
         val existingProposal =
             ProposalResult(
                 proposalId = "proposal1",
@@ -359,7 +369,18 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
 
-        val (updated, archived) = service.processEvents(listOf(event1, event2))
+        // Simulate multi-block processing as the processor does: groupByBlock, then per-block calls
+        val accumulator = newAccumulator()
+
+        // Block 2
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(event1), accumulator)
+
+        // Block 3
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(event2), accumulator)
+
+        val (updated, archived) = accumulator.results()
 
         assertEquals(1, updated.size)
         // Two archives: one after first vote in block 2, one after second vote in block 3
@@ -367,7 +388,69 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should handle multiple support types`() {
+    fun `multi-block batch with 3+ blocks should produce sequential archive versions`() {
+        val existingProposal =
+            ProposalResult(
+                proposalId = "proposal1",
+                version = 1,
+                blockId = "block-1",
+                blockNumber = 1L,
+                blockTimestamp = 1000L,
+                createdAtBlockNumber = 1L,
+                startRoundId = 1,
+                state = ProposalState.Pending,
+                results = null,
+                description = "ABC",
+            )
+
+        val events =
+            (2..5).map { blockNum ->
+                buildIndexedEvent(
+                    id = "e$blockNum",
+                    blockNumber = blockNum.toLong(),
+                    blockId = "block-$blockNum",
+                    blockTimestamp = blockNum * 1000L,
+                    eventType = "B3TR_ProposalVote",
+                    params =
+                        AbiEventParameters(
+                            returnValues =
+                                mapOf(
+                                    "from" to "account$blockNum",
+                                    "proposalId" to "proposal1",
+                                    "support" to 0,
+                                    "voteWeight" to "10",
+                                    "votePower" to "1",
+                                )
+                        ),
+                )
+            }
+
+        every { repository.findByIdOrNull("proposal1") } returns existingProposal
+
+        val accumulator = newAccumulator()
+
+        // Process each event as a separate block (simulating FAST_SYNCING multi-block batch)
+        events.forEach { event ->
+            accumulator.startBlock()
+            service.processBlockEvents(listOf(event), accumulator)
+        }
+
+        val (updated, archived) = accumulator.results()
+
+        assertEquals(1, updated.size)
+        assertEquals(5, updated[0].version) // v1 + 4 block updates
+        assertEquals("block-5", updated[0].blockId)
+
+        // 4 archives: v1 (original), v2 (after block 2), v3 (after block 3), v4 (after block 4)
+        assertEquals(4, archived.size)
+
+        // Verify sequential versions in archives
+        val archivedVersions = archived.map { it.version }.sorted()
+        assertEquals(listOf(1, 2, 3, 4), archivedVersions)
+    }
+
+    @Test
+    fun `processBlockEvents should handle multiple support types`() {
         val existingProposal =
             ProposalResult(
                 proposalId = "proposal1",
@@ -444,7 +527,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull("proposal1") } returns existingProposal
 
-        val (updated, archived) = service.processEvents(listOf(forVote, againstVote, abstainVote))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(forVote, againstVote, abstainVote), accumulator)
+        val (updated, archived) = accumulator.results()
 
         // Multiple support types are tracked separately
         assertEquals(1, updated.size)
@@ -462,7 +548,7 @@ internal class ProposalResultServiceTest {
     // ============================================================================
 
     @Test
-    fun `processEvents should handle ProposalCreated followed by ProposalVote in same batch`() {
+    fun `processBlockEvents should handle ProposalCreated followed by ProposalVote in same block`() {
         val createdEvent =
             buildIndexedEvent(
                 id = "e1",
@@ -503,7 +589,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(createdEvent, voteEvent))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(createdEvent, voteEvent), accumulator)
+        val (updated, archived) = accumulator.results()
 
         // Created proposal is archived when vote is processed in same batch
         assertEquals(1, updated.size)
@@ -513,7 +602,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should handle multiple different proposals`() {
+    fun `processBlockEvents should handle multiple different proposals`() {
         val proposal1Created =
             buildIndexedEvent(
                 id = "e1",
@@ -552,7 +641,10 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(proposal1Created, proposal2Created))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(proposal1Created, proposal2Created), accumulator)
+        val (updated, archived) = accumulator.results()
 
         assertEquals(2, updated.size)
         assertEquals(0, archived.size)
@@ -561,7 +653,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `processEvents should ignore empty vote event lists`() {
+    fun `processBlockEvents should ignore empty vote event lists`() {
         val createdEvent =
             buildIndexedEvent(
                 id = "e1",
@@ -582,29 +674,35 @@ internal class ProposalResultServiceTest {
 
         every { repository.findByIdOrNull(any()) } returns null
 
-        val (updated, archived) = service.processEvents(listOf(createdEvent))
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        service.processBlockEvents(listOf(createdEvent), accumulator)
+        val (updated, archived) = accumulator.results()
 
         assertEquals(1, updated.size)
         assertEquals(0, archived.size)
     }
 
     // ============================================================================
-    // Batch Processing Tests
+    // Status Update Tests
     // ============================================================================
 
     @Test
-    fun `getUpdatedStatuses should return empty when no non-finalized proposals exist`() {
+    fun `updateStatuses should return empty when no non-finalized proposals exist`() {
         every { repository.findByStateIn(any()) } returns emptyList()
 
         val block = BlockDetails(blockId = "block-1", blockNumber = 1L, blockTimestamp = 1000L)
-        val (updated, archived) = runBlocking { service.getUpdatedStatuses(block) }
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        runBlocking { service.updateStatuses(block, accumulator) }
+        val (updated, archived) = accumulator.results()
 
         assertEquals(0, updated.size)
         assertEquals(0, archived.size)
     }
 
     @Test
-    fun `updateStatusesForBatch should fetch and parse proposal statuses`() {
+    fun `updateStatuses should fetch and update proposal statuses via accumulator`() {
         val proposals =
             listOf(
                 ProposalResult(
@@ -653,11 +751,17 @@ internal class ProposalResultServiceTest {
                 ),
             )
 
+        every { repository.findByStateIn(any()) } returns proposals
         coEvery { thorClient.inspectClauses(any(), any()) } returns responses
+        // findByProposalId will be called by the accumulator for proposals not yet in cache
+        every { repository.findByIdOrNull("1") } returns proposals[0]
+        every { repository.findByIdOrNull("2") } returns proposals[1]
 
         val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
-        val (updated, archived) =
-            runBlocking { service.callUpdateStatusesForBatch(proposals, block) }
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        runBlocking { service.updateStatuses(block, accumulator) }
+        val (updated, archived) = accumulator.results()
 
         // State changed from Pending (0) to Active (1)
         assertEquals(2, updated.size)
@@ -667,7 +771,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `updateStatusesForBatch should handle reverted responses`() {
+    fun `updateStatuses should handle reverted responses`() {
         val proposals =
             listOf(
                 ProposalResult(
@@ -696,12 +800,15 @@ internal class ProposalResultServiceTest {
                 )
             )
 
+        every { repository.findByStateIn(any()) } returns proposals
         coEvery { thorClient.inspectClauses(any(), any()) } returns responses
 
         val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
 
         assertThrows(IllegalStateException::class.java) {
-            runBlocking { service.callUpdateStatusesForBatch(proposals, block) }
+            runBlocking { service.updateStatuses(block, accumulator) }
         }
     }
 
@@ -775,7 +882,7 @@ internal class ProposalResultServiceTest {
     }
 
     @Test
-    fun `getUpdatedStatuses should process proposals in batches`() {
+    fun `updateStatuses should process proposals in batches`() {
         // Create 125 proposals (will be split into 3 batches: 50, 50, 25)
         val proposals =
             (1..125).map { i ->
@@ -794,6 +901,14 @@ internal class ProposalResultServiceTest {
             }
 
         every { repository.findByStateIn(any()) } returns proposals
+        // findByProposalId will be called by the accumulator for each proposal
+        // Mock findById directly since findByIdOrNull is an inline extension function
+        every { repository.findById(any<String>()) } answers
+            {
+                val id = firstArg<String>()
+                val proposal = proposals.find { it.proposalId == id }
+                java.util.Optional.ofNullable(proposal)
+            }
         coEvery { thorClient.inspectClauses(any(), any()) } coAnswers
             {
                 val clauses = firstArg<List<Clause>>()
@@ -810,7 +925,10 @@ internal class ProposalResultServiceTest {
             }
 
         val block = BlockDetails(blockId = blockId(2), blockNumber = 2L, blockTimestamp = 2000L)
-        val (updated, archived) = runBlocking { service.getUpdatedStatuses(block) }
+        val accumulator = newAccumulator()
+        accumulator.startBlock()
+        runBlocking { service.updateStatuses(block, accumulator) }
+        val (updated, archived) = accumulator.results()
 
         // All proposals should be updated (state changed from Pending to Active)
         assertEquals(125, updated.size)
