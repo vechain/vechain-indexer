@@ -35,11 +35,23 @@ open class CheckpointFilteringMongoTemplate(
     // unmapped Java property name. If we only check for "_id" we miss these queries and
     // incorrectly add a checkpoint exclusion that overwrites the id match after field-name
     // mapping, causing findOne to return an arbitrary non-checkpoint document.
-    private fun queryHasIdCriteria(query: Query): Boolean =
-        query.queryObject.let { it.containsKey("_id") || it.containsKey("id") }
+    //
+    // Additionally, entities with a non-standard @Id property name (e.g. @Id val proposalId)
+    // cause Spring Data to build queries using Criteria.where("proposalId"). We detect these
+    // by inspecting the entity's mapping metadata.
+    private fun queryHasIdCriteria(query: Query, entityClass: Class<*>? = null): Boolean {
+        val queryObject = query.queryObject
+        if (queryObject.containsKey("_id") || queryObject.containsKey("id")) return true
+        if (entityClass != null) {
+            val entity = converter.mappingContext.getPersistentEntity(entityClass)
+            val idPropertyName = entity?.idProperty?.name
+            if (idPropertyName != null && queryObject.containsKey(idPropertyName)) return true
+        }
+        return false
+    }
 
-    private fun addCheckpointExclusion(query: Query): Query {
-        if (queryHasIdCriteria(query)) return query
+    private fun addCheckpointExclusion(query: Query, entityClass: Class<*>? = null): Query {
+        if (queryHasIdCriteria(query, entityClass)) return query
         query.addCriteria(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
         return query
     }
@@ -64,7 +76,7 @@ open class CheckpointFilteringMongoTemplate(
         entityClass: Class<T>,
         collectionName: String,
     ): List<T> {
-        if (shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
         return super.find(query, entityClass, collectionName)
     }
 
@@ -73,17 +85,19 @@ open class CheckpointFilteringMongoTemplate(
         entityClass: Class<T>,
         collectionName: String,
     ): T? {
-        if (shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
         return super.findOne(query, entityClass, collectionName)
     }
 
     override fun count(query: Query, entityClass: Class<*>?, collectionName: String): Long {
-        if (entityClass != null && shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (entityClass != null && shouldFilter(entityClass))
+            addCheckpointExclusion(query, entityClass)
         return super.count(query, entityClass, collectionName)
     }
 
     override fun exists(query: Query, entityClass: Class<*>?, collectionName: String): Boolean {
-        if (entityClass != null && shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (entityClass != null && shouldFilter(entityClass))
+            addCheckpointExclusion(query, entityClass)
         return super.exists(query, entityClass, collectionName)
     }
 
@@ -92,7 +106,7 @@ open class CheckpointFilteringMongoTemplate(
         entityClass: Class<T>,
         collectionName: String,
     ): java.util.stream.Stream<T> {
-        if (shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
         return super.stream(query, entityClass, collectionName)
     }
 
@@ -103,7 +117,7 @@ open class CheckpointFilteringMongoTemplate(
         entityClass: Class<*>,
         resultClass: Class<T>,
     ): List<T> {
-        if (shouldFilter(entityClass)) addCheckpointExclusion(query)
+        if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
         return super.findDistinct(query, field, collectionName, entityClass, resultClass)
     }
 

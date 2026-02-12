@@ -3,7 +3,6 @@ package org.vechain.indexer.b3tr.proposal
 import java.math.BigInteger
 import kotlin.collections.component1
 import kotlin.collections.component2
-import kotlin.collections.set
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.beans.factory.annotation.Value
@@ -36,7 +35,6 @@ import org.vechain.indexer.thor.model.Clause
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.utils.BlockDetails
 import org.vechain.indexer.utils.ContractUtils
-import org.vechain.indexer.utils.EventUtils.groupByBlock
 
 @Profile("b3tr", "b3tr-proposal", "b3tr-proposal-results")
 @Service
@@ -59,52 +57,88 @@ open class ProposalResultService(
         statusAbi = response.first()
     }
 
-    open suspend fun getUpdatedStatuses(
-        block: BlockDetails
-    ): Pair<List<ProposalResult>, List<ProposalResult>> {
-        val updatedResult = mutableListOf<ProposalResult>()
-        val archiveResult = mutableListOf<ProposalResult>()
+    open fun findByProposalId(proposalId: String): ProposalResult? =
+        repository.findByIdOrNull(proposalId)
 
-        // Fetch all proposals that are not finalized
+    open suspend fun updateStatuses(
+        block: BlockDetails,
+        accumulator: VersionedDocumentAccumulator<ProposalResult>,
+    ) {
         val proposals = withContext(Dispatchers.IO) { repository.findByStateIn(nonFinalizedStates) }
-        if (proposals.isEmpty()) return updatedResult to archiveResult
+        if (proposals.isEmpty()) return
 
-        // Process proposals in batches
-        val batchSize = 50
-        proposals.chunked(batchSize).forEach { batch ->
-            val (updated, archived) = updateStatusesForBatch(batch, block)
-            updatedResult.addAll(updated)
-            archiveResult.addAll(archived)
+        proposals.chunked(50).forEach { batch ->
+            val clauses = createStatusClauses(batch)
+            val responses = thorClient.inspectClauses(clauses, BlockRevision.Id(block.blockId))
+
+            batch.forEachIndexed { index, proposal ->
+                val response =
+                    responses.getOrNull(index)
+                        ?: error("Failed to fetch status for proposalId=${proposal.proposalId}")
+                val state = parseProposalState(response, proposal.proposalId)
+
+                if (state != null && state != proposal.state) {
+                    val (existing, nextVersion) = accumulator.resolve(proposal.proposalId)
+                    val updated =
+                        proposal.copy(
+                            version = nextVersion,
+                            blockId = block.blockId,
+                            blockNumber = block.blockNumber,
+                            blockTimestamp = block.blockTimestamp,
+                            state = state,
+                        )
+                    accumulator.put(proposal.proposalId, existing, updated)
+                }
+            }
         }
-
-        return updatedResult to archiveResult
     }
 
-    /**
-     * Updates statuses for a batch of proposals and fetches their updated statuses from the
-     * contract.
-     *
-     * @param batch The batch of proposals to process.
-     * @param block The details of the current block.
-     * @return A pair of lists containing updated and archived proposal results.
-     */
-    protected suspend fun updateStatusesForBatch(
-        batch: List<ProposalResult>,
-        block: BlockDetails,
-    ): Pair<List<ProposalResult>, List<ProposalResult>> {
-        val updatedResult = mutableListOf<ProposalResult>()
-        val archiveResult = mutableListOf<ProposalResult>()
+    open fun processBlockEvents(
+        events: List<IndexedEvent>,
+        accumulator: VersionedDocumentAccumulator<ProposalResult>,
+    ) {
+        assertEventTypes(events, "B3TR_ProposalCreated", "B3TR_ProposalVote")
 
-        // Create clauses to fetch current statuses
-        val clauses = createStatusClauses(batch)
-
-        // Execute the clauses and parse the results
-        val responses = thorClient.inspectClauses(clauses, BlockRevision.Id(block.blockId))
-
-        // Update the statuses of the proposals
-        updateProposalStates(batch, responses, block, updatedResult, archiveResult)
-
-        return updatedResult to archiveResult
+        groupByProposalId(events).forEach { (proposalId, proposalEvents) ->
+            val createdEvent = proposalEvents.firstOrNull { it.eventType == "B3TR_ProposalCreated" }
+            if (createdEvent != null) {
+                val blockDetails =
+                    BlockDetails(
+                        createdEvent.blockId,
+                        createdEvent.blockNumber,
+                        createdEvent.blockTimestamp,
+                    )
+                val (existing, nextVersion) = accumulator.resolve(proposalId)
+                if (existing != null) {
+                    error("Existing ProposalResult found for creation event: $proposalId")
+                }
+                val created =
+                    processCreatedEvent(proposalId, blockDetails, createdEvent, nextVersion)
+                accumulator.put(proposalId, existing, created)
+            }
+            val voteEvents = proposalEvents.filter { it.eventType == "B3TR_ProposalVote" }
+            if (voteEvents.isNotEmpty()) {
+                val blockDetails =
+                    BlockDetails(
+                        voteEvents.first().blockId,
+                        voteEvents.first().blockNumber,
+                        voteEvents.first().blockTimestamp,
+                    )
+                val (existing, nextVersion) = accumulator.resolve(proposalId)
+                val existingResult =
+                    existing
+                        ?: error("No existing ProposalResult found for vote event: $proposalId")
+                val updated =
+                    processVoteEvents(
+                        proposalId,
+                        blockDetails,
+                        voteEvents,
+                        existingResult,
+                        nextVersion,
+                    )
+                accumulator.put(proposalId, existing, updated)
+            }
+        }
     }
 
     /**
@@ -117,45 +151,6 @@ open class ProposalResultService(
         proposals.map { p ->
             ContractUtils.createClause(governorContract, statusAbi, p.proposalId.toBigInteger())
         }
-
-    /**
-     * Updates the states of proposals based on contract responses.
-     *
-     * @param proposals The original proposals.
-     * @param responses The contract responses.
-     * @param block The current block details.
-     * @param updatedResult The list to accumulate updated proposals.
-     * @param archiveResult The list to accumulate archived proposals.
-     */
-    protected fun updateProposalStates(
-        proposals: List<ProposalResult>,
-        responses: List<InspectionResult>,
-        block: BlockDetails,
-        updatedResult: MutableList<ProposalResult>,
-        archiveResult: MutableList<ProposalResult>,
-    ) {
-        proposals.forEachIndexed { index, proposal ->
-            val response =
-                responses.getOrNull(index)
-                    ?: error("Failed to fetch status for proposalId=${proposal.proposalId}")
-
-            val state = parseProposalState(response, proposal.proposalId)
-
-            // If the state has changed, archive the existing proposal and create an updated one
-            if (state != null && state != proposal.state) {
-                archiveResult.add(proposal)
-                updatedResult.add(
-                    proposal.copy(
-                        version = proposal.version + 1,
-                        blockId = block.blockId,
-                        blockNumber = block.blockNumber,
-                        blockTimestamp = block.blockTimestamp,
-                        state = state,
-                    )
-                )
-            }
-        }
-    }
 
     /**
      * Parses the proposal state from a contract response.
@@ -173,60 +168,6 @@ open class ProposalResultService(
         }
 
         return ProposalState.fromOrdinal(HexUtils.toInt(response.data))
-    }
-
-    /**
-     * Processes a list of events and returns a pair of lists:
-     * - The first list contains updated proposal results.
-     * - The second list contains archived proposal results.
-     *
-     * @param events The list of indexed events to process.
-     * @return A pair of lists containing updated and archived proposal results.
-     */
-    open fun processEvents(
-        events: List<IndexedEvent>
-    ): Pair<List<ProposalResult>, List<ProposalResult>> {
-        // Ensure all events are of type B3TR_ProposalCreated or B3TR_ProposalVote
-        assertEventTypes(events, "B3TR_ProposalCreated", "B3TR_ProposalVote")
-
-        val accumulator = VersionedDocumentAccumulator<ProposalResult>(repository::findByIdOrNull)
-
-        groupByBlock(events).forEach { (blockDetails, blockEvents) ->
-            accumulator.startBlock()
-            groupByProposalId(blockEvents).forEach { (proposalId, proposalEvents) ->
-                // Check for ProposalCreated event (at most one)
-                val createdEvent =
-                    proposalEvents.firstOrNull { it.eventType == "B3TR_ProposalCreated" }
-                if (createdEvent != null) {
-                    val (existing, nextVersion) = accumulator.resolve(proposalId)
-                    if (existing != null) {
-                        error("Existing ProposalResult found for creation event: $proposalId")
-                    }
-                    val created =
-                        processCreatedEvent(proposalId, blockDetails, createdEvent, nextVersion)
-                    accumulator.put(proposalId, existing, created)
-                }
-                // Process voting events
-                val voteEvents = proposalEvents.filter { it.eventType == "B3TR_ProposalVote" }
-                if (voteEvents.isNotEmpty()) {
-                    val (existing, nextVersion) = accumulator.resolve(proposalId)
-                    val existingResult =
-                        existing
-                            ?: error("No existing ProposalResult found for vote event: $proposalId")
-                    val updated =
-                        processVoteEvents(
-                            proposalId,
-                            blockDetails,
-                            voteEvents,
-                            existingResult,
-                            nextVersion,
-                        )
-                    accumulator.put(proposalId, existing, updated)
-                }
-            }
-        }
-
-        return accumulator.results()
     }
 
     /**

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 /** Minimal [VersionedDocument] for testing. */
 private data class TestDocument(
@@ -376,17 +377,15 @@ internal class VersionedDocumentAccumulatorTest {
     @Nested
     inner class FindByIdMismatchGuard {
         @Test
-        fun `resolve treats mismatched document as not found`() {
+        fun `resolve throws on mismatched document`() {
             // Simulate findById returning a document whose id doesn't match the requested id
             val wrongDoc = TestDocument(version = 5, id = "wrong-id", value = "wrong")
             val acc = VersionedDocumentAccumulator<TestDocument>(findById = { _ -> wrongDoc })
 
             acc.startBlock()
-            val (existing, nextVersion) = acc.resolve("correct-id")
 
-            // The guard should discard the wrong document
-            assertNull(existing)
-            assertEquals(1, nextVersion)
+            // The guard should fail fast with an IllegalStateException
+            assertThrows<IllegalStateException> { acc.resolve("correct-id") }
         }
     }
 

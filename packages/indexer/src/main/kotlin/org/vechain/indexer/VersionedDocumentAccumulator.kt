@@ -37,13 +37,9 @@ class VersionedDocumentAccumulator<T : VersionedDocument>(
                 // production with CheckpointFilteringMongoTemplate — findByIdOrNull can
                 // return a document whose _id doesn't match the requested ID).
                 if (result != null && result.getDocumentId() != recordId) {
-                    logger.warn(
-                        "findById returned wrong document: requested={}, got={} (v{}). Treating as not found.",
-                        recordId,
-                        result.getDocumentId(),
-                        result.version,
+                    error(
+                        "findById returned wrong document: requested=$recordId, got=${result.getDocumentId()} (v${result.version})"
                     )
-                    null
                 } else {
                     result
                 }
