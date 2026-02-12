@@ -12,6 +12,7 @@ import org.vechain.indexer.proposal.ProposalId
     name = "proposalId",
     description = "Proposal ID to filter by.",
     schema = Schema(type = "string", pattern = ProposalId.REGEX),
+    example = "83654019322420867938874773331484872860308892726218987071908233993897039987210",
 )
 annotation class ProposalIdParameter(
     @get:AliasFor(annotation = Parameter::class, attribute = "in")
