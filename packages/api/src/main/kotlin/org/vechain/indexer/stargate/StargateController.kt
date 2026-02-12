@@ -332,7 +332,7 @@ open class StargateController(
     open fun getStargateTokenRewards(
         @ValidTokenId @PathVariable("tokenId") tokenId: String,
         @ValidAddress @RequestParam(required = false) validator: Address?,
-        @RequestParam(required = false) periodType: RewardPeriod,
+        @RequestParam(required = false) periodType: RewardPeriod?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
