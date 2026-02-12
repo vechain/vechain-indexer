@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 import org.vechain.indexer.exception.AbstractHttpException
 import org.vechain.indexer.exception.ExceptionResponse
@@ -49,6 +50,32 @@ open class ExceptionResponseConfig : ResponseEntityExceptionHandler() {
         val status = HttpStatus.BAD_REQUEST
         val message = ex.constraintViolations.joinToString { it.message }
         val path = req.requestURI ?: req.servletPath
+
+        val response =
+            ExceptionResponse(
+                path = path,
+                status = status.value(),
+                error = status.reasonPhrase,
+                message = message,
+            )
+
+        this.logger.warn(
+            "HTTP ${status.value()} ($path) ${status.reasonPhrase}: (id=${response.id}) - $message"
+        )
+
+        return ResponseEntity(response, status)
+    }
+
+    /** Handles type mismatch on method arguments, eg invalid enum values. */
+    @ExceptionHandler(value = [MethodArgumentTypeMismatchException::class])
+    protected fun handleMethodArgumentTypeMismatch(
+        req: HttpServletRequest,
+        ex: MethodArgumentTypeMismatchException,
+    ): ResponseEntity<ExceptionResponse> {
+
+        val status = HttpStatus.BAD_REQUEST
+        val path = req.requestURI ?: req.servletPath
+        val message = "Invalid value '${ex.value}' for parameter '${ex.name}'"
 
         val response =
             ExceptionResponse(

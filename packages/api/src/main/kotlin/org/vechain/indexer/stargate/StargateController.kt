@@ -28,6 +28,7 @@ import org.vechain.indexer.docs.RangeParameter
 import org.vechain.indexer.docs.RewardsTypeParameter
 import org.vechain.indexer.docs.TokenIdParameter
 import org.vechain.indexer.docs.TokenLevelParameter
+import org.vechain.indexer.exception.BadRequestException
 import org.vechain.indexer.rest.PaginatedResponse
 import org.vechain.indexer.rest.paginatedResponse
 import org.vechain.indexer.stargate.nftHolders.NftHoldersByBlockRepository
@@ -523,7 +524,7 @@ open class StargateController(
             if (input.equals("BLOCK", ignoreCase = true)) {
                 null
             } else {
-                throw IllegalArgumentException(
+                throw BadRequestException(
                     "Invalid period '$input'. Allowed: BLOCK, ${TimeFrame.entries.joinToString()}"
                 )
             }
