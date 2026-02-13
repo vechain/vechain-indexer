@@ -279,12 +279,7 @@ open class CheckpointFilteringMongoTemplate(
             criteriaDefinition: CriteriaDefinition
         ): ExecutableFindOperation.TerminatingFind<T> = matching(Query.query(criteriaDefinition))
 
-        override fun near(nearQuery: NearQuery): ExecutableFindOperation.TerminatingFind<T> {
-            val baseQuery = nearQuery.query ?: Query()
-            val filteredQuery = addCheckpointExclusion(baseQuery, entityClass)
-            val updatedNearQuery = nearQuery.query(filteredQuery)
-            return delegate.near(updatedNearQuery)
-        }
+        override fun near(nearQuery: NearQuery) = delegate.near(nearQuery)
 
         // Terminal operations — redirect through matching() to guarantee the filter is applied.
         override fun oneValue(): T? = matching(Query()).oneValue()
