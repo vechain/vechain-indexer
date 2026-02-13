@@ -297,6 +297,32 @@ open class CheckpointFilteringMongoTemplate(
         override fun exists(): Boolean = matching(Query()).exists()
     }
 
+    /**
+     * Wraps [ExecutableFindOperation.TerminatingDistinct] to add checkpoint exclusion to every
+     * [matching] call. Terminal [all] without a preceding [matching] is redirected through
+     * `matching(Query())` so the filter is always applied.
+     */
+    private inner class FilteringTerminatingDistinct<T : Any>(
+        private val delegate: ExecutableFindOperation.TerminatingDistinct<T>,
+        private val entityClass: Class<*>,
+    ) : ExecutableFindOperation.TerminatingDistinct<T> {
+
+        override fun matching(query: Query): ExecutableFindOperation.TerminatingDistinct<T> =
+            delegate.matching(addCheckpointExclusion(query, entityClass))
+
+        override fun matching(
+            criteriaDefinition: CriteriaDefinition
+        ): ExecutableFindOperation.TerminatingDistinct<T> =
+            matching(Query.query(criteriaDefinition))
+
+        override fun <R : Any> `as`(
+            resultType: Class<R>
+        ): ExecutableFindOperation.TerminatingDistinct<R> =
+            FilteringTerminatingDistinct(delegate.`as`(resultType), entityClass)
+
+        override fun all(): List<T> = matching(Query()).all()
+    }
+
     private inner class FilteringFindWithProjection<T : Any>(
         private val delegate: ExecutableFindOperation.FindWithProjection<T>,
         private val entityClass: Class<*>,
@@ -309,7 +335,8 @@ open class CheckpointFilteringMongoTemplate(
         ): ExecutableFindOperation.FindWithQuery<R> =
             FilteringFindWithQuery(delegate.`as`(resultType), entityClass)
 
-        override fun distinct(field: String) = delegate.distinct(field)
+        override fun distinct(field: String) =
+            FilteringTerminatingDistinct(delegate.distinct(field), entityClass)
     }
 
     private inner class FilteringExecutableFind<T : Any>(
@@ -329,6 +356,7 @@ open class CheckpointFilteringMongoTemplate(
         ): ExecutableFindOperation.FindWithQuery<R> =
             FilteringFindWithQuery(delegate.`as`(resultType), entityClass)
 
-        override fun distinct(field: String) = delegate.distinct(field)
+        override fun distinct(field: String) =
+            FilteringTerminatingDistinct(delegate.distinct(field), entityClass)
     }
 }
