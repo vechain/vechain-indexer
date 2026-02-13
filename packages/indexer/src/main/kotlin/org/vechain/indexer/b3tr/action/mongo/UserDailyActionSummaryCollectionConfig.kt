@@ -77,6 +77,10 @@ open class UserDailyActionSummaryCollectionConfig(
                         .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::totalRewardAmount.name, Sort.Direction.ASC)
                         .on(UserDailyActionSummary::entity.name, Sort.Direction.ASC),
+                "entityType_1_date_1" to
+                    Index()
+                        .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
+                        .on(UserDailyActionSummary::date.name, Sort.Direction.ASC),
                 "entityType_1_date_1_actionsRewarded_-1_entity_1" to
                     Index()
                         .on(UserDailyActionSummary::entityType.name, Sort.Direction.ASC)
