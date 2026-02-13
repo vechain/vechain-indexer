@@ -14,7 +14,20 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 @ReadingConverter
 class StringToDecimal128Converter : Converter<String, Decimal128> {
-    override fun convert(source: String): Decimal128 = Decimal128(BigDecimal(source))
+    override fun convert(source: String): Decimal128 =
+        try {
+            Decimal128(BigDecimal(source))
+        } catch (e: NumberFormatException) {
+            throw IllegalArgumentException(
+                "Cannot convert String [$source] to Decimal128: malformed numeric value",
+                e,
+            )
+        } catch (e: ArithmeticException) {
+            throw IllegalArgumentException(
+                "Cannot convert String [$source] to Decimal128: value out of range",
+                e,
+            )
+        }
 }
 
 @Configuration
