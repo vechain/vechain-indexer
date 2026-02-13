@@ -71,7 +71,7 @@ object ActionSummaryUtils {
             val isValid = !isImpactAboveThreshold(impact, config)
 
             if (!isValid) {
-                logger.warn("⚠️  Impact exceeds threshold. Impact $impact")
+                logger.debug("⚠\uFE0F  Impact exceeds threshold. Impact {}", impact)
             }
 
             isValid

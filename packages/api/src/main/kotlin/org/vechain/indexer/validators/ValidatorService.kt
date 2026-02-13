@@ -1,7 +1,6 @@
 package org.vechain.indexer.validators
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Slice
@@ -228,11 +227,11 @@ open class ValidatorService(
         return mongoTemplate.findOne<Validator>(query)
     }
 
-    open suspend fun getMissedBlocksPercentage(
+    open fun getMissedBlocksPercentage(
         timeframe: MissedBlocksTimeframe,
         validator: String? = null,
     ): AllValidatorsMissedBlocksResponse {
-        val currentBlock = thorClient.getBlock(BlockRevision.Keyword.BEST).number
+        val currentBlock = runBlocking { thorClient.getBlock(BlockRevision.Keyword.BEST) }.number
         val blocksPerSecond = 10L // VeChain produces ~1 block per 10 seconds
 
         val startBlock =
@@ -248,13 +247,9 @@ open class ValidatorService(
 
         val missedDocs =
             if (validator != null) {
-                withContext(Dispatchers.IO) {
-                    validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
-                }
+                validatorBlockRepository.findMissedInRange(validator, startBlock, currentBlock)
             } else {
-                withContext(Dispatchers.IO) {
-                    validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
-                }
+                validatorBlockRepository.findAllMissedInRange(startBlock, currentBlock)
             }
 
         // Group by validator and calculate missed blocks for each

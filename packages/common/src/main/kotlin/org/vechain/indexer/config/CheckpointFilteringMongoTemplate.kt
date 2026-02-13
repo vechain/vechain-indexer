@@ -1,12 +1,16 @@
 package org.vechain.indexer.config
 
+import org.springframework.data.domain.ScrollPosition
 import org.springframework.data.mongodb.MongoDatabaseFactory
+import org.springframework.data.mongodb.core.ExecutableFindOperation
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.CriteriaDefinition
+import org.springframework.data.mongodb.core.query.NearQuery
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
 
@@ -242,5 +246,117 @@ open class CheckpointFilteringMongoTemplate(
             )
         }
         return super.aggregateStream(aggregation, inputCollectionName, outputType)
+    }
+
+    // --- Fluent find API (query()) ---
+    // Spring Data MongoDB's @Query-annotated repository methods use the fluent API
+    // (template.query(type).matching(query).all()) via AbstractMongoQuery. This path
+    // goes through ExecutableFindOperationSupport which calls a package-private
+    // MongoTemplate.doFind() variant, completely bypassing the overridden find() above.
+    // We intercept query() to wrap the returned ExecutableFind and add checkpoint
+    // exclusion in matching().
+
+    override fun <T : Any> query(domainType: Class<T>): ExecutableFindOperation.ExecutableFind<T> {
+        val base = super.query(domainType)
+        if (!shouldFilter(domainType)) return base
+        return FilteringExecutableFind(base, domainType)
+    }
+
+    /**
+     * Wraps [ExecutableFindOperation.FindWithQuery] to add checkpoint exclusion to every [matching]
+     * call. Terminal operations without a preceding [matching] call are redirected through
+     * `matching(Query())` so the filter is always applied.
+     */
+    private inner class FilteringFindWithQuery<T : Any>(
+        private val delegate: ExecutableFindOperation.FindWithQuery<T>,
+        private val entityClass: Class<*>,
+    ) : ExecutableFindOperation.FindWithQuery<T> {
+
+        override fun matching(query: Query): ExecutableFindOperation.TerminatingFind<T> =
+            delegate.matching(addCheckpointExclusion(query, entityClass))
+
+        override fun matching(
+            criteriaDefinition: CriteriaDefinition
+        ): ExecutableFindOperation.TerminatingFind<T> = matching(Query.query(criteriaDefinition))
+
+        override fun near(nearQuery: NearQuery) = delegate.near(nearQuery)
+
+        // Terminal operations — redirect through matching() to guarantee the filter is applied.
+        override fun oneValue(): T? = matching(Query()).oneValue()
+
+        override fun firstValue(): T? = matching(Query()).firstValue()
+
+        override fun all(): List<T> = matching(Query()).all()
+
+        override fun stream(): java.util.stream.Stream<T> = matching(Query()).stream()
+
+        override fun scroll(position: ScrollPosition) = matching(Query()).scroll(position)
+
+        override fun count(): Long = matching(Query()).count()
+
+        override fun exists(): Boolean = matching(Query()).exists()
+    }
+
+    /**
+     * Wraps [ExecutableFindOperation.TerminatingDistinct] to add checkpoint exclusion to every
+     * [matching] call. Terminal [all] without a preceding [matching] is redirected through
+     * `matching(Query())` so the filter is always applied.
+     */
+    private inner class FilteringTerminatingDistinct<T : Any>(
+        private val delegate: ExecutableFindOperation.TerminatingDistinct<T>,
+        private val entityClass: Class<*>,
+    ) : ExecutableFindOperation.TerminatingDistinct<T> {
+
+        override fun matching(query: Query): ExecutableFindOperation.TerminatingDistinct<T> =
+            delegate.matching(addCheckpointExclusion(query, entityClass))
+
+        override fun matching(
+            criteriaDefinition: CriteriaDefinition
+        ): ExecutableFindOperation.TerminatingDistinct<T> =
+            matching(Query.query(criteriaDefinition))
+
+        override fun <R : Any> `as`(
+            resultType: Class<R>
+        ): ExecutableFindOperation.TerminatingDistinct<R> =
+            FilteringTerminatingDistinct(delegate.`as`(resultType), entityClass)
+
+        override fun all(): List<T> = matching(Query()).all()
+    }
+
+    private inner class FilteringFindWithProjection<T : Any>(
+        private val delegate: ExecutableFindOperation.FindWithProjection<T>,
+        private val entityClass: Class<*>,
+    ) :
+        ExecutableFindOperation.FindWithProjection<T>,
+        ExecutableFindOperation.FindWithQuery<T> by FilteringFindWithQuery(delegate, entityClass) {
+
+        override fun <R : Any> `as`(
+            resultType: Class<R>
+        ): ExecutableFindOperation.FindWithQuery<R> =
+            FilteringFindWithQuery(delegate.`as`(resultType), entityClass)
+
+        override fun distinct(field: String) =
+            FilteringTerminatingDistinct(delegate.distinct(field), entityClass)
+    }
+
+    private inner class FilteringExecutableFind<T : Any>(
+        private val delegate: ExecutableFindOperation.ExecutableFind<T>,
+        private val entityClass: Class<*>,
+    ) :
+        ExecutableFindOperation.ExecutableFind<T>,
+        ExecutableFindOperation.FindWithQuery<T> by FilteringFindWithQuery(delegate, entityClass) {
+
+        override fun inCollection(
+            collection: String
+        ): ExecutableFindOperation.FindWithProjection<T> =
+            FilteringFindWithProjection(delegate.inCollection(collection), entityClass)
+
+        override fun <R : Any> `as`(
+            resultType: Class<R>
+        ): ExecutableFindOperation.FindWithQuery<R> =
+            FilteringFindWithQuery(delegate.`as`(resultType), entityClass)
+
+        override fun distinct(field: String) =
+            FilteringTerminatingDistinct(delegate.distinct(field), entityClass)
     }
 }
