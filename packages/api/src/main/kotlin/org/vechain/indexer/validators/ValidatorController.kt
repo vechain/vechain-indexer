@@ -340,7 +340,7 @@ open class ValidatorController(
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
-    open suspend fun getMissedBlocksPercentage(
+    open fun getMissedBlocksPercentage(
         @RequestParam timeframe: MissedBlocksTimeframe,
         @ValidAddress @RequestParam(required = false) validator: Address?,
     ): AllValidatorsMissedBlocksResponse =
