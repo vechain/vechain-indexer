@@ -1,5 +1,6 @@
 package org.vechain.indexer.config
 
+import java.util.concurrent.ConcurrentHashMap
 import org.springframework.data.domain.ScrollPosition
 import org.springframework.data.mongodb.MongoDatabaseFactory
 import org.springframework.data.mongodb.core.ExecutableFindOperation
@@ -31,8 +32,40 @@ open class CheckpointFilteringMongoTemplate(
     converter: MongoConverter,
 ) : MongoTemplate(dbFactory, converter) {
 
+    /** Cache: entity class → whether it implements [IndexedDocument]. */
+    private val filterCache = ConcurrentHashMap<Class<*>, Boolean>()
+
+    /**
+     * Cache: entity class → custom @Id property name (or `null` if none / standard).
+     *
+     * A sentinel empty-string value is stored when the entity has no custom @Id property so that we
+     * don't re-resolve it on every call.
+     */
+    private val idPropertyCache = ConcurrentHashMap<Class<*>, String>()
+
+    /**
+     * Collection names known to belong to [IndexedDocument] entities (i.e. collections that contain
+     * checkpoint documents). Populated lazily when [shouldFilter] is first called for an entity
+     * class. Used by collection-name-only aggregation overloads to decide whether to prepend the
+     * checkpoint exclusion.
+     */
+    private val checkpointCollections = ConcurrentHashMap.newKeySet<String>()
+
     private fun shouldFilter(entityClass: Class<*>): Boolean =
-        IndexedDocument::class.java.isAssignableFrom(entityClass)
+        filterCache.getOrPut(entityClass) {
+            val isIndexed = IndexedDocument::class.java.isAssignableFrom(entityClass)
+            if (isIndexed) {
+                try {
+                    checkpointCollections.add(getCollectionName(entityClass))
+                } catch (_: Exception) {
+                    // Ignore — collection name may not be resolvable for every class
+                }
+            }
+            isIndexed
+        }
+
+    private fun shouldFilterCollection(collectionName: String): Boolean =
+        collectionName in checkpointCollections
 
     // Check for both "_id" (MongoDB field name) and "id" (Java property name).
     // SimpleMongoRepository.findById builds queries using Criteria.where("id") — the
@@ -42,16 +75,28 @@ open class CheckpointFilteringMongoTemplate(
     //
     // Additionally, entities with a non-standard @Id property name (e.g. @Id val proposalId)
     // cause Spring Data to build queries using Criteria.where("proposalId"). We detect these
-    // by inspecting the entity's mapping metadata.
+    // by inspecting the entity's mapping metadata (cached to avoid repeated reflection).
     private fun queryHasIdCriteria(query: Query, entityClass: Class<*>? = null): Boolean {
         val queryObject = query.queryObject
         if (queryObject.containsKey("_id") || queryObject.containsKey("id")) return true
         if (entityClass != null) {
-            val entity = converter.mappingContext.getPersistentEntity(entityClass)
-            val idPropertyName = entity?.idProperty?.name
+            val idPropertyName = cachedIdPropertyName(entityClass)
             if (idPropertyName != null && queryObject.containsKey(idPropertyName)) return true
         }
         return false
+    }
+
+    /**
+     * Returns the custom @Id property name for the entity, or `null` if the entity uses the
+     * standard "id" / "_id" mapping. Results are cached per class.
+     */
+    private fun cachedIdPropertyName(entityClass: Class<*>): String? {
+        val cached =
+            idPropertyCache.getOrPut(entityClass) {
+                val entity = converter.mappingContext.getPersistentEntity(entityClass)
+                entity?.idProperty?.name ?: ""
+            }
+        return cached.ifEmpty { null }
     }
 
     private fun addCheckpointExclusion(query: Query, entityClass: Class<*>? = null): Query {
@@ -154,7 +199,10 @@ open class CheckpointFilteringMongoTemplate(
         collectionName: String,
         outputType: Class<O>,
     ): AggregationResults<O> {
-        return super.aggregate(prependCheckpointFilter(aggregation), collectionName, outputType)
+        if (shouldFilterCollection(collectionName)) {
+            return super.aggregate(prependCheckpointFilter(aggregation), collectionName, outputType)
+        }
+        return super.aggregate(aggregation, collectionName, outputType)
     }
 
     // --- Aggregation methods (TypedAggregation variants) ---
@@ -209,11 +257,14 @@ open class CheckpointFilteringMongoTemplate(
         collectionName: String,
         outputType: Class<O>,
     ): java.util.stream.Stream<O> {
-        return super.aggregateStream(
-            prependCheckpointFilter(aggregation),
-            collectionName,
-            outputType,
-        )
+        if (shouldFilterCollection(collectionName)) {
+            return super.aggregateStream(
+                prependCheckpointFilter(aggregation),
+                collectionName,
+                outputType,
+            )
+        }
+        return super.aggregateStream(aggregation, collectionName, outputType)
     }
 
     // --- Aggregation stream methods (TypedAggregation variants) ---
