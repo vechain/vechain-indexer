@@ -282,9 +282,9 @@ open class CheckpointFilteringMongoTemplate(
         override fun near(nearQuery: NearQuery) = delegate.near(nearQuery)
 
         // Terminal operations — redirect through matching() to guarantee the filter is applied.
-        override fun oneValue(): T = matching(Query()).oneValue()!!
+        override fun oneValue(): T? = matching(Query()).oneValue()
 
-        override fun firstValue(): T = matching(Query()).firstValue()!!
+        override fun firstValue(): T? = matching(Query()).firstValue()
 
         override fun all(): List<T> = matching(Query()).all()
 
