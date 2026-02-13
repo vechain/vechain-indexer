@@ -9,12 +9,14 @@ import io.mockk.mockk
 import java.math.BigInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.repository.findByIdOrNull
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.config.DetectedNetwork
@@ -68,59 +70,58 @@ internal class AccountOverviewServiceTest {
         ) {
         fun callTransactionsSentRule(
             block: Block,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = transactionsSentRule(block, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = transactionsSentRule(block, accumulator, resolved)
 
         fun callVthoBurnedRule(
             block: Block,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = vthoBurnedRule(block, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = vthoBurnedRule(block, accumulator, resolved)
 
         fun callVthoDelegatedRule(
             block: Block,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = vthoDelegatedRule(block, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = vthoDelegatedRule(block, accumulator, resolved)
 
         fun callGasUsedRule(
             block: Block,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = gasUsedRule(block, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = gasUsedRule(block, accumulator, resolved)
 
         fun callVetSentRule(
             block: Block,
             vetTransferEvents: List<IndexedEvent>,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = vetSentRule(block, vetTransferEvents, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = vetSentRule(block, vetTransferEvents, accumulator, resolved)
 
         fun callVetReceivedRule(
             block: Block,
             vetTransferEvents: List<IndexedEvent>,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = vetReceivedRule(block, vetTransferEvents, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = vetReceivedRule(block, vetTransferEvents, accumulator, resolved)
 
         fun callCreateNewAccountOverview(address: String, block: Block): AccountOverview =
             createNewAccountOverview(address, block)
 
-        fun callResolveAccountOverviewForUpdateAndArchive(
+        fun callResolveForMutation(
             recordId: String,
             block: Block,
-            updated: MutableMap<String, AccountOverview>,
-            archived: MutableMap<String, AccountOverview>,
-        ): AccountOverview =
-            resolveAccountOverviewForUpdateAndArchive(recordId, block, updated, archived)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ): AccountOverview = resolveForMutation(recordId, block, accumulator, resolved)
 
         suspend fun callVthoBlockRewardsRule(
             block: Block,
             events: List<IndexedEvent>,
-            updatedResult: MutableMap<String, AccountOverview>,
-            archiveResult: MutableMap<String, AccountOverview>,
-        ) = vthoBlockRewardsRule(block, events, updatedResult, archiveResult)
+            accumulator: VersionedDocumentAccumulator<AccountOverview>,
+            resolved: MutableMap<String, AccountOverview>,
+        ) = vthoBlockRewardsRule(block, events, accumulator, resolved)
 
         fun callCalculatePassiveVthoForBlock(
             vetBalance: BigInteger,
@@ -228,6 +229,13 @@ internal class AccountOverviewServiceTest {
             vetReceived = BigInteger.ZERO,
         )
 
+    private fun newAccumulator() =
+        VersionedDocumentAccumulator<AccountOverview>(
+                repository::findByIdOrNull,
+                initialVersion = 0,
+            )
+            .also { it.startBlock() }
+
     @Test
     fun `createNewAccountOverview sets initial values from block`() {
         val recordId = "0xNEW"
@@ -275,23 +283,24 @@ internal class AccountOverviewServiceTest {
                     ),
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callTransactionsSentRule(b, updated, archived)
+        service.callTransactionsSentRule(b, accumulator, resolved)
 
-        val updatedA = updated[originA]!!
+        val (updatedList, archivedList) = accumulator.results()
+        val updatedA = updatedList.find { it.address == originA }!!
         assertEquals(4, updatedA.version)
         assertEquals(7L, updatedA.transactionsSent)
         assertEquals(10L, updatedA.clausesSent)
         assertEquals(b.timestamp, updatedA.lastSeen)
-        assertSame(existingA, archived[originA])
+        assertSame(existingA, archivedList.find { it.address == originA })
 
-        val updatedB = updated[originB]!!
+        val updatedB = updatedList.find { it.address == originB }!!
         assertEquals(0, updatedB.version)
         assertEquals(1L, updatedB.transactionsSent)
         assertEquals(3L, updatedB.clausesSent)
-        assertTrue(archived[originB] == null)
+        assertNull(archivedList.find { it.address == originB })
     }
 
     @Test
@@ -315,18 +324,19 @@ internal class AccountOverviewServiceTest {
                     ),
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBurnedRule(b, updated, archived)
+        service.callVthoBurnedRule(b, accumulator, resolved)
 
-        val updatedA = updated[payerA]!!
+        val (updatedList, archivedList) = accumulator.results()
+        val updatedA = updatedList.find { it.address == payerA }!!
         assertEquals(BigInteger("121"), updatedA.vthoBurned) // 100 + 16 + 5
-        assertSame(existingA, archived[payerA])
+        assertSame(existingA, archivedList.find { it.address == payerA })
 
-        val updatedB = updated[payerB]!!
+        val updatedB = updatedList.find { it.address == payerB }!!
         assertEquals(BigInteger("2"), updatedB.vthoBurned)
-        assertTrue(archived[payerB] == null)
+        assertNull(archivedList.find { it.address == payerB })
     }
 
     @Test
@@ -362,14 +372,15 @@ internal class AccountOverviewServiceTest {
                     ),
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoDelegatedRule(b, updated, archived)
+        service.callVthoDelegatedRule(b, accumulator, resolved)
 
-        val updatedRecord = updated[payer]!!
+        val (updatedList, archivedList) = accumulator.results()
+        val updatedRecord = updatedList.find { it.address == payer }!!
         assertEquals(BigInteger("24"), updatedRecord.vthoDelegated) // 7 + 16 + 1
-        assertSame(existing, archived[payer])
+        assertSame(existing, archivedList.find { it.address == payer })
     }
 
     @Test
@@ -392,13 +403,17 @@ internal class AccountOverviewServiceTest {
                     ),
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callGasUsedRule(b, updated, archived)
+        service.callGasUsedRule(b, accumulator, resolved)
 
-        assertEquals(BigInteger("115"), updated[originA]!!.gasUsed) // 10 + 100 + 5
-        assertEquals(BigInteger("7"), updated[originB]!!.gasUsed)
+        val (updatedList, _) = accumulator.results()
+        assertEquals(
+            BigInteger("115"),
+            updatedList.find { it.address == originA }!!.gasUsed,
+        ) // 10 + 100 + 5
+        assertEquals(BigInteger("7"), updatedList.find { it.address == originB }!!.gasUsed)
     }
 
     @Test
@@ -419,13 +434,14 @@ internal class AccountOverviewServiceTest {
             )
 
         val b = block(number = 42L)
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVetSentRule(b, events, updated, archived)
+        service.callVetSentRule(b, events, accumulator, resolved)
 
-        assertEquals(BigInteger("115"), updated[fromA]!!.vetSent)
-        assertEquals(BigInteger("7"), updated[fromB]!!.vetSent)
+        val (updatedList, _) = accumulator.results()
+        assertEquals(BigInteger("115"), updatedList.find { it.address == fromA }!!.vetSent)
+        assertEquals(BigInteger("7"), updatedList.find { it.address == fromB }!!.vetSent)
     }
 
     @Test
@@ -446,34 +462,32 @@ internal class AccountOverviewServiceTest {
             )
 
         val b = block(number = 42L)
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVetReceivedRule(b, events, updated, archived)
+        service.callVetReceivedRule(b, events, accumulator, resolved)
 
-        assertEquals(BigInteger("115"), updated[toA]!!.vetReceived)
-        assertEquals(BigInteger("7"), updated[toB]!!.vetReceived)
+        val (updatedList, _) = accumulator.results()
+        assertEquals(BigInteger("115"), updatedList.find { it.address == toA }!!.vetReceived)
+        assertEquals(BigInteger("7"), updatedList.find { it.address == toB }!!.vetReceived)
     }
 
     @Test
-    fun `returns cached record when already updated`() {
+    fun `returns cached record when already resolved`() {
         val recordId = "0xACC"
-        val cached = existingAccountOverview(recordId, version = 7)
+        val existing = existingAccountOverview(recordId, version = 7)
+        every { repository.findByIdOrNull(recordId) } returns existing
 
-        val updated = mutableMapOf(recordId to cached)
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
+        val b = block()
 
-        val resolved =
-            service.callResolveAccountOverviewForUpdateAndArchive(
-                recordId,
-                block(),
-                updated,
-                archived,
-            )
+        // First resolve fetches from DB
+        val first = service.callResolveForMutation(recordId, b, accumulator, resolved)
+        // Second resolve returns cached copy
+        val second = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
-        assertSame(cached, resolved)
-        assertSame(cached, updated[recordId])
-        assertTrue(archived.isEmpty())
+        assertSame(first, second)
     }
 
     @Test
@@ -482,18 +496,19 @@ internal class AccountOverviewServiceTest {
         val existing = existingAccountOverview(recordId, version = 3)
         every { repository.findByIdOrNull(recordId) } returns existing
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
         val b = block(number = 42L)
 
-        val resolved =
-            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
+        val result = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
-        assertEquals(4, resolved.version)
-        assertEquals(b.timestamp, resolved.lastSeen)
-        assertSame(resolved, updated[recordId])
-        assertSame(existing, archived[recordId])
-        assertEquals(existing.lastSeen, archived[recordId]?.lastSeen)
+        assertEquals(4, result.version)
+        assertEquals(b.timestamp, result.lastSeen)
+
+        val (updatedList, archivedList) = accumulator.results()
+        assertSame(result, updatedList.find { it.address == recordId })
+        assertSame(existing, archivedList.find { it.address == recordId })
+        assertEquals(existing.lastSeen, archivedList.find { it.address == recordId }?.lastSeen)
     }
 
     @Test
@@ -502,22 +517,22 @@ internal class AccountOverviewServiceTest {
         val b = block(number = 42L)
         every { repository.findByIdOrNull(recordId) } returns null
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        val resolved =
-            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
+        val result = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
-        assertEquals(recordId, resolved.address)
-        assertEquals(0, resolved.version)
-        assertEquals(b.id, resolved.blockId)
-        assertEquals(b.number, resolved.blockNumber)
-        assertEquals(b.timestamp, resolved.blockTimestamp)
-        assertEquals(b.timestamp, resolved.firstSeen)
-        assertEquals(b.timestamp, resolved.lastSeen)
+        assertEquals(recordId, result.address)
+        assertEquals(0, result.version)
+        assertEquals(b.id, result.blockId)
+        assertEquals(b.number, result.blockNumber)
+        assertEquals(b.timestamp, result.blockTimestamp)
+        assertEquals(b.timestamp, result.firstSeen)
+        assertEquals(b.timestamp, result.lastSeen)
 
-        assertSame(resolved, updated[recordId])
-        assertTrue(archived.isEmpty())
+        val (updatedList, archivedList) = accumulator.results()
+        assertSame(result, updatedList.find { it.address == recordId })
+        assertTrue(archivedList.isEmpty())
     }
 
     @Test
@@ -526,19 +541,19 @@ internal class AccountOverviewServiceTest {
         val existing = existingAccountOverview(recordId, version = 3)
         every { repository.findByIdOrNull(recordId) } returns existing
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
         val b = block(number = 42L)
 
-        val first =
-            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
-        val second =
-            service.callResolveAccountOverviewForUpdateAndArchive(recordId, b, updated, archived)
+        val first = service.callResolveForMutation(recordId, b, accumulator, resolved)
+        val second = service.callResolveForMutation(recordId, b, accumulator, resolved)
 
         assertSame(first, second)
         assertEquals(4, second.version)
         assertEquals(b.timestamp, second.lastSeen)
-        assertSame(existing, archived[recordId])
+
+        val (_, archivedList) = accumulator.results()
+        assertSame(existing, archivedList.find { it.address == recordId })
     }
 
     // Helper for creating VTHO Transfer events
@@ -603,12 +618,13 @@ internal class AccountOverviewServiceTest {
         coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
             ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("500"), record.vthoBlockRewards)
     }
 
@@ -629,12 +645,13 @@ internal class AccountOverviewServiceTest {
         coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
             ExecuteAccountResponse(balance = "0x0", energy = "0x3e8", hasCode = false) // 1000
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-        assertTrue(updated.isEmpty())
+        val (updatedList, _) = accumulator.results()
+        assertTrue(updatedList.isEmpty())
     }
 
     @Test
@@ -659,12 +676,13 @@ internal class AccountOverviewServiceTest {
 
         val events = listOf(vthoTransferEvent(from = "0xOTHER", to = beneficiary, value = "300"))
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, events, updated, archived)
+        service.callVthoBlockRewardsRule(b, events, accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("200"), record.vthoBlockRewards)
     }
 
@@ -690,12 +708,13 @@ internal class AccountOverviewServiceTest {
 
         val events = listOf(vthoTransferEvent(from = beneficiary, to = "0xOTHER", value = "500"))
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, events, updated, archived)
+        service.callVthoBlockRewardsRule(b, events, accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("300"), record.vthoBlockRewards)
     }
 
@@ -725,14 +744,15 @@ internal class AccountOverviewServiceTest {
             coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
                 ExecuteAccountResponse(balance = "0x0", energy = "0x2bc", hasCode = false) // 700
 
-            val updated = mutableMapOf<String, AccountOverview>()
-            val archived = mutableMapOf<String, AccountOverview>()
+            val accumulator = newAccumulator()
+            val resolved = mutableMapOf<String, AccountOverview>()
 
-            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-            val record = updated[beneficiary]!!
+            val (updatedList, archivedList) = accumulator.results()
+            val record = updatedList.find { it.address == beneficiary }!!
             assertEquals(BigInteger("1200"), record.vthoBlockRewards) // 1000 + 200
-            assertSame(existingAccount, archived[beneficiary])
+            assertSame(existingAccount, archivedList.find { it.address == beneficiary })
         }
 
     @Test
@@ -772,13 +792,14 @@ internal class AccountOverviewServiceTest {
                     hasCode = false,
                 )
 
-            val updated = mutableMapOf<String, AccountOverview>()
-            val archived = mutableMapOf<String, AccountOverview>()
+            val accumulator = newAccumulator()
+            val resolved = mutableMapOf<String, AccountOverview>()
 
-            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
             // Reward should be negative (passive generation > balance increase), so no update
-            assertTrue(updated.isEmpty())
+            val (updatedList, _) = accumulator.results()
+            assertTrue(updatedList.isEmpty())
         }
 
     @Test
@@ -824,12 +845,13 @@ internal class AccountOverviewServiceTest {
                 hasCode = false,
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("1000"), record.vthoBlockRewards)
     }
 
@@ -867,12 +889,13 @@ internal class AccountOverviewServiceTest {
                 hasCode = false,
             )
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("600"), record.vthoBlockRewards)
     }
 
@@ -1068,12 +1091,13 @@ internal class AccountOverviewServiceTest {
         coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
             ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
 
-        val updated = mutableMapOf<String, AccountOverview>()
-        val archived = mutableMapOf<String, AccountOverview>()
+        val accumulator = newAccumulator()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
-        service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+        service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-        val record = updated[beneficiary]!!
+        val (updatedList, _) = accumulator.results()
+        val record = updatedList.find { it.address == beneficiary }!!
         assertEquals(BigInteger("600"), record.vthoBlockRewards)
     }
 
@@ -1109,12 +1133,13 @@ internal class AccountOverviewServiceTest {
             coEvery { thorClient.getAccountState(beneficiary, blockRevision) } returns
                 ExecuteAccountResponse(balance = "0x0", energy = "0x5dc", hasCode = false) // 1500
 
-            val updated = mutableMapOf<String, AccountOverview>()
-            val archived = mutableMapOf<String, AccountOverview>()
+            val accumulator = newAccumulator()
+            val resolved = mutableMapOf<String, AccountOverview>()
 
-            service.callVthoBlockRewardsRule(b, emptyList(), updated, archived)
+            service.callVthoBlockRewardsRule(b, emptyList(), accumulator, resolved)
 
-            val record = updated[beneficiary]!!
+            val (updatedList, _) = accumulator.results()
+            val record = updatedList.find { it.address == beneficiary }!!
             assertEquals(BigInteger("500"), record.vthoBlockRewards)
         }
 
@@ -1155,12 +1180,13 @@ internal class AccountOverviewServiceTest {
             val events =
                 listOf(vthoTransferEvent(from = "0xOTHER", to = beneficiary, value = "300"))
 
-            val updated = mutableMapOf<String, AccountOverview>()
-            val archived = mutableMapOf<String, AccountOverview>()
+            val accumulator = newAccumulator()
+            val resolved = mutableMapOf<String, AccountOverview>()
 
-            service.callVthoBlockRewardsRule(b, events, updated, archived)
+            service.callVthoBlockRewardsRule(b, events, accumulator, resolved)
 
-            val record = updated[beneficiary]!!
+            val (updatedList, _) = accumulator.results()
+            val record = updatedList.find { it.address == beneficiary }!!
             assertEquals(BigInteger("500"), record.vthoBlockRewards)
         }
 }

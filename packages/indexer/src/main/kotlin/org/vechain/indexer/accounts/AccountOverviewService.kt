@@ -8,6 +8,7 @@ import org.springframework.data.domain.Slice
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.accounts.repository.AccountOverviewRepository
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionSummaryUtils.assertEventTypes
@@ -115,31 +116,36 @@ open class AccountOverviewService(
     ): Pair<List<AccountOverview>, List<AccountOverview>> {
         assertEventTypes(events, "VET_TRANSFER", "Transfer")
 
-        val updatedResult = mutableMapOf<String, AccountOverview>()
-        val archiveResult = mutableMapOf<String, AccountOverview>()
+        val accumulator =
+            VersionedDocumentAccumulator<AccountOverview>(
+                repository::findByIdOrNull,
+                initialVersion = 0,
+            )
+        accumulator.startBlock()
+        val resolved = mutableMapOf<String, AccountOverview>()
 
         // Execute rules
         if (block.transactions.isNotEmpty()) {
-            transactionsSentRule(block, updatedResult, archiveResult)
-            vthoBurnedRule(block, updatedResult, archiveResult)
-            vthoDelegatedRule(block, updatedResult, archiveResult)
-            gasUsedRule(block, updatedResult, archiveResult)
+            transactionsSentRule(block, accumulator, resolved)
+            vthoBurnedRule(block, accumulator, resolved)
+            vthoDelegatedRule(block, accumulator, resolved)
+            gasUsedRule(block, accumulator, resolved)
         }
 
         val vetTransferEvents = events.filter { it.eventType == "VET_TRANSFER" }
         if (vetTransferEvents.isNotEmpty()) {
             // Calculate passive VTHO before updating balances (settles earnings since last
             // activity)
-            vthoPassiveGenerationRule(block, vetTransferEvents, updatedResult, archiveResult)
+            vthoPassiveGenerationRule(block, vetTransferEvents, accumulator, resolved)
             // Update VET sent/received totals and balance
-            vetSentRule(block, vetTransferEvents, updatedResult, archiveResult)
-            vetReceivedRule(block, vetTransferEvents, updatedResult, archiveResult)
+            vetSentRule(block, vetTransferEvents, accumulator, resolved)
+            vetReceivedRule(block, vetTransferEvents, accumulator, resolved)
         }
 
         // Calculate and apply block rewards for pre-Hayabusa blocks
-        vthoBlockRewardsRule(block, events, updatedResult, archiveResult)
+        vthoBlockRewardsRule(block, events, accumulator, resolved)
 
-        return Pair(updatedResult.values.toList(), archiveResult.values.toList())
+        return accumulator.results()
     }
 
     @Transactional
@@ -157,23 +163,17 @@ open class AccountOverviewService(
      * Add number of transactions and clauses sent per account
      *
      * @param block Block being processed
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun transactionsSentRule(
         block: Block,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         block.transactions.forEach { tx ->
             val recordId = tx.origin
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    recordId,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
             // Update counts
             updated.transactionsSent += 1
@@ -185,23 +185,17 @@ open class AccountOverviewService(
      * Add VTHO burned per account
      *
      * @param block Block being processed
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun vthoBurnedRule(
         block: Block,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         block.transactions.forEach { tx ->
             val recordId = tx.gasPayer
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    recordId,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
             // Update VTHO burned
             updated.vthoBurned += toBigInteger(tx.paid)
@@ -212,25 +206,19 @@ open class AccountOverviewService(
      * Add VTHO delegated per account
      *
      * @param block Block being processed
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun vthoDelegatedRule(
         block: Block,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         block.transactions
             .filter { it.origin != it.gasPayer }
             .forEach { tx ->
                 val recordId = tx.gasPayer
-                val updated =
-                    resolveAccountOverviewForUpdateAndArchive(
-                        recordId,
-                        block,
-                        updatedResult,
-                        archiveResult,
-                    )
+                val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
                 // Update VTHO delegated
                 updated.vthoDelegated += toBigInteger(tx.paid)
@@ -241,23 +229,17 @@ open class AccountOverviewService(
      * Add gas used where the account is the origin
      *
      * @param block Block being processed
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun gasUsedRule(
         block: Block,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         block.transactions.forEach { tx ->
             val recordId = tx.origin
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    recordId,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
             // Update gas used
             updated.gasUsed += BigInteger.valueOf(tx.gasUsed)
@@ -269,26 +251,20 @@ open class AccountOverviewService(
      *
      * @param block Block being processed
      * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun vetSentRule(
         block: Block,
         vetTransferEvents: List<IndexedEvent>,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         vetTransferEvents.forEach { event ->
             val recordId =
                 event.params.getAsString("from")
                     ?: error("Invalid VET_TRANSFER event: missing 'from' param")
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    recordId,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
             // Update VET sent and decrease balance
             val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
@@ -302,26 +278,20 @@ open class AccountOverviewService(
      *
      * @param block Block being processed
      * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun vetReceivedRule(
         block: Block,
         vetTransferEvents: List<IndexedEvent>,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         vetTransferEvents.forEach { event ->
             val recordId =
                 event.params.getAsString("to")
                     ?: error("Invalid VET_TRANSFER event: missing 'to' param")
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    recordId,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(recordId, block, accumulator, resolved)
 
             // Update VET received and increase balance
             val value = event.params.getAsBigInteger("amount") ?: BigInteger.ZERO
@@ -340,14 +310,14 @@ open class AccountOverviewService(
      *
      * @param block Block being processed
      * @param vetTransferEvents List of VET_TRANSFER events in the block
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected fun vthoPassiveGenerationRule(
         block: Block,
         vetTransferEvents: List<IndexedEvent>,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         val hayabusaBlock = forkConfig.getHayabusaBlock(detectedNetwork)
 
@@ -365,13 +335,7 @@ open class AccountOverviewService(
 
         // For each address, calculate passive VTHO earned since last settlement
         addresses.forEach { address ->
-            val updated =
-                resolveAccountOverviewForUpdateAndArchive(
-                    address,
-                    block,
-                    updatedResult,
-                    archiveResult,
-                )
+            val updated = resolveForMutation(address, block, accumulator, resolved)
 
             // Use lastVthoSettlement if available, otherwise this is a new account with no prior
             // VET
@@ -463,14 +427,14 @@ open class AccountOverviewService(
      *
      * @param block Block being processed
      * @param events List of all events in the block
-     * @param updatedResult Map of updated AccountOverview records
-     * @param archiveResult Map of AccountOverview records to be archived
+     * @param accumulator The versioned document accumulator
+     * @param resolved Local cache of records already resolved in this block
      */
     protected suspend fun vthoBlockRewardsRule(
         block: Block,
         events: List<IndexedEvent>,
-        updatedResult: MutableMap<String, AccountOverview>,
-        archiveResult: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ) {
         // Skip genesis block (no parent block to compare against)
         if (block.number == 0L) {
@@ -485,6 +449,7 @@ open class AccountOverviewService(
         val vetAtNMinus1 = accountStateAtNMinus1.balance.hexToBigInteger()
 
         // 2. Calculate passive VTHO generation from timestamp(n-1) to timestamp(n)
+        // Direct DB read needed here for pre-block state (not the accumulator's cached copy)
         val beneficiaryAccount = repository.findByIdOrNull(beneficiary)
         val passiveVtho =
             calculatePassiveVthoForBlock(vetAtNMinus1, block.number, beneficiaryAccount)
@@ -510,13 +475,7 @@ open class AccountOverviewService(
             return
         }
 
-        val updated =
-            resolveAccountOverviewForUpdateAndArchive(
-                beneficiary,
-                block,
-                updatedResult,
-                archiveResult,
-            )
+        val updated = resolveForMutation(beneficiary, block, accumulator, resolved)
 
         updated.vthoBlockRewards += reward
     }
@@ -640,40 +599,42 @@ open class AccountOverviewService(
     }
 
     /**
-     * Resolves an AccountOverview for update, creating a new one if it does not exist.
+     * Resolves an AccountOverview for in-place mutation using the accumulator.
      *
-     * If an existing record is found, it is added to [archived] and a version-bumped copy is stored
-     * in [updated]. If the record is created in the current block, it is only stored in [updated].
+     * On first call for a given [recordId] in the current block: looks up the record via the
+     * accumulator (DB or cache), creates a version-bumped copy (or new record), registers it with
+     * the accumulator, and caches it in [resolved]. On subsequent calls for the same [recordId]:
+     * returns the cached mutable copy directly.
      *
      * @param recordId The ID of the AccountOverview record
      * @param block The current block being processed
-     * @param updated Map of updated AccountOverview records
-     * @param archived Map of AccountOverview records to be archived
-     * @return The AccountOverview record for update
+     * @param accumulator The versioned document accumulator managing resolve/archive/version logic
+     * @param resolved Local cache of records already resolved in this block
+     * @return The mutable AccountOverview record for in-place updates
      */
-    protected fun resolveAccountOverviewForUpdateAndArchive(
+    protected fun resolveForMutation(
         recordId: String,
         block: Block,
-        updated: MutableMap<String, AccountOverview>,
-        archived: MutableMap<String, AccountOverview>,
+        accumulator: VersionedDocumentAccumulator<AccountOverview>,
+        resolved: MutableMap<String, AccountOverview>,
     ): AccountOverview {
-        updated[recordId]?.let {
+        resolved[recordId]?.let {
             return it
         }
 
-        // Check if a record exists in the DB
-        repository.findByIdOrNull(recordId)?.let {
-            // If a record exists add it to the archive and add a copy with incremented version to
-            // updated
-            archived[recordId] = it
-            val updatedRecord = it.copy(version = it.version + 1, lastSeen = block.timestamp)
-            updated[recordId] = updatedRecord
-            return updatedRecord
-        }
+        val (existing, nextVersion) = accumulator.resolve(recordId)
+        val result =
+            if (existing != null) {
+                val copy = existing.copy(version = nextVersion, lastSeen = block.timestamp)
+                accumulator.put(recordId, existing, copy)
+                copy
+            } else {
+                val newRecord = createNewAccountOverview(recordId, block)
+                accumulator.put(recordId, null, newRecord)
+                newRecord
+            }
 
-        // No record exists, create a new one
-        val newRecord = createNewAccountOverview(recordId, block)
-        updated[recordId] = newRecord
-        return newRecord
+        resolved[recordId] = result
+        return result
     }
 }
