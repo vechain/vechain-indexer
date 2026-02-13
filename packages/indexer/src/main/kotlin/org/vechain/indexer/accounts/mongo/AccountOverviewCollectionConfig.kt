@@ -13,6 +13,7 @@ import org.springframework.data.mongodb.core.count
 import org.springframework.data.mongodb.core.index.Index
 import org.springframework.data.mongodb.core.insert
 import org.springframework.data.mongodb.core.query.Query
+import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountOverview
 import org.vechain.indexer.accounts.AccountOverviewArchive
@@ -60,8 +61,14 @@ open class AccountOverviewCollectionConfig(
         // Ensure indexes
         ensureIndexes(
             listOf(
+                "blockNumber_-1" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
+                "_id_1_blockNumber_1" to
+                    Index()
+                        .on("_id", Sort.Direction.ASC)
+                        .on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
                 "lastVthoSettlement_1" to
-                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC)
+                    Index().on(AccountOverview::lastVthoSettlement.name, Sort.Direction.ASC),
             )
         )
     }

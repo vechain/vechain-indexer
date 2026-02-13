@@ -54,6 +54,12 @@ open class TokenRewardCollectionConfig(
         ensureIndexes(
             listOf(
                 // For global queries (all validators, sorted by timestamp)
+                "blockNumber_-1" to
+                    Index().on(IndexedDocument::blockNumber.name, Sort.Direction.DESC),
+                "_id_1_blockNumber_1" to
+                    Index()
+                        .on("_id", Sort.Direction.ASC)
+                        .on(IndexedDocument::blockNumber.name, Sort.Direction.ASC),
                 "blockTimestamp_-1" to
                     Index().on(IndexedDocument::blockTimestamp.name, Sort.Direction.DESC),
                 "validator_1_rewardPeriod_1_cycle_-1" to
