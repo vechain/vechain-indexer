@@ -16,7 +16,6 @@ import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardProcessor
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.domain.ValidatorDecoder
@@ -27,7 +26,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var tokenRewardRepository: TokenRewardRepository
     @Autowired lateinit var tokenRewardService: TokenRewardService
-    @Autowired lateinit var archiveService: ArchiveService<TokenReward, TokenRewardArchive>
+    @Autowired lateinit var archiveService: ArchiveService<TokenReward>
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var checkpointService: CheckpointService
 
@@ -123,7 +122,7 @@ class TokenRewardProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTokenRewardProcessor(
         service: TokenRewardService,
         repository: TokenRewardRepository,
-        archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+        archiveService: ArchiveService<TokenReward>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
     ) :

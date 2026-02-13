@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.b3tr.action.AppAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.AppAllTimeActionSummaryArchive
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
 
@@ -27,7 +26,7 @@ open class AppAllTimeActionSummaryCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         AppAllTimeActionSummary::class.java,
-        AppAllTimeActionSummaryArchive::class.java,
+        hasArchives = true,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -42,10 +41,6 @@ open class AppAllTimeActionSummaryCollectionConfig(
                 AppAllTimeActionSummary::class.java,
                 version,
             )
-
-        if (dropped) {
-            indexerVersionService.dropArchiveCollection(AppAllTimeActionSummaryArchive::class.java)
-        }
 
         this.ensureCollection()
 

@@ -29,10 +29,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-all-time-action-summary")
 open class UserAllTimeActionSummaryService(
     private val repository: UserAllTimeActionSummaryRepository,
-    private val userAllTimeActionSummaryArchiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    private val userAllTimeActionSummaryPruner:
-        TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+    private val userAllTimeActionSummaryArchiveService: ArchiveService<UserAllTimeActionSummary>,
+    private val userAllTimeActionSummaryPruner: TargetedPruner<UserAllTimeActionSummary>,
     private val impactConfig: ActionImpactConfig,
 ) {
     private val globalId = generateId(EntityType.GLOBAL.name)

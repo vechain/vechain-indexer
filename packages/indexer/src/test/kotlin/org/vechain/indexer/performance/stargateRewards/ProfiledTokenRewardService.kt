@@ -5,7 +5,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.stargate.rewards.TokenRewardService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -29,7 +28,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
  */
 class ProfiledTokenRewardService(
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    archiveService: ArchiveService<TokenReward>,
     delegationRepository: DelegationRepository,
     thorClient: ThorClient,
     private val profiler: DetailedProfiler,

@@ -21,20 +21,14 @@ open class DelegationConfig {
     open fun delegationArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<Delegation, DelegationArchive> =
-        ArchiveService(
-            mongoTemplate,
-            Delegation::class.java,
-            DelegationArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<Delegation> =
+        ArchiveService(mongoTemplate, Delegation::class.java, recordLimit)
 
     @Bean
     open fun delegationPruner(
-        delegationArchiveService: ArchiveService<Delegation, DelegationArchive>,
+        delegationArchiveService: ArchiveService<Delegation>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): Pruner =
-        PrunerService(DelegationArchive::class, delegationArchiveService, prunerRemovalChunkSize)
+    ): Pruner = PrunerService(delegationArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun delegationIndexer(

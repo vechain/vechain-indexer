@@ -13,26 +13,30 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.NearQuery
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.VersionedDocument
 
 /**
- * A custom MongoTemplate that automatically excludes `__checkpoint__` documents from all read
- * queries targeting [IndexedDocument] entities.
+ * A custom MongoTemplate that automatically excludes `__checkpoint__` documents and `_isArchive`
+ * documents from all read queries targeting [IndexedDocument] / [VersionedDocument] entities.
  *
- * Every data collection contains a checkpoint document used by the indexer to track progress. This
- * template ensures that checkpoint documents are never returned by read operations, removing the
- * need for manual exclusion in every query.
+ * Every data collection contains a checkpoint document used by the indexer to track progress.
+ * Stateful collections also store archive documents (previous versions) in the same collection,
+ * distinguished by `_isArchive: true`. This template ensures that neither checkpoint documents nor
+ * archive documents are ever returned by read operations, removing the need for manual exclusion in
+ * every query.
  *
  * **Not overridden** (intentionally):
- * - All write methods (`save`, `insert`, `remove`, `update*`) — the indexer writes checkpoints via
- *   these
+ * - All write methods (`save`, `insert`, `remove`, `update*`) — the indexer writes checkpoints and
+ *   archives via these or via raw driver calls
  */
-open class CheckpointFilteringMongoTemplate(
-    dbFactory: MongoDatabaseFactory,
-    converter: MongoConverter,
-) : MongoTemplate(dbFactory, converter) {
+open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: MongoConverter) :
+    MongoTemplate(dbFactory, converter) {
 
     private fun shouldFilter(entityClass: Class<*>): Boolean =
         IndexedDocument::class.java.isAssignableFrom(entityClass)
+
+    private fun shouldFilterArchives(entityClass: Class<*>): Boolean =
+        VersionedDocument::class.java.isAssignableFrom(entityClass)
 
     // Check for both "_id" (MongoDB field name) and "id" (Java property name).
     // SimpleMongoRepository.findById builds queries using Criteria.where("id") — the
@@ -60,15 +64,29 @@ open class CheckpointFilteringMongoTemplate(
         return query
     }
 
+    private fun addArchiveExclusion(query: Query, entityClass: Class<*>? = null): Query {
+        if (queryHasIdCriteria(query, entityClass)) return query
+        query.addCriteria(Criteria.where("_isArchive").ne(true))
+        return query
+    }
+
     private fun checkpointMatchStage():
         org.springframework.data.mongodb.core.aggregation.AggregationOperation =
         Aggregation.match(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
 
-    private fun prependCheckpointFilter(aggregation: Aggregation): Aggregation {
+    private fun archiveMatchStage():
+        org.springframework.data.mongodb.core.aggregation.AggregationOperation =
+        Aggregation.match(Criteria.where("_isArchive").ne(true))
+
+    private fun prependCheckpointFilter(
+        aggregation: Aggregation,
+        includeArchiveFilter: Boolean = false,
+    ): Aggregation {
         val existingOps = aggregation.pipeline.operations
         val newOps =
             mutableListOf<org.springframework.data.mongodb.core.aggregation.AggregationOperation>()
         newOps.add(checkpointMatchStage())
+        if (includeArchiveFilter) newOps.add(archiveMatchStage())
         newOps.addAll(existingOps)
         return Aggregation.newAggregation(newOps).withOptions(aggregation.options)
     }
@@ -81,6 +99,7 @@ open class CheckpointFilteringMongoTemplate(
         collectionName: String,
     ): List<T> {
         if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+        if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
         return super.find(query, entityClass, collectionName)
     }
 
@@ -90,18 +109,23 @@ open class CheckpointFilteringMongoTemplate(
         collectionName: String,
     ): T? {
         if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+        if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
         return super.findOne(query, entityClass, collectionName)
     }
 
     override fun count(query: Query, entityClass: Class<*>?, collectionName: String): Long {
         if (entityClass != null && shouldFilter(entityClass))
             addCheckpointExclusion(query, entityClass)
+        if (entityClass != null && shouldFilterArchives(entityClass))
+            addArchiveExclusion(query, entityClass)
         return super.count(query, entityClass, collectionName)
     }
 
     override fun exists(query: Query, entityClass: Class<*>?, collectionName: String): Boolean {
         if (entityClass != null && shouldFilter(entityClass))
             addCheckpointExclusion(query, entityClass)
+        if (entityClass != null && shouldFilterArchives(entityClass))
+            addArchiveExclusion(query, entityClass)
         return super.exists(query, entityClass, collectionName)
     }
 
@@ -111,6 +135,7 @@ open class CheckpointFilteringMongoTemplate(
         collectionName: String,
     ): java.util.stream.Stream<T> {
         if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+        if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
         return super.stream(query, entityClass, collectionName)
     }
 
@@ -122,15 +147,17 @@ open class CheckpointFilteringMongoTemplate(
         resultClass: Class<T>,
     ): List<T> {
         if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+        if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
         return super.findDistinct(query, field, collectionName, entityClass, resultClass)
     }
 
     // --- No-query read methods ---
 
     override fun <T : Any> findAll(entityClass: Class<T>, collectionName: String): List<T> {
-        if (shouldFilter(entityClass)) {
+        if (shouldFilter(entityClass) || shouldFilterArchives(entityClass)) {
             val query = Query()
-            addCheckpointExclusion(query)
+            if (shouldFilter(entityClass)) addCheckpointExclusion(query)
+            if (shouldFilterArchives(entityClass)) addArchiveExclusion(query)
             return super.find(query, entityClass, collectionName)
         }
         return super.findAll(entityClass, collectionName)
@@ -144,7 +171,11 @@ open class CheckpointFilteringMongoTemplate(
         outputType: Class<O>,
     ): AggregationResults<O> {
         if (shouldFilter(inputType)) {
-            return super.aggregate(prependCheckpointFilter(aggregation), inputType, outputType)
+            return super.aggregate(
+                prependCheckpointFilter(aggregation, shouldFilterArchives(inputType)),
+                inputType,
+                outputType,
+            )
         }
         return super.aggregate(aggregation, inputType, outputType)
     }
@@ -167,7 +198,11 @@ open class CheckpointFilteringMongoTemplate(
     ): AggregationResults<O> {
         if (shouldFilter(aggregation.inputType)) {
             val collectionName = getCollectionName(aggregation.inputType)
-            return super.aggregate(prependCheckpointFilter(aggregation), collectionName, outputType)
+            return super.aggregate(
+                prependCheckpointFilter(aggregation, shouldFilterArchives(aggregation.inputType)),
+                collectionName,
+                outputType,
+            )
         }
         return super.aggregate(aggregation, outputType)
     }
@@ -179,7 +214,7 @@ open class CheckpointFilteringMongoTemplate(
     ): AggregationResults<O> {
         if (shouldFilter(aggregation.inputType)) {
             return super.aggregate(
-                prependCheckpointFilter(aggregation),
+                prependCheckpointFilter(aggregation, shouldFilterArchives(aggregation.inputType)),
                 inputCollectionName,
                 outputType,
             )
@@ -196,7 +231,7 @@ open class CheckpointFilteringMongoTemplate(
     ): java.util.stream.Stream<O> {
         if (shouldFilter(inputType)) {
             return super.aggregateStream(
-                prependCheckpointFilter(aggregation),
+                prependCheckpointFilter(aggregation, shouldFilterArchives(inputType)),
                 inputType,
                 outputType,
             )
@@ -225,7 +260,7 @@ open class CheckpointFilteringMongoTemplate(
         if (shouldFilter(aggregation.inputType)) {
             val collectionName = getCollectionName(aggregation.inputType)
             return super.aggregateStream(
-                prependCheckpointFilter(aggregation),
+                prependCheckpointFilter(aggregation, shouldFilterArchives(aggregation.inputType)),
                 collectionName,
                 outputType,
             )
@@ -240,7 +275,7 @@ open class CheckpointFilteringMongoTemplate(
     ): java.util.stream.Stream<O> {
         if (shouldFilter(aggregation.inputType)) {
             return super.aggregateStream(
-                prependCheckpointFilter(aggregation),
+                prependCheckpointFilter(aggregation, shouldFilterArchives(aggregation.inputType)),
                 inputCollectionName,
                 outputType,
             )
@@ -258,7 +293,7 @@ open class CheckpointFilteringMongoTemplate(
 
     override fun <T : Any> query(domainType: Class<T>): ExecutableFindOperation.ExecutableFind<T> {
         val base = super.query(domainType)
-        if (!shouldFilter(domainType)) return base
+        if (!shouldFilter(domainType) && !shouldFilterArchives(domainType)) return base
         return FilteringExecutableFind(base, domainType)
     }
 
@@ -272,8 +307,11 @@ open class CheckpointFilteringMongoTemplate(
         private val entityClass: Class<*>,
     ) : ExecutableFindOperation.FindWithQuery<T> {
 
-        override fun matching(query: Query): ExecutableFindOperation.TerminatingFind<T> =
-            delegate.matching(addCheckpointExclusion(query, entityClass))
+        override fun matching(query: Query): ExecutableFindOperation.TerminatingFind<T> {
+            if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+            if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
+            return delegate.matching(query)
+        }
 
         override fun matching(
             criteriaDefinition: CriteriaDefinition
@@ -307,8 +345,11 @@ open class CheckpointFilteringMongoTemplate(
         private val entityClass: Class<*>,
     ) : ExecutableFindOperation.TerminatingDistinct<T> {
 
-        override fun matching(query: Query): ExecutableFindOperation.TerminatingDistinct<T> =
-            delegate.matching(addCheckpointExclusion(query, entityClass))
+        override fun matching(query: Query): ExecutableFindOperation.TerminatingDistinct<T> {
+            if (shouldFilter(entityClass)) addCheckpointExclusion(query, entityClass)
+            if (shouldFilterArchives(entityClass)) addArchiveExclusion(query, entityClass)
+            return delegate.matching(query)
+        }
 
         override fun matching(
             criteriaDefinition: CriteriaDefinition

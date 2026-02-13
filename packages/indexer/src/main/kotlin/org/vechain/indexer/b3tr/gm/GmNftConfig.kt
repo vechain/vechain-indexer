@@ -22,21 +22,19 @@ open class GmNftConfig {
     open fun gmNftArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<GmNft, GmNftArchive> =
+    ): ArchiveService<GmNft> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = GmNft::class.java,
-            archiveClazz = GmNftArchive::class.java,
             queryLimit = recordLimit,
         )
 
     @Bean
     open fun gmNftPruner(
-        gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>,
+        gmNftArchiveService: ArchiveService<GmNft>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<GmNft, GmNftArchive> =
+    ): TargetedPruner<GmNft> =
         PrunerService(
-            klass = GmNftArchive::class,
             archiveService = gmNftArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
         )
@@ -45,7 +43,7 @@ open class GmNftConfig {
     open fun gmNftIndexer(
         thorClient: ThorClient,
         processor: GmNftProcessor,
-        gmNftPruner: TargetedPruner<GmNft, GmNftArchive>,
+        gmNftPruner: TargetedPruner<GmNft>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

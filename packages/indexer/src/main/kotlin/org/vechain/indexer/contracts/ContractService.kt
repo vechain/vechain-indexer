@@ -27,8 +27,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class ContractService(
     private val repository: ContractRepository,
-    private val archiveService: ArchiveService<Contract, ContractArchive>,
-    private val contractPruner: TargetedPruner<Contract, ContractArchive>,
+    private val archiveService: ArchiveService<Contract>,
+    private val contractPruner: TargetedPruner<Contract>,
     private val thorClient: ThorClient,
 ) {
     open suspend fun processBlock(

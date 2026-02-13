@@ -30,7 +30,7 @@ open class StargateTokenService(
     private val stargateTokenRepository: StargateTokenRepository,
     private val eventService: StargateEventService,
     private val validatorDelegationService: ValidatorDelegationService,
-    private val archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    private val archiveService: ArchiveService<StargateToken>,
 ) {
     private var cachedValidators: Set<String> = emptySet()
 

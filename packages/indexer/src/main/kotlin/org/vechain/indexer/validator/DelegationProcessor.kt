@@ -14,7 +14,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class DelegationProcessor(
     repository: DelegationRepository,
-    archiveService: ArchiveService<Delegation, DelegationArchive>,
+    archiveService: ArchiveService<Delegation>,
     checkpointService: CheckpointService,
     private val service: DelegationService,
 ) :

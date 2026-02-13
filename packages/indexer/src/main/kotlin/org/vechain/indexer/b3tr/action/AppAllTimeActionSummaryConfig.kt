@@ -21,23 +21,20 @@ open class AppAllTimeActionSummaryConfig {
     open fun appAllTimeActionSummaryArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive> {
+    ): ArchiveService<AppAllTimeActionSummary> {
         return ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = AppAllTimeActionSummary::class.java,
-            archiveClazz = AppAllTimeActionSummaryArchive::class.java,
             queryLimit = recordLimit,
         )
     }
 
     @Bean
     open fun appAllTimeActionSummaryPruner(
-        appAllTimeActionSummaryArchiveService:
-            ArchiveService<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
+        appAllTimeActionSummaryArchiveService: ArchiveService<AppAllTimeActionSummary>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive> =
+    ): TargetedPruner<AppAllTimeActionSummary> =
         PrunerService(
-            klass = AppAllTimeActionSummaryArchive::class,
             archiveService = appAllTimeActionSummaryArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
         )
@@ -46,8 +43,7 @@ open class AppAllTimeActionSummaryConfig {
     open fun appAllTimeActionSummaryIndexer(
         thorClient: ThorClient,
         processor: AppAllTimeActionSummaryProcessor,
-        appAllTimeActionSummaryPruner:
-            TargetedPruner<AppAllTimeActionSummary, AppAllTimeActionSummaryArchive>,
+        appAllTimeActionSummaryPruner: TargetedPruner<AppAllTimeActionSummary>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

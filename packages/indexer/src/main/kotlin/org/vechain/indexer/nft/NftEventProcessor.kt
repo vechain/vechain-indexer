@@ -14,7 +14,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class NftProcessor(
     private val nftService: NftService,
-    nftArchiveService: ArchiveService<IndexedNft, NftArchive>,
+    nftArchiveService: ArchiveService<IndexedNft>,
     repository: NftRepository,
     checkpointService: CheckpointService,
 ) :

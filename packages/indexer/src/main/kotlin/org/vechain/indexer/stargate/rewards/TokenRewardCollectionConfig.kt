@@ -13,7 +13,6 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("token-reward")
@@ -27,7 +26,7 @@ open class TokenRewardCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         TokenReward::class.java,
-        TokenRewardArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -43,8 +42,6 @@ open class TokenRewardCollectionConfig(
                 TokenReward::class.java,
                 version,
             )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(TokenRewardArchive::class.java)
 
         ensureCollection()
 

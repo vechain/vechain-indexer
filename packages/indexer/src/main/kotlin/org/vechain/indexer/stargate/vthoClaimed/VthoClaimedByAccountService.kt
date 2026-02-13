@@ -19,10 +19,8 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 @Service
 open class VthoClaimedByAccountService(
     private val vthoClaimedByAccountRepository: VthoClaimedByAccountRepository,
-    private val vthoClaimedByAccountArchiveService:
-        ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
-    private val vthoClaimByAccountPruner:
-        TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+    private val vthoClaimedByAccountArchiveService: ArchiveService<VthoClaimedByAccount>,
+    private val vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount>,
 ) {
     private val legacyEvents =
         setOf("STARGATE_CLAIM_REWARDS_BASE_LEGACY", "STARGATE_CLAIM_REWARDS_DELEGATE_LEGACY")

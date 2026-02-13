@@ -15,7 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 open class VeVoteResultProcessor(
     private val service: VeVoteResultService,
     repository: VeVoteProposalResultRepository,
-    veVoteResultArchiveService: ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
+    veVoteResultArchiveService: ArchiveService<VeVoteProposalResult>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

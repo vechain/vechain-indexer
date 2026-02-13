@@ -41,8 +41,9 @@ open class NftHoldersByBlockCollectionConfig(
                 indexerVersionService.dropCollection(
                     indexerVersionService.getCollectionName(NftOwnerBalance::class.java)
                 )
-            if (ownerDropped)
-                indexerVersionService.dropArchiveCollection(NftOwnerBalanceArchive::class.java)
+            if (ownerDropped) {
+                // Old archive collections are left for manual cleanup
+            }
         }
 
         ensureCollection()

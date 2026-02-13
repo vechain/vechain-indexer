@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.mapping.Field
 import org.springframework.data.mongodb.core.mapping.FieldType
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.utils.IdUtils.generateId
 
 @Document(collection = IndexerNames.X_ALLOC_RESULT.COLLECTION)
@@ -62,7 +61,3 @@ constructor(
 
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document(collection = "b3tr_x_alloc_result_archives")
-data class XAllocResultArchive(@Id override val id: String, override val data: XAllocResult) :
-    Archive<XAllocResult>

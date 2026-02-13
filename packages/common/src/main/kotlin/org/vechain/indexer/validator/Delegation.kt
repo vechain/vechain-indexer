@@ -8,7 +8,6 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Views
 
@@ -36,9 +35,3 @@ constructor(
 ) : VersionedDocument {
     @JsonIgnore override fun getDocumentId(): String = id
 }
-
-@Document("delegations_archives")
-@JsonView(Views.Public::class)
-data class DelegationArchive
-@ConstructorBinding
-constructor(@Id override val id: String, override val data: Delegation) : Archive<Delegation>

@@ -12,7 +12,6 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryProcessor
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
@@ -27,11 +26,8 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var repository: UserAllTimeActionSummaryRepository
     @Autowired lateinit var service: UserAllTimeActionSummaryService
-    @Autowired
-    lateinit var archiveService:
-        ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
-    @Autowired
-    lateinit var pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>
+    @Autowired lateinit var archiveService: ArchiveService<UserAllTimeActionSummary>
+    @Autowired lateinit var pruner: TargetedPruner<UserAllTimeActionSummary>
     @Autowired lateinit var impactConfig: ActionImpactConfig
     @Autowired lateinit var checkpointService: CheckpointService
 
@@ -127,7 +123,7 @@ class UserAllTimeActionSummaryProcessorPerformanceTest : BasePerformanceTest() {
     /** Profiled wrapper for UserAllTimeActionSummaryProcessor */
     private class ProfiledUserAllTimeActionSummaryProcessor(
         repository: UserAllTimeActionSummaryRepository,
-        archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+        archiveService: ArchiveService<UserAllTimeActionSummary>,
         service: UserAllTimeActionSummaryService,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,

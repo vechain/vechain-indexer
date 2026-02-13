@@ -13,7 +13,6 @@ import org.vechain.indexer.IndexedDocument
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.contracts.Contract
-import org.vechain.indexer.contracts.ContractArchive
 import org.vechain.indexer.version.IndexerVersionService
 
 @Profile("contracts", "contract")
@@ -22,13 +21,7 @@ open class ContractCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        Contract::class.java,
-        ContractArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, Contract::class.java, hasArchives = true) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.contracts:1}") private val version: Int = 1
@@ -43,8 +36,6 @@ open class ContractCollectionConfig(
                 Contract::class.java,
                 version,
             )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(ContractArchive::class.java)
 
         ensureCollection()
 

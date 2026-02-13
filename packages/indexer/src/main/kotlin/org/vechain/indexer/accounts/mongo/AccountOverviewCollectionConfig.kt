@@ -15,7 +15,6 @@ import org.springframework.data.mongodb.core.insert
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.accounts.AccountOverview
-import org.vechain.indexer.accounts.AccountOverviewArchive
 import org.vechain.indexer.config.genesis.GenesisVetBalanceLoader
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.version.IndexerVersionService
@@ -32,7 +31,7 @@ open class AccountOverviewCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         AccountOverview::class.java,
-        AccountOverviewArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -48,8 +47,6 @@ open class AccountOverviewCollectionConfig(
                 AccountOverview::class.java,
                 version,
             )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(AccountOverviewArchive::class.java)
 
         ensureCollection()
 

@@ -11,7 +11,6 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.IndexedEvent
 import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccount
-import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountArchive
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountRepository
 import org.vechain.indexer.stargate.vthoClaimed.VthoClaimedByAccountService
 import org.vechain.indexer.utils.IdUtils
@@ -24,10 +23,9 @@ import strikt.assertions.isEqualTo
 internal class VthoClaimByAccountServiceTest {
     @MockK lateinit var repository: VthoClaimedByAccountRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>
+    @MockK lateinit var archiveService: ArchiveService<VthoClaimedByAccount>
 
-    @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>
+    @MockK lateinit var pruner: TargetedPruner<VthoClaimedByAccount>
 
     private lateinit var service: VthoClaimedByAccountService
 

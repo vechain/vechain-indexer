@@ -27,18 +27,17 @@ import org.vechain.indexer.utils.IdUtils.generateId
 internal class AppRoundActionSummaryServiceTest {
     @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-    @MockK
-    lateinit var archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
+    @MockK lateinit var archiveService: ArchiveService<AppRoundActionSummary>
 
-    @MockK lateinit var pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>
+    @MockK lateinit var pruner: TargetedPruner<AppRoundActionSummary>
 
     private lateinit var service: TestableService
 
     // A small testable subclass to expose protected methods where useful
     private class TestableService(
         repository: AppRoundActionSummaryRepository,
-        archive: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
-        pruner: TargetedPruner<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+        archive: ArchiveService<AppRoundActionSummary>,
+        pruner: TargetedPruner<AppRoundActionSummary>,
         impactConfig: ActionImpactConfig = ActionImpactConfig(),
     ) : AppRoundActionSummaryService(repository, archive, pruner, impactConfig) {
         fun callCreateOrUpdateExisting(

@@ -1,12 +1,16 @@
 package org.vechain.indexer.archive
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.InsertManyOptions
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.VersionedDocument
 import org.vechain.indexer.utils.buildArchiveId
@@ -24,31 +28,27 @@ class TestVersionedDocument : VersionedDocument {
     override val blockTimestamp: Long = System.currentTimeMillis()
 }
 
-class TestArchive(override val data: TestVersionedDocument) : Archive<TestVersionedDocument> {
-    override var id: String = buildArchiveId(data, data.version)
-
-    constructor(id: String, data: TestVersionedDocument) : this(data) {
-        this.id = id
-    }
-}
-
 @ExtendWith(MockKExtension::class)
 internal class ArchiveServiceTest {
     @MockK private lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var archiveService: ArchiveService<TestVersionedDocument, TestArchive>
+    @MockK private lateinit var converter: MongoConverter
+
+    @MockK private lateinit var collection: MongoCollection<Document>
+
+    private lateinit var archiveService: ArchiveService<TestVersionedDocument>
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
 
+        every { mongoTemplate.getCollectionName(TestVersionedDocument::class.java) } returns
+            "test_collection"
+        every { mongoTemplate.getCollection("test_collection") } returns collection
+        every { mongoTemplate.converter } returns converter
+
         archiveService =
-            ArchiveService(
-                mongoTemplate,
-                TestVersionedDocument::class.java,
-                TestArchive::class.java,
-                queryLimit = 100,
-            )
+            ArchiveService(mongoTemplate, TestVersionedDocument::class.java, queryLimit = 100)
     }
 
     @Test
@@ -56,29 +56,29 @@ internal class ArchiveServiceTest {
         archiveService.saveAll(emptyList())
 
         verify(exactly = 0) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
+            collection.insertMany(any<List<Document>>(), any<InsertManyOptions>())
         }
     }
 
     @Test
     fun `saveAll - non-empty list should save documents`() {
         val documents = listOf(TestVersionedDocument(), TestVersionedDocument())
-        val archives = documents.map { TestArchive(buildArchiveId(it, it.version), it) }
-        val slot = slot<List<TestArchive>>()
+        val slot = slot<List<Document>>()
 
-        every { mongoTemplate.insert(capture(slot), TestArchive::class.java) } returns
-            listOf<TestArchive>()
+        every { converter.write(any(), any<Document>()) } just Runs
+        every { collection.insertMany(capture(slot), any()) } returns mockk()
 
         archiveService.saveAll(documents)
 
         verify(exactly = 1) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
+            collection.insertMany(any<List<Document>>(), any<InsertManyOptions>())
         }
 
         expect {
             that(slot.captured).hasSize(2)
-            that(slot.captured[0].id).isEqualTo(archives[0].id)
-            that(slot.captured[1].id).isEqualTo(archives[1].id)
+            that(slot.captured[0].getString("_id"))
+                .isEqualTo(buildArchiveId(documents[0], documents[0].version))
+            that(slot.captured[0].getBoolean("_isArchive")).isEqualTo(true)
         }
     }
 

@@ -1,7 +1,6 @@
 package org.vechain.indexer
 
 import org.springframework.data.repository.CrudRepository
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.pruner.TargetedPruner
 
@@ -11,13 +10,13 @@ import org.vechain.indexer.pruner.TargetedPruner
  * Handles saving current records, archiving previous versions, and invoking the pruner when older
  * archives can be removed.
  */
-fun <T, S> saveVersionedDocuments(
+fun <T : VersionedDocument> saveVersionedDocuments(
     updated: List<T>,
     existing: List<T>,
     repository: CrudRepository<T, *>,
-    archiveService: ArchiveService<T, S>,
-    pruner: TargetedPruner<T, S>,
-) where T : VersionedDocument, S : Archive<T> {
+    archiveService: ArchiveService<T>,
+    pruner: TargetedPruner<T>,
+) {
     if (updated.isNotEmpty()) {
         repository.saveAll(updated)
     }

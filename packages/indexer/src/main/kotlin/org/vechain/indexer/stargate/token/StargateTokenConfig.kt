@@ -21,24 +21,15 @@ open class StargateTokenConfig {
     open fun stargateTokenArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<StargateToken, StargateTokenArchive> =
-        ArchiveService(
-            mongoTemplate,
-            StargateToken::class.java,
-            StargateTokenArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<StargateToken> =
+        ArchiveService(mongoTemplate, StargateToken::class.java, recordLimit)
 
     @Bean
     open fun stargateTokenPruner(
-        stargateTokenArchiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+        stargateTokenArchiveService: ArchiveService<StargateToken>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<StargateToken, StargateTokenArchive> =
-        PrunerService(
-            StargateTokenArchive::class,
-            stargateTokenArchiveService,
-            prunerRemovalChunkSize,
-        )
+    ): TargetedPruner<StargateToken> =
+        PrunerService(stargateTokenArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun stargateIndexer(
@@ -46,7 +37,7 @@ open class StargateTokenConfig {
         processor: StargateTokenProcessor,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLogInterval: Long,
-        stargateTokenPruner: TargetedPruner<StargateToken, StargateTokenArchive>,
+        stargateTokenPruner: TargetedPruner<StargateToken>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${business-event.substitutions.STARGATE_NFT_CONTRACT}")
         stargateNftContract: String,

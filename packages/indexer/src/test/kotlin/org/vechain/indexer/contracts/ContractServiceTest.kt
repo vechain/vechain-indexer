@@ -32,9 +32,9 @@ import org.vechain.indexer.utils.ContractUtils
 internal class ContractServiceTest {
     @MockK lateinit var repository: ContractRepository
 
-    @MockK lateinit var archiveService: ArchiveService<Contract, ContractArchive>
+    @MockK lateinit var archiveService: ArchiveService<Contract>
 
-    @MockK lateinit var pruner: TargetedPruner<Contract, ContractArchive>
+    @MockK lateinit var pruner: TargetedPruner<Contract>
 
     @MockK lateinit var thorClient: ThorClient
 
@@ -45,8 +45,8 @@ internal class ContractServiceTest {
 
     private class TestableService(
         repository: ContractRepository,
-        archiveService: ArchiveService<Contract, ContractArchive>,
-        pruner: TargetedPruner<Contract, ContractArchive>,
+        archiveService: ArchiveService<Contract>,
+        pruner: TargetedPruner<Contract>,
         thorClient: ThorClient,
     ) : ContractService(repository, archiveService, pruner, thorClient) {
         suspend fun callCreateOrUpdateExisting(

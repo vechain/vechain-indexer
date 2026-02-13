@@ -8,7 +8,6 @@ import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 
 @Profile("token-reward")
@@ -16,7 +15,7 @@ import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 open class TokenRewardProcessor(
     private val service: TokenRewardService,
     repository: TokenRewardRepository,
-    archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    archiveService: ArchiveService<TokenReward>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

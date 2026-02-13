@@ -10,7 +10,6 @@ import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 
@@ -18,7 +17,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 class BaseStatefulProcessorTest {
     @MockK lateinit var repository: BaseIndexedRepository<TestDocument, String>
 
-    @MockK lateinit var archiveService: ArchiveService<TestDocument, TestDocumentArchive>
+    @MockK lateinit var archiveService: ArchiveService<TestDocument>
 
     @MockK lateinit var checkpointService: CheckpointService
 
@@ -53,12 +52,9 @@ class BaseStatefulProcessorTest {
         }
     }
 
-    data class TestDocumentArchive(override val id: String, override val data: TestDocument) :
-        Archive<TestDocument>
-
     class TestableBaseStatefulProcessor(
         repository: BaseIndexedRepository<*, *>,
-        archiveService: ArchiveService<*, *>,
+        archiveService: ArchiveService<*>,
         checkpointService: CheckpointService,
     ) :
         BaseStatefulProcessor(

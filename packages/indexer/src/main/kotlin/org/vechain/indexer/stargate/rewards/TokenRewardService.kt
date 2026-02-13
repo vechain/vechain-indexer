@@ -16,7 +16,6 @@ import org.vechain.indexer.event.AbiLoader
 import org.vechain.indexer.event.model.abi.AbiElement
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
@@ -34,7 +33,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 @Service
 open class TokenRewardService(
     private val repository: TokenRewardRepository,
-    private val archiveService: ArchiveService<TokenReward, TokenRewardArchive>,
+    private val archiveService: ArchiveService<TokenReward>,
     private val delegationRepository: DelegationRepository,
     private val thorClient: ThorClient,
 ) {

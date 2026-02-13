@@ -15,7 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 open class StargateTokenProcessor(
     private val service: StargateTokenService,
     stargateTokenRepository: StargateTokenRepository,
-    archiveService: ArchiveService<StargateToken, StargateTokenArchive>,
+    archiveService: ArchiveService<StargateToken>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

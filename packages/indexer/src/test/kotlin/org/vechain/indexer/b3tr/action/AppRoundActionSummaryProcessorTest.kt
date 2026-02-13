@@ -28,7 +28,7 @@ internal class AppRoundActionSummaryProcessorTest {
     // A small testable subclass to expose protected methods where useful
     private class TestableProcessor(
         repository: AppRoundActionSummaryRepository,
-        archiveService: ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+        archiveService: ArchiveService<AppRoundActionSummary>,
         service: AppRoundActionSummaryService,
         startRound: Int,
         checkpointService: CheckpointService,
@@ -47,9 +47,7 @@ internal class AppRoundActionSummaryProcessorTest {
     inner class NoExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
+        @MockK lateinit var archiveService: ArchiveService<AppRoundActionSummary>
 
         @MockK lateinit var service: AppRoundActionSummaryService
 
@@ -357,9 +355,7 @@ internal class AppRoundActionSummaryProcessorTest {
     inner class ExistingRecord() {
         @MockK lateinit var repository: AppRoundActionSummaryRepository
 
-        @MockK
-        lateinit var archiveService:
-            ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>
+        @MockK lateinit var archiveService: ArchiveService<AppRoundActionSummary>
 
         @MockK lateinit var service: AppRoundActionSummaryService
 

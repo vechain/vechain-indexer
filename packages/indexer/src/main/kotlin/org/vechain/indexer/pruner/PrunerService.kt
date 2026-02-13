@@ -1,18 +1,15 @@
 package org.vechain.indexer.pruner
 
-import kotlin.reflect.KClass
 import org.slf4j.LoggerFactory
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.archive.Archive
 import org.vechain.indexer.archive.ArchiveService
 
-open class PrunerService<T : VersionedDocument, S : Archive<T>>(
-    klass: KClass<S>,
-    private val archiveService: ArchiveService<T, S>,
+open class PrunerService<T : VersionedDocument>(
+    private val archiveService: ArchiveService<T>,
     private val prunerRemovalChunkSize: Int,
-) : TargetedPruner<T, S> {
+) : TargetedPruner<T> {
     private val logger = LoggerFactory.getLogger(PrunerService::class.java)
-    private val targetObjectName = klass.simpleName ?: "Unknown"
+    private val targetObjectName = archiveService.clazz.simpleName ?: "Unknown"
 
     override fun run(currentBlockNumber: Long) = run(currentBlockNumber, null)
 
@@ -23,7 +20,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
             return
         }
 
-        logger.debug("🧹 Pruning started for $targetObjectName")
+        logger.debug("Pruning started for $targetObjectName")
         archiveService.findRecordsToPrune(prunerEndBlock, prunerRemovalChunkSize, idsToPrune).use {
             records ->
             var processed = 0
@@ -39,7 +36,7 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
                     archiveService.removeAll(chunk.toList())
                     processed += removed
                     logger.debug(
-                        "🧹 Pruning progress for $targetObjectName: processed $processed records"
+                        "Pruning progress for $targetObjectName: processed $processed records"
                     )
                     chunk.clear()
                 }
@@ -54,12 +51,10 @@ open class PrunerService<T : VersionedDocument, S : Archive<T>>(
                 val removed = chunk.size
                 archiveService.removeAll(chunk.toList())
                 processed += removed
-                logger.debug(
-                    "🧹 Pruning progress for $targetObjectName: processed $processed records"
-                )
+                logger.debug("Pruning progress for $targetObjectName: processed $processed records")
             }
 
-            logger.debug("✅ Pruning complete for $targetObjectName. Removed $processed records")
+            logger.debug("Pruning complete for $targetObjectName. Removed $processed records")
         }
     }
 }

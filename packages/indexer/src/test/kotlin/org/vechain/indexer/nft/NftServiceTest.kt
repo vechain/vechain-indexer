@@ -23,8 +23,8 @@ import strikt.assertions.isNotNull
 @ExtendWith(MockKExtension::class)
 internal class NftServiceTest {
     @MockK lateinit var repository: NftRepository
-    @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft, NftArchive>
-    @MockK lateinit var pruner: TargetedPruner<IndexedNft, NftArchive>
+    @MockK lateinit var nftArchiveService: ArchiveService<IndexedNft>
+    @MockK lateinit var pruner: TargetedPruner<IndexedNft>
     @MockK lateinit var blacklistClient: NftBlacklistClient
     @MockK lateinit var mongoTemplate: MongoTemplate
 

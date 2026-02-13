@@ -40,8 +40,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Service
 open class XAllocResultService(
     private val repository: XAllocResultRepository,
-    private val xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
-    private val xAllocResultPruner: TargetedPruner<XAllocResult, XAllocResultArchive>,
+    private val xAllocResultArchiveService: ArchiveService<XAllocResult>,
+    private val xAllocResultPruner: TargetedPruner<XAllocResult>,
     private val thorClient: ThorClient,
     @param:Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}")
     private val xAllocPoolContract: String,
