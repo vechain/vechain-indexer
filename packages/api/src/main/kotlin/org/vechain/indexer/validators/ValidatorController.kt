@@ -271,22 +271,20 @@ open class ValidatorController(
 
     @GetMapping("/block-rewards/{blockNumber}")
     @Operation(
-        summary = "Get validator block records for a specific block number",
-        description =
-            "Returns all validator block reward records for a specific block number. " +
-                "You can optionally filter by validator address to narrow to a single record.",
+        summary = "Get the validator block record for a specific block number",
+        description = "Returns the validator block reward record for a specific block number.",
     )
     @BlockNumberParameter(
         `in` = ParameterIn.PATH,
         required = true,
         description = "The block number to look up.",
     )
-    @AddressParameter(name = "validator", description = "Optional validator address to filter by")
     @CommonApiResponses
-    open fun getBlockByBlockNumber(
-        @PathVariable blockNumber: Long,
-        @ValidAddress @RequestParam(required = false) validator: Address?,
-    ): List<ValidatorBlock> = service.getBlockByNumber(blockNumber, validator)
+    open fun getBlockByBlockNumber(@PathVariable blockNumber: Long): ValidatorBlock =
+        service.getBlockByNumber(blockNumber)
+            ?: throw ResourceNotFoundException(
+                "Block reward not found for block number $blockNumber"
+            )
 
     @GetMapping("/blocks/historic/{validator}")
     @Operation(

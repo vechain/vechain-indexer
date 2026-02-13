@@ -104,19 +104,10 @@ open class ValidatorService(
         return paginatedResponse(slice)
     }
 
-    open fun getBlockByNumber(blockNumber: Long, validator: Address?): List<ValidatorBlock> {
-        val criteriaList = mutableListOf<Criteria>()
+    open fun getBlockByNumber(blockNumber: Long): ValidatorBlock? {
+        val query = Query(Criteria.where(ValidatorBlock::blockNumber.name).`is`(blockNumber))
 
-        criteriaList.add(Criteria.where(ValidatorBlock::blockNumber.name).`is`(blockNumber))
-        validator?.let {
-            criteriaList.add(
-                Criteria.where(ValidatorBlock::validator.name).`is`(it.value.lowercase())
-            )
-        }
-
-        val query = Query(Criteria().andOperator(*criteriaList.toTypedArray()))
-
-        return mongoTemplate.find<ValidatorBlock>(query)
+        return mongoTemplate.findOne<ValidatorBlock>(query)
     }
 
     /**
