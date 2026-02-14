@@ -25,8 +25,8 @@ build-image-api: #@ Build the application with Docker.
 build-k6: #@ Build the K6 docker image.
 	docker build --build-arg APP_VERSION=v.1.0.0 -t veworld-k6 load-testing
 
-test: #@ Run all the tests.
-	./gradlew cleanTest test
+test: #@ Run all the tests (excluding e2e).
+	./gradlew cleanTest test -x :packages:e2e:test
 test-e2e: #@ Run all the end-to-end tests.
 	./gradlew clean :package:e2e:test --stacktrace
 test-api: #@ Run all the API tests.
