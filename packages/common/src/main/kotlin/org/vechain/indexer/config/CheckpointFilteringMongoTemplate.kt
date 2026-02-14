@@ -96,8 +96,9 @@ open class CheckpointFilteringMongoTemplate(
     private fun cachedIdPropertyName(entityClass: Class<*>): String? {
         val cached =
             idPropertyCache.getOrPut(entityClass) {
-                val entity = converter.mappingContext.getPersistentEntity(entityClass)
-                entity?.idProperty?.name ?: ""
+                val name =
+                    converter.mappingContext.getPersistentEntity(entityClass)?.idProperty?.name
+                if (name == null || name == "id" || name == "_id") "" else name
             }
         return cached.ifEmpty { null }
     }
