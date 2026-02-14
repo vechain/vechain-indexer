@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationResults
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation
 import org.springframework.data.mongodb.core.convert.MongoConverter
+import org.springframework.data.mongodb.core.mapping.MongoPersistentEntity
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.NearQuery
@@ -44,28 +45,30 @@ open class CheckpointFilteringMongoTemplate(
     private val idPropertyCache = ConcurrentHashMap<Class<*>, String>()
 
     /**
-     * Collection names known to belong to [IndexedDocument] entities (i.e. collections that contain
-     * checkpoint documents). Populated lazily when [shouldFilter] is first called for an entity
-     * class. Used by collection-name-only aggregation overloads to decide whether to prepend the
-     * checkpoint exclusion.
+     * Cache: collection name → whether it belongs to an [IndexedDocument] entity. Resolved on
+     * demand from the mapping context so that collection-name-only overloads work correctly
+     * regardless of call ordering.
      */
-    private val checkpointCollections = ConcurrentHashMap.newKeySet<String>()
+    private val collectionFilterCache = ConcurrentHashMap<String, Boolean>()
 
     private fun shouldFilter(entityClass: Class<*>): Boolean =
         filterCache.getOrPut(entityClass) {
-            val isIndexed = IndexedDocument::class.java.isAssignableFrom(entityClass)
-            if (isIndexed) {
-                try {
-                    checkpointCollections.add(getCollectionName(entityClass))
-                } catch (_: Exception) {
-                    // Ignore — collection name may not be resolvable for every class
-                }
-            }
-            isIndexed
+            IndexedDocument::class.java.isAssignableFrom(entityClass)
         }
 
+    /**
+     * Determines whether the given collection name belongs to an [IndexedDocument] entity by
+     * consulting the mapping context. Results are cached per collection name.
+     */
     private fun shouldFilterCollection(collectionName: String): Boolean =
-        collectionName in checkpointCollections
+        collectionFilterCache.getOrPut(collectionName) {
+            converter.mappingContext.persistentEntities.any { entity ->
+                @Suppress("UNCHECKED_CAST") val mongoEntity = entity as? MongoPersistentEntity<*>
+                mongoEntity != null &&
+                    mongoEntity.collection == collectionName &&
+                    IndexedDocument::class.java.isAssignableFrom(mongoEntity.type)
+            }
+        }
 
     // Check for both "_id" (MongoDB field name) and "id" (Java property name).
     // SimpleMongoRepository.findById builds queries using Criteria.where("id") — the
