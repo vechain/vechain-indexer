@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories
-import org.vechain.indexer.config.CheckpointFilteringMongoTemplate
+import org.vechain.indexer.config.FilteringMongoTemplate
 
 @Configuration
 @EnableMongoAuditing
@@ -19,7 +19,7 @@ open class MongoDbConfig {
     open fun mongoTemplate(
         dbFactory: MongoDatabaseFactory,
         converter: MappingMongoConverter,
-    ): MongoTemplate = CheckpointFilteringMongoTemplate(dbFactory, converter)
+    ): MongoTemplate = FilteringMongoTemplate(dbFactory, converter)
 
     @Bean("mongoTransactionManager")
     open fun mongoTransactionManager(mongoTemplate: MongoTemplate): MongoTransactionManager =
