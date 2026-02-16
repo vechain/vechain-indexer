@@ -136,6 +136,11 @@ object IndexerNames {
         const val COLLECTION = "b3tr_x_alloc_results"
     }
 
+    object TREASURY_TRANSFER {
+        const val NAME = "TreasuryTransferIndexer"
+        const val COLLECTION = "b3tr_treasury_transfers"
+    }
+
     object VALIDATOR {
         const val NAME = "ValidatorIndexer"
         const val COLLECTION = "validators"

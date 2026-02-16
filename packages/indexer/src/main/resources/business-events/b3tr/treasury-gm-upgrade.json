@@ -1,0 +1,44 @@
+{
+  "name": "B3TR_TreasuryGmUpgrade",
+  "sameClause": true,
+  "events": [
+    {
+      "name": "Upgraded",
+      "alias": "upgradeEvent",
+      "conditions": [
+        {
+          "firstOperand": "address",
+          "isFirstStatic": false,
+          "secondOperand": "${GM_NFT_CONTRACT}",
+          "isSecondStatic": true,
+          "operator": "EQ"
+        },
+        {
+          "firstOperand": "tokenId",
+          "isFirstStatic": false,
+          "secondOperand": "0",
+          "isSecondStatic": true,
+          "operator": "GE"
+        }
+      ]
+    }
+  ],
+  "rules": [],
+  "paramsDefinition": [
+    {
+      "name": "tokenId",
+      "eventName": "upgradeEvent",
+      "businessEventName": "tokenId"
+    },
+    {
+      "name": "oldLevel",
+      "eventName": "upgradeEvent",
+      "businessEventName": "oldLevel"
+    },
+    {
+      "name": "newLevel",
+      "eventName": "upgradeEvent",
+      "businessEventName": "newLevel"
+    }
+  ]
+}
