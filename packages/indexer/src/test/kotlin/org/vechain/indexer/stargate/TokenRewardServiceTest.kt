@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.stargate.tokenReward.RewardPeriod
 import org.vechain.indexer.stargate.tokenReward.TokenReward
-import org.vechain.indexer.stargate.tokenReward.TokenRewardArchive
 import org.vechain.indexer.stargate.tokenReward.TokenRewardRepository
 import org.vechain.indexer.thor.HexUtils.toHex
 import org.vechain.indexer.thor.client.ThorClient
@@ -23,8 +22,7 @@ import org.vechain.indexer.validator.models.DecodedValidatorInfo
 
 class TokenRewardServiceTest {
     private val repository = mockk<TokenRewardRepository>(relaxed = true)
-    private val archiveService =
-        mockk<ArchiveService<TokenReward, TokenRewardArchive>>(relaxed = true)
+    private val archiveService = mockk<ArchiveService<TokenReward>>(relaxed = true)
     private val delegationRepository = mockk<DelegationRepository>(relaxed = true)
     private val thorClient = mockk<ThorClient>(relaxed = true)
 

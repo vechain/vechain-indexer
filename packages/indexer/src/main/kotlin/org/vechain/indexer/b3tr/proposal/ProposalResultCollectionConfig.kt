@@ -25,7 +25,7 @@ open class ProposalResultCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         ProposalResult::class.java,
-        ProposalResultArchive::class.java,
+        hasArchives = true,
     ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -40,8 +40,6 @@ open class ProposalResultCollectionConfig(
                 ProposalResult::class.java,
                 version,
             )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(ProposalResultArchive::class.java)
 
         this.ensureCollection()
 

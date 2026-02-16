@@ -15,8 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Profile("b3tr", "b3tr-actions", "b3tr-user-daily-action-summary")
 open class UserDailyActionSummaryProcessor(
     repository: UserDailyActionSummaryRepository,
-    userDailyActionSummaryArchiveService:
-        ArchiveService<UserDailyActionSummary, UserDailyActionSummaryArchive>,
+    userDailyActionSummaryArchiveService: ArchiveService<UserDailyActionSummary>,
     private val service: UserDailyActionSummaryService,
     checkpointService: CheckpointService,
 ) :

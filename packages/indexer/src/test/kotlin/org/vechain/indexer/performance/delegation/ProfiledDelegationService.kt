@@ -6,7 +6,6 @@ import org.vechain.indexer.performance.DetailedProfiler
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Delegation
-import org.vechain.indexer.validator.DelegationArchive
 import org.vechain.indexer.validator.DelegationRepository
 import org.vechain.indexer.validator.DelegationService
 import org.vechain.indexer.validator.ValidatorDelegationService
@@ -25,7 +24,7 @@ import org.vechain.indexer.validator.ValidatorDelegationService
  */
 class ProfiledDelegationService(
     repository: DelegationRepository,
-    archiveService: ArchiveService<Delegation, DelegationArchive>,
+    archiveService: ArchiveService<Delegation>,
     validatorDelegationService: ValidatorDelegationService,
     stakerSC: String,
     private val profiler: DetailedProfiler,

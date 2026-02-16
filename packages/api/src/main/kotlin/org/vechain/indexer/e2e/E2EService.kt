@@ -1,13 +1,14 @@
 package org.vechain.indexer.e2e
 
+import org.bson.Document
 import org.jetbrains.annotations.TestOnly
 import org.springframework.context.annotation.Profile
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Service
+import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.nft.IndexedNft
-import org.vechain.indexer.nft.NftArchive
 import org.vechain.indexer.transfer.IndexedTransferEvent
 import org.vechain.indexer.transfer.TransferEventType
 
@@ -16,8 +17,9 @@ import org.vechain.indexer.transfer.TransferEventType
 open class E2EService(private val mongoTemplate: MongoTemplate) {
 
     @TestOnly
-    open fun getNftArchives(): List<NftArchive> {
-        return mongoTemplate.findAll(NftArchive::class.java)
+    open fun getNftArchives(): List<Document> {
+        val collection = mongoTemplate.getCollection(IndexerNames.NFT.COLLECTION)
+        return collection.find(Document("_isArchive", true)).toList()
     }
 
     @TestOnly

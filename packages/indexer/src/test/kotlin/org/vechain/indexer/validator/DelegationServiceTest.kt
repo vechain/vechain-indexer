@@ -18,8 +18,7 @@ import strikt.assertions.isEqualTo
 
 class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
-    private val archiveService =
-        mockk<ArchiveService<Delegation, DelegationArchive>>(relaxed = true)
+    private val archiveService = mockk<ArchiveService<Delegation>>(relaxed = true)
 
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 

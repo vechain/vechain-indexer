@@ -1,15 +1,18 @@
 package org.vechain.indexer.archive
 
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.InsertManyOptions
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import org.bson.Document
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoConverter
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.VersionedDocument
-import org.vechain.indexer.utils.buildArchiveId
 import strikt.api.expect
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
@@ -24,61 +27,62 @@ class TestVersionedDocument : VersionedDocument {
     override val blockTimestamp: Long = System.currentTimeMillis()
 }
 
-class TestArchive(override val data: TestVersionedDocument) : Archive<TestVersionedDocument> {
-    override var id: String = buildArchiveId(data, data.version)
-
-    constructor(id: String, data: TestVersionedDocument) : this(data) {
-        this.id = id
-    }
-}
-
 @ExtendWith(MockKExtension::class)
 internal class ArchiveServiceTest {
     @MockK private lateinit var mongoTemplate: MongoTemplate
 
-    private lateinit var archiveService: ArchiveService<TestVersionedDocument, TestArchive>
+    @MockK private lateinit var mongoConverter: MongoConverter
+
+    @MockK private lateinit var mongoCollection: MongoCollection<Document>
+
+    private lateinit var archiveService: ArchiveService<TestVersionedDocument>
 
     @BeforeEach
     fun setup() {
         MockKAnnotations.init(this)
 
+        every { mongoTemplate.getCollectionName(TestVersionedDocument::class.java) } returns
+            "test_collection"
+        every { mongoTemplate.converter } returns mongoConverter
+
         archiveService =
-            ArchiveService(
-                mongoTemplate,
-                TestVersionedDocument::class.java,
-                TestArchive::class.java,
-                queryLimit = 100,
-            )
+            ArchiveService(mongoTemplate, TestVersionedDocument::class.java, queryLimit = 100)
     }
 
     @Test
     fun `saveAll - empty list should return immediately`() {
         archiveService.saveAll(emptyList())
 
-        verify(exactly = 0) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
-        }
+        verify(exactly = 0) { mongoTemplate.getCollection(any()) }
     }
 
     @Test
-    fun `saveAll - non-empty list should save documents`() {
+    fun `saveAll - non-empty list should save documents via raw driver`() {
         val documents = listOf(TestVersionedDocument(), TestVersionedDocument())
-        val archives = documents.map { TestArchive(buildArchiveId(it, it.version), it) }
-        val slot = slot<List<TestArchive>>()
+        val capturedDocs = slot<List<Document>>()
 
-        every { mongoTemplate.insert(capture(slot), TestArchive::class.java) } returns
-            listOf<TestArchive>()
+        every { mongoTemplate.getCollection("test_collection") } returns mongoCollection
+        every { mongoConverter.write(any(), any<Document>()) } answers
+            {
+                val doc = secondArg<Document>()
+                doc["_id"] = "test-id"
+                doc["blockNumber"] = 1L
+                doc["version"] = 1
+            }
+        every {
+            mongoCollection.insertMany(capture(capturedDocs), any<InsertManyOptions>())
+        } returns mockk()
 
         archiveService.saveAll(documents)
 
         verify(exactly = 1) {
-            mongoTemplate.insert(any<List<TestArchive>>(), TestArchive::class.java)
+            mongoCollection.insertMany(any<List<Document>>(), any<InsertManyOptions>())
         }
 
         expect {
-            that(slot.captured).hasSize(2)
-            that(slot.captured[0].id).isEqualTo(archives[0].id)
-            that(slot.captured[1].id).isEqualTo(archives[1].id)
+            that(capturedDocs.captured).hasSize(2)
+            that(capturedDocs.captured[0]["_isArchive"]).isEqualTo(true)
+            that(capturedDocs.captured[0]["_originalDocId"]).isEqualTo("test-id")
         }
     }
 

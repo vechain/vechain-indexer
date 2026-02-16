@@ -21,21 +21,19 @@ open class ProposalResultConfig {
     open fun proposalResultArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<ProposalResult, ProposalResultArchive> =
+    ): ArchiveService<ProposalResult> =
         ArchiveService(
             mongoTemplate = mongoTemplate,
             clazz = ProposalResult::class.java,
-            archiveClazz = ProposalResultArchive::class.java,
             queryLimit = recordLimit,
         )
 
     @Bean
     open fun proposalResultPruner(
-        proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+        proposalResultArchiveService: ArchiveService<ProposalResult>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<ProposalResult, ProposalResultArchive> =
+    ): TargetedPruner<ProposalResult> =
         PrunerService(
-            klass = ProposalResultArchive::class,
             archiveService = proposalResultArchiveService,
             prunerRemovalChunkSize = prunerRemovalChunkSize,
         )
@@ -44,7 +42,7 @@ open class ProposalResultConfig {
     open fun proposalResultIndexer(
         thorClient: ThorClient,
         processor: ProposalResultProcessor,
-        proposalResultPruner: TargetedPruner<ProposalResult, ProposalResultArchive>,
+        proposalResultPruner: TargetedPruner<ProposalResult>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.b3tr-proposal}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

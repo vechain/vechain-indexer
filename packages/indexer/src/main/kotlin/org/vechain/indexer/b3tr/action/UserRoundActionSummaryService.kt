@@ -30,10 +30,8 @@ import org.vechain.indexer.utils.IdUtils.generateId
 @Profile("b3tr", "b3tr-actions", "b3tr-user-round-action-summary")
 open class UserRoundActionSummaryService(
     private val repository: UserRoundActionSummaryRepository,
-    private val userRoundActionSummaryArchiveService:
-        ArchiveService<UserRoundActionSummary, UserRoundActionSummaryArchive>,
-    private val userRoundActionSummaryPruner:
-        TargetedPruner<UserRoundActionSummary, UserRoundActionSummaryArchive>,
+    private val userRoundActionSummaryArchiveService: ArchiveService<UserRoundActionSummary>,
+    private val userRoundActionSummaryPruner: TargetedPruner<UserRoundActionSummary>,
     private val impactConfig: ActionImpactConfig,
 ) {
 

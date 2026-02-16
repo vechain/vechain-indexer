@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.VersionedDocument
 import strikt.api.expectThat
 import strikt.assertions.containsExactlyInAnyOrder
 import strikt.assertions.isEmpty
@@ -39,6 +40,17 @@ data class TestIndexedDoc(
 
 @MongoDocument(collection = "test_plain_docs")
 data class TestPlainDoc(@Id val id: String, val value: String = "plain")
+
+@MongoDocument(collection = "test_versioned_docs")
+data class TestVersionedDoc(
+    @Id val id: String,
+    override val blockId: String = "0xblock",
+    override val blockNumber: Long = 1L,
+    override val blockTimestamp: Long = 1000L,
+    override val version: Int = 1,
+) : VersionedDocument {
+    override fun getDocumentId(): String = id
+}
 
 @MongoDocument(collection = "test_custom_id_docs")
 data class TestCustomIdDoc(
@@ -76,6 +88,7 @@ internal class FilteringMongoTemplateTest {
         template.dropCollection("test_indexed_docs")
         template.dropCollection("test_plain_docs")
         template.dropCollection("test_custom_id_docs")
+        template.dropCollection("test_versioned_docs")
     }
 
     private fun insertCheckpoint(collectionName: String) {
@@ -506,7 +519,101 @@ internal class FilteringMongoTemplateTest {
         }
     }
 
-    // --- 8. Edge cases ---
+    // --- 8. Archive filtering (VersionedDocument) ---
+
+    @Nested
+    inner class ArchiveFiltering {
+
+        private val vDoc1 = TestVersionedDoc(id = "v1", blockNumber = 100, version = 1)
+        private val vDoc2 = TestVersionedDoc(id = "v2", blockNumber = 200, version = 2)
+
+        private fun seedVersionedDocs() {
+            template.insert(vDoc1)
+            template.insert(vDoc2)
+            // Insert an archive document directly via raw driver
+            val archiveDoc =
+                Document("_id", "archive-v1-1")
+                    .append("blockId", "0xblock")
+                    .append("blockNumber", 100L)
+                    .append("blockTimestamp", 1000L)
+                    .append("version", 1)
+                    .append("_isArchive", true)
+                    .append("_originalDocId", "v1")
+            template.getCollection("test_versioned_docs").insertOne(archiveDoc)
+        }
+
+        @Test
+        fun `find on VersionedDocument excludes archive documents`() {
+            seedVersionedDocs()
+
+            val result = template.find(Query(), TestVersionedDoc::class.java)
+
+            expectThat(result.map { it.id }).containsExactlyInAnyOrder("v1", "v2")
+        }
+
+        @Test
+        fun `findAll on VersionedDocument excludes archive documents`() {
+            seedVersionedDocs()
+
+            val result = template.findAll(TestVersionedDoc::class.java)
+
+            expectThat(result.map { it.id }).containsExactlyInAnyOrder("v1", "v2")
+        }
+
+        @Test
+        fun `count on VersionedDocument excludes archive documents`() {
+            seedVersionedDocs()
+
+            val result = template.count(Query(), TestVersionedDoc::class.java)
+
+            expectThat(result).isEqualTo(2L)
+        }
+
+        @Test
+        fun `find with _id criteria on VersionedDocument skips archive filter`() {
+            seedVersionedDocs()
+
+            val result =
+                template.find(Query(Criteria.where("_id").`is`("v1")), TestVersionedDoc::class.java)
+
+            expectThat(result.map { it.id }).isEqualTo(listOf("v1"))
+        }
+
+        @Test
+        fun `archive filter is not applied to non-VersionedDocument entities`() {
+            // Insert a normal IndexedDocument with _isArchive field (shouldn't be filtered)
+            val doc = TestIndexedDoc(id = "idx1", blockNumber = 100)
+            template.insert(doc)
+            val archiveLikeDoc =
+                Document("_id", "idx-archive")
+                    .append("blockId", "0xblock")
+                    .append("blockNumber", 50L)
+                    .append("blockTimestamp", 1000L)
+                    .append("_isArchive", true)
+            template.getCollection("test_indexed_docs").insertOne(archiveLikeDoc)
+
+            // Non-VersionedDocument IndexedDocument should NOT filter _isArchive
+            val result = template.find(Query(), TestIndexedDoc::class.java)
+
+            expectThat(result.map { it.id }).containsExactlyInAnyOrder("idx1", "idx-archive")
+        }
+
+        @Test
+        fun `aggregate on VersionedDocument excludes archive documents`() {
+            seedVersionedDocs()
+
+            val agg =
+                Aggregation.newAggregation(
+                    TestVersionedDoc::class.java,
+                    Aggregation.project("id", "blockNumber"),
+                )
+            val result = template.aggregate(agg, TestVersionedDoc::class.java)
+
+            expectThat(result.mappedResults.map { it.id }).containsExactlyInAnyOrder("v1", "v2")
+        }
+    }
+
+    // --- 9. Edge cases ---
 
     @Nested
     inner class EdgeCases {

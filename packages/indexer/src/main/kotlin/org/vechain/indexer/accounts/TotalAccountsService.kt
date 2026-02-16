@@ -17,7 +17,7 @@ import org.vechain.indexer.utils.NumberUtils.hexToBigInteger
 @Service
 open class TotalAccountsService(
     private val repository: TotalAccountsRepository,
-    private val archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    private val archiveService: ArchiveService<TotalAccounts>,
 ) {
     val ONE_VET: BigInteger = BigInteger.TEN.pow(18)
 

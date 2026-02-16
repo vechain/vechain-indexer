@@ -16,6 +16,8 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import org.springframework.data.mongodb.core.query.NearQuery
 import org.springframework.data.mongodb.core.query.Query
 import org.vechain.indexer.IndexedDocument
+import org.vechain.indexer.IndexedDocument.Companion.CHECKPOINT_ID
+import org.vechain.indexer.VersionedDocument
 
 /**
  * A custom MongoTemplate that automatically excludes unwanted documents from all read queries
@@ -23,10 +25,11 @@ import org.vechain.indexer.IndexedDocument
  *
  * Exclusion rules are composed in [buildExclusionCriteria]. Currently, this includes:
  * - **Checkpoint filter**: excludes checkpoint documents (which lack a `blockNumber` field)
+ * - **Archive filter**: excludes archive documents (`_isArchive: true`) for [VersionedDocument]
+ *   entities
  *
- * To add a new exclusion rule (e.g. archive filtering), add a [Criteria] to the list returned by
- * [buildExclusionCriteria]. The [addExclusionFilters] method automatically skips any criteria whose
- * field already appears in the query, preventing duplicate-key exceptions from Spring Data.
+ * The [addExclusionFilters] method automatically skips any criteria whose field already appears in
+ * the query, preventing duplicate-key exceptions from Spring Data.
  *
  * **Not overridden** (intentionally):
  * - All write methods (`save`, `insert`, `remove`, `update*`) — the indexer writes checkpoints via
@@ -37,6 +40,9 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
 
     /** Cache: entity class → whether it implements [IndexedDocument]. */
     private val filterCache = ConcurrentHashMap<Class<*>, Boolean>()
+
+    /** Cache: entity class → whether it implements [VersionedDocument]. */
+    private val archiveFilterCache = ConcurrentHashMap<Class<*>, Boolean>()
 
     /**
      * Cache: entity class → custom @Id property name (or `null` if none / standard).
@@ -52,6 +58,9 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
      * regardless of call ordering.
      */
     private val collectionFilterCache = ConcurrentHashMap<String, Boolean>()
+
+    /** Cache: collection name → whether it belongs to a [VersionedDocument] entity. */
+    private val collectionArchiveFilterCache = ConcurrentHashMap<String, Boolean>()
 
     internal fun shouldFilter(entityClass: Class<*>): Boolean =
         filterCache.getOrPut(entityClass) {
@@ -69,6 +78,21 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
                 mongoEntity != null &&
                     mongoEntity.collection == collectionName &&
                     IndexedDocument::class.java.isAssignableFrom(mongoEntity.type)
+            }
+        }
+
+    internal fun shouldFilterArchives(entityClass: Class<*>): Boolean =
+        archiveFilterCache.getOrPut(entityClass) {
+            VersionedDocument::class.java.isAssignableFrom(entityClass)
+        }
+
+    internal fun shouldFilterCollectionForArchives(collectionName: String): Boolean =
+        collectionArchiveFilterCache.getOrPut(collectionName) {
+            converter.mappingContext.persistentEntities.any { entity ->
+                @Suppress("UNCHECKED_CAST") val mongoEntity = entity as? MongoPersistentEntity<*>
+                mongoEntity != null &&
+                    mongoEntity.collection == collectionName &&
+                    VersionedDocument::class.java.isAssignableFrom(mongoEntity.type)
             }
         }
 
@@ -106,13 +130,25 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     }
 
     /**
-     * Builds all exclusion criteria for an entity class. This is the extension point for adding new
-     * exclusion rules (e.g. archive filtering).
+     * Builds all exclusion criteria for an entity class. Includes:
+     * - Checkpoint filter: excludes docs without `blockNumber`
+     * - Archive filter: excludes docs with `_isArchive: true` (only for [VersionedDocument]
+     *   entities)
      */
-    internal fun buildExclusionCriteria(entityClass: Class<*>? = null): List<Criteria> {
+    internal fun buildExclusionCriteria(
+        entityClass: Class<*>? = null,
+        includeArchiveFilter: Boolean = entityClass != null && shouldFilterArchives(entityClass),
+    ): List<Criteria> {
         val criteria = mutableListOf<Criteria>()
-        // Checkpoint filter: exclude docs that lack blockNumber (checkpoint docs don't have it)
-        criteria.add(Criteria.where("blockNumber").exists(true))
+        // Checkpoint filter: exclude the checkpoint document by its known _id value.
+        // We use _id directly rather than blockNumber.exists(true) because some entities
+        // map @Id to blockNumber, causing Spring Data to translate the field to _id —
+        // which always exists, making the exists(true) check match everything.
+        criteria.add(Criteria.where("_id").ne(CHECKPOINT_ID))
+        // Archive filter: exclude archive documents stored in the same collection
+        if (includeArchiveFilter) {
+            criteria.add(Criteria.where("_isArchive").ne(true))
+        }
         return criteria
     }
 
@@ -129,16 +165,22 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         return query
     }
 
-    internal fun exclusionMatchStage():
-        org.springframework.data.mongodb.core.aggregation.AggregationOperation {
-        val criteria = buildExclusionCriteria()
+    internal fun exclusionMatchStage(
+        entityClass: Class<*>? = null,
+        includeArchiveFilter: Boolean = entityClass != null && shouldFilterArchives(entityClass),
+    ): AggregationOperation {
+        val criteria = buildExclusionCriteria(entityClass, includeArchiveFilter)
         return Aggregation.match(Criteria().andOperator(*criteria.toTypedArray()))
     }
 
-    internal fun prependExclusionFilter(aggregation: Aggregation): Aggregation {
+    internal fun prependExclusionFilter(
+        aggregation: Aggregation,
+        entityClass: Class<*>? = null,
+        includeArchiveFilter: Boolean = entityClass != null && shouldFilterArchives(entityClass),
+    ): Aggregation {
         val existingOps = aggregation.pipeline.operations
         val newOps = mutableListOf<AggregationOperation>()
-        newOps.add(exclusionMatchStage())
+        newOps.add(exclusionMatchStage(entityClass, includeArchiveFilter))
         newOps.addAll(existingOps)
         return Aggregation.newAggregation(newOps).withOptions(aggregation.options)
     }
@@ -200,7 +242,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     override fun <T : Any> findAll(entityClass: Class<T>, collectionName: String): List<T> {
         if (shouldFilter(entityClass)) {
             val query = Query()
-            addExclusionFilters(query)
+            addExclusionFilters(query, entityClass)
             return super.find(query, entityClass, collectionName)
         }
         return super.findAll(entityClass, collectionName)
@@ -214,7 +256,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         outputType: Class<O>,
     ): AggregationResults<O> {
         if (shouldFilter(inputType)) {
-            return super.aggregate(prependExclusionFilter(aggregation), inputType, outputType)
+            return super.aggregate(
+                prependExclusionFilter(aggregation, inputType),
+                inputType,
+                outputType,
+            )
         }
         return super.aggregate(aggregation, inputType, outputType)
     }
@@ -225,7 +271,12 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         outputType: Class<O>,
     ): AggregationResults<O> {
         if (shouldFilterCollection(collectionName)) {
-            return super.aggregate(prependExclusionFilter(aggregation), collectionName, outputType)
+            val archiveFilter = shouldFilterCollectionForArchives(collectionName)
+            return super.aggregate(
+                prependExclusionFilter(aggregation, includeArchiveFilter = archiveFilter),
+                collectionName,
+                outputType,
+            )
         }
         return super.aggregate(aggregation, collectionName, outputType)
     }
@@ -240,7 +291,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     ): AggregationResults<O> {
         if (shouldFilter(aggregation.inputType)) {
             val collectionName = getCollectionName(aggregation.inputType)
-            return super.aggregate(prependExclusionFilter(aggregation), collectionName, outputType)
+            return super.aggregate(
+                prependExclusionFilter(aggregation, aggregation.inputType),
+                collectionName,
+                outputType,
+            )
         }
         return super.aggregate(aggregation, outputType)
     }
@@ -252,7 +307,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     ): AggregationResults<O> {
         if (shouldFilter(aggregation.inputType)) {
             return super.aggregate(
-                prependExclusionFilter(aggregation),
+                prependExclusionFilter(aggregation, aggregation.inputType),
                 inputCollectionName,
                 outputType,
             )
@@ -268,7 +323,11 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         outputType: Class<O>,
     ): java.util.stream.Stream<O> {
         if (shouldFilter(inputType)) {
-            return super.aggregateStream(prependExclusionFilter(aggregation), inputType, outputType)
+            return super.aggregateStream(
+                prependExclusionFilter(aggregation, inputType),
+                inputType,
+                outputType,
+            )
         }
         return super.aggregateStream(aggregation, inputType, outputType)
     }
@@ -279,8 +338,9 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         outputType: Class<O>,
     ): java.util.stream.Stream<O> {
         if (shouldFilterCollection(collectionName)) {
+            val archiveFilter = shouldFilterCollectionForArchives(collectionName)
             return super.aggregateStream(
-                prependExclusionFilter(aggregation),
+                prependExclusionFilter(aggregation, includeArchiveFilter = archiveFilter),
                 collectionName,
                 outputType,
             )
@@ -297,7 +357,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
         if (shouldFilter(aggregation.inputType)) {
             val collectionName = getCollectionName(aggregation.inputType)
             return super.aggregateStream(
-                prependExclusionFilter(aggregation),
+                prependExclusionFilter(aggregation, aggregation.inputType),
                 collectionName,
                 outputType,
             )
@@ -312,7 +372,7 @@ open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: Mo
     ): java.util.stream.Stream<O> {
         if (shouldFilter(aggregation.inputType)) {
             return super.aggregateStream(
-                prependExclusionFilter(aggregation),
+                prependExclusionFilter(aggregation, aggregation.inputType),
                 inputCollectionName,
                 outputType,
             )

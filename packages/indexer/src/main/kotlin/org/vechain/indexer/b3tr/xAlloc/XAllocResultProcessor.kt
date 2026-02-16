@@ -15,7 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class XAllocResultProcessor(
     repository: XAllocResultRepository,
-    xAllocResultArchiveService: ArchiveService<XAllocResult, XAllocResultArchive>,
+    xAllocResultArchiveService: ArchiveService<XAllocResult>,
     private val service: XAllocResultService,
     checkpointService: CheckpointService,
 ) :

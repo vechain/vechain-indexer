@@ -18,9 +18,7 @@ import org.vechain.indexer.fixtures.BlockFixtures.BLOCK_NO_CLAUSES
 class VeVoteResultIndexerTest {
     @MockK lateinit var veVoteProposalResultRepository: VeVoteProposalResultRepository
 
-    @MockK
-    lateinit var veVoteProposalResultArchive:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK lateinit var veVoteProposalResultArchive: ArchiveService<VeVoteProposalResult>
 
     @MockK lateinit var veVoteResultService: VeVoteResultService
 

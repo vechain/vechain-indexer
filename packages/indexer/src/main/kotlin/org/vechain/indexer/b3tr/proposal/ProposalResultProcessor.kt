@@ -18,7 +18,7 @@ import org.vechain.indexer.utils.EventUtils.groupByBlock
 @Component
 open class ProposalResultProcessor(
     repository: ProposalResultRepository,
-    proposalResultArchiveService: ArchiveService<ProposalResult, ProposalResultArchive>,
+    proposalResultArchiveService: ArchiveService<ProposalResult>,
     private val service: ProposalResultService,
     checkpointService: CheckpointService,
 ) :

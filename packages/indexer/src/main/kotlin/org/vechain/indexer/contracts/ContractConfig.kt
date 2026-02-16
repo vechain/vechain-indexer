@@ -20,26 +20,19 @@ open class ContractConfig {
     open fun contractArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<Contract, ContractArchive> =
-        ArchiveService(
-            mongoTemplate,
-            Contract::class.java,
-            ContractArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<Contract> = ArchiveService(mongoTemplate, Contract::class.java, recordLimit)
 
     @Bean
     open fun contractPruner(
-        contractArchiveService: ArchiveService<Contract, ContractArchive>,
+        contractArchiveService: ArchiveService<Contract>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<Contract, ContractArchive> =
-        PrunerService(ContractArchive::class, contractArchiveService, prunerRemovalChunkSize)
+    ): TargetedPruner<Contract> = PrunerService(contractArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun contractIndexer(
         thorClient: ThorClient,
         processor: ContractProcessor,
-        contractPruner: TargetedPruner<Contract, ContractArchive>,
+        contractPruner: TargetedPruner<Contract>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,
         @Value("\${indexer.sync-block-batch-size.contracts:500}") syncBlockBatchSize: Long,

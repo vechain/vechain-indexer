@@ -24,19 +24,16 @@ import org.vechain.indexer.utils.ParamUtils.getAsString
 class VeVoteResultServiceTest {
     @MockK lateinit var repository: VeVoteProposalResultRepository
 
-    @MockK
-    lateinit var veVoteProposalResultArchive:
-        ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK lateinit var veVoteProposalResultArchive: ArchiveService<VeVoteProposalResult>
 
-    @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>
+    @MockK lateinit var pruner: TargetedPruner<VeVoteProposalResult>
 
     private lateinit var service: TestableService
 
     private class TestableService(
         repository: VeVoteProposalResultRepository,
-        veVoteProposalResultArchive:
-            ArchiveService<VeVoteProposalResult, VeVoteProposalResultArchive>,
-        pruner: TargetedPruner<VeVoteProposalResult, VeVoteProposalResultArchive>,
+        veVoteProposalResultArchive: ArchiveService<VeVoteProposalResult>,
+        pruner: TargetedPruner<VeVoteProposalResult>,
     ) : VeVoteResultService(repository, veVoteProposalResultArchive, pruner) {
 
         fun callCreateOrUpdateExisting(

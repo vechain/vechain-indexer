@@ -20,9 +20,9 @@ import org.vechain.indexer.pruner.TargetedPruner
 internal class GmNftServiceTest {
     @MockK lateinit var repository: GmNftRepository
 
-    @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft, GmNftArchive>
+    @MockK lateinit var gmNftArchiveService: ArchiveService<GmNft>
 
-    @MockK lateinit var pruner: TargetedPruner<GmNft, GmNftArchive>
+    @MockK lateinit var pruner: TargetedPruner<GmNft>
 
     private lateinit var service: GmNftService
 

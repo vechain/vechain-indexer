@@ -7,7 +7,6 @@ import org.vechain.indexer.thor.client.ThorClient
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
 import org.vechain.indexer.validator.Validator
-import org.vechain.indexer.validator.ValidatorArchive
 import org.vechain.indexer.validator.ValidatorRepository
 import org.vechain.indexer.validator.ValidatorService
 import org.vechain.indexer.validator.domain.ValidatorDecoder.hasAbiData
@@ -24,7 +23,7 @@ import org.vechain.indexer.validator.logic.ValidatorAssembler
  */
 class ProfiledValidatorService(
     repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
+    archiveService: ArchiveService<Validator>,
     thorClient: ThorClient,
     statsStartThreshold: Long,
     stakerSC: String,

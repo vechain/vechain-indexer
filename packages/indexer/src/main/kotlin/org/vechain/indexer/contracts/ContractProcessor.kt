@@ -16,7 +16,7 @@ import org.vechain.indexer.contracts.repository.ContractRepository
 open class ContractProcessor(
     private val service: ContractService,
     repository: ContractRepository,
-    archiveService: ArchiveService<Contract, ContractArchive>,
+    archiveService: ArchiveService<Contract>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

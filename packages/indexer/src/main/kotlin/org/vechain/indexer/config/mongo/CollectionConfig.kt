@@ -13,7 +13,7 @@ abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
     private val coroutineScope: CoroutineScope,
     val modelObj: Class<*>,
-    val archiveObj: Class<*>? = null,
+    val hasArchives: Boolean = false,
 ) {
     companion object {
         /**
@@ -42,21 +42,9 @@ abstract class CollectionConfig(
             logger.debug("Collection ${modelObj.simpleName} already exists.")
         }
 
-        // Create the archive collection if it does not exist and an archive class is provided
-        if (archiveObj != null) {
-            if (!mongoTemplate.collectionExists(archiveObj)) {
-                try {
-                    logger.info("⏱ Creating Archive:  ${archiveObj.simpleName}")
-                    mongoTemplate.createCollection(archiveObj)
-                    logger.info("✅ Creation Success: ${archiveObj.simpleName}.")
-                } catch (e: Exception) {
-                    logger.error("⛔ Creation Failed:  ${archiveObj.simpleName}", e)
-                    throw e
-                }
-            } else {
-                logger.debug("Collection ${archiveObj.simpleName} already exists.")
-            }
-            ensureArchiveIndexes()
+        // Create archive indexes on the main collection if archives are enabled
+        if (hasArchives) {
+            ensureArchiveIndexesOnMainCollection()
         }
     }
 
@@ -75,7 +63,8 @@ abstract class CollectionConfig(
         try {
             logger.info("⏱ Creating Index:    $indexName for ${entityClass.simpleName}️")
             val indexDef = index.named(indexName).background()
-            if (partialFilter != null) {
+            // Only apply the default partial filter if the index doesn't already have one set
+            if (partialFilter != null && !indexHasPartialFilter(indexDef)) {
                 indexDef.partial(PartialIndexFilter.of(partialFilter))
             }
             mongoTemplate.indexOps(entityClass).ensureIndex(indexDef)
@@ -83,6 +72,11 @@ abstract class CollectionConfig(
         } catch (e: Exception) {
             logger.error("⛔ Creation Failed:  $indexName for ${entityClass.simpleName}️", e)
         }
+    }
+
+    private fun indexHasPartialFilter(index: Index): Boolean {
+        val indexInfo = index.indexOptions
+        return indexInfo.containsKey("partialFilterExpression")
     }
 
     fun ensureIndexes(
@@ -97,19 +91,20 @@ abstract class CollectionConfig(
         }
     }
 
-    private fun ensureArchiveIndexes() {
-        if (archiveObj == null) {
-            throw RuntimeException("Archive object is null")
-        }
+    private fun ensureArchiveIndexesOnMainCollection() {
         ensureIndexes(
             listOf(
-                "data.blockNumber_-1" to Index().on("data.blockNumber", Sort.Direction.DESC),
-                "data._id_1_data.version_-1" to
+                "_isArchive_1_blockNumber_-1" to
                     Index()
-                        .on("data._id", Sort.Direction.ASC)
-                        .on("data.version", Sort.Direction.DESC),
+                        .on("_isArchive", Sort.Direction.ASC)
+                        .on("blockNumber", Sort.Direction.DESC),
+                "_isArchive_1__originalDocId_1_version_-1" to
+                    Index()
+                        .on("_isArchive", Sort.Direction.ASC)
+                        .on("_originalDocId", Sort.Direction.ASC)
+                        .on("version", Sort.Direction.DESC),
             ),
-            archiveObj,
+            modelObj,
             partialFilter = null,
         )
     }

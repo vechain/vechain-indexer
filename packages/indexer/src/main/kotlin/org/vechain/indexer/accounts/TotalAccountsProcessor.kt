@@ -17,7 +17,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 open class TotalAccountsProcessor(
     private val service: TotalAccountsService,
     repository: TotalAccountsRepository,
-    archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+    archiveService: ArchiveService<TotalAccounts>,
     checkpointService: CheckpointService,
 ) :
     BaseStatefulProcessor(

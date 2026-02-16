@@ -10,7 +10,6 @@ import org.vechain.indexer.IndexerFactory
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.IndexingResult
 import org.vechain.indexer.accounts.TotalAccounts
-import org.vechain.indexer.accounts.TotalAccountsArchive
 import org.vechain.indexer.accounts.TotalAccountsProcessor
 import org.vechain.indexer.accounts.TotalAccountsService
 import org.vechain.indexer.accounts.repository.TotalAccountsRepository
@@ -25,7 +24,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
 
     @Autowired lateinit var totalAccountsRepository: TotalAccountsRepository
     @Autowired lateinit var totalAccountsService: TotalAccountsService
-    @Autowired lateinit var archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>
+    @Autowired lateinit var archiveService: ArchiveService<TotalAccounts>
     @Autowired lateinit var mongoTemplate: MongoTemplate
     @Autowired lateinit var checkpointService: CheckpointService
 
@@ -115,7 +114,7 @@ class TotalAccountsProcessorPerformanceTest : BasePerformanceTest() {
     private class ProfiledTotalAccountsProcessor(
         service: TotalAccountsService,
         repository: TotalAccountsRepository,
-        archiveService: ArchiveService<TotalAccounts, TotalAccountsArchive>,
+        archiveService: ArchiveService<TotalAccounts>,
         private val profiler: DetailedProfiler,
         checkpointService: CheckpointService,
     ) :

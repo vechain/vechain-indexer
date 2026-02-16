@@ -25,7 +25,7 @@ open class XAllocResultCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         XAllocResult::class.java,
-        XAllocResultArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -41,8 +41,6 @@ open class XAllocResultCollectionConfig(
                 XAllocResult::class.java,
                 version,
             )
-
-        if (dropped) indexerVersionService.dropArchiveCollection(XAllocResultArchive::class.java)
 
         this.ensureCollection()
 

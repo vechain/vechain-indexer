@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.springframework.data.mongodb.core.index.PartialIndexFilter
+import org.springframework.data.mongodb.core.query.Criteria
 import org.vechain.indexer.IndexerNames
 import org.vechain.indexer.config.mongo.CollectionConfig
 import org.vechain.indexer.history.IndexedHistoryEvent
@@ -20,13 +22,7 @@ open class NftCollectionConfig(
     mongoTemplate: MongoTemplate,
     appCoroutineScope: CoroutineScope,
     private val indexerVersionService: IndexerVersionService,
-) :
-    CollectionConfig(
-        mongoTemplate,
-        appCoroutineScope,
-        IndexedNft::class.java,
-        NftArchive::class.java,
-    ) {
+) : CollectionConfig(mongoTemplate, appCoroutineScope, IndexedNft::class.java, hasArchives = true) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     @Value("\${indexer.version.nfts}") private var version: Int = 1
@@ -42,8 +38,6 @@ open class NftCollectionConfig(
                 version,
             )
 
-        if (dropped) indexerVersionService.dropArchiveCollection(NftArchive::class.java)
-
         ensureCollection()
 
         logger.info("Initializing indexes for ${modelObj.simpleName}")
@@ -58,7 +52,8 @@ open class NftCollectionConfig(
                     Index()
                         .on(IndexedNft::contractAddress.name, Sort.Direction.ASC)
                         .on(IndexedNft::tokenId.name, Sort.Direction.DESC)
-                        .unique(),
+                        .unique()
+                        .partial(PartialIndexFilter.of(Criteria.where("_isArchive").ne(true))),
                 "nft_owner_1_blockNumber_-1_txId_-1__id_-1_isBlacklisted_1" to
                     Index()
                         .on(IndexedNft::owner.name, Sort.Direction.ASC)

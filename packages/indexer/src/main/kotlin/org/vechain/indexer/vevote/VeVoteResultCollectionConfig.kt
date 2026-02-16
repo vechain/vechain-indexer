@@ -25,7 +25,7 @@ open class VeVoteResultCollectionConfig(
         mongoTemplate,
         appCoroutineScope,
         VeVoteProposalResult::class.java,
-        VeVoteProposalResultArchive::class.java,
+        hasArchives = true,
     ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -39,9 +39,6 @@ open class VeVoteResultCollectionConfig(
                 VeVoteProposalResult::class.java,
                 version,
             )
-
-        if (dropped)
-            indexerVersionService.dropArchiveCollection(VeVoteProposalResultArchive::class.java)
 
         this.ensureCollection()
 

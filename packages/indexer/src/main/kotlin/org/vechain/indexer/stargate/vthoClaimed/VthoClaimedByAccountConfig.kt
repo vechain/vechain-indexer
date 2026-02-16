@@ -22,31 +22,21 @@ open class VthoClaimedByAccountConfig {
     open fun vthoClaimByAccountArchiveService(
         mongoTemplate: MongoTemplate,
         @Value("\${indexer.pruner.record-limit}") recordLimit: Long,
-    ): ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
-        ArchiveService(
-            mongoTemplate,
-            VthoClaimedByAccount::class.java,
-            VthoClaimedByAccountArchive::class.java,
-            recordLimit,
-        )
+    ): ArchiveService<VthoClaimedByAccount> =
+        ArchiveService(mongoTemplate, VthoClaimedByAccount::class.java, recordLimit)
 
     @Bean
     open fun vthoClaimByAccountPruner(
-        vthoClaimByAccountArchiveService:
-            ArchiveService<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+        vthoClaimByAccountArchiveService: ArchiveService<VthoClaimedByAccount>,
         @Value("\${indexer.pruner.removal-chunk-size}") prunerRemovalChunkSize: Int,
-    ): TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive> =
-        PrunerService(
-            VthoClaimedByAccountArchive::class,
-            vthoClaimByAccountArchiveService,
-            prunerRemovalChunkSize,
-        )
+    ): TargetedPruner<VthoClaimedByAccount> =
+        PrunerService(vthoClaimByAccountArchiveService, prunerRemovalChunkSize)
 
     @Bean
     open fun vthoClaimedByAccountIndexer(
         thorClient: ThorClient,
         processor: VthoClaimedByAccountProcessor,
-        vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount, VthoClaimedByAccountArchive>,
+        vthoClaimByAccountPruner: TargetedPruner<VthoClaimedByAccount>,
         @Value("\${indexer.pruner.interval}") prunerInterval: Long,
         @Value("\${indexer.start-block.stargate}") startBlock: Long,
         @Value("\${indexer.sync-log-interval}") syncLoggerInterval: Long,

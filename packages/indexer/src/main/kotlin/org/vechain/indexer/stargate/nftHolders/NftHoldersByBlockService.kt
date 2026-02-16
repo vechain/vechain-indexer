@@ -15,7 +15,7 @@ import org.vechain.indexer.utils.RolloverUtils
 open class NftHoldersByBlockService(
     private val repository: NftHoldersByBlockRepository,
     private val ownerBalanceRepository: NftOwnerBalanceRepository,
-    private val archiveService: ArchiveService<NftOwnerBalance, NftOwnerBalanceArchive>,
+    private val archiveService: ArchiveService<NftOwnerBalance>,
 ) {
     /**
      * @param events The decoded on-chain events grouped across arbitrary blocks.

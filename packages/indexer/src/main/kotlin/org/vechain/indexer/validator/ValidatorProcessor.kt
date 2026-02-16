@@ -15,7 +15,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Component
 open class ValidatorProcessor(
     repository: ValidatorRepository,
-    archiveService: ArchiveService<Validator, ValidatorArchive>,
+    archiveService: ArchiveService<Validator>,
     checkpointService: CheckpointService,
     private val service: ValidatorService,
 ) :

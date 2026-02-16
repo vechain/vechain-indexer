@@ -16,8 +16,7 @@ import org.vechain.indexer.checkpoint.CheckpointService
 @Profile("b3tr", "b3tr-actions", "b3tr-app-round-action-summary")
 open class AppRoundActionSummaryProcessor(
     private val repository: AppRoundActionSummaryRepository,
-    appRoundActionSummaryArchiveService:
-        ArchiveService<AppRoundActionSummary, AppRoundActionSummaryArchive>,
+    appRoundActionSummaryArchiveService: ArchiveService<AppRoundActionSummary>,
     private val service: AppRoundActionSummaryService,
     @param:Value("\${indexer.start-round.b3tr-sustainable-actions}") private val startRound: Int,
     checkpointService: CheckpointService,

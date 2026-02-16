@@ -5,7 +5,6 @@ import org.vechain.indexer.VersionedDocumentAccumulator
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.b3tr.action.ActionImpactConfig
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummary
-import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryArchive
 import org.vechain.indexer.b3tr.action.UserAllTimeActionSummaryService
 import org.vechain.indexer.b3tr.action.repository.UserAllTimeActionSummaryRepository
 import org.vechain.indexer.event.model.generic.IndexedEvent
@@ -26,8 +25,8 @@ import org.vechain.indexer.utils.EventUtils
  */
 class ProfiledUserAllTimeActionSummaryService(
     private val repository: UserAllTimeActionSummaryRepository,
-    archiveService: ArchiveService<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
-    pruner: TargetedPruner<UserAllTimeActionSummary, UserAllTimeActionSummaryArchive>,
+    archiveService: ArchiveService<UserAllTimeActionSummary>,
+    pruner: TargetedPruner<UserAllTimeActionSummary>,
     impactConfig: ActionImpactConfig,
     private val profiler: DetailedProfiler,
 ) : UserAllTimeActionSummaryService(repository, archiveService, pruner, impactConfig) {
