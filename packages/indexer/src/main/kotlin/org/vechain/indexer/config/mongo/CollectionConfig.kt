@@ -2,10 +2,12 @@ package org.vechain.indexer.config.mongo
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.bson.Document
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.index.Index
+import org.springframework.data.mongodb.core.index.PartialIndexFilter
 
 abstract class CollectionConfig(
     private val mongoTemplate: MongoTemplate,
@@ -13,6 +15,14 @@ abstract class CollectionConfig(
     val modelObj: Class<*>,
     val archiveObj: Class<*>? = null,
 ) {
+    companion object {
+        /**
+         * Default partial filter for IndexedDocument collections. Excludes checkpoint documents.
+         */
+        val INDEXED_DOCUMENT_PARTIAL_FILTER: Document =
+            Document("blockNumber", Document("\$exists", true))
+    }
+
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     abstract fun initCollection()
@@ -56,20 +66,33 @@ abstract class CollectionConfig(
      * @param indexName The name of the index
      * @param index The index to create
      */
-    private fun ensureIndex(indexName: String, index: Index, entityClass: Class<*> = modelObj) {
+    private fun ensureIndex(
+        indexName: String,
+        index: Index,
+        entityClass: Class<*> = modelObj,
+        partialFilter: Document? = null,
+    ) {
         try {
             logger.info("⏱ Creating Index:    $indexName for ${entityClass.simpleName}️")
-            mongoTemplate.indexOps(entityClass).ensureIndex(index.named(indexName).background())
+            val indexDef = index.named(indexName).background()
+            if (partialFilter != null) {
+                indexDef.partial(PartialIndexFilter.of(partialFilter))
+            }
+            mongoTemplate.indexOps(entityClass).ensureIndex(indexDef)
             logger.info("✅ Creation Success: $indexName for ${entityClass.simpleName}.")
         } catch (e: Exception) {
             logger.error("⛔ Creation Failed:  $indexName for ${entityClass.simpleName}️", e)
         }
     }
 
-    fun ensureIndexes(indexes: Collection<Pair<String, Index>>, entityClass: Class<*> = modelObj) {
+    fun ensureIndexes(
+        indexes: Collection<Pair<String, Index>>,
+        entityClass: Class<*> = modelObj,
+        partialFilter: Document? = INDEXED_DOCUMENT_PARTIAL_FILTER,
+    ) {
         coroutineScope.launch {
             for ((indexName, index) in indexes) {
-                ensureIndex(indexName, index, entityClass)
+                ensureIndex(indexName, index, entityClass, partialFilter)
             }
         }
     }
@@ -87,6 +110,7 @@ abstract class CollectionConfig(
                         .on("data.version", Sort.Direction.DESC),
             ),
             archiveObj,
+            partialFilter = null,
         )
     }
 }

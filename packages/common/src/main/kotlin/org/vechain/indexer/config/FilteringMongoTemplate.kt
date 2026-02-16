@@ -28,10 +28,8 @@ import org.vechain.indexer.IndexedDocument
  * - All write methods (`save`, `insert`, `remove`, `update*`) — the indexer writes checkpoints via
  *   these
  */
-open class CheckpointFilteringMongoTemplate(
-    dbFactory: MongoDatabaseFactory,
-    converter: MongoConverter,
-) : MongoTemplate(dbFactory, converter) {
+open class FilteringMongoTemplate(dbFactory: MongoDatabaseFactory, converter: MongoConverter) :
+    MongoTemplate(dbFactory, converter) {
 
     /** Cache: entity class → whether it implements [IndexedDocument]. */
     private val filterCache = ConcurrentHashMap<Class<*>, Boolean>()
@@ -105,13 +103,14 @@ open class CheckpointFilteringMongoTemplate(
 
     private fun addCheckpointExclusion(query: Query, entityClass: Class<*>? = null): Query {
         if (queryHasIdCriteria(query, entityClass)) return query
-        query.addCriteria(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
+        if (query.queryObject.containsKey("blockNumber")) return query
+        query.addCriteria(Criteria.where("blockNumber").exists(true))
         return query
     }
 
     private fun checkpointMatchStage():
         org.springframework.data.mongodb.core.aggregation.AggregationOperation =
-        Aggregation.match(Criteria.where("_id").ne(IndexedDocument.CHECKPOINT_ID))
+        Aggregation.match(Criteria.where("blockNumber").exists(true))
 
     private fun prependCheckpointFilter(aggregation: Aggregation): Aggregation {
         val existingOps = aggregation.pipeline.operations

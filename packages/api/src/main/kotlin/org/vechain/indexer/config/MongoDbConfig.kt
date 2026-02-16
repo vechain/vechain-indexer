@@ -42,5 +42,5 @@ open class MongoDbConfig {
     open fun mongoTemplate(
         dbFactory: MongoDatabaseFactory,
         converter: MappingMongoConverter,
-    ): MongoTemplate = CheckpointFilteringMongoTemplate(dbFactory, converter)
+    ): MongoTemplate = FilteringMongoTemplate(dbFactory, converter)
 }
