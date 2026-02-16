@@ -34,7 +34,7 @@ class VersionedDocumentAccumulator<T : VersionedDocument>(
             if (fromCache == null) {
                 val result = findById(recordId)
                 // Guard against Spring Data returning the wrong document (observed in
-                // production with CheckpointFilteringMongoTemplate — findByIdOrNull can
+                // production with FilteringMongoTemplate — findByIdOrNull can
                 // return a document whose _id doesn't match the requested ID).
                 if (result != null && result.getDocumentId() != recordId) {
                     error(
