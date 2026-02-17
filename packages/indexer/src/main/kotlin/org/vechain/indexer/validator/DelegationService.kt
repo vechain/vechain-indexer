@@ -108,11 +108,12 @@ open class DelegationService(
 
     private fun buildValidatorIndex(
         delegations: Collection<Delegation>
-    ): Map<String, List<String>> =
+    ): MutableMap<String, MutableList<String>> =
         delegations
             .filter { it.status != Status.EXITED }
             .groupBy { it.validator }
-            .mapValues { (_, dels) -> dels.map { it.id } }
+            .mapValues { (_, dels) -> dels.map { it.id }.toMutableList() }
+            .toMutableMap()
 
     // ------------------------------
     // Step 1 helpers
@@ -248,7 +249,7 @@ open class DelegationService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
         accumulator: VersionedDocumentAccumulator<Delegation>,
         tokenIdToId: MutableMap<String, String>,
-        validatorToIds: Map<String, List<String>>,
+        validatorToIds: MutableMap<String, MutableList<String>>,
     ) {
         events
             .filter { shouldProcessDelegationEvent(it, stakerSC) }
@@ -261,6 +262,7 @@ open class DelegationService(
                             validatorSnapshots,
                             accumulator,
                             tokenIdToId,
+                            validatorToIds,
                         )
                     "DelegationExitRequested" ->
                         handleDelegationExitRequested(ev, block, accumulator)
@@ -291,6 +293,7 @@ open class DelegationService(
         validatorSnapshots: Map<String, ValidatorSnapshot>,
         accumulator: VersionedDocumentAccumulator<Delegation>,
         tokenIdToId: MutableMap<String, String>,
+        validatorToIds: MutableMap<String, MutableList<String>>,
     ) {
         val delegationId = ev.params.getAsString("delegationId")!!
         val tokenId = ev.params.getAsString("tokenId")!!
@@ -320,6 +323,7 @@ open class DelegationService(
 
         accumulator.put(delegationId, existing, newDelegation)
         tokenIdToId[tokenId] = delegationId
+        validatorToIds.getOrPut(validator) { mutableListOf() }.add(delegationId)
     }
 
     /** Handles a delegation requesting exit. */

@@ -295,4 +295,35 @@ class DelegationServiceTest {
         expectThat(updates.first().status).isEqualTo(Status.EXITING)
         expectThat(updates.first().validatorNextCycle).isEqualTo(20L)
     }
+
+    @Test
+    fun `DelegationInitiated followed by ValidatorExitRequested in same block sets new delegation to EXITING`():
+        Unit = runBlocking {
+        // stub validator cycle resolution for DelegationInitiated
+        coEvery { validatorDelegationService.resolveCycleInfo(any(), any(), any()) } returns
+            (5L to 10L)
+        // stub validator exit block for ValidatorExitRequested
+        coEvery { validatorDelegationService.getValidatorExitBlock("0xVAL", any()) } returns 20L
+
+        val initiateEv =
+            event(
+                "DelegationInitiated",
+                mapOf(
+                    "delegationId" to "d6",
+                    "validator" to "0xVAL",
+                    "tokenId" to "t6",
+                    "levelId" to "2",
+                    "amount" to "100",
+                ),
+            )
+
+        val exitEv =
+            event("ValidatorExitRequested", mapOf("validator" to "0xVAL"), address = "0xSTAKER")
+
+        val (updates, _) = service.processBlock(block(5), listOf(initiateEv, exitEv), emptyList())
+
+        val delegation = updates.first { it.id == "d6" }
+        expectThat(delegation.status).isEqualTo(Status.EXITING)
+        expectThat(delegation.validatorNextCycle).isEqualTo(20L)
+    }
 }
