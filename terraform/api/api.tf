@@ -743,19 +743,19 @@ module "ecs-backend-service" {
       value = each.value.indexer.version.delegation
     },
     {
-      name = "VERSION_TOTAL_ACCOUNTS"
+      name  = "VERSION_TOTAL_ACCOUNTS"
       value = each.value.indexer.version.total-accounts
     },
     {
-      name = "VERSION_ACCOUNT_OVERVIEW"
+      name  = "VERSION_ACCOUNT_OVERVIEW"
       value = each.value.indexer.version.account-overview
     },
     {
-      name = "VERSION_CONTRACTS"
+      name  = "VERSION_CONTRACTS"
       value = each.value.indexer.version.contracts
     },
     {
-      name = "VERSION_VET_BALANCE"
+      name  = "VERSION_VET_BALANCE"
       value = each.value.indexer.version.vet-balance
     },
     {
