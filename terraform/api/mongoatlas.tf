@@ -186,7 +186,7 @@ moved {
 }
 
 removed {
-  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert
 
   lifecycle {
     destroy = false
