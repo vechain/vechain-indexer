@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.event.model.generic.AbiEventParameters
 import org.vechain.indexer.event.model.generic.IndexedEvent
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.stargate.token.TokenLevel
 import org.vechain.indexer.thor.model.Block
 import org.vechain.indexer.thor.model.InspectionResult
@@ -20,6 +21,8 @@ class DelegationServiceTest {
     private val repository = mockk<DelegationRepository>()
     private val archiveService =
         mockk<ArchiveService<Delegation, DelegationArchive>>(relaxed = true)
+    private val delegationPruner =
+        mockk<TargetedPruner<Delegation, DelegationArchive>>(relaxed = true)
 
     private val validatorDelegationService = mockk<ValidatorDelegationService>()
 
@@ -33,6 +36,7 @@ class DelegationServiceTest {
                 DelegationService(
                     repository,
                     archiveService,
+                    delegationPruner,
                     validatorDelegationService,
                     stakerSC = "0xSTAKER",
                 )
@@ -42,6 +46,7 @@ class DelegationServiceTest {
         every { repository.findByValidatorIn(any()) } returns emptyList()
         every { repository.findByTokenIdIn(any()) } returns emptyList()
         every { repository.findByValidatorNextCycleInAndStatusIn(any(), any()) } returns emptyList()
+        every { repository.findById(any<String>()) } returns java.util.Optional.empty()
 
         every { validatorDelegationService.decodeValidatorSnapshots(any()) } returns emptyMap()
         every { validatorDelegationService.nextStatus(any()) } answers
