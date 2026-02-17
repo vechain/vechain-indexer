@@ -249,6 +249,13 @@ open class ValidatorController(
                 "Results are sorted by block number (default: descending).",
     )
     @AddressParameter(name = "validator", description = "Optional validator address to filter by")
+    @BlockNumberParameter(
+        `in` = ParameterIn.QUERY,
+        required = false,
+        description =
+            "Filter results by block number. When direction is 'desc' (default), returns records at or before this block. " +
+                "When direction is 'asc', returns records at or after this block.",
+    )
     @Parameter(
         `in` = ParameterIn.QUERY,
         name = "status",
@@ -260,13 +267,14 @@ open class ValidatorController(
     @CommonApiResponses
     open fun getValidatorBlockRewards(
         @ValidAddress @RequestParam(required = false) validator: Address?,
+        @RequestParam(required = false) blockNumber: Long?,
         @RequestParam(required = false) status: BlockStatus?,
         @RequestParam(required = false) page: Int?,
         @ValidPageSize @RequestParam(required = false) size: Int?,
         @RequestParam(required = false) direction: String?,
     ): PaginatedResponse<ValidatorBlock> {
         val pageable = toPageable(page, size, direction, ValidatorBlock::blockNumber.name)
-        return service.getValidatorBlockRewards(validator, status, pageable)
+        return service.getValidatorBlockRewards(validator, blockNumber, status, pageable)
     }
 
     @GetMapping("/block-rewards/{blockNumber}")
