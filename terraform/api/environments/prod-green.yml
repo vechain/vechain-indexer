@@ -273,12 +273,13 @@ enabled_nets:
       fqdn: mainnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M50
+      cluster_tier: M60_NVME
       disk_size_gb: 1000
       iops: 2000
+      auto_scaling_disk_gb_enabled: false
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M60
-      auto_scaling_compute_min_instance_size: M40
+      auto_scaling_compute_max_instance_size: M80_NVME
+      auto_scaling_compute_min_instance_size: M50_NVME
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
