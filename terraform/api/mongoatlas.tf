@@ -24,10 +24,8 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
 
       auto_scaling = {
         disk_gb_enabled            = true
-        compute_enabled            = true
-        compute_scale_down_enabled = true
-        compute_min_instance_size  = local.env.enabled_nets.main.mongodb.auto_scaling_compute_min_instance_size
-        compute_max_instance_size  = local.env.enabled_nets.main.mongodb.auto_scaling_compute_max_instance_size
+        compute_enabled            = false
+        compute_scale_down_enabled = false
       }
     }]
   }]
