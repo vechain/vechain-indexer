@@ -11,27 +11,27 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
   mongo_db_major_version = "8"
   backup_enabled         = true
 
-  replication_specs {
-    region_configs {
+  replication_specs = [{
+    region_configs = [{
       provider_name = "AWS"
       region_name   = "EU_WEST_1"
       priority      = 7
 
-      electable_specs {
+      electable_specs = {
         instance_size = local.env.enabled_nets.main.mongodb.cluster_tier
         node_count    = 3
         disk_size_gb  = local.env.enabled_nets.main.mongodb.disk_size_gb
       }
 
-      auto_scaling {
+      auto_scaling = {
         disk_gb_enabled            = true
         compute_enabled            = true
         compute_scale_down_enabled = true
         compute_min_instance_size  = local.env.enabled_nets.main.mongodb.auto_scaling_compute_min_instance_size
         compute_max_instance_size  = local.env.enabled_nets.main.mongodb.auto_scaling_compute_max_instance_size
       }
-    }
-  }
+    }]
+  }]
 }
 
 resource "mongodbatlas_advanced_cluster" "test_net" {
@@ -43,25 +43,25 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
   mongo_db_major_version = "8"
   backup_enabled         = true
 
-  replication_specs {
-    region_configs {
+  replication_specs = [{
+    region_configs = [{
       provider_name = "AWS"
       region_name   = "EU_WEST_1"
       priority      = 7
 
-      electable_specs {
+      electable_specs = {
         instance_size = local.env.enabled_nets.test.mongodb.cluster_tier
         node_count    = 3
         disk_size_gb  = local.env.enabled_nets.test.mongodb.disk_size_gb
       }
 
-      auto_scaling {
+      auto_scaling = {
         disk_gb_enabled            = true
         compute_enabled            = false
         compute_scale_down_enabled = false
       }
-    }
-  }
+    }]
+  }]
 }
 
 ################################################################################
