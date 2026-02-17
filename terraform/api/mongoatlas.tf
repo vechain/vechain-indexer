@@ -180,6 +180,19 @@ moved {
   to   = mongodbatlas_cloud_backup_schedule.test_net[0]
 }
 
+moved {
+  from = module.mongoatlas-main-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+  to   = mongodbatlas_alert_configuration.host_mongot_crashing_oom[0]
+}
+
+removed {
+  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+
+  lifecycle {
+    destroy = false
+  }
+}
+
 # Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
 # These secrets are used by the API and Indexer ECS services to connect to the MongoDB Atlas clusters
 
