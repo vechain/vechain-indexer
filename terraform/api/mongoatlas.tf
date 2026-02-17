@@ -69,7 +69,7 @@ resource "mongodbatlas_advanced_cluster" "test_net" {
 ################################################################################
 
 resource "mongodbatlas_cloud_backup_schedule" "main_net" {
-  count        = startswith(local.env.environment, "prod") ? 1 : 0
+  count        = startswith(local.env.environment, "prod") && try(local.env.enabled_nets.main.mongodb.type, false) == "atlas" ? 1 : 0
   project_id   = local.env.mongoatlas_project_id
   cluster_name = mongodbatlas_advanced_cluster.main_net[0].name
 
@@ -97,7 +97,7 @@ resource "mongodbatlas_cloud_backup_schedule" "main_net" {
 }
 
 resource "mongodbatlas_cloud_backup_schedule" "test_net" {
-  count        = startswith(local.env.environment, "prod-") ? 1 : 0
+  count        = startswith(local.env.environment, "prod-") && try(local.env.enabled_nets.test.mongodb.type, false) == "atlas" ? 1 : 0
   project_id   = local.env.mongoatlas_project_id
   cluster_name = mongodbatlas_advanced_cluster.test_net[0].name
 
