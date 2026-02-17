@@ -20,7 +20,6 @@ resource "mongodbatlas_advanced_cluster" "main_net" {
       electable_specs = {
         instance_size = local.env.enabled_nets.main.mongodb.cluster_tier
         node_count    = 3
-        disk_size_gb  = local.env.enabled_nets.main.mongodb.disk_size_gb
       }
 
       auto_scaling = {
@@ -144,7 +143,7 @@ resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom" {
     interval_min  = 60
     delay_min     = 0
     email_enabled = true
-    roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+    roles         = ["GROUP_CLUSTER_MANAGER"]
   }
 
   notification {
@@ -169,7 +168,7 @@ resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom_legacy" {
     interval_min  = 60
     delay_min     = 0
     email_enabled = true
-    roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+    roles         = ["GROUP_CLUSTER_MANAGER"]
   }
 }
 
