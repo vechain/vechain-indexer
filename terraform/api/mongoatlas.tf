@@ -156,6 +156,23 @@ resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom" {
   }
 }
 
+# TODO: Remove this resource after state migration has been applied to all environments.
+# It exists only to receive the moved state from the old testnet module alert.
+resource "mongodbatlas_alert_configuration" "host_mongot_crashing_oom_legacy" {
+  count      = startswith(local.env.environment, "dev") ? 0 : 1
+  project_id = local.env.mongoatlas_project_id
+  event_type = "HOST_MONGOT_CRASHING_OOM"
+  enabled    = false
+
+  notification {
+    type_name     = "GROUP"
+    interval_min  = 60
+    delay_min     = 0
+    email_enabled = true
+    roles         = ["GROUP_CHARTS_ADMIN", "GROUP_CLUSTER_MANAGER"]
+  }
+}
+
 ################################################################################
 # State migration: moved blocks
 ################################################################################
@@ -185,12 +202,9 @@ moved {
   to   = mongodbatlas_alert_configuration.host_mongot_crashing_oom[0]
 }
 
-removed {
-  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert
-
-  lifecycle {
-    destroy = false
-  }
+moved {
+  from = module.mongoatlas-test-net.mongodbatlas_alert_configuration.dynamic_alert["alert_type_1"]
+  to   = mongodbatlas_alert_configuration.host_mongot_crashing_oom_legacy[0]
 }
 
 # Create Database Users in MongoDB Atlas and corresponding secrets in AWS Secrets Manager
