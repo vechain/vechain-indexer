@@ -70,7 +70,7 @@ module "mongoatlas-main-net" {
     num_shards                   = 1
     cloud_backup                 = true
     cluster_type                 = "REPLICASET"
-    auto_scaling_disk_gb_enabled = try(local.env.enabled_nets.main.mongodb.auto_scaling_disk_gb_enabled, true)
+    auto_scaling_disk_gb_enabled = true
     provider_name                = "AWS"
     provider_volume_type         = try(local.env.enabled_nets.main.mongodb.provider_volume_type, "STANDARD")
     provider_instance_size_name  = local.env.enabled_nets.main.mongodb.cluster_tier

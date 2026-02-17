@@ -276,7 +276,6 @@ enabled_nets:
       cluster_tier: M60_NVME
       disk_size_gb: 1000
       iops: 2000
-      auto_scaling_disk_gb_enabled: false
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
       auto_scaling_compute_max_instance_size: M80_NVME
       auto_scaling_compute_min_instance_size: M60_NVME
