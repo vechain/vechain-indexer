@@ -224,7 +224,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '4'
         token-rewards: '3'
-        delegation: '5'
+        delegation: '6'
         total-accounts: '2'
         account-overview: '4'
       business-event:
@@ -430,7 +430,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '5'
         token-rewards: '2'
-        delegation: '4'
+        delegation: '5'
         total-accounts: '2'
         account-overview: '4'
       business-event:

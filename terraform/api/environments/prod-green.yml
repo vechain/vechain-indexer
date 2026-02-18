@@ -223,7 +223,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '4'
         token-rewards: '3'
-        delegation: '5'
+        delegation: '6'
         total-accounts: '2'
         account-overview: '4'
       business-event:
@@ -273,12 +273,12 @@ enabled_nets:
       fqdn: mainnet.rsmhw.mongodb.net
       proto: mongodb+srv
       opts: retryWrites=true&w=majority
-      cluster_tier: M50
+      cluster_tier: M60_NVME
       disk_size_gb: 1000
       iops: 2000
       secret_arn: arn:aws:secretsmanager:eu-west-1:905964754131:secret:prod/mongo-atlas-api-NTfIGT
-      auto_scaling_compute_max_instance_size: M60
-      auto_scaling_compute_min_instance_size: M40
+      auto_scaling_compute_max_instance_size: M80_NVME
+      auto_scaling_compute_min_instance_size: M60_NVME
   test:
     image_version: latest
     thor_url: https://testnet.vechain.org
@@ -429,7 +429,7 @@ enabled_nets:
         validator-rewards: '3'
         stargate-token: '5'
         token-rewards: '2'
-        delegation: '4'
+        delegation: '5'
         total-accounts: '2'
         account-overview: '4'
       business-event:

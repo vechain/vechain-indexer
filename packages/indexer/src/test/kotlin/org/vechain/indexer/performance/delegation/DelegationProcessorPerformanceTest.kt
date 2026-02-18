@@ -12,6 +12,7 @@ import org.vechain.indexer.archive.ArchiveService
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.performance.BasePerformanceTest
 import org.vechain.indexer.performance.DetailedProfiler
+import org.vechain.indexer.pruner.TargetedPruner
 import org.vechain.indexer.validator.Delegation
 import org.vechain.indexer.validator.DelegationArchive
 import org.vechain.indexer.validator.DelegationConfig
@@ -26,6 +27,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
     @Autowired lateinit var delegationRepository: DelegationRepository
     @Autowired lateinit var delegationService: DelegationService
     @Autowired lateinit var archiveService: ArchiveService<Delegation, DelegationArchive>
+    @Autowired lateinit var delegationPruner: TargetedPruner<Delegation, DelegationArchive>
     @Autowired lateinit var checkpointService: CheckpointService
     @Autowired
     lateinit var validatorDelegationService:
@@ -90,6 +92,7 @@ class DelegationProcessorPerformanceTest : BasePerformanceTest() {
                 ProfiledDelegationService(
                     repository = delegationRepository,
                     archiveService = archiveService,
+                    delegationPruner = delegationPruner,
                     validatorDelegationService = validatorDelegationService,
                     stakerSC = builtinStakerAddress,
                     profiler = profiler,

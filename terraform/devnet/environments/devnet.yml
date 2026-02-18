@@ -183,7 +183,7 @@ enabled_nets:
         validator-rewards: '7'
         stargate-token: '5'
         token-rewards: '5'
-        delegation: '5'
+        delegation: '6'
         accounts: '3'
       business-event:
         substitutions:
