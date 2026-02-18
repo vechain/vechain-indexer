@@ -2,6 +2,7 @@ package org.vechain.indexer
 
 import kotlin.time.TimeSource
 import org.slf4j.LoggerFactory
+import org.springframework.transaction.annotation.Transactional
 import org.vechain.indexer.checkpoint.CheckpointService
 import org.vechain.indexer.thor.model.BlockIdentifier
 
@@ -45,8 +46,9 @@ abstract class BaseProcessor(
         return listOfNotNull(latestRecord, checkpoint).maxByOrNull { it.number }
     }
 
+    @Transactional(rollbackFor = [Exception::class])
     override fun rollback(blockNumber: Long) {
-        checkpointService.saveCheckpoint(collectionName, blockNumber)
+        checkpointService.saveCheckpoint(collectionName, blockNumber - 1)
         repository.deleteAllByBlockNumberGreaterThanEqual(blockNumber)
     }
 }
