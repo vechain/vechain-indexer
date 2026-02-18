@@ -10,7 +10,7 @@ import org.vechain.indexer.IndexedDocument.Companion.CHECKPOINT_ID
 import org.vechain.indexer.thor.model.BlockIdentifier
 
 // Always run the checkpoint this many blocks behind the current block
-const val CHECKPOINT_BUFFER = 180L
+private const val CHECKPOINT_BUFFER = 180L
 
 @Service
 open class CheckpointService(private val mongoTemplate: MongoTemplate) {
