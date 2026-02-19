@@ -49,7 +49,6 @@ open class ArchiveService<T : VersionedDocument, S : Archive<T>>(
         mongoTemplate.insert(archives, archiveClazz)
     }
 
-    @Transactional(rollbackFor = [Exception::class])
     open fun rollback(blockNumber: Long) {
         val currentDocuments = getCurrentDocuments(blockNumber)
 

@@ -33,12 +33,12 @@ class BaseStatefulProcessorTest {
 
     @Test
     fun `rollback - saves checkpoint and rolls back archives`() {
-        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) } just Runs
+        every { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) } just Runs
         every { archiveService.rollback(10) } just Runs
 
         processor.rollback(10)
 
-        verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 10) }
+        verify(exactly = 1) { checkpointService.saveCheckpoint(TEST_COLLECTION, 9) }
         verify(exactly = 1) { archiveService.rollback(10) }
     }
 
