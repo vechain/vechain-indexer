@@ -27,7 +27,11 @@ class IndexerMetricsReporter(
             try {
                 runBlocking { thorClient.getBlockUnexpanded(BlockRevision.Keyword.BEST).number }
             } catch (e: Exception) {
-                logger.warn("Failed to fetch best block for metrics for revision {}", BlockRevision.Keyword.BEST, e)
+                logger.warn(
+                    "Failed to fetch best block for metrics for revision {}",
+                    BlockRevision.Keyword.BEST,
+                    e,
+                )
                 null
             }
 
