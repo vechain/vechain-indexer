@@ -11,7 +11,7 @@ import org.vechain.indexer.IndexerNames
 data class TreasuryTransfer
 @ConstructorBinding
 constructor(
-    @Id val id: String,
+    @JsonIgnore @Id val id: String,
     @JsonIgnore override val blockId: String,
     @JsonIgnore override val blockNumber: Long,
     override val blockTimestamp: Long,

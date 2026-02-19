@@ -23,6 +23,14 @@ open class TreasuryTransferConfig {
         @Value("\${indexer.sync-block-batch-size.b3tr-treasury}") syncBlockBatchSize: Long,
         @Value("\${business-event.substitutions.B3TR_CONTRACT}") b3trContractAddress: String,
         @Value("\${business-event.substitutions.GM_NFT_CONTRACT}") gmNftContractAddress: String,
+        @Value("\${business-event.substitutions.TREASURY_CONTRACT}")
+        treasuryContractAddress: String,
+        @Value("\${business-event.substitutions.GOVERNANCE_TIMELOCK_CONTRACT}")
+        governanceTimelockAddress: String,
+        @Value("\${business-event.substitutions.GRANTS_MANAGER_CONTRACT}")
+        grantsManagerAddress: String,
+        @Value("\${business-event.substitutions.EMISSIONS}") emissionsAddress: String,
+        @Value("\${business-event.substitutions.X_ALLOC_POOL_CONTRACT}") xAllocPoolAddress: String,
         bEProperties: BusinessEventProperties,
     ): Indexer =
         IndexerFactory()
@@ -40,7 +48,17 @@ open class TreasuryTransferConfig {
                     "B3TR_TreasuryGmUpgrade",
                 )
             )
-            .businessEventContracts(listOf(b3trContractAddress, gmNftContractAddress))
+            .businessEventContracts(
+                listOf(
+                    b3trContractAddress,
+                    gmNftContractAddress,
+                    treasuryContractAddress,
+                    governanceTimelockAddress,
+                    grantsManagerAddress,
+                    emissionsAddress,
+                    xAllocPoolAddress,
+                )
+            )
             .businessEventSubstitutionParams(bEProperties.substitutions)
             .build()
 }
