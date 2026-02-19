@@ -136,3 +136,14 @@ jobs:
           docker buildx imagetools create \
             $TAGS \
             $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+
+      - name: Clean up untagged images
+        env:
+          # GHCR package name uses repo/packageName, slash must be URL-encoded for the API
+          PACKAGE_PATH: veworld-indexer%2F${{ matrix.packageName }}
+        run: |
+          gh api --paginate \
+            "/orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_PATH }}/versions" \
+            --jq '.[] | select(.metadata.container.tags | length == 0) | .id' \
+          | xargs -I {} gh api --method DELETE \
+            "/orgs/${{ github.repository_owner }}/packages/container/${{ env.PACKAGE_PATH }}/versions/{}"
