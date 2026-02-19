@@ -104,10 +104,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version tags
+        id: version
+        run: |
+          # Strip v. prefix from version tag
+          VERSION=$(echo "${{ env.versionTag }}" | sed 's/^v\.//')
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f1-2)
+          echo "full=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "minor=$MINOR" >> "$GITHUB_OUTPUT"
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
+        env:
+          IMAGE: ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}
         run: |
           docker buildx imagetools create \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.versionTag }} \
-            -t ${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}:${{ env.latestTag }} \
-            $(printf '${{ env.registry }}/${{ github.repository }}/${{ matrix.packageName }}@sha256:%s ' *)
+            -t ${{ env.IMAGE }}:${{ steps.version.outputs.full }} \
+            -t ${{ env.IMAGE }}:${{ steps.version.outputs.minor }} \
+            -t ${{ env.IMAGE }}:${{ steps.version.outputs.major }} \
+            -t ${{ env.IMAGE }}:${{ env.latestTag }} \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
